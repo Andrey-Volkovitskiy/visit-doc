@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: uv-lock-check
+        name: uv lock check (pyproject.toml -> uv.lock)
+        entry: uv lock --check
+        language: system
+        pass_filenames: false
+
+      - id: uv-sync-check
+        name: uv sync check (.venv -> uv.lock)
+        entry: uv sync --check
+        language: system
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check .
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: mypy-check
+        name: mypy
+        entry: uv run mypy .
+        language: system
+        pass_filenames: false
+        types: [python]

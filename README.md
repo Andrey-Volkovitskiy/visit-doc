@@ -17,10 +17,22 @@ packages/
 └── shared-proto/   # chat<->scheduler gRPC contract
 ```
 
+## Installation
+
+Prerequisites: [`uv`](https://docs.astral.sh/uv/) (Python 3.12 is installed automatically by `uv`
+if you don't have it).
+
+```bash
+uv sync                    # install every service/package into one shared venv
+uv run pre-commit install  # install git hooks (lint/type-check before each commit)
+```
+
 ## Getting started
 
 ```bash
-uv sync                                          # install every service/package into one shared venv
-uv run --package chat -- python -m chat.main      # run the chat service
-uv run --package scheduler -- python -m scheduler.main   # run the scheduler service
+uv run --package chat -- python -m chat.main            # run the chat service
+uv run --package scheduler -- python -m scheduler.main  # run the scheduler service
 ```
+
+See the [`Makefile`](Makefile) for shortcuts (`make sync`, `make lint`, `make format`,
+`make typecheck`, `make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`).

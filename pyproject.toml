@@ -8,6 +8,7 @@ dev = [
     "mypy",
     "types-protobuf>=7.34.1.20260518",
     "types-grpcio>=1.82.1.20260724",
+    "pre-commit>=4.6.1",
 ]
 
 [tool.ruff]

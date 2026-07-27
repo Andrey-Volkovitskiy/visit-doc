@@ -71,17 +71,16 @@ service-specific rules out of context everywhere else. `services/chat/.claude/CL
 
 ## Commands
 
-`.python-version` is pinned to 3.12 for the whole workspace.
+`.python-version` is pinned to 3.12 for the whole workspace. Common commands are in the
+[`Makefile`](../Makefile): `make sync`, `make lint`, `make format`, `make typecheck`,
+`make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`.
+
+A few less-common `uv` invocations that don't have a Makefile target (they take arguments):
 
 ```bash
-uv sync                                          # install/sync every workspace member
-uv sync --package chat                            # sync just one member (e.g. in CI)
-uv run --package chat -- python -m chat.main      # run chat's entry point
-uv run --package scheduler -- python -m scheduler.main   # run scheduler's entry point
-uv add --package chat <package>                   # add a dep to services/chat
-uv add --package shared-proto <package>           # add a dep to a shared package
-uv run ruff check .                                # lint the whole workspace (config: root pyproject.toml)
-uv run mypy .                                      # type-check the whole workspace (config: root pyproject.toml)
+uv sync --package chat                    # sync just one member (e.g. in CI)
+uv add --package chat <package>           # add a dep to services/chat
+uv add --package shared-proto <package>   # add a dep to a shared package
 ```
 
 Regenerating the gRPC stubs (after editing `packages/shared-proto/protos/scheduling/v1/scheduling.proto`)
@@ -105,6 +104,21 @@ using `google.protobuf`/`grpc` directly still gets real type checking.
 No test suite or CI configuration exists yet (`pytest` is available workspace-wide as a dev
 dependency group but unconfigured). When it's wired up, prefer `uv run pytest`, etc., and update
 this file with the exact invocations.
+
+### Pre-commit hooks
+
+`.pre-commit-config.yaml` (repo root) defines four **local** hooks (`language: system`, no
+Astral/pre-commit-mirror version pins — they all shell out to the exact ruff/mypy/uv versions
+already resolved in `uv.lock`, so there's one source of truth for tool versions, not two):
+
+1. `uv-lock-check` — `uv lock --check`: fails if `uv.lock` is stale relative to `pyproject.toml`.
+2. `uv-sync-check` — `uv sync --check`: fails if `.venv` is stale relative to `uv.lock` (read-only —
+   does not install anything; run a plain `uv sync` to fix).
+3. `ruff-check` — `uv run ruff check .`
+4. `mypy-check` — `uv run mypy .`
+
+Installed locally via `uv run pre-commit install`. Each contributor needs to run that once after
+cloning (it's a `.git/hooks/` entry, not tracked by git).
 
 ## Architecture
 
