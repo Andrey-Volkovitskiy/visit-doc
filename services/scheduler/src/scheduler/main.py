@@ -1,5 +1,5 @@
 def main():
-    print("Hello from visit-doc!")
+    print("Hello from scheduler!")
 
 
 if __name__ == "__main__":

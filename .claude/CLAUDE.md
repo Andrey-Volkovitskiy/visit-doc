@@ -4,13 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is at the walking-skeleton stage: `main.py` is a placeholder ("Hello from
-visit-doc!") and no application code exists yet. `docs/ROADMAP.md` is the authoritative design
-document — read it before starting any implementation work, since it defines the architecture,
-phased build plan, and the reasoning behind each technology choice. Treat its "Design principles"
-and "Phased build plan" sections as binding scope guidance, not just background: build Phase 0
-before Phase 1, don't introduce Phase 3+ platform layers early, and don't add services/infra beyond
-what the current phase calls for.
+This repository is at the walking-skeleton stage: each service has only a placeholder `main.py`
+("Hello from chat!" / "Hello from scheduler!") and no real application code exists yet.
+`docs/ROADMAP.md` is the authoritative design document — read it before starting any implementation
+work, since it defines the architecture, phased build plan, and the reasoning behind each technology
+choice. Treat its "Design principles" and "Phased build plan" sections as binding scope guidance,
+not just background: build Phase 0 before Phase 1, don't introduce Phase 3+ platform layers early,
+and don't add services/infra beyond what the current phase calls for.
+
+The repo is a **monorepo**: `services/chat`, `services/scheduler`, and `services/frontend` are
+independent services, with cross-service Python code (Pydantic schemas, the gRPC contract) factored
+out into `packages/`. See "Repository layout" below.
 
 ## What this project is
 
@@ -34,18 +38,44 @@ later phases.
 - REACT/Vite
 
 
-## Commands
+## Repository layout
 
-This is a `uv`-managed Python project (`pyproject.toml`, `.python-version` pinned to 3.12, no
-dependencies yet).
+`uv` workspace (root `pyproject.toml` is a *virtual* workspace root — no `[project]` table of its
+own, it only lists members):
 
-```bash
-uv sync              # install/sync the environment from pyproject.toml
-uv run main.py        # run the entry point
-uv add <package>      # add a dependency (updates pyproject.toml + uv.lock)
+```
+services/
+├── chat/          # FastAPI core backend: agent, RAG, chat, auth (uv member "chat")
+├── scheduler/     # FastAPI + own Postgres, gRPC server (uv member "scheduler")
+└── frontend/      # React + Vite SPA — plain Node project, NOT a uv workspace member
+packages/
+├── shared-models/ # cross-service Pydantic schemas (uv member "shared-models")
+└── shared-proto/  # chat<->scheduler gRPC contract: protos/ source + generated *_pb2*.py (uv member "shared-proto")
 ```
 
-No test suite, linter, or CI configuration exists yet. When these are introduced, prefer
+`chat` and `scheduler` depend on `shared-models`/`shared-proto` via `tool.uv.sources` workspace
+references. All Python members share **one `uv.lock` and one `.venv`** at the repo root — they
+can't pin conflicting versions of a shared dependency.
+
+## Commands
+
+`.python-version` is pinned to 3.12 for the whole workspace.
+
+```bash
+uv sync                                          # install/sync every workspace member
+uv sync --package chat                            # sync just one member (e.g. in CI)
+uv run --package chat -- python -m chat.main      # run chat's entry point
+uv run --package scheduler -- python -m scheduler.main   # run scheduler's entry point
+uv add --package chat <package>                   # add a dep to services/chat
+uv add --package shared-proto <package>           # add a dep to a shared package
+```
+
+Regenerating the gRPC stubs (after editing `packages/shared-proto/protos/scheduling/v1/scheduling.proto`)
+is documented in `packages/shared-proto/README.md` — it requires a manual import fixup after
+running `protoc`, don't skip that step.
+
+No test suite, linter, or CI configuration exists yet (though `ruff`, `pytest`, and `mypy` are
+available workspace-wide as a dev dependency group). When these are wired up, prefer
 `uv run pytest`, `uv run ruff check`, etc., and update this file with the exact invocations.
 
 ## Architecture

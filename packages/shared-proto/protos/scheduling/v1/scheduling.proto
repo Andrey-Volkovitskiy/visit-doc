@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package scheduling.v1;
+
+service Scheduling {
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+  rpc BookAppointment(BookAppointmentRequest) returns (BookAppointmentResponse);
+}
+
+message CheckAvailabilityRequest {
+  string doctor_id = 1;
+}
+
+message CheckAvailabilityResponse {
+  repeated string available_slots = 1;
+}
+
+message BookAppointmentRequest {
+  string doctor_id = 1;
+  string patient_id = 2;
+  string slot = 3;
+}
+
+message BookAppointmentResponse {
+  string appointment_id = 1;
+}

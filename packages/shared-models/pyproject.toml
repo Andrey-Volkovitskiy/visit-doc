@@ -1,0 +1,13 @@
+[project]
+name = "shared-models"
+version = "0.1.0"
+description = "Cross-service Pydantic schemas shared between visit-doc services"
+requires-python = ">=3.12"
+dependencies = ["pydantic"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/shared_models"]
