@@ -46,7 +46,9 @@ own, it only lists members):
 ```
 services/
 ├── chat/          # FastAPI core backend: agent, RAG, chat, auth (uv member "chat")
+│                  # has its own .claude/CLAUDE.md with the Python code style guide
 ├── scheduler/     # FastAPI + own Postgres, gRPC server (uv member "scheduler")
+│                  # has its own .claude/CLAUDE.md with the Python code style guide
 └── frontend/      # React + Vite SPA — plain Node project, NOT a uv workspace member
 packages/
 ├── shared-models/ # cross-service Pydantic schemas (uv member "shared-models")
@@ -56,6 +58,16 @@ packages/
 `chat` and `scheduler` depend on `shared-models`/`shared-proto` via `tool.uv.sources` workspace
 references. All Python members share **one `uv.lock` and one `.venv`** at the repo root — they
 can't pin conflicting versions of a shared dependency.
+
+### Convention: directory-scoped CLAUDE.md files
+
+When a subdirectory needs its own Claude Code guidance (e.g. a service-specific style guide), place
+it at `<dir>/.claude/CLAUDE.md`, not `<dir>/CLAUDE.md` — matching this repo's own root convention
+(this file lives at `.claude/CLAUDE.md`, not the repo root). Claude Code loads a directory's
+`CLAUDE.md` only when files under that directory are being read/edited, so this keeps
+service-specific rules out of context everywhere else. `services/chat/.claude/CLAUDE.md` and
+`services/scheduler/.claude/CLAUDE.md` are the existing examples — both just `@`-import
+`docs/python-style-guide.md` rather than duplicating it.
 
 ## Commands
 
@@ -68,15 +80,20 @@ uv run --package chat -- python -m chat.main      # run chat's entry point
 uv run --package scheduler -- python -m scheduler.main   # run scheduler's entry point
 uv add --package chat <package>                   # add a dep to services/chat
 uv add --package shared-proto <package>           # add a dep to a shared package
+uv run ruff check .                                # lint the whole workspace (config: root pyproject.toml)
 ```
 
 Regenerating the gRPC stubs (after editing `packages/shared-proto/protos/scheduling/v1/scheduling.proto`)
 is documented in `packages/shared-proto/README.md` — it requires a manual import fixup after
 running `protoc`, don't skip that step.
 
-No test suite, linter, or CI configuration exists yet (though `ruff`, `pytest`, and `mypy` are
-available workspace-wide as a dev dependency group). When these are wired up, prefer
-`uv run pytest`, `uv run ruff check`, etc., and update this file with the exact invocations.
+Ruff lint rules are configured once, in the root `pyproject.toml`'s `[tool.ruff]`/`[tool.ruff.lint]`
+tables, and apply to every Python workspace member automatically via ruff's hierarchical config
+discovery (no member has its own `[tool.ruff]`, so the walk-up always lands on the root). Generated
+gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) are excluded. No test suite or CI configuration exists
+yet (`pytest` and `mypy` are available workspace-wide as a dev dependency group but unconfigured).
+When these are wired up, prefer `uv run pytest`, etc., and update this file with the exact
+invocations.
 
 ## Architecture
 

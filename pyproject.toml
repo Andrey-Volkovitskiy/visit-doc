@@ -3,3 +3,21 @@ members = ["services/chat", "services/scheduler", "packages/*"]
 
 [dependency-groups]
 dev = ["ruff", "pytest", "mypy"]
+
+[tool.ruff]
+extend-exclude = ["**/*_pb2.py", "**/*_pb2_grpc.py"]
+
+[tool.ruff.lint]
+extend-select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort (import sorting)
+    "N",    # pep8-naming
+    "UP",   # pyupgrade (modern syntax)
+    "B",    # flake8-bugbear (likely-bug patterns)
+    "C4",   # flake8-comprehensions
+    "RUF",  # ruff-specific rules
+    "D101", # missing docstring in public class
+    "D102", # missing docstring in public method
+    "D103", # missing docstring in public function
+]

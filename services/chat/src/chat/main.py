@@ -1,4 +1,5 @@
 def main():
+    """Print the chat service's placeholder greeting."""
     print("Hello from chat!")
 
 

@@ -1,4 +1,5 @@
 def main():
+    """Print the scheduler service's placeholder greeting."""
     print("Hello from scheduler!")
 
 
