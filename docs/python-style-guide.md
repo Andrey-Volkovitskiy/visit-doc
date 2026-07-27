@@ -6,10 +6,11 @@
 uv run ruff check .          # lint
 uv run ruff check --fix .    # lint, applying auto-fixes
 uv run ruff format .         # format
+uv run mypy .                # type-check (strict mode)
 ```
 
-Rules are configured once in the root `pyproject.toml` (`[tool.ruff]`/`[tool.ruff.lint]`) and apply
-to every Python workspace member.
+Rules are configured once in the root `pyproject.toml` (`[tool.ruff]`/`[tool.ruff.lint]`,
+`[tool.mypy]`) and apply to every Python workspace member.
 
 ## Style
 

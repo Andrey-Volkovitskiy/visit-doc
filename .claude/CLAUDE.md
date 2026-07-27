@@ -81,6 +81,7 @@ uv run --package scheduler -- python -m scheduler.main   # run scheduler's entry
 uv add --package chat <package>                   # add a dep to services/chat
 uv add --package shared-proto <package>           # add a dep to a shared package
 uv run ruff check .                                # lint the whole workspace (config: root pyproject.toml)
+uv run mypy .                                      # type-check the whole workspace (config: root pyproject.toml)
 ```
 
 Regenerating the gRPC stubs (after editing `packages/shared-proto/protos/scheduling/v1/scheduling.proto`)
@@ -90,10 +91,20 @@ running `protoc`, don't skip that step.
 Ruff lint rules are configured once, in the root `pyproject.toml`'s `[tool.ruff]`/`[tool.ruff.lint]`
 tables, and apply to every Python workspace member automatically via ruff's hierarchical config
 discovery (no member has its own `[tool.ruff]`, so the walk-up always lands on the root). Generated
-gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) are excluded. No test suite or CI configuration exists
-yet (`pytest` and `mypy` are available workspace-wide as a dev dependency group but unconfigured).
-When these are wired up, prefer `uv run pytest`, etc., and update this file with the exact
-invocations.
+gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) are excluded.
+
+Mypy is configured once, in the root `pyproject.toml`'s `[tool.mypy]` table, in `strict` mode
+(aligns with the style guide's "annotate every function" rule). Unlike ruff, mypy doesn't do
+per-file hierarchical discovery — it's pointed explicitly at each workspace member's `src/` via
+`files`/`mypy_path`, with `explicit_package_bases = true` since each member is its own package root.
+The generated gRPC stubs have their errors suppressed via a `[[tool.mypy.overrides]]` entry
+(`ignore_errors = true` for `shared_proto.scheduling.v1.*`) since protoc-generated code isn't
+statically typed; `types-protobuf`/`types-grpcio` are installed as dev dependencies so *your* code
+using `google.protobuf`/`grpc` directly still gets real type checking.
+
+No test suite or CI configuration exists yet (`pytest` is available workspace-wide as a dev
+dependency group but unconfigured). When it's wired up, prefer `uv run pytest`, etc., and update
+this file with the exact invocations.
 
 ## Architecture
 

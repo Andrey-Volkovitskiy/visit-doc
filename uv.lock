@@ -19,6 +19,8 @@ dev = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "types-grpcio", specifier = ">=1.82.1.20260724" },
+    { name = "types-protobuf", specifier = ">=7.34.1.20260518" },
 ]
 
 [[package]]
@@ -543,6 +545,24 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "grpcio-tools" }]
+
+[[package]]
+name = "types-grpcio"
+version = "1.82.1.20260724"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/45/e4/61bc374db6466c9c0a8f691f736368449316dddb54fe02ae5c049a4ca1a1/types_grpcio-1.82.1.20260724.tar.gz", hash = "sha256:54bd54bf0f393c923c4aa937fa79c5720e00539381b258582d1ca69be444c8ce", size = 15381, upload-time = "2026-07-24T04:58:46.962Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/3d/0813bd55ba38e7ccfd21d8ca9bd2d753eb6eb09150c680afbe0495009484/types_grpcio-1.82.1.20260724-py3-none-any.whl", hash = "sha256:c980135304e8775f9afb92bbb9fa81cbe20bf76431d791657f97f776041943d6", size = 15875, upload-time = "2026-07-24T04:58:46.108Z" },
+]
+
+[[package]]
+name = "types-protobuf"
+version = "7.34.1.20260518"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/59/e2b13b499d15e6720150c4b1a8d91e31fcacf716b432397475b3151ff7e4/types_protobuf-7.34.1.20260518.tar.gz", hash = "sha256:28cfaded25889cb83ebfb63cfb0a43628f0b6f3785767bec17287dc6468795f2", size = 68936, upload-time = "2026-05-18T06:01:47.332Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/1f/ec5caf72c2e3b688ca3927e0979a04ddad19e1afc4bf1c199bd743e0f419/types_protobuf-7.34.1.20260518-py3-none-any.whl", hash = "sha256:a0a5337413347166439c0e07cbc26c6164d091401c6f01b1dfd8cdb966c4dd8f", size = 85992, upload-time = "2026-05-18T06:01:45.696Z" },
+]
 
 [[package]]
 name = "typing-extensions"

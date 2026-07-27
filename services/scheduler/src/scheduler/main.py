@@ -1,4 +1,4 @@
-def main():
+def main() -> None:
     """Print the scheduler service's placeholder greeting."""
     print("Hello from scheduler!")
 
