@@ -101,9 +101,13 @@ The generated gRPC stubs have their errors suppressed via a `[[tool.mypy.overrid
 statically typed; `types-protobuf`/`types-grpcio` are installed as dev dependencies so *your* code
 using `google.protobuf`/`grpc` directly still gets real type checking.
 
-No test suite or CI configuration exists yet (`pytest` is available workspace-wide as a dev
-dependency group but unconfigured). When it's wired up, prefer `uv run pytest`, etc., and update
-this file with the exact invocations.
+Testing conventions (folder layout, naming, why `--import-mode=importlib` is required, why `tests/`
+is excluded from mypy) are documented in `docs/testing-strategy.md`. In short: unit tests are
+colocated per workspace member (`services/chat/tests/`, `services/scheduler/tests/`,
+`packages/shared-models/tests/`, `packages/shared-proto/tests/`); integration/e2e tests are
+centralized at `tests/integration/`/`tests/e2e/` (placeholders for now). Run via `make test` /
+`make test-unit`, `make test-integration`, `make test-e2e`; only the unit tier runs in CI so far
+(`test` job in `.github/workflows/ci.yml`, alongside `pre-commit`).
 
 ### Pre-commit hooks
 

@@ -29,6 +29,18 @@ extend-select = [
     "D103", # missing docstring in public function
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["D101", "D102", "D103"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib --strict-markers -ra"
+testpaths = [
+    "services/chat/tests",
+    "services/scheduler/tests",
+    "packages/shared-models/tests",
+    "packages/shared-proto/tests",
+]
+
 [tool.mypy]
 python_version = "3.12"
 mypy_path = "services/chat/src:services/scheduler/src:packages/shared-models/src:packages/shared-proto/src"
@@ -40,6 +52,7 @@ files = [
 ]
 explicit_package_bases = true
 strict = true
+exclude = ["(^|/)tests/"]
 
 [[tool.mypy.overrides]]
 module = "shared_proto.scheduling.v1.*"
