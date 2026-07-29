@@ -1,25 +1,37 @@
 <!--
 Sync Impact Report
-- Version change: (unratified template) → 1.0.0
-- Rationale: Initial concrete ratification. The file previously contained only
-  unfilled [PLACEHOLDER] tokens; this is the first version with binding content,
-  so it is treated as the initial adoption (MAJOR = 1.0.0), not an incremental bump.
-- Modified principles: n/a (first ratified version)
-- Added sections: Core Principles (I-VII), Repository & Workspace Structure,
-  Development Workflow & Quality Gates, Governance
-- Removed sections: none
+- Version change: 1.0.0 → 2.0.0
+- Rationale: MAJOR bump. Prior principles III, VI, and VII, plus the "Repository & Workspace
+  Structure" and "Development Workflow & Quality Gates" sections, were rewritten to remove
+  implementation-level detail (specific hook names, exact tool config keys, literal gRPC method
+  and MCP tool names, uv/venv mechanics) that belongs in `.claude/CLAUDE.md` / plan.md, not a
+  constitution — a backward-incompatible redefinition of what those sections mandate. Principle
+  VIII (Test-Driven Development) is new and non-negotiable, per explicit user direction.
+- Modified principles:
+  - III. "One Deliberate Service Boundary" → "Deliberate, Minimal Service Boundaries" (generalized:
+    dropped literal gRPC/constraint specifics, kept the underlying rule)
+  - VI. "Documented Technology Tradeoffs" → "Documentation as a First-Class Deliverable" (broadened
+    per user direction to cover architecture and every subsystem, not just tech-choice tradeoffs)
+  - VII. "Clean Architecture & SOLID" → "Clean Architecture, SOLID & Design Patterns" (broadened
+    per user direction to explicitly include design patterns and industry best practice)
+- Added principles: VIII. Test-Driven Development (NON-NEGOTIABLE)
+- Added sections: none new (prior "Repository & Workspace Structure" and "Development Workflow &
+  Quality Gates" sections were merged/generalized into a single "Technology Foundations" section)
+- Removed sections: "Repository & Workspace Structure", "Development Workflow & Quality Gates"
+  (replaced by "Technology Foundations", see above)
 - Templates requiring updates:
-  - ✅ .specify/templates/plan-template.md — generic "Constitution Check" gate
-    already defers to this file; no hardcoded contradictions found.
-  - ✅ .specify/templates/spec-template.md — generic, no technology-specific
-    assumptions that conflict with these principles.
-  - ✅ .specify/templates/tasks-template.md — generic single/web-app scaffolding;
-    already compatible with the monorepo layout described below.
-  - ✅ .claude/skills/speckit-*/SKILL.md — no CLAUDE-only or other agent-specific
-    hardcoded references found (the phrase appears only in this command's own
-    generic instructions, not as an actual stale reference).
-  - ✅ README.md, .claude/CLAUDE.md — source documents for this constitution;
-    no changes needed, they remain the detailed reference this file summarizes.
+  - ✅ .specify/templates/tasks-template.md — updated: removed "Tests are OPTIONAL" framing and the
+    "(OPTIONAL - only if tests requested)" story-section headers, which contradicted the new
+    non-negotiable TDD principle.
+  - ✅ .specify/templates/plan-template.md — generic "Constitution Check" gate already defers to
+    this file; no hardcoded contradictions found, no edit needed.
+  - ✅ .specify/templates/spec-template.md — generic, no technology-specific assumptions that
+    conflict with these principles; no edit needed.
+  - ✅ .claude/skills/speckit-*/SKILL.md — no CLAUDE-only or other agent-specific hardcoded
+    references found.
+  - ✅ README.md, .claude/CLAUDE.md — remain the detailed reference this file summarizes; the
+    Commands/testing-strategy detail they carry is exactly the kind of implementation detail this
+    revision moved *out* of the constitution, so no change needed there.
 - Follow-up TODOs: none.
 -->
 
@@ -29,11 +41,10 @@ Sync Impact Report
 
 ### I. Phase-Gated Scope Discipline (NON-NEGOTIABLE)
 `docs/ROADMAP.md` is the authoritative, binding build plan, not background reading. Work MUST
-proceed in phase order: Phase 0 (walking skeleton) before Phase 1 (the real agent) before Phase 2
-(evaluation/observability), with Phase 3+ platform layers (further service extraction, message
-broker, ClickHouse/analytics, staff console, Kubernetes) built only if time allows and only as
-deliberate evolution. Do not add services, infrastructure, or platform layers beyond what the
-current phase calls for, even if the target architecture describes them.
+proceed in phase order — walking skeleton, then the real agent, then evaluation/observability —
+before any optional platform/infrastructure layer is introduced, and only as deliberate,
+individually-justified evolution. Do not add services, infrastructure, or platform layers beyond
+what the current phase calls for, even if a later target architecture describes them.
 **Rationale**: This is a portfolio project with fixed effort; scope creep into infrastructure
 directly trades away time from the applied-AI work the project exists to demonstrate.
 
@@ -44,70 +55,63 @@ optional. When effort must be traded off, the AI core wins.
 **Rationale**: The project targets an AI developer role — the applied-AI work is what the project is
 being judged on.
 
-### III. One Deliberate Service Boundary
-Scheduling is the single intentionally separated service in the AI-core phase: its own FastAPI app,
-its own PostgreSQL database, and a synchronous gRPC API (`CheckAvailability`, `BookAppointment`)
-consumed by the core backend. Double-booking MUST be prevented at the database level via a
-PostgreSQL exclusion constraint on interval/range types in Scheduling's own database — not caught by
-application code. Scheduling failure handling (timeouts, retries, and agent behavior when Scheduling
-is unreachable) is part of the design and MUST be addressed alongside the happy path, not deferred.
-No further service extraction happens before Phase 3+.
-**Rationale**: One real, well-justified service boundary demonstrates distributed-systems judgment
-without paying the operational cost of splitting everything up front.
+### III. Deliberate, Minimal Service Boundaries
+Every service split MUST be a deliberate, justified seam — its own datastore and its own API
+contract — not an incidental one. Data-integrity invariants that a datastore can enforce (e.g.
+preventing conflicting bookings) MUST be enforced there, not solely in application code. Failure
+handling across a service boundary (timeouts, retries, degraded behavior when a dependency is
+unreachable) is part of the design for that boundary, not an afterthought added later.
+**Rationale**: A small number of real, well-justified boundaries demonstrates distributed-systems
+judgment without paying the operational cost of splitting everything up front.
 
 ### IV. Structured Outputs & Decoupled Tool Interfaces
-Intent classification (FAQ / booking / escalation) MUST use structured output from a cheap, fast
-model — never free-text parsing — reserving the stronger model for generation. Every capability the
-agent can invoke (`search_faq`, `check_availability`, `book_appointment`, `escalate_to_staff`) MUST
-be exposed as an MCP tool, so agent logic stays decoupled from how each capability is implemented.
-**Rationale**: Structured outputs are reliable and cheap to route on; MCP tool boundaries let the
-agent's reasoning be tested and evolved independently of backend implementation details.
+Any step that routes or classifies (e.g. intent detection) MUST use structured output rather than
+free-text parsing, and MUST use the cheapest model capable of the task — reserving stronger models
+for generation. Every capability the agent can invoke MUST be exposed behind a tool-call interface,
+so agent reasoning stays decoupled from how each capability is implemented.
+**Rationale**: Structured outputs are reliable and cheap to route on; a decoupled tool boundary lets
+the agent's reasoning be tested and evolved independently of backend implementation details.
 
 ### V. Grounded Retrieval with Mandatory Abstention
-RAG answers MUST go through defensible chunking and a reranking step, cite the source document(s),
-and pass an explicit groundedness check before being returned to the user. When retrieval is weak,
-the assistant MUST abstain and escalate to human staff rather than confabulate an answer.
+Any answer derived from retrieval MUST be traceable to its source and pass an explicit groundedness
+check before it is returned to the user. When retrieval is weak or inconclusive, the system MUST
+abstain and escalate to a human rather than confabulate an answer.
 **Rationale**: A medical-clinic assistant that guesses at policy or clinical logistics is worse than
 one that admits uncertainty — abstention is a correctness requirement, not a nicety.
 
-### VI. Documented Technology Tradeoffs
-Every significant technology choice (backend framework, datastore, agent framework, tracing/eval
-tool, inter-service protocol, etc.) MUST be recorded in the README with its tradeoff, following the
-existing table format in `docs/ROADMAP.md`. New additions follow the same pattern rather than going
-undocumented.
-**Rationale**: For a portfolio project, the README is the artifact a reviewer reads — undocumented
-choices read as accidental rather than intentional.
+### VI. Documentation as a First-Class Deliverable
+The system's overall architecture and every subsystem within it MUST be documented well enough for a
+reader to understand what it does and why without reading its source. Every significant technology
+choice MUST be recorded with its tradeoff. Documentation is updated in the same change that makes it
+stale — it is a deliverable of the work, not follow-up work.
+**Rationale**: For a portfolio project, its documentation is itself an artifact under review —
+undocumented architecture and undocumented choices read as accidental rather than intentional.
 
-### VII. Clean Architecture & SOLID
-Code follows SOLID, established clean-architecture separation of concerns, and general industry best
-practice. Service-specific style guides (see `services/chat/.claude/CLAUDE.md`,
-`services/scheduler/.claude/CLAUDE.md`, both importing `docs/python-style-guide.md`) govern the
-concrete Python conventions; this principle is the non-negotiable umbrella they specialize.
-**Rationale**: Clean boundaries keep the agent, RAG, and scheduling logic independently testable and
-keep the codebase legible to a reviewer evaluating engineering judgment, not just AI output quality.
+### VII. Clean Architecture, SOLID & Design Patterns
+Code MUST follow SOLID, established clean-architecture separation of concerns, appropriate design
+patterns, and general industry best practice. Complexity introduced beyond what a requirement
+actually needs MUST be justified, not assumed.
+**Rationale**: Clean boundaries keep subsystems independently testable and keep the codebase legible
+to a reviewer evaluating engineering judgment, not just AI output quality.
 
-## Repository & Workspace Structure
+### VIII. Test-Driven Development (NON-NEGOTIABLE)
+Work on any feature or contract MUST follow this order: define the contract, derive test cases from
+it, write the tests, confirm they fail, then implement, then run the tests to confirm they pass.
+Implementation MUST NOT be written before its corresponding tests exist and have been observed to
+fail. No step in this order may be skipped or reordered.
+**Rationale**: TDD in this order keeps the contract as the source of truth, catches
+under-specification before implementation, and gives every feature an executable definition of done.
 
-The repository is a single `uv`-workspace monorepo, not independent repositories: `services/chat`,
-`services/scheduler`, and `services/frontend` are independent services; cross-service Python code
-(Pydantic schemas in `packages/shared-models`, the gRPC contract in `packages/shared-proto`) is
-factored out rather than duplicated. All Python workspace members share one `uv.lock` and one
-`.venv` at the repository root and MUST NOT pin conflicting versions of a shared dependency.
-`services/frontend` is a plain Node project and is not a `uv` workspace member. Directory-scoped
-guidance (a service-specific style guide, for example) belongs at `<dir>/.claude/CLAUDE.md`, matching
-the root's own `.claude/CLAUDE.md` convention, so it loads only when that directory is in scope.
+## Technology Foundations
 
-## Development Workflow & Quality Gates
-
-Ruff and mypy are each configured exactly once, in the root `pyproject.toml`, and apply to every
-workspace member via ruff's hierarchical config discovery and mypy's explicit per-member `files`
-entries (`strict` mode); no member may add its own conflicting `[tool.ruff]` or `[tool.mypy]` table.
-Pre-commit runs four local hooks — `uv-lock-check`, `uv-sync-check`, `ruff-check`, `mypy-check` — all
-shelling out to the exact tool versions pinned in `uv.lock` so there is one source of truth for
-versions. Tests are tiered: unit tests are colocated per workspace member; integration and e2e tests
-are centralized under `tests/integration/` and `tests/e2e/`. Only the unit tier runs in CI so far,
-alongside pre-commit. New workspace members and new test suites MUST follow these same conventions
-rather than introducing a parallel lint/type/test setup.
+The stack is fixed at this phase: Python/FastAPI/Pydantic and PostgreSQL on the backend, Qdrant for
+vector retrieval, LangGraph for agent orchestration, Langfuse for tracing/eval, and a React/Vite SPA
+for the frontend. The repository is organized as a monorepo with clear module/service boundaries;
+code shared across services is factored into a common location rather than duplicated. Automated
+linting, type-checking, and the test suite MUST pass before any change is merged. Concrete tooling,
+commands, and conventions that implement these constraints live in `.claude/CLAUDE.md` and the
+per-service style guides it references, and MUST stay consistent with the principles above rather
+than reintroducing conflicting rules.
 
 ## Governance
 
@@ -123,4 +127,4 @@ gate against the principles above before Phase 0 research and again after Phase 
 require an entry in that plan's Complexity Tracking table explaining why a simpler, compliant
 alternative was rejected.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-28 | **Last Amended**: 2026-07-28
+**Version**: 2.0.0 | **Ratified**: 2026-07-28 | **Last Amended**: 2026-07-29
