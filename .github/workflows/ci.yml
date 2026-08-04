@@ -28,6 +28,34 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: visitdoc
+          POSTGRES_PASSWORD: visitdoc
+          # Already suffixed to match conftest.py's isolated-test-database convention,
+          # so this ephemeral, CI-only Postgres only ever needs the one database.
+          POSTGRES_DB: visitdoc_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U visitdoc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      qdrant:
+        image: qdrant/qdrant:v1.18.3
+        ports:
+          - 6333:6333
+          - 6334:6334
+    env:
+      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_test
+      QDRANT_URL: http://localhost:6333
+      # Never used for a real API call in tests (see conftest.py's fakes) -- only
+      # needed because `Settings()` requires the field.
+      ANTHROPIC_API_KEY: unused-in-ci
+      VOYAGE_API_KEY: unused-in-ci
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -45,3 +73,24 @@ jobs:
 
       - name: Run unit tests
         run: uv run pytest
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: services/frontend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: services/frontend
+        run: npm test

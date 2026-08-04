@@ -1,5 +1,5 @@
-.PHONY: sync lint format typecheck test test-unit test-integration test-e2e precommit \
-        install-hooks run-chat run-scheduler
+.PHONY: sync lint format typecheck test test-unit test-frontend test-integration test-e2e \
+        precommit install-hooks run-chat run-scheduler run-frontend db-up db-down db-reset
 
 sync:
 	uv sync
@@ -13,10 +13,13 @@ format:
 typecheck:
 	uv run mypy .
 
-test: test-unit
+test: test-unit test-frontend
 
 test-unit:
 	uv run pytest
+
+test-frontend:
+	cd services/frontend && npm test
 
 test-integration:
 	uv run pytest tests/integration
@@ -35,3 +38,16 @@ run-chat:
 
 run-scheduler:
 	uv run --package scheduler -- python -m scheduler.main
+
+run-frontend:
+	cd services/frontend && npm run dev
+
+db-up:
+	docker compose up -d
+
+db-down:
+	docker compose down
+
+# Destructive: wipes Postgres + Qdrant data volumes. Confirm before running.
+db-reset:
+	docker compose down -v

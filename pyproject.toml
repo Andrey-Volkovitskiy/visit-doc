@@ -9,10 +9,11 @@ dev = [
     "types-protobuf>=7.34.1.20260518",
     "types-grpcio>=1.82.1.20260724",
     "pre-commit>=4.6.1",
+    "pytest-asyncio>=1.4.0",
 ]
 
 [tool.ruff]
-extend-exclude = ["**/*_pb2.py", "**/*_pb2_grpc.py"]
+extend-exclude = ["**/*_pb2.py", "**/*_pb2_grpc.py", "**/alembic/versions/*.py"]
 
 [tool.ruff.lint]
 extend-select = [
@@ -34,6 +35,13 @@ extend-select = [
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib --strict-markers -ra"
+asyncio_mode = "auto"
+# The chat service's SQLAlchemy async engine (chat.db.session) is a module-level singleton
+# whose connection pool binds to the first event loop that uses it; a session-scoped loop
+# keeps every async test on that same loop instead of a fresh one per test (which would
+# otherwise raise "Future attached to a different loop" on the second test that touches it).
+asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "session"
 testpaths = [
     "services/chat/tests",
     "services/scheduler/tests",
@@ -42,6 +50,7 @@ testpaths = [
 ]
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 python_version = "3.12"
 mypy_path = "services/chat/src:services/scheduler/src:packages/shared-models/src:packages/shared-proto/src"
 files = [

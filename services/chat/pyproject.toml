@@ -3,7 +3,20 @@ name = "chat"
 version = "0.1.0"
 description = "Core backend: agent, RAG, chat, and auth"
 requires-python = ">=3.12"
-dependencies = ["shared-models", "shared-proto"]
+dependencies = [
+    "alembic>=1.18.5",
+    "anthropic>=0.120.2",
+    "asyncpg>=0.31.0",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.14.2",
+    "qdrant-client>=1.18.0",
+    "shared-models",
+    "shared-proto",
+    "sqlalchemy[asyncio]>=2.0.51",
+    "uvicorn[standard]>=0.52.1",
+    "voyageai>=0.5.0",
+]
 
 [tool.uv.sources]
 shared-models = { workspace = true }
@@ -12,6 +25,11 @@ shared-proto = { workspace = true }
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/chat"]

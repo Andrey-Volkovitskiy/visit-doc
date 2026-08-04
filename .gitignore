@@ -14,8 +14,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -219,3 +219,4 @@ __marimo__/
 
 # Node (services/frontend)
 node_modules/
+*.tsbuildinfo

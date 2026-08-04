@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: VisitDoc — Grounded FAQ Chat (Phase 0)
+  version: "0.1.0"
+  description: >
+    Phase 0 walking-skeleton API: a single streaming chat endpoint answering questions grounded
+    in an FAQ knowledge base, plus an open CRUD API for authoring that knowledge base. No
+    authentication in this phase (FR-011, FR-012).
+
+paths:
+  /chat:
+    post:
+      operationId: askQuestion
+      summary: Ask a question and receive a streamed, grounded (or abstaining) answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: >
+            Streamed response, media type application/x-ndjson: one JSON object per line.
+            Zero or more `token` events carry incremental answer text (FR-004), followed by
+            exactly one terminal `done` event carrying citations and the groundedness flag.
+            When the agent abstains (FR-005), zero `token` events are sent before `done`
+            (`grounded: false`, `citations: []`, and `done.message` holds the abstention text).
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ChatTokenEvent"
+                  - $ref: "#/components/schemas/ChatDoneEvent"
+        "422":
+          description: Validation error — empty message or message over 2,000 characters (FR-001a).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /faq:
+    post:
+      operationId: createFaqEntry
+      summary: Create a new FAQ entry (FR-006).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqEntryWrite"
+      responses:
+        "201":
+          description: Entry created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaqEntry"
+        "422":
+          description: >
+            Missing content, content over 20,000 characters, or content with no meaningful text
+            (only whitespace/dash characters, or bare "Question:"/"Answer:" labels with nothing
+            after them) (FR-009, FR-015).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+    get:
+      operationId: listFaqEntries
+      summary: List existing FAQ entries (FR-008).
+      responses:
+        "200":
+          description: All FAQ entries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FaqEntry"
+
+  /faq/{entryId}:
+    parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getFaqEntry
+      summary: Retrieve a single FAQ entry by ID (FR-008).
+      responses:
+        "200":
+          description: The entry.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaqEntry"
+        "404":
+          description: No entry with this ID.
+    put:
+      operationId: updateFaqEntry
+      summary: Replace the content of an existing FAQ entry (FR-007).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FaqEntryWrite"
+      responses:
+        "200":
+          description: Entry updated; re-indexed into Qdrant (FR-010).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FaqEntry"
+        "404":
+          description: No entry with this ID.
+        "422":
+          description: >
+            Missing content, content over 20,000 characters, or content with no meaningful text
+            (only whitespace/dash characters, or bare "Question:"/"Answer:" labels with nothing
+            after them) (FR-009, FR-015).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+    delete:
+      operationId: deleteFaqEntry
+      summary: Delete an existing FAQ entry (FR-016).
+      responses:
+        "204":
+          description: >
+            Entry deleted, along with its indexed chunks — it no longer appears in listings or
+            retrieval (FR-016).
+        "404":
+          description: No entry with this ID.
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Visitor's free-text question (FR-001, FR-001a).
+
+    ChatTokenEvent:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+          enum: [token]
+        text:
+          type: string
+          description: Incremental slice of the streamed answer.
+
+    ChatDoneEvent:
+      type: object
+      required: [type, grounded, citations]
+      properties:
+        type:
+          type: string
+          enum: [done]
+        grounded:
+          type: boolean
+          description: >
+            False when the agent abstained (retrieval below the groundedness threshold) without
+            calling the LLM; true when a grounded answer was generated.
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+        message:
+          type: string
+          description: >
+            Present only when grounded is false — the abstention text shown to the visitor
+            (FR-005). Absent when grounded is true (the answer was already streamed via token
+            events).
+
+    Citation:
+      type: object
+      required: [entry_id, chunk_index, chunk_text]
+      properties:
+        entry_id:
+          type: integer
+        chunk_index:
+          type: integer
+          description: Position of this chunk within the entry's content (0-based), per FaqChunk.
+        chunk_text:
+          type: string
+          description: >
+            The retrieved chunk's text, verbatim, so the streamed answer can be directly compared
+            against its grounding source (no separate entry title exists — see FaqEntry).
+
+    FaqEntryWrite:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: >
+            Must contain meaningful text — content consisting solely of whitespace/dash characters
+            (e.g. "---") or bare "Question:"/"Answer:" labels with nothing after them (e.g.
+            "Question:\nAnswer:") is rejected as empty (FR-009).
+
+    FaqEntry:
+      allOf:
+        - $ref: "#/components/schemas/FaqEntryWrite"
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id:
+              type: integer
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object

@@ -12,6 +12,11 @@ uv run mypy .                # type-check (strict mode)
 Rules are configured once in the root `pyproject.toml` (`[tool.ruff]`/`[tool.ruff.lint]`,
 `[tool.mypy]`) and apply to every Python workspace member.
 
+`Settings`-style classes (`pydantic_settings.BaseSettings` subclasses with required, env-populated
+fields) need the `pydantic.mypy` plugin already enabled in `[tool.mypy]` (`plugins =
+["pydantic.mypy"]`) — without it, strict mypy misreads env-sourced fields as missing constructor
+arguments and raises false `call-arg` errors on `Settings()`.
+
 ## Style
 
 - Type-annotate every function/method, including the return type:

@@ -90,7 +90,10 @@ running `protoc`, don't skip that step.
 Ruff lint rules are configured once, in the root `pyproject.toml`'s `[tool.ruff]`/`[tool.ruff.lint]`
 tables, and apply to every Python workspace member automatically via ruff's hierarchical config
 discovery (no member has its own `[tool.ruff]`, so the walk-up always lands on the root). Generated
-gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) are excluded.
+code is excluded via `extend-exclude` rather than hand-reformatted to match style rules — the
+established examples are gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) and Alembic migrations
+(`**/alembic/versions/*.py`); follow the same pattern for the next generated-code case instead of
+fixing lint violations by hand in generated files.
 
 Mypy is configured once, in the root `pyproject.toml`'s `[tool.mypy]` table, in `strict` mode
 (aligns with the style guide's "annotate every function" rule). Unlike ruff, mypy doesn't do
@@ -150,8 +153,19 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   parsing, and a cheap/fast model — reserve the stronger model for generation.
 - Capabilities are exposed to the agent as **MCP tools** (`search_faq`, `check_availability`,
   `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
-- RAG must include defensible chunking, a reranking step, citations to source documents, and an
-  explicit **abstention path** plus a **groundedness check** before any FAQ answer is returned.
+- RAG must include defensible chunking, a reranking step, citations to source documents — derived
+  structurally from what was actually retrieved and placed in context, never self-reported by the
+  LLM (avoids hallucinated citations) — and an explicit **abstention path** plus a **groundedness
+  check** before any FAQ answer is returned.
+- Any entity with both a Postgres row and a derived Qdrant index (e.g. `FaqEntry`/`FaqChunk`) keeps
+  them consistent via a fixed ordering: deindex from Qdrant *before* deleting the Postgres row on
+  delete, and always delete-then-upsert (never diff) the index on update — so the vector store can
+  never outlive or go stale relative to its source of truth.
+- Repository functions take the `AsyncSession` as an explicit parameter (e.g.
+  `faq_repository.create(session, content)`) rather than a repository class holding session state —
+  matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across
+  callers, and lets the API layer own the transaction boundary (one session per request via
+  `Depends`). New repositories, including `scheduler`'s, should follow this shape.
 - Scheduling failure handling (timeouts, retries, agent behavior when Scheduling is unreachable) is
   part of the design, not an afterthought.
 - Each significant technology choice should be documented with its tradeoff in the README, so later

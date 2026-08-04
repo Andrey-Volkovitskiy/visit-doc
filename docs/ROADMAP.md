@@ -62,12 +62,15 @@ application code to catch the race.
 
 ### Phase 0 — Walking skeleton
 Prove the entire loop end to end before adding any branching. One chat endpoint, a minimal
-streaming chat UI, and a LangGraph agent that does exactly one thing: answer an FAQ via RAG
-(message in → retrieval → grounded answer streaming back).
+streaming chat UI, and an agent step that does exactly one thing: answer an FAQ via RAG (message in
+→ retrieval → grounded answer streaming back), implemented as a plain function call to the Claude
+API — no agent framework yet, since a single linear step has no branching to justify one.
 
 ### Phase 1 — The real agent
 The spine of the project:
 
+- **Adopt LangGraph** as the agent framework, replacing Phase 0's plain function call — this is
+  where branching actually starts to exist, so a graph framework starts to pay for itself.
 - **Intent classification** into one or more of FAQ / booking / escalation, using a cheap, fast
   model and **structured output** rather than free-text parsing.
 - **Parallel specialist nodes with a merge step** for mixed-intent messages ("what should I bring,
