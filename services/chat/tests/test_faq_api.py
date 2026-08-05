@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import structlog
 from chat.main import app
+from chat.repositories.qdrant_repository import upsert_chunks as real_upsert_chunks
 from fastapi.testclient import TestClient
 from structlog.testing import capture_logs
 
@@ -177,6 +178,69 @@ def test_create_failure_logs_operation_failed_and_critical_event() -> None:
     critical = events["critical.dependency_unreachable"]
     assert critical["dependency"] == "qdrant"
     assert "qdrant down" in critical["error_detail"]
+
+
+def test_create_failure_rolls_back_the_postgres_row() -> None:
+    with TestClient(app, raise_server_exceptions=False) as client:
+        with (
+            patch("chat.rag.indexing.embed_texts", fake_embed_texts),
+            patch(
+                "chat.rag.indexing.upsert_chunks",
+                side_effect=RuntimeError("qdrant down"),
+            ),
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+        ):
+            content = "Visiting hours are 8am to 5pm."
+            response = client.post("/faq", json={"content": content})
+
+        assert response.status_code == 500
+        failed = next(e for e in logs if e["event"] == "faq.operation_failed")
+        entry_id = failed["entry_id"]
+
+        get_response = client.get(f"/faq/{entry_id}")
+    assert get_response.status_code == 404
+
+
+def test_update_failure_reverts_content_and_reindexes_previous() -> None:
+    with TestClient(app, raise_server_exceptions=False) as client:
+        entry = _create(client, "Visiting hours are 8am to 5pm.")
+
+        calls = {"n": 0}
+
+        async def _upsert_fail_once(*args: Any, **kwargs: Any) -> None:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise RuntimeError("qdrant down")
+            await real_upsert_chunks(*args, **kwargs)
+
+        with (
+            patch("chat.rag.indexing.embed_texts", fake_embed_texts),
+            patch("chat.rag.indexing.upsert_chunks", side_effect=_upsert_fail_once),
+        ):
+            update_response = client.put(
+                f"/faq/{entry['id']}", json={"content": "Visiting hours are now 24/7."}
+            )
+        assert update_response.status_code == 500
+
+        get_response = client.get(f"/faq/{entry['id']}")
+        assert get_response.status_code == 200
+        assert get_response.json()["content"] == "Visiting hours are 8am to 5pm."
+
+        with (
+            patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+            patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+        ):
+            fake_stream = FakeAnthropicStream(["An answer."])
+            mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+            chat_response = client.post("/chat", json={"message": "when can I visit?"})
+
+        lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
+        citations = lines[-1]["citations"]
+        assert any(
+            c["chunk_text"] == "Visiting hours are 8am to 5pm." for c in citations
+        )
+
+        client.delete(f"/faq/{entry['id']}")
 
 
 def test_list_faq_entries_failure_logs_critical_event_uncorrelated() -> None:

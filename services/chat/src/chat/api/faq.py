@@ -1,8 +1,9 @@
 """FAQ content CRUD endpoints (FR-006..FR-010/015/016/018/021/022)."""
 
 from fastapi import APIRouter, HTTPException, Request
+from qdrant_client import AsyncQdrantClient
 
-from chat.core.config import get_settings
+from chat.core.config import Settings, get_settings
 from chat.core.correlation import bind_operation_id
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
@@ -74,6 +75,8 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
         except FaqOperationError as exc:
             dependency = "qdrant" if exc.failed_step == "persist" else None
             _log_faq_failure("create", entry.id, exc, dependency=dependency)
+            async with session_factory() as session:
+                await faq_repository.delete(session, entry.id)
             raise
 
         get_logger().info("faq.entry_created", entry_id=entry.id)
@@ -106,6 +109,31 @@ async def get_faq_entry(entry_id: int) -> FaqEntry:
     return FaqEntry.model_validate(entry)
 
 
+async def _revert_faq_update(
+    client: AsyncQdrantClient,
+    settings: Settings,
+    entry_id: int,
+    previous_content: str | None,
+) -> None:
+    """Best-effort revert to `previous_content` after a failed update re-index.
+
+    Called when `index_faq_entry` fails on the new content mid-update: re-indexes the
+    previous content, then reverts Postgres to match, so the entry falls back to its
+    last known-good state - both Postgres and Qdrant reflecting the old content - rather
+    than Postgres claiming content that isn't backed by any vectors. Any failure during
+    this compensation is swallowed so it doesn't mask the original exception, which the
+    caller re-raises regardless of whether this succeeds.
+    """
+    if previous_content is None:
+        return
+    try:
+        await index_faq_entry(client, settings, entry_id, previous_content)
+        async with session_factory() as session:
+            await faq_repository.update(session, entry_id, previous_content)
+    except Exception:  # noqa: BLE001, S110 - best-effort; must not mask the original failure
+        pass
+
+
 @router.put("/faq/{entry_id}")
 async def update_faq_entry(
     entry_id: int, body: FaqEntryWrite, request: Request
@@ -114,6 +142,8 @@ async def update_faq_entry(
     with bind_operation_id():
         try:
             async with session_factory() as session:
+                previous = await faq_repository.get(session, entry_id)
+                previous_content = previous.content if previous is not None else None
                 entry = await faq_repository.update(session, entry_id, body.content)
         except Exception as exc:
             _log_faq_failure("update", entry_id, exc, dependency="postgres")
@@ -128,6 +158,7 @@ async def update_faq_entry(
         except FaqOperationError as exc:
             dependency = "qdrant" if exc.failed_step == "persist" else None
             _log_faq_failure("update", entry.id, exc, dependency=dependency)
+            await _revert_faq_update(client, settings, entry.id, previous_content)
             raise
 
         get_logger().info("faq.entry_updated", entry_id=entry.id)
