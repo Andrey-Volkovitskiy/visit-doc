@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from chat.api.chat import router as chat_router
 from chat.api.faq import router as faq_router
 from chat.core.config import get_settings
+from chat.core.logging import configure_logging, get_logger
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 
 
@@ -16,7 +17,15 @@ from chat.repositories.qdrant_repository import create_client, ensure_collection
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Ensure the faq_chunks collection exists; share the client on state."""
     client = create_client(get_settings())
-    await ensure_collection(client)
+    try:
+        await ensure_collection(client)
+    except Exception as exc:
+        get_logger().critical(
+            "critical.dependency_unreachable",
+            dependency="qdrant",
+            error_detail=str(exc),
+        )
+        raise
     app.state.qdrant_client = client
     yield
     await client.close()
@@ -24,6 +33,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 def create_app() -> FastAPI:
     """Build the FastAPI application. Routers are registered as their features land."""
+    configure_logging(get_settings())
     app = FastAPI(title="VisitDoc — Grounded FAQ Chat", lifespan=lifespan)
     app.include_router(chat_router)
     app.include_router(faq_router)

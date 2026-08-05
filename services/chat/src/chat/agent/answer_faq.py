@@ -10,9 +10,10 @@ from anthropic import AsyncAnthropic
 from qdrant_client import AsyncQdrantClient
 
 from chat.core.config import Settings
+from chat.core.logging import get_logger
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, Citation
 from chat.rag.groundedness import is_grounded
-from chat.rag.retriever import search_faq
+from chat.rag.retriever import TurnPipelineError, search_faq
 
 _MODEL = "claude-sonnet-5"
 _SYSTEM_PROMPT = (
@@ -25,10 +26,28 @@ _ABSTENTION_MESSAGE = "I don't have a confident answer to that."
 async def answer_faq(
     client: AsyncQdrantClient, settings: Settings, message: str
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
-    """Retrieve context for `message`, then stream a grounded answer or abstain."""
+    """Retrieve context for `message`, then stream a grounded answer or abstain.
+
+    Raises: TurnPipelineError wrapping any failure in embedding, retrieval,
+        groundedness, or generation (FR-005).
+    """
+    logger = get_logger()
+    logger.info("turn.message_received", message=message)
+
     chunks = await search_faq(client, settings, message)
 
-    if not is_grounded(chunks):
+    try:
+        grounded = is_grounded(chunks)
+    except Exception as exc:
+        raise TurnPipelineError("groundedness", exc) from exc
+    logger.info("turn.groundedness_verdict", grounded=grounded)
+
+    if not grounded:
+        logger.info(
+            "turn.completed",
+            outcome="abstained",
+            abstention_message=_ABSTENTION_MESSAGE,
+        )
         yield ChatDoneEvent(grounded=False, citations=[], message=_ABSTENTION_MESSAGE)
         return
 
@@ -36,15 +55,20 @@ async def answer_faq(
     prompt = f"Context:\n{context}\n\nQuestion: {message}"
 
     anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-    async with anthropic_client.messages.stream(
-        model=_MODEL,
-        max_tokens=1024,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        async for event in stream:
-            if event.type == "text":
-                yield ChatTokenEvent(text=event.text)
+    answer_parts: list[str] = []
+    try:
+        async with anthropic_client.messages.stream(
+            model=_MODEL,
+            max_tokens=1024,
+            system=_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        ) as stream:
+            async for event in stream:
+                if event.type == "text":
+                    answer_parts.append(event.text)
+                    yield ChatTokenEvent(text=event.text)
+    except Exception as exc:
+        raise TurnPipelineError("generation", exc) from exc
 
     citations = [
         Citation(
@@ -52,4 +76,18 @@ async def answer_faq(
         )
         for c in chunks
     ]
+    logger.info(
+        "turn.completed",
+        outcome="grounded",
+        answer_text="".join(answer_parts),
+        citations=[
+            {
+                "entry_id": c.faq_entry_id,
+                "chunk_index": c.chunk_index,
+                "chunk_text": c.chunk_text,
+                "score": c.score,
+            }
+            for c in chunks
+        ],
+    )
     yield ChatDoneEvent(grounded=True, citations=citations)

@@ -1,15 +1,20 @@
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from unittest.mock import patch
 
 import pytest
+import structlog
 from chat.core.config import Settings
 from chat.db.session import session_factory
 from chat.main import app
 from chat.rag.indexing import deindex_faq_entry, index_faq_entry
 from chat.repositories import faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
+from structlog.testing import capture_logs
 
 from .conftest import FakeAnthropicStream, fake_embed_texts
 
@@ -83,3 +88,123 @@ def test_message_validation_rejects_empty_and_oversized(message: str) -> None:
         response = client.post("/chat", json={"message": message})
 
     assert response.status_code == 422
+
+
+def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        fake_stream = FakeAnthropicStream(["Visiting ", "hours are 8am to 5pm."])
+        mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            client.post("/chat", json={"message": "when can I visit?"})
+
+    events = {entry["event"]: entry for entry in logs}
+    turn_ids = {entry["turn_id"] for entry in logs}
+
+    assert turn_ids == {logs[0]["turn_id"]}  # every entry shares one turn_id
+    assert events["turn.message_received"]["message"] == "when can I visit?"
+    assert "turn.message_embedded" in events
+    chunks = events["turn.retrieval_completed"]["retrieved_chunks"]
+    assert any(c["entry_id"] == seeded_entry for c in chunks)
+    scores = [c["score"] for c in chunks]
+    assert scores == sorted(scores, reverse=True)
+    assert events["turn.groundedness_verdict"]["grounded"] is True
+    done = events["turn.completed"]
+    assert done["outcome"] == "grounded"
+    assert done["answer_text"] == "Visiting hours are 8am to 5pm."
+    assert any(c["entry_id"] == seeded_entry for c in done["citations"])
+    assert all("score" in c for c in done["citations"])
+
+
+def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+        TestClient(app) as client,
+    ):
+        client.post("/chat", json={"message": "what is the weather today?"})
+
+    events = {entry["event"]: entry for entry in logs}
+    turn_ids = {entry["turn_id"] for entry in logs}
+
+    assert turn_ids == {logs[0]["turn_id"]}
+    assert "turn.message_received" in events
+    assert "turn.message_embedded" in events
+    assert "turn.retrieval_completed" in events
+    assert events["turn.groundedness_verdict"]["grounded"] is False
+    done = events["turn.completed"]
+    assert done["outcome"] == "abstained"
+    assert "abstention_message" in done
+
+
+async def _post_two_chat_requests(asgi_app: FastAPI) -> None:
+    transport = ASGITransport(app=asgi_app)
+    async with AsyncClient(transport=transport, base_url="http://t") as ac:
+        await asyncio.gather(
+            ac.post("/chat", json={"message": "when can I visit?"}),
+            ac.post("/chat", json={"message": "when can I visit?"}),
+        )
+
+
+def test_generation_failure_logs_turn_error_with_step(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_stream = mock_anthropic_cls.return_value.messages.stream
+        mock_stream.side_effect = RuntimeError("boom")
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False) as client,
+        ):
+            client.post("/chat", json={"message": "when can I visit?"})
+
+    events = {entry["event"]: entry for entry in logs}
+    turn_ids = {entry["turn_id"] for entry in logs}
+
+    assert turn_ids == {logs[0]["turn_id"]}
+    assert events["turn.error"]["pipeline_step"] == "generation"
+    assert "boom" in events["turn.error"]["error_detail"]
+
+
+def test_concurrent_turns_keep_distinct_turn_ids(seeded_entry: int) -> None:
+    # capture_logs isn't task-safe (docs/testing-strategy.md), so a plain collector
+    # processor is spliced into the real chain instead, ahead of the renderer.
+    collected: list[dict[str, object]] = []
+
+    def _collector(
+        _logger: object, _method_name: str, event_dict: dict[str, object]
+    ) -> dict[str, object]:
+        collected.append(dict(event_dict))
+        return event_dict
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        fake_stream = FakeAnthropicStream(["ok"])
+        mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+        with TestClient(app):
+            processors = structlog.get_config()["processors"]
+            processors.insert(-1, _collector)
+            try:
+                asyncio.run(_post_two_chat_requests(app))
+            finally:
+                processors.remove(_collector)
+
+    by_turn: dict[object, list[dict[str, object]]] = {}
+    for entry in collected:
+        by_turn.setdefault(entry.get("turn_id"), []).append(entry)
+
+    assert len(by_turn) == 2
+    for turn_id, entries in by_turn.items():
+        assert turn_id is not None
+        event_names = {entry["event"] for entry in entries}
+        assert "turn.message_received" in event_names
+        assert "turn.completed" in event_names
+        assert all(entry["turn_id"] == turn_id for entry in entries)

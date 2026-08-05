@@ -83,3 +83,26 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
 - **Citations**: derived structurally from retrieval (which chunks were actually placed in
   Claude's context), not self-reported by the model — avoids hallucinated citations, and lets a
   reviewer directly diff the streamed answer against the verbatim `chunk_text` it cites.
+
+## Structured Logging: technology choices
+
+`specs/002-structured-logging/` instruments `chat`'s agent/RAG pipeline so a turn's full decision
+trace can be reconstructed from logs alone — full rationale and alternatives considered live in
+[`research.md`](specs/002-structured-logging/research.md):
+
+- **Structured logging library**: `structlog`, not stdlib `logging` + a custom `Formatter` or
+  `loguru` — its processor-chain architecture lets truncation/redaction/rendering be centralized in
+  one place (`core/logging.py`) and swapped later (e.g. for a Langfuse-ready renderer) without
+  touching any of the ~20 call sites that actually log.
+- **Correlation IDs**: ULID (`python-ulid`), not a hyphenated UUID4 — same collision resistance,
+  but shorter, separator-free (one double-click selects the whole ID in a terminal), and
+  lexicographically sortable by creation time. Bound per-request via `structlog.contextvars`
+  (`core/correlation.py`), scoped to the current `asyncio` task so concurrent requests never see
+  each other's bound `turn_id`/`operation_id`.
+- **Severity tiers**: the three standard log levels (`info`/`error`/`critical`) rather than a
+  bespoke severity field — `structlog`'s `ConsoleRenderer` already styles by level, so only
+  `critical`'s extra prominence over `error` needed a small style override, not a new mechanism.
+- **Sub-step logging granularity**: one summarized entry per sub-step (e.g. `faq.chunks_embedded`
+  reports a chunk count), not one entry per chunk — keeps log volume proportional to pipeline steps
+  rather than content length, while a failure is still fully attributable via the operation's
+  `failed_step`.
