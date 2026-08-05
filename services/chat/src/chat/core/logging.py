@@ -73,6 +73,7 @@ def _redact_secrets(event_dict: EventDict, known_secrets: list[str]) -> EventDic
 
 
 def _redact_value(value: Any, known_secrets: list[str]) -> Any:
+    """Recursively replace any occurrence of a known secret value in `value`."""
     if isinstance(value, str):
         for secret in known_secrets:
             value = value.replace(secret, _REDACTED_PLACEHOLDER)
@@ -151,15 +152,19 @@ class _SafeLogger:
         self._logger = logger
 
     def info(self, event: str, **kwargs: Any) -> None:
+        """Log `event` at info level."""
         self._log("info", event, **kwargs)
 
     def error(self, event: str, **kwargs: Any) -> None:
+        """Log `event` at error level."""
         self._log("error", event, **kwargs)
 
     def critical(self, event: str, **kwargs: Any) -> None:
+        """Log `event` at critical level."""
         self._log("critical", event, **kwargs)
 
     def _log(self, level: str, event: str, **kwargs: Any) -> None:
+        """Log `event` at `level`, swallowing any processor-chain failure."""
         try:
             getattr(self._logger, level)(event, **kwargs)
         except Exception as exc:  # noqa: BLE001 - a dropped entry is an accepted tradeoff

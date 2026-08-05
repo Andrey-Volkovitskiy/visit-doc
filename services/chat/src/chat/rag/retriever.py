@@ -42,7 +42,6 @@ async def search_faq(
     except Exception as exc:
         raise TurnPipelineError("retrieval", exc) from exc
 
-    ordered = sorted(chunks, key=lambda chunk: chunk.score, reverse=True)
     logger.info(
         "turn.retrieval_completed",
         retrieved_chunks=[
@@ -52,7 +51,7 @@ async def search_faq(
                 "score": chunk.score,
                 "chunk_text": chunk.chunk_text,
             }
-            for chunk in ordered
+            for chunk in chunks
         ],
     )
-    return ordered
+    return chunks
