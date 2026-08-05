@@ -6,24 +6,31 @@ export function ChatWindow() {
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSend(): Promise<void> {
     setAnswer("");
     setCitations([]);
+    setError(null);
     setLoading(true);
 
-    const events = await askChat(message);
-    for await (const event of events) {
-      if (event.type === "token") {
-        setAnswer((prev) => prev + event.text);
-      } else {
-        setCitations(event.citations);
-        if (!event.grounded && event.message) {
-          setAnswer(event.message);
+    try {
+      const events = await askChat(message);
+      for await (const event of events) {
+        if (event.type === "token") {
+          setAnswer((prev) => prev + event.text);
+        } else {
+          setCitations(event.citations);
+          if (!event.grounded && event.message) {
+            setAnswer(event.message);
+          }
         }
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
@@ -38,6 +45,7 @@ export function ChatWindow() {
         Send
       </button>
       <p data-testid="answer">{answer}</p>
+      {error && <p data-testid="error">{error}</p>}
       {citations.length > 0 && (
         <ul data-testid="citations">
           {citations.map((citation) => (

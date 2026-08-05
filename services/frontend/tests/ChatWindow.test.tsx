@@ -65,4 +65,38 @@ describe("ChatWindow", () => {
     });
     expect(screen.queryByTestId("citations")).toBeNull();
   });
+
+  it("re-enables Send and shows an error when askChat rejects", async () => {
+    vi.spyOn(chatStream, "askChat").mockRejectedValue(new Error("network error"));
+
+    render(<ChatWindow />);
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Send")).not.toBeDisabled();
+    });
+    expect(screen.getByTestId("error").textContent).not.toBe("");
+  });
+
+  it("re-enables Send and shows an error when the stream throws mid-iteration", async () => {
+    async function* failingEvents(): AsyncGenerator<ChatEvent> {
+      yield { type: "token", text: "partial" };
+      throw new Error("stream dropped");
+    }
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(failingEvents());
+
+    render(<ChatWindow />);
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Send")).not.toBeDisabled();
+    });
+    expect(screen.getByTestId("error").textContent).not.toBe("");
+  });
 });
