@@ -63,7 +63,7 @@ async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
     await engine.dispose()
 
 
-def fake_embed_texts(
+async def fake_embed_texts(
     texts: list[str],
     settings: Settings,
     input_type: Literal["document", "query"] = "document",

@@ -32,7 +32,7 @@ async def search_faq(
     logger = get_logger()
 
     try:
-        vectors = embed_texts([query], settings, input_type="query")
+        vectors = await embed_texts([query], settings, input_type="query")
     except Exception as exc:
         raise TurnPipelineError("embedding", exc) from exc
     logger.info("turn.message_embedded")

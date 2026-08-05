@@ -28,7 +28,7 @@ async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> 
         calls.append("chunk")
         return chunks
 
-    def fake_embed(
+    async def fake_embed(
         _texts: list[str], _settings: Settings, input_type: str
     ) -> list[list[float]]:
         calls.append("embed")

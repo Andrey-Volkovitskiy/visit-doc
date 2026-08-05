@@ -53,7 +53,7 @@ async def index_faq_entry(
 
     texts = [chunk.chunk_text for chunk in chunks]
     try:
-        vectors = embed_texts(texts, settings, input_type="document")
+        vectors = await embed_texts(texts, settings, input_type="document")
     except Exception as exc:
         raise FaqOperationError("embedding", exc) from exc
     logger.info("faq.chunks_embedded", chunk_count=len(chunks))
