@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
 from chat.agent.answer_faq import answer_faq
-from chat.core.config import get_settings
+from chat.api.dependencies import get_voyage_client
 from chat.core.correlation import bind_turn_id
 from chat.core.logging import get_logger
 from chat.domain.schemas import ChatRequest
@@ -23,12 +23,15 @@ _CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_
 async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingResponse:
     """Ask a question and receive a streamed, grounded (or abstaining) answer."""
     client = request.app.state.qdrant_client
-    settings = get_settings()
+    voyage_client = get_voyage_client(request)
+    anthropic_client = request.app.state.anthropic_client
 
     async def event_stream() -> AsyncIterator[bytes]:
         with bind_turn_id():
             try:
-                async for event in answer_faq(client, settings, chat_request.message):
+                async for event in answer_faq(
+                    client, voyage_client, anthropic_client, chat_request.message
+                ):
                     yield (event.model_dump_json() + "\n").encode()
             except TurnPipelineError as exc:
                 logger = get_logger()

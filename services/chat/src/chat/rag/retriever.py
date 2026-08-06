@@ -1,8 +1,8 @@
 """`search_faq` retriever — same signature Phase 1's MCP tool will wrap."""
 
 from qdrant_client import AsyncQdrantClient
+from voyageai.client_async import AsyncClient
 
-from chat.core.config import Settings
 from chat.core.logging import get_logger
 from chat.rag.embeddings import embed_texts
 from chat.repositories.qdrant_repository import RetrievedChunk, search
@@ -23,7 +23,10 @@ class TurnPipelineError(Exception):
 
 
 async def search_faq(
-    client: AsyncQdrantClient, settings: Settings, query: str, limit: int = 5
+    client: AsyncQdrantClient,
+    voyage_client: AsyncClient,
+    query: str,
+    limit: int = 5,
 ) -> list[RetrievedChunk]:
     """Embed `query` and return the nearest FAQ chunks, with their similarity scores.
 
@@ -32,7 +35,7 @@ async def search_faq(
     logger = get_logger()
 
     try:
-        vectors = await embed_texts([query], settings, input_type="query")
+        vectors = await embed_texts(voyage_client, [query], input_type="query")
     except Exception as exc:
         raise TurnPipelineError("embedding", exc) from exc
     logger.info("turn.message_embedded")

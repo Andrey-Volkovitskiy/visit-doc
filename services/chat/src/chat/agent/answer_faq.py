@@ -8,8 +8,8 @@ from collections.abc import AsyncIterator
 
 from anthropic import AsyncAnthropic
 from qdrant_client import AsyncQdrantClient
+from voyageai.client_async import AsyncClient
 
-from chat.core.config import Settings
 from chat.core.logging import get_logger
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, Citation
 from chat.rag.groundedness import is_grounded
@@ -24,7 +24,10 @@ _ABSTENTION_MESSAGE = "I don't have a confident answer to that."
 
 
 async def answer_faq(
-    client: AsyncQdrantClient, settings: Settings, message: str
+    client: AsyncQdrantClient,
+    voyage_client: AsyncClient,
+    anthropic_client: AsyncAnthropic,
+    message: str,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Retrieve context for `message`, then stream a grounded answer or abstain.
 
@@ -34,7 +37,7 @@ async def answer_faq(
     logger = get_logger()
     logger.info("turn.message_received", message=message)
 
-    chunks = await search_faq(client, settings, message)
+    chunks = await search_faq(client, voyage_client, message)
 
     try:
         grounded = is_grounded(chunks)
@@ -54,7 +57,6 @@ async def answer_faq(
     context = "\n\n".join(chunk.chunk_text for chunk in chunks)
     prompt = f"Context:\n{context}\n\nQuestion: {message}"
 
-    anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
     answer_parts: list[str] = []
     try:
         async with anthropic_client.messages.stream(

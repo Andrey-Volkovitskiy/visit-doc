@@ -1,8 +1,8 @@
 """Indexing orchestration: (re-)index an entry's chunks, or remove them."""
 
 from qdrant_client import AsyncQdrantClient
+from voyageai.client_async import AsyncClient
 
-from chat.core.config import Settings
 from chat.core.logging import get_logger
 from chat.rag.chunking import chunk_content
 from chat.rag.embeddings import embed_texts
@@ -24,7 +24,10 @@ class FaqOperationError(Exception):
 
 
 async def index_faq_entry(
-    client: AsyncQdrantClient, settings: Settings, faq_entry_id: int, content: str
+    client: AsyncQdrantClient,
+    voyage_client: AsyncClient,
+    faq_entry_id: int,
+    content: str,
 ) -> None:
     """(Re-)index `content`'s chunks for `faq_entry_id`.
 
@@ -53,7 +56,7 @@ async def index_faq_entry(
 
     texts = [chunk.chunk_text for chunk in chunks]
     try:
-        vectors = await embed_texts(texts, settings, input_type="document")
+        vectors = await embed_texts(voyage_client, texts, input_type="document")
     except Exception as exc:
         raise FaqOperationError("embedding", exc) from exc
     logger.info("faq.chunks_embedded", chunk_count=len(chunks))

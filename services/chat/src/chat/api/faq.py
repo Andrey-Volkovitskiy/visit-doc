@@ -2,8 +2,9 @@
 
 from fastapi import APIRouter, HTTPException, Request
 from qdrant_client import AsyncQdrantClient
+from voyageai.client_async import AsyncClient
 
-from chat.core.config import Settings, get_settings
+from chat.api.dependencies import get_voyage_client
 from chat.core.correlation import bind_operation_id
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
@@ -68,10 +69,10 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
             _log_faq_failure("create", None, exc, dependency="postgres")
             raise
 
-        settings = get_settings()
         client = request.app.state.qdrant_client
+        voyage_client = get_voyage_client(request)
         try:
-            await index_faq_entry(client, settings, entry.id, entry.content)
+            await index_faq_entry(client, voyage_client, entry.id, entry.content)
         except FaqOperationError as exc:
             dependency = "qdrant" if exc.failed_step == "persist" else None
             _log_faq_failure("create", entry.id, exc, dependency=dependency)
@@ -111,7 +112,7 @@ async def get_faq_entry(entry_id: int) -> FaqEntry:
 
 async def _revert_faq_update(
     client: AsyncQdrantClient,
-    settings: Settings,
+    voyage_client: AsyncClient,
     entry_id: int,
     previous_content: str | None,
 ) -> None:
@@ -127,7 +128,7 @@ async def _revert_faq_update(
     if previous_content is None:
         return
     try:
-        await index_faq_entry(client, settings, entry_id, previous_content)
+        await index_faq_entry(client, voyage_client, entry_id, previous_content)
         async with session_factory() as session:
             await faq_repository.update(session, entry_id, previous_content)
     except Exception:  # noqa: BLE001, S110 - best-effort; must not mask the original failure
@@ -151,14 +152,14 @@ async def update_faq_entry(
         if entry is None:
             raise HTTPException(status_code=404, detail=_NOT_FOUND)
 
-        settings = get_settings()
         client = request.app.state.qdrant_client
+        voyage_client = get_voyage_client(request)
         try:
-            await index_faq_entry(client, settings, entry.id, entry.content)
+            await index_faq_entry(client, voyage_client, entry.id, entry.content)
         except FaqOperationError as exc:
             dependency = "qdrant" if exc.failed_step == "persist" else None
             _log_faq_failure("update", entry.id, exc, dependency=dependency)
-            await _revert_faq_update(client, settings, entry.id, previous_content)
+            await _revert_faq_update(client, voyage_client, entry.id, previous_content)
             raise
 
         get_logger().info("faq.entry_updated", entry_id=entry.id)

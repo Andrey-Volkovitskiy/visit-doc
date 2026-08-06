@@ -9,7 +9,7 @@ from chat.repositories.qdrant_repository import upsert_chunks as real_upsert_chu
 from fastapi.testclient import TestClient
 from structlog.testing import capture_logs
 
-from .conftest import FakeAnthropicStream, fake_embed_texts
+from .conftest import fake_anthropic_client, fake_embed_texts
 
 
 def _create(client: TestClient, content: str) -> dict[str, Any]:
@@ -43,34 +43,66 @@ def test_get_404_for_unknown_id() -> None:
     assert response.status_code == 404
 
 
-def test_update_is_reflected_in_chat_retrieval() -> None:
-    with TestClient(app) as client:
+def test_voyage_client_is_reused_across_create_and_update() -> None:
+    """finding #6: the Voyage `AsyncClient` must be constructed once at app startup
+    (main.py's lifespan) and reused, not rebuilt inside `embed_texts` on every call -
+    two indexing operations in the same app lifespan must still see one constructor
+    call.
+    """
+    with (
+        patch("chat.rag.indexing.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncClient") as mock_voyage_cls,
+        TestClient(app) as client,
+    ):
         entry = _create(client, "Visiting hours are 8am to 5pm.")
+        update_response = client.put(
+            f"/faq/{entry['id']}", json={"content": "New hours."}
+        )
+        delete_response = client.delete(f"/faq/{entry['id']}")
 
-        with patch("chat.rag.indexing.embed_texts", fake_embed_texts):
-            update_response = client.put(
-                f"/faq/{entry['id']}", json={"content": "Visiting hours are now 24/7."}
+    assert update_response.status_code == 200
+    assert delete_response.status_code == 204
+    mock_voyage_cls.assert_called_once()
+
+
+def test_update_is_reflected_in_chat_retrieval() -> None:
+    # The fake Anthropic client must be installed before `TestClient(app)` runs
+    # lifespan startup, so lifespan's `AsyncAnthropic(...)` call returns the fake
+    # directly - patching `app.state.anthropic_client` afterward instead would leak
+    # the real client's connection pool, since lifespan shutdown only closes whatever
+    # object `app.state.anthropic_client` currently points to.
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(["An answer."])
+        with TestClient(app) as client:
+            entry = _create(client, "Visiting hours are 8am to 5pm.")
+
+            with patch("chat.rag.indexing.embed_texts", fake_embed_texts):
+                update_response = client.put(
+                    f"/faq/{entry['id']}",
+                    json={"content": "Visiting hours are now 24/7."},
+                )
+            assert update_response.status_code == 200
+            assert update_response.json()["content"] == "Visiting hours are now 24/7."
+
+            with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+                # Deliberately a different string than the citation assertion below
+                # checks: the streamed answer text comes entirely from this fake, so
+                # asserting it equals a value we hardcoded here would prove nothing
+                # about retrieval.
+                chat_response = client.post(
+                    "/chat", json={"message": "when can I visit?"}
+                )
+
+            lines = [
+                json.loads(line) for line in chat_response.text.strip().splitlines()
+            ]
+            done_line = lines[-1]
+            citations = done_line["citations"]
+            assert any(
+                c["chunk_text"] == "Visiting hours are now 24/7." for c in citations
             )
-        assert update_response.status_code == 200
-        assert update_response.json()["content"] == "Visiting hours are now 24/7."
 
-        with (
-            patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-            patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
-        ):
-            # Deliberately a different string than the citation assertion below checks:
-            # the streamed answer text comes entirely from this mock, so asserting it
-            # equals a value we hardcoded here would prove nothing about retrieval.
-            fake_stream = FakeAnthropicStream(["An answer."])
-            mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
-            chat_response = client.post("/chat", json={"message": "when can I visit?"})
-
-        lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
-        done_line = lines[-1]
-        citations = done_line["citations"]
-        assert any(c["chunk_text"] == "Visiting hours are now 24/7." for c in citations)
-
-        client.delete(f"/faq/{entry['id']}")
+            client.delete(f"/faq/{entry['id']}")
 
 
 def test_delete_stops_grounding_and_then_404s() -> None:
@@ -202,45 +234,51 @@ def test_create_failure_rolls_back_the_postgres_row() -> None:
 
 
 def test_update_failure_reverts_content_and_reindexes_previous() -> None:
-    with TestClient(app, raise_server_exceptions=False) as client:
-        entry = _create(client, "Visiting hours are 8am to 5pm.")
+    # See test_update_is_reflected_in_chat_retrieval for why the fake Anthropic client
+    # must be installed before `TestClient(app)` runs lifespan startup.
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(["An answer."])
+        with TestClient(app, raise_server_exceptions=False) as client:
+            entry = _create(client, "Visiting hours are 8am to 5pm.")
 
-        calls = {"n": 0}
+            calls = {"n": 0}
 
-        async def _upsert_fail_once(*args: Any, **kwargs: Any) -> None:
-            calls["n"] += 1
-            if calls["n"] == 1:
-                raise RuntimeError("qdrant down")
-            await real_upsert_chunks(*args, **kwargs)
+            async def _upsert_fail_once(*args: Any, **kwargs: Any) -> None:
+                calls["n"] += 1
+                if calls["n"] == 1:
+                    raise RuntimeError("qdrant down")
+                await real_upsert_chunks(*args, **kwargs)
 
-        with (
-            patch("chat.rag.indexing.embed_texts", fake_embed_texts),
-            patch("chat.rag.indexing.upsert_chunks", side_effect=_upsert_fail_once),
-        ):
-            update_response = client.put(
-                f"/faq/{entry['id']}", json={"content": "Visiting hours are now 24/7."}
+            with (
+                patch("chat.rag.indexing.embed_texts", fake_embed_texts),
+                patch(
+                    "chat.rag.indexing.upsert_chunks", side_effect=_upsert_fail_once
+                ),
+            ):
+                update_response = client.put(
+                    f"/faq/{entry['id']}",
+                    json={"content": "Visiting hours are now 24/7."},
+                )
+            assert update_response.status_code == 500
+
+            get_response = client.get(f"/faq/{entry['id']}")
+            assert get_response.status_code == 200
+            assert get_response.json()["content"] == "Visiting hours are 8am to 5pm."
+
+            with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+                chat_response = client.post(
+                    "/chat", json={"message": "when can I visit?"}
+                )
+
+            lines = [
+                json.loads(line) for line in chat_response.text.strip().splitlines()
+            ]
+            citations = lines[-1]["citations"]
+            assert any(
+                c["chunk_text"] == "Visiting hours are 8am to 5pm." for c in citations
             )
-        assert update_response.status_code == 500
 
-        get_response = client.get(f"/faq/{entry['id']}")
-        assert get_response.status_code == 200
-        assert get_response.json()["content"] == "Visiting hours are 8am to 5pm."
-
-        with (
-            patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-            patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
-        ):
-            fake_stream = FakeAnthropicStream(["An answer."])
-            mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
-            chat_response = client.post("/chat", json={"message": "when can I visit?"})
-
-        lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
-        citations = lines[-1]["citations"]
-        assert any(
-            c["chunk_text"] == "Visiting hours are 8am to 5pm." for c in citations
-        )
-
-        client.delete(f"/faq/{entry['id']}")
+            client.delete(f"/faq/{entry['id']}")
 
 
 def test_list_faq_entries_failure_logs_critical_event_uncorrelated() -> None:

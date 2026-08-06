@@ -1,7 +1,7 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import structlog
@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from structlog.testing import capture_logs
 
-from .conftest import FakeAnthropicStream, fake_embed_texts
+from .conftest import fake_anthropic_client, fake_embed_texts
 
 _ENTRY_CONTENT = "Visiting hours are 8am to 5pm."
 
@@ -34,7 +34,8 @@ async def seeded_entry() -> AsyncIterator[int]:
         entry = await faq_repository.create(session, _ENTRY_CONTENT)
 
     with patch("chat.rag.indexing.embed_texts", fake_embed_texts):
-        await index_faq_entry(qdrant_client, settings, entry.id, _ENTRY_CONTENT)
+        # voyage_client is irrelevant here: embed_texts is faked and ignores it.
+        await index_faq_entry(qdrant_client, MagicMock(), entry.id, _ENTRY_CONTENT)
 
     yield entry.id
 
@@ -47,10 +48,11 @@ async def seeded_entry() -> AsyncIterator[int]:
 def test_grounded_answer_streams_tokens_and_citations(seeded_entry: int) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        fake_stream = FakeAnthropicStream(["Visiting ", "hours are 8am to 5pm."])
-        mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting ", "hours are 8am to 5pm."]
+        )
         with TestClient(app) as client:
             response = client.post("/chat", json={"message": "when can I visit?"})
 
@@ -93,10 +95,11 @@ def test_message_validation_rejects_empty_and_oversized(message: str) -> None:
 def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        fake_stream = FakeAnthropicStream(["Visiting ", "hours are 8am to 5pm."])
-        mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting ", "hours are 8am to 5pm."]
+        )
         with (
             capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
             TestClient(app) as client,
@@ -154,10 +157,11 @@ async def _post_two_chat_requests(asgi_app: FastAPI) -> None:
 def test_generation_failure_logs_turn_error_with_step(seeded_entry: int) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        mock_stream = mock_anthropic_cls.return_value.messages.stream
-        mock_stream.side_effect = RuntimeError("boom")
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            stream_error=RuntimeError("boom")
+        )
         with (
             capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
             TestClient(app, raise_server_exceptions=False) as client,
@@ -185,10 +189,9 @@ def test_concurrent_turns_keep_distinct_turn_ids(seeded_entry: int) -> None:
 
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        patch("chat.agent.answer_faq.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        fake_stream = FakeAnthropicStream(["ok"])
-        mock_anthropic_cls.return_value.messages.stream.return_value = fake_stream
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
         with TestClient(app):
             processors = structlog.get_config()["processors"]
             processors.insert(-1, _collector)
@@ -208,3 +211,28 @@ def test_concurrent_turns_keep_distinct_turn_ids(seeded_entry: int) -> None:
         assert "turn.message_received" in event_names
         assert "turn.completed" in event_names
         assert all(entry["turn_id"] == turn_id for entry in entries)
+
+
+def test_anthropic_and_voyage_clients_are_reused_across_chat_requests(
+    seeded_entry: int,
+) -> None:
+    """finding #6: `AsyncAnthropic`/Voyage `AsyncClient` must be constructed once at
+    app startup (main.py's lifespan) and reused, not rebuilt on every `/chat` request.
+    Two requests in the same app lifespan must still see exactly one constructor call
+    each.
+    """
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.main.AsyncClient") as mock_voyage_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
+        message = {"message": "when can I visit?"}
+        with TestClient(app) as client:
+            first_response = client.post("/chat", json=message)
+            second_response = client.post("/chat", json=message)
+
+    assert first_response.status_code == 200
+    assert second_response.status_code == 200
+    mock_anthropic_cls.assert_called_once()
+    mock_voyage_cls.assert_called_once()

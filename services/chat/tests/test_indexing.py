@@ -1,20 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import structlog
-from chat.core.config import Settings
 from chat.core.correlation import bind_operation_id
 from chat.rag.chunking import ChunkedText
 from chat.rag.indexing import deindex_faq_entry, index_faq_entry
 from structlog.testing import capture_logs
-
-
-def _settings() -> Settings:
-    return Settings(
-        DATABASE_URL="postgresql+asyncpg://user:pass@localhost/db",
-        QDRANT_URL="http://localhost:6333",
-        ANTHROPIC_API_KEY="key",
-        VOYAGE_API_KEY="key",
-    )
 
 
 async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> None:
@@ -29,7 +19,7 @@ async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> 
         return chunks
 
     async def fake_embed(
-        _texts: list[str], _settings: Settings, input_type: str
+        _client: object, _texts: list[str], input_type: str
     ) -> list[list[float]]:
         calls.append("embed")
         return [[0.1]]
@@ -43,7 +33,7 @@ async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> 
         patch("chat.rag.indexing.embed_texts", fake_embed),
         patch("chat.rag.indexing.upsert_chunks", fake_upsert),
     ):
-        await index_faq_entry(MagicMock(), _settings(), 1, "hello")
+        await index_faq_entry(MagicMock(), MagicMock(), 1, "hello")
 
     assert calls == ["delete", "chunk", "embed", "upsert"]
 
@@ -62,7 +52,7 @@ async def test_index_faq_entry_logs_substeps_correlated_by_operation_id() -> Non
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
         bind_operation_id(),
     ):
-        await index_faq_entry(MagicMock(), _settings(), 1, "hello world")
+        await index_faq_entry(MagicMock(), MagicMock(), 1, "hello world")
 
     operation_ids = {entry["operation_id"] for entry in logs}
     events = {entry["event"]: entry for entry in logs}

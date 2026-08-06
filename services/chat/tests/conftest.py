@@ -4,6 +4,7 @@ import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Literal, Self
+from unittest.mock import AsyncMock, MagicMock
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
@@ -11,6 +12,7 @@ import pytest_asyncio
 from alembic import command
 from alembic.config import Config
 from chat.core.config import Settings
+from voyageai.client_async import AsyncClient
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
 _TEST_SUFFIX = "_test"
@@ -64,15 +66,17 @@ async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
 
 
 async def fake_embed_texts(
+    client: AsyncClient,
     texts: list[str],
-    settings: Settings,
     input_type: Literal["document", "query"] = "document",
 ) -> list[list[float]]:
     """Deterministic stand-in for Voyage AI embeddings, for tests with no live API key.
 
     Text mentioning "visit"/"hours" embeds near one axis, everything else near another —
     enough to exercise the real groundedness threshold against a real local Qdrant,
-    without network access or credentials.
+    without network access or credentials. `client` is accepted (and ignored) only to
+    match `embed_texts`'s real signature, now that it takes the shared Voyage client as
+    a parameter instead of constructing one internally.
     """
 
     def vector(text: str) -> list[float]:
@@ -109,3 +113,22 @@ class FakeAnthropicStream:
     async def _generate(self) -> AsyncIterator[FakeTextEvent]:
         for token in self._tokens:
             yield FakeTextEvent(token)
+
+
+def fake_anthropic_client(
+    tokens: list[str] | None = None, *, stream_error: Exception | None = None
+) -> MagicMock:
+    """Stand-in for `AsyncAnthropic`, set on `chat.main.AsyncAnthropic`'s patched
+    return value in tests, now that the real client is constructed once at app startup
+    (main.py's lifespan) rather than inline in `answer_faq`. Exposes
+    `.messages.stream(...)` returning a `FakeAnthropicStream` of `tokens` (or raising
+    `stream_error` if given), and a no-op async `close()` so app shutdown can await it
+    like the real client.
+    """
+    client = MagicMock()
+    client.close = AsyncMock()
+    if stream_error is not None:
+        client.messages.stream.side_effect = stream_error
+    else:
+        client.messages.stream.return_value = FakeAnthropicStream(tokens or [])
+    return client
