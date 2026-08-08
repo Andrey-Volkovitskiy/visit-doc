@@ -106,3 +106,54 @@ trace can be reconstructed from logs alone — full rationale and alternatives c
   reports a chunk count), not one entry per chunk — keeps log volume proportional to pipeline steps
   rather than content length, while a failure is still fully attributable via the operation's
   `failed_step`.
+
+## Conversational Chat History: technology choices
+
+`specs/003-conversational-chat-history/` (ROADMAP Phase 1a) turns the single-turn `/chat` endpoint
+into a persisted, multi-turn chat — full rationale and alternatives considered live in
+[`research.md`](specs/003-conversational-chat-history/research.md):
+
+- **`Session` kept separate from `Chat`**: the anonymous visitor identity (the cookie) and the
+  chat thread it currently owns are two rows, not one, even though this phase only ever has one
+  `Chat` per `Session`. Costs one small table now, but avoids a breaking migration later when a
+  `Patient` layer is expected to sit between a `Session` and its chat(s) (spec.md Future Direction).
+- **Flat, sender-tagged `Message` log**: no paired request/response turn — each patient or
+  assistant message is its own row, ordered by `created_at` ascending (via a dedicated
+  `ix_messages_chat_id_created_at` index, not by ULID id — id order isn't reliably equivalent to
+  `created_at` order across concurrent writers), with `sender` an open string set (not a DB
+  enum) so ROADMAP Phase 1d's `staff` sender can be added later with zero schema migration.
+- **`reply_to_message_ids` ties a reply to every turn it actually answers**: an assistant
+  message's `reply_to_message_ids` (JSONB list, not a single FK) records every patient message
+  id it answers, in order — necessary because a merged burst (FR-014) is answered by exactly one
+  assistant message, so a scalar `reply_to_message_id` pointing only at the triggering message
+  silently lost the earlier ones. History-building never has to infer that pairing from row
+  order — a stray or out-of-order write can no longer corrupt a different turn's history.
+- **Append-only persistence, no pending/update phase**: a patient message is inserted the moment
+  it's validated; an assistant message is inserted once, in full, only on success. A failed or
+  cancelled attempt simply never gets an assistant row — no rollback, no partial-state cleanup.
+- **Cancel-and-restart via an in-process registry**: `agent/generation_registry.py` is a plain
+  `dict[chat_id, tuple[turn_id, asyncio.Task]]`, not Redis/pub-sub — this phase runs one `chat`
+  process, so process-local state is sufficient, and it avoids infrastructure a single-instance
+  deployment has no use for yet. The `turn_id` half exists purely so a cancellation can be logged
+  (`turn.cancelled`) against the specific patient turn that got superseded, not just an opaque task.
+- **`message.persisted`/`turn.cancelled`/`turn.message_received` diagnostic logging**: every
+  inserted `Message` logs `message.persisted` (chat id, message id, sender,
+  `reply_to_message_ids`), every superseded generation logs `turn.cancelled` (chat id, the
+  cancelled turn's id, the superseding turn's id), and `turn.message_received` — logged as soon
+  as a turn's pipeline starts, before retrieval — also carries `reply_to_message_ids`, so a log
+  reader can already tell from that first line whether a merged burst or a single message is
+  being processed, without waiting for the later `message.persisted` line. A patient seeing no
+  reply to an earlier message is traceable to an explicit cancellation event in the logs, not
+  silently indistinguishable from the message never having been sent.
+- **Multi-turn context as Messages-API history, not prompt concatenation**: prior messages are
+  passed as a proper alternating `user`/`assistant` list, matching how Claude is trained to use
+  multi-turn context, rather than hand-rolled into the current message's prompt string.
+- **Retrieval scoped to the merged trailing patient-message run**: a burst of unanswered messages
+  (e.g. "When can I see" + "Dr. Josh?") is merged into one retrieval query, reusing the same merge
+  pass already needed for the Messages-API history — not a second mechanism or an extra LLM call.
+- **Session id generation**: `python-ulid`'s bare `ULID()` constructor turned out to be monotonic
+  *by default* in the installed version — same-millisecond calls increment the previous randomness
+  by 1 rather than resourcing it, which would fail the non-guessable-identifier requirement for a
+  value used as a bearer cookie. `chat_repository.create_session` instead uses an explicit
+  `ulid.ULIDGenerator(policy=ulid.PureRandomPolicy())`, verified empirically against the library's
+  source before relying on it.

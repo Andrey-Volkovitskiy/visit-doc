@@ -5,8 +5,10 @@ Plain async function, no agent framework — LangGraph is deferred to Phase 1
 """
 
 from collections.abc import AsyncIterator
+from typing import cast
 
 from anthropic import AsyncAnthropic
+from anthropic.types import MessageParam
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
 
@@ -27,15 +29,33 @@ async def answer_faq(
     client: AsyncQdrantClient,
     voyage_client: AsyncClient,
     anthropic_client: AsyncAnthropic,
-    message: str,
+    history: list[MessageParam],
+    reply_to_message_ids: list[str],
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
-    """Retrieve context for `message`, then stream a grounded answer or abstain.
+    """Retrieve context for the current turn, then stream a grounded answer or abstain.
+
+    `history` is `agent/history.py`'s `build_history_messages()` output: prior chat
+    messages as alternating `user`/`assistant` entries, with the current (possibly
+    burst-merged) patient message always the final `user` entry (research.md #5) -
+    that trailing entry is both the retrieval query and the question ultimately
+    answered (research.md #6). For a chat with no prior messages, `history` has
+    exactly one entry: the current message. `reply_to_message_ids` is that same
+    function's other return value - the patient message id(s) this turn is actually
+    answering, logged up front so a log reader can tell from `turn.message_received`
+    alone whether a merged burst (len > 1) or a single message started this turn,
+    without waiting for the later `message.persisted` log of the assistant reply.
 
     Raises: TurnPipelineError wrapping any failure in embedding, retrieval,
         groundedness, or generation (FR-005).
     """
     logger = get_logger()
-    logger.info("turn.message_received", message=message)
+    # `history`'s entries are always built with plain str content (agent/history.py).
+    message = cast(str, history[-1]["content"])
+    logger.info(
+        "turn.message_received",
+        message=message,
+        reply_to_message_ids=reply_to_message_ids,
+    )
 
     chunks = await search_faq(client, voyage_client, message)
 
@@ -56,6 +76,8 @@ async def answer_faq(
 
     context = "\n\n".join(chunk.chunk_text for chunk in chunks)
     prompt = f"Context:\n{context}\n\nQuestion: {message}"
+    current_turn: MessageParam = {"role": "user", "content": prompt}
+    messages = [*history[:-1], current_turn]
 
     answer_parts: list[str] = []
     try:
@@ -63,7 +85,7 @@ async def answer_faq(
             model=_MODEL,
             max_tokens=1024,
             system=_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         ) as stream:
             async for event in stream:
                 if event.type == "text":

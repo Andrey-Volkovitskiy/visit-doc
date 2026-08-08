@@ -38,6 +38,44 @@ class ChatDoneEvent(BaseModel):
     message: str | None = None
 
 
+class ChatCancelledEvent(BaseModel):
+    """Terminal NDJSON event: this request's generation was superseded (FR-015).
+
+    Emitted instead of `ChatDoneEvent` when a newer message on the same chat arrived
+    before this one finished generating - no reply was stored for this request; any
+    `token` events already received for it should be discarded, not shown as final or
+    as an error (contracts/openapi.yaml).
+    """
+
+    type: Literal["cancelled"] = "cancelled"
+
+
+class MessageOut(BaseModel):
+    """A single message in a chat's history (FR-002, contracts/openapi.yaml `Message`).
+
+    `grounded`/`citations` are only meaningful for `sender="assistant"`; always None
+    for a patient message (data-model.md).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    sender: Literal["patient", "assistant"]
+    content: str
+    grounded: bool | None = None
+    citations: list[Citation] | None = None
+    created_at: datetime
+
+
+class ChatHistoryResponse(BaseModel):
+    """`GET /chat` response body: the chat's messages, chronological (FR-002).
+
+    Not guaranteed to alternate sender (FR-002, FR-014).
+    """
+
+    messages: list[MessageOut]
+
+
 class FaqEntryWrite(BaseModel):
     """`POST`/`PUT /faq` request body (content 1-20,000 chars, FR-015)."""
 

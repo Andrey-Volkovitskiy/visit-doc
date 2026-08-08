@@ -5,18 +5,27 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import structlog
+from chat.agent import generation_registry
 from chat.core.config import Settings
-from chat.db.session import session_factory
+from chat.db.session import engine, session_factory
+from chat.domain.models import Chat, MessageSender
 from chat.main import app
 from chat.rag.indexing import deindex_faq_entry, index_faq_entry
-from chat.repositories import faq_repository
+from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from structlog.testing import capture_logs
+from ulid import ULID
 
-from .conftest import fake_anthropic_client, fake_embed_texts
+from .conftest import (
+    FakeAnthropicStream,
+    fake_anthropic_client,
+    fake_anthropic_client_gated,
+    fake_embed_texts,
+)
 
 _ENTRY_CONTENT = "Visiting hours are 8am to 5pm."
 
@@ -37,8 +46,17 @@ async def seeded_entry() -> AsyncIterator[int]:
         # voyage_client is irrelevant here: embed_texts is faked and ignores it.
         await index_faq_entry(qdrant_client, MagicMock(), entry.id, _ENTRY_CONTENT)
 
+    # This fixture's own DB writes above bind `chat.db.session.engine`'s pool to
+    # pytest-asyncio's session loop. Since `POST /chat` now touches the same engine
+    # too (chat_repository), and a sync test's `TestClient(app)` block runs request
+    # handling on its own separate loop (docs/testing-strategy.md), leaving the pool
+    # bound here would collide with that. Disposing it at both handoff points -
+    # before yielding to the test body, and again before this teardown's own DB
+    # touches below - lets it rebind fresh to whichever loop next uses it.
+    await engine.dispose()
     yield entry.id
 
+    await engine.dispose()
     await deindex_faq_entry(qdrant_client, entry.id)
     async with session_factory() as session:
         await faq_repository.delete(session, entry.id)
@@ -176,6 +194,169 @@ def test_generation_failure_logs_turn_error_with_step(seeded_entry: int) -> None
     assert "boom" in events["turn.error"]["error_detail"]
 
 
+async def test_generation_failure_clears_in_flight_registry_entry(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            stream_error=RuntimeError("boom")
+        )
+        transport = ASGITransport(app=app, raise_app_exceptions=False)
+        with TestClient(app):
+            async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                response = await ac.post("/chat", json={"message": "when can I visit?"})
+                session_id = response.cookies["visitdoc_session_id"]
+
+    async with session_factory() as session:
+        session_row = await chat_repository.get_session(session, session_id)
+        assert session_row is not None
+        chat = await chat_repository.get_or_create_chat_for_session(
+            session, session_row.id
+        )
+
+    assert chat.id not in generation_registry._in_flight
+
+
+async def test_concurrent_first_messages_create_only_one_chat() -> None:
+    """Regression: two concurrent first messages for a brand-new session must not
+    race into two separate `Chat` rows - `_event_stream`'s advisory lock
+    (`chat_repository.lock_session`) serializes the chat-creation critical section
+    per session_id, so the second request can't read "no chat yet" until the first's
+    chat-creation has fully committed.
+    """
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+
+    real_get_chat_for_session = chat_repository.get_chat_for_session
+    started = asyncio.Event()
+    gate = asyncio.Event()
+    call_count = 0
+
+    async def gated_get_chat_for_session(session: object, session_id: str) -> object:
+        nonlocal call_count
+        call_count += 1
+        result = await real_get_chat_for_session(session, session_id)  # type: ignore[arg-type]
+        if call_count == 1:
+            started.set()
+            await gate.wait()
+        return result
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.repositories.chat_repository.get_chat_for_session",
+            side_effect=gated_get_chat_for_session,
+        ),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
+        transport = ASGITransport(app=app)
+        with TestClient(app):
+            async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                ac.cookies.set("visitdoc_session_id", session_row.id)
+                first_task = asyncio.create_task(
+                    ac.post("/chat", json={"message": "first message"})
+                )
+                await asyncio.wait_for(started.wait(), timeout=5)
+
+                second_task = asyncio.create_task(
+                    ac.post("/chat", json={"message": "second message"})
+                )
+                # Give the second request a real chance to attempt (and, with the
+                # lock, block on) its own critical section before releasing the
+                # first - proves genuine concurrency, not lucky ordering.
+                await asyncio.sleep(0.2)
+                gate.set()
+
+                await asyncio.wait_for(
+                    asyncio.gather(first_task, second_task), timeout=5
+                )
+
+    async with session_factory() as db_session:
+        result = await db_session.execute(
+            select(Chat).where(Chat.session_id == session_row.id)
+        )
+        chats = result.scalars().all()
+
+    assert len(chats) == 1
+
+
+async def test_concurrent_messages_on_existing_chat_both_reach_history(
+    seeded_entry: int,
+) -> None:
+    """Regression: two concurrent messages on the same existing chat must not race -
+    the second's history read must never miss the first's not-yet-committed message
+    (research.md #5/#6) - the advisory lock means a second request can't read history
+    until the first's message insert has fully committed.
+    """
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+        await chat_repository.get_or_create_chat_for_session(
+            db_session, session_row.id
+        )
+
+    real_list_messages = chat_repository.list_messages
+    started = asyncio.Event()
+    gate = asyncio.Event()
+    call_count = 0
+
+    async def gated_list_messages(session: object, chat_id: str) -> object:
+        nonlocal call_count
+        call_count += 1
+        result = await real_list_messages(session, chat_id)  # type: ignore[arg-type]
+        if call_count == 1:
+            started.set()
+            await gate.wait()
+        return result
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.repositories.chat_repository.list_messages",
+            side_effect=gated_list_messages,
+        ),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."]
+        )
+        transport = ASGITransport(app=app)
+        with TestClient(app):
+            async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                ac.cookies.set("visitdoc_session_id", session_row.id)
+                # Doesn't itself carry any FAQ-matching signal - abstains, never
+                # reaches Claude (see fake_embed_texts).
+                first_task = asyncio.create_task(
+                    ac.post(
+                        "/chat",
+                        json={"message": "I need help with something else first"},
+                    )
+                )
+                await asyncio.wait_for(started.wait(), timeout=5)
+
+                # Grounds against `seeded_entry`'s FAQ content, so this is the only
+                # message expected to reach Claude.
+                second_task = asyncio.create_task(
+                    ac.post("/chat", json={"message": "when can I visit?"})
+                )
+                await asyncio.sleep(0.2)
+                gate.set()
+
+                await asyncio.wait_for(
+                    asyncio.gather(first_task, second_task), timeout=5
+                )
+
+    calls = mock_anthropic_cls.return_value.messages.stream.call_args_list
+    assert len(calls) == 1
+    messages_sent = calls[0].kwargs["messages"]
+    assert any(
+        "I need help with something else first" in m["content"] for m in messages_sent
+    )
+
+
 def test_concurrent_turns_keep_distinct_turn_ids(seeded_entry: int) -> None:
     # capture_logs isn't task-safe (docs/testing-strategy.md), so a plain collector
     # processor is spliced into the real chain instead, ahead of the renderer.
@@ -236,3 +417,343 @@ def test_anthropic_and_voyage_clients_are_reused_across_chat_requests(
     assert second_response.status_code == 200
     mock_anthropic_cls.assert_called_once()
     mock_voyage_cls.assert_called_once()
+
+
+def test_session_cookie_issued_on_first_message_and_reused_thereafter(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
+        with TestClient(app) as client:
+            first = client.post("/chat", json={"message": "when can I visit?"})
+            assert "visitdoc_session_id" in first.cookies
+            session_id = first.cookies["visitdoc_session_id"]
+
+            second = client.post("/chat", json={"message": "when can I visit?"})
+
+    assert "set-cookie" not in second.headers
+    assert second.cookies.get("visitdoc_session_id", session_id) == session_id
+
+
+def test_followup_reply_uses_earlier_message_as_history(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(["Tuesday hours are 8am to 5pm."])
+        mock_anthropic_cls.return_value = anthropic_client
+        with TestClient(app) as client:
+            # Doesn't itself carry any FAQ-matching signal - abstains, but is still
+            # persisted and available as context for the next turn (FR-003).
+            client.post("/chat", json={"message": "I'm going to come on Tuesday"})
+            client.post(
+                "/chat", json={"message": "what are your working hours that day?"}
+            )
+
+    calls = anthropic_client.messages.stream.call_args_list
+    assert len(calls) == 1  # message 1 abstained - never reached Claude
+    messages_sent = calls[0].kwargs["messages"]
+    assert any(
+        m["role"] == "user" and "Tuesday" in m["content"] for m in messages_sent[:-1]
+    )
+
+
+def test_followup_still_abstains_when_neither_message_is_grounded(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        TestClient(app) as client,
+    ):
+        client.post("/chat", json={"message": "hello"})
+        response = client.post("/chat", json={"message": "how are you"})
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["grounded"] is False
+
+
+async def test_burst_cancels_earlier_generation_and_yields_one_reply(
+    seeded_entry: int,
+) -> None:
+    # `httpx.ASGITransport` only returns a response once the ASGI app call fully
+    # completes - it gives no incremental access to a StreamingResponse's body while
+    # it's still in flight (verified against its source: `handle_async_request`
+    # awaits `self.app(...)` to completion before constructing any `Response`). So
+    # this pre-creates a real `Session` row and sends its id as the cookie on both
+    # requests from the start, rather than trying to read it off an in-flight
+    # response - message 1 and message 2 still genuinely overlap server-side, as two
+    # independently scheduled `asyncio.Task`s.
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+
+    gate = asyncio.Event()
+    started = asyncio.Event()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client_gated(
+            ["Tuesday hours are 8am to 5pm."], gate, started=started
+        )
+        transport = ASGITransport(app=app)
+
+        with TestClient(app):
+            async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                ac.cookies.set("visitdoc_session_id", session_row.id)
+                first_task = asyncio.create_task(
+                    ac.post("/chat", json={"message": "What are your working hours"})
+                )
+                await asyncio.wait_for(started.wait(), timeout=5)
+                started.clear()
+
+                second_task = asyncio.create_task(
+                    ac.post(
+                        "/chat", json={"message": "on Tuesdays specifically?"}
+                    )
+                )
+                # message 2 has now also reached its gated call
+                await asyncio.wait_for(started.wait(), timeout=5)
+                gate.set()
+
+                first_response, second_response = await asyncio.wait_for(
+                    asyncio.gather(first_task, second_task), timeout=5
+                )
+
+    first_lines = [
+        json.loads(line) for line in first_response.text.strip().splitlines()
+    ]
+    second_lines = [
+        json.loads(line) for line in second_response.text.strip().splitlines()
+    ]
+
+    assert first_lines[-1] == {"type": "cancelled"}
+    assert second_lines[-1]["type"] == "done"
+    assert second_lines[-1]["grounded"] is True
+
+    async with session_factory() as db_session:
+        chat = await chat_repository.get_or_create_chat_for_session(
+            db_session, session_row.id
+        )
+        messages = await chat_repository.list_messages(db_session, chat.id)
+
+    assert [m.sender for m in messages] == ["patient", "patient", "assistant"]
+    assert messages[0].content == "What are your working hours"
+    assert messages[1].content == "on Tuesdays specifically?"
+    # The reply answers both merged patient messages, not just the one that
+    # triggered this generation - see reply_to_message_ids' docstring.
+    assert messages[2].reply_to_message_ids == [messages[0].id, messages[1].id]
+
+
+async def test_pipeline_failure_keeps_patient_message_as_context_for_next_turn(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(stream_error=RuntimeError("boom"))
+        mock_anthropic_cls.return_value = anthropic_client
+
+        # The first call's pipeline failure is expected to propagate as a genuine
+        # error (matching spec 001's existing behavior) - don't let the transport
+        # re-raise it here, so the response can still be inspected below.
+        transport = ASGITransport(app=app, raise_app_exceptions=False)
+        with TestClient(app):
+            async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                # Must itself ground (contains "hours") so it reaches the mocked,
+                # raising Claude call - unlike a purely informational message, which
+                # would abstain before ever calling Claude.
+                failed_response = await ac.post(
+                    "/chat", json={"message": "What are your working hours on Tuesday"}
+                )
+                session_id = failed_response.cookies["visitdoc_session_id"]
+
+                # Reconfigure the same mocked client to succeed for the next call.
+                anthropic_client.messages.stream.side_effect = None
+                anthropic_client.messages.stream.return_value = FakeAnthropicStream(
+                    ["Tuesday hours are 8am to 5pm."]
+                )
+                # `ac`'s own cookie jar already carries the session cookie from the
+                # first response.
+                await ac.post(
+                    "/chat",
+                    json={"message": "what are your working hours that day?"},
+                )
+
+    calls = anthropic_client.messages.stream.call_args_list
+    assert len(calls) == 2  # first raised inside the call itself, still "called"
+    second_call_messages = calls[1].kwargs["messages"]
+    # Message 1 never got a reply, so it's part of the same unanswered trailing run
+    # as message 2 and gets merged into the final turn (research.md #5), not kept as
+    # a separate prior entry - either way, its content still reached Claude (FR-012).
+    assert any("Tuesday" in m["content"] for m in second_call_messages)
+
+    async with session_factory() as session:
+        session_row = await chat_repository.get_session(session, session_id)
+        assert session_row is not None
+        chat = await chat_repository.get_or_create_chat_for_session(
+            session, session_row.id
+        )
+        messages = await chat_repository.list_messages(session, chat.id)
+
+    assert [m.sender for m in messages] == ["patient", "patient", "assistant"]
+
+
+def test_get_chat_history_empty_without_cookie() -> None:
+    with TestClient(app) as client:
+        response = client.get("/chat")
+    assert response.status_code == 200
+    assert response.json() == {"messages": []}
+
+
+def test_get_chat_history_returns_messages_in_chronological_order(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."]
+        )
+        with TestClient(app) as client:
+            client.post("/chat", json={"message": "when can I visit?"})
+            history_response = client.get("/chat")
+
+    assert history_response.status_code == 200
+    messages = history_response.json()["messages"]
+    assert [m["sender"] for m in messages] == ["patient", "assistant"]
+    assert messages[0]["content"] == "when can I visit?"
+    assert messages[1]["content"] == "Visiting hours are 8am to 5pm."
+    assert messages[1]["grounded"] is True
+    assert len(messages[1]["citations"]) > 0
+    assert "created_at" in messages[0]
+
+
+def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        TestClient(app) as client,
+    ):
+        client.post("/chat", json={"message": "what is the weather today?"})
+        history_response = client.get("/chat")
+
+    messages = history_response.json()["messages"]
+    assert messages[1]["grounded"] is False
+    assert messages[1]["citations"] == []
+    assert messages[1]["content"] == "I don't have a confident answer to that."
+
+
+def test_get_chat_history_persists_across_simulated_reload(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
+        with TestClient(app) as client:
+            client.post("/chat", json={"message": "when can I visit?"})
+            # Simulated reload: a later GET on the same cookie jar sees the same data.
+            first_load = client.get("/chat").json()
+            second_load = client.get("/chat").json()
+
+    assert first_load == second_load
+    assert len(first_load["messages"]) == 2
+
+
+async def test_get_chat_history_shows_burst_without_forced_alternation() -> None:
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+        chat = await chat_repository.get_or_create_chat_for_session(
+            db_session, session_row.id
+        )
+        await chat_repository.create_message(
+            db_session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            sender=MessageSender.PATIENT,
+            content="When can I see",
+        )
+        await chat_repository.create_message(
+            db_session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            sender=MessageSender.PATIENT,
+            content="Dr. Josh?",
+        )
+        await chat_repository.create_message(
+            db_session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            sender=MessageSender.ASSISTANT,
+            content="Dr. Josh is available Tuesdays.",
+            grounded=True,
+            citations=[],
+        )
+
+    transport = ASGITransport(app=app)
+    with TestClient(app):
+        async with AsyncClient(transport=transport, base_url="http://t") as ac:
+            ac.cookies.set("visitdoc_session_id", session_row.id)
+            response = await ac.get("/chat")
+
+    messages = response.json()["messages"]
+    assert [m["sender"] for m in messages] == ["patient", "patient", "assistant"]
+    assert messages[0]["content"] == "When can I see"
+    assert messages[1]["content"] == "Dr. Josh?"
+    assert messages[2]["content"] == "Dr. Josh is available Tuesdays."
+
+
+def test_delete_chat_hard_deletes_messages_and_leaves_session_cookie_untouched(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["ok"])
+        with TestClient(app) as client:
+            post_response = client.post("/chat", json={"message": "when can I visit?"})
+            session_id = post_response.cookies["visitdoc_session_id"]
+
+            delete_response = client.delete("/chat")
+            assert delete_response.status_code == 204
+            assert "set-cookie" not in delete_response.headers
+            assert client.cookies["visitdoc_session_id"] == session_id
+
+            history_response = client.get("/chat")
+
+    assert history_response.json() == {"messages": []}
+
+
+def test_delete_chat_is_noop_when_no_current_chat() -> None:
+    with TestClient(app) as client:
+        first = client.delete("/chat")
+        second = client.delete("/chat")
+    assert first.status_code == 204
+    assert second.status_code == 204
+
+
+def test_delete_chat_then_post_starts_fresh_chat_with_no_memory(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(["ok"])
+        mock_anthropic_cls.return_value = anthropic_client
+        with TestClient(app) as client:
+            client.post("/chat", json={"message": "What are your hours on Tuesday"})
+            delete_response = client.delete("/chat")
+            assert delete_response.status_code == 204
+
+            client.post("/chat", json={"message": "what are your working hours"})
+
+    calls = anthropic_client.messages.stream.call_args_list
+    assert len(calls) == 2  # both messages ground independently
+    second_call_messages = calls[1].kwargs["messages"]
+    assert not any("Tuesday" in m["content"] for m in second_call_messages)

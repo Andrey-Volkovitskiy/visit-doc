@@ -1,5 +1,5 @@
 .PHONY: sync lint format typecheck test test-unit test-frontend test-integration test-e2e \
-        precommit install-hooks run-chat run-scheduler run-frontend db-up db-down db-reset
+        precommit install-hooks run-chat run-chat-dev run-scheduler run-frontend-dev db-up db-down db-reset
 
 sync:
 	uv sync
@@ -36,10 +36,13 @@ install-hooks:
 run-chat:
 	uv run --package chat -- python -m chat.main
 
+run-chat-dev:
+	uv run --package chat -- uvicorn chat.main:app --reload --reload-dir services/chat/src --host 0.0.0.0 --port 8000
+
 run-scheduler:
 	uv run --package scheduler -- python -m scheduler.main
 
-run-frontend:
+run-frontend-dev:
 	cd services/frontend && npm run dev
 
 db-up:

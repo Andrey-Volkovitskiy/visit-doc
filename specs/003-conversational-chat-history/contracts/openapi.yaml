@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: VisitDoc — Conversational Chat History
+  version: "0.3.0"
+  description: >
+    Extends spec 001's Grounded FAQ Chat API (specs/001-grounded-faq-chat/contracts/openapi.yaml)
+    with persistent, multi-turn chats. `POST /chat` gains anonymous-session identity via a cookie;
+    `GET /chat` and `DELETE /chat` are new operations on that same path (history and hard-delete,
+    respectively) — not a separate `/conversation` resource, since a chat's history and its
+    ask-a-question flow are the same resource under different HTTP methods. No authentication in
+    this phase, same as spec 001 (FR-011/FR-012 of that spec). The cookie identifies a `Session`,
+    not a `Chat` directly, so that a future capability (a `Session` managing multiple Patients, each
+    with their own chat — see spec.md's Future Direction) can be added later without changing this
+    cookie's meaning (data-model.md, research.md #1). A chat is a flat, sender-tagged log of
+    `Message` rows (patient or assistant this phase) rather than paired request/response turns — a
+    sender may post several consecutive messages before another sender responds (FR-013/FR-014).
+
+paths:
+  /chat:
+    post:
+      operationId: askQuestion
+      summary: >
+        Ask a question and receive a streamed, grounded (or abstaining) answer, in the context of
+        the visitor's current chat.
+      description: >
+        Behavior unchanged from spec 001 except: the request is now associated with the visitor's
+        `Session`, identified via the `visitdoc_session_id` cookie, and that session's current
+        `Chat`. If the cookie is missing or names a session that no longer exists, a new `Session`
+        (and its first `Chat`) is created and the session id is returned via `Set-Cookie` (FR-001,
+        FR-010). The assistant's reply now takes prior messages in the same chat into account
+        (FR-003). If the pipeline fails partway, the patient's message is still retained in the chat
+        but no reply is stored (FR-012) — see `GET /chat`.
+
+
+        **Cancel-and-restart (FR-015)**: if this chat already has a reply generation in flight (from
+        an earlier, not-yet-answered message) when this request arrives, that earlier generation is
+        cancelled and no reply is stored for it. If the earlier request's own stream had already
+        sent `token` events to its caller, that stream is terminated with a final
+        `ChatCancelledEvent` rather than a `ChatDoneEvent` or a bare disconnect — callers MUST treat
+        a `cancelled` event as "no reply is coming for this request," not as an error.
+      parameters:
+        - name: visitdoc_session_id
+          in: cookie
+          required: false
+          schema:
+            type: string
+          description: >
+            ULID identifying the visitor's session. Omitted on a visitor's first-ever message; the
+            response sets it via `Set-Cookie`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: >
+            Streamed response, media type application/x-ndjson: one JSON object per line. A
+            `Set-Cookie` header is present when this request started a new session. A stream ends
+            with exactly one of `ChatDoneEvent` (this request's reply was generated and stored) or
+            `ChatCancelledEvent` (this request was superseded by a newer message in the same chat
+            before it could finish — no reply was stored for it, FR-015).
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: >
+                `visitdoc_session_id=<ulid>; HttpOnly; SameSite=Lax; Max-Age=<~400 days>`.
+                Present only when a new session was created for this request — never reissued on an
+                existing session, including across a `DELETE /chat` (see that operation).
+          content:
+            application/x-ndjson:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ChatTokenEvent"
+                  - $ref: "#/components/schemas/ChatDoneEvent"
+                  - $ref: "#/components/schemas/ChatCancelledEvent"
+        "422":
+          description: Validation error — empty message or message over 2,000 characters (FR-008).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+    get:
+      operationId: getChatHistory
+      summary: Return the visitor's current chat, in chronological order (FR-002).
+      description: >
+        Read-only — never creates a session or chat. If the `visitdoc_session_id` cookie is missing
+        or names a session that no longer exists, returns an empty chat (FR-010) rather than an
+        error. Messages are returned as a flat, chronological list tagged by sender; the list is not
+        guaranteed to alternate senders (FR-002, FR-014) — for example, a patient message that never
+        received a reply (generation failed, FR-012, or was cancelled, FR-015) is simply not
+        followed by an assistant message.
+      parameters:
+        - name: visitdoc_session_id
+          in: cookie
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The chat's messages so far (possibly empty).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatHistoryResponse"
+
+    delete:
+      operationId: clearChat
+      summary: Permanently delete the visitor's current chat and start fresh (FR-004/FR-005).
+      description: >
+        Hard-deletes the chat and all of its messages. A no-op (still `204`) if there is no current
+        chat to delete (missing/unrecognized cookie, or a session with no chat yet). Does **not**
+        delete the session and does **not** touch the `visitdoc_session_id` cookie — the same
+        session immediately gets a brand-new, empty chat the next time `POST /chat` is called
+        (FR-006), with no re-identification step needed.
+      parameters:
+        - name: visitdoc_session_id
+          in: cookie
+          required: false
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Chat deleted (or none existed). No `Set-Cookie` header — the session cookie,
+            if any, is left exactly as it was.
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Visitor's free-text message (FR-008).
+
+    ChatTokenEvent:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+          enum: [token]
+        text:
+          type: string
+          description: Incremental slice of the streamed answer.
+
+    ChatDoneEvent:
+      type: object
+      required: [type, grounded, citations]
+      properties:
+        type:
+          type: string
+          enum: [done]
+        grounded:
+          type: boolean
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+        message:
+          type: string
+          description: Present only when grounded is false — the abstention text.
+
+    ChatCancelledEvent:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [cancelled]
+      description: >
+        Terminal event for a request whose in-flight generation was cancelled because a newer
+        message arrived in the same chat first (FR-015). No reply was generated or stored for this
+        request; any `token` events already received for it should be discarded rather than
+        displayed. This is not an error — the caller should not surface it as one.
+
+    Citation:
+      type: object
+      required: [entry_id, chunk_index, chunk_text]
+      properties:
+        entry_id:
+          type: integer
+        chunk_index:
+          type: integer
+        chunk_text:
+          type: string
+
+    Message:
+      type: object
+      required: [id, sender, content, created_at]
+      properties:
+        id:
+          type: string
+          description: >
+            ULID. For a patient message, shared with the request's logging `turn_id`; for an
+            assistant message, independently generated (data-model.md, research.md #4).
+        sender:
+          type: string
+          enum: [patient, assistant]
+          description: >
+            Open set (FR-013) — a future phase (ROADMAP Phase 1d) is expected to add `staff` as a
+            third value; no staff-authored messages exist in this phase.
+        content:
+          type: string
+          description: >
+            The patient's message as submitted, or the assistant's full answer/abstention text.
+        grounded:
+          type: boolean
+          nullable: true
+          description: Meaningful only when sender is "assistant"; null for a patient message.
+        citations:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/Citation"
+          description: Meaningful only when sender is "assistant"; null for a patient message.
+        created_at:
+          type: string
+          format: date-time
+
+    ChatHistoryResponse:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+          description: >
+            Chronological order (oldest first). Not guaranteed to alternate sender (FR-002, FR-014).
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object

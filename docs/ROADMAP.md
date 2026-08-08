@@ -67,27 +67,53 @@ streaming chat UI, and an agent step that does exactly one thing: answer an FAQ 
 API — no agent framework yet, since a single linear step has no branching to justify one.
 
 ### Phase 1 — The real agent
-The spine of the project:
+The spine of the project, split into sub-phases small enough to build and verify one at a time. Each
+builds on the ones before it; MCP stays the seam that keeps agent logic decoupled from how a
+capability is actually implemented, so a later sub-phase can swap an implementation without touching
+the agent.
 
-- **Adopt LangGraph** as the agent framework, replacing Phase 0's plain function call — this is
-  where branching actually starts to exist, so a graph framework starts to pay for itself.
-- **Intent classification** into one or more of FAQ / booking / escalation, using a cheap, fast
-  model and **structured output** rather than free-text parsing.
+#### Phase 1a — Multi-turn conversation state
+Turn Phase 0's stateless, single-turn exchange into a real conversation before touching the agent
+itself: persist conversation history per visitor, and have generation take prior turns into account
+so a follow-up question doesn't require repeating context. Still a plain function call under the
+hood — no LangGraph yet — but the conversation shape (a flat, ordered log of turns, not a fixed
+request/response pair) is now in place for 1d to extend once staff can post into it too.
+
+#### Phase 1b — Adopt LangGraph + intent classification
+Replace Phase 0's plain function call with a LangGraph graph, proving the framework swap on its own
+before adding new capabilities on top of it. Add **intent classification** into one or more of FAQ /
+booking / escalation, using a cheap, fast model and **structured output** rather than free-text
+parsing. The graph still has only one real path (FAQ) at this point — branching comes in 1d.
+
+#### Phase 1c — Scheduling service
+Stand up Scheduling as a separate FastAPI service with its own PostgreSQL and a small gRPC API
+(`CheckAvailability`, `BookAppointment`), including the double-booking guard — a PostgreSQL
+exclusion constraint on interval/range types — and failure handling: timeouts, retries, and defined
+behavior for callers when Scheduling is unreachable. Built and tested standalone against its own
+gRPC contract, before the agent calls it.
+
+#### Phase 1d — Booking, escalation, and real branching
+Wire the agent up to what 1a–1c built:
+- **MCP tool servers** — `search_faq`, `check_availability`, `book_appointment`,
+  `escalate_to_staff` — keeping the agent's logic decoupled from how each capability is implemented.
 - **Parallel specialist nodes with a merge step** for mixed-intent messages ("what should I bring,
   and can I move my appointment to Friday?") — the graph doing real branching.
-- **MCP tool servers**: `search_faq`, `check_availability`, `book_appointment`,
-  `escalate_to_staff`, keeping the agent's logic decoupled from how each capability is implemented.
-- **Scheduling as a separate service** with its own PostgreSQL and a small gRPC API
-  (`CheckAvailability`, `BookAppointment`), including failure handling — timeouts, retries, and what
-  the agent does when Scheduling is unreachable.
-- **Booking** flows through Scheduling: the `check_availability` and `book_appointment` MCP tools
-  call it over gRPC, and the range-type guard lives in Scheduling's database. The agent code is
-  identical whether Scheduling is in-process or remote — the tool just points at the service. Then
-  wire the **escalation** path.
-- **RAG done properly**, not just embed-and-top-k: defensible chunking, a reranking step, grounded
-  answers **with citations back to the source document**, and an explicit **abstention path** — when
-  retrieval is weak, the agent says it doesn't know and escalates instead of hallucinating.
-- A **groundedness check** before any FAQ answer is returned to the user.
+- **Booking** flows through Scheduling: `check_availability`/`book_appointment` call it over gRPC;
+  the agent code is identical whether Scheduling is in-process or remote — the tool just points at
+  the service.
+- The **escalation** path, which is where conversation shape actually becomes multi-party: staff
+  take over and post directly into the same thread the patient sees (not a separate,
+  assistant-mediated channel), so a conversation becomes a flat, ordered log of messages from any
+  sender (patient, assistant, or staff). Escalation is a state on the conversation as a whole, not
+  per-message: once escalated, the assistant stops generating replies in it until a staff member
+  resolves it or hands it back.
+
+#### Phase 1e — RAG done properly
+Upgrade Phase 0's naive embed-and-top-k retrieval: defensible chunking, a reranking step, grounded
+answers **with citations back to the source document** — derived structurally from what was actually
+retrieved, never self-reported by the LLM — and an explicit **abstention path** that escalates via
+1d's `escalate_to_staff` tool instead of hallucinating when retrieval is weak. A **groundedness
+check** runs before any FAQ answer is returned to the user.
 
 ### Phase 2 — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does:

@@ -21,8 +21,36 @@ arguments and raises false `call-arg` errors on `Settings()`.
 
 - Type-annotate every function/method, including the return type:
   `def foo(a: str, b: list[int]) -> dict[str, tuple[int, bool]]: ...`
+- If a `str`/`int` parameter or field only ever legally takes a small, fixed set of values (e.g. a
+  "kind"/"status"/"sender" discriminator), define an `enum.Enum` (or `enum.StrEnum`/`enum.IntEnum`
+  when the value must still behave like a plain `str`/`int`, e.g. crossing a DB column, JSON
+  boundary, or existing `str`-typed field) instead of accepting/passing a bare string/int literal.
+  A bare literal lets a typo (`"asistant"` for `"assistant"`) become a new, silently-accepted value
+  at runtime; an enum member is checked by mypy instead. This is a *Python-level* constraint, not
+  necessarily a database one — a field can and often should stay a plain DB column (no native SQL
+  `ENUM` type) so a future legal value never needs a migration, while every call site is still
+  required to pass an enum member, never a raw string, in application code:
+  ```python
+  class MessageSender(StrEnum):
+      PATIENT = "patient"
+      ASSISTANT = "assistant"
+
+  def create_message(sender: MessageSender, ...) -> Message: ...
+
+  create_message(sender=MessageSender.PATIENT)  # not sender="patient"
+  ```
 - Give every function/method a short docstring describing what it does. Only add `Args`/`Returns`
   sections when they aren't already obvious from the argument names and type annotations.
+- If a function returns a composite type (e.g. a `tuple`, or a `dict`/`list` of tuples/objects)
+  where the type annotation alone doesn't say what each part *means*, its docstring MUST have a
+  `Returns:` line spelling that out — one clause per part, in the order they appear in the type:
+  ```python
+  def foo(a: str) -> tuple[list[int], list[str]]:
+      """...
+
+      Returns: a list of user_ids and a list of user_names
+      """
+  ```
 - Document exceptions the function can raise — whether raised directly in its body or propagated
   from another function/method in this codebase that it calls — with a `Raises:` line, e.g.
   `Raises: ValueError`. Exceptions from third-party/standard-library calls don't need to be

@@ -16,7 +16,20 @@ export interface ChatDoneEvent {
   message?: string;
 }
 
-export type ChatEvent = ChatTokenEvent | ChatDoneEvent;
+export interface ChatCancelledEvent {
+  type: "cancelled";
+}
+
+export type ChatEvent = ChatTokenEvent | ChatDoneEvent | ChatCancelledEvent;
+
+export interface Message {
+  id: string;
+  sender: "patient" | "assistant";
+  content: string;
+  grounded: boolean | null;
+  citations: Citation[] | null;
+  created_at: string;
+}
 
 /** Parse a POST /chat NDJSON response into its stream of events. */
 export async function* parseNdjsonStream(response: Response): AsyncGenerator<ChatEvent> {
@@ -50,11 +63,27 @@ export async function* parseNdjsonStream(response: Response): AsyncGenerator<Cha
 }
 
 /** POST `message` to /chat and return its parsed NDJSON event stream. */
-export async function askChat(message: string): Promise<AsyncGenerator<ChatEvent>> {
+export async function askChat(
+  message: string,
+  signal?: AbortSignal,
+): Promise<AsyncGenerator<ChatEvent>> {
   const response = await fetch("/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
+    signal,
   });
   return parseNdjsonStream(response);
+}
+
+/** GET /chat and return the visitor's chat history, chronological (FR-002). */
+export async function fetchChatHistory(): Promise<Message[]> {
+  const response = await fetch("/chat");
+  const data = (await response.json()) as { messages: Message[] };
+  return data.messages;
+}
+
+/** DELETE /chat: permanently clear the visitor's current chat (FR-004/FR-005). */
+export async function clearChat(): Promise<void> {
+  await fetch("/chat", { method: "DELETE" });
 }
