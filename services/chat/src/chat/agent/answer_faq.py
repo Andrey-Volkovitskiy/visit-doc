@@ -41,9 +41,11 @@ async def answer_faq(
     answered (research.md #6). For a chat with no prior messages, `history` has
     exactly one entry: the current message. `reply_to_message_ids` is that same
     function's other return value - the patient message id(s) this turn is actually
-    answering, logged up front so a log reader can tell from `turn.message_received`
-    alone whether a merged burst (len > 1) or a single message started this turn,
-    without waiting for the later `message.persisted` log of the assistant reply.
+    answering, logged as `message_ids_unified` on both `turn.message_received` (up
+    front, so a log reader can tell whether a merged burst (len > 1) or a single
+    message started this turn) and `turn.completed` (so the same is knowable from
+    the turn's outcome log alone) - `message.persisted` never carries it, for either
+    the patient or the assistant message.
 
     Raises: TurnPipelineError wrapping any failure in embedding, retrieval,
         groundedness, or generation (FR-005).
@@ -54,7 +56,7 @@ async def answer_faq(
     logger.info(
         "turn.message_received",
         message=message,
-        reply_to_message_ids=reply_to_message_ids,
+        message_ids_unified=reply_to_message_ids,
     )
 
     chunks = await search_faq(client, voyage_client, message)
@@ -70,6 +72,7 @@ async def answer_faq(
             "turn.completed",
             outcome="abstained",
             abstention_message=_ABSTENTION_MESSAGE,
+            message_ids_unified=reply_to_message_ids,
         )
         yield ChatDoneEvent(grounded=False, citations=[], message=_ABSTENTION_MESSAGE)
         return
@@ -104,6 +107,7 @@ async def answer_faq(
         "turn.completed",
         outcome="grounded",
         answer_text="".join(answer_parts),
+        message_ids_unified=reply_to_message_ids,
         citations=[
             {
                 "entry_id": c.faq_entry_id,

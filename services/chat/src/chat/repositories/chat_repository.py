@@ -129,7 +129,7 @@ async def create_message(
         message_id=message.id,
         chat_id=chat_id,
         sender=sender,
-        reply_to_message_ids=reply_to_message_ids,
+        content=content,
     )
     return message
 

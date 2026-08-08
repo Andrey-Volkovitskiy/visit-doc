@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatWindow } from "../src/components/ChatWindow";
 import * as chatStream from "../src/lib/chatStream";
@@ -178,6 +178,39 @@ describe("ChatWindow", () => {
     expect(textbox.value).toBe("line one");
   });
 
+  it("shows a red warning and blocks sending when the message exceeds the length limit", async () => {
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    const askChatSpy = vi.spyOn(chatStream, "askChat");
+    const callsBefore = askChatSpy.mock.calls.length;
+    const tooLong = "a".repeat(2001);
+
+    await renderReady();
+    const textbox = screen.getByLabelText("question") as HTMLTextAreaElement;
+    fireEvent.change(textbox, { target: { value: tooLong } });
+
+    const warning = screen.getByTestId("length-error");
+    expect(warning).toHaveTextContent("2001/2000");
+    expect(warning).toHaveStyle({ color: "rgb(255, 0, 0)" });
+
+    fireEvent.click(screen.getByText("Send"));
+    fireEvent.keyDown(textbox, { key: "Enter", shiftKey: false });
+
+    expect(askChatSpy.mock.calls.length).toBe(callsBefore);
+    expect(textbox.value).toBe(tooLong);
+  });
+
+  it("clears the length warning once the draft is shortened back under the limit", async () => {
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+
+    await renderReady();
+    const textbox = screen.getByLabelText("question");
+    fireEvent.change(textbox, { target: { value: "a".repeat(2001) } });
+    expect(screen.getByTestId("length-error")).toBeInTheDocument();
+
+    fireEvent.change(textbox, { target: { value: "a".repeat(2000) } });
+    expect(screen.queryByTestId("length-error")).toBeNull();
+  });
+
   it("re-enables Send and shows an error when askChat rejects", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockRejectedValue(new Error("network error"));
@@ -260,12 +293,18 @@ describe("ChatWindow", () => {
     expect(screen.queryByTestId("error")).toBeNull();
   });
 
-  it("ignores Enter while a send is already loading, unlike the disabled Send button", async () => {
+  it("sends a second message via Enter while the first is still in flight", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
-    const pending = new Promise<AsyncGenerator<ChatEvent>>(() => {
+    const pendingA = new Promise<AsyncGenerator<ChatEvent>>(() => {
       // Never resolves - message A stays in flight for the whole test.
     });
-    const askChatSpy = vi.spyOn(chatStream, "askChat").mockReturnValue(pending);
+    const pendingB = new Promise<AsyncGenerator<ChatEvent>>(() => {
+      // Never resolves either - only the call count and cleared draft matter here.
+    });
+    const askChatSpy = vi
+      .spyOn(chatStream, "askChat")
+      .mockReturnValueOnce(pendingA)
+      .mockReturnValueOnce(pendingB);
     // vi.spyOn reuses the existing spy across tests in this file (it's never
     // restored), so its call count accumulates - compare deltas, not absolutes,
     // matching the "does not send when Shift+Enter" test above.
@@ -279,64 +318,92 @@ describe("ChatWindow", () => {
     await waitFor(() => {
       expect(screen.getByText("first message")).toBeInTheDocument();
     });
-    expect(screen.getByText("Send")).toBeDisabled();
     expect(askChatSpy.mock.calls.length).toBe(callsBefore + 1);
 
     fireEvent.change(textbox, { target: { value: "second message" } });
     fireEvent.keyDown(textbox, { key: "Enter", shiftKey: false });
 
-    expect(askChatSpy.mock.calls.length).toBe(callsBefore + 1);
-    expect(textbox.value).toBe("second message");
+    await waitFor(() => {
+      expect(screen.getByText("second message")).toBeInTheDocument();
+    });
+    expect(askChatSpy.mock.calls.length).toBe(callsBefore + 2);
+    expect(textbox.value).toBe("");
   });
 
-  it("keeps Send disabled across a supersede - an aborted request's own cleanup must not re-enable it early", async () => {
+  it("delivers the reply for an earlier turn still in flight when a newer send starts, instead of dropping it (regression)", async () => {
+    // Previously, starting "m" while "n"'s reply hadn't arrived yet aborted "n"'s
+    // own fetch - the server had already computed and persisted "n"'s reply, but
+    // the client silently threw the abort-triggered rejection away, so "n"'s
+    // reply only ever showed up after a page refresh. A send must never abort an
+    // earlier, still-genuinely-completing one; only Clear Chat may abort.
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
-    let rejectA!: (reason: unknown) => void;
-    const pendingA = new Promise<AsyncGenerator<ChatEvent>>((_resolve, reject) => {
-      rejectA = reject;
+    const abortSpy = vi.spyOn(AbortController.prototype, "abort");
+    let resolveN!: (events: AsyncGenerator<ChatEvent>) => void;
+    const pendingN = new Promise<AsyncGenerator<ChatEvent>>((resolve) => {
+      resolveN = resolve;
     });
-    let resolveB!: (events: AsyncGenerator<ChatEvent>) => void;
-    const pendingB = new Promise<AsyncGenerator<ChatEvent>>((resolve) => {
-      resolveB = resolve;
-    });
-    const askChatSpy = vi
-      .spyOn(chatStream, "askChat")
-      .mockReturnValueOnce(pendingA)
-      .mockReturnValueOnce(pendingB);
-    // See the previous test's comment: the spy's call count accumulates across
-    // the file, so track the delta from here rather than an absolute count.
-    const callsBefore = askChatSpy.mock.calls.length;
+    vi.spyOn(chatStream, "askChat")
+      .mockReturnValueOnce(pendingN)
+      .mockResolvedValueOnce(
+        fakeEvents([
+          { type: "done", grounded: false, citations: [], message: "abstained for m" },
+        ]),
+      );
 
     await renderReady();
     const textbox = screen.getByLabelText("question");
-    const sendButton = screen.getByText("Send");
-    fireEvent.change(textbox, { target: { value: "when can I visit?" } });
+    fireEvent.change(textbox, { target: { value: "n" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => expect(screen.getByText("n")).toBeInTheDocument());
 
-    // Two native clicks dispatched synchronously in a single act() batch, before
-    // React commits the first click's setLoading(true) (React itself refuses to
-    // dispatch onClick to an already-disabled button once that commit lands, and
-    // the old bug's real-world trigger - an unguarded Enter keydown - is now
-    // fixed too). This reproduces the same kind of race: a second send starts
-    // while the first is still in flight. abortRef is a ref, not render state,
-    // so it still tracks correctly across both handlers even though both belong
-    // to the same pre-batch render.
-    act(() => {
-      sendButton.click();
-      sendButton.click();
+    // "m" is sent before "n"'s own request has resolved at all.
+    fireEvent.change(textbox, { target: { value: "m" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => expect(screen.getByText("m")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("abstained for m")).toBeInTheDocument());
+
+    expect(abortSpy).not.toHaveBeenCalled();
+
+    // "n"'s request finally resolves - its reply must still land, not be
+    // silently dropped just because "m" was sent in the meantime.
+    resolveN(
+      fakeEvents([
+        { type: "done", grounded: false, citations: [], message: "abstained for n" },
+      ]),
+    );
+    await waitFor(() => expect(screen.getByText("abstained for n")).toBeInTheDocument());
+    abortSpy.mockRestore();
+  });
+
+  it("aborts every in-flight send, not just the most recent, when the chat is cleared", async () => {
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "clearChat").mockResolvedValue(undefined);
+    const abortSpy = vi.spyOn(AbortController.prototype, "abort");
+    const pendingN = new Promise<AsyncGenerator<ChatEvent>>(() => {
+      // Never resolves - both sends stay in flight through this test.
     });
+    const pendingM = new Promise<AsyncGenerator<ChatEvent>>(() => {
+      // Never resolves either.
+    });
+    vi.spyOn(chatStream, "askChat")
+      .mockReturnValueOnce(pendingN)
+      .mockReturnValueOnce(pendingM);
 
-    expect(askChatSpy.mock.calls.length).toBe(callsBefore + 2);
-    expect(sendButton).toBeDisabled();
+    await renderReady();
+    const textbox = screen.getByLabelText("question");
+    fireEvent.change(textbox, { target: { value: "n" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => expect(screen.getByText("n")).toBeInTheDocument());
+    fireEvent.change(textbox, { target: { value: "m" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => expect(screen.getByText("m")).toBeInTheDocument());
 
-    // The first send's own fetch now rejects because the second send's
-    // handleSend aborted its controller - its finally must not clear loading
-    // while the second send is still in flight.
-    rejectA(new DOMException("The operation was aborted.", "AbortError"));
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(sendButton).toBeDisabled();
-    expect(screen.queryByTestId("error")).toBeNull();
+    fireEvent.click(screen.getByText("Clear chat"));
+    fireEvent.click(screen.getByText("Clear"));
+    await waitFor(() => expect(abortSpy).toHaveBeenCalledTimes(2));
 
-    resolveB(fakeEvents([{ type: "done", grounded: true, citations: [] }]));
-    await waitFor(() => expect(sendButton).not.toBeDisabled());
+    expect(screen.queryByText("n")).toBeNull();
+    expect(screen.queryByText("m")).toBeNull();
+    abortSpy.mockRestore();
   });
 });

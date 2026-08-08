@@ -7,6 +7,7 @@ from anthropic import AsyncAnthropic
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from qdrant_client import AsyncQdrantClient
+from sqlalchemy.exc import SQLAlchemyError
 from ulid import ULID
 from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
@@ -97,7 +98,20 @@ async def _event_stream(
                     content=message,
                 )
             finally:
-                await chat_repository.unlock_session(db_session, session_id)
+                # A statement above may have aborted `db_session`'s transaction, in
+                # which case Postgres refuses this unlock too (`InFailedSQL-
+                # TransactionError`), masking the real error and leaking the
+                # advisory lock on this pooled connection. Only roll back - and
+                # retry - on that actual failure path: an unconditional rollback
+                # would also expire `chat`/`history_rows` (loaded above) despite
+                # `expire_on_commit=False`, which governs `commit()` but not
+                # `rollback()`, forcing a doomed refresh once `db_session` closes
+                # below and they're used detached.
+                try:
+                    await chat_repository.unlock_session(db_session, session_id)
+                except SQLAlchemyError:
+                    await db_session.rollback()
+                    await chat_repository.unlock_session(db_session, session_id)
 
         merged_history, reply_source_ids = build_history_messages(
             history_rows, message, turn_id

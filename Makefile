@@ -1,5 +1,6 @@
 .PHONY: sync lint format typecheck test test-unit test-frontend test-integration test-e2e \
-        precommit install-hooks run-chat run-chat-dev run-scheduler run-frontend-dev db-up db-down db-reset
+        precommit install-hooks run-chat run-chat-dev run-scheduler run-frontend-dev db-up db-down db-reset \
+        alembic-chat-history
 
 sync:
 	uv sync
@@ -37,6 +38,7 @@ run-chat:
 	uv run --package chat -- python -m chat.main
 
 run-chat-dev:
+	uv run --directory services/chat alembic upgrade head
 	uv run --package chat -- uvicorn chat.main:app --reload --reload-dir services/chat/src --host 0.0.0.0 --port 8000
 
 run-scheduler:
@@ -54,3 +56,6 @@ db-down:
 # Destructive: wipes Postgres + Qdrant data volumes. Confirm before running.
 db-reset:
 	docker compose down -v
+
+alembic-chat-history:
+	uv run --directory services/chat alembic history

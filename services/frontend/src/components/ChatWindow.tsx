@@ -10,22 +10,39 @@ function localId(): string {
   return `local-${nextMessageId}`;
 }
 
+// Must match `ChatRequest.message`'s `max_length` in
+// services/chat/src/chat/domain/schemas.py - checked client-side too so the
+// patient gets immediate feedback instead of a round trip to hit the same 422.
+const MAX_MESSAGE_LENGTH = 2000;
+
 export function ChatWindow() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  // Every send's own controller lives here for the duration of its request, not
+  // just the latest one - several turns can be genuinely in flight at once (a
+  // burst of quick patient messages, FR-015), and each must run to completion
+  // independently. The server alone decides whether an earlier turn in the same
+  // chat gets superseded (register_and_cancel_previous, `cancelled` event,
+  // FR-016) - a still-genuinely-completing earlier request must never be aborted
+  // from here just because a newer send started, or its final `done` event (and
+  // the reply the server already persisted) would be thrown away client-side,
+  // only reappearing on the next reload.
+  const activeControllersRef = useRef<Set<AbortController>>(new Set());
 
   useEffect(() => {
     void fetchChatHistory().then(setMessages);
   }, []);
 
   function handleCleared(): void {
-    // The chat and its messages are gone server-side (FR-005); abort any in-flight
-    // reply so a stale generation can't populate the now-empty chat (FR-006).
-    abortRef.current?.abort();
+    // The chat and its messages are gone server-side (FR-005); abort every
+    // in-flight reply so a stale generation can't populate the now-empty chat
+    // (FR-006) - there can be more than one in flight at once (see above).
+    for (const controller of activeControllersRef.current) {
+      controller.abort();
+    }
+    activeControllersRef.current.clear();
     setMessages([]);
     setStreaming(null);
     setError(null);
@@ -33,19 +50,14 @@ export function ChatWindow() {
 
   async function handleSend(): Promise<void> {
     const messageText = input;
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || messageText.length > MAX_MESSAGE_LENGTH) return;
 
     setInput("");
     setError(null);
-    setLoading(true);
     setStreaming("");
 
-    // Aborts this window's own prior in-flight fetch, for immediate UI
-    // responsiveness - the server-side generation registry is the authoritative
-    // cancel-and-restart mechanism regardless (FR-015, research.md #9/#10).
-    abortRef.current?.abort();
     const controller = new AbortController();
-    abortRef.current = controller;
+    activeControllersRef.current.add(controller);
 
     setMessages((prev) => [
       ...prev,
@@ -89,20 +101,16 @@ export function ChatWindow() {
       }
     } catch (err) {
       if (controller.signal.aborted) {
-        // This window aborted its own fetch because the patient sent a newer
-        // message - that newer send's own flow handles display, not an error.
+        // Only Clear Chat aborts a controller now (see `activeControllersRef`
+        // above) - its own `handleCleared` already reset all display state, so
+        // there's nothing left for this stale request to do.
         return;
       }
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setStreaming(null);
       setInput(messageText);
     } finally {
-      // Only this send's own controller is still current if no newer handleSend
-      // call has superseded it - otherwise clearing loading here would re-enable
-      // Send while that newer call is still actively streaming.
-      if (abortRef.current === controller) {
-        setLoading(false);
-      }
+      activeControllersRef.current.delete(controller);
     }
   }
 
@@ -125,16 +133,19 @@ export function ChatWindow() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && !loading) {
+          if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             void handleSend();
           }
         }}
         placeholder="Ask a question..."
       />
-      <button onClick={() => void handleSend()} disabled={loading}>
-        Send
-      </button>
+      <button onClick={() => void handleSend()}>Send</button>
+      {input.length > MAX_MESSAGE_LENGTH && (
+        <p data-testid="length-error" style={{ color: "red" }}>
+          Message is too long ({input.length}/{MAX_MESSAGE_LENGTH} characters).
+        </p>
+      )}
       {error && <p data-testid="error">{error}</p>}
     </div>
   );
