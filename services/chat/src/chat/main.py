@@ -18,25 +18,22 @@ from chat.repositories.qdrant_repository import create_client, ensure_collection
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-    """Ensure the faq_chunks collection exists; share the Qdrant, Anthropic, and Voyage
-    clients on state so every request reuses the same connection pool instead of paying
-    fresh HTTP client setup cost per request.
-
-    Qdrant/Anthropic get pooling for free just by reusing the client instance. Voyage's
-    `AsyncClient` doesn't: it opens and closes a brand-new `aiohttp.ClientSession` on
-    every `embed()` call unless handed a shared session via the `voyageai.aiosession`
-    contextvar, so a plain shared `aiohttp.ClientSession` is created and stored on state
-    here too - `chat.api.dependencies.get_voyage_client` binds it into the contextvar at
-    the start of each request (setting it once here wouldn't reliably reach each
-    request's own asyncio task).
-
-    Each client's/session's cleanup is registered on an `AsyncExitStack` right after
-    construction, so a later step failing during startup - or one close() raising during
-    shutdown - can never leave an earlier one's connections unclosed.
+    """Ensure the faq_chunks collection exists, then share the Qdrant, Anthropic, and
+    Voyage clients on app state so every request reuses the same connection pool
+    instead of paying fresh HTTP client setup cost per request.
 
     Raises:
         Exception: propagated from `ensure_collection` if the Qdrant collection can't be
             created or verified during startup.
+
+    Qdrant and Anthropic get pooling for free by reusing the client instance. Voyage's
+    `AsyncClient` doesn't - it opens a fresh `aiohttp.ClientSession` per `embed()` call
+    unless handed a shared session via the `voyageai.aiosession` contextvar - so a plain
+    shared `aiohttp.ClientSession` is also created and stored on state here, to be bound
+    into that contextvar per-request elsewhere. Each client's/session's cleanup is
+    registered on an `AsyncExitStack` right after construction, so a later step failing
+    during startup, or one close() raising during shutdown, can never leave an earlier
+    one's connections unclosed.
     """
     settings = get_settings()
     async with AsyncExitStack() as stack:
@@ -66,7 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 def create_app() -> FastAPI:
-    """Build the FastAPI application. Routers are registered as their features land."""
+    """Build the FastAPI application."""
     configure_logging(get_settings())
     app = FastAPI(title="VisitDoc — Grounded FAQ Chat", lifespan=lifespan)
     app.include_router(chat_router)

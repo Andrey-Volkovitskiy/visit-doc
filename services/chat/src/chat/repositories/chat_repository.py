@@ -1,4 +1,4 @@
-"""Postgres `Session`/`Chat`/`Message` repository (async session, data-model.md)."""
+"""Postgres `Session`/`Chat`/`Message` repository (async session)."""
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ _id_generator = ULIDGenerator(policy=PureRandomPolicy())
 
 
 async def create_session(session: AsyncSession) -> Session:
-    """Create and persist a new `Session` with a non-guessable id (FR-017)."""
+    """Create and persist a new `Session` with a non-guessable id."""
     new_session = Session(id=str(_id_generator.generate()))
     session.add(new_session)
     await session.commit()
@@ -35,7 +35,7 @@ async def get_session(session: AsyncSession, session_id: str) -> Session | None:
 async def get_chat_for_session(session: AsyncSession, session_id: str) -> Chat | None:
     """Return `session_id`'s current `Chat`, or None if it has none yet.
 
-    Read-only - never creates one (used by `GET /chat`, FR-010).
+    Read-only - never creates one.
     """
     result = await session.execute(
         select(Chat).where(Chat.session_id == session_id).order_by(Chat.id.desc())
@@ -46,17 +46,11 @@ async def get_chat_for_session(session: AsyncSession, session_id: str) -> Chat |
 async def lock_session(session: AsyncSession, session_id: str) -> None:
     """Take a session-scoped Postgres advisory lock keyed by `session_id`.
 
-    Blocks until any other connection holding the same lock releases it. Serializes
-    concurrent requests for one session through `_event_stream`'s chat-creation +
-    history-read + message-insert critical section (FR-009/FR-012), closing the races
-    that let two concurrent first messages create two `Chat` rows, or let a second
-    concurrent message's history read miss a sibling message that hadn't committed
-    yet. Deliberately session-scoped, not transaction-scoped (`pg_advisory_xact_lock`
-    would do) - that critical section spans several of this module's own internal
-    `session.commit()` calls (`get_or_create_chat_for_session`, `create_message`),
-    each of which would release a transaction-scoped lock early. Must be released
-    explicitly via `unlock_session`, always in a `finally`, before the caller's
-    `AsyncSession` closes and its connection returns to the pool.
+    Blocks until any other connection holding the same lock releases it.
+    Session-scoped, not transaction-scoped - stays held across this connection's own
+    `commit()` calls until explicitly released. Must be released via `unlock_session`,
+    always in a `finally`, before the caller's `AsyncSession` closes and its connection
+    returns to the pool.
     """
     await session.execute(
         text("SELECT pg_advisory_lock(hashtext(:session_id)::bigint)"),
@@ -75,10 +69,10 @@ async def unlock_session(session: AsyncSession, session_id: str) -> None:
 async def get_or_create_chat_for_session(
     session: AsyncSession, session_id: str
 ) -> Chat:
-    """Return `session_id`'s current `Chat`, creating one if none exists (FR-009).
+    """Return `session_id`'s current `Chat`, creating one if none exists.
 
-    Exactly one active `Chat` per `Session` is enforced here, in application logic -
-    not by a uniqueness constraint (data-model.md, research.md #1).
+    Exactly one active `Chat` per `Session` is enforced here, in application logic, not
+    by a database uniqueness constraint.
     """
     existing = await get_chat_for_session(session, session_id)
     if existing is not None:
@@ -104,13 +98,14 @@ async def create_message(
 ) -> Message:
     """Insert a new `Message` and return it.
 
-    `id` is always caller-supplied, never generated here - a patient message reuses
-    the request's `turn_id`, an assistant message gets a fresh ULID (research.md #4).
-    Append-only: a `Message` is written once, in full, with no "complete"/pending
-    step (research.md #3). `reply_to_message_ids` is only meaningful for an assistant
-    message - every patient message id it answers, in order (possibly more than one,
-    for a merged burst) - so history-building can pair a turn's messages explicitly
-    instead of inferring pairing from row order.
+    Args:
+        id: Caller-supplied, never generated here - a patient message reuses the
+            request's turn id; an assistant message gets a fresh ULID.
+        reply_to_message_ids: For an assistant message, every patient message id it
+            answers, in order (more than one for a merged burst). Not meaningful for a
+            patient message.
+
+    Append-only: a `Message` is written once, in full, with no "complete"/pending step.
     """
     message = Message(
         id=id,
@@ -135,11 +130,11 @@ async def create_message(
 
 
 async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
-    """Return `chat_id`'s messages in chronological order (FR-002).
+    """Return `chat_id`'s messages in chronological order.
 
     Ordered by `created_at`, not `id` - ULIDs are only monotonic within the
     generating process's clock/randomness and aren't guaranteed to sort in true
-    creation order across concurrent writers (data-model.md).
+    creation order across concurrent writers.
     """
     result = await session.execute(
         select(Message)
@@ -150,9 +145,9 @@ async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
 
 
 async def delete_chat(session: AsyncSession, chat_id: str) -> None:
-    """Hard-delete `chat_id` (FR-005).
+    """Hard-delete `chat_id`.
 
-    Its `Message` rows cascade via FK, not an application-level loop (research.md #7).
+    Its `Message` rows cascade via FK, not an application-level loop.
     """
     chat = await session.get(Chat, chat_id)
     if chat is None:

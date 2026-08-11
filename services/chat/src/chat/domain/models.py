@@ -13,12 +13,11 @@ _ULID_LENGTH = 26
 class MessageSender(StrEnum):
     """Legal values for `Message.sender` - a Python-level closed set.
 
-    Deliberately *not* a database-level enum (`Message.sender` stays a plain
-    `String` column, research.md, FR-013): the DB schema stays open so a future
-    `staff` value (ROADMAP Phase 1d) never needs a migration. This enum exists purely
-    to stop application code from passing an arbitrary/misspelled string where the
-    repository or agent layer expects a sender - callers should always pass a
-    `MessageSender` member, never a bare string literal (docs/python-style-guide.md).
+    Deliberately *not* a database-level enum: `Message.sender` stays a plain `String`
+    column, so a future value can be added without a migration. This enum exists
+    purely to stop application code from passing an arbitrary/misspelled string where
+    the repository or agent layer expects a sender - callers should always pass a
+    `MessageSender` member, never a bare string literal.
     """
 
     PATIENT = "patient"
@@ -32,7 +31,7 @@ class Base(DeclarativeBase):
 class FaqEntry(Base):
     """A unit of clinic knowledge that can be retrieved to ground an answer.
 
-    No `title` field — citations reference the retrieved passage itself (data-model.md).
+    No `title` field — citations reference the retrieved passage itself.
     """
 
     __tablename__ = "faq_entries"
@@ -48,10 +47,10 @@ class FaqEntry(Base):
 
 
 class Session(Base):
-    """An anonymous visitor's identity, scoped to one browser (data-model.md).
+    """An anonymous visitor's identity, scoped to one browser.
 
-    `id` is never server-generated here — `chat_repository.create_session` mints it
-    explicitly via a `PureRandomPolicy` ULID generator (FR-017, research.md #1).
+    `id` is never server-generated - it's minted explicitly by the repository layer
+    before insert, not the database.
     """
 
     __tablename__ = "sessions"
@@ -63,11 +62,10 @@ class Session(Base):
 
 
 class Chat(Base):
-    """One continuous chat thread between a `Session` and the assistant (data-model.md).
+    """One continuous chat thread between a `Session` and the assistant.
 
-    No uniqueness constraint on `session_id`: exactly-one-active-chat-per-session
-    (FR-009) is an application-level rule, not a schema one, so a later Patient layer
-    can allow multiple chats per session without dropping a constraint (research.md #1).
+    No uniqueness constraint on `session_id` - exactly-one-active-chat-per-session is
+    enforced in application logic, not the schema.
     """
 
     __tablename__ = "chats"
@@ -84,14 +82,13 @@ class Chat(Base):
 
 
 class Message(Base):
-    """A single message belonging to a `Chat`, authored by one sender (data-model.md).
+    """A single message belonging to a `Chat`, authored by one sender.
 
-    `sender` is stored as a plain string column, not a database-level enum, so a third
-    value (`staff`, ROADMAP Phase 1d) can be added later with no schema migration
-    (FR-013) - callers should still only ever write it via a `MessageSender` member
-    (above), never a bare string literal. `id` is always caller-supplied (never
-    server-generated): a patient message reuses the request's `turn_id`, an assistant
-    message gets a fresh ULID (research.md #4).
+    `sender` is stored as a plain string column, not a database-level enum, so a
+    future value can be added with no schema migration - callers should still only
+    ever write it via a `MessageSender` member (above), never a bare string literal.
+    `id` is always caller-supplied, never server-generated - a patient message reuses
+    the request's turn id, an assistant message gets a fresh ULID.
     """
 
     __tablename__ = "messages"

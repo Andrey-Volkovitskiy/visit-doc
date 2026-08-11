@@ -1,4 +1,4 @@
-"""`classify_intent`: structured-output intent classification (research.md #3/#4)."""
+"""`classify_intent`: structured-output intent classification."""
 
 from typing import Any
 
@@ -40,18 +40,17 @@ class ClassificationFailedError(Exception):
 async def classify_intent(
     anthropic_client: AsyncAnthropic, bursts: list[list[Message]]
 ) -> IntentClassificationResult:
-    """Classify the trailing patient message in `bursts` (FR-001/FR-002).
+    """Classify the trailing patient message in `bursts`.
 
-    `bursts` is a `bound_to_last_n_turns()`-bounded window (research.md #5) over the
-    turn's conversation history - never the full chat history. Translated to Claude's
-    `messages` format internally, via `history.py::to_claude_messages()` - this
-    function's own implementation detail (it's the one that talks to
-    `anthropic_client`), not something the caller should need to do itself. Uses
-    native JSON Outputs (`output_config.format`), not tool-use (research.md #3).
+    Args:
+        bursts: A `bound_to_last_n_turns()`-bounded window over the turn's
+            conversation history - never the full chat history.
 
-    Raises: ClassificationFailedError on any API error, timeout, a response that fails
-        to validate against the schema, or a validated response that still contains
-        `CLASSIFICATION_FAILED` (FR-007) - never returns a result containing it.
+    Raises: ClassificationFailedError on any API error, timeout, a response that
+        fails to validate against the schema, or a validated response that still
+        contains `CLASSIFICATION_FAILED` - never returns a result containing it.
+
+    Uses native JSON Outputs (`output_config.format`), not tool-use.
     """
     try:
         response = await anthropic_client.messages.create(

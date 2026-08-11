@@ -1,8 +1,8 @@
 """Structlog configuration: the one centralized place log entries are shaped/rendered.
 
 Every log call flows through one processor chain (merge correlation id -> add level ->
-add timestamp -> truncate -> redact -> render), so switching the rendering later
-(FR-014) is a one-line change here, not a rewrite of every call site.
+add timestamp -> truncate -> redact -> render), so switching the rendering later is a
+one-line change here, not a rewrite of every call site.
 """
 
 import re
@@ -39,7 +39,7 @@ _LEVEL_STYLES = {
 
 
 def _truncate_value(value: Any) -> Any:
-    """Recursively truncate any string over 2,000 characters (FR-013)."""
+    """Recursively truncate any string over 2,000 characters."""
     if isinstance(value, str) and len(value) > _MAX_STRING_LENGTH:
         return value[:_MAX_STRING_LENGTH] + _TRUNCATION_SUFFIX
     if isinstance(value, list):
@@ -52,16 +52,16 @@ def _truncate_value(value: Any) -> Any:
 def _truncate_long_strings(
     _logger: WrappedLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
-    """Structlog processor applying `_truncate_value` to every field (FR-013)."""
+    """Structlog processor applying `_truncate_value` to every field."""
     return {key: _truncate_value(value) for key, value in event_dict.items()}
 
 
 def _redact_secrets(event_dict: EventDict, known_secrets: list[str]) -> EventDict:
-    """Redact `event_dict` by key name and by known live secret value (FR-017).
+    """Redact `event_dict` by key name and by known live secret value.
 
-    Two independent checks, since neither alone is sufficient (research.md #4): a key
-    whose name looks like a secret is redacted regardless of its value, and any string
-    value matching a known live secret is redacted regardless of its key name.
+    Two independent checks, since neither alone is sufficient: a key whose name looks
+    like a secret is redacted regardless of its value, and any string value matching a
+    known live secret is redacted regardless of its key name.
     """
     result: dict[str, Any] = {}
     for key, value in event_dict.items():
@@ -86,7 +86,7 @@ def _redact_value(value: Any, known_secrets: list[str]) -> Any:
 
 
 def _known_secret_values(settings: Settings) -> list[str]:
-    """Return the service's own live secret values, to redact on sight (FR-017)."""
+    """Return the service's own live secret values, to redact on sight."""
     values = [getattr(settings, field) for field in _SECRET_SETTINGS_FIELDS]
     for field in _SECRET_URL_SETTINGS_FIELDS:
         password = urlsplit(getattr(settings, field)).password
@@ -96,7 +96,7 @@ def _known_secret_values(settings: Settings) -> list[str]:
 
 
 def make_redact_secrets_processor(settings: Settings) -> _LogProcessor:
-    """Build a redaction processor bound to `settings`' live secret values (FR-017)."""
+    """Build a redaction processor bound to `settings`' live secret values."""
     known_secrets = _known_secret_values(settings)
 
     def _processor(
@@ -108,12 +108,12 @@ def make_redact_secrets_processor(settings: Settings) -> _LogProcessor:
 
 
 def _build_console_renderer() -> structlog.dev.ConsoleRenderer:
-    """Build the one terminal renderer: critical > error > info (FR-011/014/019)."""
+    """Build the one terminal renderer: critical > error > info."""
     return structlog.dev.ConsoleRenderer(level_styles=_LEVEL_STYLES, colors=True)
 
 
 def configure_logging(settings: Settings) -> None:
-    """Configure the shared structlog processor chain (FR-009/011/013/014/017)."""
+    """Configure the shared structlog processor chain."""
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
@@ -132,8 +132,8 @@ def configure_logging(settings: Settings) -> None:
 def _log_pipeline_failure(level: str, event: str, exc: Exception) -> None:
     """Best-effort stderr fallback so a dropped log entry isn't entirely invisible.
 
-    Never raises or retries itself (FR-008) - if even this fails, that failure is
-    swallowed too, since servicing the visitor's request still takes priority.
+    Never raises or retries itself - if even this fails, that failure is swallowed
+    too, since servicing the visitor's request still takes priority.
     """
     with suppress(Exception):
         message = f"[Error: logging pipeline failed] {level} {event}: {exc!r}"
@@ -141,11 +141,11 @@ def _log_pipeline_failure(level: str, event: str, exc: Exception) -> None:
 
 
 class _SafeLogger:
-    """Wrap a structlog logger so a processor failure never reaches the caller (FR-008).
+    """Wrap a structlog logger so a processor failure never reaches the caller.
 
     Servicing the visitor's request takes priority over guaranteeing delivery of any
-    single log entry (spec.md edge cases) - a failure here is never retried or surfaced
-    to the caller, only best-effort noted via `_log_pipeline_failure`'s stderr fallback.
+    single log entry - a failure here is never retried or surfaced to the caller, only
+    best-effort noted via `_log_pipeline_failure`'s stderr fallback.
     """
 
     def __init__(self, logger: WrappedLogger) -> None:
@@ -172,5 +172,5 @@ class _SafeLogger:
 
 
 def get_logger(**initial_values: Any) -> _SafeLogger:
-    """Return a logger whose `.info`/`.error`/`.critical` calls never raise (FR-008)."""
+    """Return a logger whose `.info`/`.error`/`.critical` calls never raise."""
     return _SafeLogger(structlog.get_logger(**initial_values))

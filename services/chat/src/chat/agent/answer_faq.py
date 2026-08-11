@@ -1,8 +1,8 @@
-"""`answer_faq`: retrieve -> groundedness gate -> generate/stream (research.md #9).
+"""`answer_faq`: retrieve -> groundedness gate -> generate/stream.
 
-Plain async function, no agent-framework dependency of its own — `agent/graph.py`'s
+Plain async function, no agent-framework dependency of its own - `agent/graph.py`'s
 `answer_faq_node` wraps it as a LangGraph node, forwarding its yielded events via the
-stream writer (research.md #1).
+stream writer.
 """
 
 from collections.abc import AsyncIterator
@@ -37,25 +37,15 @@ async def answer_faq(
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Retrieve context for the current turn, then stream a grounded answer or abstain.
 
-    `bursts` is the turn's conversation history, already partitioned into contiguous
-    same-side runs by `history.py::split_into_bursts` (research.md #5/#9), with the
-    current (possibly burst-merged) patient message always the trailing burst - the
-    query this turn retrieves for and ultimately answers (research.md #6). Translated
-    to Claude's `messages` format internally, via `history.py::to_claude_messages()` -
-    that's this function's own implementation detail (it's the one that talks to
-    `anthropic_client`), not something callers should need to know or do themselves.
-    For a chat with no prior messages, `bursts` has exactly one burst: the current
-    message. `reply_to_message_ids` is `history.py::derive_reply_to_message_ids()`'s
-    output over that same trailing burst - the patient message id(s) this turn is
-    actually answering, logged as `message_ids_unified` on `turn.completed` (so a log
-    reader can tell whether a merged burst (len > 1) or a single message this turn
-    answers, from the turn's outcome log alone) - `message.persisted` never carries
-    it, for either the patient or the assistant message. `turn.message_received` (the
-    same ids, up front) is logged by the caller in `api/chat.py`, before this function
-    (and `classify_intent_node`) ever run.
+    Args:
+        bursts: The turn's conversation history, partitioned into contiguous
+            same-side runs, with the current (possibly burst-merged) patient message
+            always the trailing burst - the query this turn retrieves for and
+            answers. For a chat with no prior messages, has exactly one burst.
+        reply_to_message_ids: The patient message id(s) this turn is answering.
 
     Raises: TurnPipelineError wrapping any failure in embedding, retrieval,
-        groundedness, or generation (FR-005).
+        groundedness, or generation.
     """
     logger = get_logger()
     history = to_claude_messages(bursts)

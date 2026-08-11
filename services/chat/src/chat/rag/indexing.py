@@ -10,11 +10,10 @@ from chat.repositories.qdrant_repository import delete_by_entry, upsert_chunks
 
 
 class FaqOperationError(Exception):
-    """Tags which sub-step of a FAQ operation failed (FR-007, FR-022).
+    """Tags which sub-step of a FAQ operation failed.
 
-    Raised, not logged, at the point of failure - `api/faq.py` is the one place
-    that turns this into a `faq.operation_failed` log entry (FR-014's "one
-    centralized place" spirit).
+    Raised, not logged, at the point of failure - logging happens once, centrally,
+    by the caller.
     """
 
     def __init__(self, failed_step: str, cause: Exception) -> None:
@@ -31,12 +30,11 @@ async def index_faq_entry(
 ) -> None:
     """(Re-)index `content`'s chunks for `faq_entry_id`.
 
-    Always delete-then-upsert: safe for a brand-new entry (delete is a no-op) and for a
-    re-index after an update (data-model.md's Update lifecycle) — the one indexing path
-    both create and update use.
+    Raises: FaqOperationError wrapping any failure, tagged "chunking", "embedding",
+        or "persist".
 
-    Raises: FaqOperationError wrapping any failure, tagged "chunking", "embedding", or
-        "persist" (FR-007, FR-022).
+    Always delete-then-upsert: safe for a brand-new entry (delete is a no-op) and for
+    a re-index after an update - the one indexing path both create and update use.
     """
     logger = get_logger()
 
@@ -72,7 +70,7 @@ async def deindex_faq_entry(
 ) -> None:
     """Remove all indexed chunks for `faq_entry_id`.
 
-    Raises: FaqOperationError tagged "persist", wrapping any failure (FR-007).
+    Raises: FaqOperationError tagged "persist", wrapping any failure.
     """
     try:
         await delete_by_entry(qdrant_client, faq_entry_id)

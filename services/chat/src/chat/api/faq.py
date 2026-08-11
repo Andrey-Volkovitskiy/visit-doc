@@ -1,4 +1,4 @@
-"""FAQ content CRUD endpoints (FR-006..FR-010/015/016/018/021/022)."""
+"""FAQ content CRUD endpoints."""
 
 from fastapi import APIRouter, HTTPException, Request
 from qdrant_client import AsyncQdrantClient
@@ -22,9 +22,10 @@ def _log_faq_failure(
 ) -> None:
     """Log `faq.operation_failed`, plus a critical event if `dependency` is given.
 
-    `dependency` is the failing external system's name ("postgres"/"qdrant") when the
-    failure is a dependency being unreachable, or None for a failure outside FR-015's
-    critical-event scope, e.g. chunking (FR-007, FR-015, FR-016, FR-017, FR-018).
+    Args:
+        dependency: The failing external system's name ("postgres"/"qdrant") when the
+            failure is a dependency being unreachable, or None for a failure outside
+            that critical-event scope (e.g. chunking).
     """
     logger = get_logger()
     if isinstance(exc, FaqOperationError):
@@ -49,9 +50,8 @@ def _log_faq_failure(
 def _log_dependency_unreachable(dependency: str, exc: Exception) -> None:
     """Log a critical event for a dependency failure outside any FAQ operation.
 
-    Covers read-only endpoints (list/get), which aren't "management operations"
-    (FR-007) and so carry no `operation_id` - the failure is still a critical event
-    in its own right (FR-015, spec.md edge cases: "...or during normal operation").
+    Covers read-only endpoints (list/get), which carry no `operation_id` - the
+    failure is still logged as a critical event in its own right.
     """
     get_logger().critical(
         "critical.dependency_unreachable", dependency=dependency, error_detail=str(exc)
@@ -60,7 +60,7 @@ def _log_dependency_unreachable(dependency: str, exc: Exception) -> None:
 
 @router.post("/faq", status_code=201)
 async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
-    """Create a new FAQ entry (FR-006)."""
+    """Create a new FAQ entry."""
     with bind_operation_id():
         try:
             async with session_factory() as session:
@@ -86,7 +86,7 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
 
 @router.get("/faq")
 async def list_faq_entries() -> list[FaqEntry]:
-    """List existing FAQ entries (FR-008)."""
+    """List existing FAQ entries."""
     try:
         async with session_factory() as session:
             entries = await faq_repository.list_all(session)
@@ -98,7 +98,7 @@ async def list_faq_entries() -> list[FaqEntry]:
 
 @router.get("/faq/{entry_id}")
 async def get_faq_entry(entry_id: int) -> FaqEntry:
-    """Retrieve a single FAQ entry by ID (FR-008)."""
+    """Retrieve a single FAQ entry by ID."""
     try:
         async with session_factory() as session:
             entry = await faq_repository.get(session, entry_id)
@@ -139,7 +139,7 @@ async def _revert_faq_update(
 async def update_faq_entry(
     entry_id: int, body: FaqEntryWrite, request: Request
 ) -> FaqEntry:
-    """Replace the content of an existing FAQ entry; re-indexes it (FR-007, FR-010)."""
+    """Replace the content of an existing FAQ entry; re-indexes it."""
     with bind_operation_id():
         try:
             async with session_factory() as session:
@@ -170,10 +170,10 @@ async def update_faq_entry(
 
 @router.delete("/faq/{entry_id}", status_code=204)
 async def delete_faq_entry(entry_id: int, request: Request) -> None:
-    """Delete an existing FAQ entry (FR-016).
+    """Delete an existing FAQ entry.
 
-    Deindexes first (data-model.md ordering), so a partial failure never leaves
-    orphaned, still-retrievable chunks behind.
+    Deindexes first, so a partial failure never leaves orphaned, still-retrievable
+    chunks behind.
     """
     with bind_operation_id():
         try:

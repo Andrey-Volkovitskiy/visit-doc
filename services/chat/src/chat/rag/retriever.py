@@ -1,4 +1,4 @@
-"""`search_faq` retriever — same signature Phase 1's MCP tool will wrap."""
+"""FAQ retrieval: embed a query and search Qdrant for the nearest chunks."""
 
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
@@ -9,11 +9,10 @@ from chat.repositories.qdrant_repository import RetrievedChunk, search
 
 
 class TurnPipelineError(Exception):
-    """Tags which pipeline step failed during a chat turn (FR-005).
+    """Tags which pipeline step failed during a chat turn.
 
-    Raised, not logged, at the point of failure - `api/chat.py` is the one place
-    that turns this into a `turn.error` log entry (FR-014's "one centralized place"
-    spirit: attribution happens where it occurs, the log call happens once).
+    Raised, not logged, at the point of failure - logging happens once, centrally,
+    by the caller.
     """
 
     def __init__(self, pipeline_step: str, cause: Exception) -> None:
@@ -30,7 +29,7 @@ async def search_faq(
 ) -> list[RetrievedChunk]:
     """Embed `query` and return the nearest FAQ chunks, with their similarity scores.
 
-    Raises: TurnPipelineError wrapping any failure in embedding or retrieval (FR-005).
+    Raises: TurnPipelineError wrapping any failure in embedding or retrieval.
     """
     logger = get_logger()
 

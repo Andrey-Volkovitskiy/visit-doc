@@ -1,9 +1,9 @@
-"""`visitdoc_session_id` cookie: read/mint helpers (research.md #2).
+"""`visitdoc_session_id` cookie: read/mint helpers.
 
 `HttpOnly` keeps the value unreadable from frontend JavaScript (the frontend never
 needs it - the browser attaches it automatically); `Secure=False` is deliberate for
-this phase's local-HTTP-only deployment (research.md #2) and MUST be revisited once
-the app is served over HTTPS.
+this phase's local-HTTP-only deployment and MUST be revisited once the app is served
+over HTTPS.
 """
 
 from fastapi import Request, Response
@@ -20,9 +20,8 @@ def read_session_id(request: Request) -> str | None:
 def set_session_cookie(response: Response, session_id: str) -> None:
     """Mint the session cookie on `response`.
 
-    Only called when a new `Session` was just created (FR-001/FR-010) - never
-    reissued for an existing session, including across a `DELETE /chat`
-    (research.md #7).
+    Only called when a new `Session` was just created - never reissued for an
+    existing session, including across a `DELETE /chat`.
     """
     response.set_cookie(
         COOKIE_NAME,

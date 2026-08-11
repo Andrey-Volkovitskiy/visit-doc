@@ -1,4 +1,4 @@
-"""Pydantic request/response DTOs (contracts/openapi.yaml)."""
+"""Pydantic request/response DTOs."""
 
 from datetime import datetime
 from enum import StrEnum
@@ -10,20 +10,19 @@ from chat.domain.validation import is_meaningless
 
 
 class ChatRequest(BaseModel):
-    """`POST /chat` request body (FR-001, FR-001a)."""
+    """`POST /chat` request body."""
 
     message: str = Field(min_length=1, max_length=2000)
 
 
 class IntentLabel(StrEnum):
-    """Legal values for a classified patient-message intent (data-model.md).
+    """Legal values for a classified patient-message intent.
 
-    The first four members are the classifier's own closed output set (FR-003);
-    `CLASSIFICATION_FAILED` is assigned only by orchestration code (`agent/graph.py`'s
-    `classify_intent_node`) on a failed/invalid classification call, never by the
-    classifier itself (FR-007, research.md #3) - `classify_intent()`'s own request
-    schema excludes it from the model's `enum`, so it's structurally unreachable from a
-    model response, not just a convention.
+    The first four members are the classifier's own closed output set;
+    `CLASSIFICATION_FAILED` is assigned only by orchestration code on a failed/invalid
+    classification call, never returned by the classifier itself - excluded from its
+    request schema's `enum`, so it's structurally unreachable from a model response,
+    not just a convention.
     """
 
     FAQ_QUESTION = "faq_question"
@@ -34,17 +33,17 @@ class IntentLabel(StrEnum):
 
 
 class IntentClassificationResult(BaseModel):
-    """The parsed, validated result of one `classify_intent()` call (data-model.md).
+    """The parsed, validated result of one `classify_intent()` call.
 
     Never contains `CLASSIFICATION_FAILED` - that value is assigned by the caller when
-    `classify_intent()` raises, not returned in a result (research.md #3).
+    `classify_intent()` raises, not returned in a result.
     """
 
     intents: list[IntentLabel] = Field(min_length=1)
 
 
 class Citation(BaseModel):
-    """A retrieved chunk cited in a grounded answer, verbatim (research.md #13)."""
+    """A retrieved chunk cited in a grounded answer, verbatim."""
 
     entry_id: int
     chunk_index: int
@@ -52,7 +51,7 @@ class Citation(BaseModel):
 
 
 class ChatTokenEvent(BaseModel):
-    """An incremental slice of the streamed answer (FR-004)."""
+    """An incremental slice of the streamed answer."""
 
     type: Literal["token"] = "token"
     text: str
@@ -68,22 +67,22 @@ class ChatDoneEvent(BaseModel):
 
 
 class ChatCancelledEvent(BaseModel):
-    """Terminal NDJSON event: this request's generation was superseded (FR-015).
+    """Terminal NDJSON event: this request's generation was superseded.
 
     Emitted instead of `ChatDoneEvent` when a newer message on the same chat arrived
     before this one finished generating - no reply was stored for this request; any
     `token` events already received for it should be discarded, not shown as final or
-    as an error (contracts/openapi.yaml).
+    as an error.
     """
 
     type: Literal["cancelled"] = "cancelled"
 
 
 class MessageOut(BaseModel):
-    """A single message in a chat's history (FR-002, contracts/openapi.yaml `Message`).
+    """A single message in a chat's history.
 
     `grounded`/`citations` are only meaningful for `sender="assistant"`; always None
-    for a patient message (data-model.md).
+    for a patient message.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -97,23 +96,23 @@ class MessageOut(BaseModel):
 
 
 class ChatHistoryResponse(BaseModel):
-    """`GET /chat` response body: the chat's messages, chronological (FR-002).
+    """`GET /chat` response body: the chat's messages, chronological.
 
-    Not guaranteed to alternate sender (FR-002, FR-014).
+    Not guaranteed to alternate sender.
     """
 
     messages: list[MessageOut]
 
 
 class FaqEntryWrite(BaseModel):
-    """`POST`/`PUT /faq` request body (content 1-20,000 chars, FR-015)."""
+    """`POST`/`PUT /faq` request body."""
 
     content: str = Field(min_length=1, max_length=20000)
 
     @field_validator("content")
     @classmethod
     def _reject_meaningless_content(cls, value: str) -> str:
-        """Raises: ValueError if `value` has no meaningful text (FR-009)."""
+        """Raises: ValueError if `value` has no meaningful text."""
         if is_meaningless(value):
             raise ValueError("content must contain meaningful text")
         return value

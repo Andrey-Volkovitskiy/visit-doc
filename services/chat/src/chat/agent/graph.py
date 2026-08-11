@@ -1,10 +1,9 @@
-"""LangGraph wrapper: `classify_intent_node -> answer_faq_node -> END` (research.md #1).
+"""LangGraph wrapper: `classify_intent_node -> answer_faq_node -> END`.
 
 Sequential, not parallel: `classify_intent_node` completing before `answer_faq_node`
-starts is deliberate, giving a future routing decision (ROADMAP Phase 1d) a graph edge
-to attach to (research.md #1). Both nodes run inside the one `asyncio.Task`
-`api/chat.py`'s `generation_registry` already tracks and cancels per chat - cancelling
-that task cancels whichever node is currently running (research.md #2).
+starts is deliberate, leaving a graph edge for a future routing decision to attach
+to. Both nodes run inside the same `asyncio.Task` the caller tracks and cancels per
+chat - cancelling that task cancels whichever node is currently running.
 """
 
 from collections.abc import AsyncIterator
@@ -30,9 +29,8 @@ class _GraphState(TypedDict):
     """Everything either node needs - read-only from each node's own perspective.
 
     Neither node writes a meaningful state update: `classify_intent_node`'s only
-    output is its own `intent.classified` log line (FR-004 - classification never
-    changes what `answer_faq_node` does this phase); `answer_faq_node` forwards its
-    events via the stream writer rather than a state update (research.md #1).
+    output is its own `intent.classified` log line; `answer_faq_node` forwards its
+    events via the stream writer rather than a state update.
     """
 
     bursts: list[list[Message]]
@@ -58,19 +56,12 @@ def _build_graph(
     """
 
     async def classify_intent_node(state: _GraphState) -> None:
-        """Classify the current message and log the result (FR-001/FR-003/FR-007).
+        """Classify the current message and log the result.
 
-        Bounds `bursts` to the last 5 turns itself (FR-006) - that's a business rule
-        about how much history to consider, this node's own call to make - and hands
-        `classify_intent()` the bounded bursts directly; formatting them for Claude is
-        `classify_intent()`'s own concern, not this node's (Core design principles'
-        Dependency Inversion rule). Always continues to `answer_faq_node` regardless
-        of outcome - a failed or invalid classification call, or a failure while
-        building its own bounded context, is caught here and recorded as
-        `CLASSIFICATION_FAILED`, never allowed to fail the request (FR-007). The
-        underlying exception is logged as `intent.classification_failed` (error level)
-        right before that, so a developer can still see *why* it failed, even though
-        the request itself never surfaces it.
+        Bounds `bursts` to the last 5 turns itself before classifying. Always
+        continues to `answer_faq_node` regardless of outcome - a failed or invalid
+        classification call is caught here and recorded as `CLASSIFICATION_FAILED`,
+        logged as `intent.classification_failed`, never allowed to fail the request.
         """
         logger = get_logger()
         try:
@@ -87,7 +78,7 @@ def _build_graph(
     async def answer_faq_node(state: _GraphState) -> None:
         """Wrap `answer_faq()`, forwarding its events via the stream writer.
 
-        Raises: TurnPipelineError propagated from `answer_faq()` (FR-005).
+        Raises: TurnPipelineError propagated from `answer_faq()`.
         """
         writer = get_stream_writer()
         async for event in answer_faq(
@@ -117,19 +108,18 @@ async def run_turn(
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Run this turn's graph: classify the intent, then answer via the FAQ path.
 
-    `bursts` is the chat's full conversation history (oldest first), already split
-    into contiguous same-side runs by `history.py::split_into_bursts` - its trailing
-    burst is always patient-sided (`api/chat.py`'s single production call site
-    guarantees the current, not-yet-answered patient message is folded into it).
-    `classify_intent_node` bounds `bursts` to the last 5 turns itself (FR-006);
-    `answer_faq_node` passes the full, unbounded `bursts` through unchanged. Neither
-    node formats `bursts` for Claude itself - each callee does that internally, as its
-    own implementation detail. `reply_to_message_ids` is
-    `history.py::derive_reply_to_message_ids`'s output over that same trailing burst -
-    forwarded to `answer_faq_node` unchanged (research.md #1).
+    Args:
+        bursts: The chat's full conversation history (oldest first), split into
+            contiguous same-side runs, with the trailing burst always patient-sided
+            (the current, not-yet-answered patient message).
+        reply_to_message_ids: The patient message id(s) the trailing burst
+            represents, forwarded to `answer_faq_node` unchanged.
 
-    Raises: TurnPipelineError propagated from `answer_faq_node` (FR-005) - a
-        classification failure never raises here (FR-007), only logs.
+    Raises: TurnPipelineError propagated from `answer_faq_node` - a classification
+        failure never raises here, only logs.
+
+    `classify_intent_node` bounds `bursts` to the last 5 turns itself;
+    `answer_faq_node` receives the full, unbounded `bursts`.
     """
     graph = _build_graph(qdrant_client, voyage_client, anthropic_client)
     state: _GraphState = {

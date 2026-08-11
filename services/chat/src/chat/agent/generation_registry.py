@@ -1,10 +1,9 @@
-"""Cancel-and-restart in-flight generation registry (FR-015, research.md #9).
+"""Cancel-and-restart in-flight generation registry.
 
 A module-level `dict[chat_id, (turn_id, asyncio.Task)]`, not a database table -
-purely in-memory, process-local coordination, sufficient for this phase's single
-`chat` process (plan.md Scale/Scope). Never survives a process restart, and doesn't
-need to: a restart simply means no generation is in-flight for any chat, which is
-also the correct starting state.
+purely in-memory, process-local coordination. Never survives a process restart, and
+doesn't need to: a restart simply means no generation is in-flight for any chat,
+which is also the correct starting state.
 """
 
 import asyncio
@@ -48,9 +47,8 @@ async def register_and_cancel_previous(
 def clear_if_current(chat_id: str, task: "asyncio.Task[None]") -> bool:
     """Remove `task` from the registry for `chat_id`, only if it's still current.
 
-    Returns True if `task` was current (now cleared) - the caller inserts the
-    assistant `Message` only in that case, since a newer message may have already
-    superseded it (FR-015).
+    Returns: True if `task` was current (now cleared), False if it had already been
+        superseded by a newer registration.
     """
     current = _in_flight.get(chat_id)
     if current is not None and current[1] is task:

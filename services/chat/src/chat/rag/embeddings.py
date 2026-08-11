@@ -1,4 +1,4 @@
-"""Voyage AI embeddings client wrapper (research.md #1)."""
+"""Voyage AI embeddings client wrapper."""
 
 from typing import Literal
 

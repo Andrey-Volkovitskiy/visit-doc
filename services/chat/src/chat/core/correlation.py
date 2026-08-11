@@ -2,7 +2,7 @@
 
 Bound via `structlog.contextvars`, which is scoped to the current asyncio task -
 matching FastAPI's per-request task model, so concurrent requests never see each
-other's bound value (FR-006, FR-021).
+other's bound value.
 """
 
 from collections.abc import Generator
@@ -14,7 +14,7 @@ from ulid import ULID
 
 @contextmanager
 def bind_turn_id() -> Generator[str]:
-    """Bind a fresh `turn_id` for the duration of the context (FR-006).
+    """Bind a fresh `turn_id` for the duration of the context.
 
     Turn means a single patient message and the assistant reply it produces, including
     any intermediate steps (embedding, retrieval, groundedness check, generation). A
@@ -22,7 +22,7 @@ def bind_turn_id() -> Generator[str]:
     tell which lines belong to the same turn.
 
     A chat turn's `turn_id` and a FAQ operation's `operation_id` are mutually
-    exclusive (data-model.md) - this only ever binds `turn_id`.
+    exclusive - this only ever binds `turn_id`.
     """
     turn_id = str(ULID())
     with bound_contextvars(turn_id=turn_id):
@@ -31,7 +31,7 @@ def bind_turn_id() -> Generator[str]:
 
 @contextmanager
 def bind_operation_id() -> Generator[str]:
-    """Bind a fresh `operation_id` for the duration of the context (FR-021).
+    """Bind a fresh `operation_id` for the duration of the context.
 
     Operation means a single FAQ management action, such as creating or updating a FAQ
     entry. An operation's `operation_id` is logged on every log line for that

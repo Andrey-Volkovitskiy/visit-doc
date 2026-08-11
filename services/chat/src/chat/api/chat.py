@@ -1,4 +1,4 @@
-"""`POST`/`GET /chat` — NDJSON streaming + history endpoints (FR-001..FR-017)."""
+"""`POST`/`GET /chat` — NDJSON streaming + history endpoints."""
 
 import asyncio
 from collections.abc import AsyncIterator
@@ -45,8 +45,8 @@ _CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_
 async def _resolve_session_id(request: Request) -> tuple[str, bool]:
     """Return the visitor's session id, creating one if missing/unrecognized.
 
-    Returns `(session_id, is_new)` - `is_new` tells the caller whether to mint the
-    `Set-Cookie` header (FR-001/FR-010; never reissued for an existing session).
+    Returns: `(session_id, is_new)` - `is_new` tells the caller whether to mint the
+        `Set-Cookie` header.
     """
     cookie_session_id = read_session_id(request)
     async with session_factory() as db_session:
@@ -67,12 +67,12 @@ async def _event_stream(
 ) -> AsyncIterator[bytes]:
     """Insert `message`, run the pipeline under cancel-and-restart, stream NDJSON lines.
 
-    Cancels any still-running generation for `session_id`'s chat before starting this
-    one (FR-015); yields a `cancelled` line instead of a reply if this turn is itself
-    superseded before it completes (FR-016).
-
     Raises: TurnPipelineError propagated from `run_pipeline`'s task, if the pipeline
-        failed (FR-005).
+        failed.
+
+    Cancels any still-running generation for `session_id`'s chat before starting this
+    one; yields a `cancelled` line instead of a reply if this turn is itself superseded
+    before it completes.
     """
     with bind_turn_id() as turn_id:
         async with session_factory() as db_session:
@@ -130,7 +130,7 @@ async def _event_stream(
         async def run_pipeline() -> None:
             """Run this turn's graph, queue its events, persist the reply.
 
-            Raises: TurnPipelineError propagated from `answer_faq_node` (FR-005).
+            Raises: TurnPipelineError propagated from `answer_faq_node`.
             """
             answer_parts: list[str] = []
             done_event: ChatDoneEvent | None = None
@@ -238,10 +238,10 @@ async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingRes
 
 @router.get("/chat")
 async def get_chat(request: Request) -> ChatHistoryResponse:
-    """Return the visitor's current chat, in chronological order (FR-002).
+    """Return the visitor's current chat, in chronological order.
 
     Read-only - never creates a session or chat; a missing/unrecognized cookie or a
-    session with no chat yet returns an empty history rather than an error (FR-010).
+    session with no chat yet returns an empty history rather than an error.
     """
     session_id = read_session_id(request)
     if session_id is None:
@@ -263,10 +263,10 @@ async def get_chat(request: Request) -> ChatHistoryResponse:
 
 @router.delete("/chat", status_code=204)
 async def delete_chat(request: Request) -> None:
-    """Permanently delete the visitor's current chat and start fresh (FR-004/FR-005).
+    """Permanently delete the visitor's current chat and start fresh.
 
     A no-op (still `204`) if there's no current chat to delete. Does **not** delete
-    the session or touch the `visitdoc_session_id` cookie (FR-006, research.md #7).
+    the session or touch the `visitdoc_session_id` cookie.
     """
     session_id = read_session_id(request)
     if session_id is None:

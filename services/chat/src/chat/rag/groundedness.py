@@ -1,4 +1,4 @@
-"""Similarity-threshold groundedness gate (research.md #4)."""
+"""Similarity-threshold groundedness gate."""
 
 from chat.repositories.qdrant_repository import RetrievedChunk
 
@@ -10,8 +10,8 @@ GROUNDEDNESS_THRESHOLD = 0.5
 def is_grounded(chunks: list[RetrievedChunk]) -> bool:
     """Return True if the best-matching chunk clears the groundedness threshold.
 
-    Below threshold (or no chunks at all), the agent MUST abstain without calling Claude
-    (FR-005, Constitution Principle V). `chunks` is assumed sorted best-match first, as
+    Below threshold (or no chunks at all), returns False - the caller must not call
+    Claude in that case. `chunks` is assumed sorted best-match first, as
     `qdrant_repository.search` returns it.
     """
     if not chunks:

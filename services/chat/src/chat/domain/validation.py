@@ -1,4 +1,4 @@
-"""Shared "meaningless content" check (FR-009, FR-017; research.md #14)."""
+"""Shared "meaningless content" check."""
 
 import re
 
@@ -10,7 +10,7 @@ def is_meaningless(text: str) -> bool:
     """Return True if `text` has no meaningful content.
 
     Meaningless = nothing remains after stripping whitespace, dashes, and any bare
-    `Question:`/`Answer:` labels (FR-014).
+    `Question:`/`Answer:` labels.
     """
     without_labels = _LABEL_PATTERN.sub("", text)
     return without_labels.strip(_MEANINGLESS_CHARS) == ""

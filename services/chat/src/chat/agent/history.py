@@ -1,6 +1,4 @@
-"""Message rows -> conversation bursts -> alternating Claude `messages` history
-(research.md #5/#9).
-"""
+"""Message rows -> conversation bursts -> alternating Claude `messages` history."""
 
 from typing import Literal, cast
 
@@ -14,18 +12,12 @@ _Role = Literal["user", "assistant"]
 def split_into_bursts(history: list[Message]) -> list[list[Message]]:
     """Group `history` into contiguous same-side runs, in order.
 
-    A turn has two sides: the patient, and whoever replies to them - which will soon
-    be more than one sender (staff, ROADMAP Phase 1d), so "same side" means same
-    patient-or-not status, not same exact `sender`. Two adjacent messages belong to
-    the same burst whenever both are from the patient or both aren't - e.g. an
-    assistant message immediately followed by a staff one is still one burst. The one
-    shared definition of "a burst" - both `derive_reply_to_message_ids()`'s trailing-
-    burst selection and `bound_to_last_n_turns()`'s turn-boundary counting build on
-    this, so a future change to what counts as a burst boundary only needs to change
-    it here.
-
     Returns: `history`, partitioned in order into contiguous same-side runs - each
         inner list is one burst.
+
+    A turn has two sides: the patient, and whoever replies to them, so "same side"
+    means same patient-or-not status, not same exact `sender` - e.g. an assistant
+    message immediately followed by a staff one is still one burst.
     """
     bursts: list[list[Message]] = []
     for message in history:
@@ -43,12 +35,9 @@ def split_into_bursts(history: list[Message]) -> list[list[Message]]:
 def derive_reply_to_message_ids(bursts: list[list[Message]]) -> list[str]:
     """Return the ids of every message in `bursts`'s trailing burst, in order.
 
-    Precondition: `bursts`'s last burst is patient-sided - i.e. the `history` passed
-    to `split_into_bursts` already ends with the current, not-yet-answered patient
-    message (guaranteed today by `api/chat.py`'s single production call site). Not
-    enforced with a runtime assert/guard here (this codebase's style: trust internal
-    callers, validate only at system boundaries) - covered by a test for the
-    empty-history case instead.
+    Precondition: `bursts`'s last burst is patient-sided - i.e. `history` already
+    ends with the current, not-yet-answered patient message. Not enforced with a
+    runtime assert/guard here - covered by a test for the empty-history case instead.
     """
     if not bursts:
         return []
@@ -58,16 +47,12 @@ def derive_reply_to_message_ids(bursts: list[list[Message]]) -> list[str]:
 def bound_to_last_n_turns(
     bursts: list[list[Message]], n: int = 5
 ) -> list[list[Message]]:
-    """Truncate `bursts` to its last `n` complete turns (research.md #5, data-model).
+    """Truncate `bursts` to its last `n` complete turns.
 
     A turn is one contiguous patient-message burst immediately followed by one reply
-    burst - any mix of assistant/staff messages (staff: ROADMAP Phase 1d), not
-    necessarily all from the same sender. A trailing, still-unanswered patient burst
-    at the very end of `bursts` isn't itself a turn yet (research.md #5) - it doesn't
-    count against the `n` budget, and is always kept regardless, since `bursts`'s
-    trailing burst is always patient-sided (the precondition `derive_reply_to_
-    message_ids` documents) - unlike the old `last_n_turns`, there's no need to check
-    which side it's on before keeping it.
+    burst - not necessarily all from the same sender. A trailing, still-unanswered
+    patient burst at the end of `bursts` isn't itself a turn yet - it doesn't count
+    against the `n` budget, and is always kept.
     """
     trailing = bursts[-1:]
     complete = bursts[:-1]

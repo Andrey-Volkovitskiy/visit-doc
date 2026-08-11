@@ -1,4 +1,4 @@
-"""Fixed-size chunking with degenerate-chunk filtering (research.md #3, FR-017)."""
+"""Fixed-size chunking with degenerate-chunk filtering."""
 
 from dataclasses import dataclass
 
@@ -11,7 +11,7 @@ _BOUNDARY_WINDOW = 200
 
 @dataclass(frozen=True)
 class ChunkedText:
-    """Pre-embedding, pre-entry-association shape of a `FaqChunk` (data-model.md)."""
+    """Pre-embedding, pre-entry-association shape of a `FaqChunk`."""
 
     chunk_index: int
     chunk_text: str
@@ -20,9 +20,9 @@ class ChunkedText:
 def chunk_content(content: str) -> list[ChunkedText]:
     """Split `content` into overlapping ~1,000-char chunks, dropping degenerate ones.
 
-    Chunks prefer paragraph/sentence boundaries over mid-word cuts (research.md #3).
-    A chunk that is itself meaningless is dropped (FR-017) — `chunk_index` is assigned
-    after filtering, so it's contiguous over the surviving, retrievable chunks.
+    Chunks prefer paragraph/sentence boundaries over mid-word cuts. A chunk that is
+    itself meaningless is dropped — `chunk_index` is assigned after filtering, so
+    it's contiguous over the surviving, retrievable chunks.
     """
     texts = [text for text in _split(content) if not is_meaningless(text)]
     return [ChunkedText(chunk_index=i, chunk_text=text) for i, text in enumerate(texts)]
