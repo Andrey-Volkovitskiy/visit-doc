@@ -44,18 +44,18 @@ def create_client(settings: Settings) -> AsyncQdrantClient:
     return AsyncQdrantClient(url=settings.QDRANT_URL)
 
 
-async def ensure_collection(client: AsyncQdrantClient) -> None:
+async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
     """Create the configured chunks collection if missing. Idempotent."""
-    if await client.collection_exists(COLLECTION_NAME):
+    if await qdrant_client.collection_exists(COLLECTION_NAME):
         return
-    await client.create_collection(
+    await qdrant_client.create_collection(
         collection_name=COLLECTION_NAME,
         vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
     )
 
 
 async def upsert_chunks(
-    client: AsyncQdrantClient,
+    qdrant_client: AsyncQdrantClient,
     faq_entry_id: int,
     chunks: list[ChunkedText],
     vectors: list[list[float]],
@@ -75,14 +75,14 @@ async def upsert_chunks(
     ]
     if not points:
         return
-    await client.upsert(collection_name=COLLECTION_NAME, points=points)
+    await qdrant_client.upsert(collection_name=COLLECTION_NAME, points=points)
 
 
 async def search(
-    client: AsyncQdrantClient, query_vector: list[float], limit: int = 5
+    qdrant_client: AsyncQdrantClient, query_vector: list[float], limit: int = 5
 ) -> list[RetrievedChunk]:
     """Return the nearest chunks to `query_vector`, with their similarity scores."""
-    response = await client.query_points(
+    response = await qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
         limit=limit,
@@ -104,9 +104,9 @@ async def search(
     return results
 
 
-async def delete_by_entry(client: AsyncQdrantClient, faq_entry_id: int) -> None:
+async def delete_by_entry(qdrant_client: AsyncQdrantClient, faq_entry_id: int) -> None:
     """Delete all chunks for `faq_entry_id`."""
-    await client.delete(
+    await qdrant_client.delete(
         collection_name=COLLECTION_NAME,
         points_selector=Filter(
             must=[

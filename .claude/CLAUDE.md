@@ -133,6 +133,11 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 
 ### Core design principles
 - Follow SOLID, major clean architecture principles, and best industry paractices.
+- Dependency Inversion: orchestration/high-level code (e.g. a LangGraph node) should depend only on
+  domain types, never on a specific provider's wire format (e.g. Anthropic's `MessageParam`).
+  Translating domain data into a provider's request shape is that provider-calling function's own
+  responsibility, done internally, not the caller's — keeps provider-specific knowledge in one
+  place and out of orchestration code.
 
 ### Target shape (AI-core phase, per ROADMAP)
 

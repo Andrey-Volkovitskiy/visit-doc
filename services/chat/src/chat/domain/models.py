@@ -108,16 +108,14 @@ class Message(Base):
     )
     # Only ever set on an assistant message: every patient message id it answers, in
     # order - a burst of several unanswered patient messages merged into one Claude
-    # turn (FR-014, history.py's build_history_messages) is answered by exactly one
-    # assistant message, so a single scalar FK can't represent it; this ties a reply
+    # turn (FR-014, history.py's derive_reply_to_message_ids) is answered by exactly
+    # one assistant message, so a single scalar FK can't represent it; this ties a reply
     # to its turn(s) explicitly, so history-building never has to infer pairing from
     # row order (which a stray/delayed write can violate). Plain JSONB, like
     # `citations` above - not a FK, so no per-element referential integrity, but this
     # is diagnostic-only data (never joined on in SQL) and a chat's messages are
     # always deleted together anyway (chat_id's own CASCADE).
-    reply_to_message_ids: Mapped[list[str] | None] = mapped_column(
-        JSONB, nullable=True
-    )
+    reply_to_message_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

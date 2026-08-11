@@ -9,6 +9,7 @@ from chat.agent import generation_registry
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import Chat, MessageSender
+from chat.domain.schemas import IntentLabel
 from chat.main import app
 from chat.rag.indexing import deindex_faq_entry, index_faq_entry
 from chat.repositories import chat_repository, faq_repository
@@ -24,6 +25,7 @@ from .conftest import (
     FakeAnthropicStream,
     fake_anthropic_client,
     fake_anthropic_client_gated,
+    fake_anthropic_client_sequence,
     fake_embed_texts,
 )
 
@@ -89,9 +91,11 @@ def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
     question = "what is the weather today?"
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        TestClient(app) as client,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        response = client.post("/chat", json={"message": question})
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            response = client.post("/chat", json={"message": question})
 
     assert response.status_code == 200
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
@@ -126,6 +130,7 @@ def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> N
 
     events = {entry["event"]: entry for entry in logs}
     turn_ids = {entry["turn_id"] for entry in logs}
+    event_names = [entry["event"] for entry in logs]
 
     assert turn_ids == {logs[0]["turn_id"]}  # every entry shares one turn_id
     assert events["turn.message_received"]["message"] == "when can I visit?"
@@ -140,18 +145,31 @@ def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> N
     assert done["answer_text"] == "Visiting hours are 8am to 5pm."
     assert any(c["entry_id"] == seeded_entry for c in done["citations"])
     assert all("score" in c for c in done["citations"])
+    # intent.classified sits between turn.message_received and turn.completed
+    # (contracts/log-events.md §3, research.md #1/#8).
+    assert "intent.classified" in events
+    assert (
+        event_names.index("turn.message_received")
+        < event_names.index("intent.classified")
+        < event_names.index("turn.completed")
+    )
 
 
 def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
-        TestClient(app) as client,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        client.post("/chat", json={"message": "what is the weather today?"})
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            client.post("/chat", json={"message": "what is the weather today?"})
 
     events = {entry["event"]: entry for entry in logs}
     turn_ids = {entry["turn_id"] for entry in logs}
+    event_names = [entry["event"] for entry in logs]
 
     assert turn_ids == {logs[0]["turn_id"]}
     assert "turn.message_received" in events
@@ -161,6 +179,331 @@ def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> 
     done = events["turn.completed"]
     assert done["outcome"] == "abstained"
     assert "abstention_message" in done
+    assert "intent.classified" in events
+    assert (
+        event_names.index("turn.message_received")
+        < event_names.index("intent.classified")
+        < event_names.index("turn.completed")
+    )
+
+
+@pytest.mark.parametrize(
+    ("message", "mocked_intents", "expected_intents"),
+    [
+        (
+            "I'd like to book an appointment for next Tuesday",
+            [IntentLabel.BOOKING],
+            ["booking"],
+        ),
+        (
+            "I need to talk to someone about a billing problem",
+            [IntentLabel.CALL_STAFF],
+            ["call_staff"],
+        ),
+        (
+            "I need to book something and also ask a policy question",
+            [IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+            ["faq_question", "booking"],
+        ),
+        (
+            "what's the weather like today?",
+            [IntentLabel.UNKNOWN],
+            ["unknown"],
+        ),
+    ],
+)
+def test_non_faq_messages_get_a_coherent_faq_path_reply_and_correct_intents(
+    message: str,
+    mocked_intents: list[IntentLabel],
+    expected_intents: list[str],
+) -> None:
+    """FR-001/FR-003/FR-004: every case here has no "visit"/"hours" keyword, so
+    `fake_embed_texts` routes it to abstain (docs/testing-strategy.md) - the reply is
+    always exactly `_ABSTENTION_MESSAGE`, never a fabricated booking/hand-off
+    confirmation, regardless of the mocked classified intent(s) (spec.md Acceptance
+    Scenarios US2.1-US2.3, quickstart Scenario 2).
+    """
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(intents=mocked_intents)
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            response = client.post("/chat", json={"message": message})
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert len(lines) == 1
+    assert lines[0]["type"] == "done"
+    assert lines[0]["grounded"] is False
+    assert lines[0]["message"] == "I don't have a confident answer to that."
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert [i.value for i in classified["intents"]] == expected_intents
+
+
+def test_classification_failure_does_not_block_the_faq_reply(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting ", "hours are 8am to 5pm."],
+            classify_error=RuntimeError("boom"),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            response = client.post("/chat", json={"message": "when can I visit?"})
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    done_line = lines[-1]
+    assert done_line["type"] == "done"
+    assert done_line["grounded"] is True
+    assert any(c["entry_id"] == seeded_entry for c in done_line["citations"])
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+
+
+async def test_cancelled_turn_gets_no_intent_classified_survivor_reflects_both() -> (
+    None
+):
+    """research.md #2's concrete regression test (quickstart Scenario 3): a message
+    whose turn is cancelled by a rapid follow-up gets no `intent.classified` line at
+    all, while the surviving message's own line is produced from a classify_intent()
+    call whose context already includes the cancelled message's content (FR-005/
+    FR-006) - verified against the mock's actual call args, not just its hardcoded
+    return value (docs/testing-strategy.md).
+    """
+    # capture_logs isn't task-safe (docs/testing-strategy.md), so a plain collector
+    # processor is spliced into the real chain instead, ahead of the renderer.
+    collected: list[dict[str, object]] = []
+
+    def _collector(
+        _logger: object, _method_name: str, event_dict: dict[str, object]
+    ) -> dict[str, object]:
+        collected.append(dict(event_dict))
+        return event_dict
+
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+
+    gate = asyncio.Event()
+    started = asyncio.Event()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Tuesday hours are 8am to 5pm."],
+            intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+            classify_gate=gate,
+            classify_started=started,
+        )
+        mock_anthropic_cls.return_value = anthropic_client
+
+        transport = ASGITransport(app=app)
+        with TestClient(app):
+            processors = structlog.get_config()["processors"]
+            processors.insert(-1, _collector)
+            try:
+                async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                    ac.cookies.set("visitdoc_session_id", session_row.id)
+                    first_task = asyncio.create_task(
+                        ac.post(
+                            "/chat", json={"message": "What are your working hours"}
+                        )
+                    )
+                    await asyncio.wait_for(started.wait(), timeout=5)
+                    started.clear()
+
+                    second_message = "actually, can I just book a slot Tuesday?"
+                    second_task = asyncio.create_task(
+                        ac.post("/chat", json={"message": second_message})
+                    )
+                    # message 2 reaching its own gated classify call proves
+                    # register_and_cancel_previous has already cancelled message 1's
+                    # still-suspended task by this point (it's serialized ahead of
+                    # this call in api/chat.py) - only then is it safe to release the
+                    # gate for message 2's own (sole surviving) call.
+                    await asyncio.wait_for(started.wait(), timeout=5)
+                    gate.set()
+
+                    first_response, second_response = await asyncio.wait_for(
+                        asyncio.gather(first_task, second_task), timeout=5
+                    )
+            finally:
+                processors.remove(_collector)
+
+    first_lines = [
+        json.loads(line) for line in first_response.text.strip().splitlines()
+    ]
+    second_lines = [
+        json.loads(line) for line in second_response.text.strip().splitlines()
+    ]
+    assert first_lines[-1] == {"type": "cancelled"}
+    assert second_lines[-1]["type"] == "done"
+
+    classified_events = [e for e in collected if e["event"] == "intent.classified"]
+    assert len(classified_events) == 1
+    assert classified_events[0]["intents"] == [
+        IntentLabel.FAQ_QUESTION,
+        IntentLabel.BOOKING,
+    ]
+
+    # The one classify_intent() call that actually completed (the survivor's) was
+    # given context spanning both messages, not just its own - the concrete proof
+    # the cancelled message's content still reached the surviving call (FR-006).
+    last_call_messages = anthropic_client.messages.create.call_args_list[-1].kwargs[
+        "messages"
+    ]
+    combined_text = " ".join(m["content"] for m in last_call_messages)
+    assert "working hours" in combined_text
+    assert "book a slot Tuesday" in combined_text
+
+
+async def test_turn_message_received_fires_for_every_message_even_a_cancelled_one() -> (
+    None
+):
+    """research.md #8's regression case: `turn.message_received` is emitted for every
+    incoming patient message - including one whose turn is later cancelled - and
+    always before that turn's `intent.classified`/`turn.cancelled` line.
+    """
+    # capture_logs isn't task-safe (docs/testing-strategy.md), so a plain collector
+    # processor is spliced into the real chain instead, ahead of the renderer.
+    collected: list[dict[str, object]] = []
+
+    def _collector(
+        _logger: object, _method_name: str, event_dict: dict[str, object]
+    ) -> dict[str, object]:
+        collected.append(dict(event_dict))
+        return event_dict
+
+    async with session_factory() as db_session:
+        session_row = await chat_repository.create_session(db_session)
+
+    gate = asyncio.Event()
+    started = asyncio.Event()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            classify_gate=gate,
+            classify_started=started,
+        )
+
+        transport = ASGITransport(app=app)
+        with TestClient(app):
+            processors = structlog.get_config()["processors"]
+            processors.insert(-1, _collector)
+            try:
+                async with AsyncClient(transport=transport, base_url="http://t") as ac:
+                    ac.cookies.set("visitdoc_session_id", session_row.id)
+                    first_task = asyncio.create_task(
+                        ac.post("/chat", json={"message": "when can I visit?"})
+                    )
+                    await asyncio.wait_for(started.wait(), timeout=5)
+                    started.clear()
+
+                    second_task = asyncio.create_task(
+                        ac.post(
+                            "/chat", json={"message": "actually, what about Tuesday?"}
+                        )
+                    )
+                    await asyncio.wait_for(started.wait(), timeout=5)
+                    gate.set()
+
+                    await asyncio.wait_for(
+                        asyncio.gather(first_task, second_task), timeout=5
+                    )
+            finally:
+                processors.remove(_collector)
+
+    received_events = [e for e in collected if e["event"] == "turn.message_received"]
+    assert len(received_events) == 2
+
+    by_turn: dict[object, list[str]] = {}
+    for entry in collected:
+        by_turn.setdefault(entry.get("turn_id"), []).append(str(entry["event"]))
+    # turn.cancelled's own (ambient) turn_id is the *superseding* turn's, not the
+    # cancelled one - the cancelled turn's id is its `cancelled_turn_id` field.
+    turn_cancelled_entry = next(e for e in collected if e["event"] == "turn.cancelled")
+    cancelled_turn = turn_cancelled_entry["cancelled_turn_id"]
+    assert "turn.message_received" in by_turn[cancelled_turn]
+    assert "intent.classified" not in by_turn[cancelled_turn]
+    # `collected`'s order is chronological (each entry appended as it's logged) -
+    # the cancelled turn's own turn.message_received precedes the turn.cancelled
+    # line that reports it, wherever that line's ambient turn_id points.
+    received_index = next(
+        i
+        for i, e in enumerate(collected)
+        if e["event"] == "turn.message_received" and e["turn_id"] == cancelled_turn
+    )
+    cancelled_index = collected.index(turn_cancelled_entry)
+    assert received_index < cancelled_index
+
+
+def test_classified_intents_are_reviewable_from_logs_without_rerunning(
+    seeded_entry: int,
+) -> None:
+    """spec.md User Story 3 / SC-002 (quickstart Scenario 4): after sending several
+    messages with different intents, a maintainer can look up each one's classified
+    intent from the captured logs alone, by `turn_id`, without re-running the
+    conversation.
+    """
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client_sequence(
+            [
+                [IntentLabel.FAQ_QUESTION],
+                [IntentLabel.BOOKING],
+                [IntentLabel.CALL_STAFF],
+            ],
+            ["Visiting hours are 8am to 5pm."],
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            r1 = client.post("/chat", json={"message": "when can I visit?"})
+            r2 = client.post(
+                "/chat", json={"message": "I'd like to book an appointment"}
+            )
+            r3 = client.post(
+                "/chat", json={"message": "I need to speak to someone about billing"}
+            )
+
+    patient_turn_ids = [
+        entry["turn_id"]
+        for entry in logs
+        if entry["event"] == "message.persisted" and entry["sender"] == "patient"
+    ]
+    assert len(patient_turn_ids) == 3
+    assert r1.status_code == r2.status_code == r3.status_code == 200
+
+    classified_by_turn = {
+        entry["turn_id"]: entry["intents"]
+        for entry in logs
+        if entry["event"] == "intent.classified"
+    }
+    assert len(classified_by_turn) == 3
+    expected = [
+        [IntentLabel.FAQ_QUESTION],
+        [IntentLabel.BOOKING],
+        [IntentLabel.CALL_STAFF],
+    ]
+    for turn_id, want in zip(patient_turn_ids, expected, strict=True):
+        assert classified_by_turn[turn_id] == want
 
 
 async def _post_two_chat_requests(asgi_app: FastAPI) -> None:
@@ -294,9 +637,7 @@ async def test_concurrent_messages_on_existing_chat_both_reach_history(
     """
     async with session_factory() as db_session:
         session_row = await chat_repository.create_session(db_session)
-        await chat_repository.get_or_create_chat_for_session(
-            db_session, session_row.id
-        )
+        await chat_repository.get_or_create_chat_for_session(db_session, session_row.id)
 
     real_list_messages = chat_repository.list_messages
     started = asyncio.Event()
@@ -466,10 +807,12 @@ def test_followup_still_abstains_when_neither_message_is_grounded(
 ) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        TestClient(app) as client,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        client.post("/chat", json={"message": "hello"})
-        response = client.post("/chat", json={"message": "how are you"})
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            client.post("/chat", json={"message": "hello"})
+            response = client.post("/chat", json={"message": "how are you"})
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
@@ -501,7 +844,10 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
         )
         transport = ASGITransport(app=app)
 
-        with TestClient(app):
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app),
+        ):
             async with AsyncClient(transport=transport, base_url="http://t") as ac:
                 ac.cookies.set("visitdoc_session_id", session_row.id)
                 first_task = asyncio.create_task(
@@ -511,9 +857,7 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
                 started.clear()
 
                 second_task = asyncio.create_task(
-                    ac.post(
-                        "/chat", json={"message": "on Tuesdays specifically?"}
-                    )
+                    ac.post("/chat", json={"message": "on Tuesdays specifically?"})
                 )
                 # message 2 has now also reached its gated call
                 await asyncio.wait_for(started.wait(), timeout=5)
@@ -546,6 +890,23 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
     # The reply answers both merged patient messages, not just the one that
     # triggered this generation - see reply_to_message_ids' docstring.
     assert messages[2].reply_to_message_ids == [messages[0].id, messages[1].id]
+
+    # The surviving turn's turn.message_received (turn_id reuses the second patient
+    # message's id, research.md #4) must log the merged burst text it actually
+    # answers against, not just the second fragment that arrived last - contracts/
+    # log-events.md's "a reader can therefore always tell what unified/merged message
+    # a turn is processing" contract.
+    received_events = [
+        entry
+        for entry in logs
+        if entry["event"] == "turn.message_received"
+        and entry["turn_id"] == messages[1].id
+    ]
+    assert len(received_events) == 1
+    assert (
+        received_events[0]["message"]
+        == "What are your working hours\n\non Tuesdays specifically?"
+    )
 
 
 async def test_pipeline_failure_keeps_patient_message_as_context_for_next_turn(
@@ -637,10 +998,12 @@ def test_get_chat_history_returns_messages_in_chronological_order(
 def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
-        TestClient(app) as client,
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        client.post("/chat", json={"message": "what is the weather today?"})
-        history_response = client.get("/chat")
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            client.post("/chat", json={"message": "what is the weather today?"})
+            history_response = client.get("/chat")
 
     messages = history_response.json()["messages"]
     assert messages[1]["grounded"] is False

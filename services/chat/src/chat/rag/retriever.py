@@ -23,7 +23,7 @@ class TurnPipelineError(Exception):
 
 
 async def search_faq(
-    client: AsyncQdrantClient,
+    qdrant_client: AsyncQdrantClient,
     voyage_client: AsyncClient,
     query: str,
     limit: int = 5,
@@ -41,7 +41,7 @@ async def search_faq(
     logger.info("turn.message_embedded")
 
     try:
-        chunks = await search(client, vectors[0], limit=limit)
+        chunks = await search(qdrant_client, vectors[0], limit=limit)
     except Exception as exc:
         raise TurnPipelineError("retrieval", exc) from exc
 

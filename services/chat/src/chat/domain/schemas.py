@@ -1,6 +1,7 @@
 """Pydantic request/response DTOs (contracts/openapi.yaml)."""
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -12,6 +13,34 @@ class ChatRequest(BaseModel):
     """`POST /chat` request body (FR-001, FR-001a)."""
 
     message: str = Field(min_length=1, max_length=2000)
+
+
+class IntentLabel(StrEnum):
+    """Legal values for a classified patient-message intent (data-model.md).
+
+    The first four members are the classifier's own closed output set (FR-003);
+    `CLASSIFICATION_FAILED` is assigned only by orchestration code (`agent/graph.py`'s
+    `classify_intent_node`) on a failed/invalid classification call, never by the
+    classifier itself (FR-007, research.md #3) - `classify_intent()`'s own request
+    schema excludes it from the model's `enum`, so it's structurally unreachable from a
+    model response, not just a convention.
+    """
+
+    FAQ_QUESTION = "faq_question"
+    BOOKING = "booking"
+    CALL_STAFF = "call_staff"
+    UNKNOWN = "unknown"
+    CLASSIFICATION_FAILED = "classification_failed"
+
+
+class IntentClassificationResult(BaseModel):
+    """The parsed, validated result of one `classify_intent()` call (data-model.md).
+
+    Never contains `CLASSIFICATION_FAILED` - that value is assigned by the caller when
+    `classify_intent()` raises, not returned in a result (research.md #3).
+    """
+
+    intents: list[IntentLabel] = Field(min_length=1)
 
 
 class Citation(BaseModel):

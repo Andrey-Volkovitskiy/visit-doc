@@ -37,6 +37,24 @@ e.g. `citations`/retrieved `chunk_text`, which come from a real Qdrant search an
 change if retrieval broke. If nothing unmocked is left to assert on, either too much is mocked, or
 this test isn't actually the right place to verify that behavior.
 
+Every test that exercises a code path capable of calling a paid, remote AI API — Anthropic
+(`AsyncAnthropic`, both `answer_faq`'s generation call and `classify_intent`'s classification call)
+or Voyage (`embed_texts`) — MUST mock that call, even if the test's own assertions never touch its
+output. A test only caring about an *earlier* pipeline stage still runs later stages that call these
+APIs unconditionally — e.g. `classify_intent_node` (`agent/graph.py`) runs ahead of every FAQ answer
+regardless of whether the test is exercising the grounded, abstained, or failure path — so leaving
+any of them unmocked doesn't just burn real API tokens on every test run, it makes the test
+genuinely non-deterministic (network latency and model output both vary run to run) and dependent on
+network access and a valid API key. This happened in practice: three tests written before intent
+classification was wired into every turn (`test_abstention_on_unrelated_question`,
+`test_followup_still_abstains_when_neither_message_is_grounded`,
+`test_get_chat_history_preserves_abstention`) never needed to mock `AsyncAnthropic` at the time, but
+silently started making live calls once `classify_intent_node` began running unconditionally ahead
+of every FAQ answer — caught only when one of them failed non-deterministically on a live run.
+Use `conftest.py`'s `fake_anthropic_client(...)` (covers both the generation stream and the
+classification call with one mock, defaulting classification to a confident `faq_question` result)
+even when a test's own assertions never touch either.
+
 ## Config notes
 
 - Root `pyproject.toml`'s `[tool.pytest.ini_options]` sets `--import-mode=importlib`. This is

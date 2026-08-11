@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import cast
 
 from anthropic import AsyncAnthropic
 from fastapi import APIRouter, Request
@@ -11,12 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from ulid import ULID
 from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
-from chat.agent.answer_faq import answer_faq
+from chat.agent import history
 from chat.agent.generation_registry import (
     clear_if_current,
     register_and_cancel_previous,
 )
-from chat.agent.history import build_history_messages
+from chat.agent.graph import run_turn
 from chat.api.dependencies import get_voyage_client
 from chat.api.session_cookie import read_session_id, set_session_cookie
 from chat.core.correlation import bind_turn_id
@@ -58,7 +59,7 @@ async def _resolve_session_id(request: Request) -> tuple[str, bool]:
 
 
 async def _event_stream(
-    client: AsyncQdrantClient,
+    qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
     message: str,
@@ -84,13 +85,11 @@ async def _event_stream(
                 chat = await chat_repository.get_or_create_chat_for_session(
                     db_session, session_id
                 )
-                history_rows = await chat_repository.list_messages(
-                    db_session, chat.id
-                )
+                history_rows = await chat_repository.list_messages(db_session, chat.id)
                 # Inserted synchronously, as soon as it's validated - before
                 # generation starts (research.md #3). Reuses `turn_id` as its id
                 # (research.md #4).
-                await chat_repository.create_message(
+                patient_message = await chat_repository.create_message(
                     db_session,
                     id=turn_id,
                     chat_id=chat.id,
@@ -113,26 +112,35 @@ async def _event_stream(
                     await db_session.rollback()
                     await chat_repository.unlock_session(db_session, session_id)
 
-        merged_history, reply_source_ids = build_history_messages(
-            history_rows, message, turn_id
+        history_rows = [*history_rows, patient_message]
+        bursts = history.split_into_bursts(history_rows)
+        reply_to_message_ids = history.derive_reply_to_message_ids(bursts)
+        # Fires unconditionally, before the cancellable graph task below even exists -
+        # unlike intent.classified/turn.completed, not gated on the turn completing
+        # (research.md #8). Moved here (out of answer_faq(), where it used to live) so
+        # it precedes classification too, not just generation.
+        get_logger().info(
+            "turn.message_received",
+            message=cast(str, history.to_claude_messages(bursts)[-1]["content"]),
+            message_ids_unified=reply_to_message_ids,
         )
 
         queue: asyncio.Queue[ChatTokenEvent | ChatDoneEvent | None] = asyncio.Queue()
 
         async def run_pipeline() -> None:
-            """Run the FAQ pipeline for this turn, queue its events, persist the reply.
+            """Run this turn's graph, queue its events, persist the reply.
 
-            Raises: TurnPipelineError propagated from `answer_faq` (FR-005).
+            Raises: TurnPipelineError propagated from `answer_faq_node` (FR-005).
             """
             answer_parts: list[str] = []
             done_event: ChatDoneEvent | None = None
             try:
-                async for event in answer_faq(
-                    client,
+                async for event in run_turn(
+                    qdrant_client,
                     voyage_client,
                     anthropic_client,
-                    merged_history,
-                    reply_source_ids,
+                    bursts,
+                    reply_to_message_ids,
                 ):
                     queue.put_nowait(event)
                     if isinstance(event, ChatTokenEvent):
@@ -149,9 +157,7 @@ async def _event_stream(
                         if done_event.grounded
                         else (done_event.message or "")
                     )
-                    citations_payload = [
-                        c.model_dump() for c in done_event.citations
-                    ]
+                    citations_payload = [c.model_dump() for c in done_event.citations]
                     async with session_factory() as insert_session:
                         await chat_repository.create_message(
                             insert_session,
@@ -161,7 +167,7 @@ async def _event_stream(
                             content=content,
                             grounded=done_event.grounded,
                             citations=citations_payload,
-                            reply_to_message_ids=reply_source_ids,
+                            reply_to_message_ids=reply_to_message_ids,
                         )
             except asyncio.CancelledError:
                 raise
@@ -209,7 +215,7 @@ async def _event_stream(
 @router.post("/chat")
 async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingResponse:
     """Ask a question and receive a streamed, grounded (or abstaining) answer."""
-    client = request.app.state.qdrant_client
+    qdrant_client = request.app.state.qdrant_client
     voyage_client = get_voyage_client(request)
     anthropic_client = request.app.state.anthropic_client
 
@@ -217,7 +223,11 @@ async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingRes
 
     response = StreamingResponse(
         _event_stream(
-            client, voyage_client, anthropic_client, chat_request.message, session_id
+            qdrant_client,
+            voyage_client,
+            anthropic_client,
+            chat_request.message,
+            session_id,
         ),
         media_type="application/x-ndjson",
     )

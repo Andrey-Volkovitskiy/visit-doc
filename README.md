@@ -157,3 +157,53 @@ into a persisted, multi-turn chat — full rationale and alternatives considered
   value used as a bearer cookie. `chat_repository.create_session` instead uses an explicit
   `ulid.ULIDGenerator(policy=ulid.PureRandomPolicy())`, verified empirically against the library's
   source before relying on it.
+
+## LangGraph + Intent Classification: technology choices
+
+`specs/004-langgraph-intent-classification/` (ROADMAP Phase 1b) wraps the existing FAQ-answering
+pipeline in a LangGraph `StateGraph` and adds intent classification ahead of any real routing —
+full rationale and alternatives considered live in
+[`research.md`](specs/004-langgraph-intent-classification/research.md):
+
+- **Sequential graph shape (`classify_intent_node -> answer_faq_node -> END`), not parallel**:
+  classification completing before generation starts spends part of the latency budget on
+  classification, but it's what gives ROADMAP Phase 1d's eventual routing decision (which
+  specialist node(s) to launch) a graph edge to attach to — a parallel shape has no such decision
+  point. `answer_faq()`'s own retrieve/gate/generate/stream logic is unchanged; the graph forwards
+  its events via LangGraph's custom stream-writer mechanism rather than rewriting it to fit a
+  return-a-state-update shape, preserving the existing token-by-token NDJSON streaming contract.
+- **Classification shares the FAQ pipeline's existing cancel-and-restart task, not a separate
+  fire-and-forget one**: both nodes run inside the one `asyncio.Task`
+  `agent/generation_registry.py` already tracks and cancels per chat. A message whose turn is
+  superseded before classification finishes gets no classification record at all — its content
+  still reaches the *surviving* message's own classification call via the bounded context window
+  below, so nothing is lost, only avoided as wasted work.
+- **Native JSON Outputs (`output_config.format`), not forced tool-use**: Claude's JSON Outputs
+  mechanism (constrained decoding against a schema) is the documented fit for classification
+  specifically, distinct from Strict Tool Use's agentic-tool-calling framing. The request schema is
+  built from `IntentLabel`'s own JSON schema with `classification_failed` filtered out of its
+  `enum`, so the model can never produce that value structurally — it's assigned only by
+  orchestration code (`classify_intent_node`) when the call itself fails or returns something
+  invalid, never silently conflated with a real classification outcome.
+- **One `IntentLabel` enum for both what the model can say and what gets logged**, rather than two
+  near-duplicate enums — the schema-level `enum` exclusion above already enforces the model-facing
+  restriction at the one place it actually matters (the API boundary), so a second type would only
+  duplicate one concept for no added guarantee.
+- **Haiku 4.5 for classification, unchanged Sonnet 5 for generation**: routing/classification steps
+  use the cheapest model capable of the task, reserving the stronger model for generation — the
+  same shared `AsyncAnthropic` client, just a different `model=` argument.
+- **Classification context bounded to the last 5 turns (`history.py::bound_to_last_n_turns`)**, not
+  the unbounded history `answer_faq`'s generation call uses: classification is cost-sensitive in a
+  way generation quality isn't. `bound_to_last_n_turns` lives alongside `split_into_bursts`,
+  `derive_reply_to_message_ids`, and `to_claude_messages` in `history.py` rather than a
+  classifier-only module, since all four are about interpreting `Message` rows as turns/bursts — a
+  future caller (e.g. Phase 1d's specialist nodes) can reuse it the same way.
+- **Log-only, not a new table**: `intent.classified` (turn id + label(s) only — no raw message
+  text, unlike the pre-existing `turn.message_received`) is the classification record. Formal
+  tracing infrastructure (Langfuse) arrives in a later phase; a persisted table now would be scope
+  beyond what reviewing classification quality via structured logs actually requires yet.
+- **`turn.message_received` moved earlier, out of `answer_faq()`**: it now fires from `api/chat.py`
+  once, before the graph task is even created — unconditionally, for every incoming message,
+  including one whose turn is later cancelled. This keeps it answering "what did the system start
+  processing" regardless of which stage (classification or generation) is currently active, a
+  distinction that didn't exist before this feature inserted a stage ahead of generation.

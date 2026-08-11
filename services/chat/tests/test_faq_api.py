@@ -251,9 +251,7 @@ def test_update_failure_reverts_content_and_reindexes_previous() -> None:
 
             with (
                 patch("chat.rag.indexing.embed_texts", fake_embed_texts),
-                patch(
-                    "chat.rag.indexing.upsert_chunks", side_effect=_upsert_fail_once
-                ),
+                patch("chat.rag.indexing.upsert_chunks", side_effect=_upsert_fail_once),
             ):
                 update_response = client.put(
                     f"/faq/{entry['id']}",

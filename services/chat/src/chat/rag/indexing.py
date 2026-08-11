@@ -24,7 +24,7 @@ class FaqOperationError(Exception):
 
 
 async def index_faq_entry(
-    client: AsyncQdrantClient,
+    qdrant_client: AsyncQdrantClient,
     voyage_client: AsyncClient,
     faq_entry_id: int,
     content: str,
@@ -41,7 +41,7 @@ async def index_faq_entry(
     logger = get_logger()
 
     try:
-        await delete_by_entry(client, faq_entry_id)
+        await delete_by_entry(qdrant_client, faq_entry_id)
     except Exception as exc:
         raise FaqOperationError("persist", exc) from exc
 
@@ -62,17 +62,19 @@ async def index_faq_entry(
     logger.info("faq.chunks_embedded", chunk_count=len(chunks))
 
     try:
-        await upsert_chunks(client, faq_entry_id, chunks, vectors)
+        await upsert_chunks(qdrant_client, faq_entry_id, chunks, vectors)
     except Exception as exc:
         raise FaqOperationError("persist", exc) from exc
 
 
-async def deindex_faq_entry(client: AsyncQdrantClient, faq_entry_id: int) -> None:
+async def deindex_faq_entry(
+    qdrant_client: AsyncQdrantClient, faq_entry_id: int
+) -> None:
     """Remove all indexed chunks for `faq_entry_id`.
 
     Raises: FaqOperationError tagged "persist", wrapping any failure (FR-007).
     """
     try:
-        await delete_by_entry(client, faq_entry_id)
+        await delete_by_entry(qdrant_client, faq_entry_id)
     except Exception as exc:
         raise FaqOperationError("persist", exc) from exc

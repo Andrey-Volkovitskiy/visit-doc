@@ -40,10 +40,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """
     settings = get_settings()
     async with AsyncExitStack() as stack:
-        client = create_client(settings)
-        stack.push_async_callback(client.close)
+        qdrant_client = create_client(settings)
+        stack.push_async_callback(qdrant_client.close)
         try:
-            await ensure_collection(client)
+            await ensure_collection(qdrant_client)
         except Exception as exc:
             get_logger().critical(
                 "critical.dependency_unreachable",
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         voyage_session = aiohttp.ClientSession()
         stack.push_async_callback(voyage_session.close)
 
-        app.state.qdrant_client = client
+        app.state.qdrant_client = qdrant_client
         app.state.anthropic_client = anthropic_client
         app.state.voyage_client = voyage_client
         app.state.voyage_session = voyage_session

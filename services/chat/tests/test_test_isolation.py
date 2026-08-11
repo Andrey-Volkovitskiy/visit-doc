@@ -12,7 +12,7 @@ these tests inspect the live singletons themselves, the things that actually bro
 
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
-from chat.domain.models import Chat, Message, Session
+from chat.domain.models import Chat, FaqEntry, Message, Session
 from chat.repositories.qdrant_repository import (
     COLLECTION_NAME,
     create_client,
@@ -30,14 +30,21 @@ def test_qdrant_collection_name_is_the_isolated_test_collection() -> None:
 
 
 async def test_database_tables_are_empty_at_test_start() -> None:
-    """`_clear_chat_tables` (conftest.py) truncates before every test - verify it held.
-    """
+    # `_clear_chat_tables` (conftest.py) truncates before every test - verify it held.
     async with session_factory() as session:
         session_count = await session.scalar(select(func.count()).select_from(Session))
         chat_count = await session.scalar(select(func.count()).select_from(Chat))
         message_count = await session.scalar(select(func.count()).select_from(Message))
+        faq_entry_count = await session.scalar(
+            select(func.count()).select_from(FaqEntry)
+        )
 
-    assert (session_count, chat_count, message_count) == (0, 0, 0)
+    assert (session_count, chat_count, message_count, faq_entry_count) == (
+        0,
+        0,
+        0,
+        0,
+    )
 
 
 async def test_qdrant_collection_is_empty_at_test_start() -> None:
