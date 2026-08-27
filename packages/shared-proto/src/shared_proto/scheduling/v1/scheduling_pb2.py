@@ -24,21 +24,59 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1escheduling/v1/scheduling.proto\x12\rscheduling.v1\"-\n\x18\x43heckAvailabilityRequest\x12\x11\n\tdoctor_id\x18\x01 \x01(\t\"4\n\x19\x43heckAvailabilityResponse\x12\x17\n\x0f\x61vailable_slots\x18\x01 \x03(\t\"M\n\x16\x42ookAppointmentRequest\x12\x11\n\tdoctor_id\x18\x01 \x01(\t\x12\x12\n\npatient_id\x18\x02 \x01(\t\x12\x0c\n\x04slot\x18\x03 \x01(\t\"1\n\x17\x42ookAppointmentResponse\x12\x16\n\x0e\x61ppointment_id\x18\x01 \x01(\t2\xd6\x01\n\nScheduling\x12\x66\n\x11\x43heckAvailability\x12\'.scheduling.v1.CheckAvailabilityRequest\x1a(.scheduling.v1.CheckAvailabilityResponse\x12`\n\x0f\x42ookAppointment\x12%.scheduling.v1.BookAppointmentRequest\x1a&.scheduling.v1.BookAppointmentResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1escheduling/v1/scheduling.proto\x12\rscheduling.v1\"]\n\x0cWorkingRange\x12\'\n\x07weekday\x18\x01 \x01(\x0e\x32\x16.scheduling.v1.Weekday\x12\x12\n\nstart_time\x18\x02 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\t\"9\n\x07Patient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0f\n\x07\x63hat_id\x18\x02 \x01(\t\x12\x11\n\tfull_name\x18\x03 \x01(\t\"\x95\x01\n\x0cPractitioner\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tfull_name\x18\x02 \x01(\t\x12\x11\n\tspecialty\x18\x03 \x01(\t\x12$\n\x1c\x61ppointment_duration_minutes\x18\x04 \x01(\x05\x12-\n\x08schedule\x18\x05 \x03(\x0b\x32\x1b.scheduling.v1.WorkingRange\"\xc5\x01\n\x0b\x41ppointment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\npatient_id\x18\x02 \x01(\t\x12\x19\n\x11patient_full_name\x18\x03 \x01(\t\x12\x17\n\x0fpractitioner_id\x18\x04 \x01(\t\x12\x1e\n\x16practitioner_full_name\x18\x05 \x01(\t\x12\x1e\n\x16practitioner_specialty\x18\x06 \x01(\t\x12\x11\n\tstarts_at\x18\x07 \x01(\t\x12\x0f\n\x07\x65nds_at\x18\x08 \x01(\t\"U\n\x0e\x42ookingFailure\x12\x33\n\x06reason\x18\x01 \x01(\x0e\x32#.scheduling.v1.BookingFailureReason\x12\x0e\n\x06\x64\x65tail\x18\x02 \x01(\t\"S\n\rRenameFailure\x12\x32\n\x06reason\x18\x01 \x01(\x0e\x32\".scheduling.v1.RenameFailureReason\x12\x0e\n\x06\x64\x65tail\x18\x02 \x01(\t\"F\n\x1f\x45nsureSessionProvisionedRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63hat_id\x18\x02 \x01(\t\"\xb6\x01\n EnsureSessionProvisionedResponse\x12\'\n\x07patient\x18\x01 \x01(\x0b\x32\x16.scheduling.v1.Patient\x12\x32\n\rpractitioners\x18\x02 \x03(\x0b\x32\x1b.scheduling.v1.Practitioner\x12\x17\n\x0fpatient_created\x18\x03 \x01(\x08\x12\x1c\n\x14practitioner_created\x18\x04 \x01(\x08\"Q\n\x14RenamePatientRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\npatient_id\x18\x02 \x01(\t\x12\x11\n\tfull_name\x18\x03 \x01(\t\"}\n\x15RenamePatientResponse\x12)\n\x07patient\x18\x01 \x01(\x0b\x32\x16.scheduling.v1.PatientH\x00\x12/\n\x07\x66\x61ilure\x18\x02 \x01(\x0b\x32\x1c.scheduling.v1.RenameFailureH\x00\x42\x08\n\x06result\".\n\x18ListPractitionersRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\"O\n\x19ListPractitionersResponse\x12\x32\n\rpractitioners\x18\x01 \x03(\x0b\x32\x1b.scheduling.v1.Practitioner\"\x92\x01\n\x18\x43heckAvailabilityRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x17\n\x0fpractitioner_id\x18\x02 \x01(\t\x12\x11\n\tfrom_date\x18\x03 \x01(\t\x12\x0f\n\x07to_date\x18\x04 \x01(\t\x12\x11\n\tlocal_now\x18\x05 \x01(\t\x12\x12\n\npatient_id\x18\x06 \x01(\t\"n\n\x19\x43heckAvailabilityResponse\x12\x18\n\x10\x61vailable_starts\x18\x01 \x03(\t\x12\x11\n\ttruncated\x18\x02 \x01(\x08\x12$\n\x1c\x61ppointment_duration_minutes\x18\x03 \x01(\x05\"\x98\x01\n\x16\x42ookAppointmentRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\npatient_id\x18\x02 \x01(\t\x12\x17\n\x0fpractitioner_id\x18\x03 \x01(\t\x12\x11\n\tstarts_at\x18\x04 \x01(\t\x12\x11\n\tlocal_now\x18\x05 \x01(\t\x12\x17\n\x0fidempotency_key\x18\x06 \x01(\t\"\xa3\x01\n\x17\x42ookAppointmentResponse\x12\x31\n\x0b\x61ppointment\x18\x01 \x01(\x0b\x32\x1a.scheduling.v1.AppointmentH\x00\x12\x30\n\x07\x66\x61ilure\x18\x02 \x01(\x0b\x32\x1d.scheduling.v1.BookingFailureH\x00\x12\x19\n\x11idempotent_replay\x18\x03 \x01(\x08\x42\x08\n\x06result\"\\\n\x1fListUpcomingAppointmentsRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x12\n\npatient_id\x18\x02 \x01(\t\x12\x11\n\tlocal_now\x18\x03 \x01(\t\"T\n ListUpcomingAppointmentsResponse\x12\x30\n\x0c\x61ppointments\x18\x01 \x03(\x0b\x32\x1a.scheduling.v1.Appointment\"B\n\x1b\x44\x65letePatientForChatRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63hat_id\x18\x02 \x01(\t\"U\n\x1c\x44\x65letePatientForChatResponse\x12\x17\n\x0fpatient_existed\x18\x01 \x01(\x08\x12\x1c\n\x14\x61ppointments_deleted\x18\x02 \x01(\x05*\x9d\x01\n\x07Weekday\x12\x12\n\x0eWEEKDAY_MONDAY\x10\x00\x12\x13\n\x0fWEEKDAY_TUESDAY\x10\x01\x12\x15\n\x11WEEKDAY_WEDNESDAY\x10\x02\x12\x14\n\x10WEEKDAY_THURSDAY\x10\x03\x12\x12\n\x0eWEEKDAY_FRIDAY\x10\x04\x12\x14\n\x10WEEKDAY_SATURDAY\x10\x05\x12\x12\n\x0eWEEKDAY_SUNDAY\x10\x06*\x97\x03\n\x14\x42ookingFailureReason\x12&\n\"BOOKING_FAILURE_REASON_UNSPECIFIED\x10\x00\x12,\n(BOOKING_FAILURE_REASON_PRACTITIONER_BUSY\x10\x01\x12\'\n#BOOKING_FAILURE_REASON_PATIENT_BUSY\x10\x02\x12+\n\'BOOKING_FAILURE_REASON_OUTSIDE_SCHEDULE\x10\x03\x12#\n\x1f\x42OOKING_FAILURE_REASON_OFF_GRID\x10\x04\x12\"\n\x1e\x42OOKING_FAILURE_REASON_IN_PAST\x10\x05\x12)\n%BOOKING_FAILURE_REASON_BEYOND_HORIZON\x10\x06\x12\x31\n-BOOKING_FAILURE_REASON_PRACTITIONER_NOT_FOUND\x10\x07\x12,\n(BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND\x10\x08*\x8f\x01\n\x13RenameFailureReason\x12%\n!RENAME_FAILURE_REASON_UNSPECIFIED\x10\x00\x12$\n RENAME_FAILURE_REASON_NAME_TAKEN\x10\x01\x12+\n\'RENAME_FAILURE_REASON_PATIENT_NOT_FOUND\x10\x02\x32\x85\x06\n\nScheduling\x12{\n\x18\x45nsureSessionProvisioned\x12..scheduling.v1.EnsureSessionProvisionedRequest\x1a/.scheduling.v1.EnsureSessionProvisionedResponse\x12Z\n\rRenamePatient\x12#.scheduling.v1.RenamePatientRequest\x1a$.scheduling.v1.RenamePatientResponse\x12\x66\n\x11ListPractitioners\x12\'.scheduling.v1.ListPractitionersRequest\x1a(.scheduling.v1.ListPractitionersResponse\x12\x66\n\x11\x43heckAvailability\x12\'.scheduling.v1.CheckAvailabilityRequest\x1a(.scheduling.v1.CheckAvailabilityResponse\x12`\n\x0f\x42ookAppointment\x12%.scheduling.v1.BookAppointmentRequest\x1a&.scheduling.v1.BookAppointmentResponse\x12{\n\x18ListUpcomingAppointments\x12..scheduling.v1.ListUpcomingAppointmentsRequest\x1a/.scheduling.v1.ListUpcomingAppointmentsResponse\x12o\n\x14\x44\x65letePatientForChat\x12*.scheduling.v1.DeletePatientForChatRequest\x1a+.scheduling.v1.DeletePatientForChatResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'scheduling.v1.scheduling_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_CHECKAVAILABILITYREQUEST']._serialized_start=49
-  _globals['_CHECKAVAILABILITYREQUEST']._serialized_end=94
-  _globals['_CHECKAVAILABILITYRESPONSE']._serialized_start=96
-  _globals['_CHECKAVAILABILITYRESPONSE']._serialized_end=148
-  _globals['_BOOKAPPOINTMENTREQUEST']._serialized_start=150
-  _globals['_BOOKAPPOINTMENTREQUEST']._serialized_end=227
-  _globals['_BOOKAPPOINTMENTRESPONSE']._serialized_start=229
-  _globals['_BOOKAPPOINTMENTRESPONSE']._serialized_end=278
-  _globals['_SCHEDULING']._serialized_start=281
-  _globals['_SCHEDULING']._serialized_end=495
+  _globals['_WEEKDAY']._serialized_start=2241
+  _globals['_WEEKDAY']._serialized_end=2398
+  _globals['_BOOKINGFAILUREREASON']._serialized_start=2401
+  _globals['_BOOKINGFAILUREREASON']._serialized_end=2808
+  _globals['_RENAMEFAILUREREASON']._serialized_start=2811
+  _globals['_RENAMEFAILUREREASON']._serialized_end=2954
+  _globals['_WORKINGRANGE']._serialized_start=49
+  _globals['_WORKINGRANGE']._serialized_end=142
+  _globals['_PATIENT']._serialized_start=144
+  _globals['_PATIENT']._serialized_end=201
+  _globals['_PRACTITIONER']._serialized_start=204
+  _globals['_PRACTITIONER']._serialized_end=353
+  _globals['_APPOINTMENT']._serialized_start=356
+  _globals['_APPOINTMENT']._serialized_end=553
+  _globals['_BOOKINGFAILURE']._serialized_start=555
+  _globals['_BOOKINGFAILURE']._serialized_end=640
+  _globals['_RENAMEFAILURE']._serialized_start=642
+  _globals['_RENAMEFAILURE']._serialized_end=725
+  _globals['_ENSURESESSIONPROVISIONEDREQUEST']._serialized_start=727
+  _globals['_ENSURESESSIONPROVISIONEDREQUEST']._serialized_end=797
+  _globals['_ENSURESESSIONPROVISIONEDRESPONSE']._serialized_start=800
+  _globals['_ENSURESESSIONPROVISIONEDRESPONSE']._serialized_end=982
+  _globals['_RENAMEPATIENTREQUEST']._serialized_start=984
+  _globals['_RENAMEPATIENTREQUEST']._serialized_end=1065
+  _globals['_RENAMEPATIENTRESPONSE']._serialized_start=1067
+  _globals['_RENAMEPATIENTRESPONSE']._serialized_end=1192
+  _globals['_LISTPRACTITIONERSREQUEST']._serialized_start=1194
+  _globals['_LISTPRACTITIONERSREQUEST']._serialized_end=1240
+  _globals['_LISTPRACTITIONERSRESPONSE']._serialized_start=1242
+  _globals['_LISTPRACTITIONERSRESPONSE']._serialized_end=1321
+  _globals['_CHECKAVAILABILITYREQUEST']._serialized_start=1324
+  _globals['_CHECKAVAILABILITYREQUEST']._serialized_end=1470
+  _globals['_CHECKAVAILABILITYRESPONSE']._serialized_start=1472
+  _globals['_CHECKAVAILABILITYRESPONSE']._serialized_end=1582
+  _globals['_BOOKAPPOINTMENTREQUEST']._serialized_start=1585
+  _globals['_BOOKAPPOINTMENTREQUEST']._serialized_end=1737
+  _globals['_BOOKAPPOINTMENTRESPONSE']._serialized_start=1740
+  _globals['_BOOKAPPOINTMENTRESPONSE']._serialized_end=1903
+  _globals['_LISTUPCOMINGAPPOINTMENTSREQUEST']._serialized_start=1905
+  _globals['_LISTUPCOMINGAPPOINTMENTSREQUEST']._serialized_end=1997
+  _globals['_LISTUPCOMINGAPPOINTMENTSRESPONSE']._serialized_start=1999
+  _globals['_LISTUPCOMINGAPPOINTMENTSRESPONSE']._serialized_end=2083
+  _globals['_DELETEPATIENTFORCHATREQUEST']._serialized_start=2085
+  _globals['_DELETEPATIENTFORCHATREQUEST']._serialized_end=2151
+  _globals['_DELETEPATIENTFORCHATRESPONSE']._serialized_start=2153
+  _globals['_DELETEPATIENTFORCHATRESPONSE']._serialized_end=2238
+  _globals['_SCHEDULING']._serialized_start=2957
+  _globals['_SCHEDULING']._serialized_end=3730
 # @@protoc_insertion_point(module_scope)

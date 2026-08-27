@@ -1,12 +1,28 @@
-"""LangGraph wrapper: `classify_intent_node -> answer_faq_node -> END`.
+"""The turn graph: a router, two specialists that may run concurrently, and a merge.
 
-Sequential, not parallel: `classify_intent_node` completing before `answer_faq_node`
-starts is deliberate, leaving a graph edge for a future routing decision to attach
-to. Both nodes run inside the same `asyncio.Task` the caller tracks and cancels per
-chat - cancelling that task cancels whichever node is currently running.
+```
+                       ┌──> answer_faq ─────┐
+START ──> classify_intent                    ├──> compose_answer ──> END
+                       └──> handle_booking ─┘
+```
+
+`classify_intent` is a real router: it selects the specialist(s) the classified intents
+imply, and LangGraph runs the selected ones concurrently. A message like "what should I
+bring, and can I book Friday?" is ordinary phrasing, and routing it to one specialist
+would answer half of it.
+
+A single-specialist turn must not pay for the merge: the sole specialist emits its own
+reply and its own terminal event, and `compose_answer` detects one result and emits
+nothing but the turn's completion. Only a genuinely mixed turn makes the extra
+generation call. The FAQ path streams its reply token by token; the booking path emits
+its reply in one event once its tool-use loop finishes (see `handle_booking`).
+
+The two specialists write *disjoint* state keys, so concurrent branches need no channel
+reducer - that error only fires when two branches write the same key.
 """
 
 from collections.abc import AsyncIterator
+from datetime import datetime
 from functools import lru_cache
 from typing import TypedDict, cast
 
@@ -19,22 +35,84 @@ from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
 from chat.agent.answer_faq import answer_faq
 from chat.agent.classify_intent import classify_intent
+from chat.agent.compose_answer import (
+    FaqResult,
+    compose_answer,
+    log_single_specialist_completion,
+)
+from chat.agent.handle_booking import BookingResult, handle_booking
 from chat.agent.history import bound_to_last_n_turns
+from chat.agent.node_logging import node_span
+from chat.agent.tools.registry import ToolRegistry
+from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.domain.models import Message
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
+from chat.domain.schemas import (
+    AnswerSource,
+    ChatDoneEvent,
+    ChatTokenEvent,
+    IntentLabel,
+)
+
+_ANSWER_FAQ = "answer_faq"
+_HANDLE_BOOKING = "handle_booking"
+_COMPOSE_ANSWER = "compose_answer"
+
+# Which specialist each classified intent implies. Anything not listed - call_staff,
+# unknown, a failed classification - falls back to the FAQ path, which is today's
+# default; escalation is a later phase.
+_SPECIALIST_BY_INTENT = {
+    IntentLabel.FAQ_QUESTION: _ANSWER_FAQ,
+    IntentLabel.BOOKING: _HANDLE_BOOKING,
+}
 
 
 class _GraphState(TypedDict):
-    """Everything either node needs - read-only from each node's own perspective.
+    """Everything the router and both specialists need for one turn.
 
-    Neither node writes a meaningful state update: `classify_intent_node`'s only
-    output is its own `intent.classified` log line; `answer_faq_node` forwards its
-    events via the stream writer rather than a state update.
+    `bursts` stays the *whole* history: each node applies its own context bound, so a
+    future node with a different requirement is not silently starved by a decision
+    another node made.
+
+    `faq_result` and `booking_result` are deliberately separate keys - the two branches
+    can run at once, and concurrent writes to one key are what LangGraph rejects.
     """
 
     bursts: list[list[Message]]
     reply_to_message_ids: list[str]
+    patient_name: str
+    local_now: datetime
+    registry: ToolRegistry | None
+    specialists: list[str]
+    merge_required: bool
+    faq_result: FaqResult | None
+    booking_result: BookingResult | None
+
+
+def clear_graph_cache() -> None:
+    """Drop every compiled graph, releasing the clients each closes over.
+
+    Called when an app shuts down: the cache is keyed on the client objects, so without
+    this the lifespan's `aclose` calls free nothing and a second lifecycle in the same
+    process adds another full set.
+    """
+    _build_graph.cache_clear()
+
+
+def _select_specialists(intents: list[IntentLabel]) -> list[str]:
+    """Return the specialist node(s) `intents` implies, in a stable order.
+
+    Never empty: a message that matches no specialist still gets the FAQ path rather
+    than no answer at all.
+    """
+    selected = {
+        _SPECIALIST_BY_INTENT[intent]
+        for intent in intents
+        if intent in _SPECIALIST_BY_INTENT
+    }
+    if not selected:
+        return [_ANSWER_FAQ]
+    return [name for name in (_ANSWER_FAQ, _HANDLE_BOOKING) if name in selected]
 
 
 @lru_cache
@@ -45,58 +123,207 @@ def _build_graph(
 ) -> "CompiledStateGraph[_GraphState, None, _GraphState, _GraphState]":
     """Build and compile the graph, closing over its three shared clients.
 
-    Memoized via `lru_cache`: `qdrant_client`/`voyage_client`/`anthropic_client` are
-    each constructed once at app startup (main.py's lifespan) and passed in unchanged
-    on every turn, so the graph's structure never actually varies call to call -
-    recompiling it from scratch on every turn would be pure waste. The first call for
-    a given client triple compiles and caches the `CompiledStateGraph`; every later
-    call with that same triple reuses it. Safe to invoke concurrently across
-    overlapping requests - a compiled LangGraph graph carries no per-invocation
-    mutable state, that's the point of separating `.compile()` from `.astream()`.
+    Memoized on the three clients: each is constructed once at app startup and passed
+    in unchanged on every turn, so the graph's structure never varies call to call and
+    recompiling it per turn would be pure waste. Safe to invoke concurrently across
+    overlapping requests - a compiled graph carries no per-invocation state.
+
+    The entry keys on the clients themselves, so it keeps them - and their compiled
+    graph - reachable for as long as it lives. `clear_graph_cache()` is therefore part
+    of shutting an app down, or a process running more than one lifecycle accumulates a
+    set of closed clients per lifecycle.
     """
 
-    async def classify_intent_node(state: _GraphState) -> None:
-        """Classify the current message and log the result.
+    async def classify_intent_node(state: _GraphState) -> dict[str, object]:
+        """Classify the current message and route the turn to its specialist(s).
 
-        Bounds `bursts` to the last 5 turns itself before classifying. Always
-        continues to `answer_faq_node` regardless of outcome - a failed or invalid
-        classification call is caught here and recorded as `CLASSIFICATION_FAILED`,
-        logged as `intent.classification_failed`, never allowed to fail the request.
+        Always routes somewhere: a failed or invalid classification call is caught here
+        and recorded as `CLASSIFICATION_FAILED`, which falls back to the FAQ path rather
+        than failing the request.
         """
         logger = get_logger()
-        try:
-            bounded_bursts = bound_to_last_n_turns(state["bursts"], n=5)
-            result = await classify_intent(anthropic_client, bounded_bursts)
-            intents = result.intents
-        except Exception as exc:  # noqa: BLE001 - a classification failure must
-            # never fail the request (FR-007); it's recorded as CLASSIFICATION_FAILED
-            # instead, after logging the cause for visibility.
-            logger.error("intent.classification_failed", error_detail=str(exc))
-            intents = [IntentLabel.CLASSIFICATION_FAILED]
-        logger.info("intent.classified", intents=intents)
+        async with node_span("classify_intent") as span:
+            try:
+                bounded_bursts = bound_to_last_n_turns(
+                    state["bursts"], n=get_settings().CONTEXT_TURNS
+                )
+                result = await classify_intent(anthropic_client, bounded_bursts)
+                intents = result.intents
+            except Exception as exc:  # noqa: BLE001 - a classification failure must
+                # never fail the request; it's recorded as CLASSIFICATION_FAILED
+                # instead, after logging the cause for visibility.
+                logger.error("intent.classification_failed", error_detail=str(exc))
+                intents = [IntentLabel.CLASSIFICATION_FAILED]
+            logger.info("intent.classified", intents=intents)
 
-    async def answer_faq_node(state: _GraphState) -> None:
-        """Wrap `answer_faq()`, forwarding its events via the stream writer.
+            specialists = _select_specialists(intents)
+            merge_required = len(specialists) > 1
+            span.set(
+                intents=[str(i) for i in intents],
+                specialists=specialists,
+                merge_required=merge_required,
+            )
+        return {"specialists": specialists, "merge_required": merge_required}
+
+    async def answer_faq_node(state: _GraphState) -> dict[str, object]:
+        """Run the FAQ pipeline, streaming or collecting depending on the route.
 
         Raises: TurnPipelineError propagated from `answer_faq()`.
         """
         writer = get_stream_writer()
-        async for event in answer_faq(
-            qdrant_client,
-            voyage_client,
-            anthropic_client,
-            state["bursts"],
-            state["reply_to_message_ids"],
-        ):
-            writer(event)
+        streaming = not state["merge_required"]
+        result: FaqResult | None = None
+        async with node_span(_ANSWER_FAQ) as span:
+            async for event in answer_faq(
+                qdrant_client,
+                voyage_client,
+                anthropic_client,
+                state["bursts"],
+                state["reply_to_message_ids"],
+                stream=streaming,
+            ):
+                # In streaming mode the events go to the patient and the trailing
+                # result is kept for the completion line; in collect mode the result is
+                # all there is.
+                if isinstance(event, FaqResult):
+                    result = event
+                else:
+                    writer(event)
+            span.set(
+                grounded=result.grounded if result else None,
+                abstained=result is not None and not result.grounded,
+                citation_count=len(result.citations) if result else 0,
+                answer_chars=len(result.answer_text) if result else 0,
+                mode="streamed" if streaming else "collected",
+            )
+        return {"faq_result": result}
+
+    async def handle_booking_node(state: _GraphState) -> dict[str, object]:
+        """Run the booking loop, streaming or collecting depending on the route.
+
+        Raises: RuntimeError if the turn was routed to booking without a tool registry.
+        """
+        writer = get_stream_writer()
+        streaming = not state["merge_required"]
+        registry = state["registry"]
+        result: BookingResult | None = None
+        async with node_span(_HANDLE_BOOKING) as span:
+            if registry is None:
+                raise RuntimeError("booking requires a tool registry")
+            async for event in handle_booking(
+                anthropic_client,
+                registry,
+                state["bursts"],
+                patient_name=state["patient_name"],
+                local_now=state["local_now"].isoformat(),
+                stream=streaming,
+            ):
+                if isinstance(event, BookingResult):
+                    result = event
+                else:
+                    writer(event)
+            if streaming:
+                # The sole specialist ends its own turn, exactly as the FAQ path does.
+                # A booking reply was never retrieved against, so it carries no
+                # groundedness verdict and no citations.
+                writer(
+                    ChatDoneEvent(
+                        grounded=None,
+                        citations=[],
+                        answer_source=AnswerSource.BOOKING,
+                    )
+                )
+            span.set(
+                outcome=str(result.outcome) if result else None,
+                appointment_id=result.appointment_id if result else None,
+                iterations=result.iterations if result else 0,
+                tool_calls=result.tool_calls if result else 0,
+                mode="streamed" if streaming else "collected",
+            )
+        return {"booking_result": result}
+
+    async def compose_answer_node(state: _GraphState) -> None:
+        """Emit the turn's reply and completion, merging only when both halves ran."""
+        writer = get_stream_writer()
+        faq_result = state.get("faq_result")
+        booking_result = state.get("booking_result")
+        booking_outcome = booking_result.outcome if booking_result is not None else None
+        async with node_span(_COMPOSE_ANSWER) as span:
+            if not state["merge_required"]:
+                answer_text, citations, grounded, source = _single_specialist_reply(
+                    faq_result, booking_result
+                )
+                log_single_specialist_completion(
+                    answer_source=source,
+                    grounded=grounded,
+                    booking_outcome=booking_outcome,
+                    answer_text=answer_text,
+                    citations=citations,
+                    reply_to_message_ids=state["reply_to_message_ids"],
+                )
+                span.set(
+                    answer_source=str(source),
+                    merged=False,
+                    grounded=grounded,
+                    booking_outcome=booking_outcome,
+                    citation_count=len(citations),
+                )
+                return
+
+            async for event in compose_answer(
+                anthropic_client,
+                faq_result=faq_result,
+                booking_reply=(
+                    booking_result.reply_text if booking_result is not None else None
+                ),
+                booking_outcome=booking_outcome,
+                reply_to_message_ids=state["reply_to_message_ids"],
+            ):
+                writer(event)
+            span.set(
+                answer_source=str(AnswerSource.MERGED),
+                merged=True,
+                grounded=faq_result.grounded if faq_result else None,
+                booking_outcome=booking_outcome,
+                citation_count=len(faq_result.citations) if faq_result else 0,
+            )
 
     builder = StateGraph(_GraphState)
     builder.add_node("classify_intent", classify_intent_node)
-    builder.add_node("answer_faq", answer_faq_node)
+    builder.add_node(_ANSWER_FAQ, answer_faq_node)
+    builder.add_node(_HANDLE_BOOKING, handle_booking_node)
+    builder.add_node(_COMPOSE_ANSWER, compose_answer_node)
     builder.add_edge(START, "classify_intent")
-    builder.add_edge("classify_intent", "answer_faq")
-    builder.add_edge("answer_faq", END)
+    builder.add_conditional_edges(
+        "classify_intent",
+        lambda state: state["specialists"],
+        [_ANSWER_FAQ, _HANDLE_BOOKING],
+    )
+    builder.add_edge(_ANSWER_FAQ, _COMPOSE_ANSWER)
+    builder.add_edge(_HANDLE_BOOKING, _COMPOSE_ANSWER)
+    builder.add_edge(_COMPOSE_ANSWER, END)
     return builder.compile()
+
+
+def _single_specialist_reply(
+    faq_result: FaqResult | None, booking_result: BookingResult | None
+) -> tuple[str, list[dict[str, object]], bool | None, AnswerSource]:
+    """Describe the reply a single specialist already streamed.
+
+    Returns: its text, its citations as logged, its groundedness verdict (None for a
+        booking reply, which was never retrieved against), and which specialist
+        produced it.
+    """
+    if booking_result is not None:
+        return booking_result.reply_text, [], None, AnswerSource.BOOKING
+    if faq_result is not None:
+        return (
+            faq_result.answer_text,
+            faq_result.scored_citations(),
+            faq_result.grounded,
+            AnswerSource.FAQ,
+        )
+    return "", [], None, AnswerSource.FAQ
 
 
 async def run_turn(
@@ -105,29 +332,38 @@ async def run_turn(
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
+    *,
+    patient_name: str,
+    local_now: datetime,
+    registry: ToolRegistry | None,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
-    """Run this turn's graph: classify the intent, then answer via the FAQ path.
+    """Run this turn's graph: classify, fan out to the specialist(s), then compose.
 
     Args:
         bursts: The chat's full conversation history (oldest first), split into
-            contiguous same-side runs, with the trailing burst always patient-sided
-            (the current, not-yet-answered patient message).
-        reply_to_message_ids: The patient message id(s) the trailing burst
-            represents, forwarded to `answer_faq_node` unchanged.
+            contiguous same-side runs, with the trailing burst always patient-sided.
+        reply_to_message_ids: The patient message id(s) the trailing burst represents.
+        registry: The turn's tool registry, or None when scheduling is not wired up.
+            It already carries the turn's session, chat, and patient, so none of those
+            are threaded through the graph state as a second copy that could drift.
 
     Raises: TurnPipelineError propagated from `answer_faq_node` - a classification
         failure never raises here, only logs.
-
-    `classify_intent_node` bounds `bursts` to the last 5 turns itself;
-    `answer_faq_node` receives the full, unbounded `bursts`.
     """
     graph = _build_graph(qdrant_client, voyage_client, anthropic_client)
     state: _GraphState = {
         "bursts": bursts,
         "reply_to_message_ids": reply_to_message_ids,
+        "patient_name": patient_name,
+        "local_now": local_now,
+        "registry": registry,
+        "specialists": [],
+        "merge_required": False,
+        "faq_result": None,
+        "booking_result": None,
     }
     async for event in graph.astream(state, stream_mode="custom"):
-        # `astream`'s own return type is untyped (`dict[str, Any] | Any`) - every
-        # value it yields here is actually one `writer(event)` call from
-        # `answer_faq_node`, always a `ChatTokenEvent`/`ChatDoneEvent` (research.md #1).
+        # `astream`'s own return type is untyped (`dict[str, Any] | Any`) - every value
+        # it yields here is one `writer(event)` call from a node, always a
+        # `ChatTokenEvent`/`ChatDoneEvent`.
         yield cast("ChatTokenEvent | ChatDoneEvent", event)

@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: VisitDoc — chat service HTTP API (Phase 1c)
+  version: "1.3.0"
+  description: >
+    Changes in this feature: the single-chat-per-session endpoints `GET /chat` and `DELETE /chat`
+    are REMOVED and replaced by a `/chats` resource (spec FR-035..FR-041, research.md #19);
+    `POST /chat` gains a required `chat_id` and a required, timezone-naive `local_now`
+    (FR-032/FR-058). `/faq` is unchanged and omitted here.
+
+    Every route is scoped to the `visitdoc_session_id` cookie's session. A chat id belonging to
+    another session is indistinguishable from one that does not exist (404) — FR-002/SC-004.
+
+servers:
+  - url: http://localhost:8000
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: visitdoc_session_id
+  schemas:
+    LocalDateTime:
+      type: string
+      description: >
+        Timezone-naive local wall-clock date-time, ISO-8601 with no offset and no `Z`. A value
+        carrying an offset is rejected with 422 (FR-033/FR-043).
+      pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$'
+      examples: ["2026-08-14T09:00:00"]
+
+    ChatSummary:
+      type: object
+      required: [id, patient_name, created_at, last_message_at]
+      properties:
+        id: { type: string, minLength: 26, maxLength: 26 }
+        patient_name:
+          type: [string, "null"]
+          description: >
+            Null while this chat's patient record does not exist yet (scheduling unavailable at
+            creation, FR-054). The client renders a placeholder from `created_at`; the server does
+            not invent a label.
+        created_at: { type: string, format: date-time }
+        last_message_at:
+          type: [string, "null"]
+          format: date-time
+          description: Newest message in this chat, or null if it has none.
+
+    ChatListResponse:
+      type: object
+      required: [chats, session_exists]
+      properties:
+        chats:
+          type: array
+          items: { $ref: "#/components/schemas/ChatSummary" }
+          description: >
+            Already ordered by FR-056: chats holding messages first, newest message first; chats
+            with no messages after, newest-created first. The client opens `chats[0]` on load.
+            May be empty — a session with zero chats is a valid state (FR-040).
+        session_exists:
+          type: boolean
+          description: >
+            Whether this request carried a cookie naming a session the server knows. False means a
+            genuine first arrival: no cookie, or one naming a session that no longer exists.
+
+            This is the only thing that tells an empty `chats` list apart from a session the user
+            emptied, and the two require opposite behavior — FR-042 says a first arrival is given a
+            chat, FR-040 says deleting the last chat must NOT provision a replacement. The client
+            cannot make that distinction itself: the session cookie is `HttpOnly`, so the SPA never
+            sees it.
+
+    Citation:
+      type: object
+      required: [entry_id, chunk_index, chunk_text]
+      properties:
+        entry_id: { type: integer }
+        chunk_index: { type: integer }
+        chunk_text: { type: string }
+
+    MessageOut:
+      type: object
+      required: [id, sender, content, created_at]
+      properties:
+        id: { type: string }
+        sender: { type: string, enum: [patient, assistant] }
+        content: { type: string }
+        grounded:
+          type: [boolean, "null"]
+          description: >
+            Null for a patient message and for an assistant reply that came from the booking path
+            alone (research.md #4). Carries the FAQ half's verdict for a merged reply.
+        citations:
+          type: [array, "null"]
+          items: { $ref: "#/components/schemas/Citation" }
+        created_at: { type: string, format: date-time }
+
+    ChatHistoryResponse:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/MessageOut" }
+
+    ChatRequest:
+      type: object
+      required: [chat_id, message, local_now]
+      properties:
+        chat_id: { type: string, minLength: 26, maxLength: 26 }
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        local_now:
+          allOf: [{ $ref: "#/components/schemas/LocalDateTime" }]
+          description: >
+            The user's current local date and time, supplied by the client on every turn. Resolves
+            relative phrasing ("tomorrow", "next Tuesday at 3") and is the ONLY clock used for
+            past/upcoming/horizon judgements anywhere in the system (FR-032, FR-058).
+
+security:
+  - sessionCookie: []
+
+paths:
+  /chats:
+    get:
+      summary: List the session's chats, in FR-056 order
+      description: >
+        Read-only; never creates a session or a chat. A missing or unrecognized cookie returns an
+        empty list rather than an error, with `session_exists: false` so the client can tell a
+        first arrival from a session whose chats were all deleted.
+      responses:
+        "200":
+          description: The session's chats.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatListResponse" }
+
+    post:
+      summary: Create a chat, and its patient
+      description: >
+        Creates and commits the `Chat` row FIRST, then attempts `EnsureSessionProvisioned` on the
+        scheduler under the 2s/2-attempt budget (FR-047). If that call fails, the chat is still
+        returned — with `patient_name: null` — and its patient is created on a later interaction
+        (FR-044, FR-045, research.md #10). Creates the session and mints the cookie if the request
+        carries none, which is the first-visit path (FR-042).
+      responses:
+        "201":
+          description: The created chat.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatSummary" }
+          headers:
+            Set-Cookie:
+              description: Minted only when this request created the session.
+              schema: { type: string }
+
+  /chats/{chat_id}:
+    delete:
+      summary: Delete a chat, its messages, its patient, and that patient's appointments
+      description: >
+        The single deletion operation (FR-039) — there is no delete-only-the-chat and no
+        delete-only-the-patient. Cancels any in-flight turn for this chat first, abandoning the
+        streaming reply with nothing recorded (FR-055), then calls `DeletePatientForChat` on the
+        scheduler, and only then deletes the local rows (research.md #11). Does not end the session
+        and does not provision a replacement chat (FR-040).
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Deleted. Also returned when the chat was already absent. }
+        "404": { description: No session cookie, or the chat belongs to another session. }
+        "503":
+          description: >
+            The scheduling service was unreachable, so the patient and its appointments could not
+            be removed. Nothing was deleted; the client may retry.
+
+  /chats/{chat_id}/messages:
+    get:
+      summary: One chat's message history, chronological
+      parameters:
+        - name: chat_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The chat's messages, oldest first. Not guaranteed to alternate sender.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatHistoryResponse" }
+        "404": { description: No session cookie, or the chat belongs to another session. }
+
+  /chat:
+    post:
+      summary: Send a message and stream the reply (NDJSON)
+      description: >
+        Unchanged transport (one JSON object per line, `application/x-ndjson`) and unchanged
+        cancel-and-restart semantics: a newer message on the same chat supersedes an in-flight one,
+        which then terminates with `cancelled` instead of `done`.
+
+        New in this feature: the turn is routed by its classified intents to the FAQ specialist, the
+        booking specialist, or both concurrently, with a composing step when both ran (research.md
+        #2). `done.answer_source` reports which.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: |
+            NDJSON stream. Line types:
+
+            * `{"type":"token","text":"..."}` — an incremental slice of the reply.
+            * `{"type":"done","grounded":bool|null,"citations":[...],"message":str|null,
+               "answer_source":"faq"|"booking"|"merged"}` — terminal.
+              Render `message` when present (the FAQ abstention case), otherwise the accumulated
+              tokens. `citations` are derived structurally from what was retrieved, never from
+              model output; they are empty for `answer_source: "booking"`.
+            * `{"type":"cancelled"}` — this turn was superseded; discard its partial tokens.
+          content:
+            application/x-ndjson:
+              schema: { type: string }
+        "404": { description: No session cookie, or `chat_id` belongs to another session. }
+        "422":
+          description: >
+            Empty/oversized `message`, missing `chat_id`, or a `local_now` that is absent or
+            carries a timezone offset.

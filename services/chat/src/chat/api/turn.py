@@ -1,11 +1,13 @@
-"""`POST`/`GET /chat` — NDJSON streaming + history endpoints."""
+"""`POST /chat` — the streaming turn endpoint."""
 
 import asyncio
 from collections.abc import AsyncIterator
+from datetime import datetime
 from typing import cast
 
+import grpc
 from anthropic import AsyncAnthropic
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from qdrant_client import AsyncQdrantClient
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,19 +20,21 @@ from chat.agent.generation_registry import (
     register_and_cancel_previous,
 )
 from chat.agent.graph import run_turn
+from chat.agent.tools.registry import ToolContext, ToolRegistry
+from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.api.dependencies import get_voyage_client
-from chat.api.session_cookie import read_session_id, set_session_cookie
+from chat.api.provisioning import provision_patient
+from chat.api.session_cookie import read_session_id
+from chat.core.config import get_settings
 from chat.core.correlation import bind_turn_id
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
-from chat.domain.models import MessageSender
+from chat.domain.models import Chat, MessageSender
 from chat.domain.schemas import (
     ChatCancelledEvent,
     ChatDoneEvent,
-    ChatHistoryResponse,
     ChatRequest,
     ChatTokenEvent,
-    MessageOut,
 )
 from chat.rag.retriever import TurnPipelineError
 from chat.repositories import chat_repository
@@ -41,50 +45,59 @@ router = APIRouter()
 # "embedding" (Voyage) or "groundedness" (pure computation), per spec.md Assumptions.
 _CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_api"}
 
+# Used in the booking prompt until a chat has a real patient. The scheduler owns
+# patient names, so this side never invents one that could then disagree with it.
+_PATIENT_PLACEHOLDER_NAME = "the patient"
 
-async def _resolve_session_id(request: Request) -> tuple[str, bool]:
-    """Return the visitor's session id, creating one if missing/unrecognized.
 
-    Returns: `(session_id, is_new)` - `is_new` tells the caller whether to mint the
-        `Set-Cookie` header.
+async def _resolve_chat(request: Request, chat_id: str) -> Chat:
+    """Return the chat `chat_id` identifies within the request's cookie session.
+
+    Raises: HTTPException 404 if the request carries no session cookie, the session is
+        unrecognized, or `chat_id` belongs to another session - all reported
+        identically, so a probing caller learns nothing from which one it hit.
+
+    Never creates a session or a chat: both arrive via `POST /chats`.
     """
-    cookie_session_id = read_session_id(request)
+    session_id = read_session_id(request)
+    if session_id is None:
+        raise HTTPException(status_code=404, detail="chat not found")
     async with session_factory() as db_session:
-        if cookie_session_id is not None:
-            existing = await chat_repository.get_session(db_session, cookie_session_id)
-            if existing is not None:
-                return existing.id, False
-        new_session = await chat_repository.create_session(db_session)
-        return new_session.id, True
+        chat = await chat_repository.get_chat(db_session, chat_id, session_id)
+    if chat is None:
+        raise HTTPException(status_code=404, detail="chat not found")
+    return chat
 
 
 async def _event_stream(
     qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
+    scheduling_channel: grpc.aio.Channel,
     message: str,
-    session_id: str,
+    chat: Chat,
+    local_now: datetime,
 ) -> AsyncIterator[bytes]:
     """Insert `message`, run the pipeline under cancel-and-restart, stream NDJSON lines.
+
+    Args:
+        local_now: The visitor's own clock, forwarded into graph state - the only clock
+            any past/upcoming/horizon judgement in this turn is made against.
 
     Raises: TurnPipelineError propagated from `run_pipeline`'s task, if the pipeline
         failed.
 
-    Cancels any still-running generation for `session_id`'s chat before starting this
-    one; yields a `cancelled` line instead of a reply if this turn is itself superseded
-    before it completes.
+    Cancels any still-running generation for `chat` before starting this one; yields a
+    `cancelled` line instead of a reply if this turn is itself superseded before it
+    completes.
     """
     with bind_turn_id() as turn_id:
         async with session_factory() as db_session:
-            # Serializes this whole section per session_id: without it, two
-            # concurrent first messages for one session can each see "no chat yet"
-            # and create two `Chat` rows, or a second concurrent message's history
-            # read can miss a sibling message whose insert hasn't committed yet.
-            await chat_repository.lock_session(db_session, session_id)
+            # Serializes this whole section per chat: without it, a concurrent sibling
+            # message's history read can miss a message whose insert hasn't committed
+            # yet.
+            await chat_repository.lock_chat(db_session, chat.id)
             try:
-                chat = await chat_repository.get_or_create_chat_for_session(
-                    db_session, session_id
-                )
                 history_rows = await chat_repository.list_messages(db_session, chat.id)
                 # Inserted synchronously, as soon as it's validated - before
                 # generation starts (research.md #3). Reuses `turn_id` as its id
@@ -107,10 +120,10 @@ async def _event_stream(
                 # `rollback()`, forcing a doomed refresh once `db_session` closes
                 # below and they're used detached.
                 try:
-                    await chat_repository.unlock_session(db_session, session_id)
+                    await chat_repository.unlock_chat(db_session, chat.id)
                 except SQLAlchemyError:
                     await db_session.rollback()
-                    await chat_repository.unlock_session(db_session, session_id)
+                    await chat_repository.unlock_chat(db_session, chat.id)
 
         history_rows = [*history_rows, patient_message]
         bursts = history.split_into_bursts(history_rows)
@@ -123,6 +136,17 @@ async def _event_stream(
             "turn.message_received",
             message=cast(str, history.to_claude_messages(bursts)[-1]["content"]),
             message_ids_unified=reply_to_message_ids,
+        )
+
+        registry = ToolRegistry(
+            SCHEDULING_TOOLS,
+            ToolContext(
+                channel=scheduling_channel,
+                settings=get_settings(),
+                session_id=chat.session_id,
+                patient_id=chat.patient_id,
+                local_now=local_now,
+            ),
         )
 
         queue: asyncio.Queue[ChatTokenEvent | ChatDoneEvent | None] = asyncio.Queue()
@@ -141,6 +165,9 @@ async def _event_stream(
                     anthropic_client,
                     bursts,
                     reply_to_message_ids,
+                    patient_name=chat.patient_name or _PATIENT_PLACEHOLDER_NAME,
+                    local_now=local_now,
+                    registry=registry,
                 ):
                     queue.put_nowait(event)
                     if isinstance(event, ChatTokenEvent):
@@ -152,11 +179,11 @@ async def _event_stream(
                 # included), and only if a newer message hasn't already superseded
                 # this one (FR-015, research.md #3/#9).
                 if done_event is not None and clear_if_current(chat.id, task):
-                    content = (
-                        "".join(answer_parts)
-                        if done_event.grounded
-                        else (done_event.message or "")
-                    )
+                    # `message` is set only when there is no streamed text to show,
+                    # which today is the FAQ abstention case. `grounded` stays NULL for
+                    # a booking-only reply: it was never retrieved against, so it is
+                    # neither grounded nor abstaining.
+                    content = done_event.message or "".join(answer_parts)
                     citations_payload = [c.model_dump() for c in done_event.citations]
                     async with session_factory() as insert_session:
                         await chat_repository.create_message(
@@ -169,8 +196,6 @@ async def _event_stream(
                             citations=citations_payload,
                             reply_to_message_ids=reply_to_message_ids,
                         )
-            except asyncio.CancelledError:
-                raise
             except TurnPipelineError as exc:
                 logger = get_logger()
                 logger.error(
@@ -214,69 +239,32 @@ async def _event_stream(
 
 @router.post("/chat")
 async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingResponse:
-    """Ask a question and receive a streamed, grounded (or abstaining) answer."""
+    """Send a message to one chat and receive the streamed reply.
+
+    Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
+        another session.
+    """
     qdrant_client = request.app.state.qdrant_client
     voyage_client = get_voyage_client(request)
     anthropic_client = request.app.state.anthropic_client
+    scheduling_channel = request.app.state.scheduling_channel
 
-    session_id, is_new_session = await _resolve_session_id(request)
+    chat = await _resolve_chat(request, chat_request.chat_id)
+    # A chat created while scheduling was unreachable has no patient yet. Retrying here
+    # is what lets it acquire one on any later turn rather than staying degraded until
+    # the visitor happens to create a new chat. A failure is not fatal: the turn still
+    # runs, and the booking tools report themselves unavailable.
+    await provision_patient(scheduling_channel, chat)
 
-    response = StreamingResponse(
+    return StreamingResponse(
         _event_stream(
             qdrant_client,
             voyage_client,
             anthropic_client,
+            scheduling_channel,
             chat_request.message,
-            session_id,
+            chat,
+            chat_request.local_now,
         ),
         media_type="application/x-ndjson",
     )
-    if is_new_session:
-        set_session_cookie(response, session_id)
-    return response
-
-
-@router.get("/chat")
-async def get_chat(request: Request) -> ChatHistoryResponse:
-    """Return the visitor's current chat, in chronological order.
-
-    Read-only - never creates a session or chat; a missing/unrecognized cookie or a
-    session with no chat yet returns an empty history rather than an error.
-    """
-    session_id = read_session_id(request)
-    if session_id is None:
-        return ChatHistoryResponse(messages=[])
-
-    async with session_factory() as db_session:
-        session_row = await chat_repository.get_session(db_session, session_id)
-        if session_row is None:
-            return ChatHistoryResponse(messages=[])
-        chat = await chat_repository.get_chat_for_session(db_session, session_row.id)
-        if chat is None:
-            return ChatHistoryResponse(messages=[])
-        messages = await chat_repository.list_messages(db_session, chat.id)
-
-    return ChatHistoryResponse(
-        messages=[MessageOut.model_validate(m) for m in messages]
-    )
-
-
-@router.delete("/chat", status_code=204)
-async def delete_chat(request: Request) -> None:
-    """Permanently delete the visitor's current chat and start fresh.
-
-    A no-op (still `204`) if there's no current chat to delete. Does **not** delete
-    the session or touch the `visitdoc_session_id` cookie.
-    """
-    session_id = read_session_id(request)
-    if session_id is None:
-        return
-
-    async with session_factory() as db_session:
-        session_row = await chat_repository.get_session(db_session, session_id)
-        if session_row is None:
-            return
-        chat = await chat_repository.get_chat_for_session(db_session, session_row.id)
-        if chat is None:
-            return
-        await chat_repository.delete_chat(db_session, chat.id)

@@ -1,0 +1,162 @@
+"""The capability seam: named, schema'd tools the agent can invoke.
+
+The booking node knows tool names and JSON schemas and nothing else - that a
+`book_appointment` call becomes a gRPC round trip to another service is entirely the
+handler's business. Swapping a handler for a different transport later changes no agent
+code.
+
+Nothing here knows what scheduling is; `scheduling_tools.py` supplies the entries.
+"""
+
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, cast
+
+import grpc
+from anthropic.types import ToolParam
+
+from chat.core.config import Settings
+
+# What a handler returns: a small JSON-serializable object the model reads back as a
+# `tool_result`. Always carries its own `status`, never prose the caller must parse.
+ToolResult = dict[str, Any]
+
+# Returned for a tool whose ambient precondition is unmet, in place of running it. Says
+# only what is true at this layer - there is no patient to act for - and leaves what
+# that means for a booking to the model.
+_NO_PATIENT_RESULT: ToolResult = {
+    "status": "unavailable",
+    "explanation": "This chat has no patient record, so nothing could be done.",
+}
+
+
+@dataclass(frozen=True)
+class ToolContext:
+    """The ambient facts every handler needs, bound once per turn.
+
+    None of these are tool parameters, and that is the point: a model cannot invent or
+    leak a session id it was never shown, and cannot substitute a different "now" than
+    the client supplied.
+
+    `patient_id` is None when this chat has no patient record yet, which is the normal
+    state of a chat created while scheduling was unreachable.
+    """
+
+    channel: grpc.aio.Channel
+    settings: Settings
+    session_id: str
+    patient_id: str | None
+    local_now: datetime
+
+
+@dataclass(frozen=True)
+class Tool:
+    """One capability: what it is called, what it does, and what it accepts.
+
+    `requires_patient` marks a tool that cannot run for a chat with no patient record
+    yet. The registry enforces it, so a tool declares the requirement once instead of
+    every handler opening with the same guard - and a new tool that needs a patient
+    cannot forget to check.
+
+    `writes` marks a tool whose call can create something the patient cannot undo. It is
+    what lets a caller tell "this failed and nothing happened" from "this failed and its
+    effect is unknown" without hardcoding a tool name: a read that raised wrote nothing
+    by construction, while a write that raised may already have landed.
+    """
+
+    name: str
+    description: str
+    input_schema: dict[str, Any]
+    handler: Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]]
+    requires_patient: bool = False
+    writes: bool = False
+
+
+class UnknownToolError(Exception):
+    """Raised when a model asks for a tool the registry does not hold."""
+
+
+class ToolArgumentError(Exception):
+    """Raised when a model's tool arguments cannot be read as its schema declares.
+
+    Deliberately distinct from every other handler failure: it is raised while reading
+    the arguments, before the handler has called anything, so the call provably had no
+    effect. That is what lets a rejected *write* be reported as having created nothing,
+    rather than as an outcome nobody can know.
+    """
+
+
+def required_argument(arguments: dict[str, Any], name: str) -> str:
+    """Return `name` from a model-supplied arguments dict, coerced to `str`.
+
+    Raises: ToolArgumentError if `name` is absent or null.
+
+    A value arrives as whatever JSON the model produced, so a schema-declared string
+    can still turn up as a number - coerced here rather than trusted.
+    """
+    value = arguments.get(name)
+    if value is None:
+        raise ToolArgumentError(f"{name} is required")
+    return str(value)
+
+
+class ToolRegistry:
+    """The tools available for one turn, bound to that turn's ambient context."""
+
+    def __init__(self, tools: list[Tool], context: ToolContext) -> None:
+        self._tools = {tool.name: tool for tool in tools}
+        self._context = context
+
+    @property
+    def names(self) -> list[str]:
+        """Return the registered tool names, in registration order."""
+        return list(self._tools)
+
+    def to_anthropic_tools(self) -> list[ToolParam]:
+        """Render the registry into the shape the Messages API's `tools=` expects.
+
+        Only name, description, and schema cross this boundary - the handler stays on
+        this side, which is what keeps the model's view of a capability to its
+        contract. Building the provider's request shape is this module's own job, so
+        the node calling it never sees a provider type.
+        """
+        return [
+            cast(
+                "ToolParam",
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": tool.input_schema,
+                },
+            )
+            for tool in self._tools.values()
+        ]
+
+    def writes(self, name: str) -> bool:
+        """Whether the named tool can create something, for a caller reporting failure.
+
+        An unregistered name is not a write: it never ran, so nothing it might have
+        done is in question.
+        """
+        tool = self._tools.get(name)
+        return tool is not None and tool.writes
+
+    async def dispatch(self, name: str, arguments: dict[str, Any]) -> ToolResult:
+        """Run the named tool with this turn's ambient context.
+
+        Raises:
+            UnknownToolError: `name` is not registered.
+            ToolArgumentError: propagated from a handler that could not read its
+                arguments - raised before that handler calls anything.
+
+        A tool declaring `requires_patient` is answered as unavailable, without being
+        run, when the turn has no patient record - the same result its handler would
+        have produced, decided in one place instead of in each of them.
+        """
+        tool = self._tools.get(name)
+        if tool is None:
+            raise UnknownToolError(name)
+        if tool.requires_patient and self._context.patient_id is None:
+            return dict(_NO_PATIENT_RESULT)
+        return await tool.handler(self._context, arguments)

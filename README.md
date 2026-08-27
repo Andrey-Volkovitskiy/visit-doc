@@ -34,18 +34,23 @@ The `chat` service needs a local Postgres and Qdrant (`docker-compose.yml`, repo
 `VOYAGE_API_KEY` (see `specs/001-grounded-faq-chat/quickstart.md` for the full walkthrough).
 
 ```bash
-make db-up                                               # start Postgres + Qdrant
-uv run --package chat -- alembic upgrade head             # apply DB migrations (from services/chat/)
-uv run --package chat -- python -m chat.main             # run the chat service
-uv run --package scheduler -- python -m scheduler.main  # run the scheduler service
+make db-up             # start Postgres + Qdrant
+make run-scheduler-dev # migrate, then serve the scheduler (HTTP :8001, gRPC :50051)
+make run-chat-dev      # migrate, then serve the chat service (:8000)
+make run-frontend-dev  # Vite (:5173)
 ```
 
-`chat`'s test suite (`services/chat/tests/`) never touches the `visitdoc` database above — it runs
-against a separate `visitdoc_test` database in the same Postgres container (schema kept at head
-automatically by a session-scoped fixture in `conftest.py`), so manual `curl`/dev work and
-automated tests can't pollute each other. `docker-compose.yml` creates `visitdoc_test`
-automatically on a fresh volume; if you set up Postgres before this existed, create it once with
-`docker exec visitdoc-postgres psql -U visitdoc -c "CREATE DATABASE visitdoc_test;"`. CI
+Each service owns its own database, named for it: `visitdoc_chat` and `visitdoc_scheduler`. Each
+has its own Alembic history, and neither has a foreign key into the other — they reference each
+other by opaque id only. Both live in the one local Postgres container (see the tradeoff below);
+`SCHEDULER_DATABASE_URL` points at the scheduler's, `DATABASE_URL` at chat's.
+
+Each service's test suite runs against its own `_test`-suffixed database (`visitdoc_chat_test`,
+`visitdoc_scheduler_test`), with the schema kept at head automatically by a session-scoped fixture
+in each `conftest.py` — so manual `curl`/dev work and automated tests can't pollute each other.
+`docker-compose.yml` creates all four automatically on a fresh volume; on a pre-existing one,
+create the missing ones by hand (see
+`specs/005-scheduling-and-booking/quickstart.md` for the exact commands). CI
 (`.github/workflows/ci.yml`) uses its own fully ephemeral Postgres/Qdrant service containers, so it
 needs no such step.
 
@@ -55,8 +60,9 @@ the existing idempotent `ensure_collection` — no volume/init-script step neede
 is just an API-created resource, not something that has to pre-exist like a Postgres database.
 
 See the [`Makefile`](Makefile) for shortcuts (`make sync`, `make lint`, `make format`,
-`make typecheck`, `make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`,
-`make db-up`, `make db-down`).
+`make typecheck`, `make precommit`, `make install-hooks`, `make run-chat`, `make run-chat-dev`,
+`make run-scheduler`, `make run-scheduler-dev`, `make run-frontend-dev`, `make db-up`,
+`make db-down`).
 
 ## Grounded FAQ Chat: technology choices
 
@@ -202,8 +208,79 @@ full rationale and alternatives considered live in
   text, unlike the pre-existing `turn.message_received`) is the classification record. Formal
   tracing infrastructure (Langfuse) arrives in a later phase; a persisted table now would be scope
   beyond what reviewing classification quality via structured logs actually requires yet.
-- **`turn.message_received` moved earlier, out of `answer_faq()`**: it now fires from `api/chat.py`
+- **`turn.message_received` moved earlier, out of `answer_faq()`**: it now fires from `api/turn.py`
   once, before the graph task is even created — unconditionally, for every incoming message,
   including one whose turn is later cancelled. This keeps it answering "what did the system start
   processing" regardless of which stage (classification or generation) is currently active, a
   distinction that didn't exist before this feature inserted a stage ahead of generation.
+
+
+## Scheduling and End-to-End Booking: technology choices
+
+`specs/005-scheduling-and-booking/` (ROADMAP Phase 1c) turns `services/scheduler` into a real
+service and gives the agent its first write capability — full rationale and alternatives considered
+live in [`research.md`](specs/005-scheduling-and-booking/research.md):
+
+- **A separate scheduling service with its own database, talking gRPC**: the one deliberate service
+  boundary in this phase. It owns patients, practitioners, working schedules, and appointments, and
+  the chat service holds nothing but opaque ids into it. The cost is a real network hop on the
+  booking path and a failure mode to design for; the payoff is that the invariants that matter most
+  — no double booking, no appointment outliving its patient — are enforced in one place, by the
+  datastore that owns them.
+- **Double booking prevented by two PostgreSQL exclusion constraints, not application code**:
+  `EXCLUDE USING gist (patient_id WITH =, tsrange(starts_at, ends_at) WITH &&)` and the same keyed
+  by practitioner. A read-then-write check cannot survive two transactions racing for one slot; an
+  exclusion constraint can, and it is what makes "exactly one of them wins" true rather than
+  likely. `tsrange` is half-open, so back-to-back appointments do not conflict — without which a
+  contiguous slot grid would be entirely unbookable. Requires the `btree_gist` extension, and a
+  `CREATE TYPE timerange AS RANGE (subtype = time)` for the equivalent rule on working ranges,
+  since PostgreSQL ships no range type over bare `time`.
+- **"Inside the schedule" and "on the grid" are creation-time checks, deliberately *not*
+  constraints**: editing a practitioner's schedule must not reject the edit because an existing
+  appointment would violate it — those appointments are grandfathered, keeping the times they were
+  agreed at. A CHECK or trigger enforcing them continuously would reject exactly the edit that has
+  to succeed.
+- **No timezone anywhere**: `TIMESTAMP WITHOUT TIME ZONE`, naive Python `datetime`s, and offset-free
+  ISO-8601 strings on the wire. `TIMESTAMPTZ` would silently rotate every value through the
+  server's zone, and `google.protobuf.Timestamp` denotes an absolute instant — putting a local
+  wall-clock time in one asserts a zone that does not exist. Every past/upcoming/horizon judgement
+  is made against a `local_now` the client sends, never a server clock, so the scheduler has no
+  reason to call one at all. The cost is that two devices in genuinely different zones would read
+  the same stored times as different moments — out of scope for a single-session demo, and the
+  reason the earlier stored-timezone design was dropped.
+- **Capabilities reach the agent through an in-process tool registry, not MCP**: `(name,
+  description, JSON schema, handler)` records rendered straight into the Anthropic Messages API's
+  `tools=`. The booking node knows only names and schemas, so swapping a handler for an MCP client
+  later changes no agent code — which is the decoupling that actually matters. MCP's added value
+  over this is cross-process reuse by a third-party client, which nothing in this phase consumes;
+  the ROADMAP's Phase 1c bullet was amended accordingly.
+- **A derived idempotency key, not a random one**: `uuid5` over exactly
+  `(patient_id, practitioner_id, starts_at)`. A random key protects only the transport retry that
+  generated it; a derived one also collapses the case that actually bites — a lost confirmation
+  where the *model* re-issues the same booking several turns later, which would otherwise be
+  reported to the patient as a conflict with their own appointment. Because the key is a function
+  of the three fields the scheduler re-checks it against, a key presented with a *different*
+  request can only mean the derivation broke, and is answered with an error rather than by
+  replaying a booking the patient never asked for.
+- **Domain refusals are data, transport failures are status codes**: a booking the service
+  evaluated and declined comes back as a successful RPC carrying one of eight typed reasons; only
+  an unreachable service raises. Collapsing both into a status code would force the chat service to
+  reverse-engineer "explain why to the patient" from "we could not reach the service" out of a
+  string. The caller applies a 2-second deadline and at most two attempts, retrying only
+  `UNAVAILABLE` and `DEADLINE_EXCEEDED`.
+- **Both services' databases share one local Postgres container**: database-per-service is about
+  schema and migration ownership, not container count, and the boundary that matters — no shared
+  tables, no cross-database joins, no shared migration history — holds either way. The tradeoff is
+  a shared failure domain in development that a real deployment would not have. Acceptable because
+  the degraded-mode behavior this phase must demonstrate is exercised by stopping the *scheduler
+  process*, not its database; moving to a separate container later is a compose-file change with no
+  code impact.
+- **Parallel specialists with a merge step, pulled forward from Phase 1d**: a message like "what
+  should I bring, and can I book Friday?" is ordinary phrasing, and once there are two real
+  specialists, routing it to one ships a visibly partial answer. The extra cost is bounded to
+  mixed-intent turns: a single-specialist turn streams from its own specialist and the merge node
+  is a no-op, so the FAQ path keeps its existing latency and behavior.
+- **Every model call bounded to the last five turns**: generation used to read unbounded history,
+  which was fine when a chat was short-lived and a turn made one model call. Now a session holds
+  many long-lived chats and a mixed-intent turn can make several calls, with up to six more inside
+  the booking loop. Storage is unaffected — only what is sent to a model is windowed.

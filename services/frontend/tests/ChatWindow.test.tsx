@@ -10,8 +10,10 @@ async function* fakeEvents(events: ChatEvent[]): AsyncGenerator<ChatEvent> {
   }
 }
 
+const CHAT_ID = "01CHAT000000000000000000";
+
 async function renderReady(): Promise<void> {
-  render(<ChatWindow />);
+  render(<ChatWindow chatId={CHAT_ID} />);
   await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
 }
 
@@ -37,7 +39,7 @@ describe("ChatWindow", () => {
     ];
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue(history);
 
-    render(<ChatWindow />);
+    render(<ChatWindow chatId={CHAT_ID} />);
 
     await waitFor(() => {
       expect(screen.getAllByTestId("message")).toHaveLength(2);
@@ -75,7 +77,7 @@ describe("ChatWindow", () => {
     ];
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue(history);
 
-    render(<ChatWindow />);
+    render(<ChatWindow chatId={CHAT_ID} />);
 
     await waitFor(() => {
       expect(screen.getAllByTestId("message")).toHaveLength(3);
@@ -97,6 +99,7 @@ describe("ChatWindow", () => {
         {
           type: "done",
           grounded: true,
+          answer_source: "faq",
           citations: [
             { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
           ],
@@ -129,6 +132,7 @@ describe("ChatWindow", () => {
           type: "done",
           grounded: false,
           citations: [],
+          answer_source: "faq",
           message: "I don't have a confident answer to that.",
         },
       ]),
@@ -150,7 +154,7 @@ describe("ChatWindow", () => {
   it("sends the message when Enter is pressed without Shift", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
-      fakeEvents([{ type: "done", grounded: true, citations: [] }]),
+      fakeEvents([{ type: "done", grounded: true, citations: [], answer_source: "faq" }]),
     );
 
     await renderReady();
@@ -161,7 +165,11 @@ describe("ChatWindow", () => {
     await waitFor(() => {
       expect(screen.getByText("when can I visit?")).toBeInTheDocument();
     });
-    expect(chatStream.askChat).toHaveBeenCalledWith("when can I visit?", expect.anything());
+    expect(chatStream.askChat).toHaveBeenCalledWith(
+      CHAT_ID,
+      "when can I visit?",
+      expect.anything(),
+    );
   });
 
   it("does not send when Shift+Enter is pressed, leaving the draft for a newline", async () => {
@@ -293,6 +301,52 @@ describe("ChatWindow", () => {
     expect(screen.queryByTestId("error")).toBeNull();
   });
 
+  it("keeps a second turn's streamed text when an earlier turn is cancelled", async () => {
+    // The component deliberately lets several turns run at once. With one shared
+    // streaming slot, turn A's `cancelled` handler cleared the bubble outright and
+    // took turn B's still-streaming reply down with it.
+    let cancelA!: () => void;
+    const aCancelled = new Promise<void>((resolve) => {
+      cancelA = resolve;
+    });
+
+    async function* turnA(): AsyncGenerator<ChatEvent> {
+      yield { type: "token", text: "superseded partial" };
+      await aCancelled;
+      yield { type: "cancelled" };
+    }
+    async function* turnB(): AsyncGenerator<ChatEvent> {
+      yield { type: "token", text: "the surviving reply" };
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      yield { type: "token", text: " continues" };
+    }
+
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat")
+      .mockResolvedValueOnce(turnA())
+      .mockResolvedValueOnce(turnB());
+
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("question"), { target: { value: "first" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => {
+      expect(screen.getByText("superseded partial")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText("question"), { target: { value: "second" } });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => {
+      expect(screen.getByText("the surviving reply")).toBeInTheDocument();
+    });
+
+    cancelA();
+
+    await waitFor(() => {
+      expect(screen.queryByText("superseded partial")).toBeNull();
+    });
+    expect(screen.getByText("the surviving reply")).toBeInTheDocument();
+  });
+
   it("sends a second message via Enter while the first is still in flight", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     const pendingA = new Promise<AsyncGenerator<ChatEvent>>(() => {
@@ -335,7 +389,7 @@ describe("ChatWindow", () => {
     // own fetch - the server had already computed and persisted "n"'s reply, but
     // the client silently threw the abort-triggered rejection away, so "n"'s
     // reply only ever showed up after a page refresh. A send must never abort an
-    // earlier, still-genuinely-completing one; only Clear Chat may abort.
+    // earlier, still-genuinely-completing one; only leaving the chat may abort.
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     const abortSpy = vi.spyOn(AbortController.prototype, "abort");
     let resolveN!: (events: AsyncGenerator<ChatEvent>) => void;
@@ -346,7 +400,13 @@ describe("ChatWindow", () => {
       .mockReturnValueOnce(pendingN)
       .mockResolvedValueOnce(
         fakeEvents([
-          { type: "done", grounded: false, citations: [], message: "abstained for m" },
+          {
+            type: "done",
+            grounded: false,
+            citations: [],
+            answer_source: "faq",
+            message: "abstained for m",
+          },
         ]),
       );
 
@@ -368,16 +428,21 @@ describe("ChatWindow", () => {
     // silently dropped just because "m" was sent in the meantime.
     resolveN(
       fakeEvents([
-        { type: "done", grounded: false, citations: [], message: "abstained for n" },
+        {
+          type: "done",
+          grounded: false,
+          citations: [],
+          answer_source: "faq",
+          message: "abstained for n",
+        },
       ]),
     );
     await waitFor(() => expect(screen.getByText("abstained for n")).toBeInTheDocument());
     abortSpy.mockRestore();
   });
 
-  it("aborts every in-flight send, not just the most recent, when the chat is cleared", async () => {
+  it("aborts every in-flight send, not just the most recent, when the chat changes", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
-    vi.spyOn(chatStream, "clearChat").mockResolvedValue(undefined);
     const abortSpy = vi.spyOn(AbortController.prototype, "abort");
     const pendingN = new Promise<AsyncGenerator<ChatEvent>>(() => {
       // Never resolves - both sends stay in flight through this test.
@@ -389,7 +454,8 @@ describe("ChatWindow", () => {
       .mockReturnValueOnce(pendingN)
       .mockReturnValueOnce(pendingM);
 
-    await renderReady();
+    const { rerender } = render(<ChatWindow chatId={CHAT_ID} />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
     const textbox = screen.getByLabelText("question");
     fireEvent.change(textbox, { target: { value: "n" } });
     fireEvent.click(screen.getByText("Send"));
@@ -398,12 +464,54 @@ describe("ChatWindow", () => {
     fireEvent.click(screen.getByText("Send"));
     await waitFor(() => expect(screen.getByText("m")).toBeInTheDocument());
 
-    fireEvent.click(screen.getByText("Clear chat"));
-    fireEvent.click(screen.getByText("Clear"));
+    // Both replies belong to a thread that is no longer on screen.
+    rerender(<ChatWindow chatId="01OTHERCHAT00000000000000" />);
     await waitFor(() => expect(abortSpy).toHaveBeenCalledTimes(2));
 
     expect(screen.queryByText("n")).toBeNull();
     expect(screen.queryByText("m")).toBeNull();
     abortSpy.mockRestore();
+  });
+
+  it("mutes itself and offers no input when the session holds no chats", () => {
+    render(<ChatWindow chatId={null} />);
+
+    expect(screen.getByTestId("no-chat")).toBeInTheDocument();
+    expect(screen.queryByLabelText("question")).toBeNull();
+  });
+
+  it("loads the newly selected chat's own history when the chat changes", async () => {
+    const historyByChat: Record<string, Message[]> = {
+      [CHAT_ID]: [
+        {
+          id: "1",
+          sender: "patient",
+          content: "in the first chat",
+          grounded: null,
+          citations: null,
+          created_at: "2026-08-06T00:00:00Z",
+        },
+      ],
+      other: [
+        {
+          id: "2",
+          sender: "patient",
+          content: "in the other chat",
+          grounded: null,
+          citations: null,
+          created_at: "2026-08-06T00:00:00Z",
+        },
+      ],
+    };
+    vi.spyOn(chatStream, "fetchChatHistory").mockImplementation(
+      async (chatId: string) => historyByChat[chatId] ?? [],
+    );
+
+    const { rerender } = render(<ChatWindow chatId={CHAT_ID} />);
+    await waitFor(() => expect(screen.getByText("in the first chat")).toBeInTheDocument());
+
+    rerender(<ChatWindow chatId="other" />);
+    await waitFor(() => expect(screen.getByText("in the other chat")).toBeInTheDocument());
+    expect(screen.queryByText("in the first chat")).toBeNull();
   });
 });

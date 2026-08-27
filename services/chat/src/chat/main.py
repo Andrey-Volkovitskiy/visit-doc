@@ -9,8 +9,11 @@ from anthropic import AsyncAnthropic
 from fastapi import FastAPI
 from voyageai.client_async import AsyncClient
 
-from chat.api.chat import router as chat_router
+from chat.agent.graph import clear_graph_cache
+from chat.api.chats import router as chats_router
 from chat.api.faq import router as faq_router
+from chat.api.turn import router as turn_router
+from chat.clients.scheduling import create_channel
 from chat.core.config import get_settings
 from chat.core.logging import configure_logging, get_logger
 from chat.repositories.qdrant_repository import create_client, ensure_collection
@@ -55,10 +58,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         voyage_session = aiohttp.ClientSession()
         stack.push_async_callback(voyage_session.close)
 
+        # A gRPC channel is a connection pool, so it is built once and shared like the
+        # clients above. Deliberately *not* connected eagerly: the scheduler being down
+        # must never stop this service from starting and answering FAQ questions.
+        scheduling_channel = create_channel(settings)
+        stack.push_async_callback(scheduling_channel.close)
+
         app.state.qdrant_client = qdrant_client
         app.state.anthropic_client = anthropic_client
         app.state.voyage_client = voyage_client
         app.state.voyage_session = voyage_session
+        app.state.scheduling_channel = scheduling_channel
+        # Registered before the yield so it runs on the way out whatever happens: the
+        # compiled-graph cache keys on the clients above, and would otherwise keep this
+        # lifecycle's closed clients reachable for the life of the process.
+        stack.callback(clear_graph_cache)
         yield
 
 
@@ -66,8 +80,9 @@ def create_app() -> FastAPI:
     """Build the FastAPI application."""
     configure_logging(get_settings())
     app = FastAPI(title="VisitDoc — Grounded FAQ Chat", lifespan=lifespan)
-    app.include_router(chat_router)
+    app.include_router(chats_router)
     app.include_router(faq_router)
+    app.include_router(turn_router)
     return app
 
 

@@ -5,10 +5,10 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from chat.agent.history import to_claude_messages
+from chat.core.config import get_settings
 from chat.domain.models import Message
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
 
-_MODEL = "claude-haiku-4-5-20251001"
 _MAX_TOKENS = 256
 _SYSTEM_PROMPT = (
     "Classify the visitor's most recent message into every intent that applies, given "
@@ -54,7 +54,7 @@ async def classify_intent(
     """
     try:
         response = await anthropic_client.messages.create(
-            model=_MODEL,
+            model=get_settings().CLASSIFICATION_MODEL,
             max_tokens=_MAX_TOKENS,
             system=_SYSTEM_PROMPT,
             messages=to_claude_messages(bursts),

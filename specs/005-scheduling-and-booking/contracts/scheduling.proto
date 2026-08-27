@@ -1,0 +1,248 @@
+// Phase 1 contract — chat <-> scheduler gRPC.
+//
+// Target for `packages/shared-proto/protos/scheduling/v1/scheduling.proto`, which today holds a
+// walking-skeleton placeholder (`CheckAvailability(doctor_id)`) that this file replaces wholesale.
+// Regenerate the stubs per `packages/shared-proto/README.md` (including the manual import fixup).
+//
+// Conventions:
+//   * Every local date-time is an ISO-8601 string with NO offset and NO trailing `Z`
+//     ("2026-08-14T09:00:00"); every local date is "YYYY-MM-DD"; every local time is "HH:MM".
+//     `google.protobuf.Timestamp` is deliberately not used: it denotes an absolute instant, and
+//     this system has no timezone (spec FR-033/FR-043, research.md #5). Both ends validate.
+//   * Every request carries `session_id`. The server scopes every query to it and never returns a
+//     row from another session (spec FR-002). Because the scoping is a filter rather than a
+//     post-hoc check, an id belonging to another session simply does not resolve — it is reported
+//     as not-found, identically to one that never existed (spec FR-066).
+//   * Every request that makes a judgement about "past", "upcoming", or the booking horizon carries
+//     `local_now`, the client's current local date-time. The server never reads its own clock for
+//     such a judgement (spec FR-058, research.md #20).
+//   * A refusal the server evaluated is a SUCCESSFUL rpc carrying a typed failure. gRPC status
+//     codes are reserved for transport/infrastructure failures (research.md #9).
+//   * The caller applies a 2s deadline and at most 2 attempts per call, retrying only UNAVAILABLE
+//     and DEADLINE_EXCEEDED (spec FR-047).
+//   * `x-turn-id` metadata carries the caller's correlation id (research.md #18).
+
+syntax = "proto3";
+
+package scheduling.v1;
+
+service Scheduling {
+  // Idempotent per-session provisioning: creates this chat's patient if absent, and one
+  // default practitioner if the session has none. Safe to call on every visit (FR-042, FR-045).
+  rpc EnsureSessionProvisioned(EnsureSessionProvisionedRequest)
+      returns (EnsureSessionProvisionedResponse);
+
+  // Every practitioner in the session, with specialty and schedule (FR-030).
+  rpc ListPractitioners(ListPractitionersRequest) returns (ListPractitionersResponse);
+
+  // Bookable start times for one practitioner over a window (FR-024).
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+
+  // Create one appointment, or explain why it was refused (FR-016..FR-021, FR-051).
+  rpc BookAppointment(BookAppointmentRequest) returns (BookAppointmentResponse);
+
+  // This patient's appointments whose start is still in the future, earliest first (FR-031).
+  rpc ListUpcomingAppointments(ListUpcomingAppointmentsRequest)
+      returns (ListUpcomingAppointmentsResponse);
+
+  // Hard-delete this chat's patient and, by cascade, that patient's appointments (FR-039).
+  // Idempotent: deleting an already-absent patient succeeds.
+  rpc DeletePatientForChat(DeletePatientForChatRequest) returns (DeletePatientForChatResponse);
+}
+
+// ---------------------------------------------------------------------------
+// Domain messages
+// ---------------------------------------------------------------------------
+
+// A specialty is one of the ten values of `shared_models.Specialty` (spec FR-005) — carried as a
+// `string`, deliberately NOT a proto enum (research.md #25). The StrEnum in `shared-models` is the
+// single declaration of the set; a proto enum would be a second one that could drift, and adding an
+// eleventh specialty would then mean regenerating stubs on both sides. Both ends validate the string
+// against that enum on ingress and reject anything outside it with INVALID_ARGUMENT. An empty string
+// on a create request means "use the default", which is "General Practice" (FR-057).
+
+// 0 = Monday .. 6 = Sunday.
+enum Weekday {
+  WEEKDAY_MONDAY = 0;
+  WEEKDAY_TUESDAY = 1;
+  WEEKDAY_WEDNESDAY = 2;
+  WEEKDAY_THURSDAY = 3;
+  WEEKDAY_FRIDAY = 4;
+  WEEKDAY_SATURDAY = 5;
+  WEEKDAY_SUNDAY = 6;
+}
+
+// One continuous span on one weekday during which a practitioner accepts appointments.
+message WorkingRange {
+  Weekday weekday = 1;
+  string start_time = 2;  // "HH:MM"
+  string end_time = 3;    // "HH:MM", strictly after start_time
+}
+
+message Patient {
+  string id = 1;
+  string chat_id = 2;
+  string full_name = 3;
+}
+
+message Practitioner {
+  string id = 1;
+  string full_name = 2;
+  string specialty = 3;  // one of the ten Specialty values
+  int32 appointment_duration_minutes = 4;
+  repeated WorkingRange schedule = 5;  // empty => listed but never bookable
+}
+
+message Appointment {
+  string id = 1;
+  string patient_id = 2;
+  string patient_full_name = 3;
+  string practitioner_id = 4;
+  string practitioner_full_name = 5;
+  string practitioner_specialty = 6;  // one of the ten Specialty values
+  string starts_at = 7;  // local, "YYYY-MM-DDTHH:MM:SS"
+  string ends_at = 8;    // local
+}
+
+// Why an evaluated booking was refused. Mirrors `shared_models.BookingFailureReason` 1:1, and is
+// exactly the closed set of eight FR-065 allows — every value here maps to one rejection rule, and
+// every rejection rule has a value here.
+//
+// An attempt can break several rules at once, so the server evaluates them in FR-065's fixed
+// precedence and reports the FIRST that holds:
+//   NOT_FOUND (either) -> IN_PAST -> BEYOND_HORIZON -> OUTSIDE_SCHEDULE -> OFF_GRID -> BUSY (either).
+// Two consequences worth stating: a start inside NO working range is OUTSIDE_SCHEDULE and never
+// OFF_GRID (off-grid presupposes a range to be off the grid of), and the two BUSY reasons come from
+// the datastore's exclusion constraints at insert time, so when one attempt collides with both,
+// either may be reported.
+enum BookingFailureReason {
+  BOOKING_FAILURE_REASON_UNSPECIFIED = 0;
+  BOOKING_FAILURE_REASON_PRACTITIONER_BUSY = 1;      // FR-017
+  BOOKING_FAILURE_REASON_PATIENT_BUSY = 2;           // FR-016
+  BOOKING_FAILURE_REASON_OUTSIDE_SCHEDULE = 3;       // FR-018, incl. an appointment spanning two
+                                                     //   contiguous ranges, and any start outside
+                                                     //   every range
+  BOOKING_FAILURE_REASON_OFF_GRID = 4;               // FR-019, only inside a range
+  BOOKING_FAILURE_REASON_IN_PAST = 5;                // FR-020, start <= local_now (boundary refused)
+  BOOKING_FAILURE_REASON_BEYOND_HORIZON = 6;         // FR-021, start > local_now + 90d (inclusive)
+  BOOKING_FAILURE_REASON_PRACTITIONER_NOT_FOUND = 7; // incl. another session's id (FR-066)
+  BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND = 8;      // incl. a patient deleted mid-turn (FR-055),
+                                                     //   and another session's id (FR-066)
+}
+
+message BookingFailure {
+  BookingFailureReason reason = 1;
+  // Human-readable detail for logs only. The assistant's explanation to the patient is generated
+  // from `reason`, never from this string.
+  string detail = 2;
+}
+
+// ---------------------------------------------------------------------------
+// RPC messages
+// ---------------------------------------------------------------------------
+
+message EnsureSessionProvisionedRequest {
+  string session_id = 1;
+  string chat_id = 2;
+}
+
+message EnsureSessionProvisionedResponse {
+  Patient patient = 1;
+  repeated Practitioner practitioners = 2;  // the session's full set, not only any newly created one
+  bool patient_created = 3;                 // false when an earlier attempt had already created it
+  bool practitioner_created = 4;
+}
+
+message ListPractitionersRequest {
+  string session_id = 1;
+}
+
+message ListPractitionersResponse {
+  repeated Practitioner practitioners = 1;
+}
+
+message CheckAvailabilityRequest {
+  string session_id = 1;
+  string practitioner_id = 2;
+  string from_date = 3;   // local, "YYYY-MM-DD", inclusive
+  // local, "YYYY-MM-DD", inclusive. A window longer than FR-067's 14-day cap is CLAMPED to 14 days
+  // from `from_date`, never rejected, and the response is marked `truncated`.
+  string to_date = 4;
+  string local_now = 5;   // FR-058
+  // REQUIRED. Availability is patient-relative (FR-024): slots colliding with this patient's own
+  // appointments — with ANY practitioner — are excluded, so an offered slot can never be refused by
+  // FR-016's patient-overlap rule. Omitting it would reintroduce that gap, so it is not optional.
+  string patient_id = 6;
+}
+
+message CheckAvailabilityResponse {
+  // Bookable start times, ascending, local. Each is guaranteed bookable BY THIS PATIENT at the
+  // moment it is produced (FR-025/SC-009): inside ONE working range, on that range's grid, free for
+  // the practitioner, free for the patient, strictly after `local_now`, in horizon. Every predicate
+  // is evaluated exactly as `BookAppointment` evaluates it, boundaries included — a slot starting at
+  // exactly `local_now` is NOT offered, because FR-020 would refuse it. Intervals are half-open
+  // (FR-061), so a slot starting exactly when the patient's previous appointment ends IS offered.
+  // Grandfathered appointments (FR-023) remove the slots they overlap like any other appointment;
+  // they merely never appear as offers themselves, since the grid comes from the CURRENT schedule.
+  // The guarantee is scoped to the moment of production — another patient may take a slot before
+  // this one confirms.
+  repeated string available_starts = 1;
+  // True when either FR-067 cap bit: the requested window was clamped to 14 days, or more than 50
+  // starts existed. An empty list with `truncated = false` therefore means genuinely nothing
+  // bookable in that window, which is what lets the caller tell "fully booked" from "not all seen".
+  bool truncated = 2;
+  int32 appointment_duration_minutes = 3;
+}
+
+message BookAppointmentRequest {
+  string session_id = 1;
+  string patient_id = 2;
+  string practitioner_id = 3;
+  string starts_at = 4;        // local; `ends_at` is derived server-side from the practitioner
+  string local_now = 5;        // FR-058
+  // Required, caller-derived from exactly (patient_id, practitioner_id, starts_at) so that the same
+  // booking always yields the same key and different bookings never share one (FR-062).
+  //
+  //   * key unused                         -> validate and create; the key is recorded ONLY on
+  //                                           success, so a refusal leaves it free (FR-064)
+  //   * key used, all three fields match   -> return that appointment, idempotent_replay = true
+  //                                           (FR-051)
+  //   * key used, any field differs        -> INVALID_ARGUMENT (FR-063). NOT a BookingFailure: it
+  //                                           means the caller's key derivation is broken, not that
+  //                                           the patient must choose differently. Returning the
+  //                                           stored appointment here would confirm a time the
+  //                                           patient never asked for (FR-028).
+  //
+  // Globally scoped; lives exactly as long as the appointment that recorded it (FR-064).
+  string idempotency_key = 6;
+}
+
+message BookAppointmentResponse {
+  oneof result {
+    Appointment appointment = 1;  // created now, OR the original for an already-used key
+    BookingFailure failure = 2;
+  }
+  // True when `idempotency_key` matched an earlier attempt and `appointment` is that original.
+  // Diagnostic only: the caller reports it to the patient identically either way (FR-051).
+  bool idempotent_replay = 3;
+}
+
+message ListUpcomingAppointmentsRequest {
+  string session_id = 1;
+  string patient_id = 2;
+  string local_now = 3;  // strictly-after filter (FR-031, FR-058)
+}
+
+message ListUpcomingAppointmentsResponse {
+  repeated Appointment appointments = 1;  // earliest first
+}
+
+message DeletePatientForChatRequest {
+  string session_id = 1;
+  string chat_id = 2;
+}
+
+message DeletePatientForChatResponse {
+  bool patient_existed = 1;
+  int32 appointments_deleted = 2;
+}

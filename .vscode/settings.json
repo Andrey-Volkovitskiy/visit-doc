@@ -1,0 +1,31 @@
+{
+  // Pylance walks every file under the workspace root. Naming
+  // `python.analysis.exclude` REPLACES Pyright's built-in defaults
+  // ("**/node_modules", "**/__pycache__", "**/.*") rather than adding to them, so
+  // those three are restated here instead of being silently dropped.
+  //
+  // This workspace is ~140 Python files; .venv alone holds ~5500 more and
+  // services/frontend/node_modules another ~4000 files. Excluded paths are still
+  // resolved when project code imports them - third-party types keep working, they
+  // just stop being scanned as workspace sources.
+  "python.analysis.exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    // Redundant with "**/.*" today, but kept explicit so relaxing that glob later
+    // (e.g. to analyze .github/ scripts) can't quietly re-enable a 5500-file scan.
+    "**/.venv",
+    // Build output, not sources: Vite's bundle and any coverage/packaging artifacts.
+    "**/dist",
+    "**/build",
+    "**/htmlcov"
+  ],
+  // Generated gRPC stubs: still analyzed, so `from shared_proto...` resolves and
+  // autocompletes, but never reported on. protoc output isn't statically typed, which
+  // is the same call the repo already makes for mypy ([[tool.mypy.overrides]]
+  // ignore_errors on shared_proto.scheduling.v1.*) and ruff (extend-exclude).
+  "python.analysis.ignore": [
+    "**/*_pb2.py",
+    "**/*_pb2_grpc.py"
+  ]
+}

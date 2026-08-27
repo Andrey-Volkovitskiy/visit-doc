@@ -6,13 +6,32 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from chat.domain.models import PATIENT_NAME_LENGTH
 from chat.domain.validation import is_meaningless
+
+_ULID_LENGTH = 26
 
 
 class ChatRequest(BaseModel):
-    """`POST /chat` request body."""
+    """`POST /chat` request body.
 
+    `local_now` is the visitor's own clock, sent on every turn. It resolves relative
+    phrasing ("tomorrow", "next Tuesday at 3") and is the only clock any past,
+    upcoming, or booking-horizon judgement is made against - so it must carry no
+    timezone, because there is none to carry.
+    """
+
+    chat_id: str = Field(min_length=_ULID_LENGTH, max_length=_ULID_LENGTH)
     message: str = Field(min_length=1, max_length=2000)
+    local_now: datetime
+
+    @field_validator("local_now")
+    @classmethod
+    def _reject_timezone_aware(cls, value: datetime) -> datetime:
+        """Raises: ValueError if `value` carries a timezone offset."""
+        if value.tzinfo is not None:
+            raise ValueError("local_now must carry no timezone offset")
+        return value
 
 
 class IntentLabel(StrEnum):
@@ -57,13 +76,29 @@ class ChatTokenEvent(BaseModel):
     text: str
 
 
+class AnswerSource(StrEnum):
+    """Which specialist(s) produced the reply a turn ended with."""
+
+    FAQ = "faq"
+    BOOKING = "booking"
+    MERGED = "merged"
+
+
 class ChatDoneEvent(BaseModel):
-    """Terminal NDJSON event: groundedness flag, citations, and abstention message."""
+    """Terminal NDJSON event: provenance, groundedness flag, citations, and message.
+
+    `grounded` is None when no FAQ specialist ran, since a booking reply is streamed
+    text that was never retrieved against and so is neither grounded nor abstaining.
+    `message` keeps its meaning: set only when there is no streamed text to show, which
+    today is the FAQ abstention case. A client renders `message` if present, otherwise
+    the tokens it accumulated. `citations` are always empty for a booking-only reply.
+    """
 
     type: Literal["done"] = "done"
-    grounded: bool
+    grounded: bool | None
     citations: list[Citation]
     message: str | None = None
+    answer_source: AnswerSource = AnswerSource.FAQ
 
 
 class ChatCancelledEvent(BaseModel):
@@ -96,12 +131,66 @@ class MessageOut(BaseModel):
 
 
 class ChatHistoryResponse(BaseModel):
-    """`GET /chat` response body: the chat's messages, chronological.
+    """`GET /chats/{chat_id}/messages` response: the chat's messages, chronological.
 
     Not guaranteed to alternate sender.
     """
 
     messages: list[MessageOut]
+
+
+class ChatSummary(BaseModel):
+    """One row of the session's chat list.
+
+    `patient_name` is None while this chat's patient record does not exist yet; the
+    client renders its own placeholder from `created_at` rather than the server
+    inventing a label it would then have to keep consistent.
+    """
+
+    id: str
+    patient_name: str | None
+    created_at: datetime
+    last_message_at: datetime | None
+
+
+class ChatPatientUpdate(BaseModel):
+    """`PATCH /chats/{chat_id}/patient` request body.
+
+    The bounds match the scheduler's own, so a name this service accepts is never one
+    the scheduler will then reject for its length.
+    """
+
+    full_name: str = Field(min_length=1, max_length=PATIENT_NAME_LENGTH)
+
+
+class ChatPatientOut(BaseModel):
+    """`PATCH /chats/{chat_id}/patient` response body.
+
+    Carries only what the rename changed. The client patches this into the row it is
+    already showing, so the response does not restate the rest of a `ChatSummary` - and
+    cannot disagree with it.
+    """
+
+    chat_id: str
+    patient_name: str
+
+
+class ChatListResponse(BaseModel):
+    """`GET /chats` response body.
+
+    `chats` is already in display order - chats holding messages first, newest message
+    first, then chats with none, newest-created first - so the client opens `chats[0]`
+    rather than re-deriving the rule on every render. May be empty: a session with zero
+    chats is a valid state.
+
+    `session_exists` is what tells an empty list apart from a session the user emptied,
+    and the two require opposite behavior - a first arrival is given a chat, an emptied
+    session is left alone. The client cannot make that distinction itself: the session
+    cookie is `HttpOnly`, so it never sees one.
+    """
+
+    chats: list[ChatSummary]
+    session_exists: bool
 
 
 class FaqEntryWrite(BaseModel):

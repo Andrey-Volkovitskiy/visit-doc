@@ -34,9 +34,10 @@ jobs:
         env:
           POSTGRES_USER: visitdoc
           POSTGRES_PASSWORD: visitdoc
-          # Already suffixed to match conftest.py's isolated-test-database convention,
-          # so this ephemeral, CI-only Postgres only ever needs the one database.
-          POSTGRES_DB: visitdoc_test
+          # Already suffixed to match each conftest.py's isolated-test-database
+          # convention. The image creates exactly one database, so the scheduler's is
+          # created by an explicit step below.
+          POSTGRES_DB: visitdoc_chat_test
         ports:
           - 5432:5432
         options: >-
@@ -50,10 +51,56 @@ jobs:
           - 6333:6333
           - 6334:6334
     env:
-      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_test
+      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_chat_test
+      SCHEDULER_DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_scheduler_test
       QDRANT_URL: http://localhost:6333
       # Never used for a real API call in tests (see conftest.py's fakes) -- only
       # needed because `Settings()` requires the field.
+      ANTHROPIC_API_KEY: unused-in-ci
+      VOYAGE_API_KEY: unused-in-ci
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Provision the scheduler test database
+        run: PGPASSWORD=visitdoc psql -h localhost -U visitdoc -d visitdoc_chat_test -c "CREATE DATABASE visitdoc_scheduler_test;"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Sync workspace
+        run: uv sync --locked
+
+      - name: Run unit tests
+        run: uv run pytest
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: visitdoc
+          POSTGRES_PASSWORD: visitdoc
+          # This tier only drives the scheduler's own database; chat's client talks to
+          # a live servicer over gRPC rather than to chat's Postgres.
+          POSTGRES_DB: visitdoc_scheduler_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U visitdoc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_scheduler_test
+      SCHEDULER_DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_scheduler_test
+      QDRANT_URL: http://localhost:6333
       ANTHROPIC_API_KEY: unused-in-ci
       VOYAGE_API_KEY: unused-in-ci
     steps:
@@ -71,8 +118,8 @@ jobs:
       - name: Sync workspace
         run: uv sync --locked
 
-      - name: Run unit tests
-        run: uv run pytest
+      - name: Run integration tests
+        run: uv run pytest tests/integration
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -90,6 +137,14 @@ jobs:
       - name: Install dependencies
         working-directory: services/frontend
         run: npm ci
+
+      # vitest transpiles via esbuild and never typechecks, so without this step a
+      # TypeScript type error passes CI. `tsc -b` (not `tsc --noEmit`) is what actually
+      # checks: tsconfig.json is a solution file with `"files": []`, so an invocation
+      # that does not follow its project references silently checks nothing.
+      - name: Typecheck
+        working-directory: services/frontend
+        run: npm run typecheck
 
       - name: Run tests
         working-directory: services/frontend

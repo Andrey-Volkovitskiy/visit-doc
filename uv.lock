@@ -12,6 +12,8 @@ resolution-markers = [
 members = [
     "chat",
     "scheduler",
+    "shared-db",
+    "shared-logging",
     "shared-models",
     "shared-proto",
 ]
@@ -405,6 +407,8 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-ulid" },
     { name = "qdrant-client" },
+    { name = "shared-db" },
+    { name = "shared-logging" },
     { name = "shared-models" },
     { name = "shared-proto" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -429,6 +433,8 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-ulid", specifier = ">=4.0.1" },
     { name = "qdrant-client", specifier = ">=1.18.0" },
+    { name = "shared-db", editable = "packages/shared-db" },
+    { name = "shared-logging", editable = "packages/shared-logging" },
     { name = "shared-models", editable = "packages/shared-models" },
     { name = "shared-proto", editable = "packages/shared-proto" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
@@ -2245,15 +2251,47 @@ name = "scheduler"
 version = "0.1.0"
 source = { editable = "services/scheduler" }
 dependencies = [
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "fastapi" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "python-ulid" },
+    { name = "shared-db" },
+    { name = "shared-logging" },
     { name = "shared-models" },
     { name = "shared-proto" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "structlog" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx2" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "alembic", specifier = ">=1.18.5" },
+    { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "fastapi", specifier = ">=0.141.1" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3.4" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "python-ulid", specifier = ">=4.0.1" },
+    { name = "shared-db", editable = "packages/shared-db" },
+    { name = "shared-logging", editable = "packages/shared-logging" },
     { name = "shared-models", editable = "packages/shared-models" },
     { name = "shared-proto", editable = "packages/shared-proto" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
+    { name = "structlog", specifier = ">=26.1.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "httpx2", specifier = ">=2.9.1" }]
 
 [[package]]
 name = "setuptools"
@@ -2263,6 +2301,28 @@ sdist = { url = "https://files.pythonhosted.org/packages/34/26/f5d29e25ffdb535af
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5d/40/e1e72872c6354b306daef1703549e8e83b4d43cfea356311bf722a043752/setuptools-83.0.0-py3-none-any.whl", hash = "sha256:29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3", size = 1008090, upload-time = "2026-07-04T15:31:20.885Z" },
 ]
+
+[[package]]
+name = "shared-db"
+version = "0.1.0"
+source = { editable = "packages/shared-db" }
+dependencies = [
+    { name = "sqlalchemy", extra = ["asyncio"] },
+]
+
+[package.metadata]
+requires-dist = [{ name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" }]
+
+[[package]]
+name = "shared-logging"
+version = "0.1.0"
+source = { editable = "packages/shared-logging" }
+dependencies = [
+    { name = "structlog" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "structlog", specifier = ">=26.1.0" }]
 
 [[package]]
 name = "shared-models"

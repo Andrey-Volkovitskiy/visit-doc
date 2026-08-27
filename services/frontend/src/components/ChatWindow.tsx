@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
-import { ClearChatButton } from "./ClearChatButton";
 import { MessageView } from "./MessageView";
 
 let nextMessageId = 0;
@@ -15,46 +14,82 @@ function localId(): string {
 // patient gets immediate feedback instead of a round trip to hit the same 422.
 const MAX_MESSAGE_LENGTH = 2000;
 
-export function ChatWindow() {
+interface ChatWindowProps {
+  /** The chat to show and send to. Null when the session holds no chats at all. */
+  chatId: string | null;
+  /** Called after a turn completes, so the chat list can refresh its ordering. */
+  onTurnComplete?: () => void;
+}
+
+export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState<string | null>(null);
+  // Keyed by turn rather than a single string: several turns can be in flight at once
+  // (see below), and one shared slot means whichever finishes first clears the other's
+  // in-progress bubble, while their tokens interleave in one bubble until it does.
+  const [streaming, setStreaming] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   // Every send's own controller lives here for the duration of its request, not
   // just the latest one - several turns can be genuinely in flight at once (a
-  // burst of quick patient messages, FR-015), and each must run to completion
+  // burst of quick patient messages), and each must run to completion
   // independently. The server alone decides whether an earlier turn in the same
-  // chat gets superseded (register_and_cancel_previous, `cancelled` event,
-  // FR-016) - a still-genuinely-completing earlier request must never be aborted
-  // from here just because a newer send started, or its final `done` event (and
-  // the reply the server already persisted) would be thrown away client-side,
-  // only reappearing on the next reload.
+  // chat gets superseded (`cancelled` event) - a still-genuinely-completing
+  // earlier request must never be aborted from here just because a newer send
+  // started, or its final `done` event (and the reply the server already
+  // persisted) would be thrown away client-side, only reappearing on reload.
   const activeControllersRef = useRef<Set<AbortController>>(new Set());
 
   useEffect(() => {
-    void fetchChatHistory().then(setMessages);
-  }, []);
-
-  function handleCleared(): void {
-    // The chat and its messages are gone server-side (FR-005); abort every
-    // in-flight reply so a stale generation can't populate the now-empty chat
-    // (FR-006) - there can be more than one in flight at once (see above).
+    // Switching chats abandons whatever the previous one had in flight: its reply
+    // belongs to a thread that is no longer on screen, and letting it land would
+    // append it to the wrong history.
     for (const controller of activeControllersRef.current) {
       controller.abort();
     }
     activeControllersRef.current.clear();
     setMessages([]);
-    setStreaming(null);
+    setStreaming({});
     setError(null);
+
+    if (chatId === null) return;
+    let current = true;
+    void fetchChatHistory(chatId)
+      .then((history) => {
+        if (current) setMessages(history);
+      })
+      .catch((err: unknown) => {
+        // A chat deleted in another tab 404s here. Reporting it beats leaving the
+        // pane silently empty, and leaves `messages` a real array either way.
+        if (current) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load this chat's history.",
+          );
+        }
+      });
+    return () => {
+      current = false;
+    };
+  }, [chatId]);
+
+  function clearStreaming(turnKey: string): void {
+    setStreaming((prev) => {
+      const { [turnKey]: _removed, ...rest } = prev;
+      return rest;
+    });
   }
 
   async function handleSend(): Promise<void> {
     const messageText = input;
+    if (chatId === null) return;
     if (!messageText.trim() || messageText.length > MAX_MESSAGE_LENGTH) return;
 
     setInput("");
     setError(null);
-    setStreaming("");
+
+    const turnKey = localId();
+    setStreaming((prev) => ({ ...prev, [turnKey]: "" }));
 
     const controller = new AbortController();
     activeControllersRef.current.add(controller);
@@ -73,50 +108,60 @@ export function ChatWindow() {
 
     let accumulated = "";
     try {
-      const events = await askChat(messageText, controller.signal);
+      const events = await askChat(chatId, messageText, controller.signal);
       for await (const event of events) {
         if (event.type === "token") {
           accumulated += event.text;
-          setStreaming(accumulated);
+          setStreaming((prev) => ({ ...prev, [turnKey]: accumulated }));
         } else if (event.type === "cancelled") {
           // Superseded by a newer message - remove the in-progress bubble and any
-          // partial tokens entirely; never shown as final, never as an error
-          // (FR-016, research.md #10).
-          setStreaming(null);
+          // partial tokens entirely; never shown as final, never as an error. Only
+          // this turn's, so a sibling turn still streaming keeps its own.
+          clearStreaming(turnKey);
           return;
         } else {
-          setStreaming(null);
+          clearStreaming(turnKey);
           setMessages((prev) => [
             ...prev,
             {
               id: localId(),
               sender: "assistant",
-              content: event.grounded ? accumulated : (event.message ?? ""),
+              // `message` is set only when there is no streamed text to show (the
+              // FAQ abstention case); otherwise the accumulated tokens are the
+              // reply, whether it came from the FAQ path, the booking path, or both.
+              content: event.message ?? accumulated,
               grounded: event.grounded,
               citations: event.citations,
               created_at: new Date().toISOString(),
             },
           ]);
+          onTurnComplete?.();
         }
       }
     } catch (err) {
       if (controller.signal.aborted) {
-        // Only Clear Chat aborts a controller now (see `activeControllersRef`
-        // above) - its own `handleCleared` already reset all display state, so
-        // there's nothing left for this stale request to do.
+        // Aborted by a chat switch or a deletion, both of which already reset the
+        // display state - there is nothing left for this stale request to do.
         return;
       }
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-      setStreaming(null);
+      clearStreaming(turnKey);
       setInput(messageText);
     } finally {
       activeControllersRef.current.delete(controller);
     }
   }
 
+  if (chatId === null) {
+    return (
+      <div data-testid="no-chat" style={{ opacity: 0.5 }}>
+        <p>No chat selected. Create one to start talking.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <ClearChatButton onCleared={handleCleared} />
       <div data-testid="messages">
         {messages.map((message) => (
           <MessageView
@@ -124,9 +169,12 @@ export function ChatWindow() {
             sender={message.sender}
             content={message.content}
             citations={message.citations}
+            grounded={message.grounded}
           />
         ))}
-        {streaming !== null && <MessageView sender="assistant" content={streaming} />}
+        {Object.entries(streaming).map(([turnKey, text]) => (
+          <MessageView key={turnKey} sender="assistant" content={text} />
+        ))}
       </div>
       <textarea
         aria-label="question"

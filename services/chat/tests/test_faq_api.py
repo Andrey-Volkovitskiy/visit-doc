@@ -9,7 +9,12 @@ from chat.repositories.qdrant_repository import upsert_chunks as real_upsert_chu
 from fastapi.testclient import TestClient
 from structlog.testing import capture_logs
 
-from .conftest import fake_anthropic_client, fake_embed_texts
+from .conftest import (
+    LOCAL_NOW,
+    chat_id_for,
+    fake_anthropic_client,
+    fake_embed_texts,
+)
 
 
 def _create(client: TestClient, content: str) -> dict[str, Any]:
@@ -90,7 +95,12 @@ def test_update_is_reflected_in_chat_retrieval() -> None:
                 # asserting it equals a value we hardcoded here would prove nothing
                 # about retrieval.
                 chat_response = client.post(
-                    "/chat", json={"message": "when can I visit?"}
+                    "/chat",
+                    json={
+                        "chat_id": chat_id_for(client),
+                        "message": "when can I visit?",
+                        "local_now": LOCAL_NOW,
+                    },
                 )
 
             lines = [
@@ -116,7 +126,14 @@ def test_delete_stops_grounding_and_then_404s() -> None:
         assert client.delete(f"/faq/{entry['id']}").status_code == 404
 
         with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
-            chat_response = client.post("/chat", json={"message": "when can I visit?"})
+            chat_response = client.post(
+                "/chat",
+                json={
+                    "chat_id": chat_id_for(client),
+                    "message": "when can I visit?",
+                    "local_now": LOCAL_NOW,
+                },
+            )
         lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
         assert lines[-1]["grounded"] is False
 
@@ -265,7 +282,12 @@ def test_update_failure_reverts_content_and_reindexes_previous() -> None:
 
             with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
                 chat_response = client.post(
-                    "/chat", json={"message": "when can I visit?"}
+                    "/chat",
+                    json={
+                        "chat_id": chat_id_for(client),
+                        "message": "when can I visit?",
+                        "local_now": LOCAL_NOW,
+                    },
                 )
 
             lines = [

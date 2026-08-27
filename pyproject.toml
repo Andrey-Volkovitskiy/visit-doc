@@ -13,7 +13,12 @@ dev = [
 ]
 
 [tool.ruff]
-extend-exclude = ["**/*_pb2.py", "**/*_pb2_grpc.py", "**/alembic/versions/*.py"]
+extend-exclude = [
+    "**/*_pb2.py",
+    "**/*_pb2.pyi",
+    "**/*_pb2_grpc.py",
+    "**/alembic/versions/*.py",
+]
 
 [tool.ruff.lint]
 extend-select = [
@@ -28,6 +33,17 @@ extend-select = [
     "D101", # missing docstring in public class
     "D102", # missing docstring in public method
     "D103", # missing docstring in public function
+]
+
+ignore = [
+    # This system stores and reasons about *local wall-clock* times only - no timezone
+    # is stored, converted, or configurable anywhere, and every past/upcoming/horizon
+    # judgement is made against a client-supplied `local_now`. A naive `datetime(...)`
+    # is therefore the correct, intended construction here, not an oversight. Only
+    # DTZ001 (the constructor) is ignored: the rest of the flake8-datetimez family stays
+    # on, and is genuinely useful - DTZ005/DTZ011 in particular forbid reading the host
+    # clock, which is exactly the mistake the local-time model must not make.
+    "DTZ001",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -45,6 +61,7 @@ asyncio_default_fixture_loop_scope = "session"
 testpaths = [
     "services/chat/tests",
     "services/scheduler/tests",
+    "packages/shared-logging/tests",
     "packages/shared-models/tests",
     "packages/shared-proto/tests",
 ]
@@ -52,10 +69,12 @@ testpaths = [
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
-mypy_path = "services/chat/src:services/scheduler/src:packages/shared-models/src:packages/shared-proto/src"
+mypy_path = "services/chat/src:services/scheduler/src:packages/shared-db/src:packages/shared-logging/src:packages/shared-models/src:packages/shared-proto/src"
 files = [
     "services/chat/src",
     "services/scheduler/src",
+    "packages/shared-db/src",
+    "packages/shared-logging/src",
     "packages/shared-models/src",
     "packages/shared-proto/src",
 ]

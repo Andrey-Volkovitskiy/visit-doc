@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 _ULID_LENGTH = 26
+PATIENT_NAME_LENGTH = 200
 
 
 class MessageSender(StrEnum):
@@ -26,6 +27,16 @@ class MessageSender(StrEnum):
 
 class Base(DeclarativeBase):
     """Declarative base for all SQLAlchemy models."""
+
+
+def all_table_names() -> tuple[str, ...]:
+    """Return every table this service owns, in declaration order.
+
+    Read from the metadata rather than listed by hand, so a suite truncating "every
+    table" between tests keeps doing that after a table is added - a hand-written list
+    silently leaves the new one's rows to leak into the next test.
+    """
+    return tuple(table.name for table in Base.metadata.sorted_tables)
 
 
 class FaqEntry(Base):
@@ -64,8 +75,19 @@ class Session(Base):
 class Chat(Base):
     """One continuous chat thread between a `Session` and the assistant.
 
-    No uniqueness constraint on `session_id` - exactly-one-active-chat-per-session is
-    enforced in application logic, not the schema.
+    A session may hold any number of chats, including none.
+
+    `patient_id` references the scheduler service's own database and is deliberately
+    not a foreign key: the two services own separate databases, so this side holds an
+    opaque id and never a `Patient` row. It is NULL until that patient exists, which is
+    the normal state of a chat created while scheduling was unreachable.
+
+    `patient_name` is a cached display value this service never authors - it is written
+    from whatever the scheduler reported, so the chat list has something to render
+    without a per-render call. Renaming through this service updates both stores in the
+    one request, which is what keeps the copy true; renaming through the scheduler's own
+    admin API instead writes only its side and leaves this copy stale, since nothing
+    here re-reads a name it already has.
     """
 
     __tablename__ = "chats"
@@ -75,6 +97,12 @@ class Chat(Base):
         String(_ULID_LENGTH),
         ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=False,
+    )
+    patient_id: Mapped[str | None] = mapped_column(
+        String(_ULID_LENGTH), nullable=True, index=True
+    )
+    patient_name: Mapped[str | None] = mapped_column(
+        String(PATIENT_NAME_LENGTH), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

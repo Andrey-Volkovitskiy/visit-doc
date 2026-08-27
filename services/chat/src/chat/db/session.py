@@ -1,28 +1,13 @@
-"""Async SQLAlchemy engine/session factory for the app's database."""
+"""This service's engine and session factory, over the shared constructors."""
 
 from collections.abc import AsyncIterator
 
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from shared_db import create_engine, create_session_factory
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from chat.core.config import Settings, get_settings
+from chat.core.config import get_settings
 
-
-def create_engine(settings: Settings) -> AsyncEngine:
-    """Build the async engine for the given settings."""
-    return create_async_engine(settings.DATABASE_URL)
-
-
-def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-    """Build a session factory bound to the given engine."""
-    return async_sessionmaker(engine, expire_on_commit=False)
-
-
-engine = create_engine(get_settings())
+engine = create_engine(get_settings().DATABASE_URL)
 session_factory = create_session_factory(engine)
 
 

@@ -44,6 +44,26 @@ async def register_and_cancel_previous(
             await previous_task
 
 
+async def cancel_for_chat(chat_id: str) -> bool:
+    """Cancel and forget any generation still running for `chat_id`.
+
+    Returns: True if a turn was actually cancelled.
+
+    Used when a chat is being deleted: the reply belongs to a chat that is about to
+    stop existing, so it is abandoned with nothing recorded rather than left to insert
+    a message against a row that is going away.
+    """
+    current = _in_flight.pop(chat_id, None)
+    if current is None or current[1].done():
+        return False
+    turn_id, task = current
+    get_logger().info("turn.cancelled", chat_id=chat_id, cancelled_turn_id=turn_id)
+    task.cancel()
+    with suppress(asyncio.CancelledError):
+        await task
+    return True
+
+
 def clear_if_current(chat_id: str, task: "asyncio.Task[None]") -> bool:
     """Remove `task` from the registry for `chat_id`, only if it's still current.
 

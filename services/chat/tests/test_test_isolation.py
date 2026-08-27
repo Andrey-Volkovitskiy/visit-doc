@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 
 
 def test_database_engine_is_bound_to_the_isolated_test_database() -> None:
-    assert engine.url.database == "visitdoc_test"
+    assert engine.url.database == "visitdoc_chat_test"
 
 
 def test_qdrant_collection_name_is_the_isolated_test_collection() -> None:

@@ -1,5 +1,5 @@
 from chat.core.config import Settings
-from chat.db.session import create_engine, create_session_factory
+from shared_db import create_engine, create_session_factory
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -13,7 +13,7 @@ def _settings() -> Settings:
 
 
 async def test_session_factory_builds_session_bound_to_configured_database() -> None:
-    engine = create_engine(_settings())
+    engine = create_engine(_settings().DATABASE_URL)
     session_factory = create_session_factory(engine)
 
     async with session_factory() as session:

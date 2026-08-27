@@ -1,0 +1,256 @@
+openapi: 3.1.0
+info:
+  title: VisitDoc — scheduler service admin API (Phase 1c)
+  version: "1.0.0"
+  description: >
+    Spec FR-048's programmatic management surface: create/edit/delete practitioners and rename
+    patients. No user interface ships for it in this phase.
+
+    Authorization is the session id itself, presented in `X-Session-Id`. The chat service mints it
+    from `os.urandom` entropy specifically so it can act as a bearer credential; every handler
+    scopes its query to it, so a row belonging to another session is indistinguishable from a row
+    that does not exist (404) — spec US5-5, FR-002 (research.md #16).
+
+    All times are timezone-naive local wall-clock; nothing here accepts or returns an offset.
+
+servers:
+  - url: http://localhost:8001
+
+components:
+  parameters:
+    SessionId:
+      name: X-Session-Id
+      in: header
+      required: true
+      schema: { type: string, minLength: 26, maxLength: 26 }
+  schemas:
+    Specialty:
+      type: string
+      enum:
+        - Cardiology
+        - Dentistry
+        - Dermatology
+        - General Practice
+        - Gynecology
+        - Neurology
+        - Ophthalmology
+        - Orthopedics
+        - Pediatrics
+        - Psychiatry
+      description: >
+        The ten specialties (FR-005, research.md #25). A practitioner holds exactly one; there is no
+        "other" value and nothing outside this list is accepted. Values are the display names —
+        there is no separate key-to-label mapping. Listed here in name order, the same order
+        `GET /specialties` returns them in (FR-060); clients should populate a chooser from that
+        endpoint rather than from a copy of this list.
+
+    WorkingRange:
+      type: object
+      required: [weekday, start_time, end_time]
+      properties:
+        weekday: { type: integer, minimum: 0, maximum: 6, description: "0 = Monday … 6 = Sunday" }
+        start_time: { type: string, pattern: '^\d{2}:\d{2}$' }
+        end_time: { type: string, pattern: '^\d{2}:\d{2}$', description: Strictly after start_time. }
+
+    Practitioner:
+      type: object
+      required: [id, full_name, specialty, appointment_duration_minutes, schedule]
+      properties:
+        id: { type: string }
+        full_name: { type: string }
+        specialty: { $ref: "#/components/schemas/Specialty" }
+        appointment_duration_minutes: { type: integer, minimum: 5, maximum: 480 }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/WorkingRange" }
+          description: >
+            Ranges on the same weekday must not overlap (FR-006). An empty schedule is legal: the
+            practitioner is listed but offers no bookable times (spec Edge Cases).
+
+    PractitionerCreate:
+      type: object
+      description: >
+        Every field is optional (FR-057). Omitted `full_name` takes the next unused physician-pool
+        name, `specialty` to "General Practice", `schedule` to Monday–Friday 09:00–17:00, and
+        `appointment_duration_minutes` to 60 — so `POST` with `{}` yields an immediately bookable
+        practitioner. First-visit seeding uses this same path with nothing supplied.
+      properties:
+        full_name: { type: string, minLength: 1, maxLength: 200 }
+        specialty: { $ref: "#/components/schemas/Specialty" }
+        appointment_duration_minutes: { type: integer, minimum: 5, maximum: 480 }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/WorkingRange" }
+
+    PractitionerUpdate:
+      type: object
+      description: >
+        Partial update; omitted fields are untouched. Edits that invalidate existing appointments —
+        narrowing the schedule, changing the duration — are ACCEPTED, and those appointments keep
+        their original times and length (FR-022). Only later bookings are validated against the new
+        settings; the grandfathered rows still block overlapping bookings (FR-023).
+      properties:
+        full_name: { type: string, minLength: 1, maxLength: 200 }
+        specialty: { $ref: "#/components/schemas/Specialty" }
+        appointment_duration_minutes: { type: integer, minimum: 5, maximum: 480 }
+        schedule:
+          type: array
+          items: { $ref: "#/components/schemas/WorkingRange" }
+
+    Patient:
+      type: object
+      required: [id, chat_id, full_name]
+      properties:
+        id: { type: string }
+        chat_id: { type: string }
+        full_name: { type: string }
+
+    PatientUpdate:
+      type: object
+      required: [full_name]
+      properties:
+        full_name: { type: string, minLength: 1, maxLength: 200 }
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+paths:
+  /specialties:
+    get:
+      summary: The ten specialties, sorted by name
+      description: >
+        FR-060. The source a practitioner-editing dropdown is populated from, so the list lives in
+        one place rather than being copied into each client. Sorted by name explicitly, not by
+        declaration order — the ordering is part of the contract.
+
+        Not session-scoped: the list is the same for every caller and contains no session data, so
+        `X-Session-Id` is not required here. This is the only route in this API without it.
+      responses:
+        "200":
+          description: Every specialty, name-sorted.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Specialty" }
+              example: ["Cardiology", "Dentistry", "Dermatology", "General Practice", "Gynecology",
+                        "Neurology", "Ophthalmology", "Orthopedics", "Pediatrics", "Psychiatry"]
+
+  /practitioners:
+    get:
+      summary: List the session's practitioners
+      parameters: [{ $ref: "#/components/parameters/SessionId" }]
+      responses:
+        "200":
+          description: Practitioners in this session.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Practitioner" }
+        "401": { description: Missing X-Session-Id. }
+
+    post:
+      summary: Create a practitioner
+      parameters: [{ $ref: "#/components/parameters/SessionId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PractitionerCreate" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Practitioner" }
+        "401": { description: Missing X-Session-Id. }
+        "409":
+          description: >
+            `full_name` is already used by another practitioner in this session (FR-012, FR-050).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { description: Overlapping ranges on one weekday, end_time <= start_time, or a specialty outside the FR-005 list. }
+
+  /practitioners/{practitioner_id}:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+      - name: practitioner_id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Edit a practitioner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PractitionerUpdate" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Practitioner" }
+        "401": { description: Missing X-Session-Id. }
+        "404": { description: Unknown practitioner, or one belonging to another session. }
+        "409": { description: Name collision within the session (FR-050). }
+        "422": { description: Overlapping ranges on one weekday, an invalid range, or a specialty outside the FR-005 list. }
+    delete:
+      summary: Delete a practitioner and their appointments
+      description: >
+        Hard delete. The practitioner's appointments are removed with them by database cascade
+        (FR-049); other patients' remaining appointments are untouched.
+      responses:
+        "204": { description: Deleted. Also returned when already absent. }
+        "401": { description: Missing X-Session-Id. }
+        "404": { description: A practitioner belonging to another session. }
+
+  /patients:
+    get:
+      summary: List the session's patients
+      parameters: [{ $ref: "#/components/parameters/SessionId" }]
+      responses:
+        "200":
+          description: Patients in this session.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Patient" }
+        "401": { description: Missing X-Session-Id. }
+
+  /patients/{patient_id}:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+      - name: patient_id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Rename a patient
+      description: >
+        The only patient mutation in this API. There is deliberately no create and no delete: a
+        patient is created with its chat and deleted with it (FR-003, FR-039).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PatientUpdate" }
+      responses:
+        "200":
+          description: Renamed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Patient" }
+        "401": { description: Missing X-Session-Id. }
+        "404": { description: Unknown patient, or one belonging to another session. }
+        "409":
+          description: Another patient in this session already has that name (FR-012, FR-050).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }

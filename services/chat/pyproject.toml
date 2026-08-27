@@ -13,6 +13,8 @@ dependencies = [
     "pydantic-settings>=2.14.2",
     "python-ulid>=4.0.1",
     "qdrant-client>=1.18.0",
+    "shared-db",
+    "shared-logging",
     "shared-models",
     "shared-proto",
     "sqlalchemy[asyncio]>=2.0.51",
@@ -22,6 +24,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
+shared-db = { workspace = true }
+shared-logging = { workspace = true }
 shared-models = { workspace = true }
 shared-proto = { workspace = true }
 

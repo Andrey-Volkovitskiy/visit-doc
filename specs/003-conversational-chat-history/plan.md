@@ -97,7 +97,8 @@ history has no automatic expiration (FR-011) and is only removed by an explicit
 `DELETE /chat` (hard delete, FR-005) — which removes the `Chat`, not the `Session`,
 so the same cookie keeps identifying the visitor across a clear; existing per-message validation
 (1–2,000 chars, FR-008) and grounding/abstention behavior (FR-007) are unchanged; no fixed cap on
-how many prior messages are fed to Claude as context this phase (spec.md Assumptions); no `patients`
+how many prior messages are fed to Claude as context this phase (spec.md Assumptions - since
+superseded by spec 005, which bounds every model call to the last five turns); no `patients`
 table or multi-chat-per-session behavior is built this phase (spec.md Future Direction is
 explicitly deferred — only the `Session`/`Chat` seam is added now); no `staff` sender is
 built this phase (`Message.sender` is an open set that anticipates it, FR-013, but only `patient`/

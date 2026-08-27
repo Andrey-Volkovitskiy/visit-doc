@@ -52,10 +52,19 @@ services/
 ├── scheduler/     # FastAPI + own Postgres, gRPC server (uv member "scheduler")
 │                  # has its own .claude/CLAUDE.md with the Python code style guide
 └── frontend/      # React + Vite SPA — plain Node project, NOT a uv workspace member
+│                  # has its own .claude/CLAUDE.md (network layer, per-turn state, tests)
 packages/
+├── shared-db/     # engine/session construction + Alembic's async→sync URL swap (uv member "shared-db")
+├── shared-logging/# the one structlog processor chain, incl. secret redaction (uv member "shared-logging")
 ├── shared-models/ # cross-service Pydantic schemas (uv member "shared-models")
 └── shared-proto/  # chat<->scheduler gRPC contract: protos/ source + generated *_pb2*.py (uv member "shared-proto")
 ```
+
+`shared-logging` and `shared-db` exist because `chat` and `scheduler` otherwise hold byte-identical
+copies of their infrastructure layer, varying only in a `Settings` field name. Redaction in
+particular is a security control: a copy that drifts leaves one service logging in the clear with
+nothing to catch it. Each service keeps only what genuinely varies — its secret-field tuples, and
+its own module-level engine bound to its own URL setting.
 
 `chat` and `scheduler` depend on `shared-models`/`shared-proto` via `tool.uv.sources` workspace
 references. All Python members share **one `uv.lock` and one `.venv`** at the repo root — they
@@ -70,6 +79,11 @@ it at `<dir>/.claude/CLAUDE.md`, not `<dir>/CLAUDE.md` — matching this repo's 
 service-specific rules out of context everywhere else. `services/chat/.claude/CLAUDE.md` and
 `services/scheduler/.claude/CLAUDE.md` are the existing examples — both just `@`-import
 `docs/python-style-guide.md` rather than duplicating it.
+
+`services/frontend/.claude/CLAUDE.md` deliberately holds its rules inline instead of `@`-importing
+a `docs/frontend-style-guide.md`: the `@`-import exists so two Python services can share one guide,
+and there is only one frontend, so a separate file would add indirection with no second reader. If
+a second Node project ever appears, extract it then.
 
 ## Commands
 
@@ -138,6 +152,25 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   Translating domain data into a provider's request shape is that provider-calling function's own
   responsibility, done internally, not the caller's — keeps provider-specific knowledge in one
   place and out of orchestration code.
+- **One value, one meaning.** A return value, status, or empty result must never stand for two
+  different situations. An empty list that means both "this exists and has nothing" and "this does
+  not exist", or a `None` that means both "already done" and "the dependency was unreachable",
+  forces every caller to guess — and in an agent, a guess becomes a confident false statement to a
+  patient. When two situations are genuinely different, give them different answers: a distinct
+  return type, a typed failure, a `NOT_FOUND` status. If a value's docstring needs the word "or" to
+  describe what it means, that is the smell.
+- **Every query carries its session/tenant predicate.** Scoping is a `WHERE` clause on the read,
+  never a check applied to the result afterwards, so an id from another session simply does not
+  resolve. This applies especially where it feels unnecessary: a lookup by a globally-unique key
+  (an idempotency key, a ULID) still needs the scope, because "unique" only means no *collision* —
+  it says nothing about who is allowed to read the row. A scoped check placed *after* an unscoped
+  lookup that already returned data is not a check at all.
+- **A timeout never proves the server did nothing.** A deadline is the caller's, not the callee's:
+  it expiring means the answer did not arrive, not that the work did not happen. The same is true
+  of a server-side error status, which means the request *was* processed. Code may report "nothing
+  was created" only when it actually knows that — every attempt failed to reach the server. When
+  the outcome is genuinely unknown for a write, say so and stop, rather than guessing "nothing
+  happened" and inviting a retry that duplicates a real, uncancellable side effect.
 
 ### Target shape (AI-core phase, per ROADMAP)
 

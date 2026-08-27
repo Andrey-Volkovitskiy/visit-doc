@@ -34,6 +34,21 @@ class SchedulingStub:
         Args:
             channel: A grpc.Channel.
         """
+        self.EnsureSessionProvisioned = channel.unary_unary(
+                '/scheduling.v1.Scheduling/EnsureSessionProvisioned',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.FromString,
+                _registered_method=True)
+        self.RenamePatient = channel.unary_unary(
+                '/scheduling.v1.Scheduling/RenamePatient',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.FromString,
+                _registered_method=True)
+        self.ListPractitioners = channel.unary_unary(
+                '/scheduling.v1.Scheduling/ListPractitioners',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersResponse.FromString,
+                _registered_method=True)
         self.CheckAvailability = channel.unary_unary(
                 '/scheduling.v1.Scheduling/CheckAvailability',
                 request_serializer=scheduling_dot_v1_dot_scheduling__pb2.CheckAvailabilityRequest.SerializeToString,
@@ -44,19 +59,74 @@ class SchedulingStub:
                 request_serializer=scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentRequest.SerializeToString,
                 response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentResponse.FromString,
                 _registered_method=True)
+        self.ListUpcomingAppointments = channel.unary_unary(
+                '/scheduling.v1.Scheduling/ListUpcomingAppointments',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsResponse.FromString,
+                _registered_method=True)
+        self.DeletePatientForChat = channel.unary_unary(
+                '/scheduling.v1.Scheduling/DeletePatientForChat',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.FromString,
+                _registered_method=True)
 
 
 class SchedulingServicer:
     """Missing associated documentation comment in .proto file."""
 
+    def EnsureSessionProvisioned(self, request, context):
+        """Idempotent per-session provisioning: creates this chat's patient if absent, and one
+        default practitioner if the session has none. Safe to call on every visit (FR-042, FR-045).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RenamePatient(self, request, context):
+        """Rename one patient. Idempotent: renaming to the name it already has succeeds and
+        changes nothing, so a caller whose deadline expired may safely retry.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListPractitioners(self, request, context):
+        """Every practitioner in the session, with specialty and schedule (FR-030).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def CheckAvailability(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Bookable start times for one practitioner over a window (FR-024).
+        NOT_FOUND when the practitioner or the patient does not resolve in this session:
+        this response has no typed-failure channel, and an empty result already means
+        something else entirely (see CheckAvailabilityResponse.truncated).
+        INVALID_ARGUMENT when `to_date` precedes `from_date`, which would otherwise walk
+        zero days and answer with that same "nothing bookable" shape.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def BookAppointment(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Create one appointment, or explain why it was refused (FR-016..FR-021, FR-051).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListUpcomingAppointments(self, request, context):
+        """This patient's appointments whose start is still in the future, earliest first (FR-031).
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeletePatientForChat(self, request, context):
+        """Hard-delete this chat's patient and, by cascade, that patient's appointments (FR-039).
+        Idempotent: deleting an already-absent patient succeeds.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -64,6 +134,21 @@ class SchedulingServicer:
 
 def add_SchedulingServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'EnsureSessionProvisioned': grpc.unary_unary_rpc_method_handler(
+                    servicer.EnsureSessionProvisioned,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.SerializeToString,
+            ),
+            'RenamePatient': grpc.unary_unary_rpc_method_handler(
+                    servicer.RenamePatient,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.SerializeToString,
+            ),
+            'ListPractitioners': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListPractitioners,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersResponse.SerializeToString,
+            ),
             'CheckAvailability': grpc.unary_unary_rpc_method_handler(
                     servicer.CheckAvailability,
                     request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.CheckAvailabilityRequest.FromString,
@@ -73,6 +158,16 @@ def add_SchedulingServicer_to_server(servicer, server):
                     servicer.BookAppointment,
                     request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentRequest.FromString,
                     response_serializer=scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentResponse.SerializeToString,
+            ),
+            'ListUpcomingAppointments': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListUpcomingAppointments,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsResponse.SerializeToString,
+            ),
+            'DeletePatientForChat': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeletePatientForChat,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -84,6 +179,87 @@ def add_SchedulingServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class Scheduling:
     """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def EnsureSessionProvisioned(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/EnsureSessionProvisioned',
+            scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RenamePatient(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/RenamePatient',
+            scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListPractitioners(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/ListPractitioners',
+            scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def CheckAvailability(request,
@@ -129,6 +305,60 @@ class Scheduling:
             '/scheduling.v1.Scheduling/BookAppointment',
             scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentRequest.SerializeToString,
             scheduling_dot_v1_dot_scheduling__pb2.BookAppointmentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListUpcomingAppointments(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/ListUpcomingAppointments',
+            scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.ListUpcomingAppointmentsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeletePatientForChat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/DeletePatientForChat',
+            scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.FromString,
             options,
             channel_credentials,
             insecure,

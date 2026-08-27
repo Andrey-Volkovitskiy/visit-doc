@@ -8,10 +8,12 @@
   self-contained unit, not a separate tree. A package's `tests/` dir *is* the unit tier; there's no
   extra `tests/unit/` nesting.
 - **Integration and e2e tests are centralized at the repo root**: `tests/integration/`,
-  `tests/e2e/`. These inherently cross service boundaries (e.g. `chat` calling `scheduler` over
-  gRPC, or a full frontend+chat+scheduler flow), so they can't belong to a single package. Both are
-  placeholders today — no integration surface or frontend exists yet (see `docs/ROADMAP.md`);
-  populate them once there's something to test.
+  `tests/e2e/`. These inherently cross service boundaries, so they can't belong to a single package.
+  `tests/integration/` is real as of spec 005: it runs `chat`'s own gRPC client against a live
+  scheduling servicer backed by a real `visitdoc_scheduler_test` database, covering the booking
+  round trip, the idempotent replay, and the cross-store deletion cascade — the contract the chat
+  unit tier's fakes stand in for. `tests/e2e/` is still a placeholder (no full frontend+chat+
+  scheduler flow is automated yet).
 
 ## Naming
 
@@ -51,9 +53,52 @@ classification was wired into every turn (`test_abstention_on_unrelated_question
 `test_get_chat_history_preserves_abstention`) never needed to mock `AsyncAnthropic` at the time, but
 silently started making live calls once `classify_intent_node` began running unconditionally ahead
 of every FAQ answer — caught only when one of them failed non-deterministically on a live run.
-Use `conftest.py`'s `fake_anthropic_client(...)` (covers both the generation stream and the
-classification call with one mock, defaulting classification to a confident `faq_question` result)
-even when a test's own assertions never touch either.
+Use `conftest.py`'s `fake_anthropic_client(...)` (covers the generation stream, the classification
+call, *and* the booking loop's tool-use call with one mock — the last two share
+`.messages.create` and are told apart by the parameter each sends) even when a test's own
+assertions never touch any of them. A test that needs the booking loop to actually call tools
+passes `booking_tool_calls=[...]`.
+
+The **scheduling gRPC boundary** is faked the same way and for the same reason: no scheduler runs
+alongside chat's unit tests, and the app's channel is bound to the lifespan's event loop rather
+than the test's. `services/chat/tests/conftest.py`'s autouse
+`_scheduler_is_unreachable_by_default` makes every chat unit test see an unreachable scheduler
+unless it patches the boundary itself — which is also the honest default, since that is exactly
+what a chat service with no scheduler running really sees.
+
+An autouse fake at a boundary MUST cover **every** call reachable across it, not just the one a
+test happened to need when it was written. A boundary fake is a guarantee the whole suite leans
+on, so a gap in it is not "that path is untested" — it is a live call on the wrong event loop,
+failing with a loop-binding or timeout error attributed to whatever the test was actually about.
+When a new function is added to a faked boundary, add it to the autouse fixture in the same
+change: `_scheduler_is_unreachable_by_default` fakes both `ensure_session_provisioned` and
+`delete_patient_for_chat` for exactly this reason.
+
+## Fixtures
+
+**Derive a fixture from production, never restate it.** When a test needs a default, a schema, or
+a set of names that production also declares, import the production declaration rather than typing
+an equal-looking literal into `conftest.py`:
+
+```python
+DEFAULT_SCHEDULE = list(
+    practitioner_repository.DEFAULT_SCHEDULE
+)  # not a re-typed Mon-Fri tuple
+f"TRUNCATE TABLE {', '.join(all_table_names())} ..."  # not a hand-written table list
+```
+
+A restated constant does not fail when production changes — it silently keeps testing the old
+value. That is worse than a broken test: the suite goes green while covering a configuration the
+system no longer creates, so the change that needed scrutiny gets none. The two shapes this takes
+here are seeding defaults (`DEFAULT_SCHEDULE`/`DEFAULT_SPECIALTY`/`DEFAULT_DURATION_MINUTES`, which
+come from `practitioner_repository`) and the per-test `TRUNCATE` list (which comes from each
+service's `all_table_names()`, read off `Base.metadata`, so a table added later is cleaned up
+without anyone remembering to add it).
+
+The same applies across test tiers: `tests/integration/conftest.py` and a package's own
+`conftest.py` must not each declare their own copy of an isolation rule. The `_test`-suffix scheme
+lives once in `shared_db.testing` (`isolated_database_url`/`with_test_suffix`) and both import it —
+otherwise the tier that was not updated ends up pointed at the developer's own database.
 
 ## Config notes
 
@@ -74,37 +119,46 @@ even when a test's own assertions never touch either.
   their own Makefile targets, so they don't fail the default run with "no tests ran" before either
   tier has real tests.
 
-## Test databases (chat)
+## Test databases (chat and scheduler)
 
-`chat`'s unit tests (`services/chat/tests/`) are unit-scoped by location, but hit **real**
-Postgres and Qdrant — only the paid third-party APIs (Voyage embeddings, Claude) are faked (see
-`conftest.py`'s `fake_embed_texts`/`FakeAnthropicStream`). To keep that real I/O from colliding
-with manual/dev use of the same local containers, tests run against **isolated database and
-collection names**, never the ones `.env` points a locally-running `chat` service at:
+Both services' unit tests are unit-scoped by location but hit **real** Postgres (and, for chat,
+real Qdrant) — only the paid third-party APIs (Voyage embeddings, Claude) and the cross-service
+gRPC boundary are faked. To keep that real I/O from colliding with manual/dev use of the same local
+containers, each suite runs against an **isolated, `_test`-suffixed database**, never the one
+`.env` points a locally-running service at:
 
-- **Postgres**: `conftest.py` reads the base `DATABASE_URL` from `Settings()`, then overrides the
-  `DATABASE_URL` env var to a `<db>_test`-suffixed database (`visitdoc` → `visitdoc_test`) *before*
-  any `chat.*` module is imported by a test file. Because env vars take priority over `.env` file
+- **Postgres (chat)**: `services/chat/tests/conftest.py` reads the base `DATABASE_URL` from
+  `Settings()`, then (via `shared_db.testing.isolated_database_url`) overrides the `DATABASE_URL`
+  env var to a `<db>_test`-suffixed database
+  (`visitdoc_chat` → `visitdoc_chat_test`) *before* any `chat.*` module is imported by a test
+  file. Because env vars take priority over `.env` file
   values in `pydantic-settings`, every later `Settings()` call — including Alembic's `env.py`,
   which reads `DATABASE_URL` directly — consistently resolves to the isolated database. A
   session-scoped, autouse fixture (`_apply_migrations_to_test_database`) runs `alembic upgrade
   head` against it once before any test, so the isolated database's schema is always current
   regardless of test order or whether it's ever been migrated before.
-- **Qdrant**: the same suffixing helper (`_with_test_suffix`) is applied to
+- **Qdrant**: the same suffixing helper (`shared_db.testing.with_test_suffix`) is applied to
   `QDRANT_COLLECTION_NAME` (default `faq_chunks`, overridden to `faq_chunks_test`), which
   `chat.repositories.qdrant_repository.COLLECTION_NAME` reads at import time. Unlike Postgres, no
   pre-provisioning is needed — a Qdrant collection is just an API-created resource, and the
   existing idempotent `ensure_collection` creates it on demand the first time a test touches it.
+- **Postgres (scheduler)**: `services/scheduler/tests/conftest.py` does exactly the same for
+  `SCHEDULER_DATABASE_URL` (`visitdoc_scheduler` → `visitdoc_scheduler_test`), with its own
+  session-scoped `alembic upgrade head` against the scheduler's own migration tree. It has no
+  Qdrant side. It additionally truncates every scheduling table before each test — the list read
+  from `Base.metadata` via `all_table_names()`, not hand-written — since the repositories under
+  test issue real commits and nothing else cleans them up.
 
-Locally, `docker-compose.yml` creates the `visitdoc_test` Postgres database automatically via a
-`/docker-entrypoint-initdb.d` init script (`docker/postgres-init/01-create-test-db.sql`) — but only
-on a *fresh* `postgres_data` volume; a pre-existing volume needs it created once by hand (`docker
-exec visitdoc-postgres psql -U visitdoc -c "CREATE DATABASE visitdoc_test;"`). In CI
-(`.github/workflows/ci.yml`), the `test` job's Postgres service container is provisioned with
-`POSTGRES_DB: visitdoc_test` directly, and Qdrant needs no such step at all (ephemeral either way,
-collection created on demand) — so CI required no extra setup for the Qdrant side of this scheme.
+Locally, `docker-compose.yml` creates all four databases automatically via
+`/docker-entrypoint-initdb.d` init scripts (`docker/postgres-init/01-create-test-db.sql`,
+`02-create-scheduler-dbs.sql`) — but only on a *fresh* `postgres_data` volume; a pre-existing
+volume needs the missing ones created once by hand (see
+`specs/005-scheduling-and-booking/quickstart.md`). In CI (`.github/workflows/ci.yml`), the `test`
+job's Postgres service container is provisioned with `POSTGRES_DB: visitdoc_chat_test` directly and
+an explicit step creates `visitdoc_scheduler_test` alongside it; Qdrant needs no such step at all
+(ephemeral either way, collection created on demand).
 
-## Async engine and event loops (chat)
+## Async engine and event loops
 
 SQLAlchemy's async engine (`chat.db.session`) is a module-level singleton, and its connection pool
 binds to the *first* event loop that touches it. Multiple `TestClient(app)` instantiations across
@@ -122,17 +176,27 @@ Two pieces of config fix this together — neither alone is sufficient:
   loop-scope fix, since separate `TestClient(app)` instantiations across tests otherwise keep
   exhibiting pool-binding conflicts.
 
-Any future service with async SQLAlchemy tests (`scheduler` will need this once it has its own
-Postgres-backed test suite) needs both pieces, not just one.
+`scheduler` needs both pieces too, and has them: the loop-scope settings are shared (they live in
+the root `pyproject.toml`), and `services/scheduler/tests/conftest.py` has its own
+`_reset_engine_pool_between_tests`.
+
+One further consequence, learned the hard way in both suites: an **async** test must not drive a
+FastAPI app through `TestClient`, which runs request handling on a loop of its own and collides
+with the engine the test has already bound. Async tests go through
+`httpx.AsyncClient(transport=ASGITransport(app=app))` instead, which keeps the app and the test on
+one loop — `services/chat/tests/test_chats_api.py`'s `_api()` and
+`services/scheduler/tests/conftest.py`'s `admin_api()` are the two helpers that wrap this. Sync
+tests may keep using `TestClient` freely.
 
 ## Commands
 
 ```bash
-make test              # = make test-unit
+make test              # = make test-unit + make test-frontend
 make test-unit          # uv run pytest (scoped to the four per-package tests/ dirs via testpaths)
+make test-frontend      # vitest, in services/frontend
 make test-integration   # uv run pytest tests/integration
 make test-e2e           # uv run pytest tests/e2e
 ```
 
-Only `test-unit` runs in CI so far (a `test` job in `.github/workflows/ci.yml`, alongside the
-`pre-commit` job). `test-integration`/`test-e2e` stay manual until those tiers have real tests.
+`test-unit`, `test-frontend`, and `test-integration` all run in CI (`.github/workflows/ci.yml`).
+`test-e2e` stays manual until that tier has real tests.

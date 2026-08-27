@@ -57,36 +57,163 @@ async def test_session_ids_are_not_sequential_or_monotonic() -> None:
     assert not all(diff == 1 for diff in diffs)
 
 
-async def test_get_or_create_chat_for_session_creates_one_when_none_exists() -> None:
+async def test_create_chat_persists_a_new_chat_with_no_patient() -> None:
     async with session_factory() as session:
         created_session = await chat_repository.create_session(session)
-        chat = await chat_repository.get_or_create_chat_for_session(
-            session, created_session.id
-        )
+        chat = await chat_repository.create_chat(session, created_session.id)
 
     assert chat.id is not None
     assert chat.session_id == created_session.id
+    assert chat.patient_id is None
 
 
-async def test_get_or_create_chat_for_session_reuses_existing_chat() -> None:
+async def test_create_chat_makes_a_distinct_chat_every_time() -> None:
     async with session_factory() as session:
         created_session = await chat_repository.create_session(session)
-        first = await chat_repository.get_or_create_chat_for_session(
-            session, created_session.id
+        first = await chat_repository.create_chat(session, created_session.id)
+        second = await chat_repository.create_chat(session, created_session.id)
+
+    assert first.id != second.id
+
+
+async def test_get_chat_returns_the_chat_for_its_own_session() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, created_session.id)
+
+        found = await chat_repository.get_chat(session, chat.id, created_session.id)
+
+    assert found is not None
+    assert found.id == chat.id
+
+
+async def test_get_chat_returns_none_for_another_sessions_chat() -> None:
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        stranger = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, owner.id)
+
+        found = await chat_repository.get_chat(session, chat.id, stranger.id)
+
+    assert found is None
+
+
+async def test_get_chat_returns_none_for_an_unknown_chat_id() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+
+        found = await chat_repository.get_chat(
+            session, "nonexistent-id", created_session.id
         )
-        second = await chat_repository.get_or_create_chat_for_session(
+
+    assert found is None
+
+
+async def test_set_patient_records_the_scheduler_side_patient_and_its_name() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, created_session.id)
+
+        await chat_repository.set_patient(session, chat.id, "PATIENT01", "Ada Lovelace")
+        found = await chat_repository.get_chat(session, chat.id, created_session.id)
+
+    assert found is not None
+    assert found.patient_id == "PATIENT01"
+    assert found.patient_name == "Ada Lovelace"
+
+
+async def test_list_chats_for_session_is_empty_for_a_session_with_none() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+
+        listed = await chat_repository.list_chats_for_session(
             session, created_session.id
         )
 
-    assert first.id == second.id
+    assert listed == []
+
+
+async def test_list_chats_for_session_excludes_another_sessions_chats() -> None:
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        stranger = await chat_repository.create_session(session)
+        await chat_repository.create_chat(session, owner.id)
+
+        listed = await chat_repository.list_chats_for_session(session, stranger.id)
+
+    assert listed == []
+
+
+async def test_list_chats_puts_chats_with_messages_ahead_of_chats_without() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        with_message = await chat_repository.create_chat(session, created_session.id)
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=with_message.id,
+            sender=MessageSender.PATIENT,
+            content="hi",
+        )
+        # Created last, so it is the newest chat - but it holds no message, so it must
+        # still rank behind the one the visitor actually talked in.
+        empty = await chat_repository.create_chat(session, created_session.id)
+
+        listed = await chat_repository.list_chats_for_session(
+            session, created_session.id
+        )
+
+    assert [chat.id for chat, _ in listed] == [with_message.id, empty.id]
+    assert listed[0][1] is not None
+    assert listed[1][1] is None
+
+
+async def test_list_chats_orders_chats_with_messages_by_newest_message() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        older = await chat_repository.create_chat(session, created_session.id)
+        newer = await chat_repository.create_chat(session, created_session.id)
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=newer.id,
+            sender=MessageSender.PATIENT,
+            content="first",
+        )
+        await asyncio.sleep(0.01)
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=older.id,
+            sender=MessageSender.PATIENT,
+            content="second",
+        )
+
+        listed = await chat_repository.list_chats_for_session(
+            session, created_session.id
+        )
+
+    assert [chat.id for chat, _ in listed] == [older.id, newer.id]
+
+
+async def test_list_chats_orders_empty_chats_by_newest_created() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        first = await chat_repository.create_chat(session, created_session.id)
+        await asyncio.sleep(0.01)
+        second = await chat_repository.create_chat(session, created_session.id)
+
+        listed = await chat_repository.list_chats_for_session(
+            session, created_session.id
+        )
+
+    assert [chat.id for chat, _ in listed] == [second.id, first.id]
 
 
 async def test_delete_chat_removes_all_its_messages() -> None:
     async with session_factory() as session:
         created_session = await chat_repository.create_session(session)
-        chat = await chat_repository.get_or_create_chat_for_session(
-            session, created_session.id
-        )
+        chat = await chat_repository.create_chat(session, created_session.id)
         await chat_repository.create_message(
             session,
             id=str(ULID()),
@@ -105,9 +232,7 @@ async def test_delete_chat_removes_all_its_messages() -> None:
 async def test_delete_chat_leaves_session_untouched() -> None:
     async with session_factory() as session:
         created_session = await chat_repository.create_session(session)
-        chat = await chat_repository.get_or_create_chat_for_session(
-            session, created_session.id
-        )
+        chat = await chat_repository.create_chat(session, created_session.id)
 
         await chat_repository.delete_chat(session, chat.id)
 
@@ -121,31 +246,31 @@ async def test_delete_chat_is_noop_for_unknown_chat_id() -> None:
         await chat_repository.delete_chat(session, "nonexistent-id")  # must not raise
 
 
-async def test_lock_session_blocks_a_second_holder_until_released() -> None:
-    """`lock_session` must genuinely serialize two separate DB connections, not just
+async def test_lock_chat_blocks_a_second_holder_until_released() -> None:
+    """`lock_chat` must genuinely serialize two separate DB connections, not just
     two coroutines sharing one - the whole point is to close a race between two
     concurrent HTTP requests, each with its own `AsyncSession`/connection.
     """
-    session_id = "lock-test-session"
+    chat_id = "lock-test-chat"
     order: list[str] = []
     first_holds_lock = asyncio.Event()
     release_first = asyncio.Event()
 
     async def hold_then_release() -> None:
         async with session_factory() as session:
-            await chat_repository.lock_session(session, session_id)
+            await chat_repository.lock_chat(session, chat_id)
             order.append("first-acquired")
             first_holds_lock.set()
             await release_first.wait()
             order.append("first-released")
-            await chat_repository.unlock_session(session, session_id)
+            await chat_repository.unlock_chat(session, chat_id)
 
     async def acquire_after_first() -> None:
         await first_holds_lock.wait()
         async with session_factory() as session:
-            await chat_repository.lock_session(session, session_id)
+            await chat_repository.lock_chat(session, chat_id)
             order.append("second-acquired")
-            await chat_repository.unlock_session(session, session_id)
+            await chat_repository.unlock_chat(session, chat_id)
 
     first_task = asyncio.create_task(hold_then_release())
     await first_holds_lock.wait()

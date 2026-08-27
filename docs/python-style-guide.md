@@ -39,6 +39,20 @@ arguments and raises false `call-arg` errors on `Settings()`.
 
   create_message(sender=MessageSender.PATIENT)  # not sender="patient"
   ```
+- Never index a `dict` with a value that came from outside this process — a wire field, a response
+  body, a database column, a model's tool arguments. Use `.get()` and handle the miss explicitly.
+  A mapping that is total *today* is not total after the peer on the other side of the contract is
+  deployed one version ahead of you, and proto3 enums are open by design (an unrecognized value
+  arrives as a plain int, and an unset field arrives as `0`). The failure mode is the bad one: a
+  `KeyError` escapes the layer that understood the value and is caught somewhere generic, turning
+  an explainable answer into "something went wrong":
+  ```python
+  reason = _FAILURE_REASON_BY_PROTO.get(response.failure.reason)
+  if reason is None:  # not _FAILURE_REASON_BY_PROTO[...]
+      log_and_raise_a_typed_error(...)
+  ```
+  Indexing a mapping with a value this process itself produced (an internal enum member) is fine —
+  the rule is about values you did not create.
 - Give every function/method a short docstring describing what it does. A docstring has at most
   four parts, in this order, each separated from the next by a blank line — omit any part that
   doesn't apply, don't pad a docstring with a section that has nothing to say:
@@ -110,16 +124,24 @@ Follow the modern recomendation using:
 
 ## Logging
 
-Every service logs via `structlog`, never stdlib `logging` directly. `services/chat/src/chat/core/logging.py`
-and `services/chat/src/chat/core/correlation.py` are the reference implementation — mirror their
-shape in any other service that needs logging (e.g. `services/scheduler/src/scheduler/core/`),
-rather than inventing a different approach per service.
+Every service logs via `structlog`, never stdlib `logging` directly. The processor chain itself —
+truncation, redaction, rendering, and the never-raise wrapper — lives once in
+`packages/shared-logging`, and services import it rather than reimplementing or copying it. A new
+service's own `core/logging.py` is a thin module declaring only what genuinely varies (its two
+secret-field tuples) and re-exporting `get_logger`; `services/chat/src/chat/core/logging.py` and
+`services/scheduler/src/scheduler/core/logging.py` are both ~30 lines and are the pattern to
+follow. `services/chat/src/chat/core/correlation.py` is the reference for correlation binding.
 
-- **One processor chain per service**, configured once via a `configure_logging(settings)` call at
-  app startup: merge correlation-id context → add log level → add timestamp → truncate long
-  strings → redact secrets → render. Every log call flows through this single chain, so changing
-  how logs are rendered later (e.g. a JSON/Langfuse-ready renderer) is a one-line change in that
-  one module, not a rewrite of every call site.
+Do not copy the chain into a new service. Redaction is a security control, and a per-service copy
+is one that can silently diverge: a bypass fixed in one copy leaves the other logging that value in
+the clear, and no test or type error catches the difference.
+
+- **One processor chain, shared by every service**, configured once via that service's
+  `configure_logging(settings)` call at app startup: merge correlation-id context → add log level →
+  add timestamp → truncate long strings → redact secrets → render. The chain is declared once in
+  `packages/shared-logging`, so changing how logs are rendered later (e.g. a JSON/Langfuse-ready
+  renderer) is a one-line change in that one module — for every service at once, not per service
+  and not per call site.
 - **Call sites never call `structlog.get_logger()` directly.** Use the service's own `get_logger()`
   helper instead, which wraps the structlog logger so a failure anywhere in the processor chain
   never raises out to the caller — servicing the request always takes priority over a log entry
@@ -142,9 +164,11 @@ surfaces inside an unrelated exception message.
 
 In `services/chat/src/chat/core/logging.py`, that means adding the new `Settings` field name to
 `_SECRET_SETTINGS_FIELDS` (a plain secret value) or `_SECRET_URL_SETTINGS_FIELDS` (a URL whose
-embedded password is the secret) — both declared as constants at the top of the module specifically
-so this is a one-line addition, not a change buried inside `_known_secret_values`'s body. Mirror the
-same two-constants pattern in any other service's logging module.
+embedded password is the secret). Those two tuples are the *only* thing a service's logging module
+declares — everything else is inherited from `shared-logging` — so this is always a one-line
+addition. Each service's `tests/test_logging.py` asserts that every field it names actually exists
+on its `Settings`, so a rename that silently drops a secret from redaction fails the suite rather
+than the running service.
 
 This is on top of, not instead of, key-name-based redaction (any field named `password`, `token`,
 `secret`, `api_key`, `credential`, `authorization`, etc. is redacted regardless of its value) —

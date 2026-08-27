@@ -1,0 +1,434 @@
+"""The `Scheduling` gRPC service implementation.
+
+A booking the service evaluated and refused is a *successful* RPC carrying a typed
+`BookingFailure`; gRPC status codes are reserved for transport, infrastructure, and
+caller-defect failures. That split is what lets the chat service tell "the patient must
+choose differently" from "the service is unreachable" without parsing a status string.
+"""
+
+from typing import Any, NoReturn
+
+import grpc
+from shared_models.localtime import format_local_date, format_local_datetime
+from shared_models.scheduling import (
+    BookingFailureReason,
+    NotFoundEntity,
+    RenameFailureReason,
+)
+from shared_proto.scheduling.v1 import scheduling_pb2 as pb
+from shared_proto.scheduling.v1 import scheduling_pb2_grpc
+from sqlalchemy.exc import IntegrityError
+
+from scheduler.core.config import get_settings
+from scheduler.core.logging import get_logger
+from scheduler.db.session import session_factory
+from scheduler.domain import availability
+from scheduler.grpc import converters
+from scheduler.repositories import (
+    appointment_repository,
+    patient_repository,
+    practitioner_repository,
+)
+
+_PROTO_BY_FAILURE_REASON = {
+    BookingFailureReason.PRACTITIONER_BUSY: (
+        pb.BOOKING_FAILURE_REASON_PRACTITIONER_BUSY
+    ),
+    BookingFailureReason.PATIENT_BUSY: pb.BOOKING_FAILURE_REASON_PATIENT_BUSY,
+    BookingFailureReason.OUTSIDE_SCHEDULE: pb.BOOKING_FAILURE_REASON_OUTSIDE_SCHEDULE,
+    BookingFailureReason.OFF_GRID: pb.BOOKING_FAILURE_REASON_OFF_GRID,
+    BookingFailureReason.IN_PAST: pb.BOOKING_FAILURE_REASON_IN_PAST,
+    BookingFailureReason.BEYOND_HORIZON: pb.BOOKING_FAILURE_REASON_BEYOND_HORIZON,
+    BookingFailureReason.PRACTITIONER_NOT_FOUND: (
+        pb.BOOKING_FAILURE_REASON_PRACTITIONER_NOT_FOUND
+    ),
+    BookingFailureReason.PATIENT_NOT_FOUND: (
+        pb.BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND
+    ),
+}
+
+_PROTO_BY_RENAME_REASON = {
+    RenameFailureReason.NAME_TAKEN: pb.RENAME_FAILURE_REASON_NAME_TAKEN,
+    RenameFailureReason.PATIENT_NOT_FOUND: pb.RENAME_FAILURE_REASON_PATIENT_NOT_FOUND,
+}
+
+
+async def _abort(context: Any, code: grpc.StatusCode, detail: str) -> NoReturn:
+    """End the RPC with `code`, never returning.
+
+    `context.abort` already raises, but its stub is untyped, so callers that narrow a
+    value afterwards need the `NoReturn` this annotation supplies.
+    """
+    await context.abort(code, detail)
+    raise AssertionError("context.abort() returned")  # pragma: no cover
+
+
+def _failure(reason: BookingFailureReason) -> pb.BookingFailure:
+    """Render one refusal onto the wire.
+
+    `detail` is for logs only - the assistant's explanation to the patient is built
+    from `reason`, never from this string.
+    """
+    return pb.BookingFailure(
+        reason=_PROTO_BY_FAILURE_REASON[reason], detail=reason.value
+    )
+
+
+def _rename_failure(reason: RenameFailureReason) -> pb.RenamePatientResponse:
+    """Render one refused rename onto the wire.
+
+    `detail` is for logs only - the caller's message to the user is built from `reason`.
+    """
+    return pb.RenamePatientResponse(
+        failure=pb.RenameFailure(
+            reason=_PROTO_BY_RENAME_REASON[reason], detail=reason.value
+        )
+    )
+
+
+class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
+    """Serves the seven scheduling RPCs against the scheduler's own database.
+
+    Every handler opens its own session from the shared factory and owns its
+    transaction, matching the repository layer's session-as-a-parameter shape.
+
+    Handlers read their request fields straight through `converters`, without guarding
+    each read: `LoggingInterceptor` turns a `ConversionError` into `INVALID_ARGUMENT`
+    for every RPC at once, so a new one cannot be added without that behavior.
+    """
+
+    async def EnsureSessionProvisioned(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.EnsureSessionProvisionedRequest,
+        context: Any,
+    ) -> pb.EnsureSessionProvisionedResponse:
+        """Create this chat's patient and, if the session has none, one practitioner.
+
+        Idempotent on both counts, which is what makes it safe to call on every visit
+        and to retry after a failure: the patient is keyed by chat, and practitioner
+        creation is guarded on the session having none - so a second, third, or
+        hundredth chat in one session never seeds another practitioner.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        chat_id = converters.read_required_id(request.chat_id, "chat_id")
+
+        async with session_factory() as session:
+            try:
+                patient, patient_created = await patient_repository.create_if_absent(
+                    session, session_id, chat_id
+                )
+            except patient_repository.ChatSessionMismatchError:
+                # The chat exists, but under another session. Reported as not-found
+                # like every other cross-session id, and never by handing back the
+                # patient that holds it.
+                await _abort(
+                    context, grpc.StatusCode.NOT_FOUND, NotFoundEntity.CHAT.value
+                )
+            # Read onto the wire before the practitioner step below, which may roll
+            # back: a rollback expires every object loaded before it, and reading an
+            # expired attribute afterwards would attempt IO where none is expected.
+            patient_message = converters.to_proto_patient(patient)
+            practitioners = await practitioner_repository.list_for_session(
+                session, session_id
+            )
+            practitioner_created = False
+            if not practitioners:
+                try:
+                    await practitioner_repository.create(
+                        session, session_id, retry_pool_name=False
+                    )
+                    practitioner_created = True
+                except IntegrityError:
+                    # A concurrent first visit in the same session seeded one first.
+                    # The name's UNIQUE constraint is the guard, so the loser simply
+                    # re-reads rather than seeding a second practitioner - which is why
+                    # the pool-name retry is switched off for this call: retrying would
+                    # succeed under the next name and leave the session with two.
+                    await session.rollback()
+                    get_logger().warning(
+                        "name.collision_retried",
+                        entity="practitioner",
+                        attempt=1,
+                    )
+                practitioners = await practitioner_repository.list_for_session(
+                    session, session_id
+                )
+            schedules = await practitioner_repository.get_schedules(
+                session, [p.id for p in practitioners]
+            )
+            return pb.EnsureSessionProvisionedResponse(
+                patient=patient_message,
+                practitioners=[
+                    converters.to_proto_practitioner(p, schedules[p.id])
+                    for p in practitioners
+                ],
+                patient_created=patient_created,
+                practitioner_created=practitioner_created,
+            )
+
+    async def RenamePatient(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.RenamePatientRequest,
+        context: Any,
+    ) -> pb.RenamePatientResponse:
+        """Rename one patient, or explain why the new name was refused.
+
+        Idempotent: renaming to the name the patient already holds succeeds and changes
+        nothing, so a caller whose deadline expired mid-call may retry the same request
+        without having to establish what the first attempt did.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        full_name = converters.read_patient_name(request.full_name)
+
+        async with session_factory() as session:
+            patient = await patient_repository.get(session, patient_id, session_id)
+            if patient is None:
+                return _rename_failure(RenameFailureReason.PATIENT_NOT_FOUND)
+            try:
+                renamed = await patient_repository.rename(session, patient, full_name)
+            except IntegrityError:
+                # The (session_id, full_name) unique constraint is the arbiter, so this
+                # is the answer for both a name already held in this session and one
+                # taken concurrently between the read above and the write.
+                await session.rollback()
+                return _rename_failure(RenameFailureReason.NAME_TAKEN)
+            return pb.RenamePatientResponse(
+                patient=converters.to_proto_patient(renamed)
+            )
+
+    async def ListPractitioners(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.ListPractitionersRequest,
+        context: Any,
+    ) -> pb.ListPractitionersResponse:
+        """Return every practitioner in the caller's session, with their schedule."""
+        session_id = converters.read_required_id(request.session_id, "session_id")
+
+        async with session_factory() as session:
+            practitioners = await practitioner_repository.list_for_session(
+                session, session_id
+            )
+            schedules = await practitioner_repository.get_schedules(
+                session, [p.id for p in practitioners]
+            )
+
+        return pb.ListPractitionersResponse(
+            practitioners=[
+                converters.to_proto_practitioner(p, schedules[p.id])
+                for p in practitioners
+            ]
+        )
+
+    async def CheckAvailability(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.CheckAvailabilityRequest,
+        context: Any,
+    ) -> pb.CheckAvailabilityResponse:
+        """Return the start times bookable by this patient with this practitioner.
+
+        Every returned start is bookable by this patient at the moment it is produced:
+        it passes exactly the predicates `BookAppointment` applies, evaluated by the
+        same code, and excludes both the practitioner's and the patient's existing
+        appointments. Only another patient taking a slot in between can undo that.
+
+        An unknown practitioner or patient - including one belonging to another session
+        - is answered with NOT_FOUND rather than an empty result, which the response's
+        own contract reserves for a practitioner who genuinely has nothing to offer.
+        The status detail is the `NotFoundEntity` that failed to resolve, so the caller
+        explains the actual cause instead of assuming it was the practitioner.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        practitioner_id = converters.read_required_id(
+            request.practitioner_id, "practitioner_id"
+        )
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        from_date = converters.read_local_date(request.from_date, "from_date")
+        to_date = converters.read_local_date(request.to_date, "to_date")
+        local_now = converters.read_local_datetime(request.local_now, "local_now")
+
+        if to_date < from_date:
+            await _abort(
+                context,
+                grpc.StatusCode.INVALID_ARGUMENT,
+                f"to_date {request.to_date} precedes from_date {request.from_date}",
+            )
+
+        async with session_factory() as session:
+            practitioner = await practitioner_repository.get(
+                session, practitioner_id, session_id
+            )
+            if practitioner is None:
+                await _abort(
+                    context,
+                    grpc.StatusCode.NOT_FOUND,
+                    NotFoundEntity.PRACTITIONER.value,
+                )
+            # Scoped like every other read: an unscoped patient id would still have its
+            # appointments subtracted from the answer, leaking the times it holds
+            # through the slots that went missing.
+            patient = await patient_repository.get(session, patient_id, session_id)
+            if patient is None:
+                await _abort(
+                    context, grpc.StatusCode.NOT_FOUND, NotFoundEntity.PATIENT.value
+                )
+
+            schedule = practitioner_repository.to_daily_ranges(
+                await practitioner_repository.get_schedule(session, practitioner.id)
+            )
+            busy = await appointment_repository.busy_intervals(
+                session,
+                session_id=session_id,
+                practitioner_id=practitioner.id,
+                patient_id=patient.id,
+                from_date=from_date,
+                to_date=to_date,
+            )
+
+        settings = get_settings()
+        starts, truncated = availability.available_starts(
+            schedule=schedule,
+            duration_minutes=practitioner.appointment_duration_minutes,
+            busy=busy,
+            from_date=from_date,
+            to_date=to_date,
+            local_now=local_now,
+            horizon_days=settings.BOOKING_HORIZON_DAYS,
+            max_window_days=settings.AVAILABILITY_MAX_WINDOW_DAYS,
+            max_slots=settings.AVAILABILITY_MAX_SLOTS,
+        )
+        get_logger().info(
+            "availability.computed",
+            practitioner_id=practitioner.id,
+            from_date=format_local_date(from_date),
+            to_date=format_local_date(to_date),
+            slot_count=len(starts),
+            truncated=truncated,
+        )
+        return pb.CheckAvailabilityResponse(
+            available_starts=[format_local_datetime(s) for s in starts],
+            truncated=truncated,
+            appointment_duration_minutes=practitioner.appointment_duration_minutes,
+        )
+
+    async def BookAppointment(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.BookAppointmentRequest,
+        context: Any,
+    ) -> pb.BookAppointmentResponse:
+        """Create one appointment, or explain in a typed failure why it was refused."""
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        practitioner_id = converters.read_required_id(
+            request.practitioner_id, "practitioner_id"
+        )
+        starts_at = converters.read_local_datetime(request.starts_at, "starts_at")
+        local_now = converters.read_local_datetime(request.local_now, "local_now")
+        idempotency_key = converters.read_required_id(
+            request.idempotency_key, "idempotency_key"
+        )
+
+        async with session_factory() as session:
+            try:
+                outcome = await appointment_repository.book(
+                    session,
+                    session_id=session_id,
+                    patient_id=patient_id,
+                    practitioner_id=practitioner_id,
+                    starts_at=starts_at,
+                    local_now=local_now,
+                    idempotency_key=idempotency_key,
+                    horizon_days=get_settings().BOOKING_HORIZON_DAYS,
+                )
+            except appointment_repository.IdempotencyKeyMismatchError as exc:
+                # Not a BookingFailure: the caller's key derivation is broken, which is
+                # nothing the patient can resolve by choosing differently. Returning
+                # the stored appointment here would confirm a time they never asked for.
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(exc))
+
+            if isinstance(outcome, appointment_repository.BookingRefused):
+                return pb.BookAppointmentResponse(failure=_failure(outcome.reason))
+
+            return pb.BookAppointmentResponse(
+                appointment=converters.to_proto_appointment(
+                    outcome.appointment, outcome.patient, outcome.practitioner
+                ),
+                idempotent_replay=outcome.idempotent_replay,
+            )
+
+    async def ListUpcomingAppointments(  # noqa: N802 - fixed by the gRPC contract
+        self,
+        request: pb.ListUpcomingAppointmentsRequest,
+        context: Any,
+    ) -> pb.ListUpcomingAppointmentsResponse:
+        """Return this patient's appointments starting after `local_now`.
+
+        A patient that does not resolve in this session is answered with NOT_FOUND, not
+        with an empty list: an empty list is the answer for a patient who exists and has
+        nothing upcoming, and one value cannot mean both without the caller having to
+        guess which - a guess that reads to the patient as "you have nothing booked".
+
+        An appointment whose practitioner was deleted between the two reads is omitted
+        rather than raising: the practitioner is already gone, and failing the whole
+        call would report a healthy scheduler as unreachable.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        local_now = converters.read_local_datetime(request.local_now, "local_now")
+
+        async with session_factory() as session:
+            patient = await patient_repository.get(session, patient_id, session_id)
+            if patient is None:
+                await _abort(
+                    context, grpc.StatusCode.NOT_FOUND, NotFoundEntity.PATIENT.value
+                )
+            appointments = await appointment_repository.list_upcoming(
+                session,
+                session_id=session_id,
+                patient_id=patient.id,
+                local_now=local_now,
+            )
+            if not appointments:
+                return pb.ListUpcomingAppointmentsResponse()
+            practitioners = await practitioner_repository.get_by_ids(
+                session,
+                session_id,
+                [a.practitioner_id for a in appointments],
+            )
+
+        rendered = []
+        for appointment in appointments:
+            practitioner = practitioners.get(appointment.practitioner_id)
+            if practitioner is None:
+                get_logger().warning(
+                    "appointment.practitioner_missing",
+                    appointment_id=appointment.id,
+                    practitioner_id=appointment.practitioner_id,
+                )
+                continue
+            rendered.append(
+                converters.to_proto_appointment(appointment, patient, practitioner)
+            )
+        return pb.ListUpcomingAppointmentsResponse(appointments=rendered)
+
+    async def DeletePatientForChat(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.DeletePatientForChatRequest,
+        context: Any,
+    ) -> pb.DeletePatientForChatResponse:
+        """Delete this chat's patient and, by cascade, that patient's appointments.
+
+        Idempotent: deleting an already-absent patient succeeds, so a caller retrying
+        after a lost response never has to distinguish "already gone" from "never was".
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        chat_id = converters.read_required_id(request.chat_id, "chat_id")
+
+        async with session_factory() as session:
+            existed, deleted = await patient_repository.delete_for_chat(
+                session, session_id, chat_id
+            )
+
+        return pb.DeletePatientForChatResponse(
+            patient_existed=existed, appointments_deleted=deleted
+        )

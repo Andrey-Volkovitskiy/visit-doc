@@ -3,15 +3,37 @@ name = "scheduler"
 version = "0.1.0"
 description = "Scheduling service: doctor calendars, availability, and booking"
 requires-python = ">=3.12"
-dependencies = ["shared-models", "shared-proto"]
+dependencies = [
+    "alembic>=1.18.5",
+    "asyncpg>=0.31.0",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.14.2",
+    "python-dotenv>=1.2.2",
+    "python-ulid>=4.0.1",
+    "shared-db",
+    "shared-logging",
+    "shared-models",
+    "shared-proto",
+    "sqlalchemy[asyncio]>=2.0.51",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.52.1",
+]
 
 [tool.uv.sources]
+shared-db = { workspace = true }
+shared-logging = { workspace = true }
 shared-models = { workspace = true }
 shared-proto = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scheduler"]

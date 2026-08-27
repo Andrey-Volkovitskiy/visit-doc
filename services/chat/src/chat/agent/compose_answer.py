@@ -1,0 +1,182 @@
+"""`compose_answer`: the join node that owns the turn's user-visible reply.
+
+It runs on every path, merging or not, which is what makes it the one place a turn can
+be reported complete exactly once - after the reply actually exists.
+
+When only one specialist ran it does nothing at all: that specialist streamed its own
+tokens and emitted its own terminal event, so the FAQ path keeps its existing latency
+and behavior byte for byte. Only a mixed-intent turn pays for a composing call.
+"""
+
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+
+from anthropic import AsyncAnthropic
+
+from chat.agent.handle_booking import BookingOutcome
+from chat.core.config import get_settings
+from chat.core.logging import get_logger
+from chat.domain.schemas import (
+    AnswerSource,
+    ChatDoneEvent,
+    ChatTokenEvent,
+    Citation,
+)
+
+_MAX_TOKENS = 1024
+_SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
+message had two parts: a question, and something about an appointment. Two specialists
+have already handled them, and their outputs are below.
+
+Combine them into a single, natural reply. You must:
+- Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
+- If the question half says there is no confident answer, say plainly that you do not
+  have a confident answer to that part. Never fill the gap from your own knowledge.
+- If the appointment half did not result in a booking, never write anything that
+  suggests one exists.
+- Do not mention that two specialists, tools, or internal steps were involved.
+Be concise."""
+
+
+@dataclass(frozen=True)
+class FaqResult:
+    """What `answer_faq` produces for the turn.
+
+    `chunk_scores` holds each citation's retrieval score, positionally. The scores are
+    part of the turn's observable record but not of the reply, so they ride here rather
+    than on `Citation`, which is a wire type the client reads.
+    """
+
+    answer_text: str
+    citations: list[Citation]
+    grounded: bool
+    chunk_scores: list[float] = field(default_factory=list)
+
+    def scored_citations(self) -> list[dict[str, object]]:
+        """Return each citation with the score it was retrieved at, for the log line."""
+        return [
+            {**citation.model_dump(), "score": score}
+            for citation, score in zip(self.citations, self.chunk_scores, strict=True)
+        ]
+
+
+async def compose_answer(
+    anthropic_client: AsyncAnthropic,
+    *,
+    faq_result: FaqResult | None,
+    booking_reply: str | None,
+    booking_outcome: BookingOutcome | None,
+    reply_to_message_ids: list[str],
+) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
+    """Compose and stream the merged reply, then emit the turn's terminal event.
+
+    Args:
+        faq_result: The FAQ specialist's collected output, or None if it did not run.
+        booking_reply: The booking specialist's own reply text, or None if it did not
+            run.
+        booking_outcome: The machine-derived outcome of the booking half, carried into
+            the prompt so the composing model is constrained by what actually happened
+            rather than by how the booking half phrased it.
+
+    Yields: the composed reply's tokens, then exactly one `ChatDoneEvent`.
+
+    Citations are carried through from the chunks the FAQ half actually retrieved and
+    are never re-reported by the composing model, so a merged answer cites exactly what
+    a single-specialist answer would have.
+    """
+    logger = get_logger()
+    prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
+
+    answer_parts: list[str] = []
+    async with anthropic_client.messages.stream(
+        model=get_settings().GENERATION_MODEL,
+        max_tokens=_MAX_TOKENS,
+        system=_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        async for event in stream:
+            if event.type == "text":
+                answer_parts.append(event.text)
+                yield ChatTokenEvent(text=event.text)
+
+    answer_text = "".join(answer_parts)
+    citations = faq_result.citations if faq_result is not None else []
+    grounded = faq_result.grounded if faq_result is not None else None
+    fields: dict[str, object] = {
+        "outcome": "merged",
+        "answer_source": AnswerSource.MERGED,
+        "answer_text": answer_text,
+        "grounded": grounded,
+        "booking_outcome": booking_outcome,
+        "message_ids_unified": reply_to_message_ids,
+        "citations": (faq_result.scored_citations() if faq_result is not None else []),
+    }
+    if grounded is False:
+        # Carried on a merged turn too, so a log query or eval harness counting
+        # abstentions does not silently miss exactly the mixed-intent traffic this
+        # node exists to serve.
+        fields["abstention_message"] = answer_text
+    logger.info("turn.completed", **fields)
+    yield ChatDoneEvent(
+        grounded=grounded,
+        citations=citations,
+        answer_source=AnswerSource.MERGED,
+    )
+
+
+def _single_specialist_outcome(grounded: bool | None) -> str:
+    """Describe a single-specialist turn's outcome for its `turn.completed` line."""
+    if grounded is None:
+        return "booking"
+    return "grounded" if grounded else "abstained"
+
+
+def log_single_specialist_completion(
+    *,
+    answer_source: AnswerSource,
+    grounded: bool | None,
+    booking_outcome: BookingOutcome | None,
+    answer_text: str,
+    citations: list[dict[str, object]],
+    reply_to_message_ids: list[str],
+) -> None:
+    """Emit `turn.completed` for a turn whose sole specialist streamed its own reply.
+
+    The no-op composing path still owns the event: this is the one node that runs on
+    every path, so keeping the emission here is what makes "exactly once per turn" true
+    rather than a property each specialist has to remember.
+    """
+    fields: dict[str, object] = {
+        "outcome": _single_specialist_outcome(grounded),
+        "answer_source": answer_source,
+        "answer_text": answer_text,
+        "grounded": grounded,
+        "booking_outcome": booking_outcome,
+        "message_ids_unified": reply_to_message_ids,
+        "citations": citations,
+    }
+    if grounded is False:
+        # The abstained turn's own long-standing field, kept so a log reader (and the
+        # eval harness) can still pick out what the patient was actually told.
+        fields["abstention_message"] = answer_text
+    get_logger().info("turn.completed", **fields)
+
+
+def _build_prompt(
+    faq_result: FaqResult | None,
+    booking_reply: str | None,
+    booking_outcome: BookingOutcome | None,
+) -> str:
+    """Build the composing call's single user message from both halves' outputs."""
+    parts: list[str] = []
+    if faq_result is not None:
+        if faq_result.grounded:
+            parts.append(f"Answer to the question part:\n{faq_result.answer_text}")
+        else:
+            parts.append(
+                "Answer to the question part:\n"
+                "There is no confident answer to this part. Say so plainly."
+            )
+    if booking_reply is not None:
+        parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")
+    return "\n\n".join(parts)

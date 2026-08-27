@@ -316,6 +316,14 @@ mentioned in the cleared chat and confirm the assistant does not use it.
   stance on context growth — cancel-and-restart (FR-015) already bounds concurrent generation work to
   at most one in-flight attempt per chat. Abuse/cost controls can be added later as a
   request-layer concern without requiring a redesign of the chat/message data model.
+
+  > **Superseded by spec 005 (`005-scheduling-and-booking`, research.md #23).** The "no fixed cap on
+  > context growth" stance no longer holds: every model call in the graph now sends at most the last
+  > five turns. Three things in that phase invalidated it — a session holds many long-lived chats
+  > rather than one that gets cleared, a mixed-intent turn makes several model calls instead of one,
+  > and the booking specialist may make up to six more within its own loop. Storage is unaffected:
+  > the full history is still persisted and still returned by the history endpoint; only what is
+  > sent to a model is windowed.
 - Although a real chat may eventually involve a third participant (staff, per ROADMAP Phase
   1d), every chat built by this feature has exactly two possible senders — patient and
   assistant. The Message model's sender is treated as an open set rather than a hardcoded pair so a

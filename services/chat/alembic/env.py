@@ -1,9 +1,9 @@
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from chat.domain.models import Base
 from dotenv import load_dotenv
+from shared_db import sync_database_url
 from sqlalchemy import engine_from_config, pool
 
 load_dotenv()
@@ -20,18 +20,7 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def _sync_database_url() -> str:
-    """Read DATABASE_URL and swap its driver for psycopg's sync one.
-
-    Raises: RuntimeError if DATABASE_URL isn't set.
-    """
-    url = os.environ.get("DATABASE_URL")
-    if url is None:
-        raise RuntimeError("DATABASE_URL is not set")
-    return url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
-
-
-config.set_main_option("sqlalchemy.url", _sync_database_url())
+config.set_main_option("sqlalchemy.url", sync_database_url("DATABASE_URL"))
 
 
 def run_migrations_offline() -> None:

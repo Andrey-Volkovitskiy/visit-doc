@@ -47,3 +47,34 @@ describe("MessageView", () => {
     expect(screen.queryByTestId("citations")).toBeNull();
   });
 });
+
+describe("MessageView booking replies", () => {
+  it("renders a booking reply with no citation block", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="You're booked for Tuesday at 9."
+        citations={[]}
+        grounded={null}
+      />,
+    );
+
+    expect(screen.getByText("You're booked for Tuesday at 9.")).toBeInTheDocument();
+    expect(screen.queryByTestId("citations")).toBeNull();
+    expect(screen.getByTestId("message")).not.toHaveAttribute("data-grounded");
+  });
+
+  it("marks a grounded FAQ reply distinctly from a booking one", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="Visiting hours are 8am to 5pm."
+        citations={[{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }]}
+        grounded={true}
+      />,
+    );
+
+    expect(screen.getByTestId("message")).toHaveAttribute("data-grounded", "true");
+    expect(screen.getByTestId("citations")).toBeInTheDocument();
+  });
+});

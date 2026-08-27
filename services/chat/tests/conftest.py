@@ -2,11 +2,10 @@
 
 import asyncio
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Literal, Self
-from unittest.mock import AsyncMock, MagicMock
-from urllib.parse import urlsplit, urlunsplit
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -14,17 +13,35 @@ from alembic import command
 from alembic.config import Config
 from chat.core.config import Settings
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
+from fastapi.testclient import TestClient
+from httpx import AsyncClient as HttpxAsyncClient
+from httpx import Response
+from shared_db import isolated_database_url, with_test_suffix
 from sqlalchemy import text as sql_text
 from voyageai.client_async import AsyncClient
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
-_TEST_SUFFIX = "_test"
 _VECTOR_SIZE = 512
 
+# What the mocked booking loop says when a test hasn't asked for anything specific.
+# The loop ends on the first response carrying no tool_use block, so this is a
+# one-iteration turn with no tool calls.
+DEFAULT_BOOKING_REPLY = "Which practitioner would you like to see?"
 
-def _with_test_suffix(value: str) -> str:
-    """Append `_test` to `value`, unless it's already suffixed (idempotent)."""
-    return value if value.endswith(_TEST_SUFFIX) else value + _TEST_SUFFIX
+
+def _mock_tool_use_response(calls: list[tuple[str, dict[str, object]]]) -> MagicMock:
+    """Build a mocked response whose content is `tool_use` blocks, one per call."""
+    blocks = []
+    for index, (name, arguments) in enumerate(calls):
+        block = MagicMock()
+        block.type = "tool_use"
+        block.id = f"toolu_{index}"
+        block.name = name
+        block.input = arguments
+        blocks.append(block)
+    response = MagicMock()
+    response.content = blocks
+    return response
 
 
 def _mock_text_response(text: str) -> MagicMock:
@@ -41,19 +58,13 @@ def _mock_text_response(text: str) -> MagicMock:
     return response
 
 
-def _isolated_test_database_url(url: str) -> str:
-    """Return `url` pointed at a `<db>_test` database instead of the dev one."""
-    parts = urlsplit(url)
-    return urlunsplit(parts._replace(path=_with_test_suffix(parts.path)))
-
-
 # Must run before any other `chat.*` module reads DATABASE_URL/QDRANT_COLLECTION_NAME
 # (env vars beat `.env`, so this override reaches every later Settings()/get_settings()
 # call). Uses Settings() directly, not get_settings(): it needs the pre-override value,
 # and caching it here would freeze the singleton on the dev URL for the whole session.
 _base_settings = Settings()
-os.environ["DATABASE_URL"] = _isolated_test_database_url(_base_settings.DATABASE_URL)
-os.environ["QDRANT_COLLECTION_NAME"] = _with_test_suffix(
+os.environ["DATABASE_URL"] = isolated_database_url(_base_settings.DATABASE_URL)
+os.environ["QDRANT_COLLECTION_NAME"] = with_test_suffix(
     _base_settings.QDRANT_COLLECTION_NAME
 )
 
@@ -119,16 +130,17 @@ async def _clear_chat_tables() -> None:
     `qdrant_repository.COLLECTION_NAME` has the identical `get_settings()`-at-import
     hazard for `QDRANT_COLLECTION_NAME`, hence the same lazy-import treatment.
     """
-    from chat.db.session import create_engine
+    from chat.domain.models import all_table_names
     from chat.repositories.qdrant_repository import COLLECTION_NAME, create_client
     from qdrant_client.http.models import Filter
+    from shared_db import create_engine
 
-    engine = create_engine(Settings())
+    engine = create_engine(Settings().DATABASE_URL)
     try:
         async with engine.begin() as connection:
             await connection.execute(
                 sql_text(
-                    "TRUNCATE TABLE sessions, chats, messages, faq_entries "
+                    f"TRUNCATE TABLE {', '.join(all_table_names())} "
                     "RESTART IDENTITY CASCADE"
                 )
             )
@@ -144,6 +156,40 @@ async def _clear_chat_tables() -> None:
         )
     finally:
         await qdrant_client.close()
+
+
+@pytest.fixture(autouse=True)
+def _scheduler_is_unreachable_by_default() -> Iterator[None]:
+    """Fake the scheduling boundary for every chat unit test that does not override it.
+
+    No scheduler runs alongside this tier, and the app's gRPC channel is bound to the
+    lifespan's event loop rather than the test's - so an unfaked call would fail on the
+    loop rather than on the thing a test is actually about. Unreachable is also the
+    honest default: it is what a chat service with no scheduler running really sees.
+
+    Every call reachable from an HTTP request is faked, not just the provisioning one:
+    a test exercising a path that reaches an unfaked call would otherwise dial the real
+    channel on the wrong loop, and fail with a loop-binding error attributed to whatever
+    it was actually about. A test that wants a specific outcome patches over this.
+    """
+    from chat.clients.scheduling import SchedulingUnavailableError
+
+    def _unreachable() -> AsyncMock:
+        return AsyncMock(
+            side_effect=SchedulingUnavailableError(
+                "no scheduler in tests", outcome_unknown=False
+            )
+        )
+
+    with (
+        patch(
+            "chat.api.provisioning.scheduling.ensure_session_provisioned",
+            new=_unreachable(),
+        ),
+        patch("chat.api.chats.scheduling.delete_patient_for_chat", new=_unreachable()),
+        patch("chat.api.chats.scheduling.rename_patient", new=_unreachable()),
+    ):
+        yield
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -275,6 +321,8 @@ def fake_anthropic_client(
     classify_error: Exception | None = None,
     classify_gate: asyncio.Event | None = None,
     classify_started: asyncio.Event | None = None,
+    booking_reply: str = DEFAULT_BOOKING_REPLY,
+    booking_tool_calls: list[list[tuple[str, dict[str, object]]]] | None = None,
 ) -> MagicMock:
     """Stand-in for `AsyncAnthropic`, set on `chat.main.AsyncAnthropic`'s patched
     return value in tests, now that the real client is constructed once at app startup
@@ -304,6 +352,8 @@ def fake_anthropic_client(
         gate=classify_gate,
         started=classify_started,
         client=client,
+        booking_reply=booking_reply,
+        booking_tool_calls=booking_tool_calls,
     )
     return client
 
@@ -315,6 +365,8 @@ def fake_classify_intent_client(
     gate: asyncio.Event | None = None,
     started: asyncio.Event | None = None,
     client: MagicMock | None = None,
+    booking_reply: str = DEFAULT_BOOKING_REPLY,
+    booking_tool_calls: list[list[tuple[str, dict[str, object]]]] | None = None,
 ) -> MagicMock:
     """Stand-in for `AsyncAnthropic` when only `.messages.create(...)` is exercised, via
     `classify_intent()`'s structured-output call (research.md #3). Exposes
@@ -336,7 +388,20 @@ def fake_classify_intent_client(
         client = MagicMock()
         client.close = AsyncMock()
 
-    async def _create(*_args: object, **_kwargs: object) -> MagicMock:
+    # One entry per booking-loop iteration that should issue tool calls; the loop then
+    # falls through to the plain-text reply above and stops.
+    booking_responses = [
+        _mock_tool_use_response(calls) for calls in (booking_tool_calls or [])
+    ]
+
+    async def _create(*_args: object, **kwargs: object) -> MagicMock:
+        # `.messages.create` serves two callers: `classify_intent` (structured output)
+        # and the booking loop (tool use). They are told apart by the parameter each
+        # sends, so one mocked client can stand in for both on a mixed-intent turn.
+        if kwargs.get("tools") is not None:
+            if booking_responses:
+                return booking_responses.pop(0)
+            return _mock_text_response(booking_reply)
         if gate is not None:
             if started is not None:
                 started.set()
@@ -359,20 +424,90 @@ def fake_classify_intent_client(
 
 
 def fake_anthropic_client_sequence(
-    intents_sequence: list[list[IntentLabel]], tokens: list[str] | None = None
+    intents_sequence: list[list[IntentLabel]],
+    tokens: list[str] | None = None,
+    booking_reply: str = DEFAULT_BOOKING_REPLY,
 ) -> MagicMock:
     """Like `fake_anthropic_client`, but returns a different classification result on
-    each successive `.messages.create(...)` call, in `intents_sequence` order - lets
-    one shared mocked client (matching one real app lifespan/session, like
-    `TestClient`'s) simulate several distinct patient messages each getting their own
-    recorded intent (US3's reviewability scenario).
+    each successive classification call, in `intents_sequence` order - lets one shared
+    mocked client (matching one real app lifespan/session, like `TestClient`'s)
+    simulate several distinct patient messages each getting their own recorded intent.
+
+    A booking-loop call is answered with `booking_reply` and does *not* consume an entry
+    from the sequence: the two callers share `.messages.create` but are told apart by
+    the parameter each sends, so a booking turn must not shift the classifications the
+    later turns are supposed to get.
     """
     client = fake_anthropic_client(tokens)
+    remaining = [
+        _mock_text_response(
+            IntentClassificationResult(intents=intents).model_dump_json()
+        )
+        for intents in intents_sequence
+    ]
 
-    def _response_for(intents: list[IntentLabel]) -> MagicMock:
-        text = IntentClassificationResult(intents=intents).model_dump_json()
-        return _mock_text_response(text)
+    async def _create(*_args: object, **kwargs: object) -> MagicMock:
+        if kwargs.get("tools") is not None:
+            return _mock_text_response(booking_reply)
+        return remaining.pop(0)
 
-    responses = [_response_for(intents) for intents in intents_sequence]
-    client.messages.create = AsyncMock(side_effect=responses)
+    client.messages.create = AsyncMock(side_effect=_create)
     return client
+
+
+# A turn's clock, required on every `POST /chat`. Fixed so a test that does not care
+# about time is unaffected by when it runs.
+LOCAL_NOW = "2026-08-14T09:00:00"
+_CHAT_ID_ATTR = "_visitdoc_chat_id"
+_chat_id_lock = asyncio.Lock()
+
+
+def chat_id_for(client: TestClient) -> str:
+    """Return the client's chat, creating one on first use.
+
+    A chat is an explicit resource created by `POST /chats`, so every turn needs one to
+    address. Caching it on the client keeps a multi-turn test talking to the same chat.
+    """
+    chat_id = getattr(client, _CHAT_ID_ATTR, None)
+    if chat_id is None:
+        chat_id = client.post("/chats").json()["id"]
+        setattr(client, _CHAT_ID_ATTR, chat_id)
+    return str(chat_id)
+
+
+def turn(client: TestClient, message: str) -> Response:
+    """Send one message to the client's chat."""
+    return client.post(
+        "/chat",
+        json={
+            "chat_id": chat_id_for(client),
+            "message": message,
+            "local_now": LOCAL_NOW,
+        },
+    )
+
+
+async def async_chat_id_for(client: HttpxAsyncClient) -> str:
+    """Return the async client's chat, creating one on first use.
+
+    Locked because several tests launch concurrent turns: without it, two tasks could
+    each read "no chat yet" across the `await` and create their own.
+    """
+    async with _chat_id_lock:
+        chat_id = getattr(client, _CHAT_ID_ATTR, None)
+        if chat_id is None:
+            chat_id = (await client.post("/chats")).json()["id"]
+            setattr(client, _CHAT_ID_ATTR, chat_id)
+        return str(chat_id)
+
+
+async def async_turn(client: HttpxAsyncClient, message: str) -> Response:
+    """Send one message to the async client's chat."""
+    return await client.post(
+        "/chat",
+        json={
+            "chat_id": await async_chat_id_for(client),
+            "message": message,
+            "local_now": LOCAL_NOW,
+        },
+    )
