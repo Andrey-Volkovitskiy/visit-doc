@@ -390,6 +390,34 @@ def test_turn_completed_is_emitted_exactly_once_on_a_single_specialist_path(
     assert [e["event"] for e in logs].count("turn.completed") == 1
 
 
+@pytest.mark.parametrize(
+    "intents",
+    [
+        [IntentLabel.FAQ_QUESTION],
+        [IntentLabel.BOOKING],
+        [IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+    ],
+)
+def test_turn_completed_is_the_last_line_after_every_node_has_closed(
+    seeded_entry: int, intents: list[IntentLabel]
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours."], intents=intents)
+        asyncio.run(_run_turn(anthropic_client, "when can I visit and book Friday?"))
+
+    events = [e["event"] for e in logs]
+    assert events.index("turn.completed") > _last_index(events, "node.completed")
+    # A turn-level event, so it must not inherit the composing node's binding either.
+    assert "node" not in next(e for e in logs if e["event"] == "turn.completed")
+
+
+def _last_index(events: list[str], event: str) -> int:
+    return len(events) - 1 - events[::-1].index(event)
+
+
 def test_every_node_emits_its_lifecycle_pair_with_its_own_name(
     seeded_entry: int,
 ) -> None:

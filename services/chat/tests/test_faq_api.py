@@ -116,26 +116,34 @@ def test_update_is_reflected_in_chat_retrieval() -> None:
 
 
 def test_delete_stops_grounding_and_then_404s() -> None:
-    with TestClient(app) as client:
-        entry = _create(client, "Visiting hours are 8am to 5pm.")
+    # Patched before `TestClient(app)`, like its siblings above: the turn this test
+    # runs would otherwise classify and generate against the live API, which is both
+    # paid and non-deterministic - and it is the FAQ path's groundedness, not the
+    # classifier's reading of the message, that is under test here.
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(["An answer."])
+        with TestClient(app) as client:
+            entry = _create(client, "Visiting hours are 8am to 5pm.")
 
-        delete_response = client.delete(f"/faq/{entry['id']}")
-        assert delete_response.status_code == 204
+            delete_response = client.delete(f"/faq/{entry['id']}")
+            assert delete_response.status_code == 204
 
-        assert client.get(f"/faq/{entry['id']}").status_code == 404
-        assert client.delete(f"/faq/{entry['id']}").status_code == 404
+            assert client.get(f"/faq/{entry['id']}").status_code == 404
+            assert client.delete(f"/faq/{entry['id']}").status_code == 404
 
-        with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
-            chat_response = client.post(
-                "/chat",
-                json={
-                    "chat_id": chat_id_for(client),
-                    "message": "when can I visit?",
-                    "local_now": LOCAL_NOW,
-                },
-            )
-        lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
-        assert lines[-1]["grounded"] is False
+            with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+                chat_response = client.post(
+                    "/chat",
+                    json={
+                        "chat_id": chat_id_for(client),
+                        "message": "when can I visit?",
+                        "local_now": LOCAL_NOW,
+                    },
+                )
+            lines = [
+                json.loads(line) for line in chat_response.text.strip().splitlines()
+            ]
+            assert lines[-1]["grounded"] is False
 
 
 @pytest.mark.parametrize(

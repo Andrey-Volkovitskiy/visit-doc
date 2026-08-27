@@ -10,11 +10,13 @@ and behavior byte for byte. Only a mixed-intent turn pays for a composing call.
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from typing import Any
 
 from anthropic import AsyncAnthropic
 
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.config import get_settings
+from chat.core.correlation import turn_elapsed_ms
 from chat.core.logging import get_logger
 from chat.domain.schemas import (
     AnswerSource,
@@ -36,6 +38,42 @@ Combine them into a single, natural reply. You must:
   suggests one exists.
 - Do not mention that two specialists, tools, or internal steps were involved.
 Be concise."""
+
+
+class TurnCompletion:
+    """A slot holding the fields `turn.completed` should carry, until it is emitted.
+
+    The fields are only known inside `compose_answer`'s node span, but the event
+    describes the *turn*, not that node - so the path that produced the reply records
+    them here and the caller emits them once the span has closed. That keeps the
+    turn's terminal line after the last `node.completed` instead of nested inside it,
+    and keeps it free of the span's `node` binding.
+    """
+
+    def __init__(self) -> None:
+        self._fields: dict[str, Any] | None = None
+
+    def set(self, **fields: Any) -> None:
+        """Record the fields `turn.completed` should carry."""
+        self._fields = fields
+
+    def emit(self) -> None:
+        """Emit `turn.completed`, timed from when the turn's id was bound.
+
+        Raises: RuntimeError if no path recorded a completion first - every path
+            through the turn owes exactly one.
+
+        `duration_ms` covers the whole turn the patient waited through - the history
+        read and message insert included, not just the graph - and is left off
+        entirely when the emission happens outside a bound turn.
+        """
+        if self._fields is None:
+            raise RuntimeError("turn.completed was emitted with no fields recorded")
+        duration_ms = turn_elapsed_ms()
+        if duration_ms is None:
+            get_logger().info("turn.completed", **self._fields)
+            return
+        get_logger().info("turn.completed", duration_ms=duration_ms, **self._fields)
 
 
 @dataclass(frozen=True)
@@ -67,8 +105,9 @@ async def compose_answer(
     booking_reply: str | None,
     booking_outcome: BookingOutcome | None,
     reply_to_message_ids: list[str],
+    completion: TurnCompletion,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
-    """Compose and stream the merged reply, then emit the turn's terminal event.
+    """Compose and stream the merged reply, recording the turn's completion fields.
 
     Args:
         faq_result: The FAQ specialist's collected output, or None if it did not run.
@@ -77,6 +116,8 @@ async def compose_answer(
         booking_outcome: The machine-derived outcome of the booking half, carried into
             the prompt so the composing model is constrained by what actually happened
             rather than by how the booking half phrased it.
+        completion: Filled in with the turn's `turn.completed` fields, for the caller
+            to emit once the composing node's span has closed.
 
     Yields: the composed reply's tokens, then exactly one `ChatDoneEvent`.
 
@@ -84,7 +125,6 @@ async def compose_answer(
     are never re-reported by the composing model, so a merged answer cites exactly what
     a single-specialist answer would have.
     """
-    logger = get_logger()
     prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
 
     answer_parts: list[str] = []
@@ -116,7 +156,7 @@ async def compose_answer(
         # abstentions does not silently miss exactly the mixed-intent traffic this
         # node exists to serve.
         fields["abstention_message"] = answer_text
-    logger.info("turn.completed", **fields)
+    completion.set(**fields)
     yield ChatDoneEvent(
         grounded=grounded,
         citations=citations,
@@ -131,7 +171,8 @@ def _single_specialist_outcome(grounded: bool | None) -> str:
     return "grounded" if grounded else "abstained"
 
 
-def log_single_specialist_completion(
+def record_single_specialist_completion(
+    completion: TurnCompletion,
     *,
     answer_source: AnswerSource,
     grounded: bool | None,
@@ -140,11 +181,11 @@ def log_single_specialist_completion(
     citations: list[dict[str, object]],
     reply_to_message_ids: list[str],
 ) -> None:
-    """Emit `turn.completed` for a turn whose sole specialist streamed its own reply.
+    """Record `turn.completed` for a turn whose sole specialist streamed its own reply.
 
     The no-op composing path still owns the event: this is the one node that runs on
-    every path, so keeping the emission here is what makes "exactly once per turn" true
-    rather than a property each specialist has to remember.
+    every path, so keeping it here is what makes "exactly once per turn" true rather
+    than a property each specialist has to remember.
     """
     fields: dict[str, object] = {
         "outcome": _single_specialist_outcome(grounded),
@@ -159,7 +200,7 @@ def log_single_specialist_completion(
         # The abstained turn's own long-standing field, kept so a log reader (and the
         # eval harness) can still pick out what the patient was actually told.
         fields["abstention_message"] = answer_text
-    get_logger().info("turn.completed", **fields)
+    completion.set(**fields)
 
 
 def _build_prompt(

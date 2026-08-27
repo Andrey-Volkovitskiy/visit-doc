@@ -59,6 +59,21 @@ call, *and* the booking loop's tool-use call with one mock — the last two shar
 assertions never touch any of them. A test that needs the booking loop to actually call tools
 passes `booking_tool_calls=[...]`.
 
+**This rule is enforced, not just documented.** `services/chat/tests/conftest.py`'s autouse
+`_paid_apis_are_blocked` patches the paid SDK calls themselves — Anthropic's
+`AsyncMessages.create`/`.stream` and Voyage's `AsyncClient.embed` — so a test that reaches one
+fails immediately with `PaidAPICallInTestError`, naming the call it made and the fake it should
+have used, instead of quietly billing a live request. The block sits on the SDK class, not on this
+codebase's wrappers, so it also catches a client the app's own lifespan builds in a test that
+forgot to patch `chat.main.AsyncAnthropic`. Two consequences worth knowing:
+
+- **A new paid call belongs in `_PAID_API_CALLS` in the same change that introduces it** — a new
+  SDK method, or a new provider entirely. A guard with a gap is worse than no guard, because the
+  suite now reads as if it were covered.
+- **`services/chat/tests/test_paid_api_guard.py` asserts the guard is armed.** A renamed SDK
+  attribute would make the `patch` target stop resolving, and a guard failing open looks exactly
+  like a suite that never calls a paid API — which is the state it exists to distinguish from.
+
 The **scheduling gRPC boundary** is faked the same way and for the same reason: no scheduler runs
 alongside chat's unit tests, and the app's channel is bound to the lifespan's event loop rather
 than the test's. `services/chat/tests/conftest.py`'s autouse

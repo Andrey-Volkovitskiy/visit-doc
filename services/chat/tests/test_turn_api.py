@@ -149,6 +149,9 @@ def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> N
     done = events["turn.completed"]
     assert done["outcome"] == "grounded"
     assert done["answer_text"] == "Visiting hours are 8am to 5pm."
+    # The whole turn, not one node: no shorter than the slowest node within it.
+    node_durations = [e["duration_ms"] for e in logs if e["event"] == "node.completed"]
+    assert done["duration_ms"] >= max(node_durations)
     assert any(c["entry_id"] == seeded_entry for c in done["citations"])
     assert all("score" in c for c in done["citations"])
     # intent.classified sits between turn.message_received and turn.completed

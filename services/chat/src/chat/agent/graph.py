@@ -37,8 +37,9 @@ from chat.agent.answer_faq import answer_faq
 from chat.agent.classify_intent import classify_intent
 from chat.agent.compose_answer import (
     FaqResult,
+    TurnCompletion,
     compose_answer,
-    log_single_specialist_completion,
+    record_single_specialist_completion,
 )
 from chat.agent.handle_booking import BookingResult, handle_booking
 from chat.agent.history import bound_to_last_n_turns
@@ -248,12 +249,14 @@ def _build_graph(
         faq_result = state.get("faq_result")
         booking_result = state.get("booking_result")
         booking_outcome = booking_result.outcome if booking_result is not None else None
+        completion = TurnCompletion()
         async with node_span(_COMPOSE_ANSWER) as span:
             if not state["merge_required"]:
                 answer_text, citations, grounded, source = _single_specialist_reply(
                     faq_result, booking_result
                 )
-                log_single_specialist_completion(
+                record_single_specialist_completion(
+                    completion,
                     answer_source=source,
                     grounded=grounded,
                     booking_outcome=booking_outcome,
@@ -268,25 +271,32 @@ def _build_graph(
                     booking_outcome=booking_outcome,
                     citation_count=len(citations),
                 )
-                return
-
-            async for event in compose_answer(
-                anthropic_client,
-                faq_result=faq_result,
-                booking_reply=(
-                    booking_result.reply_text if booking_result is not None else None
-                ),
-                booking_outcome=booking_outcome,
-                reply_to_message_ids=state["reply_to_message_ids"],
-            ):
-                writer(event)
-            span.set(
-                answer_source=str(AnswerSource.MERGED),
-                merged=True,
-                grounded=faq_result.grounded if faq_result else None,
-                booking_outcome=booking_outcome,
-                citation_count=len(faq_result.citations) if faq_result else 0,
-            )
+            else:
+                async for event in compose_answer(
+                    anthropic_client,
+                    faq_result=faq_result,
+                    booking_reply=(
+                        booking_result.reply_text
+                        if booking_result is not None
+                        else None
+                    ),
+                    booking_outcome=booking_outcome,
+                    reply_to_message_ids=state["reply_to_message_ids"],
+                    completion=completion,
+                ):
+                    writer(event)
+                span.set(
+                    answer_source=str(AnswerSource.MERGED),
+                    merged=True,
+                    grounded=faq_result.grounded if faq_result else None,
+                    booking_outcome=booking_outcome,
+                    citation_count=len(faq_result.citations) if faq_result else 0,
+                )
+        # Emitted outside the span so the turn's terminal line follows the last
+        # `node.completed` rather than sitting inside it: `turn.completed` describes
+        # the whole turn, and a reader should not meet it before the node that
+        # produced it has been reported closed.
+        completion.emit()
 
     builder = StateGraph(_GraphState)
     builder.add_node("classify_intent", classify_intent_node)

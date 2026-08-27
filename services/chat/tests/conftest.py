@@ -2,9 +2,10 @@
 
 import asyncio
 import os
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from contextlib import ExitStack
 from pathlib import Path
-from typing import Literal, Self
+from typing import Any, Literal, NoReturn, Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -189,6 +190,64 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
         patch("chat.api.chats.scheduling.delete_patient_for_chat", new=_unreachable()),
         patch("chat.api.chats.scheduling.rename_patient", new=_unreachable()),
     ):
+        yield
+
+
+class PaidAPICallInTestError(RuntimeError):
+    """Raised when a test reaches a real paid API instead of that API's fake."""
+
+
+# Every call this codebase makes that costs money, keyed by the SDK attribute it goes
+# through. Blocked on the SDK class rather than on this codebase's own wrappers, so a
+# client built anywhere - including one the app's own lifespan constructs in a test
+# that forgot to patch it - is covered by the same guard.
+_PAID_API_CALLS = {
+    "anthropic.resources.messages.AsyncMessages.create": (
+        "Anthropic messages.create (intent classification, or the booking tool loop)"
+    ),
+    "anthropic.resources.messages.AsyncMessages.stream": (
+        "Anthropic messages.stream (answer generation)"
+    ),
+    "voyageai.client_async.AsyncClient.embed": "Voyage embed (embeddings)",
+}
+
+_PAID_API_REMEDY = (
+    "Tests must never call a paid API: it bills real money on every run, and both its "
+    "latency and its output vary, so the test is non-deterministic and needs network "
+    "plus a valid key to pass at all. Patch `chat.main.AsyncAnthropic` with "
+    "`fake_anthropic_client(...)` and `chat.rag.<module>.embed_texts` with "
+    "`fake_embed_texts` - see docs/testing-strategy.md."
+)
+
+
+@pytest.fixture(autouse=True)
+def _paid_apis_are_blocked() -> Iterator[None]:
+    """Fail any test that reaches Anthropic or Voyage for real.
+
+    A test only caring about an earlier pipeline stage still runs the later ones, which
+    call these APIs unconditionally - so an unmocked call is not "that path is
+    untested", it is a live, billed, non-deterministic call attributed to whatever the
+    test was actually about. This turns that into an immediate, named failure at the
+    call site instead.
+
+    A test that legitimately needs a real call - there is none in this tier - would
+    have to opt out by patching over this fixture, which is the point: it cannot happen
+    by omission.
+
+    A new paid call (a new SDK method, or a new provider) belongs in `_PAID_API_CALLS`
+    in the same change that introduces it, exactly as a new scheduling call belongs in
+    `_scheduler_is_unreachable_by_default`.
+    """
+
+    def _blocked(api: str) -> Callable[..., NoReturn]:
+        def raise_paid_api_error(*_args: Any, **_kwargs: Any) -> NoReturn:
+            raise PaidAPICallInTestError(f"this test called {api}. {_PAID_API_REMEDY}")
+
+        return raise_paid_api_error
+
+    with ExitStack() as stack:
+        for target, api in _PAID_API_CALLS.items():
+            stack.enter_context(patch(target, new=_blocked(api)))
         yield
 
 

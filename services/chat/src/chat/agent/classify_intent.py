@@ -13,9 +13,12 @@ _MAX_TOKENS = 256
 _SYSTEM_PROMPT = (
     "Classify the visitor's most recent message into every intent that applies, given "
     "the conversation so far: faq_question (a clinic policy/FAQ question), booking "
-    "(wants to book/reschedule/cancel an appointment), call_staff (an urgent or "
-    "staff-handled issue, e.g. a billing problem), unknown (fits none of the above). A "
-    "message may carry more than one intent at once."
+    "(anything only the clinic's live appointment records can answer - booking, "
+    "rescheduling or cancelling an appointment, and equally asking which "
+    "practitioners this clinic has, what a named practitioner specializes in, or when "
+    "one of them next has a free appointment), "
+    "call_staff (an urgent or staff-handled issue, e.g. a billing problem), unknown "
+    "(fits none of the above). A message may carry more than one intent at once."
 )
 
 # The classifier's own request schema, built from `IntentClassificationResult`'s

@@ -5,10 +5,12 @@ from unittest.mock import MagicMock
 import pytest
 from chat.agent.compose_answer import (
     FaqResult,
+    TurnCompletion,
     compose_answer,
-    log_single_specialist_completion,
+    record_single_specialist_completion,
 )
 from chat.agent.handle_booking import BookingOutcome
+from chat.core.correlation import bind_turn_id
 from chat.domain.schemas import AnswerSource, ChatDoneEvent, ChatTokenEvent, Citation
 from structlog.testing import capture_logs
 
@@ -50,17 +52,22 @@ async def _compose(
 ) -> tuple[list[ChatTokenEvent], ChatDoneEvent]:
     tokens: list[ChatTokenEvent] = []
     done: ChatDoneEvent | None = None
+    completion = TurnCompletion()
     async for event in compose_answer(
         client,
         faq_result=faq_result,
         booking_reply=booking_reply,
         booking_outcome=booking_outcome,
         reply_to_message_ids=_REPLY_IDS,
+        completion=completion,
     ):
         if isinstance(event, ChatDoneEvent):
             done = event
         else:
             tokens.append(event)
+    # The node emits the recorded completion once its span has closed; these tests
+    # stand in for that caller so the event is still observable here.
+    completion.emit()
     assert done is not None
     return tokens, done
 
@@ -184,7 +191,9 @@ async def test_a_merged_turn_logs_completion_once_with_scored_citations() -> Non
 
 def test_a_single_specialist_turn_emits_only_its_completion() -> None:
     with capture_logs() as logs:
-        log_single_specialist_completion(
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
             answer_source=AnswerSource.FAQ,
             grounded=True,
             booking_outcome=None,
@@ -192,15 +201,53 @@ def test_a_single_specialist_turn_emits_only_its_completion() -> None:
             citations=[{**_CITATION.model_dump(), "score": 0.9}],
             reply_to_message_ids=_REPLY_IDS,
         )
+        completion.emit()
 
     assert [e["event"] for e in logs] == ["turn.completed"]
     assert logs[0]["outcome"] == "grounded"
     assert logs[0]["answer_source"] == AnswerSource.FAQ
 
 
+def test_a_completion_emitted_within_a_turn_reports_the_turn_duration() -> None:
+    with capture_logs() as logs, bind_turn_id():
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.FAQ,
+            grounded=True,
+            booking_outcome=None,
+            answer_text="Visiting hours are 8am to 5pm.",
+            citations=[],
+            reply_to_message_ids=_REPLY_IDS,
+        )
+        completion.emit()
+
+    assert logs[0]["duration_ms"] >= 0
+
+
+def test_a_completion_emitted_outside_a_turn_reports_no_duration() -> None:
+    with capture_logs() as logs:
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.FAQ,
+            grounded=True,
+            booking_outcome=None,
+            answer_text="Visiting hours are 8am to 5pm.",
+            citations=[],
+            reply_to_message_ids=_REPLY_IDS,
+        )
+        completion.emit()
+
+    # Absent, rather than a null that would read as an instant turn.
+    assert "duration_ms" not in logs[0]
+
+
 def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> None:
     with capture_logs() as logs:
-        log_single_specialist_completion(
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
             answer_source=AnswerSource.FAQ,
             grounded=False,
             booking_outcome=None,
@@ -208,6 +255,7 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
         )
+        completion.emit()
 
     assert logs[0]["outcome"] == "abstained"
     assert logs[0]["abstention_message"] == "I don't have a confident answer to that."
@@ -215,7 +263,9 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
 
 def test_a_booking_only_turn_reports_no_groundedness_verdict() -> None:
     with capture_logs() as logs:
-        log_single_specialist_completion(
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
             answer_source=AnswerSource.BOOKING,
             grounded=None,
             booking_outcome=str(BookingOutcome.BOOKED),
@@ -223,6 +273,7 @@ def test_a_booking_only_turn_reports_no_groundedness_verdict() -> None:
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
         )
+        completion.emit()
 
     assert logs[0]["grounded"] is None
     assert logs[0]["booking_outcome"] == "booked"
