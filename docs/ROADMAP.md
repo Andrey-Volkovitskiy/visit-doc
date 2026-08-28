@@ -34,8 +34,11 @@ grounded content from clinic policy documents, cites its sources, and **abstains
 retrieval is weak** rather than confabulating. It hands off to a human whenever it can't confidently
 resolve something; urgent or ambiguous requests are prioritized.
 
-**Staff** (a later phase) work from a console that surfaces incoming escalations, lets them take
-over a conversation, and shows operational analytics.
+**Staff** (Phase 2b) work from a console that notifies them of incoming escalations, lets them take
+over a conversation and reply in the patient's own thread, and manages the practitioners and FAQ
+entries the assistant answers from. Both sides live on one screen — patient chats on the left, the
+staff console on the right — so a visitor drives an escalation and then answers it, as the session's
+single staff member, without logging in as anyone. Operational analytics follow in Phase 3+.
 
 ---
 
@@ -169,24 +172,127 @@ Complete the agent's conversational surface on top of 1c's booking:
   generating replies in it until a staff member resolves it or hands it back.
 
 #### Phase 1e — RAG done properly
-Upgrade Phase 0's naive embed-and-top-k retrieval: defensible chunking, a reranking step, grounded
-answers **with citations back to the source document** — derived structurally from what was actually
-retrieved, never self-reported by the LLM — and an explicit **abstention path** that escalates via
-1d's `escalate_to_staff` tool instead of hallucinating when retrieval is weak. A **groundedness
-check** runs before any FAQ answer is returned to the user.
+Upgrade Phase 0's naive embed-and-top-k retrieval into a pipeline with a defensible stage for each
+job: chunking, retrieval, reranking, and two gates that decide whether an answer is allowed out at
+all.
 
-### Phase 2 — Evaluation & observability
+- **Defensible chunking**, replacing Phase 0's naive split.
+- **Reranking, so retrieval can cast wider while the prompt carries less.** Vector search is a
+  bi-encoder: a chunk is embedded at index time knowing nothing about the question, so cosine
+  distance between two independently placed points is a blunt relevance signal — measured on the
+  current corpus, two chunks answering *different* questions already score 0.57 against each other.
+  A reranker is a cross-encoder, scoring query and chunk together: far more accurate, and far too
+  expensive to run over a corpus, so it re-orders a shortlist the cheap retriever produced. The
+  pipeline becomes retrieve wide for recall → rerank → keep the best few for precision, with both
+  the prompt context and the citations built from the survivors — so a citation comes to mean "this
+  is what the answer stands on" rather than "this was nearby".
+- **The reranked score is a different scale and gets its own name.** Cosine similarity and
+  cross-encoder relevance are not interchangeable numbers, and writing the second into the field
+  holding the first would make one value mean two things depending on which path produced it. Two
+  scores, two thresholds: the fallback that runs when reranking is unavailable must read the cosine
+  threshold, never the relevance one.
+- **Gate A — retrieval sufficiency, before generation.** *Is there material here worth answering
+  from?* A per-chunk floor on the relevance score plus a minimum number of surviving chunks,
+  replacing Phase 0's single top-1 test. Failing it abstains without spending a generation call.
+  Cross-encoder scores are bimodal — genuinely relevant chunks pile up high, irrelevant ones near
+  zero — so this threshold sits in an empty valley instead of slicing through a continuum, which is
+  what makes the gate meaningful rather than nominal.
+- **Gate B — answer support, after generation.** *Does the answer that came out actually follow from
+  the context that went in?* A cheap, fast model as judge, with structured output, comparing the
+  generated answer against the chunks that were in the prompt. It catches the failure Gate A
+  structurally cannot see: retrieval was good, and the model answered partly from what it already
+  knew. Gate B ships **log-only first** — the FAQ path streams, so a verdict arriving after the
+  tokens cannot unsay them, and the honest order is to measure how often it would fire before paying
+  the latency of buffering answers in order to act on it.
+- **The turn's verdict becomes a typed outcome, not a boolean.** `grounded: true/false/null` already
+  carries "no FAQ ran", "retrieval was too weak", and "we generated something"; Gate B would give
+  one name five meanings. A verdict enum — not applicable, abstained (nothing retrieved / retrieved
+  too weak), answered and verified, answered but unverified — keeps "we checked and it held"
+  distinct from "we could not check", for the UI, the log, and Phase 2's metrics alike.
+- **Citations back to the source document**, derived structurally from the chunks actually placed in
+  context, never self-reported by the LLM.
+- **An explicit abstention path** that escalates via 1d's `escalate_to_staff` tool instead of
+  confabulating, so an abstention ends with a human rather than at a dead end.
+- **Every threshold above is measured, not guessed.** Each is an operating point on a curve, and the
+  curve needs Phase 2's labeled set — questions the corpus genuinely answers, and questions it
+  genuinely does not — before it exists. Two error rates are tracked apart, hallucinations and false
+  abstentions; for a clinic the gates are tuned toward abstaining.
+
+#### Phase 1f — Sub-query extraction
+1c routes a mixed-intent message to two specialists at once, but hands each of them the *whole*
+message — so the FAQ node retrieves against "what should I bring, and can I book Friday?" rather
+than against the question inside it. The scheduling half of that sentence is dense with vocabulary
+the FAQ corpus also contains, so it pulls booking-flavored chunks into the top-k, dilutes the
+scores the gates read, and produces citations for chunks that answer nothing the patient asked.
+
+- **The classifier returns sub-queries, not just labels.** Its structured output becomes one entry
+  per detected intent — the label, plus the part of the message carrying it, rewritten to stand on
+  its own. Same cheap model, same single call, one schema change: no second model round trip.
+- **Each specialist receives its own sub-query**, so retrieval embeds the question alone and its
+  score reflects the question alone.
+- **An extracted sub-query has to be self-contained.** "and can I book Friday?" means nothing
+  without its referent, and retrieval sees the sub-query with no conversation around it — so
+  extraction is also decontextualization, resolving pronouns and elisions against the turn's
+  history.
+- **The booking specialist still gets the whole conversation.** Only retrieval needs an isolated
+  question; dialogue policy needs history, and stripping it would break exactly the multi-turn
+  confirmation flow 1c built.
+- **Single-intent turns are unaffected** — the sub-query is the message, and the FAQ path behaves
+  as it does today.
+
+This has no dependency on 1e and can be built before it. If 1e's thresholds are calibrated first,
+they need re-checking afterwards: this phase changes the text those scores are measured against.
+
+### Phase 2a — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does:
 
 - **A golden dataset** — 50–100 realistic patient messages labeled with expected intent(s),
   expected tool calls, and (for FAQ) the correct source document.
 - **Metrics**: intent-classification accuracy, tool-selection correctness, retrieval hit@k / MRR,
-  **answer groundedness** (LLM-as-judge comparing the answer against the retrieved context), and
-  **end-to-end task success** (did the booking land in the correct database state?).
+  **answer groundedness** (1e's Gate B judge, run offline across the labeled set rather than per
+  turn), and **end-to-end task success** (did the booking land in the correct database state?).
 - **CI-gated evals** — run the suite in GitHub Actions on every commit and fail the build on a
   metric regression.
 - **Tracing with Langfuse** — per-step latency, token cost, and the full decision trace for each
   turn.
+
+### Phase 2b — Staff console and admin UI
+1d makes a conversation multi-party on the server; this is the interface that makes that real, plus
+the two admin surfaces for the data the assistant answers from. Mostly frontend over APIs that
+already exist.
+
+**One screen, both sides.** The app demonstrates the patient experience and the staff experience at
+once: the session's patient chats on the left, the staff interface on the right, so an escalation
+can be watched arriving from the side that raised it. There is no login and no second kind of user —
+the anonymous session remains the only identity, and it owns both panes.
+
+- **Escalated-conversation chat.** A queue of the session's conversations the assistant handed
+  off, each opening into the same thread the patient pane shows, with a composer that posts into it
+  as staff. The console owns the state transition 1d defined: while a conversation is escalated the
+  assistant stays silent, until the staff member resolves it or hands it back.
+- **Staff notification.** An escalation is worth nothing if nobody happens to be looking at that
+  pane. In-app first — a live push and an unread count on the staff side, raised by a turn the user
+  may have been driving from the patient side a second earlier — because that needs no new
+  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 3+, where a
+  broker and a Notification service actually exist.
+- **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
+  practitioners, with the seeded-name defaults and the cascading deletes the service already
+  enforces. No new backend.
+- **FAQ entry management** — a UI over the existing FAQ CRUD, with one thing it must not get wrong:
+  a *saved* entry and a *searchable* entry are different states. The backend's Postgres↔Qdrant
+  ordering (deindex before deleting the row, delete-then-upsert on update) is what keeps the two
+  consistent, and the console surfaces indexing state so a staff member can tell whether what they
+  just wrote is something the assistant can actually retrieve. It is also the one admin action that
+  changes what the assistant will say, which makes it the natural place to show a retrieval or eval
+  effect later.
+- **The session stays the only boundary — there is no staff login.** A session gets exactly one
+  staff member, created with it as its patients and practitioners already are, and the app user
+  simply acts as that person. Scoping is unchanged from 1c: a session sees and manages only its own
+  chats, patients, practitioners, and staff member, and an id from another session resolves to
+  nothing. Authentication would buy nothing this scope does not already give, and would cost the
+  side-by-side demonstration that is the point of the screen. The staff member is a core-backend
+  record, alongside sessions, chats, and messages — nothing about it touches Scheduling's
+  invariants.
 
 ### Phase 3+ — Platform layers (optional, if time allows)
 Added as deliberate evolution, each with a one-line rationale in the README:
@@ -196,7 +302,8 @@ Added as deliberate evolution, each with a one-line rationale in the README:
 - Introduce **one** message broker plus the **transactional outbox** pattern and **idempotent
   consumers** (at-least-once delivery plus idempotency gives effectively-once processing).
 - Add ClickHouse and an event stream for the analytics dashboard.
-- Build the **staff console** for escalations and practitioner management.
+- Extend Phase 2b's console with operational analytics, and with escalation notifications that
+  reach staff out of band (email/SMS) once a broker and a Notification service exist.
 - Containerize and deploy to Kubernetes.
 
 ---
@@ -206,7 +313,8 @@ Added as deliberate evolution, each with a one-line rationale in the README:
 - **Route models deliberately** — a cheap, fast model for classification; a stronger one for
   generation — and record the cost reasoning.
 - **Structured outputs** for intents and tool arguments, not string parsing.
-- **Groundedness gate** on every retrieved answer.
+- **Two groundedness gates** — retrieval sufficiency before generating, answer support after —
+  with abstention as a first-class outcome rather than a failure.
 - **Ship a live, clickable demo** on something cheap and simple — a URL an interviewer can poke,
   prioritized over deployment sophistication.
 
