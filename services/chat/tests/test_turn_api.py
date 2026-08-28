@@ -498,11 +498,28 @@ def test_classified_intents_are_reviewable_from_logs_without_rerunning(
 
 
 async def _post_two_chat_requests(asgi_app: FastAPI) -> None:
+    """Run two turns concurrently, each in its own chat.
+
+    One chat per turn deliberately: two concurrent turns in the *same* chat race to
+    supersede each other, and the loser is cancelled mid-pipeline, so whether both
+    turns reach `turn.completed` would depend on scheduling order. Supersession has
+    its own tests; this one is about turn ids staying separate across concurrent
+    tasks.
+    """
     transport = ASGITransport(app=asgi_app)
-    async with AsyncClient(transport=transport, base_url="http://t") as ac:
+    async with (
+        AsyncClient(transport=transport, base_url="http://t") as first,
+        AsyncClient(transport=transport, base_url="http://t") as second,
+    ):
+        # Both chats are created up front, so the gather below launches two turns and
+        # nothing else: chat creation is slower than a turn whose model and embeddings
+        # are faked, so leaving it inside `async_turn` would let the first turn finish
+        # while the second client was still creating its chat - no overlap at all.
+        await async_chat_id_for(first)
+        await async_chat_id_for(second)
         await asyncio.gather(
-            async_turn(ac, "when can I visit?"),
-            async_turn(ac, "when can I visit?"),
+            async_turn(first, "when can I visit?"),
+            async_turn(second, "when can I visit?"),
         )
 
 
