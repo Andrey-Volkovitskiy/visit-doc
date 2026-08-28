@@ -152,6 +152,18 @@ the clear, and no test or type error catches the difference.
   as an explicit parameter — `structlog.contextvars` is scoped to the current `asyncio` task, so
   concurrent requests never leak each other's bound values, and business-logic signatures stay free
   of observability-only parameters.
+- **`debug` is for what a decision was made from; `info` for what was decided.** An event
+  another engineer would want in a production log — a turn's outcome, a call's status and
+  duration — is `info`. The material behind it, which is large and only useful while
+  reproducing something (e.g. the full conversation a specialist sent the model), is `debug`.
+  A debug entry is rendered dimmed by the shared renderer, so a DEBUG-level log stays
+  skimmable for the `info` events describing what the service actually did.
+- **The level threshold is `LOG_LEVEL` in each service's `Settings`**, typed as
+  `shared_logging.LogLevel` so an invalid value fails at startup rather than silently
+  logging at some other level. It defaults to `INFO`; local `.env` files set `DEBUG`.
+  Anything below the threshold is dropped before its arguments are rendered, so a `debug`
+  call with an expensive payload costs nothing when it is off — but build that payload in
+  the call itself rather than beforehand, or the saving is lost.
 - **Never log a secret** — see "Secrets in logs" below.
 
 ### Secrets in logs

@@ -24,6 +24,7 @@ def configure_logging(settings: Settings) -> None:
         settings,
         secret_fields=_SECRET_SETTINGS_FIELDS,
         secret_url_fields=_SECRET_URL_SETTINGS_FIELDS,
+        log_level=settings.LOG_LEVEL,
     )
 
 

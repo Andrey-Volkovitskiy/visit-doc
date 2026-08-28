@@ -24,7 +24,11 @@ from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
 from shared_models.localtime import parse_local_datetime
 
-from chat.agent.history import bound_to_last_n_turns, to_claude_messages
+from chat.agent.history import (
+    bound_to_last_n_turns,
+    to_claude_messages,
+    to_loggable_messages,
+)
 from chat.agent.tools.registry import ToolArgumentError, ToolRegistry
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
@@ -38,6 +42,9 @@ _MAX_TOKENS = 1024
 _MAX_ITERATIONS = 6
 
 _SYSTEM_PROMPT = """You are a clinic's booking assistant, talking to {patient_name}.
+Your goal is to answer the last message in the conversation, previous messages are
+context.
+
 The patient's current local date and time is {local_now}. Resolve every relative
 phrase ("tomorrow", "next Tuesday at 3") against that, and never against your own
 sense of the date.
@@ -46,6 +53,7 @@ Rules you must follow:
 - Only offer times that check_availability returned. Never invent or round one.
 - Confirm BOTH the practitioner and the exact start time with the patient before
   calling book_appointment. An appointment cannot be cancelled or changed afterwards.
+  Don't ask for confirmation if the patient already confirmed this appointment before.
 - Never state or imply that an appointment exists unless book_appointment returned
   status "booked" in this turn.
 - When several practitioners could match what the patient asked for, list them and ask
@@ -114,6 +122,11 @@ class BookingResult:
     appointment_id: str | None = None
     iterations: int = 0
     tool_calls: int = 0
+
+
+def _elapsed_ms(started: float) -> float:
+    """Return milliseconds elapsed since `started`, to two decimal places."""
+    return round((time.monotonic() - started) * 1000, 2)
 
 
 def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | None]:
@@ -214,6 +227,15 @@ async def handle_booking(
     tool_calls = 0
 
     for iteration in range(1, _MAX_ITERATIONS + 1):
+        # What the model is about to answer from, in full: the bounded history plus
+        # every tool exchange this turn has accumulated so far. A booking loop that
+        # goes wrong usually went wrong on what it could see, not on what it was told.
+        logger.debug(
+            "booking.model_request",
+            iteration=iteration,
+            messages=to_loggable_messages(messages),
+        )
+        started = time.monotonic()
         response = await anthropic_client.messages.create(
             model=settings.GENERATION_MODEL,
             max_tokens=_MAX_TOKENS,
@@ -221,9 +243,20 @@ async def handle_booking(
             messages=messages,
             tools=tools,
         )
+        model_duration_ms = _elapsed_ms(started)
         tool_uses = [block for block in response.content if block.type == "tool_use"]
         reply_text = "".join(
             block.text for block in response.content if block.type == "text"
+        )
+        # Every iteration waits on this call, and none of the surrounding events time
+        # it - without this, the seconds between one `booking.tool_result` and the next
+        # `booking.tool_called` belong to nothing in the log.
+        logger.info(
+            "booking.model_call",
+            iteration=iteration,
+            duration_ms=model_duration_ms,
+            tool_names=[block.name for block in tool_uses],
+            text=reply_text,
         )
 
         if not tool_uses:
@@ -346,6 +379,6 @@ async def _dispatch(
         iteration=iteration,
         status=result.get("status", "ok"),
         reason=result.get("reason"),
-        duration_ms=round((time.monotonic() - started) * 1000, 2),
+        duration_ms=_elapsed_ms(started),
     )
     return result

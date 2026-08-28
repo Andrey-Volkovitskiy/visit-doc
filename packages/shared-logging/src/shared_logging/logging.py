@@ -5,10 +5,12 @@ add timestamp -> truncate -> redact -> render), so switching the rendering later
 one-line change here, not a rewrite of every call site.
 """
 
+import logging
 import re
 import sys
 from collections.abc import Callable, Sequence
 from contextlib import suppress
+from enum import StrEnum
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -16,6 +18,7 @@ import structlog
 from structlog.types import EventDict, WrappedLogger
 
 _LogProcessor = Callable[[WrappedLogger, str, EventDict], EventDict]
+_ConsoleRenderer = Callable[[WrappedLogger, str, EventDict], str]
 
 _MAX_STRING_LENGTH = 2000
 _TRUNCATION_SUFFIX = "..."
@@ -23,12 +26,28 @@ _REDACTED_PLACEHOLDER = "***REDACTED***"
 _SECRET_KEY_PATTERN = re.compile(
     r"(password|token|secret|api_key|apikey|credential|authorization)", re.IGNORECASE
 )
+# Faint grey: debug entries are diagnostic detail sitting between the events that
+# describe what the service did, so they have to be skimmable past rather than read.
+_DIM = "\033[2m\033[90m"
+_RESET = "\033[0m"
+_ANSI_SEQUENCE = re.compile(r"\033\[[0-9;]*m")
 _LEVEL_STYLES = {
+    "debug": _DIM,
     "info": "",
     "warning": "\033[33m",  # yellow foreground
     "error": "\033[31m",  # red foreground
     "critical": "\033[1m\033[41m\033[97m",  # bold, red background, bright white text
 }
+
+
+class LogLevel(StrEnum):
+    """The levels a service may be configured to emit, lowest threshold first."""
+
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 def _truncate_value(value: Any) -> Any:
@@ -114,15 +133,36 @@ def make_redact_secrets_processor(
     return _processor
 
 
-def _build_console_renderer() -> structlog.dev.ConsoleRenderer:
-    """Build the one terminal renderer: critical > error > warning > info."""
-    return structlog.dev.ConsoleRenderer(level_styles=_LEVEL_STYLES, colors=True)
+def _build_console_renderer() -> _ConsoleRenderer:
+    """Build the one terminal renderer: critical > error > warning > info > debug.
+
+    A debug entry is dimmed whole rather than only in its level column, which is what
+    makes it lower-priority to read: at DEBUG the log is mostly diagnostics, and the
+    events saying what the service actually did still have to be findable in it. The
+    line's own colours are stripped before dimming - each ends in a reset, which would
+    otherwise end the dimming at the first key the renderer coloured.
+    """
+    renderer = structlog.dev.ConsoleRenderer(level_styles=_LEVEL_STYLES, colors=True)
+
+    def _render(logger: WrappedLogger, method_name: str, event_dict: EventDict) -> str:
+        line = renderer(logger, method_name, event_dict)
+        if method_name != "debug":
+            return line
+        return f"{_DIM}{_ANSI_SEQUENCE.sub('', line)}{_RESET}"
+
+    return _render
+
+
+def _threshold(level: LogLevel) -> int:
+    """Return the numeric filtering threshold for `level`."""
+    return logging.getLevelNamesMapping()[level]
 
 
 def configure_logging(
     settings: object,
     secret_fields: Sequence[str] = (),
     secret_url_fields: Sequence[str] = (),
+    log_level: LogLevel = LogLevel.INFO,
 ) -> None:
     """Configure the shared structlog processor chain.
 
@@ -130,6 +170,8 @@ def configure_logging(
         secret_fields: Settings field names whose value is itself a secret.
         secret_url_fields: Settings field names holding a URL whose embedded password
             is the secret.
+        log_level: The lowest level to emit; anything below it is dropped before its
+            arguments are rendered, so a debug call costs nothing when off.
 
     A service must pass every secret-bearing field it has: these two lists are what the
     redaction processor matches live values against, and a field missing from them is
@@ -144,7 +186,7 @@ def configure_logging(
             make_redact_secrets_processor(settings, secret_fields, secret_url_fields),
             _build_console_renderer(),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(0),
+        wrapper_class=structlog.make_filtering_bound_logger(_threshold(log_level)),
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False,
     )
@@ -171,6 +213,10 @@ class SafeLogger:
 
     def __init__(self, logger: WrappedLogger) -> None:
         self._logger = logger
+
+    def debug(self, event: str, **kwargs: Any) -> None:
+        """Log `event` at debug level."""
+        self._log("debug", event, **kwargs)
 
     def info(self, event: str, **kwargs: Any) -> None:
         """Log `event` at info level."""

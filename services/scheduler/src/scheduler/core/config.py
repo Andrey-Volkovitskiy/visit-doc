@@ -3,6 +3,7 @@
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from shared_logging import LogLevel
 
 
 class Settings(BaseSettings):
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
     # answer and are tuned together.
     AVAILABILITY_MAX_WINDOW_DAYS: int = 14
     AVAILABILITY_MAX_SLOTS: int = 50
+    LOG_LEVEL: LogLevel = LogLevel.INFO
 
 
 @lru_cache

@@ -6,17 +6,20 @@ Each service's own wiring - that it declares every secret-bearing field it has -
 tested on that service's side.
 """
 
+from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
 import structlog
 from shared_logging.logging import (
+    LogLevel,
     SafeLogger,
     _build_console_renderer,
     _redact_secrets,
     _truncate_long_strings,
     configure_logging,
+    get_logger,
     make_redact_secrets_processor,
 )
 
@@ -32,6 +35,15 @@ class _FakeSettings:
     QDRANT_URL: str = "http://localhost:6333"
     ANTHROPIC_API_KEY: str = "sk-ant-test-key"
     VOYAGE_API_KEY: str = "voyage-test-key"
+
+
+@pytest.fixture(autouse=True)
+def _restore_structlog_config() -> Generator[None]:
+    # Several tests here reconfigure structlog process-wide; without this the last one
+    # to run would leave every other package's tests logging under its settings.
+    saved = structlog.get_config()
+    yield
+    structlog.configure(**saved)
 
 
 def _settings() -> _FakeSettings:
@@ -189,3 +201,78 @@ def test_console_renderer_critical_more_prominent_than_error() -> None:
 
     assert "\x1b[41m" in critical_line
     assert "\x1b[41m" not in error_line
+
+
+def test_console_renderer_debug_less_prominent_than_info() -> None:
+    renderer = _build_console_renderer()
+
+    info_line = renderer(None, "info", {"event": "turn.completed", "level": "info"})
+    debug_line = renderer(
+        None, "debug", {"event": "booking.model_request", "level": "debug"}
+    )
+
+    assert debug_line.startswith("\x1b[2m")
+    assert not info_line.startswith("\x1b[2m")
+
+
+def test_console_renderer_debug_line_is_dimmed_to_its_end() -> None:
+    # A reset left mid-line would end the dimming there, leaving the rest of a debug
+    # entry as loud as the info events it has to recede behind.
+    renderer = _build_console_renderer()
+
+    line = renderer(
+        None, "debug", {"event": "faq.model_request", "level": "debug", "kept": "yes"}
+    )
+
+    assert "kept" in line
+    assert line.index("\x1b[0m") == len(line) - len("\x1b[0m")
+
+
+def test_debug_is_dropped_below_the_configured_level(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_logging(_settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS)
+
+    get_logger().debug("booking.model_request", messages=[])
+    get_logger().info("turn.completed", outcome="booking")
+
+    captured = capsys.readouterr()
+    assert "booking.model_request" not in captured.out
+    assert "turn.completed" in captured.out
+
+
+def test_debug_is_emitted_when_the_configured_level_allows_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_level=LogLevel.DEBUG
+    )
+
+    get_logger().debug("booking.model_request", messages=[])
+
+    assert "booking.model_request" in capsys.readouterr().out
+
+
+def test_secrets_are_redacted_in_debug_entries_too(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # Debug carries whole conversations, so it is the level most likely to sweep a
+    # secret up in something it is quoting verbatim.
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_level=LogLevel.DEBUG
+    )
+
+    get_logger().debug(
+        "booking.model_request",
+        messages=[{"role": "user", "content": "my key is sk-ant-test-key"}],
+    )
+
+    assert "sk-ant-test-key" not in capsys.readouterr().out
+
+
+def test_safe_logger_swallows_a_debug_processor_failure() -> None:
+    class _RaisingLogger:
+        def debug(self, *_args: object, **_kwargs: object) -> None:
+            raise RuntimeError("boom")
+
+    SafeLogger(_RaisingLogger()).debug("booking.model_request", messages=[])

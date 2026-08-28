@@ -3,6 +3,7 @@
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from shared_logging import LogLevel
 
 
 class Settings(BaseSettings):
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     # How many trailing turns of history every model call is given. One number, so the
     # specialists cannot disagree about what "recent" means within a single turn.
     CONTEXT_TURNS: int = 5
+    # DEBUG additionally logs what each specialist actually sent the model. Off by
+    # default: that is the whole conversation, so it belongs in a dev terminal rather
+    # than in a deployment's log stream.
+    LOG_LEVEL: LogLevel = LogLevel.INFO
 
 
 @lru_cache

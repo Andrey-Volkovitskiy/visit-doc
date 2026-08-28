@@ -20,7 +20,11 @@ from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
 
 from chat.agent.compose_answer import FaqResult
-from chat.agent.history import bound_to_last_n_turns, to_claude_messages
+from chat.agent.history import (
+    bound_to_last_n_turns,
+    to_claude_messages,
+    to_loggable_messages,
+)
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.domain.models import Message
@@ -95,6 +99,10 @@ async def answer_faq(
     prompt = f"Context:\n{context}\n\nQuestion: {message}"
     current_turn: MessageParam = {"role": "user", "content": prompt}
     messages = [*history[:-1], current_turn]
+
+    # The retrieved context reaches the model inside this turn's own message, so the
+    # logged conversation is also the record of what was retrieved for it.
+    logger.debug("faq.model_request", messages=to_loggable_messages(messages))
 
     answer_parts: list[str] = []
     try:

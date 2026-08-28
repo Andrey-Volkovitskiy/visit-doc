@@ -4,11 +4,13 @@ data-model.md), and `to_claude_messages()`'s same-side merge into alternating
 `user`/`assistant` entries (research.md §5).
 """
 
+from anthropic.types import ThinkingBlock, ToolUseBlock
 from chat.agent.history import (
     bound_to_last_n_turns,
     derive_reply_to_message_ids,
     split_into_bursts,
     to_claude_messages,
+    to_loggable_messages,
 )
 from chat.domain.models import Message, MessageSender
 
@@ -218,3 +220,59 @@ def test_split_into_bursts_groups_consecutive_same_side_messages() -> None:
     bursts = split_into_bursts(history)
 
     assert [_ids(burst) for burst in bursts] == [["p1", "p2"], ["a1"], ["p3"]]
+
+
+# --- to_loggable_messages ------------------------------------------------------------
+
+
+def test_to_loggable_messages_keeps_plain_text_content_as_is() -> None:
+    messages = to_claude_messages(
+        split_into_bursts([_row(MessageSender.PATIENT, "Any slots Friday?", id="p1")])
+    )
+
+    assert to_loggable_messages(messages) == [
+        {"role": "user", "content": "Any slots Friday?"}
+    ]
+
+
+def test_to_loggable_messages_renders_sdk_blocks_as_plain_data() -> None:
+    # The model's own reply arrives as SDK objects, which would otherwise reach the log
+    # as an opaque repr.
+    block = ToolUseBlock(
+        id="toolu_1",
+        name="check_availability",
+        input={"practitioner_id": "abc"},
+        type="tool_use",
+    )
+
+    loggable = to_loggable_messages([{"role": "assistant", "content": [block]}])
+
+    # Field-by-field rather than whole-dict, so a field the SDK adds later doesn't fail
+    # a test that is about the object becoming plain data at all.
+    logged_block = loggable[0]["content"][0]
+    assert isinstance(logged_block, dict)
+    assert logged_block["type"] == "tool_use"
+    assert logged_block["name"] == "check_availability"
+    assert logged_block["input"] == {"practitioner_id": "abc"}
+
+
+def test_to_loggable_messages_keeps_service_built_blocks() -> None:
+    result_block = {"type": "tool_result", "tool_use_id": "toolu_1", "content": "{}"}
+
+    loggable = to_loggable_messages([{"role": "user", "content": [result_block]}])
+
+    assert loggable[0]["content"] == [result_block]
+
+
+def test_to_loggable_messages_drops_the_thinking_signature() -> None:
+    # The integrity token the API puts on a thinking block: a few hundred opaque
+    # characters that say nothing about what the model saw.
+    block = ThinkingBlock(
+        thinking="", signature="EowDCpABCBEYAipA5RLe", type="thinking"
+    )
+
+    logged_block = to_loggable_messages([{"role": "assistant", "content": [block]}])[0][
+        "content"
+    ][0]
+
+    assert logged_block == {"thinking": "", "type": "thinking"}
