@@ -236,8 +236,8 @@ appointment exists with the expected patient, practitioner, and time.
 ### User Story 2 - A first visit produces a usable clinic, even when scheduling is down (Priority: P2)
 
 Someone opens the site for the first time and can immediately start a real conversation. Behind the
-scenes they get a named patient identity and at least one practitioner to book with, so the very
-first thing they try can be a booking. If the scheduling capability happens to be unavailable, the
+scenes they get a named patient identity and two practitioners of different specialties to book
+with, so the very first thing they try can be a booking. If the scheduling capability happens to be unavailable, the
 visit still works — they get a chat and grounded FAQ answers, just no booking yet.
 
 **Why this priority**: Without provisioning there is nobody to book and nobody to book with, so
@@ -245,14 +245,14 @@ Story 1 has no data to act on. It is P2 rather than P1 only because Story 1 can 
 manually created data.
 
 **Independent Test**: Open the site with no prior state and confirm a session, a chat, a named
-patient, and one practitioner all exist. Repeat with the scheduling capability stopped and confirm
+patient, and both default practitioners all exist. Repeat with the scheduling capability stopped and confirm
 the chat is still created and still answers an FAQ question.
 
 **Acceptance Scenarios**:
 
 1. **Given** a visitor with no prior session, **When** they open the site, **Then** a session, one
-   chat, one patient with a name from the writer pool, and one practitioner with a name from the
-   practitioner pool are created.
+   chat, one patient with a name from the writer pool, and two practitioners — a general
+   practitioner and a dentist — with names from the practitioner pool are created.
 2. **Given** a first-time visitor, **When** the scheduling capability is unavailable, **Then** the
    chat is still created and still answers FAQ questions, the patient is shown as unnamed, and the
    patient record is created on a later interaction once scheduling recovers.
@@ -671,7 +671,9 @@ chat UI.
 #### Provisioning and degraded operation
 
 - **FR-042**: On a visitor's first arrival, the system MUST create a session, one chat, one patient,
-  and one practitioner.
+  and two practitioners — a general practitioner working Monday to Saturday 08:00–17:00 and a
+  dentist working Monday to Saturday 09:00–14:00. Two, differing in both specialty and hours, so a
+  first booking request has a practitioner to choose rather than a single possible answer.
 - **FR-043**: The system MUST NOT store a timezone for a session, a patient, or a practitioner.
   Everyone reachable from one session is assumed to share a single local time, so no timezone
   identifier is captured, stored, or configurable anywhere.

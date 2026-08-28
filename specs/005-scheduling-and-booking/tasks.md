@@ -167,7 +167,7 @@ practitioner, and time.
 and still gets a working chat with grounded FAQ answers when the scheduler is down.
 
 **Independent Test**: Open the site with no prior state and confirm a session, a chat, a named
-patient, and one practitioner all exist. Repeat with the scheduler stopped and confirm the chat is
+patient, and both default practitioners all exist. Repeat with the scheduler stopped and confirm the chat is
 still created and still answers an FAQ question.
 
 ### Tests for User Story 2 (write first, confirm failing) ⚠️

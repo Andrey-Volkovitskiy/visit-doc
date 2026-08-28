@@ -187,29 +187,97 @@ async def test_an_overlapping_schedule_is_not_retried(db_session: AsyncSession) 
         await practitioner_repository.create(db_session, new_id(), schedule=overlapping)
 
 
-async def test_seeding_declines_to_retry_so_a_race_yields_one_practitioner(
+async def test_seeding_creates_the_whole_default_roster(
     db_session: AsyncSession,
 ) -> None:
-    """`retry_pool_name=False` keeps the unique constraint as provisioning's guard.
+    session_id = new_id()
 
-    Without it the loser of a seeding race would succeed under the next pool name and
-    leave the session with two practitioners.
+    seeded = await practitioner_repository.seed_session(db_session, session_id)
+
+    assert [p.full_name for p in seeded] == list(PHYSICIAN_POOL[:2])
+    assert [p.specialty for p in seeded] == [
+        Specialty.GENERAL_PRACTICE,
+        Specialty.DENTISTRY,
+    ]
+    assert [p.appointment_duration_minutes for p in seeded] == [60, 60]
+
+
+async def test_the_seeded_roster_works_monday_to_saturday_on_differing_hours(
+    db_session: AsyncSession,
+) -> None:
+    """The two differ in hours as well as specialty, which is the point of seeding two.
+
+    Both work Saturdays; only the general practitioner works the early morning and the
+    late afternoon.
     """
     session_id = new_id()
-    await practitioner_repository.create(db_session, session_id)
 
-    async def _stale(session: AsyncSession, sid: str) -> set[str]:
-        return set()
+    general, dentist = await practitioner_repository.seed_session(
+        db_session, session_id
+    )
 
-    with (
-        patch.object(practitioner_repository, "taken_names", new=_stale),
-        pytest.raises(IntegrityError),
+    for practitioner, hours in (
+        (general, (time(8, 0), time(17, 0))),
+        (dentist, (time(9, 0), time(14, 0))),
     ):
-        await practitioner_repository.create(
-            db_session, session_id, retry_pool_name=False
+        schedule = await practitioner_repository.get_schedule(
+            db_session, practitioner.id
         )
+        assert [r.weekday for r in schedule] == [0, 1, 2, 3, 4, 5]
+        assert {(r.start_time, r.end_time) for r in schedule} == {hours}
+
+
+async def test_a_seeded_practitioner_is_immediately_bookable(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    seeded = await practitioner_repository.seed_session(db_session, session_id)
+
+    starts, _ = availability.available_starts(
+        schedule=practitioner_repository.to_daily_ranges(
+            await practitioner_repository.get_schedule(db_session, seeded[1].id)
+        ),
+        duration_minutes=seeded[1].appointment_duration_minutes,
+        busy=[],
+        from_date=_TUESDAY,
+        to_date=_TUESDAY,
+        local_now=_LOCAL_NOW,
+        horizon_days=90,
+        max_window_days=_SETTINGS.AVAILABILITY_MAX_WINDOW_DAYS,
+        max_slots=_SETTINGS.AVAILABILITY_MAX_SLOTS,
+    )
+
+    assert starts
+
+
+async def test_seeding_a_session_twice_collides_rather_than_appending(
+    db_session: AsyncSession,
+) -> None:
+    """The unique constraint is provisioning's guard, and a loser must not append.
+
+    Standing in for the race: the second call is the loser, reading the session only
+    after the winner committed. It must still insist on the same pool names, so the
+    constraint refuses it - allocating around the taken ones would leave the session
+    with four practitioners.
+    """
+    session_id = new_id()
+    await practitioner_repository.seed_session(db_session, session_id)
+
+    with pytest.raises(IntegrityError):
+        await practitioner_repository.seed_session(db_session, session_id)
 
     await db_session.rollback()
     assert (
-        len(await practitioner_repository.list_for_session(db_session, session_id)) == 1
+        len(await practitioner_repository.list_for_session(db_session, session_id)) == 2
     )
+
+
+async def test_a_seeded_session_keeps_walking_the_pool_for_later_creates(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    await practitioner_repository.seed_session(db_session, session_id)
+
+    later = await practitioner_repository.create(db_session, session_id)
+
+    assert later.full_name == PHYSICIAN_POOL[2]

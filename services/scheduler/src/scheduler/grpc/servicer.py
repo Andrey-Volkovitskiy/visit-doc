@@ -102,12 +102,12 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
         request: pb.EnsureSessionProvisionedRequest,
         context: Any,
     ) -> pb.EnsureSessionProvisionedResponse:
-        """Create this chat's patient and, if the session has none, one practitioner.
+        """Create this chat's patient and, if the session has none, its practitioners.
 
         Idempotent on both counts, which is what makes it safe to call on every visit
-        and to retry after a failure: the patient is keyed by chat, and practitioner
-        creation is guarded on the session having none - so a second, third, or
-        hundredth chat in one session never seeds another practitioner.
+        and to retry after a failure: the patient is keyed by chat, and seeding is
+        guarded on the session having no practitioners at all - so a second, third, or
+        hundredth chat in one session never seeds another roster.
         """
         session_id = converters.read_required_id(request.session_id, "session_id")
         chat_id = converters.read_required_id(request.chat_id, "chat_id")
@@ -134,16 +134,13 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
             practitioner_created = False
             if not practitioners:
                 try:
-                    await practitioner_repository.create(
-                        session, session_id, retry_pool_name=False
-                    )
+                    await practitioner_repository.seed_session(session, session_id)
                     practitioner_created = True
                 except IntegrityError:
-                    # A concurrent first visit in the same session seeded one first.
-                    # The name's UNIQUE constraint is the guard, so the loser simply
-                    # re-reads rather than seeding a second practitioner - which is why
-                    # the pool-name retry is switched off for this call: retrying would
-                    # succeed under the next name and leave the session with two.
+                    # A concurrent first visit in the same session seeded the roster
+                    # first. The name's UNIQUE constraint is the guard, and it cannot
+                    # fire until that transaction committed, so the loser simply
+                    # re-reads the whole roster rather than appending to it.
                     await session.rollback()
                     get_logger().warning(
                         "name.collision_retried",

@@ -5,6 +5,7 @@ one, so the caller owns the transaction boundary and these stay reusable across 
 and HTTP surfaces alike.
 """
 
+from dataclasses import dataclass
 from datetime import time
 
 from shared_models.scheduling import Specialty, Weekday
@@ -34,8 +35,53 @@ RANGE_CONSTRAINTS = (
 # someone immediately bookable rather than a listed name with no time to offer.
 DEFAULT_SPECIALTY = Specialty.GENERAL_PRACTICE
 DEFAULT_DURATION_MINUTES = 60
-DEFAULT_SCHEDULE: tuple[tuple[Weekday, time, time], ...] = tuple(
-    (Weekday(weekday), time(9, 0), time(17, 0)) for weekday in range(5)
+
+_MONDAY_TO_FRIDAY = tuple(
+    Weekday(day) for day in range(Weekday.MONDAY, Weekday.FRIDAY + 1)
+)
+_MONDAY_TO_SATURDAY = (*_MONDAY_TO_FRIDAY, Weekday.SATURDAY)
+
+
+def _weekly(
+    days: tuple[Weekday, ...], start: time, end: time
+) -> tuple[tuple[Weekday, time, time], ...]:
+    """Build one identical working range per listed weekday."""
+    return tuple((day, start, end) for day in days)
+
+
+DEFAULT_SCHEDULE: tuple[tuple[Weekday, time, time], ...] = _weekly(
+    _MONDAY_TO_FRIDAY, time(9, 0), time(17, 0)
+)
+
+
+@dataclass(frozen=True)
+class PractitionerSeed:
+    """One practitioner a fresh session is provisioned with - everything but the name.
+
+    A seed carries no name on purpose: names are drawn from the pool in allocation
+    order at creation time, so a session that already holds some of those names still
+    gets its full roster instead of a collision.
+    """
+
+    specialty: Specialty
+    schedule: tuple[tuple[Weekday, time, time], ...]
+    appointment_duration_minutes: int = DEFAULT_DURATION_MINUTES
+
+
+# What a session is seeded with on its first visit, in creation order. Two
+# practitioners rather than one, differing in both specialty and hours, so the first
+# booking conversation has something to actually decide - which practitioner, and
+# within which window - rather than a single answer the assistant can reach without
+# asking. Order is part of the contract: it fixes which pool name each one gets.
+SESSION_SEED: tuple[PractitionerSeed, ...] = (
+    PractitionerSeed(
+        specialty=Specialty.GENERAL_PRACTICE,
+        schedule=_weekly(_MONDAY_TO_SATURDAY, time(8, 0), time(17, 0)),
+    ),
+    PractitionerSeed(
+        specialty=Specialty.DENTISTRY,
+        schedule=_weekly(_MONDAY_TO_SATURDAY, time(9, 0), time(14, 0)),
+    ),
 )
 
 
@@ -151,6 +197,35 @@ def _add_ranges(
         )
 
 
+async def _stage(
+    session: AsyncSession,
+    session_id: str,
+    *,
+    full_name: str,
+    specialty: Specialty,
+    appointment_duration_minutes: int,
+    schedule: list[tuple[Weekday, time, time]] | tuple[tuple[Weekday, time, time], ...],
+) -> Practitioner:
+    """Add one practitioner and their working ranges, flushing but not committing.
+
+    Flushed rather than committed so a caller staging several practitioners commits
+    them as one transaction; the flush itself is what makes the row visible to the
+    ranges' foreign key and to a later `taken_names` read in the same transaction.
+    """
+    practitioner = Practitioner(
+        id=str(ULID()),
+        session_id=session_id,
+        full_name=full_name,
+        specialty=specialty,
+        appointment_duration_minutes=appointment_duration_minutes,
+    )
+    session.add(practitioner)
+    await session.flush()
+    _add_ranges(session, practitioner.id, schedule)
+    await session.flush()
+    return practitioner
+
+
 async def create(
     session: AsyncSession,
     session_id: str,
@@ -159,7 +234,6 @@ async def create(
     specialty: Specialty = DEFAULT_SPECIALTY,
     appointment_duration_minutes: int = DEFAULT_DURATION_MINUTES,
     schedule: list[tuple[Weekday, time, time]] | None = None,
-    retry_pool_name: bool = True,
 ) -> Practitioner:
     """Create a practitioner, applying the defaults for anything not supplied.
 
@@ -168,10 +242,6 @@ async def create(
         schedule: `(weekday, start_time, end_time)` triples. Omitted entirely means the
             default Monday-Friday schedule; an explicitly empty list means a
             practitioner who is listed but never bookable, which is a legal state.
-        retry_pool_name: Whether a pool-allocated name taken by a concurrent creation
-            is retried with the next free one. False for a caller whose intent is to
-            seed exactly one practitioner, for which losing the race is the answer
-            rather than a problem - see `EnsureSessionProvisioned`.
 
     Raises:
         IntegrityError: `full_name` was supplied and is already used in this session,
@@ -183,8 +253,9 @@ async def create(
     not make and cannot act on. A name they *did* supply is never retried - creating
     them under a different name than they asked for would be worse than the error.
 
-    Creating with nothing supplied yields someone immediately bookable, which is what
-    first-visit seeding relies on.
+    One practitioner at a time, each in its own transaction. Seeding a session's whole
+    roster is `seed_session`, which is atomic across the roster and must not be
+    expressed as a loop over this.
     """
     from_pool = full_name is None
 
@@ -195,28 +266,25 @@ async def create(
                 await taken_names(session, session_id),
                 entity=NamedEntity.PRACTITIONER,
             )
-            if from_pool
+            if full_name is None
             else full_name
         )
-        practitioner = Practitioner(
-            id=str(ULID()),
-            session_id=session_id,
-            full_name=name,
-            specialty=specialty,
-            appointment_duration_minutes=appointment_duration_minutes,
-        )
-        session.add(practitioner)
         try:
-            await session.flush()
-            ranges = list(DEFAULT_SCHEDULE) if schedule is None else schedule
-            _add_ranges(session, practitioner.id, ranges)
+            practitioner = await _stage(
+                session,
+                session_id,
+                full_name=name,
+                specialty=specialty,
+                appointment_duration_minutes=appointment_duration_minutes,
+                schedule=DEFAULT_SCHEDULE if schedule is None else schedule,
+            )
             await session.commit()
         except IntegrityError as exc:
             await session.rollback()
             # Only a pool name this call chose is retried. A supplied name, or any
             # other constraint (an overlapping range), is the caller's to see - and
             # retrying an overlap would just fail five times over.
-            if not retry_pool_name or not from_pool:
+            if not from_pool:
                 raise
             if NAME_UNIQUE_CONSTRAINT not in str(exc.orig):
                 raise
@@ -231,6 +299,52 @@ async def create(
 
     message = "practitioner name allocation exhausted its retries"
     raise IntegrityError(message, None, None)  # type: ignore[arg-type]
+
+
+async def seed_session(session: AsyncSession, session_id: str) -> list[Practitioner]:
+    """Create `SESSION_SEED`'s whole roster for a session that has no practitioners.
+
+    Returns: the created practitioners, in `SESSION_SEED` order.
+
+    Raises: IntegrityError if the session already holds any of the roster's names -
+        which, given the precondition, means a concurrent first visit seeded it first.
+
+    All of the roster or none of it, in one transaction. A half-seeded session is
+    indistinguishable from one an app user deleted a practitioner from, and nothing
+    would ever repair it: seeding is guarded on the session having *no* practitioners,
+    so a later visit would leave the gap in place.
+
+    Names are taken from the top of the pool without reading what the session already
+    holds - the only place a name is chosen that way. Two reasons, and both matter.
+    Nothing is taken yet, by the precondition. And a race is arbitrated entirely by the
+    name's UNIQUE constraint, which can only fire if the loser insists on the same
+    names: reading the taken set would let a loser whose read landed *after* the
+    winner's commit allocate around it and append a second roster, the exact outcome
+    the guard exists to prevent.
+
+    A collision is never retried here, unlike `create`. It cannot be raised before the
+    winner's transaction committed, so the loser rolls back and re-reads a complete
+    roster.
+    """
+    taken: set[str] = set()
+    created: list[Practitioner] = []
+    for seed in SESSION_SEED:
+        name = allocate_name(PHYSICIAN_POOL, taken, entity=NamedEntity.PRACTITIONER)
+        taken.add(name)
+        created.append(
+            await _stage(
+                session,
+                session_id,
+                full_name=name,
+                specialty=seed.specialty,
+                appointment_duration_minutes=seed.appointment_duration_minutes,
+                schedule=seed.schedule,
+            )
+        )
+    await session.commit()
+    for practitioner in created:
+        await session.refresh(practitioner)
+    return created
 
 
 async def replace_schedule(

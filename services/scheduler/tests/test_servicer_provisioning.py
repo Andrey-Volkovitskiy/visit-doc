@@ -8,11 +8,11 @@ import grpc
 import pytest
 import pytest_asyncio
 from scheduler.db.session import session_factory
-from scheduler.domain.models import Appointment, Patient
+from scheduler.domain.models import Appointment, Patient, Practitioner
 from scheduler.domain.name_pools import PHYSICIAN_POOL, WRITER_POOL
 from scheduler.grpc.interceptors import LoggingInterceptor
 from scheduler.grpc.servicer import SchedulingServicer
-from shared_models.scheduling import NotFoundEntity
+from shared_models.scheduling import NotFoundEntity, Specialty
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from shared_proto.scheduling.v1 import scheduling_pb2_grpc
 from sqlalchemy import func, select
@@ -37,13 +37,15 @@ async def stub() -> AsyncIterator[scheduling_pb2_grpc.SchedulingStub]:
     await server.stop(0)
 
 
-async def _count(model: type[Patient] | type[Appointment]) -> int:
+async def _count(
+    model: type[Patient] | type[Practitioner] | type[Appointment],
+) -> int:
     async with session_factory() as session:
         result = await session.execute(select(func.count()).select_from(model))
         return int(result.scalar_one())
 
 
-async def test_a_first_visit_creates_a_patient_and_one_practitioner(
+async def test_a_first_visit_creates_a_patient_and_the_default_roster(
     stub: scheduling_pb2_grpc.SchedulingStub,
 ) -> None:
     session_id = new_id()
@@ -57,9 +59,13 @@ async def test_a_first_visit_creates_a_patient_and_one_practitioner(
     assert response.practitioner_created is True
     assert response.patient.full_name == WRITER_POOL[0]
     assert response.patient.chat_id == chat_id
-    assert [p.full_name for p in response.practitioners] == [PHYSICIAN_POOL[0]]
-    # Immediately bookable: the default schedule came with it.
-    assert len(response.practitioners[0].schedule) == 5
+    assert [p.full_name for p in response.practitioners] == list(PHYSICIAN_POOL[:2])
+    assert [p.specialty for p in response.practitioners] == [
+        Specialty.GENERAL_PRACTICE,
+        Specialty.DENTISTRY,
+    ]
+    # Immediately bookable: both came with their Monday-to-Saturday schedules.
+    assert [len(p.schedule) for p in response.practitioners] == [6, 6]
 
 
 async def test_a_second_call_for_one_chat_creates_nothing(
@@ -100,7 +106,7 @@ async def test_another_sessions_chat_is_not_found_rather_than_answered(
     assert theirs.full_name == "Ada"
 
 
-async def test_a_second_chat_in_one_session_gets_its_own_patient_but_no_practitioner(
+async def test_a_second_chat_in_one_session_gets_its_own_patient_but_no_roster(
     stub: scheduling_pb2_grpc.SchedulingStub,
 ) -> None:
     session_id = new_id()
@@ -115,7 +121,7 @@ async def test_a_second_chat_in_one_session_gets_its_own_patient_but_no_practiti
     assert second.patient.id != first.patient.id
     assert [second.patient.full_name] == [WRITER_POOL[1]]
     assert second.practitioner_created is False
-    assert len(second.practitioners) == 1
+    assert [p.id for p in second.practitioners] == [p.id for p in first.practitioners]
 
 
 async def test_two_sessions_may_hold_the_same_patient_name(
@@ -151,7 +157,12 @@ async def test_concurrent_provisioning_of_one_chat_yields_one_patient(
 async def test_concurrent_provisioning_of_two_chats_yields_two_distinct_names(
     stub: scheduling_pb2_grpc.SchedulingStub,
 ) -> None:
-    """A name race is resolved by the UNIQUE constraint and a retry, not by locking."""
+    """A name race is resolved by the UNIQUE constraint and a retry, not by locking.
+
+    Patients and practitioners resolve it oppositely, and both are checked here: two
+    chats need two patients, so the loser retries under the next name; one session
+    needs one roster, so the loser abandons its own and re-reads the winner's.
+    """
     session_id = new_id()
 
     responses = await asyncio.gather(
@@ -165,6 +176,7 @@ async def test_concurrent_provisioning_of_two_chats_yields_two_distinct_names(
 
     assert len({r.patient.full_name for r in responses}) == 2
     assert await _count(Patient) == 2
+    assert await _count(Practitioner) == 2
 
 
 # --- deletion ----------------------------------------------------------------
