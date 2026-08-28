@@ -36,6 +36,8 @@ from chat.domain.models import Message
 from chat.domain.schemas import ChatTokenEvent
 
 _MAX_TOKENS = 1024
+# The capability the node reads for itself, before the model gets a turn.
+_LIST_PRACTITIONERS = "list_practitioners"
 # Enough for the longest legitimate chain - list practitioners, check availability,
 # book, and a retry or two after a refusal - with room to spare before the loop is
 # doing something other than making progress.
@@ -49,6 +51,8 @@ The patient's current local date and time is {local_now}. Resolve every relative
 phrase ("tomorrow", "next Tuesday at 3") against that, and never against your own
 sense of the date.
 
+{practitioners}
+
 Rules you must follow:
 - Only offer times that check_availability returned. Never invent or round one.
 - Confirm BOTH the practitioner and the exact start time with the patient before
@@ -58,14 +62,38 @@ Rules you must follow:
   status "booked" in this turn.
 - When several practitioners could match what the patient asked for, list them and ask
   which they want. Never choose for them.
-- Answer any question about who works here, or what they specialize in, from
-  list_practitioners and never from memory. Name everyone it returns who fits, and say
-  which of them are not currently taking appointments.
-- When none matches, say so and name the specialties this clinic actually has - never
-  a specialty it does not.
 - Speak in plain local time ("Tuesday at 9am"). Never mention a timezone, an internal
   id, or the name of a tool.
 - If a booking was refused, explain the reason you were given and offer alternatives."""
+
+# The roster is read once per turn and put in front of the model, because the failure
+# it prevents is the model inventing a `practitioner_id` from a name it read in the
+# conversation: the call is refused, and the turn spends two more model round trips
+# recovering from a guess it was never given the means to avoid.
+_ROSTER_KNOWN = """The clinic's practitioners, read at the start of this turn:
+{roster}
+
+Answer any question about who works here, or what they specialize in, from that list
+and never from memory. Name everyone in it who fits, and say which of them are not
+currently taking appointments. When a tool asks for a practitioner_id, pass one exactly
+as it appears above - never build one out of a name. When nobody there matches what the
+patient asked for, say so and name the specialties that are listed - never one that is
+not."""
+
+_ROSTER_EMPTY = "(nobody - this clinic currently has no practitioners at all)"
+
+# Says what is not known rather than leaving the model to assume, because the tool call
+# it is told to make is against the same service that just failed. Naming a
+# practitioner from earlier in the conversation is exactly what it would otherwise do,
+# and that name would be unverifiable at the moment it is said.
+_ROSTER_UNKNOWN = """The clinic's practitioner list could not be read at the start of
+this turn. You do not know who works here.
+
+Call list_practitioners before you name anyone or book anything, and answer any
+question about who works here from what it returns. If that call fails too, tell the
+patient the clinic's schedule cannot be reached right now and that nothing was booked -
+do not name a practitioner or a specialty from memory or from earlier in this
+conversation, and do not offer any appointment time."""
 
 _READ_FAILED_EXPLANATION = "That step failed. Nothing was booked."
 
@@ -127,6 +155,61 @@ class BookingResult:
 def _elapsed_ms(started: float) -> float:
     """Return milliseconds elapsed since `started`, to two decimal places."""
     return round((time.monotonic() - started) * 1000, 2)
+
+
+async def _read_roster(registry: ToolRegistry) -> list[Any] | None:
+    """Read the clinic's practitioners for this turn's prompt.
+
+    Returns: the practitioners as the capability reported them, or None when they
+        could not be read at all.
+
+    Never an empty list for that second case: a clinic with nobody on it and a clinic
+    whose roster is unknown need opposite replies, and the reply to the second one must
+    not name anyone.
+
+    A failure here is not the turn's failure - the loop still runs, told that it does
+    not know who works here - so every way this can fail is caught.
+    """
+    logger = get_logger()
+    try:
+        result = await registry.dispatch(_LIST_PRACTITIONERS, {})
+    except Exception as exc:  # noqa: BLE001 - degrades the prompt, never the turn
+        logger.warning(
+            "booking.roster_unread",
+            error_type=type(exc).__name__,
+            error_detail=str(exc),
+        )
+        return None
+
+    practitioners = result.get("practitioners")
+    if practitioners is None:
+        # The capability answered, and its answer was that it could not tell us -
+        # `status` carries which failure that was.
+        logger.warning("booking.roster_unread", status=result.get("status"))
+        return None
+
+    logger.info("booking.roster_read", practitioner_count=len(practitioners))
+    return list(practitioners)
+
+
+def _practitioners_section(roster: list[Any] | None) -> str:
+    """Render the prompt's practitioner section from what the roster read returned."""
+    if roster is None:
+        return _ROSTER_UNKNOWN
+    lines = "\n".join(_practitioner_line(entry) for entry in roster)
+    return _ROSTER_KNOWN.format(roster=lines or _ROSTER_EMPTY)
+
+
+def _practitioner_line(entry: Any) -> str:
+    """Render one practitioner as a line of the prompt's roster."""
+    if not isinstance(entry, dict):
+        return "- (unreadable entry)"
+    bookable = "" if entry.get("bookable") else ", not currently taking appointments"
+    return (
+        f"- id {entry.get('id')}: {entry.get('full_name')}"
+        f", {entry.get('specialty')}"
+        f", {entry.get('appointment_duration_minutes')}-minute appointments{bookable}"
+    )
 
 
 def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | None]:
@@ -215,10 +298,18 @@ async def handle_booking(
     model call in the graph. The `tool_use`/`tool_result` blocks accumulated *within*
     this turn are not history and are never dropped - truncating them mid-loop would
     hide from the model what it has already booked or been refused.
+
+    The clinic's roster is read before the first model call and put in the prompt, so
+    the model has the ids it would otherwise guess at. A roster that cannot be read
+    leaves the turn running without it, told that it does not know who works here.
     """
     logger = get_logger()
     settings = get_settings()
-    system = _SYSTEM_PROMPT.format(patient_name=patient_name, local_now=local_now)
+    system = _SYSTEM_PROMPT.format(
+        patient_name=patient_name,
+        local_now=local_now,
+        practitioners=_practitioners_section(await _read_roster(registry)),
+    )
     messages: list[MessageParam] = list(
         to_claude_messages(bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS))
     )

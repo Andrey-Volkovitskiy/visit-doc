@@ -32,6 +32,7 @@ from chat.domain.schemas import ChatTokenEvent
 from structlog.testing import capture_logs
 
 _LOCAL_NOW = "2026-08-17T08:00:00"
+_ROSTER_READ = "list_practitioners"
 _PRACTITIONER_ID = "01PRACTITIONER0000000000"
 _STARTS_AT = "2026-08-18T09:00:00"
 
@@ -54,7 +55,12 @@ class _RecordingRegistry(ToolRegistry):
 
     def __init__(self, results: dict[str, Any]) -> None:
         self.dispatched: list[tuple[str, dict[str, Any]]] = []
-        self._results = results
+        # Set by a test whose point is a handler failing rather than answering.
+        self.raise_on: str | None = None
+        # `handle_booking` reads the roster through the registry before the model's
+        # first turn, so every turn needs a result for it - a test names one itself
+        # only when the roster is what that test is about.
+        self._results = {_ROSTER_READ: {"practitioners": []}, **results}
         tools = [
             Tool(
                 name=tool.name,
@@ -81,10 +87,33 @@ class _RecordingRegistry(ToolRegistry):
         self.dispatched.append((name, arguments))
         return await super().dispatch(name, arguments)
 
+    def set_result(self, name: str, result: dict[str, Any]) -> None:
+        """Replace one canned result partway through a turn."""
+        self._results[name] = result
+
     async def _handler(
         self, _context: ToolContext, _arguments: dict[str, Any]
     ) -> dict[str, Any]:
-        return self._results[self.dispatched[-1][0]]
+        name = self.dispatched[-1][0]
+        if name == self.raise_on:
+            raise RuntimeError("handler blew up")
+        return self._results[name]
+
+
+def _model_dispatched(registry: _RecordingRegistry) -> list[str]:
+    """Return the tools the *model* asked for, in order.
+
+    `handle_booking` reads the roster through this same registry before the model's
+    first turn, so the first dispatch of every turn is the node's own, not the
+    model's - asserted here rather than left to each caller to skip past.
+    """
+    assert registry.dispatched[0][0] == _ROSTER_READ
+    return [name for name, _ in registry.dispatched[1:]]
+
+
+def _system_prompt(client: MagicMock) -> str:
+    """Return the system prompt the turn's first model call was given."""
+    return str(client.messages.create.await_args_list[0].kwargs["system"])
 
 
 def _tool_use_response(calls: list[tuple[str, dict[str, Any]]]) -> MagicMock:
@@ -187,7 +216,7 @@ async def test_the_loop_chains_list_then_availability_then_book_in_one_turn() ->
 
     _, result = await _run(client, registry, _bursts("book me with anyone Tuesday"))
 
-    assert [name for name, _ in registry.dispatched] == [
+    assert _model_dispatched(registry) == [
         "list_practitioners",
         "check_availability",
         "book_appointment",
@@ -204,7 +233,7 @@ async def test_a_turn_with_no_tool_calls_is_informational() -> None:
 
     _, result = await _run(client, registry, _bursts("I'd like an appointment"))
 
-    assert registry.dispatched == []
+    assert _model_dispatched(registry) == []
     assert result.outcome is BookingOutcome.INFORMATIONAL
 
 
@@ -338,15 +367,16 @@ async def test_a_booking_that_succeeded_after_a_refusal_is_a_success() -> None:
         ]
     )
 
-    # Flip the canned result after the first dispatch, so the second attempt succeeds.
+    # Flip the canned result after the first booking attempt, so the second succeeds.
     original = registry.dispatch
 
     async def dispatch(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         result = await original(name, arguments)
-        results["book_appointment"] = {
-            "status": "booked",
-            "appointment": {"id": "01APPOINTMENT"},
-        }
+        if name == "book_appointment":
+            registry.set_result(
+                "book_appointment",
+                {"status": "booked", "appointment": {"id": "01APPOINTMENT"}},
+            )
         return result
 
     registry.dispatch = dispatch  # type: ignore[method-assign]
@@ -372,7 +402,7 @@ async def test_the_loop_stops_at_its_iteration_bound() -> None:
     assert exhausted["iterations"] == 6
     assert exhausted["log_level"] == "warning"
     assert result.iterations == 6
-    assert len(registry.dispatched) == 6
+    assert len(_model_dispatched(registry)) == 6
     assert result.reply_text
 
 
@@ -464,9 +494,9 @@ async def test_the_prompt_carries_both_disambiguation_rules() -> None:
 
     await _run(client, registry, _bursts("I'd like to see a dentist"))
 
-    system = client.messages.create.call_args.kwargs["system"]
+    system = _system_prompt(client)
     assert "list them and ask" in system
-    assert "never\n  a specialty it does not" in system
+    assert "name the specialties that are listed - never one that is\nnot" in system
 
 
 async def test_the_model_sees_every_registered_tool() -> None:
@@ -483,7 +513,8 @@ async def test_the_model_sees_every_registered_tool() -> None:
 
 
 async def test_a_handler_that_raises_is_reported_to_the_model_not_raised() -> None:
-    registry = _RecordingRegistry({})  # every result lookup raises KeyError
+    registry = _RecordingRegistry({})
+    registry.raise_on = "list_practitioners"
 
     client = _client(
         [
@@ -510,7 +541,8 @@ async def test_a_raising_write_is_not_reported_as_having_created_nothing() -> No
     landing and the failure coming afterwards is indistinguishable from here - so the
     model must not be told nothing was booked and invited to try again.
     """
-    registry = _RecordingRegistry({})  # every result lookup raises KeyError
+    registry = _RecordingRegistry({})
+    registry.raise_on = "book_appointment"
     client = _client(
         [
             _tool_use_response(
@@ -625,7 +657,7 @@ async def test_asking_who_is_available_lists_practitioners_and_writes_nothing() 
 
     _, result = await _run(client, registry, _bursts("who can I see?"))
 
-    assert [name for name, _ in registry.dispatched] == ["list_practitioners"]
+    assert _model_dispatched(registry) == ["list_practitioners"]
     assert result.outcome is BookingOutcome.INFORMATIONAL
     assert result.appointment_id is None
 
@@ -656,7 +688,7 @@ async def test_asking_what_i_have_booked_lists_appointments_and_writes_nothing()
 
     _, result = await _run(client, registry, _bursts("what have I got booked?"))
 
-    assert [name for name, _ in registry.dispatched] == ["list_my_appointments"]
+    assert _model_dispatched(registry) == ["list_my_appointments"]
     assert result.outcome is BookingOutcome.INFORMATIONAL
 
 
@@ -729,7 +761,7 @@ async def test_a_read_only_turn_never_reaches_the_booking_tool() -> None:
         client, registry, _bursts("who's there, and what have I got?")
     )
 
-    dispatched = {name for name, _ in registry.dispatched}
+    dispatched = set(_model_dispatched(registry))
     assert dispatched == {"list_practitioners", "list_my_appointments"}
     assert "book_appointment" not in dispatched
     assert result.outcome is BookingOutcome.INFORMATIONAL
@@ -937,3 +969,108 @@ async def test_a_write_rejected_for_bad_arguments_says_nothing_was_created() -> 
         "booking.tool_arguments_invalid",
     ]
     assert result.outcome is BookingOutcome.UNAVAILABLE
+
+
+# --- the roster the prompt carries -------------------------------------------
+
+
+async def test_the_roster_is_read_once_and_put_in_the_system_prompt() -> None:
+    registry = _RecordingRegistry(
+        {
+            _ROSTER_READ: {
+                "practitioners": [
+                    {
+                        "id": _PRACTITIONER_ID,
+                        "full_name": "William Osler",
+                        "specialty": "General Practice",
+                        "appointment_duration_minutes": 60,
+                        "bookable": True,
+                    }
+                ]
+            }
+        }
+    )
+    client = _client([_text_response("Which day suits you?")])
+
+    await _run(client, registry, _bursts("I'd like to see someone"))
+
+    system = _system_prompt(client)
+    assert _PRACTITIONER_ID in system
+    assert "William Osler" in system
+    assert "General Practice" in system
+    assert _model_dispatched(registry) == []
+
+
+async def test_a_practitioner_not_taking_appointments_is_marked_as_such() -> None:
+    registry = _RecordingRegistry(
+        {
+            _ROSTER_READ: {
+                "practitioners": [
+                    {
+                        "id": _PRACTITIONER_ID,
+                        "full_name": "William Osler",
+                        "specialty": "General Practice",
+                        "appointment_duration_minutes": 60,
+                        "bookable": False,
+                    }
+                ]
+            }
+        }
+    )
+    client = _client([_text_response("Nobody is taking appointments right now.")])
+
+    await _run(client, registry, _bursts("I'd like to see someone"))
+
+    assert "not currently taking appointments" in _system_prompt(client)
+
+
+async def test_an_unreadable_roster_says_it_is_not_known_who_works_here() -> None:
+    # What the read-only tools return when the scheduler cannot be reached at all.
+    registry = _RecordingRegistry(
+        {
+            _ROSTER_READ: {
+                "status": "unavailable",
+                "explanation": _UNAVAILABLE_EXPLANATION,
+            }
+        }
+    )
+    client = _client([_text_response("I can't reach the clinic's schedule.")])
+
+    with capture_logs() as logs:
+        _, result = await _run(client, registry, _bursts("book me with Dr. Osler"))
+
+    system = _system_prompt(client)
+    assert "could not be read" in system
+    # The name the patient just used must not come back as an established fact.
+    assert "Osler" not in system
+    unread = next(e for e in logs if e["event"] == "booking.roster_unread")
+    assert unread["log_level"] == "warning"
+    assert unread["status"] == "unavailable"
+    assert result.outcome is BookingOutcome.INFORMATIONAL
+
+
+async def test_a_roster_read_that_raises_does_not_fail_the_turn() -> None:
+    registry = _RecordingRegistry({})
+    registry.raise_on = _ROSTER_READ
+    client = _client([_text_response("Let me look that up.")])
+
+    with capture_logs() as logs:
+        _, result = await _run(client, registry, _bursts("who works here?"))
+
+    assert "could not be read" in _system_prompt(client)
+    unread = next(e for e in logs if e["event"] == "booking.roster_unread")
+    assert unread["error_type"] == "RuntimeError"
+    assert result.reply_text
+
+
+async def test_an_empty_roster_is_not_reported_as_an_unreadable_one() -> None:
+    # A clinic with nobody on it and a clinic whose roster is unknown need opposite
+    # replies, so they must not render the same way.
+    registry = _RecordingRegistry({_ROSTER_READ: {"practitioners": []}})
+    client = _client([_text_response("We have no practitioners at the moment.")])
+
+    await _run(client, registry, _bursts("who works here?"))
+
+    system = _system_prompt(client)
+    assert "no practitioners" in system
+    assert "could not be read" not in system
