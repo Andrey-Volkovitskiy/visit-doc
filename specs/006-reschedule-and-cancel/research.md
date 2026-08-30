@@ -183,21 +183,38 @@ on the described facts lets the assistant say *what* changed, in the patient's o
 
 ## #6 — Old and new values come out of the same statement
 
-**Decision**: the update self-joins the pre-image so one round trip yields both sides of the change:
+**Decision**: the update joins a **locked** pre-image, so one round trip yields both sides of the
+change and both describe the same version of the row:
 
 ```sql
-UPDATE appointments SET … FROM appointments AS old
- WHERE appointments.id = old.id AND <the predicate from #5>
-RETURNING old.starts_at AS old_start, old.practitioner_id AS old_practitioner,
-          appointments.starts_at AS new_start, appointments.practitioner_id AS new_practitioner
+WITH old AS (
+  SELECT id, starts_at, practitioner_id, idempotency_key, status FROM appointments
+   WHERE id = :appointment_id AND session_id = :session_id AND patient_id = :patient_id
+   FOR UPDATE
+)
+UPDATE appointments SET … FROM old
+ WHERE appointments.id = old.id AND <the predicate from #5, read off `old`>
+RETURNING old.starts_at AS old_start, old.practitioner_id AS old_practitioner
 ```
 
 **Rationale**: FR-036 wants the start before and the start after; FR-038 wants the practitioner on
 each side. `RETURNING` alone gives only the new row. Reading the old values first would put a second
 statement inside the very window #5 exists to close, and — worse — would produce a log entry
 describing a "before" state that a concurrent change may have replaced, which is a false record
-rather than a missing one. `UPDATE … FROM t AS old` sees the pre-update snapshot, so both sides come
-from one atomic statement.
+rather than a missing one.
+
+**`FOR UPDATE` is not decoration, and a plain `FROM appointments AS old` self-join is wrong here** —
+this was the shape originally chosen, and it was measured failing. The `old` leg of such a join
+carries no row mark, so when a concurrent commit forces the update to re-check its predicate
+PostgreSQL re-reads the *target* row but keeps `old` from the original snapshot. Two identical moves
+— the ordinary shape of the caller's own retry after `DEADLINE_EXCEEDED` (FR-023) — then both match
+the guard's target arm, and the loser reads a stale pre-image: it reports a move it never performed
+and writes a second `appointment.rescheduled` for one transition, which is exactly the over-counted
+move SC-009 forbids. Reproduced 7 times in 8 before the lock was added, and 0 in 8 after.
+
+The lock does not reintroduce #5's rejected `SELECT … FOR UPDATE` *then* write: there is no window,
+because the read and the decision are one statement. What #5 rejects is a check that has already
+returned by the time the write runs.
 
 It also decides the no-transition case for free: a reschedule whose `old` and new values are equal
 transitioned nothing and is recorded as such (#9, FR-040), and the comparison is made on values the

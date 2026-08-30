@@ -33,9 +33,11 @@ re-sent change return its original outcome instead of a false conflict (FR-021, 
 SC-016). When the statement matches nothing, a classification read names which of the four new
 refusal reasons applies; it decides nothing, so it cannot reintroduce the race it reports on.
 
-Old and new values come back from that same statement via `UPDATE … FROM appointments AS old …
-RETURNING`, because FR-036 needs both sides and reading the "before" separately would describe a state
-a concurrent change may already have replaced (research #6).
+Old and new values come back from that same statement, which joins a **locked** pre-image
+(`WITH old AS (SELECT … FOR UPDATE) UPDATE … FROM old … RETURNING`), because FR-036 needs both sides
+and reading the "before" separately would describe a state a concurrent change may already have
+replaced. The lock is load-bearing rather than cautious: an unlocked self-join returns a stale
+pre-image to the loser of two identical moves, which is SC-009's over-counted move (research #6).
 
 **(3) The tool seam grows by two, and one existing tool changes shape.**
 `reschedule_appointment` and `cancel_appointment` join the registry; `list_my_appointments` gains

@@ -164,6 +164,14 @@ _WRITE_FAILED_EXPLANATION = (
     "clinic before trying again."
 )
 
+# The same for a change. Booking's sentence names the wrong act and, worse, omits the
+# claim this path actually forbids - that the change did, or did not, take effect.
+_CHANGE_FAILED_EXPLANATION = (
+    "That step failed, so it is not known whether the change went through. Do not say "
+    "the appointment was changed, do not say it was not, and do not try it again - "
+    "tell the patient to check with the clinic."
+)
+
 # Arguments that could not be read are rejected before the handler calls anything, so
 # unlike every other failure this one provably had no effect. It says so, and says what
 # to fix: the model can correct the call and make it again within this same turn.
@@ -365,11 +373,16 @@ def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | 
             outcome = BookingOutcome.OUTCOME_UNKNOWN
         return outcome, appointment.get("id")
 
+    # An unknown outcome outranks a no-op, though both rank below a completed change.
+    # `results` accumulates across every tool call the turn made - the model can ask for
+    # several at once - so one turn can hold a provable no-op *and* a lost write. Only
+    # `unchanged` asserts positively that nothing was written, and a turn holding a lost
+    # write cannot make that claim: the weaker, safer label has to win.
+    if any(r.get("status") == "unknown" for r in results):
+        return BookingOutcome.OUTCOME_UNKNOWN, None
     if any(r.get("status") == "unchanged" for r in results):
         unchanged = [r for r in results if r.get("status") == "unchanged"][-1]
         return BookingOutcome.UNCHANGED, unchanged.get("appointment", {}).get("id")
-    if any(r.get("status") == "unknown" for r in results):
-        return BookingOutcome.OUTCOME_UNKNOWN, None
     if any(r.get("status") in {"unavailable", "error"} for r in results):
         # A step that failed, whether the scheduler never answered or the handler
         # raised. Not a completed change, because nothing here observed one - the
@@ -638,10 +651,18 @@ async def _dispatch(
             # `UNAVAILABLE`, which the composing step is told means nothing was
             # created, moved or cancelled: the status has to carry the same meaning its
             # explanation already does.
-            return {
+            failed: dict[str, Any] = {
                 "status": "unknown",
-                "explanation": _WRITE_FAILED_EXPLANATION,
+                "explanation": (
+                    _CHANGE_FAILED_EXPLANATION
+                    if name in _OPERATION_BY_TOOL
+                    else _WRITE_FAILED_EXPLANATION
+                ),
             }
+            # Recorded here as well as on the answering path: this is an unknown write
+            # outcome like any other, and it took the one route that skipped the event.
+            _record_unknown_outcome(name, arguments, failed)
+            return failed
         return {"status": "error", "explanation": _READ_FAILED_EXPLANATION}
 
     logger.info(

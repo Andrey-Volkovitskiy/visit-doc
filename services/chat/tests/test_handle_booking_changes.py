@@ -175,7 +175,7 @@ async def test_a_completed_change_outranks_a_refusal_in_the_same_turn() -> None:
     assert second.outcome is BookingOutcome.CANCELLED
 
 
-async def test_unchanged_outranks_an_unknown_outcome() -> None:
+async def test_an_unknown_outcome_outranks_unchanged() -> None:
     registry = _RecordingRegistry(
         {
             "cancel_appointment": {
@@ -203,7 +203,10 @@ async def test_unchanged_outranks_an_unknown_outcome() -> None:
 
     _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
 
-    assert result.outcome is BookingOutcome.UNCHANGED
+    # Both are claims about writes, and `unchanged` is the stronger one: it asserts
+    # positively that nothing was written. A turn holding a lost write cannot make that
+    # claim, so the weaker, safer label wins.
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
 
 
 async def test_an_unknown_outcome_outranks_an_unavailable_step() -> None:
@@ -1270,3 +1273,127 @@ async def test_a_read_tool_that_raised_is_still_unavailable() -> None:
     _, result = await _run(client, registry, _bursts("what have I got?"))
 
     assert result.outcome is BookingOutcome.UNAVAILABLE
+
+
+# --- one turn, two changes: the lost one must not be masked -------------------
+
+
+async def test_a_lost_write_beside_a_no_op_is_never_reported_as_nothing_written() -> (
+    None
+):
+    """`observed` accumulates across every tool call the turn made, not just one.
+
+    The model can emit several tool_use blocks in one message, and they are dispatched
+    together - so "move my Tuesday appointment and cancel my Friday one" can produce a
+    provable no-op and a lost write at once. `unchanged` would then label the turn,
+    and the composing step is told that label means nothing was written and to report
+    it as already done - with an irreversible cancellation of unknown fate open.
+    """
+    registry = _RecordingRegistry(
+        {
+            "reschedule_appointment": {
+                "status": "unchanged",
+                "appointment": _entry(),
+                "explanation": "Already at that time.",
+            },
+            "cancel_appointment": {
+                "status": "unknown",
+                "explanation": "It is not known whether that went through.",
+            },
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    ("reschedule_appointment", _RESCHEDULE_ARGUMENTS),
+                    ("cancel_appointment", _CANCEL_ARGUMENTS),
+                ]
+            ),
+            _text_response("One was already set; I could not confirm the other."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("move one, cancel the other"))
+
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
+
+
+async def test_the_exhausted_reply_for_that_turn_claims_nothing_either_way() -> None:
+    # The sharpest form: `_LOOP_EXHAUSTED_UNCHANGED_REPLY` says "nothing needed to
+    # change", which is a flat denial of the lost cancellation.
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_UNCHANGED_REPLY
+
+    registry = _RecordingRegistry(
+        {
+            "reschedule_appointment": {
+                "status": "unchanged",
+                "appointment": _entry(),
+                "explanation": "Already at that time.",
+            },
+            "cancel_appointment": {"status": "unknown", "explanation": "Not known."},
+            "list_my_appointments": _listing([]),
+        }
+    )
+    client = _exhausting_client(
+        _tool_use_response(
+            [
+                ("reschedule_appointment", _RESCHEDULE_ARGUMENTS),
+                ("cancel_appointment", _CANCEL_ARGUMENTS),
+            ]
+        )
+    )
+
+    _, result = await _run(client, registry, _bursts("move one, cancel the other"))
+
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
+    assert result.reply_text != _LOOP_EXHAUSTED_UNCHANGED_REPLY
+
+
+# --- a change handler that raised --------------------------------------------
+
+
+async def test_a_raising_change_handler_is_told_about_changes_not_bookings() -> None:
+    # The wrong-verb problem this feature fixed one file over: booking's sentence tells
+    # the model not to say it was *booked* and not to *book* it again, and never
+    # mentions the claim it actually must not make about a cancellation.
+    registry = _RecordingRegistry({"cancel_appointment": _cancelled_result()})
+    registry.raise_on = "cancel_appointment"
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("I could not confirm that."),
+        ]
+    )
+
+    await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    import json
+
+    sent = client.messages.create.await_args_list[1].kwargs["messages"]
+    reported = json.loads(sent[-1]["content"][0]["content"])
+    explanation = reported["explanation"].lower()
+    assert reported["status"] == "unknown"
+    assert "book" not in explanation
+    assert "not known" in explanation
+
+
+async def test_a_raising_change_handler_still_records_the_unknown_outcome() -> None:
+    # contracts/log-events.md: an unknown outcome is recorded as
+    # `change.outcome_unknown`, never as a completed change. A handler that raised is
+    # exactly such an outcome, and it took the one path that skipped the record.
+    registry = _RecordingRegistry({"cancel_appointment": _cancelled_result()})
+    registry.raise_on = "cancel_appointment"
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("I could not confirm that."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    event = next(log for log in logs if log["event"] == "change.outcome_unknown")
+    assert event["operation"] == "cancel"
+    assert event["appointment_id"] == _APPOINTMENT_ID

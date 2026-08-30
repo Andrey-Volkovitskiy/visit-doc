@@ -85,6 +85,18 @@ _STATUS_FILTER_BY_PROTO: dict[int, StatusFilter] = {
 }
 
 
+class StoredStateError(RuntimeError):
+    """Raised when a stored row holds a value this build cannot render.
+
+    Deliberately *not* a `ConversionError`: the interceptor answers those with
+    `INVALID_ARGUMENT`, which says the caller sent something the contract forbids. This
+    is the opposite - the request was fine and the row is not - and it is raised while
+    rendering a response for a write that has already committed. Reported as a server
+    fault so the caller reads the outcome as unknown rather than as a change that
+    provably did not happen.
+    """
+
+
 class ConversionError(ValueError):
     """Raised when a request field cannot be read as the type the contract promises.
 
@@ -208,7 +220,7 @@ def to_proto_appointment(
     The caller never joins to resolve a name, so the chat service can build its
     confirmation from the response alone.
 
-    Raises: ConversionError if the appointment's stored status is outside the closed
+    Raises: StoredStateError if the appointment's stored status is outside the closed
         set - the `CHECK` constraint makes that a corrupted row rather than a caller
         defect, so it fails loudly instead of travelling as unspecified.
     """
@@ -228,12 +240,14 @@ def to_proto_appointment(
 def _read_stored_status(value: str) -> AppointmentStatus:
     """Read a stored status column into its domain member.
 
-    Raises: ConversionError if the column holds a value outside the closed set.
+    Raises: StoredStateError if the column holds a value outside the closed set, which
+        the `CHECK` constraint makes a corrupted row rather than anything the caller
+        did.
     """
     try:
         return AppointmentStatus(value)
     except ValueError as exc:
-        raise ConversionError(f"unrecognized stored status: {value!r}") from exc
+        raise StoredStateError(f"unrecognized stored status: {value!r}") from exc
 
 
 def to_proto_change_failure(reason: ChangeFailureReason) -> pb.ChangeFailure:

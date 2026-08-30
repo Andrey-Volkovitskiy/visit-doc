@@ -318,9 +318,12 @@ capabilities — full rationale and alternatives considered live in
   move, collides with no other appointment, so the datastore cannot catch it either. The guard has
   two arms, the state the patient was shown *or* the state the request asks for, which is what
   makes a re-sent change report its original outcome instead of a false conflict. Old and new
-  values come back from that same statement via `UPDATE … FROM appointments AS old … RETURNING`,
-  because reading the "before" separately would describe a state a concurrent change may already
-  have replaced — a false record rather than a missing one.
+  values come back from that same statement, via a `FOR UPDATE` CTE holding the pre-image, because
+  reading the "before" separately would describe a state a concurrent change may already have
+  replaced — a false record rather than a missing one. The lock earns its place: an unlocked
+  `FROM appointments AS old` self-join carries no row mark, so the loser of two identical moves —
+  the ordinary shape of the caller's own retry — reads a pre-image from before the winner committed
+  and logs a second change record for one transition.
 - **Neither change RPC carries an idempotency key**: a key exists to stop a *second row* coming
   into being, and neither operation can create one. A key derived from the target state would
   actively introduce a replay bug — 09:00 → 10:00 → 09:00 → 10:00 derives the first move's key on

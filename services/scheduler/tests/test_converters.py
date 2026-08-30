@@ -81,3 +81,42 @@ def test_the_status_mapping_is_total_over_the_domain_enum() -> None:
             )
             is status
         )
+
+
+def test_a_corrupt_stored_status_is_not_a_caller_defect() -> None:
+    """Rendering failures on a committed write must not become INVALID_ARGUMENT.
+
+    `to_proto_appointment` runs *after* `cancel()`/`reschedule()` has committed. The
+    interceptor turns every `ConversionError` into INVALID_ARGUMENT, which the chat
+    client reads as "this service sent something the contract forbids" and both change
+    tools answer with "nothing was changed. The appointment still stands exactly as it
+    was" - a flat denial of a change that happened.
+
+    So a stored value this build cannot read must surface as a server fault, which
+    completes as UNKNOWN and reaches the patient as an unknown outcome.
+    """
+    session_id = new_id()
+    patient = make_patient(session_id)
+    practitioner = make_practitioner(session_id)
+    appointment = make_appointment(
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 9, 2, 9, 0),
+        datetime(2026, 9, 2, 10, 0),
+    )
+    appointment.status = "rescheduled-away"  # outside the closed set
+
+    with pytest.raises(Exception) as caught:
+        converters.to_proto_appointment(appointment, patient, practitioner)
+
+    assert not isinstance(caught.value, ConversionError)
+
+
+def test_a_malformed_request_field_is_still_a_caller_defect() -> None:
+    # Unchanged, and the distinction the test above rests on: reading a *request* field
+    # this build cannot parse is the caller's fault and stays INVALID_ARGUMENT.
+    with pytest.raises(ConversionError):
+        converters.read_local_datetime("not a date", "starts_at")
+    with pytest.raises(ConversionError):
+        converters.read_appointment_status(pb.APPOINTMENT_STATUS_UNSPECIFIED)
