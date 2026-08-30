@@ -860,3 +860,73 @@ async def test_a_cancellation_leaves_the_key_on_the_row_it_created(
 
     cancelled = await _row(db_session, booked.appointment_id)
     assert cancelled.idempotency_key == original_key  # type: ignore[attr-defined]
+
+
+# --- a grandfathered appointment ---------------------------------------------
+
+
+async def _narrow_to_afternoon(session: AsyncSession, practitioner_id: str) -> None:
+    """Leave the Tuesday 09:00 appointment outside its practitioner's current hours."""
+    from scheduler.repositories import practitioner_repository
+
+    await practitioner_repository.replace_schedule(
+        session, practitioner_id, [(Weekday.TUESDAY, time(14, 0), time(16, 0))]
+    )
+
+
+async def test_a_grandfathered_appointment_can_be_moved_onto_a_currently_legal_time(
+    db_session: AsyncSession,
+) -> None:
+    """Its own out-of-schedule start is never re-validated; the new one always is.
+
+    The guard compares the stored start for equality and asks nothing about whether it
+    would still be bookable - which is what "grandfathered" means. Only the destination
+    is put through the placement rules.
+    """
+    booked = await _seed(db_session)
+    await _narrow_to_afternoon(db_session, booked.practitioner_id)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=datetime(2026, 8, 18, 14, 0)
+    )
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.starts_at == datetime(2026, 8, 18, 14, 0)
+    assert outcome.previous_starts_at == _TUESDAY_9AM
+
+
+async def test_a_grandfathered_appointment_may_not_move_outside_current_hours(
+    db_session: AsyncSession,
+) -> None:
+    # Being grandfathered exempts it from being disturbed, not from the rules that
+    # govern where it may go next - so it cannot move to another hour the practitioner
+    # no longer works, including the one it currently occupies.
+    booked = await _seed(db_session)
+    await _narrow_to_afternoon(db_session, booked.practitioner_id)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=datetime(2026, 8, 18, 11, 0)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.OUTSIDE_SCHEDULE
+    row = await _row(db_session, booked.appointment_id)
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
+
+
+async def test_a_grandfathered_appointment_may_not_stay_where_it_is(
+    db_session: AsyncSession,
+) -> None:
+    # The sharpest form of the rule: asking to "move" it to the time it already holds
+    # is refused, because that time is no longer one the practitioner works. The
+    # appointment keeps it only for as long as nobody asks to place it there again.
+    booked = await _seed(db_session)
+    await _narrow_to_afternoon(db_session, booked.practitioner_id)
+
+    outcome = await _reschedule(db_session, booked, new_starts_at=_TUESDAY_9AM)
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.OUTSIDE_SCHEDULE
+    row = await _row(db_session, booked.appointment_id)
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
+    assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]

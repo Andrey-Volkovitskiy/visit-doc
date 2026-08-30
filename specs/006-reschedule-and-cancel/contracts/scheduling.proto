@@ -165,6 +165,16 @@ message ChangeAppointmentResponse {
   // state a concurrent change may already have replaced.
   string previous_starts_at = 4;
   string previous_practitioner_id = 5;
+  // The practitioner's display name, denormalized beside its id for the same reason `Appointment`
+  // carries one: the caller never joins to resolve a name, so it builds its confirmation from this
+  // response alone. FR-027 requires a swap to name BOTH practitioners, and without this the chat
+  // service has the old one's id and no way to render it — data-model.md's
+  // `ChangeApplied.previous_practitioner_full_name` would be unpopulatable.
+  //
+  // Resolving it with a second rpc instead was rejected: that puts a call which can fail *after* a
+  // committed change on the path that reports it, so a swap that landed could be reported as
+  // unknown.
+  string previous_practitioner_full_name = 6;
 }
 
 message ListAppointmentsRequest {

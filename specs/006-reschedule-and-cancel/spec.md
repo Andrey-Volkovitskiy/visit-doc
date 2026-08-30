@@ -535,13 +535,23 @@ neither produced a change record.
 - **FR-011**: Cancelling an appointment MUST release the idempotency key that created it, so the
   freed slot can be booked again — by the same patient with the same practitioner at the same time,
   or by anyone else — as an ordinary new booking producing a new appointment. A booking key lives as
-  long as the appointment it created **stands**, not as long as its record exists. This amends the
-  key lifetime Phase 1c fixed (005 FR-064), which was written when cancelling removed the record.
+  long as the appointment it created **stands where that key describes**, not as long as its record
+  exists. This amends the key lifetime Phase 1c fixed (005 FR-064), which was written when
+  cancelling removed the record and when an appointment could not move.
   A released key carries no memory of the appointment it created: because 005 FR-062 derives the key
   from the patient, practitioner, and start time alone, a late duplicate of the original booking
   request and a deliberate rebooking of the freed slot are the *same* request. Both MUST produce a
   new appointment, and the system MUST NOT try to tell them apart — there is nothing in the request
   to tell apart by.
+- **FR-011a**: Rescheduling an appointment MUST likewise release the key that created it, whenever
+  the change actually moved it. The key is derived from the patient, practitioner, and start time
+  (005 FR-062), so an appointment that has moved no longer sits where its key describes: the request
+  that key stands for is one nobody has made. Holding it makes the *next* genuine request for the
+  vacated slot — which the availability check now offers, since the appointment left it — derive
+  that same key and collide with an appointment that is no longer in it, refused as a caller-defect
+  the patient can do nothing about, for as long as the moved appointment stands. A request that
+  transitioned nothing (FR-019, FR-040) MUST NOT release it: nothing moved, so the key still
+  describes where the appointment is.
 - **FR-012**: Every read that asks what an appointment blocks, what times are free, or what a
   patient has booked MUST state which statuses it means as part of the query, rather than filtering
   the results afterwards. There is no read in this system for which "every appointment regardless of

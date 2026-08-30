@@ -84,6 +84,27 @@ class ChangeFailureReason(StrEnum):
     PATIENT_BUSY = "patient_busy"
 ```
 
+```python
+class TimeFilter(StrEnum):
+    FUTURE = "future"          # starts strictly after local_now
+    PAST = "past"              # starts at or before local_now, incl. one under way
+    BOTH = "both"
+
+
+class StatusFilter(StrEnum):
+    STANDING = "standing"
+    CANCELLED = "cancelled"
+    BOTH = "both"
+```
+
+The two filters are cross-cutting types rather than wire-only, because both ends name them: the
+scheduler's `list_for_patient()` takes them as parameters, and `list_my_appointments`'s tool schema
+builds its `enum` lists from their values, so the strings a model may send and the strings the
+repository branches on are the same declaration. `StatusFilter` deliberately mirrors
+`AppointmentStatus` plus a `BOTH` rather than reusing it: a filter is not a status, and one type
+serving both would make "the appointments I asked for" and "the state one of them is in" the same
+value.
+
 A unit test asserts, member by member, that every `BookingFailureReason` value appears in
 `ChangeFailureReason` with the identical string — the mechanical pin that stops the two vocabularies
 drifting (research #10). `ALREADY_CANCELLED` is reachable as a *failure* only for a reschedule; for a

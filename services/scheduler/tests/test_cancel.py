@@ -391,3 +391,74 @@ async def test_the_change_read_back_is_scoped_to_the_session_and_patient(
         )
         is None
     )
+
+
+# --- a grandfathered appointment ---------------------------------------------
+
+
+async def test_a_grandfathered_appointment_can_still_be_cancelled(
+    db_session: AsyncSession,
+) -> None:
+    """Being grandfathered exempts it from being disturbed, not from being called off.
+
+    A later schedule edit can leave an appointment outside its practitioner's hours
+    entirely. Cancelling it asks nothing about where it sits, so no placement rule is
+    consulted - and a patient who can no longer be seen at that time is exactly the
+    patient most likely to want it cancelled.
+    """
+    from datetime import time
+
+    from scheduler.repositories import practitioner_repository
+
+    booked = await _seed(db_session)
+    # Narrow the practitioner's Tuesday to an afternoon window that no longer contains
+    # the booked hour, leaving the appointment outside the current schedule.
+    await practitioner_repository.replace_schedule(
+        db_session, booked.practitioner_id, [(1, time(14, 0), time(16, 0))]
+    )
+
+    outcome = await _cancel(db_session, booked)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.status == AppointmentStatus.CANCELLED
+
+
+# --- the appointment vanishing under a completed change -----------------------
+
+
+async def test_a_change_that_committed_before_its_parties_vanished_raises(
+    db_session: AsyncSession,
+) -> None:
+    """The chat was deleted mid-turn, taking the appointment by cascade.
+
+    Reachable only in that window: the write commits, and before the read-back that
+    describes it the patient or practitioner is deleted, which takes the appointment
+    with them. The change is real and already committed, so this must not be reported
+    as a refusal or a no-op - there is simply nothing left to describe.
+
+    The read-back is patched rather than raced, because the race is between two
+    transactions and the assertion is about what this one does when it loses.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    from scheduler.repositories.appointment_repository import (
+        AppointmentVanishedError,
+    )
+
+    booked = await _seed(db_session)
+
+    with (
+        patch.object(
+            appointment_repository,
+            "_load_change_context",
+            new=AsyncMock(return_value=None),
+        ),
+        pytest.raises(AppointmentVanishedError) as caught,
+    ):
+        await _cancel(db_session, booked)
+
+    assert caught.value.appointment_id == booked.appointment_id
+    # The write stands: the error describes what could not be *read*, and must never
+    # be taken as evidence the change did not happen.
+    row = await _row(db_session, booked.appointment_id)
+    assert row.status == AppointmentStatus.CANCELLED  # type: ignore[attr-defined]

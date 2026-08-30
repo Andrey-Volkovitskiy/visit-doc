@@ -389,3 +389,32 @@ async def test_a_move_that_kept_its_practitioner_names_that_same_one(
 
     assert response.previous_practitioner_id == booked.practitioner_id
     assert response.previous_practitioner_full_name == "Dr A"
+
+
+async def test_an_appointment_that_vanished_under_a_change_is_not_a_typed_failure(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    """It completes as UNKNOWN, which is the honest answer and the safe one.
+
+    A typed failure would say the change was evaluated and declined; a `no_change`
+    would say the appointment was already in that state. Both are false - the change
+    committed. UNKNOWN carries no claim either way, and the chat client turns a
+    non-retryable status into an unknown outcome, which is what the patient is told.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    from scheduler.repositories import appointment_repository
+
+    booked = await _seed(db_session)
+
+    with (
+        patch.object(
+            appointment_repository,
+            "_load_change_context",
+            new=AsyncMock(return_value=None),
+        ),
+        pytest.raises(grpc.aio.AioRpcError) as caught,
+    ):
+        await stub.CancelAppointment(_cancel_request(booked))
+
+    assert caught.value.code() is grpc.StatusCode.UNKNOWN

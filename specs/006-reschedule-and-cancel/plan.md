@@ -66,10 +66,19 @@ what they already resolve in the shared `uv.lock`; `shared-proto` regenerates fr
 - `ALTER TABLE appointments ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'standing'` with a
   `CHECK (status IN ('standing','cancelled'))` — existing rows are standing, which is exactly what
   they are;
-- drop and recreate both exclusion constraints with `WHERE (status = 'standing')`;
 - drop `appointments_idempotency_key_unique`; create the partial unique index
   `ix_appointments_idempotency_key_standing`;
+- drop and recreate both exclusion constraints with `WHERE (status = 'standing')`;
 - add `ix_appointments_patient_status_starts (patient_id, status, starts_at)` for the two legs.
+
+**The order of the middle two is load-bearing, and not obviously so.** PostgreSQL checks a row
+against its indexes in creation order and reports only the *first* violation, so recreating the
+overlap constraints before swapping the key would leave the key index behind them. Two identical
+concurrent booking attempts collide on the key *and* on both overlap rules, so the loser would then
+be answered `patient_busy` — "you are already busy then" — instead of replaying the appointment the
+winner just created for it, which is 005 FR-051's idempotent replay. The key index has to keep the
+position its constraint held in the original table. Nothing single-threaded can tell the difference;
+`test_two_concurrent_identical_attempts_yield_one_row_and_a_replay` is what catches it.
 
 `visitdoc_chat` is untouched — there is no chat-side migration. The pending confirmation lives in the
 conversation and nowhere else. Qdrant is untouched.
