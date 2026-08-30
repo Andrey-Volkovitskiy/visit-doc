@@ -462,3 +462,41 @@ async def test_a_change_that_committed_before_its_parties_vanished_raises(
     # be taken as evidence the change did not happen.
     row = await _row(db_session, booked.appointment_id)
     assert row.status == AppointmentStatus.CANCELLED  # type: ignore[attr-defined]
+
+
+# --- another patient's appointment, in this same session ----------------------
+
+
+async def test_another_patients_appointment_in_the_same_session_is_not_found(
+    db_session: AsyncSession,
+) -> None:
+    """Session scoping alone is not enough: one session can hold several patients.
+
+    A second chat in the same session gets its own patient, so "same session, different
+    patient" is an ordinary configuration rather than an attack. The patient predicate
+    sits on the write beside the session one, and this is what holds it there - without
+    a test, removing it would leave the suite green while a cancellation landed on
+    someone else's appointment.
+
+    Answered identically to an id that never existed, for the same reason a
+    cross-session id is: a caller able to tell the two apart could enumerate the
+    session's other patients.
+    """
+    booked = await _seed(db_session)
+    intruder = await seed_patient(db_session, booked.session_id, full_name="Bram")
+
+    outcome = await appointment_repository.cancel(
+        db_session,
+        session_id=booked.session_id,
+        patient_id=intruder.id,
+        appointment_id=booked.appointment_id,
+        expected_starts_at=_TUESDAY_9AM,
+        expected_practitioner_id=booked.practitioner_id,
+        local_now=_LOCAL_NOW,
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.APPOINTMENT_NOT_FOUND
+    row = await _row(db_session, booked.appointment_id)
+    assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]

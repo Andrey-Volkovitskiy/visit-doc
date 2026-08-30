@@ -930,3 +930,34 @@ async def test_a_grandfathered_appointment_may_not_stay_where_it_is(
     row = await _row(db_session, booked.appointment_id)
     assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
     assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]
+
+
+# --- another patient's appointment, in this same session ----------------------
+
+
+async def test_another_patients_appointment_in_the_same_session_cannot_be_moved(
+    db_session: AsyncSession,
+) -> None:
+    # The other half of SC-014. The session predicate would pass here - it is the same
+    # session - so only the patient predicate on the write refuses this.
+    booked = await _seed(db_session)
+    intruder = await seed_patient(db_session, booked.session_id, full_name="Bram")
+
+    outcome = await appointment_repository.reschedule(
+        db_session,
+        session_id=booked.session_id,
+        patient_id=intruder.id,
+        appointment_id=booked.appointment_id,
+        new_starts_at=_TUESDAY_10AM,
+        new_practitioner_id=None,
+        expected_starts_at=_TUESDAY_9AM,
+        expected_practitioner_id=booked.practitioner_id,
+        local_now=_LOCAL_NOW,
+        horizon_days=_HORIZON_DAYS,
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.APPOINTMENT_NOT_FOUND
+    row = await _row(db_session, booked.appointment_id)
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
+    assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]

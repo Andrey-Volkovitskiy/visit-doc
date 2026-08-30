@@ -418,3 +418,19 @@ async def test_an_appointment_that_vanished_under_a_change_is_not_a_typed_failur
         await stub.CancelAppointment(_cancel_request(booked))
 
     assert caught.value.code() is grpc.StatusCode.UNKNOWN
+
+
+async def test_another_patients_appointment_is_not_found_over_the_wire(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # SC-014 end to end: same session, different patient, and the answer is the typed
+    # failure an unknown appointment gets - not a leak that one exists.
+    booked = await _seed(db_session)
+    intruder = await seed_patient(db_session, booked.session_id, full_name="Bram")
+
+    response = await stub.CancelAppointment(
+        _cancel_request(booked, patient_id=intruder.id)
+    )
+
+    assert response.WhichOneof("result") == "failure"
+    assert response.failure.reason == pb.CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND
