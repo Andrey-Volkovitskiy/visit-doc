@@ -284,3 +284,52 @@ live in [`research.md`](specs/005-scheduling-and-booking/research.md):
   which was fine when a chat was short-lived and a turn made one model call. Now a session holds
   many long-lived chats and a mixed-intent turn can make several calls, with up to six more inside
   the booking loop. Storage is unaffected — only what is sent to a model is windowed.
+
+
+## Rescheduling and Cancellation: technology choices
+
+`specs/006-reschedule-and-cancel/` (ROADMAP Phase 1d, part 1) gives the agent its first *mutating*
+capabilities — full rationale and alternatives considered live in
+[`research.md`](specs/006-reschedule-and-cancel/research.md):
+
+- **Cancellation retains the record and sets a status; it does not delete the row**: `appointments`
+  gains `status ∈ {standing, cancelled}`, so a cancelled appointment keeps its identifier, its
+  practitioner and its times, and a patient can still ask what they cancelled. The alternative
+  shapes were worse in the same way: a `deleted_at` names the row's fate rather than the
+  appointment's, and a separate `cancelled_appointments` table loses the identifier's continuity
+  and makes every "which appointment is this?" lookup read two tables. There is deliberately no
+  `cancelled_at` column — nothing reads it, and a column no requirement consumes is one that gets
+  populated, never read, and eventually trusted.
+- **The consequences of retaining it are carried by *partial* constraints, not application
+  filters**: both overlap exclusion constraints and the idempotency key's uniqueness gain
+  `WHERE (status = 'standing')`. This is the whole of "a cancelled slot is bookable again
+  immediately" — an unconditional exclusion constraint would go on rejecting any booking of that
+  time however carefully the application filtered, because the row still holds its `tsrange`. The
+  key follows the same predicate, which amends 005's FR-064: a booking key now lives as long as the
+  appointment *stands*, not as long as its record exists, so cancelling frees it in the same
+  statement. PostgreSQL has no partial UNIQUE *constraint*, so that one becomes a partial unique
+  **index** — a real difference, not a spelling, since the insert-conflict handler must then match
+  on the index name. It also buys "an appointment never blocks its own change" for free on the
+  write path, because an exclusion constraint compares distinct rows.
+- **A change is one conditional `UPDATE` whose `WHERE` clause *is* the staleness guard**: identity,
+  session scope, eligibility rules and the guard travel in one predicate, and nothing is read
+  first. A check performed before the write leaves a window in which two changes both pass and the
+  second silently overwrites the first — and the pairing that matters most, a cancellation racing a
+  move, collides with no other appointment, so the datastore cannot catch it either. The guard has
+  two arms, the state the patient was shown *or* the state the request asks for, which is what
+  makes a re-sent change report its original outcome instead of a false conflict. Old and new
+  values come back from that same statement via `UPDATE … FROM appointments AS old … RETURNING`,
+  because reading the "before" separately would describe a state a concurrent change may already
+  have replaced — a false record rather than a missing one.
+- **Neither change RPC carries an idempotency key**: a key exists to stop a *second row* coming
+  into being, and neither operation can create one. A key derived from the target state would
+  actively introduce a replay bug — 09:00 → 10:00 → 09:00 → 10:00 derives the first move's key on
+  the third and would replay it, leaving the appointment at 09:00 while reporting success. The
+  target-state arm of the guard is what makes a re-send safe instead.
+- **A tool result status of `unknown`, distinct from `unavailable`**: 005 had both meanings but
+  separated them only in prose, so they were one value to every consumer that read `status`. That
+  was tolerable when the only write was a booking whose derived key made a retry safe; it is not
+  once a write can be a cancellation, because `unavailable`'s explanation says "nothing was
+  booked", and a deadline we stopped waiting on is no evidence the server stopped working. The
+  distinction is now visible to the turn's outcome derivation, to the composing step's truth
+  constraint, and to the tests.

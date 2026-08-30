@@ -25,7 +25,7 @@ from shared_models.scheduling import (
     StatusFilter,
     TimeFilter,
 )
-from sqlalchemy import and_, or_, select, update
+from sqlalchemy import and_, case, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -504,6 +504,27 @@ async def reschedule(
             starts_at=new_starts_at,
             ends_at=ends_at,
             practitioner_id=target_practitioner_id,
+            # The key is derived from exactly (patient, practitioner, starts_at), so an
+            # appointment that has moved no longer sits where its key says. Holding it
+            # would make the next genuine request for the vacated slot - which
+            # availability now offers again - derive that same key and collide with an
+            # appointment that is no longer in it, refused as a caller-defect for as
+            # long as the moved appointment stands. Released by overwriting rather than
+            # clearing, since the column is NOT NULL and a fresh id cannot collide.
+            #
+            # Conditional on something actually having moved: a request that
+            # transitioned nothing must write nothing, or `appointment.unchanged` would
+            # be a claim about a row that did change.
+            idempotency_key=case(
+                (
+                    and_(
+                        old.starts_at == new_starts_at,
+                        old.practitioner_id == target_practitioner_id,
+                    ),
+                    old.idempotency_key,
+                ),
+                else_=str(ULID()),
+            ),
         )
         .returning(old.starts_at, old.practitioner_id)
     )

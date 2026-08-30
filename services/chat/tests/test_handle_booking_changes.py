@@ -849,3 +849,147 @@ async def test_a_swap_turn_reports_the_previous_practitioner_to_the_model() -> N
     observed = registry._results["reschedule_appointment"]
     assert observed["previous_practitioner_full_name"] == "William Osler"
     assert observed["appointment"]["practitioner_full_name"] == "Elizabeth Blackwell"
+
+
+# --- what does NOT get a change record ---------------------------------------
+
+
+async def test_a_declined_confirmation_produces_no_change_and_no_record() -> None:
+    # Nothing was sent, so there is nothing to record. The observable guarantee is that
+    # no change tool was dispatched at all.
+    registry = _RecordingRegistry({"list_my_appointments": _listing([_entry()])})
+    client = _client(
+        [
+            _tool_use_response([("list_my_appointments", {})]),
+            _text_response("All right, I have left it as it is."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        _, result = await _run(
+            client, registry, _bursts("cancel it", "shall I?", "no, leave it")
+        )
+
+    assert "cancel_appointment" not in _model_dispatched(registry)
+    assert result.outcome is BookingOutcome.INFORMATIONAL
+    assert "change.outcome_unknown" not in [log["event"] for log in logs]
+
+
+async def test_a_turn_still_awaiting_confirmation_produces_no_record() -> None:
+    registry = _RecordingRegistry(
+        {
+            "check_availability": {
+                "available_starts": ["2026-08-18T10:00:00"],
+                "appointment_duration_minutes": 60,
+                "truncated": False,
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "check_availability",
+                        {
+                            "practitioner_id": _PRACTITIONER_ID,
+                            "from_date": "2026-08-18",
+                            "to_date": "2026-08-18",
+                            "excluded_appointment_id": _APPOINTMENT_ID,
+                        },
+                    )
+                ]
+            ),
+            _text_response("I could move it to 10am - shall I?"),
+        ]
+    )
+
+    with capture_logs() as logs:
+        _, result = await _run(client, registry, _bursts("move it later"))
+
+    assert result.outcome is BookingOutcome.AWAITING_CONFIRMATION
+    assert "reschedule_appointment" not in _model_dispatched(registry)
+    assert "change.outcome_unknown" not in [log["event"] for log in logs]
+
+
+async def test_a_refusal_produces_no_unknown_outcome_record() -> None:
+    # A refusal is recorded scheduler-side as `change.refused`. The chat side's own
+    # record exists for one thing only, and a refusal is not it: the outcome is known.
+    registry = _RecordingRegistry(
+        {
+            "cancel_appointment": {
+                "status": "refused",
+                "reason": "already_started",
+                "explanation": "That appointment has already started.",
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("That has already started."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.REFUSED
+    assert "change.outcome_unknown" not in [log["event"] for log in logs]
+
+
+async def test_a_completed_change_produces_no_unknown_outcome_record() -> None:
+    registry = _RecordingRegistry({"cancel_appointment": _cancelled_result()})
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("Cancelled."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert "change.outcome_unknown" not in [log["event"] for log in logs]
+
+
+async def test_only_an_unknown_outcome_produces_the_unknown_record() -> None:
+    registry = _RecordingRegistry(
+        {"cancel_appointment": {"status": "unknown", "explanation": "Not known."}}
+    )
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("I could not confirm that."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    unknown = [log for log in logs if log["event"] == "change.outcome_unknown"]
+    assert len(unknown) == 1
+    assert set(unknown[0]) - {"event", "log_level"} == {
+        "operation",
+        "appointment_id",
+        "attempts",
+    }
+
+
+async def test_a_failing_read_never_produces_a_change_record() -> None:
+    # `list_my_appointments` is not a change, so an unknown result from it - which it
+    # cannot produce anyway - must not be recorded as one.
+    registry = _RecordingRegistry(
+        {"list_my_appointments": {"status": "unavailable", "explanation": "Down."}}
+    )
+    client = _client(
+        [
+            _tool_use_response([("list_my_appointments", {})]),
+            _text_response("I could not look that up."),
+        ]
+    )
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("what have I got?"))
+
+    assert "change.outcome_unknown" not in [log["event"] for log in logs]

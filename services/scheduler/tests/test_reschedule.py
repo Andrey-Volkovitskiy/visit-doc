@@ -761,3 +761,102 @@ async def test_a_move_that_kept_its_practitioner_names_that_same_one(
 
     assert isinstance(outcome, ChangeApplied)
     assert outcome.previous_practitioner_full_name == outcome.practitioner.full_name
+
+
+# --- the booking key follows the booking it describes ------------------------
+
+
+async def test_a_move_releases_the_key_the_original_booking_derived(
+    db_session: AsyncSession,
+) -> None:
+    """A moved appointment no longer sits where its key says, so it stops holding it.
+
+    The key is derived from exactly (patient, practitioner, starts_at). Once the
+    appointment is somewhere else, that key describes a booking request nobody has
+    made - and holding it makes the *next* genuine request for that slot collide with
+    an appointment that is no longer in it.
+    """
+    booked = await _seed(db_session)
+    original_key = (
+        await _row(db_session, booked.appointment_id)
+    ).idempotency_key  # type: ignore[attr-defined]
+
+    await _reschedule(db_session, booked)
+
+    assert (
+        await appointment_repository.get_by_idempotency_key(db_session, original_key)
+        is None
+    )
+    moved = await _row(db_session, booked.appointment_id)
+    assert moved.idempotency_key != original_key  # type: ignore[attr-defined]
+
+
+async def test_the_freed_key_lets_the_original_slot_be_booked_again(
+    db_session: AsyncSession,
+) -> None:
+    # The defect this prevents: availability offers the vacated slot, and the booking
+    # that follows is refused as a key-derivation defect - permanently, for as long as
+    # the moved appointment stands.
+    booked = await _seed(db_session)
+    original_key = (
+        await _row(db_session, booked.appointment_id)
+    ).idempotency_key  # type: ignore[attr-defined]
+    await _reschedule(db_session, booked)
+
+    outcome = await appointment_repository.book(
+        db_session,
+        session_id=booked.session_id,
+        patient_id=booked.patient_id,
+        practitioner_id=booked.practitioner_id,
+        starts_at=_TUESDAY_9AM,
+        local_now=_LOCAL_NOW,
+        idempotency_key=original_key,
+        horizon_days=_HORIZON_DAYS,
+    )
+
+    from scheduler.repositories.appointment_repository import BookingCreated
+
+    assert isinstance(outcome, BookingCreated)
+    assert outcome.idempotent_replay is False
+    assert outcome.appointment.id != booked.appointment_id
+
+
+async def test_a_move_that_transitioned_nothing_keeps_the_key_it_had(
+    db_session: AsyncSession,
+) -> None:
+    # A no-op transitioned nothing, so it must write nothing - including the key. A
+    # rotation here would make `appointment.unchanged` a lie about the row.
+    booked = await _seed(db_session)
+    original_key = (
+        await _row(db_session, booked.appointment_id)
+    ).idempotency_key  # type: ignore[attr-defined]
+
+    outcome = await _reschedule(db_session, booked, new_starts_at=_TUESDAY_9AM)
+
+    assert isinstance(outcome, ChangeNoOp)
+    unchanged = await _row(db_session, booked.appointment_id)
+    assert unchanged.idempotency_key == original_key  # type: ignore[attr-defined]
+
+
+async def test_a_cancellation_leaves_the_key_on_the_row_it_created(
+    db_session: AsyncSession,
+) -> None:
+    # A cancellation frees the key by leaving the partial index, not by overwriting the
+    # column - the row is still the record of which key created it, and it never moved.
+    booked = await _seed(db_session)
+    original_key = (
+        await _row(db_session, booked.appointment_id)
+    ).idempotency_key  # type: ignore[attr-defined]
+
+    await appointment_repository.cancel(
+        db_session,
+        session_id=booked.session_id,
+        patient_id=booked.patient_id,
+        appointment_id=booked.appointment_id,
+        expected_starts_at=_TUESDAY_9AM,
+        expected_practitioner_id=booked.practitioner_id,
+        local_now=_LOCAL_NOW,
+    )
+
+    cancelled = await _row(db_session, booked.appointment_id)
+    assert cancelled.idempotency_key == original_key  # type: ignore[attr-defined]

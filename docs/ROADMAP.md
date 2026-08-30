@@ -161,10 +161,19 @@ the chat, its patient, and that patient's appointments together. This is the one
 work in the phase.
 
 #### Phase 1d — Rescheduling, cancellation, escalation, and real branching
-Complete the agent's conversational surface on top of 1c's booking:
-- **Rescheduling and cancellation** of an existing appointment, through the same tool seam and the
-  same database-level guards that protect booking.
-- The **escalation** path — adding `escalate_to_staff` to 1c's tool registry — which is where
+Complete the agent's conversational surface on top of 1c's booking. Shipped in two parts, because
+the two halves share nothing but the tool registry: the first changes appointments, the second
+changes who is talking.
+
+- **Part 1 — rescheduling and cancellation** of an existing appointment, through the same tool seam
+  and the same database-level guards that protect booking. **Shipped** as
+  `specs/006-reschedule-and-cancel/`. Both halves of that sentence held literally: no new seam, and
+  no new guard mechanism — the same two exclusion constraints, now partial on a `status` column, so
+  a cancelled appointment stops occupying its slot at the datastore rather than by an application
+  filter. The agent gains its first *mutating* capabilities, and with them the first outcome the
+  system must admit it does not know: a write whose answer never arrived is reported as unknown,
+  never as "nothing happened".
+- **Part 2 — the escalation path** — adding `escalate_to_staff` to 1c's tool registry — which is where
   conversation shape actually becomes multi-party: staff take over and post directly into the same
   thread the patient sees (not a separate, assistant-mediated channel), so a conversation becomes a
   flat, ordered log of messages from any sender (patient, assistant, or staff). Escalation is a

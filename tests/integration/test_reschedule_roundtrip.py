@@ -194,3 +194,65 @@ async def test_the_ends_at_is_recomputed_rather_than_carried_over(
     new_length = moved.appointment.ends_at - moved.appointment.starts_at
     assert new_length == original_length
     assert moved.appointment.ends_at == _TUESDAY_10AM + original_length
+
+
+async def test_the_vacated_slot_can_actually_be_booked_again(
+    scheduling_channel: grpc.aio.Channel,
+) -> None:
+    """Offering a slot and being unable to book it is worse than not offering it.
+
+    The booking key is derived from (patient, practitioner, starts_at), so a second
+    booking of the vacated slot by the same patient derives the same key the moved
+    appointment was created with. While that appointment held the key, availability
+    offered the slot and every booking of it was refused as a key-derivation defect -
+    permanently, for as long as the moved appointment stood.
+    """
+    session_id = new_id()
+    practitioner_id, patient_id = await _seed(session_id)
+    booked = await _book(scheduling_channel, session_id, patient_id, practitioner_id)
+    await _move(
+        scheduling_channel,
+        session_id,
+        patient_id,
+        booked.appointment.id,
+        practitioner_id,
+    )
+
+    assert _TUESDAY_9AM in await _available(
+        scheduling_channel, session_id, patient_id, practitioner_id
+    )
+    rebooked = await _book(
+        scheduling_channel, session_id, patient_id, practitioner_id
+    )
+
+    assert rebooked.idempotent_replay is False
+    assert rebooked.appointment.id != booked.appointment.id
+    assert rebooked.appointment.starts_at == _TUESDAY_9AM
+
+    async with session_factory() as session:
+        count = await session.execute(select(func.count()).select_from(Appointment))
+        assert count.scalar_one() == 2
+
+
+async def test_a_moved_appointment_and_its_replacement_hold_different_keys(
+    scheduling_channel: grpc.aio.Channel,
+) -> None:
+    session_id = new_id()
+    practitioner_id, patient_id = await _seed(session_id)
+    booked = await _book(scheduling_channel, session_id, patient_id, practitioner_id)
+    await _move(
+        scheduling_channel,
+        session_id,
+        patient_id,
+        booked.appointment.id,
+        practitioner_id,
+    )
+    await _book(scheduling_channel, session_id, patient_id, practitioner_id)
+
+    async with session_factory() as session:
+        rows = list(
+            (await session.execute(select(Appointment))).scalars().all()
+        )
+
+    assert len(rows) == 2
+    assert len({r.idempotency_key for r in rows}) == 2

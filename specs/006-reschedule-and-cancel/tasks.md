@@ -245,15 +245,15 @@ contract as a whole and closes any gap that per-story testing left.
 
 ### Tests for User Story 4 (write first, confirm failing) ⚠️
 
-- [ ] T081 [P] [US4] Write `services/scheduler/tests/test_change_records.py` asserting the five scheduler events field-for-field against `contracts/log-events.md` — including that `appointment.cancelled` carries **no** new-start key at all, not an empty one (FR-037), and that `appointment.unchanged` and `appointment.rescheduled` are mutually exclusive for one request
-- [ ] T082 [P] [US4] Write the turn-correlation test in `services/scheduler/tests/test_change_records.py`: every record carries the `turn_id` re-bound from the `x-turn-id` metadata, so a change joins to the conversation that caused it on one key (FR-039)
-- [ ] T083 [P] [US4] Write the negative-record tests in `services/chat/tests/test_handle_booking_changes.py` and `services/scheduler/tests/test_change_records.py`: a declined confirmation, a refusal, and an unknown outcome each produce **no** `appointment.rescheduled` or `appointment.cancelled`; the refusal appears as `change.refused` with its single reason and the unknown as `change.outcome_unknown` (FR-040, SC-010)
-- [ ] T084 [P] [US4] Write the over-counting test in `tests/integration/test_move_sequence.py`: the 09:00 → 10:00 → 09:00 → 10:00 sequence leaves **exactly three** `appointment.rescheduled` records, and a re-send of a move that already landed adds zero records and zero stale refusals — it appears as `appointment.unchanged` (SC-009, SC-017)
-- [ ] T085 [P] [US4] Write the privacy assertion in `services/scheduler/tests/test_change_records.py`: no new event carries a patient's or practitioner's name, a raw message, or a reply body — ids, times and reasons only
+- [X] T081 [P] [US4] Write `services/scheduler/tests/test_change_records.py` asserting the five scheduler events field-for-field against `contracts/log-events.md` — including that `appointment.cancelled` carries **no** new-start key at all, not an empty one (FR-037), and that `appointment.unchanged` and `appointment.rescheduled` are mutually exclusive for one request
+- [X] T082 [P] [US4] Write the turn-correlation test in `services/scheduler/tests/test_change_records.py`: every record carries the `turn_id` re-bound from the `x-turn-id` metadata, so a change joins to the conversation that caused it on one key (FR-039)
+- [X] T083 [P] [US4] Write the negative-record tests in `services/chat/tests/test_handle_booking_changes.py` and `services/scheduler/tests/test_change_records.py`: a declined confirmation, a refusal, and an unknown outcome each produce **no** `appointment.rescheduled` or `appointment.cancelled`; the refusal appears as `change.refused` with its single reason and the unknown as `change.outcome_unknown` (FR-040, SC-010)
+- [X] T084 [P] [US4] Write the over-counting test in `tests/integration/test_move_sequence.py`: the 09:00 → 10:00 → 09:00 → 10:00 sequence leaves **exactly three** `appointment.rescheduled` records, and a re-send of a move that already landed adds zero records and zero stale refusals — it appears as `appointment.unchanged` (SC-009, SC-017)
+- [X] T085 [P] [US4] Write the privacy assertion in `services/scheduler/tests/test_change_records.py`: no new event carries a patient's or practitioner's name, a raw message, or a reply body — ids, times and reasons only
 
 ### Implementation for User Story 4
 
-- [ ] T086 [US4] Reconcile the event payloads against `contracts/log-events.md`'s field lists — every field present, no field beyond them, and `appointment.cancelled` carrying no new-start key — in `services/scheduler/src/scheduler/repositories/appointment_repository.py` and `services/chat/src/chat/agent/handle_booking.py`, and run T081–T085 to green
+- [X] T086 [US4] Reconcile the event payloads against `contracts/log-events.md`'s field lists — every field present, no field beyond them, and `appointment.cancelled` carrying no new-start key — in `services/scheduler/src/scheduler/repositories/appointment_repository.py` and `services/chat/src/chat/agent/handle_booking.py`, and run T081–T085 to green
 
 **Checkpoint**: every change is traceable, and nothing that did not happen is recorded as though it did.
 
@@ -263,12 +263,12 @@ contract as a whole and closes any gap that per-story testing left.
 
 **Purpose**: The documentation this change makes stale, and the full-suite verification.
 
-- [ ] T087 [P] Add README entries for the two choices a reader would otherwise reverse-engineer from a migration: that cancellation **retains** the record rather than deleting it, and that the consequences of retaining it are carried by **partial** constraints rather than application filters — plus the note that 005's FR-064 key lifetime is amended by FR-011 (plan.md "Documentation changes carried by this feature")
-- [ ] T088 [P] Split the Phase 1d bullet in `docs/ROADMAP.md` to record that rescheduling and cancellation ship here and escalation follows in part 2 (FR-042)
-- [ ] T089 [P] Update the scheduling section of `.claude/CLAUDE.md` only if the repository-layout or command notes there went stale; `docs/testing-strategy.md` needs no change — no tier is added and no harness convention changes
-- [ ] T090 Run the quickstart end to end: `specs/006-reschedule-and-cancel/quickstart.md` Scenarios 1–7, starting with the `\d appointments` check that both exclusion constraints print `WHERE (status::text = 'standing'::text)`
-- [ ] T091 Run `make lint && make typecheck && make test` and confirm the whole suite is green
-- [ ] T092 Confirm the CI `test` job passes on the branch (`.github/workflows/ci.yml`) with no new services or fixtures required
+- [X] T087 [P] Add README entries for the two choices a reader would otherwise reverse-engineer from a migration: that cancellation **retains** the record rather than deleting it, and that the consequences of retaining it are carried by **partial** constraints rather than application filters — plus the note that 005's FR-064 key lifetime is amended by FR-011 (plan.md "Documentation changes carried by this feature")
+- [X] T088 [P] Split the Phase 1d bullet in `docs/ROADMAP.md` to record that rescheduling and cancellation ship here and escalation follows in part 2 (FR-042)
+- [X] T089 [P] Update the scheduling section of `.claude/CLAUDE.md` only if the repository-layout or command notes there went stale; `docs/testing-strategy.md` needs no change — no tier is added and no harness convention changes
+- [X] T090 Run the quickstart end to end: `specs/006-reschedule-and-cancel/quickstart.md` Scenarios 1–7, starting with the `\d appointments` check that both exclusion constraints print `WHERE (status::text = 'standing'::text)`
+- [X] T091 Run `make lint && make typecheck && make test` and confirm the whole suite is green
+- [X] T092 Confirm the CI `test` job passes on the branch (`.github/workflows/ci.yml`) with no new services or fixtures required
 
 ---
 

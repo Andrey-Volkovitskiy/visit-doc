@@ -177,10 +177,14 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 - **Core backend** — FastAPI, hosting the agent, RAG, chat, and auth. Single deployable for
   everything except Scheduling.
 - **Scheduling service** — a separate FastAPI service with its own PostgreSQL, the one deliberate
-  service boundary in this phase. Owns doctor calendars, availability, and booking. Talks to the
-  core backend over gRPC (`CheckAvailability`, `BookAppointment`). Double-booking is prevented at
-  the database level via a PostgreSQL exclusion constraint on interval/range types, not application
-  code.
+  service boundary in this phase. Owns doctor calendars, availability, booking, and changes to a
+  booking. Talks to the core backend over gRPC (`CheckAvailability`, `BookAppointment`,
+  `RescheduleAppointment`, `CancelAppointment`, `ListAppointments`). Double-booking is prevented at
+  the database level via PostgreSQL exclusion constraints on interval/range types, not application
+  code — **partial** ones (`WHERE status = 'standing'`) since 006, so a cancelled appointment stops
+  occupying its slot at the datastore rather than by an application filter. A *change* is likewise
+  one conditional `UPDATE` whose `WHERE` clause carries the staleness guard, never a check
+  performed before the write.
 - **Vector store** — Qdrant, for RAG over clinic policy/FAQ documents.
 - **Agent framework** — LangGraph, with real branching (parallel specialist nodes + merge) for
   mixed-intent messages rather than a linear chain.
