@@ -381,7 +381,7 @@ async def test_the_read_only_questions_never_cross_a_patient_or_a_session(
         ),
     )
 
-    appointments = (await registry.dispatch("list_my_appointments", {}))["appointments"]
+    appointments = (await registry.dispatch("list_my_appointments", {}))["future"]
     practitioners = (await registry.dispatch("list_practitioners", {}))["practitioners"]
 
     # Only this patient's own booking, not their session sibling's and not the other
@@ -409,5 +409,7 @@ async def test_a_patient_with_nothing_booked_is_told_so_rather_than_erroring(
 
     result = await registry.dispatch("list_my_appointments", {})
 
-    assert result == {"appointments": []}
+    # Two empty legs, not an error and not one merged empty list: the patient exists
+    # and has nothing matching the corner that was asked for.
+    assert result == {"future": [], "past": [], "past_truncated": False}
     assert "status" not in result

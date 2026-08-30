@@ -286,3 +286,167 @@ async def test_no_result_ever_names_a_tool_or_an_internal_id_to_the_patient() ->
         assert _APPOINTMENT_ID not in explanation
         assert _PRACTITIONER_ID not in explanation
         assert "cancel_appointment" not in explanation
+
+
+# --- reschedule_appointment --------------------------------------------------
+
+_RESCHEDULE_ARGUMENTS = {
+    "appointment_id": _APPOINTMENT_ID,
+    "new_starts_at": "2026-08-18T10:00:00",
+    "expected_starts_at": "2026-08-18T09:00:00",
+    "expected_practitioner_id": _PRACTITIONER_ID,
+}
+_NEW_STARTS_AT = datetime(2026, 8, 18, 10, 0)
+
+
+async def _move(outcome: Any, **argument_overrides: str) -> dict[str, Any]:
+    arguments = dict(_RESCHEDULE_ARGUMENTS)
+    arguments.update(argument_overrides)
+    side: dict[str, Any] = (
+        {"side_effect": outcome}
+        if isinstance(outcome, BaseException)
+        else {"return_value": outcome}
+    )
+    with patch(_CLIENT + ".reschedule_appointment", new=AsyncMock(**side)):
+        return await _registry().dispatch("reschedule_appointment", arguments)
+
+
+async def test_a_completed_move_is_reported_as_changed_rescheduled() -> None:
+    result = await _move(
+        ChangeApplied(
+            appointment=_appointment(
+                status=AppointmentStatus.STANDING, starts_at=_NEW_STARTS_AT
+            ),
+            previous_starts_at=_STARTS_AT,
+            previous_practitioner_full_name="William Osler",
+        )
+    )
+
+    assert result["status"] == "changed"
+    assert result["change"] == "rescheduled"
+    assert result["appointment"]["starts_at"] == "2026-08-18T10:00:00"
+    assert result["previous_starts_at"] == "2026-08-18T09:00:00"
+
+
+async def test_a_move_that_transitioned_nothing_is_unchanged() -> None:
+    result = await _move(
+        ChangeNoOp(appointment=_appointment(status=AppointmentStatus.STANDING))
+    )
+
+    assert result["status"] == "unchanged"
+    assert "reason" not in result
+
+
+async def test_a_refused_move_carries_its_reason_and_explanation() -> None:
+    result = await _move(
+        ChangeRefusal(reason=ChangeFailureReason.OFF_GRID, detail="off_grid")
+    )
+
+    assert result["status"] == "refused"
+    assert result["reason"] == "off_grid"
+    assert result["explanation"]
+
+
+async def test_a_lost_move_is_reported_as_unknown() -> None:
+    result = await _move(
+        SchedulingUnavailableError("timed out", outcome_unknown=True)
+    )
+
+    assert result["status"] == "unknown"
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        ChangeFailureReason.PRACTITIONER_BUSY,
+        ChangeFailureReason.PATIENT_BUSY,
+        ChangeFailureReason.OUTSIDE_SCHEDULE,
+        ChangeFailureReason.OFF_GRID,
+        ChangeFailureReason.IN_PAST,
+        ChangeFailureReason.BEYOND_HORIZON,
+    ],
+)
+async def test_each_placement_reason_has_a_distinct_explanation(
+    reason: ChangeFailureReason,
+) -> None:
+    # The six a move can be refused by that a cancellation cannot: each has to be
+    # explainable on its own, because the model is required to offer alternatives for
+    # exactly these and for no others.
+    result = await _move(ChangeRefusal(reason=reason, detail=reason.value))
+
+    assert result["reason"] == reason.value
+    assert result["explanation"]
+
+
+def test_the_placement_reasons_have_six_different_explanations() -> None:
+    from chat.agent.tools.scheduling_tools import CHANGE_EXPLANATION_BY_REASON
+
+    placement = {
+        ChangeFailureReason.PRACTITIONER_BUSY,
+        ChangeFailureReason.PATIENT_BUSY,
+        ChangeFailureReason.OUTSIDE_SCHEDULE,
+        ChangeFailureReason.OFF_GRID,
+        ChangeFailureReason.IN_PAST,
+        ChangeFailureReason.BEYOND_HORIZON,
+    }
+    explanations = {CHANGE_EXPLANATION_BY_REASON[r] for r in placement}
+
+    assert len(explanations) == len(placement)
+
+
+async def test_the_move_guard_and_destination_are_passed_through() -> None:
+    with patch(
+        _CLIENT + ".reschedule_appointment",
+        new=AsyncMock(
+            return_value=ChangeNoOp(
+                appointment=_appointment(status=AppointmentStatus.STANDING)
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "reschedule_appointment", dict(_RESCHEDULE_ARGUMENTS)
+        )
+
+    kwargs = called.call_args.kwargs
+    assert kwargs["new_starts_at"] == _NEW_STARTS_AT
+    assert kwargs["expected_starts_at"] == _STARTS_AT
+    assert kwargs["expected_practitioner_id"] == _PRACTITIONER_ID
+    assert kwargs["session_id"] == _SESSION_ID
+    assert kwargs["local_now"] == _LOCAL_NOW
+
+
+def test_the_reschedule_schema_is_closed_and_names_only_its_own_arguments() -> None:
+    tool = next(t for t in SCHEDULING_TOOLS if t.name == "reschedule_appointment")
+
+    assert tool.input_schema["additionalProperties"] is False
+    assert set(tool.input_schema["properties"]) == {
+        "appointment_id",
+        "new_starts_at",
+        "new_practitioner_id",
+        "expected_starts_at",
+        "expected_practitioner_id",
+    }
+    # The practitioner is optional; everything else is required.
+    assert set(tool.input_schema["required"]) == {
+        "appointment_id",
+        "new_starts_at",
+        "expected_starts_at",
+        "expected_practitioner_id",
+    }
+    assert tool.writes is True
+    assert tool.requires_patient is True
+
+
+async def test_an_unparseable_new_start_is_rejected_before_anything_happens() -> None:
+    from chat.agent.tools.registry import ToolArgumentError
+
+    with (
+        patch(_CLIENT + ".reschedule_appointment", new=AsyncMock()) as called,
+        pytest.raises(ToolArgumentError),
+    ):
+        await _registry().dispatch(
+            "reschedule_appointment",
+            {**_RESCHEDULE_ARGUMENTS, "new_starts_at": "next Tuesday"},
+        )
+
+    called.assert_not_awaited()

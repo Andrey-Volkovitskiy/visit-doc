@@ -890,3 +890,177 @@ async def test_an_unresolvable_patient_raises_rather_than_returning_empty_legs()
     )
     with ctx, pytest.raises(scheduling.SchedulingNotFoundError):
         await scheduling.list_appointments(_CHANNEL, _settings(), **_list_kwargs())
+
+
+def _reschedule_kwargs(**overrides: Any) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "session_id": _SESSION_ID,
+        "patient_id": _PATIENT_ID,
+        "appointment_id": "01APPOINTMENT000000000000",
+        "new_starts_at": datetime(2026, 8, 18, 10, 0),
+        "new_practitioner_id": None,
+        "expected_starts_at": datetime(2026, 8, 18, 9, 0),
+        "expected_practitioner_id": _PRACTITIONER_ID,
+        "local_now": _LOCAL_NOW,
+    }
+    kwargs.update(overrides)
+    return kwargs
+
+
+async def test_a_completed_move_maps_onto_change_applied_with_its_previous_state() -> (
+    None
+):
+    response = pb.ChangeAppointmentResponse(
+        appointment=_wire_appointment(starts_at="2026-08-18T10:00:00"),
+        previous_starts_at="2026-08-18T09:00:00",
+        previous_practitioner_id=_PRACTITIONER_ID,
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+    with ctx:
+        result = await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeApplied)
+    assert result.appointment.starts_at == datetime(2026, 8, 18, 10, 0)
+    assert result.previous_starts_at == datetime(2026, 8, 18, 9, 0)
+
+
+async def test_a_move_that_transitioned_nothing_maps_onto_change_no_op() -> None:
+    response = pb.ChangeAppointmentResponse(
+        no_change=pb.NoChange(appointment=_wire_appointment())
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+    with ctx:
+        result = await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeNoOp)
+
+
+async def test_a_refused_move_maps_onto_change_refusal_with_its_reason() -> None:
+    from shared_models.scheduling import ChangeFailureReason
+
+    response = pb.ChangeAppointmentResponse(
+        failure=pb.ChangeFailure(
+            reason=pb.CHANGE_FAILURE_REASON_OFF_GRID, detail="off_grid"
+        )
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+    with ctx:
+        result = await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeRefusal)
+    assert result.reason is ChangeFailureReason.OFF_GRID
+
+
+async def test_the_reschedule_request_carries_the_guard_and_the_destination() -> None:
+    ctx, method = _patched(
+        "RescheduleAppointment",
+        [pb.ChangeAppointmentResponse(appointment=_wire_appointment())],
+    )
+    with ctx:
+        await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    request = method.calls[0]["request"]
+    assert request.new_starts_at == "2026-08-18T10:00:00"
+    assert request.expected_starts_at == "2026-08-18T09:00:00"
+    assert request.expected_practitioner_id == _PRACTITIONER_ID
+    assert request.local_now == format_local_datetime(_LOCAL_NOW)
+
+
+async def test_keeping_the_practitioner_sends_an_empty_new_practitioner_id() -> None:
+    # Empty is the contract's "keep the one it has" - not a missing required field.
+    ctx, method = _patched(
+        "RescheduleAppointment",
+        [pb.ChangeAppointmentResponse(appointment=_wire_appointment())],
+    )
+    with ctx:
+        await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs(new_practitioner_id=None)
+        )
+
+    assert method.calls[0]["request"].new_practitioner_id == ""
+
+
+async def test_a_move_follows_the_same_two_attempt_budget() -> None:
+    ctx, method = _patched(
+        "RescheduleAppointment",
+        [
+            _RpcError(grpc.StatusCode.UNAVAILABLE),
+            _RpcError(grpc.StatusCode.UNAVAILABLE),
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError):
+        await scheduling.reschedule_appointment(
+            _CHANNEL,
+            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
+            **_reschedule_kwargs(),
+        )
+
+    assert len(method.calls) == 2
+
+
+async def test_a_move_whose_deadline_expired_reports_an_unknown_outcome() -> None:
+    ctx, _ = _patched(
+        "RescheduleAppointment",
+        [
+            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
+            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
+        await scheduling.reschedule_appointment(
+            _CHANNEL,
+            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
+            **_reschedule_kwargs(),
+        )
+
+    assert caught.value.outcome_unknown is True
+
+
+async def test_check_availability_carries_the_excluded_appointment_id() -> None:
+    ctx, method = _patched(
+        "CheckAvailability", [pb.CheckAvailabilityResponse(available_starts=[])]
+    )
+    with ctx:
+        await scheduling.check_availability(
+            _CHANNEL,
+            _settings(),
+            session_id=_SESSION_ID,
+            practitioner_id=_PRACTITIONER_ID,
+            patient_id=_PATIENT_ID,
+            from_date=date(2026, 8, 18),
+            to_date=date(2026, 8, 18),
+            local_now=_LOCAL_NOW,
+            excluded_appointment_id="01APPOINTMENT000000000000",
+        )
+
+    assert (
+        method.calls[0]["request"].excluded_appointment_id
+        == "01APPOINTMENT000000000000"
+    )
+
+
+async def test_check_availability_omits_the_exclusion_when_none_is_given() -> None:
+    ctx, method = _patched(
+        "CheckAvailability", [pb.CheckAvailabilityResponse(available_starts=[])]
+    )
+    with ctx:
+        await scheduling.check_availability(
+            _CHANNEL,
+            _settings(),
+            session_id=_SESSION_ID,
+            practitioner_id=_PRACTITIONER_ID,
+            patient_id=_PATIENT_ID,
+            from_date=date(2026, 8, 18),
+            to_date=date(2026, 8, 18),
+            local_now=_LOCAL_NOW,
+        )
+
+    assert method.calls[0]["request"].excluded_appointment_id == ""

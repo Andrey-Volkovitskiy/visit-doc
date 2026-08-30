@@ -207,3 +207,126 @@ async def test_the_failure_detail_carries_the_reason_for_logs(
     )
 
     assert response.failure.detail == "appointment_not_found"
+
+
+# --- RescheduleAppointment ---------------------------------------------------
+
+_TUESDAY_10AM_WIRE = "2026-08-18T10:00:00"
+
+
+def _reschedule_request(
+    booked: _Booked, **overrides: str
+) -> pb.RescheduleAppointmentRequest:
+    fields: dict[str, str] = {
+        "session_id": booked.session_id,
+        "patient_id": booked.patient_id,
+        "appointment_id": booked.appointment_id,
+        "new_starts_at": _TUESDAY_10AM_WIRE,
+        "expected_starts_at": _TUESDAY_9AM_WIRE,
+        "expected_practitioner_id": booked.practitioner_id,
+        "local_now": _LOCAL_NOW,
+    }
+    fields.update(overrides)
+    return pb.RescheduleAppointmentRequest(**fields)
+
+
+async def test_a_move_answers_with_the_appointment_at_its_new_time(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert response.WhichOneof("result") == "appointment"
+    assert response.appointment.id == booked.appointment_id
+    assert response.appointment.starts_at == _TUESDAY_10AM_WIRE
+    assert response.appointment.status == pb.APPOINTMENT_STATUS_STANDING
+
+
+async def test_previous_starts_at_accompanies_a_real_move(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert response.previous_starts_at == _TUESDAY_9AM_WIRE
+    assert response.previous_practitioner_id == booked.practitioner_id
+
+
+async def test_a_move_that_transitioned_nothing_answers_no_change(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(
+        _reschedule_request(booked, new_starts_at=_TUESDAY_9AM_WIRE)
+    )
+
+    assert response.WhichOneof("result") == "no_change"
+    assert response.no_change.appointment.starts_at == _TUESDAY_9AM_WIRE
+    # No previous fields: nothing moved, so there is no state it came from.
+    assert response.previous_starts_at == ""
+
+
+async def test_a_re_sent_move_answers_no_change_not_a_stale_confirmation(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # SC-008: quoting the pre-move state on the second send is what a retry looks like,
+    # and it must not read as a conflict for a change that succeeded.
+    booked = await _seed(db_session)
+    first = await stub.RescheduleAppointment(_reschedule_request(booked))
+    assert first.WhichOneof("result") == "appointment"
+
+    second = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert second.WhichOneof("result") == "no_change"
+
+
+async def test_a_refused_move_is_a_typed_failure(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(
+        _reschedule_request(booked, new_starts_at="2026-08-18T09:20:00")
+    )
+
+    assert response.WhichOneof("result") == "failure"
+    assert response.failure.reason == pb.CHANGE_FAILURE_REASON_OFF_GRID
+
+
+async def test_a_move_of_a_cancelled_appointment_is_refused_not_a_no_change(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # The asymmetry: for a cancellation that state is the target, for a move it is an
+    # ineligibility - there is no un-cancelling by moving.
+    booked = await _seed(db_session, status=AppointmentStatus.CANCELLED)
+
+    response = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert response.WhichOneof("result") == "failure"
+    assert response.failure.reason == pb.CHANGE_FAILURE_REASON_ALREADY_CANCELLED
+
+
+async def test_an_empty_new_practitioner_means_keep_the_one_it_has(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert response.appointment.practitioner_id == booked.practitioner_id
+
+
+async def test_a_move_missing_a_required_field_is_an_invalid_argument(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    with pytest.raises(grpc.aio.AioRpcError) as caught:
+        await stub.RescheduleAppointment(
+            _reschedule_request(booked, new_starts_at="")
+        )
+
+    assert caught.value.code() is grpc.StatusCode.INVALID_ARGUMENT

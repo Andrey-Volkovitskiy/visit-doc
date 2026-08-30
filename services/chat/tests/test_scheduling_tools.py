@@ -644,3 +644,59 @@ async def test_an_unparsable_argument_is_rejected_before_the_scheduler_is_called
         await _registry().dispatch(tool_name, arguments)
 
     assert client.mock_calls == []
+
+
+async def test_check_availability_passes_an_excluded_appointment_through() -> None:
+    # The model must set it when offering times for a change, or the appointment's
+    # current slot is missing from its own options.
+    with patch(
+        _CLIENT + ".check_availability",
+        new=AsyncMock(
+            return_value=AvailabilityResult(
+                available_starts=(), appointment_duration_minutes=60, truncated=False
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "check_availability",
+            {
+                "practitioner_id": _PRACTITIONER_ID,
+                "from_date": "2026-08-18",
+                "to_date": "2026-08-18",
+                "excluded_appointment_id": "01APPOINTMENT000000000000",
+            },
+        )
+
+    assert called.call_args.kwargs["excluded_appointment_id"] == (
+        "01APPOINTMENT000000000000"
+    )
+
+
+async def test_check_availability_omits_the_exclusion_when_the_model_sends_none() -> (
+    None
+):
+    with patch(
+        _CLIENT + ".check_availability",
+        new=AsyncMock(
+            return_value=AvailabilityResult(
+                available_starts=(), appointment_duration_minutes=60, truncated=False
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "check_availability",
+            {
+                "practitioner_id": _PRACTITIONER_ID,
+                "from_date": "2026-08-18",
+                "to_date": "2026-08-18",
+            },
+        )
+
+    assert called.call_args.kwargs["excluded_appointment_id"] is None
+
+
+def test_check_availability_declares_the_exclusion_as_optional() -> None:
+    tool = next(t for t in SCHEDULING_TOOLS if t.name == "check_availability")
+
+    assert "excluded_appointment_id" in tool.input_schema["properties"]
+    assert "excluded_appointment_id" not in tool.input_schema["required"]

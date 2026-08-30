@@ -475,3 +475,86 @@ async def test_availability_beyond_the_horizon_offers_nothing(
     )
 
     assert list(response.available_starts) == []
+
+
+# --- excluded_appointment_id: the offer path ---------------------------------
+
+
+async def test_availability_offers_the_slot_the_excluded_appointment_holds(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    """An appointment must not block its own move.
+
+    Without the exclusion, 09:00 is missing from the options offered for the 09:00
+    appointment, and a patient could never move one onto a time overlapping the one it
+    currently occupies - including keeping the time and changing only the practitioner.
+    """
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    mine = make_appointment(
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 8, 18, 9, 0),
+        datetime(2026, 8, 18, 10, 0),
+    )
+    db_session.add(mine)
+    await db_session.commit()
+
+    def request(**extra: str) -> pb.CheckAvailabilityRequest:
+        return pb.CheckAvailabilityRequest(
+            session_id=session_id,
+            practitioner_id=practitioner.id,
+            patient_id=patient.id,
+            from_date=_TUESDAY,
+            to_date=_TUESDAY,
+            local_now=_LOCAL_NOW,
+            **extra,
+        )
+
+    without = await stub.CheckAvailability(request())
+    with_exclusion = await stub.CheckAvailability(
+        request(excluded_appointment_id=mine.id)
+    )
+
+    assert _TUESDAY_9AM not in list(without.available_starts)
+    assert _TUESDAY_9AM in list(with_exclusion.available_starts)
+
+
+async def test_an_excluded_id_from_another_session_frees_nothing(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # Scoped like every other id, so passing one from another session excludes nothing
+    # rather than revealing that it exists.
+    from .conftest import make_appointment
+
+    theirs_session = new_id()
+    theirs_practitioner = await seed_practitioner(db_session, theirs_session)
+    theirs_patient = await seed_patient(db_session, theirs_session)
+    theirs = make_appointment(
+        theirs_session,
+        theirs_patient.id,
+        theirs_practitioner.id,
+        datetime(2026, 8, 18, 9, 0),
+        datetime(2026, 8, 18, 10, 0),
+    )
+    db_session.add(theirs)
+    await db_session.commit()
+
+    response = await stub.CheckAvailability(
+        pb.CheckAvailabilityRequest(
+            session_id=theirs_session,
+            practitioner_id=theirs_practitioner.id,
+            patient_id=theirs_patient.id,
+            from_date=_TUESDAY,
+            to_date=_TUESDAY,
+            local_now=_LOCAL_NOW,
+            excluded_appointment_id=new_id(),
+        )
+    )
+
+    assert _TUESDAY_9AM not in list(response.available_starts)
+    assert theirs.id is not None

@@ -1,0 +1,530 @@
+"""Tests for `reschedule()`: one write, both sides returned, every placement rule kept.
+
+A move is the same conditional `UPDATE` a cancellation is, with a destination. So the
+same properties are asserted - the guard is a predicate, a refusal leaves the row
+byte-identical - plus the ones only a move has: `ends_at` recomputed from the
+practitioner who will hold it, and every rule that governs a booking's placement
+governing the move.
+"""
+
+from datetime import datetime, time, timedelta
+
+import pytest
+from scheduler.repositories import appointment_repository
+from scheduler.repositories.appointment_repository import (
+    ChangeApplied,
+    ChangeNoOp,
+    ChangeRefused,
+)
+from shared_models.scheduling import (
+    AppointmentStatus,
+    ChangeFailureReason,
+    Weekday,
+)
+from sqlalchemy.ext.asyncio import AsyncSession
+from structlog.testing import capture_logs
+
+from .conftest import (
+    make_appointment,
+    new_id,
+    seed_patient,
+    seed_practitioner,
+)
+
+_TUESDAY_9AM = datetime(2026, 8, 18, 9, 0)
+_TUESDAY_10AM = datetime(2026, 8, 18, 10, 0)
+_TUESDAY_11AM = datetime(2026, 8, 18, 11, 0)
+_LOCAL_NOW = datetime(2026, 8, 17, 8, 0)
+_HORIZON_DAYS = 90
+
+
+class _Booked:
+    def __init__(
+        self,
+        session_id: str,
+        patient_id: str,
+        practitioner_id: str,
+        appointment_id: str,
+    ) -> None:
+        self.session_id = session_id
+        self.patient_id = patient_id
+        self.practitioner_id = practitioner_id
+        self.appointment_id = appointment_id
+
+
+async def _seed(
+    session: AsyncSession,
+    *,
+    starts_at: datetime = _TUESDAY_9AM,
+    duration_minutes: int = 60,
+    status: AppointmentStatus = AppointmentStatus.STANDING,
+) -> _Booked:
+    session_id = new_id()
+    practitioner = await seed_practitioner(
+        session, session_id, duration_minutes=duration_minutes
+    )
+    patient = await seed_patient(session, session_id)
+    appointment = make_appointment(
+        session_id,
+        patient.id,
+        practitioner.id,
+        starts_at,
+        starts_at + timedelta(minutes=duration_minutes),
+        status=status,
+    )
+    session.add(appointment)
+    await session.commit()
+    return _Booked(session_id, patient.id, practitioner.id, appointment.id)
+
+
+async def _reschedule(
+    session: AsyncSession,
+    booked: _Booked,
+    *,
+    new_starts_at: datetime = _TUESDAY_10AM,
+    new_practitioner_id: str | None = None,
+    session_id: str | None = None,
+    expected_starts_at: datetime = _TUESDAY_9AM,
+    expected_practitioner_id: str | None = None,
+    local_now: datetime = _LOCAL_NOW,
+) -> ChangeApplied | ChangeNoOp | ChangeRefused:
+    return await appointment_repository.reschedule(
+        session,
+        session_id=session_id if session_id is not None else booked.session_id,
+        patient_id=booked.patient_id,
+        appointment_id=booked.appointment_id,
+        new_starts_at=new_starts_at,
+        new_practitioner_id=new_practitioner_id,
+        expected_starts_at=expected_starts_at,
+        expected_practitioner_id=(
+            expected_practitioner_id
+            if expected_practitioner_id is not None
+            else booked.practitioner_id
+        ),
+        local_now=local_now,
+        horizon_days=_HORIZON_DAYS,
+    )
+
+
+async def _row(session: AsyncSession, appointment_id: str) -> object:
+    from scheduler.domain.models import Appointment
+
+    session.expire_all()
+    return await session.get(Appointment, appointment_id)
+
+
+# --- the move itself ---------------------------------------------------------
+
+
+async def test_a_move_rewrites_both_bounds_and_returns_both_sides(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.starts_at == _TUESDAY_10AM
+    assert outcome.appointment.ends_at == _TUESDAY_11AM
+    # The pre-image comes from the same statement, so it describes the state the row
+    # actually left rather than one a concurrent change may have replaced.
+    assert outcome.previous_starts_at == _TUESDAY_9AM
+    assert outcome.previous_practitioner_id == booked.practitioner_id
+
+
+async def test_the_appointment_keeps_its_identifier_patient_and_practitioner(
+    db_session: AsyncSession,
+) -> None:
+    # It is the same appointment, not a cancellation plus a new booking.
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.id == booked.appointment_id
+    assert outcome.appointment.patient_id == booked.patient_id
+    assert outcome.appointment.practitioner_id == booked.practitioner_id
+    assert outcome.appointment.status == AppointmentStatus.STANDING
+
+
+async def test_the_patient_ends_up_holding_exactly_one_appointment(
+    db_session: AsyncSession,
+) -> None:
+    from scheduler.domain.models import Appointment
+    from sqlalchemy import func, select
+
+    booked = await _seed(db_session)
+
+    await _reschedule(db_session, booked)
+
+    result = await db_session.execute(select(func.count()).select_from(Appointment))
+    assert result.scalar_one() == 1
+
+
+async def test_ends_at_is_derived_from_the_practitioners_current_length(
+    db_session: AsyncSession,
+) -> None:
+    # Not carried over from the old row: the end is recomputed from the practitioner
+    # who will hold the appointment, read at the moment of the change.
+    booked = await _seed(db_session, duration_minutes=30)
+
+    outcome = await _reschedule(db_session, booked)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.ends_at == _TUESDAY_10AM + timedelta(minutes=30)
+
+
+async def test_a_move_to_the_time_it_already_holds_is_a_no_op(
+    db_session: AsyncSession,
+) -> None:
+    # The appointment does not block its own slot - an exclusion constraint compares
+    # distinct rows - so this succeeds, and transitions nothing.
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked, new_starts_at=_TUESDAY_9AM)
+
+    assert isinstance(outcome, ChangeNoOp)
+    assert outcome.appointment.starts_at == _TUESDAY_9AM
+
+
+async def test_a_re_sent_move_quoting_the_pre_move_state_is_a_no_op(
+    db_session: AsyncSession,
+) -> None:
+    # FR-021's second arm: the guard passes when the appointment matches EITHER the
+    # described state or the target state. Without it, a retry of a move that landed
+    # would be refused as stale - reporting a conflict for a change that succeeded.
+    booked = await _seed(db_session)
+    first = await _reschedule(db_session, booked)
+    assert isinstance(first, ChangeApplied)
+
+    second = await _reschedule(db_session, booked)
+
+    assert isinstance(second, ChangeNoOp)
+    assert second.appointment.starts_at == _TUESDAY_10AM
+
+
+async def test_a_move_can_overlap_the_slot_it_currently_occupies(
+    db_session: AsyncSession,
+) -> None:
+    # 09:00-10:00 moving to 09:30-10:30 overlaps itself, which the write path allows
+    # because an exclusion constraint never compares a row to its own previous value.
+    booked = await _seed(db_session, duration_minutes=30)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=_TUESDAY_9AM + timedelta(minutes=30)
+    )
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.starts_at == _TUESDAY_9AM + timedelta(minutes=30)
+
+
+# --- the guard ---------------------------------------------------------------
+
+
+async def test_a_guard_naming_a_start_the_row_no_longer_holds_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked, expected_starts_at=_TUESDAY_11AM)
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def test_a_guard_naming_a_practitioner_the_row_no_longer_holds_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+    elsewhere = await seed_practitioner(db_session, booked.session_id, full_name="Dr Z")
+
+    outcome = await _reschedule(
+        db_session, booked, expected_practitioner_id=elsewhere.id
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def test_a_cancelled_appointment_cannot_be_moved(
+    db_session: AsyncSession,
+) -> None:
+    # For a reschedule this is a refusal, not a no-op: cancelled is not a state a move
+    # may target, and there is no un-cancelling.
+    booked = await _seed(db_session, status=AppointmentStatus.CANCELLED)
+
+    outcome = await _reschedule(db_session, booked)
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.ALREADY_CANCELLED
+
+
+async def test_an_appointment_already_under_way_cannot_be_moved(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, local_now=_TUESDAY_9AM + timedelta(minutes=30)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.ALREADY_STARTED
+
+
+async def test_another_sessions_appointment_is_not_found(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked, session_id=new_id())
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.APPOINTMENT_NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"expected_starts_at": _TUESDAY_11AM},
+        {"local_now": _TUESDAY_9AM + timedelta(minutes=1)},
+        {"new_starts_at": datetime(2026, 8, 18, 9, 20)},
+        {"new_starts_at": datetime(2026, 8, 18, 23, 0)},
+    ],
+)
+async def test_every_refusal_leaves_the_row_exactly_as_it_was(
+    db_session: AsyncSession, kwargs: dict[str, object]
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked, **kwargs)  # type: ignore[arg-type]
+
+    assert isinstance(outcome, ChangeRefused)
+    row = await _row(db_session, booked.appointment_id)
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
+    assert row.ends_at == _TUESDAY_10AM  # type: ignore[attr-defined]
+    assert row.practitioner_id == booked.practitioner_id  # type: ignore[attr-defined]
+    assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]
+
+
+# --- placement: the same rules a booking obeys -------------------------------
+
+
+async def test_a_new_start_in_the_past_is_refused_as_in_past_not_already_started(
+    db_session: AsyncSession,
+) -> None:
+    # Two different situations, two different values: the appointment has not started,
+    # the time it is asked to move to has passed.
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=datetime(2026, 8, 10, 9, 0)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.IN_PAST
+
+
+async def test_a_new_start_beyond_the_horizon_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=_LOCAL_NOW + timedelta(days=_HORIZON_DAYS + 5)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.BEYOND_HORIZON
+
+
+async def test_a_new_start_outside_every_working_range_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=datetime(2026, 8, 18, 23, 0)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.OUTSIDE_SCHEDULE
+
+
+async def test_a_new_start_off_the_grid_inside_a_range_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=datetime(2026, 8, 18, 9, 20)
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.OFF_GRID
+
+
+async def test_a_move_onto_another_patients_slot_is_refused_practitioner_busy(
+    db_session: AsyncSession,
+) -> None:
+    # Decided by the exclusion constraint at the write, exactly as a booking's is.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    mine = await seed_patient(db_session, session_id, full_name="Ada")
+    theirs = await seed_patient(db_session, session_id, full_name="Bram")
+    ours = make_appointment(
+        session_id, mine.id, practitioner.id, _TUESDAY_9AM, _TUESDAY_10AM
+    )
+    db_session.add_all(
+        [
+            ours,
+            make_appointment(
+                session_id, theirs.id, practitioner.id, _TUESDAY_10AM, _TUESDAY_11AM
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    outcome = await appointment_repository.reschedule(
+        db_session,
+        session_id=session_id,
+        patient_id=mine.id,
+        appointment_id=ours.id,
+        new_starts_at=_TUESDAY_10AM,
+        new_practitioner_id=None,
+        expected_starts_at=_TUESDAY_9AM,
+        expected_practitioner_id=practitioner.id,
+        local_now=_LOCAL_NOW,
+        horizon_days=_HORIZON_DAYS,
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.PRACTITIONER_BUSY
+
+
+async def test_a_move_onto_the_patients_own_other_appointment_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    here = await seed_practitioner(db_session, session_id, full_name="Dr A")
+    there = await seed_practitioner(db_session, session_id, full_name="Dr B")
+    patient = await seed_patient(db_session, session_id)
+    ours = make_appointment(
+        session_id, patient.id, here.id, _TUESDAY_9AM, _TUESDAY_10AM
+    )
+    db_session.add_all(
+        [
+            ours,
+            make_appointment(
+                session_id, patient.id, there.id, _TUESDAY_10AM, _TUESDAY_11AM
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    outcome = await appointment_repository.reschedule(
+        db_session,
+        session_id=session_id,
+        patient_id=patient.id,
+        appointment_id=ours.id,
+        new_starts_at=_TUESDAY_10AM,
+        new_practitioner_id=None,
+        expected_starts_at=_TUESDAY_9AM,
+        expected_practitioner_id=here.id,
+        local_now=_LOCAL_NOW,
+        horizon_days=_HORIZON_DAYS,
+    )
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.PATIENT_BUSY
+
+
+async def test_placement_is_validated_by_the_same_implementation_booking_uses(
+    db_session: AsyncSession,
+) -> None:
+    """Every placement refusal a move produces is one `validate_start` produces.
+
+    The rule is true by construction rather than by two implementations agreeing, so
+    this walks the reasons and checks each maps across with its value intact.
+    """
+    from scheduler.domain.availability import DailyRange, validate_start
+
+    schedule = [DailyRange(Weekday.TUESDAY, time(9, 0), time(17, 0))]
+    for start, expected in (
+        (datetime(2026, 8, 10, 9, 0), ChangeFailureReason.IN_PAST),
+        (datetime(2026, 8, 18, 23, 0), ChangeFailureReason.OUTSIDE_SCHEDULE),
+        (datetime(2026, 8, 18, 9, 20), ChangeFailureReason.OFF_GRID),
+    ):
+        booking_reason = validate_start(
+            start,
+            schedule=schedule,
+            duration_minutes=60,
+            local_now=_LOCAL_NOW,
+            horizon_days=_HORIZON_DAYS,
+        )
+        assert booking_reason is not None
+        assert ChangeFailureReason(booking_reason.value) is expected
+
+
+# --- the change record -------------------------------------------------------
+
+
+async def test_the_rescheduled_event_carries_both_starts_and_both_practitioners(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(db_session, booked)
+
+    event = next(log for log in logs if log["event"] == "appointment.rescheduled")
+    assert event["appointment_id"] == booked.appointment_id
+    assert event["old_starts_at"] == _TUESDAY_9AM.isoformat()
+    assert event["new_starts_at"] == _TUESDAY_10AM.isoformat()
+    assert event["old_practitioner_id"] == booked.practitioner_id
+    assert event["new_practitioner_id"] == booked.practitioner_id
+
+
+async def test_a_move_that_transitioned_nothing_emits_unchanged_instead(
+    db_session: AsyncSession,
+) -> None:
+    # FR-040: mutually exclusive, and that is the point of having both - a re-sent move
+    # must not make the log show two moves where one happened.
+    booked = await _seed(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(db_session, booked, new_starts_at=_TUESDAY_9AM)
+
+    events = [log["event"] for log in logs]
+    assert "appointment.unchanged" in events
+    assert "appointment.rescheduled" not in events
+    unchanged = next(log for log in logs if log["event"] == "appointment.unchanged")
+    assert unchanged["operation"] == "reschedule"
+
+
+async def test_a_refused_move_emits_change_refused_and_no_completed_change(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(db_session, booked, expected_starts_at=_TUESDAY_11AM)
+
+    events = [log["event"] for log in logs]
+    assert "change.refused" in events
+    assert "appointment.rescheduled" not in events
+    assert "appointment.unchanged" not in events
+    refused = next(log for log in logs if log["event"] == "change.refused")
+    assert refused["operation"] == "reschedule"
+    assert refused["reason"] == ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def test_a_move_never_emits_the_cancelled_event(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(db_session, booked)
+
+    assert "appointment.cancelled" not in [log["event"] for log in logs]

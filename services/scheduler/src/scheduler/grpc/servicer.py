@@ -337,6 +337,10 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
                 patient_id=patient.id,
                 from_date=from_date,
                 to_date=to_date,
+                # Optional, and empty means no exclusion. Set when offering times for a
+                # change, so the appointment being moved does not block its own new
+                # time - including a move to the time it already holds.
+                excluded_appointment_id=request.excluded_appointment_id or None,
             )
 
         settings = get_settings()
@@ -409,6 +413,52 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
                 ),
                 idempotent_replay=outcome.idempotent_replay,
             )
+
+    async def RescheduleAppointment(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.RescheduleAppointmentRequest,
+        context: Any,
+    ) -> pb.ChangeAppointmentResponse:
+        """Move one appointment, or explain in a typed failure why it was not.
+
+        `new_practitioner_id` left empty means "keep the practitioner it has". When set,
+        practitioner, start and end change together in one write - never a cancellation
+        plus a new booking.
+
+        `previous_starts_at` and `previous_practitioner_id` accompany a completed move
+        and nothing else: a request that transitioned nothing has no state it came from.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        appointment_id = converters.read_required_id(
+            request.appointment_id, "appointment_id"
+        )
+        new_starts_at = converters.read_local_datetime(
+            request.new_starts_at, "new_starts_at"
+        )
+        expected_starts_at = converters.read_local_datetime(
+            request.expected_starts_at, "expected_starts_at"
+        )
+        expected_practitioner_id = converters.read_required_id(
+            request.expected_practitioner_id, "expected_practitioner_id"
+        )
+        local_now = converters.read_local_datetime(request.local_now, "local_now")
+
+        async with session_factory() as session:
+            outcome = await appointment_repository.reschedule(
+                session,
+                session_id=session_id,
+                patient_id=patient_id,
+                appointment_id=appointment_id,
+                new_starts_at=new_starts_at,
+                # Empty is the contract's "keep the one it has", not a missing field.
+                new_practitioner_id=request.new_practitioner_id or None,
+                expected_starts_at=expected_starts_at,
+                expected_practitioner_id=expected_practitioner_id,
+                local_now=local_now,
+                horizon_days=get_settings().BOOKING_HORIZON_DAYS,
+            )
+            return _change_response(outcome, carries_previous=True)
 
     async def CancelAppointment(  # noqa: N802 - name fixed by the gRPC contract
         self,

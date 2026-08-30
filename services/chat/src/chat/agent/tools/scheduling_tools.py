@@ -312,6 +312,9 @@ async def check_availability(
 ) -> ToolResult:
     """Return the start times this patient can book with one practitioner.
 
+    `excluded_appointment_id` is optional and omits one appointment from both parties'
+    commitments, so an appointment being moved does not block its own new time.
+
     The registry guarantees a patient record before this runs, so `patient_id` is never
     None here.
     """
@@ -330,6 +333,7 @@ async def check_availability(
             from_date=from_date,
             to_date=to_date,
             local_now=context.local_now,
+            excluded_appointment_id=arguments.get("excluded_appointment_id"),
         )
     except SchedulingNotFoundError as exc:
         # Distinct from an empty result, which means this practitioner exists and has
@@ -528,6 +532,58 @@ def _change_result(
     return result
 
 
+async def reschedule_appointment(
+    context: ToolContext, arguments: dict[str, Any]
+) -> ToolResult:
+    """Move one real appointment, or explain why it was not moved.
+
+    The appointment keeps its identity - this is one write, not a cancellation plus a
+    new booking. `ends_at` is recomputed from whichever practitioner will hold it, so a
+    swap can return an appointment longer or shorter than it went in.
+
+    The guard arguments are the model's own: only it knows what it stated to the
+    patient. Re-reading the appointment here would return its current state, which
+    matches itself by definition and disables the guard completely.
+
+    The registry guarantees a patient record before this runs, so `patient_id` is never
+    None here.
+    """
+    assert context.patient_id is not None
+
+    appointment_id = required_argument(arguments, "appointment_id")
+    new_starts_at = _required_datetime(arguments, "new_starts_at")
+    expected_starts_at = _required_datetime(arguments, "expected_starts_at")
+    expected_practitioner_id = required_argument(
+        arguments, "expected_practitioner_id"
+    )
+    try:
+        outcome = await scheduling.reschedule_appointment(
+            context.channel,
+            context.settings,
+            session_id=context.session_id,
+            patient_id=context.patient_id,
+            appointment_id=appointment_id,
+            new_starts_at=new_starts_at,
+            # Absent means "keep the practitioner it has", which is the common case.
+            new_practitioner_id=arguments.get("new_practitioner_id") or None,
+            expected_starts_at=expected_starts_at,
+            expected_practitioner_id=expected_practitioner_id,
+            local_now=context.local_now,
+        )
+    except SchedulingUnavailableError as exc:
+        return _write_failed("reschedule", appointment_id, exc)
+    except SchedulingRequestError as exc:
+        get_logger().error(
+            "change.response_unreadable",
+            operation="reschedule",
+            appointment_id=appointment_id,
+            error_detail=str(exc),
+        )
+        return _outcome_unknown()
+
+    return _change_result(outcome, change="rescheduled")
+
+
 async def cancel_appointment(
     context: ToolContext, arguments: dict[str, Any]
 ) -> ToolResult:
@@ -615,7 +671,9 @@ SCHEDULING_TOOLS = [
             "Returns bookable start times for one practitioner over a date range. Only "
             "these times can be booked. Never offer a time this tool did not return. "
             "If truncated is true, the list is not the practitioner's whole "
-            "availability - offer to look further ahead."
+            "availability - offer to look further ahead. When you are offering times "
+            "for a CHANGE, always pass excluded_appointment_id - without it the "
+            "appointment's own current slot is missing from its options."
         ),
         input_schema={
             "type": "object",
@@ -628,6 +686,13 @@ SCHEDULING_TOOLS = [
                 "to_date": {
                     "type": "string",
                     "description": "local date, YYYY-MM-DD, inclusive",
+                },
+                "excluded_appointment_id": {
+                    "type": "string",
+                    "description": (
+                        "the appointment being moved, so it does not block its own "
+                        "new time"
+                    ),
                 },
             },
             "required": ["practitioner_id", "from_date", "to_date"],
@@ -691,6 +756,53 @@ SCHEDULING_TOOLS = [
         },
         handler=_reports_unavailable(list_my_appointments),
         requires_patient=True,
+    ),
+    Tool(
+        name="reschedule_appointment",
+        description=(
+            "Moves a REAL appointment to a different time, and optionally to a "
+            "different practitioner. The appointment keeps its identity - this is not "
+            "a cancellation plus a new booking. Only call this after the patient has "
+            "explicitly confirmed, in this turn, the appointment being moved and the "
+            "exact new time. expected_starts_at and expected_practitioner_id must be "
+            "the values you stated to the patient when you asked them to confirm - not "
+            "values you have just re-read."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "appointment_id": {"type": "string"},
+                "new_starts_at": {
+                    "type": "string",
+                    "description": "local date-time, YYYY-MM-DDTHH:MM:SS",
+                },
+                "new_practitioner_id": {
+                    "type": "string",
+                    "description": "omit to keep the current practitioner",
+                },
+                "expected_starts_at": {
+                    "type": "string",
+                    "description": (
+                        "the start you read out to the patient, "
+                        "YYYY-MM-DDTHH:MM:SS"
+                    ),
+                },
+                "expected_practitioner_id": {
+                    "type": "string",
+                    "description": "the practitioner you read out",
+                },
+            },
+            "required": [
+                "appointment_id",
+                "new_starts_at",
+                "expected_starts_at",
+                "expected_practitioner_id",
+            ],
+            "additionalProperties": False,
+        },
+        handler=reschedule_appointment,
+        requires_patient=True,
+        writes=True,
     ),
     Tool(
         name="cancel_appointment",

@@ -580,3 +580,199 @@ async def test_a_failed_change_turn_still_leaves_the_faq_half_untouched() -> Non
 
     assert faq.grounded is True
     assert faq.citations[0].chunk_text == "Visiting hours are 8-5."
+
+
+# --- moving an appointment ---------------------------------------------------
+
+_NEW_STARTS_AT = "2026-08-18T10:00:00"
+
+_RESCHEDULE_ARGUMENTS = {
+    "appointment_id": _APPOINTMENT_ID,
+    "new_starts_at": _NEW_STARTS_AT,
+    "expected_starts_at": _STARTS_AT,
+    "expected_practitioner_id": _PRACTITIONER_ID,
+}
+
+
+def _moved_result() -> dict[str, Any]:
+    return {
+        "status": "changed",
+        "change": "rescheduled",
+        "appointment": _entry(starts_at=_NEW_STARTS_AT),
+        "previous_starts_at": _STARTS_AT,
+        "previous_practitioner_full_name": "William Osler",
+    }
+
+
+async def test_a_completed_move_makes_the_turn_rescheduled() -> None:
+    registry = _RecordingRegistry({"reschedule_appointment": _moved_result()})
+    client = _client(
+        [
+            _tool_use_response([("reschedule_appointment", _RESCHEDULE_ARGUMENTS)]),
+            _text_response("Moved."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("move it to 10", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.RESCHEDULED
+
+
+async def test_a_stale_refusal_never_re_issues_the_change() -> None:
+    """FR-022, SC-018: the earlier yes does not cover the new state.
+
+    The loop's guarantee is the observable one - a refused move followed by a reply is
+    exactly one dispatch, not a silent retry under a confirmation that has expired.
+    """
+    registry = _RecordingRegistry(
+        {
+            "reschedule_appointment": {
+                "status": "refused",
+                "reason": "stale_confirmation",
+                "explanation": (
+                    "That appointment has changed since it was read out. Describe it "
+                    "as it now stands and ask again - do not repeat the change."
+                ),
+            },
+            "list_my_appointments": _listing([_entry(starts_at="2026-08-18T14:00:00")]),
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response([("reschedule_appointment", _RESCHEDULE_ARGUMENTS)]),
+            _tool_use_response([("list_my_appointments", {})]),
+            _text_response("That has moved since I read it out - it is now at 2pm."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("move it", "sure?", "yes"))
+
+    moves = [
+        name for name, _ in registry.dispatched if name == "reschedule_appointment"
+    ]
+    assert len(moves) == 1
+    assert result.outcome is BookingOutcome.REFUSED
+
+
+async def test_the_prompt_requires_both_the_current_and_the_proposed_start() -> None:
+    prompt = await _captured_prompt()
+
+    assert re.search(
+        r"both the current and the proposed start", prompt, re.IGNORECASE
+    )
+
+
+async def test_the_prompt_says_what_to_do_per_refusal_group() -> None:
+    prompt = await _captured_prompt()
+
+    # The six placement reasons: offer alternatives.
+    assert re.search(r"check_availability", prompt)
+    for reason in ("practitioner_busy", "patient_busy", "off_grid"):
+        assert reason in prompt
+    # The three that admit none: no alternatives at all.
+    for reason in ("already_started", "already_cancelled", "appointment_not_found"):
+        assert reason in prompt
+    assert re.search(r"no alternative|invent no alternative", prompt, re.IGNORECASE)
+
+
+async def test_the_prompt_says_a_stale_confirmation_is_re_asked_never_re_issued() -> (
+    None
+):
+    prompt = await _captured_prompt()
+
+    assert "stale_confirmation" in prompt
+    assert re.search(r"never re-?issue|do not re-?issue", prompt, re.IGNORECASE)
+    assert re.search(r"ask again", prompt, re.IGNORECASE)
+
+
+async def test_the_prompt_requires_the_exclusion_when_offering_times_for_a_move() -> (
+    None
+):
+    # Without it the appointment's current slot is missing from its own options, and
+    # the patient cannot move it onto a time overlapping the one it holds.
+    prompt = await _captured_prompt()
+
+    assert "excluded_appointment_id" in prompt
+
+
+async def test_every_start_offered_in_a_move_turn_came_from_check_availability() -> (
+    None
+):
+    # FR-033: the loop cannot police the reply text, but it can pin that the only
+    # starts the model was ever shown are the ones the tool returned.
+    offered = ["2026-08-18T10:00:00", "2026-08-18T11:00:00"]
+    registry = _RecordingRegistry(
+        {
+            "check_availability": {
+                "available_starts": offered,
+                "appointment_duration_minutes": 60,
+                "truncated": False,
+            },
+            "reschedule_appointment": _moved_result(),
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "check_availability",
+                        {
+                            "practitioner_id": _PRACTITIONER_ID,
+                            "from_date": "2026-08-18",
+                            "to_date": "2026-08-18",
+                            "excluded_appointment_id": _APPOINTMENT_ID,
+                        },
+                    )
+                ]
+            ),
+            _tool_use_response([("reschedule_appointment", _RESCHEDULE_ARGUMENTS)]),
+            _text_response("Moved to 10am."),
+        ]
+    )
+
+    await _run(client, registry, _bursts("move it", "10am please", "yes"))
+
+    # The start the move actually used is one of the offered ones, not an invented,
+    # rounded or inferred time.
+    move = next(
+        arguments
+        for name, arguments in registry.dispatched
+        if name == "reschedule_appointment"
+    )
+    assert move["new_starts_at"] in offered
+
+
+async def test_a_move_turn_passes_the_exclusion_when_checking_availability() -> None:
+    registry = _RecordingRegistry(
+        {
+            "check_availability": {
+                "available_starts": [_NEW_STARTS_AT],
+                "appointment_duration_minutes": 60,
+                "truncated": False,
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "check_availability",
+                        {
+                            "practitioner_id": _PRACTITIONER_ID,
+                            "from_date": "2026-08-18",
+                            "to_date": "2026-08-18",
+                            "excluded_appointment_id": _APPOINTMENT_ID,
+                        },
+                    )
+                ]
+            ),
+            _text_response("You could move it to 10am."),
+        ]
+    )
+
+    await _run(client, registry, _bursts("when could I move it to?"))
+
+    _, arguments = registry.dispatched[-1]
+    assert arguments["excluded_appointment_id"] == _APPOINTMENT_ID

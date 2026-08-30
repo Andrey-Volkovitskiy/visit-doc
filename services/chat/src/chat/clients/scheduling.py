@@ -652,8 +652,14 @@ async def check_availability(
     from_date: date,
     to_date: date,
     local_now: datetime,
+    excluded_appointment_id: str | None = None,
 ) -> AvailabilityResult:
     """Return the start times this patient can book with this practitioner.
+
+    Args:
+        excluded_appointment_id: The appointment being moved, omitted from both parties'
+            commitments so it does not block its own new time. Without it, the slot an
+            appointment currently holds is missing from its own options.
 
     Raises:
         SchedulingUnavailableError: the scheduler could not answer.
@@ -677,6 +683,7 @@ async def check_availability(
             from_date=format_local_date(from_date),
             to_date=format_local_date(to_date),
             local_now=format_local_datetime(local_now),
+            excluded_appointment_id=excluded_appointment_id or "",
         ),
     )
     return AvailabilityResult(
@@ -804,6 +811,58 @@ def _to_change_outcome(
         previous_starts_at=previous_starts_at,
         previous_practitioner_full_name=appointment.practitioner_full_name,
     )
+
+
+async def reschedule_appointment(
+    channel: grpc.aio.Channel,
+    settings: Settings,
+    *,
+    session_id: str,
+    patient_id: str,
+    appointment_id: str,
+    new_starts_at: datetime,
+    new_practitioner_id: str | None,
+    expected_starts_at: datetime,
+    expected_practitioner_id: str,
+    local_now: datetime,
+) -> ChangeApplied | ChangeNoOp | ChangeRefusal:
+    """Move one appointment, or report the one reason it was not moved.
+
+    Args:
+        new_practitioner_id: The practitioner to move it to, or None to keep the one it
+            has. Practitioner, start and end change together in one write.
+        expected_starts_at: The start the assistant stated to the patient when it asked
+            them to confirm - not a value re-read just now, which would match the
+            appointment's current state by definition and disable the guard.
+        expected_practitioner_id: The practitioner it stated, for the same reason.
+
+    Returns: a `ChangeApplied` when the appointment moved, carrying the state it came
+        from, a `ChangeNoOp` when it was already there, or a `ChangeRefusal` naming why
+        not.
+
+    Raises:
+        SchedulingUnavailableError: the scheduler could not answer. Its
+            `outcome_unknown` says whether the move may nonetheless have landed; when it
+            is true the caller must not report that nothing happened.
+        SchedulingRequestError: the response carried a reason this build cannot name.
+    """
+    response = await _call(
+        settings,
+        "RescheduleAppointment",
+        _stub(channel).RescheduleAppointment,
+        pb.RescheduleAppointmentRequest(
+            session_id=session_id,
+            patient_id=patient_id,
+            appointment_id=appointment_id,
+            new_starts_at=format_local_datetime(new_starts_at),
+            # Empty is the contract's "keep the practitioner it has".
+            new_practitioner_id=new_practitioner_id or "",
+            expected_starts_at=format_local_datetime(expected_starts_at),
+            expected_practitioner_id=expected_practitioner_id,
+            local_now=format_local_datetime(local_now),
+        ),
+    )
+    return _to_change_outcome(response)
 
 
 async def cancel_appointment(
@@ -941,4 +1000,5 @@ __all__ = [
     "list_appointments",
     "list_practitioners",
     "rename_patient",
+    "reschedule_appointment",
 ]

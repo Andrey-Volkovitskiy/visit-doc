@@ -25,7 +25,7 @@ from shared_models.scheduling import (
     StatusFilter,
     TimeFilter,
 )
-from sqlalchemy import or_, select, update
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -70,6 +70,15 @@ class BookingRefused:
     """A booking the service evaluated and declined, with the one reason why."""
 
     reason: BookingFailureReason
+
+
+# The constraints a *change* can violate, and the refusal each stands for. Overlap is
+# still the datastore's decision, read back off the rejected write rather than predicted
+# by a read that could already be stale.
+_CHANGE_REFUSAL_BY_CONSTRAINT = {
+    "appointments_practitioner_no_overlap": ChangeFailureReason.PRACTITIONER_BUSY,
+    "appointments_patient_no_overlap": ChangeFailureReason.PATIENT_BUSY,
+}
 
 
 @dataclass(frozen=True)
@@ -166,8 +175,15 @@ async def busy_intervals(
     patient_id: str,
     from_date: date,
     to_date: date,
+    excluded_appointment_id: str | None = None,
 ) -> list[Interval]:
     """Return every interval already taken by this practitioner or this patient.
+
+    Args:
+        excluded_appointment_id: An appointment to omit from BOTH parties' commitments,
+            so an appointment never blocks its own change. Scoped to the session with
+            everything else, so an id from another session omits nothing rather than
+            revealing that it exists.
 
     Both sides matter: availability is patient-relative, so a slot colliding with the
     patient's own appointment with a *different* practitioner must not be offered, or
@@ -181,23 +197,28 @@ async def busy_intervals(
     is offered again immediately. The exclusion constraints carry the same predicate, so
     the offer path and the write path agree about what "taken" means.
 
+    Only the offer path needs an exclusion spelled out. On the write path an exclusion
+    constraint compares distinct rows, so an update is never checked against the row's
+    own previous interval.
+
     Widened by a day at each end so an appointment starting just outside the window but
     running into it is still seen.
     """
     window_start = datetime.combine(from_date, datetime.min.time()) - timedelta(days=1)
     window_end = datetime.combine(to_date, datetime.min.time()) + timedelta(days=2)
-    result = await session.execute(
-        select(Appointment).where(
-            Appointment.session_id == session_id,
-            Appointment.status == AppointmentStatus.STANDING,
-            or_(
-                Appointment.practitioner_id == practitioner_id,
-                Appointment.patient_id == patient_id,
-            ),
-            Appointment.starts_at < window_end,
-            Appointment.ends_at > window_start,
-        )
-    )
+    predicates = [
+        Appointment.session_id == session_id,
+        Appointment.status == AppointmentStatus.STANDING,
+        or_(
+            Appointment.practitioner_id == practitioner_id,
+            Appointment.patient_id == patient_id,
+        ),
+        Appointment.starts_at < window_end,
+        Appointment.ends_at > window_start,
+    ]
+    if excluded_appointment_id is not None:
+        predicates.append(Appointment.id != excluded_appointment_id)
+    result = await session.execute(select(Appointment).where(*predicates))
     return [Interval(a.starts_at, a.ends_at) for a in result.scalars().all()]
 
 
@@ -286,7 +307,7 @@ async def list_for_patient(
     )
 
 
-async def classify_change_failure(
+async def _first_ineligibility(
     session: AsyncSession,
     *,
     session_id: str,
@@ -294,21 +315,24 @@ async def classify_change_failure(
     appointment_id: str,
     expected_starts_at: datetime,
     expected_practitioner_id: str,
+    target_starts_at: datetime | None,
+    target_practitioner_id: str | None,
     local_now: datetime,
-) -> ChangeFailureReason:
-    """Name which eligibility rule a change that wrote nothing actually broke.
+) -> ChangeFailureReason | None:
+    """Return the first of the four eligibility rules this request breaks, if any.
 
-    Returns: the first reason that holds, in the fixed precedence - not found, then
-        already cancelled, then already started, then a stale confirmation.
+    Args:
+        target_starts_at: The state the request asks the appointment to end in, for the
+            guard's second arm. None for a cancellation, which has no destination - its
+            re-send is settled by `ALREADY_CANCELLED` instead.
+        target_practitioner_id: The same, for the practitioner.
 
-    Runs only after a conditional update matched no row, and decides nothing: its output
-    is a reason, never an outcome, so it cannot reintroduce the race it is reporting on.
-    Scoped to the session and the patient exactly as that update was, so an appointment
-    belonging to anyone else is reported as absent rather than described.
+    Returns: `APPOINTMENT_NOT_FOUND`, `ALREADY_CANCELLED`, `ALREADY_STARTED` or
+        `STALE_CONFIRMATION` in that precedence, or None when the appointment is
+        eligible and matches the guard.
 
-    A row that satisfies every rule still answers `STALE_CONFIRMATION`: the update
-    matched nothing, so something changed between it and this read, and that is the
-    honest name for it.
+    Decides nothing: its output is a reason, never an outcome. It is what lets the four
+    outrank a placement reason without a write having to be attempted first.
     """
     result = await session.execute(
         select(Appointment).where(
@@ -324,7 +348,286 @@ async def classify_change_failure(
         return ChangeFailureReason.ALREADY_CANCELLED
     if appointment.starts_at <= local_now:
         return ChangeFailureReason.ALREADY_STARTED
+
+    matches_described = (
+        appointment.starts_at == expected_starts_at
+        and appointment.practitioner_id == expected_practitioner_id
+    )
+    matches_target = (
+        target_starts_at is not None
+        and appointment.starts_at == target_starts_at
+        and appointment.practitioner_id == target_practitioner_id
+    )
+    if matches_described or matches_target:
+        return None
     return ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def classify_change_failure(
+    session: AsyncSession,
+    *,
+    session_id: str,
+    patient_id: str,
+    appointment_id: str,
+    expected_starts_at: datetime,
+    expected_practitioner_id: str,
+    local_now: datetime,
+    target_starts_at: datetime | None = None,
+    target_practitioner_id: str | None = None,
+) -> ChangeFailureReason:
+    """Name which eligibility rule a change that wrote nothing actually broke.
+
+    Returns: the first reason that holds, in the fixed precedence - not found, then
+        already cancelled, then already started, then a stale confirmation.
+
+    Runs only after a conditional update matched no row. A row that satisfies every rule
+    still answers `STALE_CONFIRMATION`: the update matched nothing, so something changed
+    between it and this read, and that is the honest name for it.
+    """
+    reason = await _first_ineligibility(
+        session,
+        session_id=session_id,
+        patient_id=patient_id,
+        appointment_id=appointment_id,
+        expected_starts_at=expected_starts_at,
+        expected_practitioner_id=expected_practitioner_id,
+        target_starts_at=target_starts_at,
+        target_practitioner_id=target_practitioner_id,
+        local_now=local_now,
+    )
+    return reason if reason is not None else ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def reschedule(
+    session: AsyncSession,
+    *,
+    session_id: str,
+    patient_id: str,
+    appointment_id: str,
+    new_starts_at: datetime,
+    new_practitioner_id: str | None,
+    expected_starts_at: datetime,
+    expected_practitioner_id: str,
+    local_now: datetime,
+    horizon_days: int,
+) -> ChangeOutcome:
+    """Move one appointment, or report the single reason it was refused.
+
+    Args:
+        new_practitioner_id: The practitioner to move it to, or None to keep the one it
+            has. When set, practitioner, start and end change together in one write.
+
+    Returns: a `ChangeApplied` when the row moved, a `ChangeNoOp` when it was already in
+        the state asked for, or a `ChangeRefused` naming the one rule the request broke.
+
+    Raises: AppointmentVanishedError if both parties were deleted between the write and
+        the read that describes it.
+
+    The appointment keeps its identifier and its patient - this is one write on one row,
+    never a cancellation plus a new booking. `ends_at` is recomputed from the
+    practitioner who will hold it, read at the moment of the change, so a swap can
+    return an appointment longer or shorter than it went in.
+
+    Every placement rule a booking obeys is applied by `domain.availability`'s own
+    validator, the same implementation the offer path uses, so the two cannot disagree.
+    Overlap alone is left to the exclusion constraints, as at insert.
+    """
+    # Whichever arm of the guard the row matches, this is the practitioner it will end
+    # up with: the target when one is named, and otherwise the one the assistant read
+    # out, which is the one it keeps.
+    target_practitioner_id = new_practitioner_id or expected_practitioner_id
+
+    placement = await _placement_refusal(
+        session,
+        session_id=session_id,
+        practitioner_id=target_practitioner_id,
+        new_starts_at=new_starts_at,
+        local_now=local_now,
+        horizon_days=horizon_days,
+    )
+    if placement is not None:
+        # The four settle whether the appointment can be changed at all, before any
+        # question of where it may go - so they outrank whatever is wrong with the
+        # destination.
+        ineligible = await _first_ineligibility(
+            session,
+            session_id=session_id,
+            patient_id=patient_id,
+            appointment_id=appointment_id,
+            expected_starts_at=expected_starts_at,
+            expected_practitioner_id=expected_practitioner_id,
+            target_starts_at=new_starts_at,
+            target_practitioner_id=target_practitioner_id,
+            local_now=local_now,
+        )
+        return _refused_change("reschedule", appointment_id, ineligible or placement)
+
+    practitioner = await practitioner_repository.get(
+        session, target_practitioner_id, session_id
+    )
+    # `_placement_refusal` already resolved it; this re-read is only to reach the
+    # duration, and cannot be None without the row having vanished in between.
+    assert practitioner is not None
+    ends_at = new_starts_at + timedelta(
+        minutes=practitioner.appointment_duration_minutes
+    )
+
+    old = aliased(Appointment, name="old")
+    statement = (
+        update(Appointment)
+        .where(
+            Appointment.id == old.id,
+            Appointment.id == appointment_id,
+            Appointment.session_id == session_id,
+            Appointment.patient_id == patient_id,
+            Appointment.status == AppointmentStatus.STANDING,
+            Appointment.starts_at > local_now,
+            or_(
+                # The state the patient was shown ...
+                and_(
+                    Appointment.starts_at == expected_starts_at,
+                    Appointment.practitioner_id == expected_practitioner_id,
+                ),
+                # ... or the state this request asks for. The second arm is what makes
+                # a re-sent change return its original outcome instead of a conflict.
+                and_(
+                    Appointment.starts_at == new_starts_at,
+                    Appointment.practitioner_id == target_practitioner_id,
+                ),
+            ),
+        )
+        .values(
+            starts_at=new_starts_at,
+            ends_at=ends_at,
+            practitioner_id=target_practitioner_id,
+        )
+        .returning(old.starts_at, old.practitioner_id)
+    )
+    try:
+        result = await session.execute(statement)
+        row = result.first()
+        if row is None:
+            await session.rollback()
+            return await _refuse_change(
+                session,
+                operation="reschedule",
+                session_id=session_id,
+                patient_id=patient_id,
+                appointment_id=appointment_id,
+                expected_starts_at=expected_starts_at,
+                expected_practitioner_id=expected_practitioner_id,
+                local_now=local_now,
+                target_starts_at=new_starts_at,
+                target_practitioner_id=target_practitioner_id,
+                no_op_reason=None,
+            )
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        return _resolve_change_conflict("reschedule", appointment_id, exc)
+
+    loaded = await _load_change_context(session, appointment_id)
+    if loaded is None:
+        raise AppointmentVanishedError(appointment_id)
+    appointment, patient, practitioner_row = loaded
+
+    if row.starts_at == new_starts_at and row.practitioner_id == target_practitioner_id:
+        # The write matched on its target arm and rewrote the values it already held,
+        # so nothing transitioned. Its own record kind, so one `appointment.rescheduled`
+        # still means one move.
+        get_logger().info(
+            "appointment.unchanged",
+            appointment_id=appointment_id,
+            operation="reschedule",
+            starts_at=appointment.starts_at.isoformat(),
+        )
+        return ChangeNoOp(
+            appointment=appointment, patient=patient, practitioner=practitioner_row
+        )
+
+    get_logger().info(
+        "appointment.rescheduled",
+        appointment_id=appointment_id,
+        old_starts_at=row.starts_at.isoformat(),
+        new_starts_at=appointment.starts_at.isoformat(),
+        old_practitioner_id=row.practitioner_id,
+        new_practitioner_id=appointment.practitioner_id,
+    )
+    return ChangeApplied(
+        appointment=appointment,
+        patient=patient,
+        practitioner=practitioner_row,
+        previous_starts_at=row.starts_at,
+        previous_practitioner_id=row.practitioner_id,
+    )
+
+
+async def _placement_refusal(
+    session: AsyncSession,
+    *,
+    session_id: str,
+    practitioner_id: str,
+    new_starts_at: datetime,
+    local_now: datetime,
+    horizon_days: int,
+) -> ChangeFailureReason | None:
+    """Return the first placement rule the new start breaks, or None if it breaks none.
+
+    Overlap is deliberately absent: that is the datastore's to decide, at the write, and
+    it comes last in the same precedence.
+    """
+    practitioner = await practitioner_repository.get(
+        session, practitioner_id, session_id
+    )
+    if practitioner is None:
+        return ChangeFailureReason.PRACTITIONER_NOT_FOUND
+
+    schedule = practitioner_repository.to_daily_ranges(
+        await practitioner_repository.get_schedule(session, practitioner.id)
+    )
+    reason = validate_start(
+        new_starts_at,
+        schedule=schedule,
+        duration_minutes=practitioner.appointment_duration_minutes,
+        local_now=local_now,
+        horizon_days=horizon_days,
+    )
+    if reason is None:
+        return None
+    # The two vocabularies share their string values by construction, and a unit test
+    # pins that member by member - so a booking reason names a change reason directly.
+    return ChangeFailureReason(reason.value)
+
+
+def _resolve_change_conflict(
+    operation: str, appointment_id: str, exc: IntegrityError
+) -> ChangeRefused:
+    """Turn a write rejected by a constraint into the refusal it stands for.
+
+    Raises: IntegrityError re-raised when the violated constraint is none this operation
+        can produce, since guessing would hide a real schema problem.
+    """
+    detail = str(exc.orig)
+    for constraint, reason in _CHANGE_REFUSAL_BY_CONSTRAINT.items():
+        if constraint in detail:
+            get_logger().warning(
+                "change.race_lost", operation=operation, reason=reason
+            )
+            return _refused_change(operation, appointment_id, reason)
+    raise exc
+
+
+def _refused_change(
+    operation: str, appointment_id: str, reason: ChangeFailureReason
+) -> ChangeRefused:
+    """Log and return one evaluated change refusal."""
+    get_logger().info(
+        "change.refused",
+        appointment_id=appointment_id,
+        operation=operation,
+        reason=reason,
+    )
+    return ChangeRefused(reason=reason)
 
 
 async def cancel(
@@ -447,6 +750,8 @@ async def _refuse_change(
     expected_practitioner_id: str,
     local_now: datetime,
     no_op_reason: ChangeFailureReason | None,
+    target_starts_at: datetime | None = None,
+    target_practitioner_id: str | None = None,
 ) -> ChangeNoOp | ChangeRefused:
     """Turn a change that wrote nothing into the refusal - or no-op - it actually means.
 
@@ -467,6 +772,8 @@ async def _refuse_change(
         expected_starts_at=expected_starts_at,
         expected_practitioner_id=expected_practitioner_id,
         local_now=local_now,
+        target_starts_at=target_starts_at,
+        target_practitioner_id=target_practitioner_id,
     )
     logger = get_logger()
     if reason is no_op_reason:
@@ -484,13 +791,7 @@ async def _refuse_change(
             )
         reason = ChangeFailureReason.APPOINTMENT_NOT_FOUND
 
-    logger.info(
-        "change.refused",
-        appointment_id=appointment_id,
-        operation=operation,
-        reason=reason,
-    )
-    return ChangeRefused(reason=reason)
+    return _refused_change(operation, appointment_id, reason)
 
 
 async def _load_change_context(

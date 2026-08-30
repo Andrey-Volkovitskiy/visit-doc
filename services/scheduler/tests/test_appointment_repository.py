@@ -498,3 +498,138 @@ async def test_busy_intervals_still_reports_a_standing_appointment(
     assert [(i.start, i.end) for i in busy] == [
         (_TUESDAY_9AM, _TUESDAY_9AM + timedelta(hours=1))
     ]
+
+
+# --- excluded_appointment_id: an appointment never blocks its own change ------
+
+
+async def test_busy_intervals_omits_the_excluded_appointment_from_the_practitioner(
+    db_session: AsyncSession,
+) -> None:
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    other = await seed_patient(db_session, session_id, full_name="Bram")
+    theirs = make_appointment(
+        session_id,
+        other.id,
+        practitioner.id,
+        _TUESDAY_9AM,
+        _TUESDAY_9AM + timedelta(hours=1),
+    )
+    db_session.add(theirs)
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+        excluded_appointment_id=theirs.id,
+    )
+
+    assert busy == []
+
+
+async def test_busy_intervals_omits_the_excluded_appointment_from_the_patient(
+    db_session: AsyncSession,
+) -> None:
+    # Both sides: the appointment being moved must not block its own new time through
+    # the patient's own commitments either.
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id, full_name="Dr A")
+    elsewhere = await seed_practitioner(db_session, session_id, full_name="Dr B")
+    patient = await seed_patient(db_session, session_id)
+    mine = make_appointment(
+        session_id,
+        patient.id,
+        elsewhere.id,
+        _TUESDAY_9AM,
+        _TUESDAY_9AM + timedelta(hours=1),
+    )
+    db_session.add(mine)
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+        excluded_appointment_id=mine.id,
+    )
+
+    assert busy == []
+
+
+async def test_an_excluded_id_from_another_session_excludes_nothing(
+    db_session: AsyncSession,
+) -> None:
+    # Scoped like every other id: passing another session's appointment id excludes
+    # nothing, rather than revealing that it exists.
+    from .conftest import make_appointment
+
+    theirs_session = new_id()
+    theirs_practitioner = await seed_practitioner(db_session, theirs_session)
+    theirs_patient = await seed_patient(db_session, theirs_session)
+    theirs = make_appointment(
+        theirs_session,
+        theirs_patient.id,
+        theirs_practitioner.id,
+        _TUESDAY_9AM,
+        _TUESDAY_9AM + timedelta(hours=1),
+    )
+    db_session.add(theirs)
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=theirs_session,
+        practitioner_id=theirs_practitioner.id,
+        patient_id=theirs_patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+        # A well-formed id that belongs to nothing in any session this call can see.
+        excluded_appointment_id=new_id(),
+    )
+
+    assert [(i.start, i.end) for i in busy] == [
+        (_TUESDAY_9AM, _TUESDAY_9AM + timedelta(hours=1))
+    ]
+
+
+async def test_omitting_the_exclusion_leaves_every_appointment_in_place(
+    db_session: AsyncSession,
+) -> None:
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    mine = make_appointment(
+        session_id,
+        patient.id,
+        practitioner.id,
+        _TUESDAY_9AM,
+        _TUESDAY_9AM + timedelta(hours=1),
+    )
+    db_session.add(mine)
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+    )
+
+    assert len(busy) == 1
