@@ -1064,3 +1064,57 @@ async def test_check_availability_omits_the_exclusion_when_none_is_given() -> No
         )
 
     assert method.calls[0]["request"].excluded_appointment_id == ""
+
+
+async def test_a_swap_carries_the_previous_practitioners_name() -> None:
+    # FR-027 needs both practitioners named, and the name travels beside its id so the
+    # caller never has to resolve one with a second call.
+    response = pb.ChangeAppointmentResponse(
+        appointment=_wire_appointment(starts_at="2026-08-18T10:00:00"),
+        previous_starts_at="2026-08-18T09:00:00",
+        previous_practitioner_id="01OTHERPRACTITIONER00000",
+        previous_practitioner_full_name="Elizabeth Blackwell",
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+    with ctx:
+        result = await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeApplied)
+    assert result.previous_practitioner_full_name == "Elizabeth Blackwell"
+    assert result.appointment.practitioner_full_name == "William Osler"
+
+
+async def test_a_move_that_kept_its_practitioner_reports_that_same_name() -> None:
+    response = pb.ChangeAppointmentResponse(
+        appointment=_wire_appointment(starts_at="2026-08-18T10:00:00"),
+        previous_starts_at="2026-08-18T09:00:00",
+        previous_practitioner_id=_PRACTITIONER_ID,
+        previous_practitioner_full_name="William Osler",
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+    with ctx:
+        result = await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeApplied)
+    assert result.previous_practitioner_full_name == "William Osler"
+
+
+async def test_the_reschedule_request_carries_a_new_practitioner_when_given() -> None:
+    ctx, method = _patched(
+        "RescheduleAppointment",
+        [pb.ChangeAppointmentResponse(appointment=_wire_appointment())],
+    )
+    with ctx:
+        await scheduling.reschedule_appointment(
+            _CHANNEL,
+            _settings(),
+            **_reschedule_kwargs(new_practitioner_id="01OTHERPRACTITIONER00000"),
+        )
+
+    assert method.calls[0]["request"].new_practitioner_id == (
+        "01OTHERPRACTITIONER00000"
+    )

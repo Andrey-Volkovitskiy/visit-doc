@@ -337,18 +337,20 @@ class CancelAppointmentRequest(_message.Message):
     def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., appointment_id: _Optional[str] = ..., expected_starts_at: _Optional[str] = ..., expected_practitioner_id: _Optional[str] = ..., local_now: _Optional[str] = ...) -> None: ...
 
 class ChangeAppointmentResponse(_message.Message):
-    __slots__ = ("appointment", "no_change", "failure", "previous_starts_at", "previous_practitioner_id")
+    __slots__ = ("appointment", "no_change", "failure", "previous_starts_at", "previous_practitioner_id", "previous_practitioner_full_name")
     APPOINTMENT_FIELD_NUMBER: _ClassVar[int]
     NO_CHANGE_FIELD_NUMBER: _ClassVar[int]
     FAILURE_FIELD_NUMBER: _ClassVar[int]
     PREVIOUS_STARTS_AT_FIELD_NUMBER: _ClassVar[int]
     PREVIOUS_PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
+    PREVIOUS_PRACTITIONER_FULL_NAME_FIELD_NUMBER: _ClassVar[int]
     appointment: Appointment
     no_change: NoChange
     failure: ChangeFailure
     previous_starts_at: str
     previous_practitioner_id: str
-    def __init__(self, appointment: _Optional[_Union[Appointment, _Mapping]] = ..., no_change: _Optional[_Union[NoChange, _Mapping]] = ..., failure: _Optional[_Union[ChangeFailure, _Mapping]] = ..., previous_starts_at: _Optional[str] = ..., previous_practitioner_id: _Optional[str] = ...) -> None: ...
+    previous_practitioner_full_name: str
+    def __init__(self, appointment: _Optional[_Union[Appointment, _Mapping]] = ..., no_change: _Optional[_Union[NoChange, _Mapping]] = ..., failure: _Optional[_Union[ChangeFailure, _Mapping]] = ..., previous_starts_at: _Optional[str] = ..., previous_practitioner_id: _Optional[str] = ..., previous_practitioner_full_name: _Optional[str] = ...) -> None: ...
 
 class ListAppointmentsRequest(_message.Message):
     __slots__ = ("session_id", "patient_id", "local_now", "time_filter", "status_filter")

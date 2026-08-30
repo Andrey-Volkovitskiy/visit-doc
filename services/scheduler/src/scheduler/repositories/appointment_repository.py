@@ -95,6 +95,10 @@ class ChangeApplied:
     practitioner: Practitioner
     previous_starts_at: datetime
     previous_practitioner_id: str
+    # Denormalized beside the id so the caller can name both practitioners without a
+    # second lookup. Equal to `practitioner.full_name` when the practitioner did not
+    # change, which is the common case.
+    previous_practitioner_full_name: str
 
 
 @dataclass(frozen=True)
@@ -559,7 +563,42 @@ async def reschedule(
         practitioner=practitioner_row,
         previous_starts_at=row.starts_at,
         previous_practitioner_id=row.practitioner_id,
+        previous_practitioner_full_name=await _previous_practitioner_name(
+            session,
+            session_id=session_id,
+            previous_practitioner_id=row.practitioner_id,
+            current=practitioner_row,
+        ),
     )
+
+
+async def _previous_practitioner_name(
+    session: AsyncSession,
+    *,
+    session_id: str,
+    previous_practitioner_id: str,
+    current: Practitioner,
+) -> str:
+    """Return the display name of the practitioner the appointment used to have.
+
+    Read only when the practitioner actually changed - a move that kept it already has
+    the name in hand. A practitioner deleted between the write and this read falls back
+    to the current one's name rather than failing: the change has already happened, and
+    naming the wrong practitioner in a confirmation is better than reporting a
+    completed change as an error.
+    """
+    if previous_practitioner_id == current.id:
+        return current.full_name
+    previous = await practitioner_repository.get(
+        session, previous_practitioner_id, session_id
+    )
+    if previous is None:
+        get_logger().warning(
+            "change.previous_practitioner_missing",
+            practitioner_id=previous_practitioner_id,
+        )
+        return current.full_name
+    return previous.full_name
 
 
 async def _placement_refusal(
@@ -723,6 +762,7 @@ async def cancel(
         practitioner=practitioner,
         previous_starts_at=row.starts_at,
         previous_practitioner_id=row.practitioner_id,
+        previous_practitioner_full_name=practitioner.full_name,
     )
 
 

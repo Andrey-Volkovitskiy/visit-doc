@@ -113,6 +113,7 @@ def _change_response(
         appointment=rendered,
         previous_starts_at=format_local_datetime(outcome.previous_starts_at),
         previous_practitioner_id=outcome.previous_practitioner_id,
+        previous_practitioner_full_name=outcome.previous_practitioner_full_name,
     )
 
 

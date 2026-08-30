@@ -786,8 +786,8 @@ def _to_change_outcome(
         reason this build cannot name.
 
     `previous_practitioner_full_name` falls back to the appointment's current
-    practitioner when the response names no previous one, which is the case for a move
-    that kept its practitioner - it is the same person either way.
+    practitioner when the response names none, which is what a cancellation sends: it
+    has no destination, so the practitioner it had is the one it still has.
     """
     result = response.WhichOneof("result")
     if result == "failure":
@@ -809,7 +809,10 @@ def _to_change_outcome(
     return ChangeApplied(
         appointment=appointment,
         previous_starts_at=previous_starts_at,
-        previous_practitioner_full_name=appointment.practitioner_full_name,
+        previous_practitioner_full_name=(
+            response.previous_practitioner_full_name
+            or appointment.practitioner_full_name
+        ),
     )
 
 

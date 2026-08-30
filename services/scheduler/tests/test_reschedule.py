@@ -528,3 +528,236 @@ async def test_a_move_never_emits_the_cancelled_event(
         await _reschedule(db_session, booked)
 
     assert "appointment.cancelled" not in [log["event"] for log in logs]
+
+
+# --- swapping the practitioner ----------------------------------------------
+
+
+async def _seed_two(session: AsyncSession) -> tuple[_Booked, str, int]:
+    """Seed one appointment with Dr A, plus a Dr B of a different length.
+
+    Returns: the booking, the second practitioner's id, and that practitioner's
+        appointment length in minutes.
+    """
+    session_id = new_id()
+    here = await seed_practitioner(
+        session, session_id, full_name="Dr A", duration_minutes=60
+    )
+    there = await seed_practitioner(
+        session, session_id, full_name="Dr B", duration_minutes=30
+    )
+    patient = await seed_patient(session, session_id)
+    appointment = make_appointment(
+        session_id, patient.id, here.id, _TUESDAY_9AM, _TUESDAY_10AM
+    )
+    session.add(appointment)
+    await session.commit()
+    return (
+        _Booked(session_id, patient.id, here.id, appointment.id),
+        there.id,
+        30,
+    )
+
+
+async def test_practitioner_start_and_end_change_together(
+    db_session: AsyncSession,
+) -> None:
+    # FR-003: one write on one row. Not a cancellation plus a new booking, which is
+    # what "the two halves come apart" would look like from the outside.
+    booked, other_id, _ = await _seed_two(db_session)
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=other_id)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.id == booked.appointment_id
+    assert outcome.appointment.practitioner_id == other_id
+    assert outcome.appointment.starts_at == _TUESDAY_10AM
+    assert outcome.previous_practitioner_id == booked.practitioner_id
+    assert outcome.previous_starts_at == _TUESDAY_9AM
+
+
+async def test_ends_at_comes_from_the_new_practitioners_length(
+    db_session: AsyncSession,
+) -> None:
+    # FR-004: an appointment can come out shorter than it went in. A patient must be
+    # told when that happens, which is only possible if it is true here first.
+    booked, other_id, other_minutes = await _seed_two(db_session)
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=other_id)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.ends_at == _TUESDAY_10AM + timedelta(
+        minutes=other_minutes
+    )
+
+
+async def test_a_swap_can_make_an_appointment_longer_than_it_went_in(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    here = await seed_practitioner(
+        db_session, session_id, full_name="Dr A", duration_minutes=30
+    )
+    there = await seed_practitioner(
+        db_session, session_id, full_name="Dr B", duration_minutes=60
+    )
+    patient = await seed_patient(db_session, session_id)
+    appointment = make_appointment(
+        session_id,
+        patient.id,
+        here.id,
+        _TUESDAY_9AM,
+        _TUESDAY_9AM + timedelta(minutes=30),
+    )
+    db_session.add(appointment)
+    await db_session.commit()
+    booked = _Booked(session_id, patient.id, here.id, appointment.id)
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=there.id)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.ends_at - outcome.appointment.starts_at == timedelta(
+        minutes=60
+    )
+
+
+async def test_a_swap_keeping_the_same_start_succeeds_when_the_new_one_is_free(
+    db_session: AsyncSession,
+) -> None:
+    # FR-007: the appointment does not block its own change, so keeping the time and
+    # changing only the practitioner is a legal move.
+    booked, other_id, other_minutes = await _seed_two(db_session)
+
+    outcome = await _reschedule(
+        db_session, booked, new_starts_at=_TUESDAY_9AM, new_practitioner_id=other_id
+    )
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.appointment.starts_at == _TUESDAY_9AM
+    assert outcome.appointment.practitioner_id == other_id
+    assert outcome.appointment.ends_at == _TUESDAY_9AM + timedelta(
+        minutes=other_minutes
+    )
+
+
+async def test_an_unknown_new_practitioner_is_refused_with_the_row_untouched(
+    db_session: AsyncSession,
+) -> None:
+    booked, _, _ = await _seed_two(db_session)
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=new_id())
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.PRACTITIONER_NOT_FOUND
+    row = await _row(db_session, booked.appointment_id)
+    assert row.practitioner_id == booked.practitioner_id  # type: ignore[attr-defined]
+    assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
+
+
+async def test_a_practitioner_from_another_session_is_reported_identically(
+    db_session: AsyncSession,
+) -> None:
+    booked, _, _ = await _seed_two(db_session)
+    stranger = await seed_practitioner(db_session, new_id(), full_name="Dr Elsewhere")
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=stranger.id)
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.PRACTITIONER_NOT_FOUND
+
+
+async def test_a_swap_onto_a_practitioner_who_is_busy_then_is_refused(
+    db_session: AsyncSession,
+) -> None:
+    booked, other_id, _ = await _seed_two(db_session)
+    theirs = await seed_patient(db_session, booked.session_id, full_name="Bram")
+    db_session.add(
+        make_appointment(
+            booked.session_id,
+            theirs.id,
+            other_id,
+            _TUESDAY_10AM,
+            _TUESDAY_10AM + timedelta(minutes=30),
+        )
+    )
+    await db_session.commit()
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=other_id)
+
+    assert isinstance(outcome, ChangeRefused)
+    assert outcome.reason is ChangeFailureReason.PRACTITIONER_BUSY
+
+
+async def test_the_swap_event_names_both_practitioners_and_they_differ(
+    db_session: AsyncSession,
+) -> None:
+    # FR-038: without both fields a same-time swap logs as a change from a time to the
+    # identical time, which reads as a change that did nothing.
+    booked, other_id, _ = await _seed_two(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(
+            db_session,
+            booked,
+            new_starts_at=_TUESDAY_9AM,
+            new_practitioner_id=other_id,
+        )
+
+    event = next(log for log in logs if log["event"] == "appointment.rescheduled")
+    assert event["old_practitioner_id"] == booked.practitioner_id
+    assert event["new_practitioner_id"] == other_id
+    assert event["old_practitioner_id"] != event["new_practitioner_id"]
+    # The times are identical, which is exactly why the practitioner fields carry it.
+    assert event["old_starts_at"] == event["new_starts_at"]
+
+
+async def test_both_practitioner_fields_are_present_even_when_unchanged(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    with capture_logs() as logs:
+        await _reschedule(db_session, booked)
+
+    event = next(log for log in logs if log["event"] == "appointment.rescheduled")
+    assert event["old_practitioner_id"] == booked.practitioner_id
+    assert event["new_practitioner_id"] == booked.practitioner_id
+
+
+async def test_a_same_time_same_practitioner_request_is_still_a_no_op(
+    db_session: AsyncSession,
+) -> None:
+    booked, other_id, _ = await _seed_two(db_session)
+    await _reschedule(
+        db_session, booked, new_starts_at=_TUESDAY_9AM, new_practitioner_id=other_id
+    )
+
+    # Re-sent, quoting the pre-swap state as a retry would.
+    second = await _reschedule(
+        db_session, booked, new_starts_at=_TUESDAY_9AM, new_practitioner_id=other_id
+    )
+
+    assert isinstance(second, ChangeNoOp)
+
+
+async def test_a_completed_swap_carries_the_previous_practitioners_name(
+    db_session: AsyncSession,
+) -> None:
+    booked, other_id, _ = await _seed_two(db_session)
+
+    outcome = await _reschedule(db_session, booked, new_practitioner_id=other_id)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.previous_practitioner_full_name == "Dr A"
+    assert outcome.practitioner.full_name == "Dr B"
+
+
+async def test_a_move_that_kept_its_practitioner_names_that_same_one(
+    db_session: AsyncSession,
+) -> None:
+    booked = await _seed(db_session)
+
+    outcome = await _reschedule(db_session, booked)
+
+    assert isinstance(outcome, ChangeApplied)
+    assert outcome.previous_practitioner_full_name == outcome.practitioner.full_name

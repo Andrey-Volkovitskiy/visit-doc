@@ -402,6 +402,12 @@ message ChangeAppointmentResponse {
   // describe a state a concurrent change may already have replaced.
   string previous_starts_at = 4;
   string previous_practitioner_id = 5;
+  // The practitioner's display name, denormalized alongside its id for the same reason
+  // `Appointment` carries one: the caller never joins to resolve a name, so it can
+  // build its confirmation from this response alone. Naming BOTH practitioners is
+  // required of a swap (006 FR-027), and resolving the old one with a second rpc would
+  // put a call that can fail *after* a completed change on the path that reports it.
+  string previous_practitioner_full_name = 6;
 }
 
 message ListAppointmentsRequest {

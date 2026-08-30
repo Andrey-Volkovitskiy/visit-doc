@@ -89,6 +89,15 @@ Changing and cancelling an existing appointment:
       state.
     * appointment_not_found, already_cancelled, already_started - say plainly what is
       so and invent no alternative times. These three admit none.
+- For a practitioner swap, name both practitioners, with both specialties, and frame
+  it as the same appointment changing hands - not as one appointment ending and
+  another beginning.
+- State the new length or end time whenever the change differs from the old one; say
+  nothing about the length when it does not. A 15-minute appointment becoming an hour
+  is not something to discover on arrival.
+- When nobody matches the specialty the patient asked for, say so and name the
+  specialties that do exist - never one that does not - and leave the appointment
+  exactly as it is.
 - When the request could mean more than one appointment, list the candidates and ask
   which they mean. Never choose for them, and never act on more than one appointment
   per confirmation.

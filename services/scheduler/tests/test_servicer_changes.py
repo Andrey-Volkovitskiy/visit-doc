@@ -330,3 +330,62 @@ async def test_a_move_missing_a_required_field_is_an_invalid_argument(
         )
 
     assert caught.value.code() is grpc.StatusCode.INVALID_ARGUMENT
+
+
+async def test_a_swap_carries_both_the_previous_id_and_the_previous_name(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+    other = await seed_practitioner(
+        db_session, booked.session_id, full_name="Dr B", duration_minutes=30
+    )
+
+    response = await stub.RescheduleAppointment(
+        _reschedule_request(booked, new_practitioner_id=other.id)
+    )
+
+    assert response.WhichOneof("result") == "appointment"
+    assert response.appointment.practitioner_id == other.id
+    assert response.appointment.practitioner_full_name == "Dr B"
+    assert response.previous_practitioner_id == booked.practitioner_id
+    assert response.previous_practitioner_full_name == "Dr A"
+
+
+async def test_a_swap_recomputes_the_end_from_the_new_practitioner(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+    other = await seed_practitioner(
+        db_session, booked.session_id, full_name="Dr B", duration_minutes=30
+    )
+
+    response = await stub.RescheduleAppointment(
+        _reschedule_request(booked, new_practitioner_id=other.id)
+    )
+
+    assert response.appointment.starts_at == _TUESDAY_10AM_WIRE
+    assert response.appointment.ends_at == "2026-08-18T10:30:00"
+
+
+async def test_an_unknown_new_practitioner_is_a_typed_failure(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(
+        _reschedule_request(booked, new_practitioner_id=new_id())
+    )
+
+    assert response.WhichOneof("result") == "failure"
+    assert response.failure.reason == pb.CHANGE_FAILURE_REASON_PRACTITIONER_NOT_FOUND
+
+
+async def test_a_move_that_kept_its_practitioner_names_that_same_one(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    booked = await _seed(db_session)
+
+    response = await stub.RescheduleAppointment(_reschedule_request(booked))
+
+    assert response.previous_practitioner_id == booked.practitioner_id
+    assert response.previous_practitioner_full_name == "Dr A"

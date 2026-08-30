@@ -62,6 +62,7 @@ def _registry() -> ToolRegistry:
 def _appointment(
     status: AppointmentStatus = AppointmentStatus.CANCELLED,
     starts_at: datetime = _STARTS_AT,
+    ends_at: datetime = datetime(2026, 8, 18, 10, 0),
 ) -> AppointmentInfo:
     return AppointmentInfo(
         id=_APPOINTMENT_ID,
@@ -71,7 +72,7 @@ def _appointment(
         practitioner_full_name="William Osler",
         practitioner_specialty="General Practice",
         starts_at=starts_at,
-        ends_at=datetime(2026, 8, 18, 10, 0),
+        ends_at=ends_at,
         status=status,
     )
 
@@ -450,3 +451,87 @@ async def test_an_unparseable_new_start_is_rejected_before_anything_happens() ->
         )
 
     called.assert_not_awaited()
+
+
+# --- the practitioner swap ---------------------------------------------------
+
+
+async def test_the_tool_accepts_a_new_practitioner_and_passes_it_through() -> None:
+    with patch(
+        _CLIENT + ".reschedule_appointment",
+        new=AsyncMock(
+            return_value=ChangeNoOp(
+                appointment=_appointment(status=AppointmentStatus.STANDING)
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "reschedule_appointment",
+            {**_RESCHEDULE_ARGUMENTS, "new_practitioner_id": "01OTHER"},
+        )
+
+    assert called.call_args.kwargs["new_practitioner_id"] == "01OTHER"
+
+
+async def test_omitting_the_new_practitioner_keeps_the_current_one() -> None:
+    with patch(
+        _CLIENT + ".reschedule_appointment",
+        new=AsyncMock(
+            return_value=ChangeNoOp(
+                appointment=_appointment(status=AppointmentStatus.STANDING)
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "reschedule_appointment", dict(_RESCHEDULE_ARGUMENTS)
+        )
+
+    assert called.call_args.kwargs["new_practitioner_id"] is None
+
+
+async def test_a_completed_swap_returns_the_previous_practitioners_name() -> None:
+    # FR-027: the model has to name both practitioners, so it must be handed both.
+    result = await _move(
+        ChangeApplied(
+            appointment=_appointment(
+                status=AppointmentStatus.STANDING, starts_at=_NEW_STARTS_AT
+            ),
+            previous_starts_at=_STARTS_AT,
+            previous_practitioner_full_name="Elizabeth Blackwell",
+        ),
+        new_practitioner_id="01OTHER",
+    )
+
+    assert result["status"] == "changed"
+    assert result["previous_practitioner_full_name"] == "Elizabeth Blackwell"
+    assert result["appointment"]["practitioner_full_name"] == "William Osler"
+
+
+async def test_a_completed_swap_returns_the_new_end_so_a_length_change_is_visible() -> (
+    None
+):
+    # FR-025: the model must say so when the change alters how long the patient is at
+    # the clinic, which it can only do if both ends of the NEW appointment are in the
+    # result. Here a 60-minute appointment came back as a 30-minute one.
+    result = await _move(
+        ChangeApplied(
+            appointment=_appointment(
+                status=AppointmentStatus.STANDING,
+                starts_at=_NEW_STARTS_AT,
+                ends_at=datetime(2026, 8, 18, 10, 30),
+            ),
+            previous_starts_at=_STARTS_AT,
+            previous_practitioner_full_name="Elizabeth Blackwell",
+        ),
+        new_practitioner_id="01OTHER",
+    )
+
+    assert result["appointment"]["starts_at"] == "2026-08-18T10:00:00"
+    assert result["appointment"]["ends_at"] == "2026-08-18T10:30:00"
+
+
+def test_the_new_practitioner_is_optional_in_the_schema() -> None:
+    tool = next(t for t in SCHEDULING_TOOLS if t.name == "reschedule_appointment")
+
+    assert "new_practitioner_id" in tool.input_schema["properties"]
+    assert "new_practitioner_id" not in tool.input_schema["required"]

@@ -309,11 +309,15 @@ async def test_an_unknown_outcome_is_logged_at_error_level_with_its_context() ->
 
 
 async def _captured_prompt() -> str:
-    """Run one trivial turn and return the system prompt it was given."""
+    """Run one trivial turn and return the system prompt it was given.
+
+    Whitespace-collapsed, because the prompt is wrapped prose: an assertion about what
+    a rule *says* must not depend on where its line happens to break.
+    """
     registry = _RecordingRegistry({"list_my_appointments": _listing([])})
     client = _client([_text_response("Nothing booked.")])
     await _run(client, registry, _bursts("what have I got?"))
-    return _system_prompt(client)
+    return re.sub(r"\s+", " ", _system_prompt(client))
 
 
 async def test_the_prompt_forbids_changing_without_a_confirmation_this_turn() -> None:
@@ -776,3 +780,72 @@ async def test_a_move_turn_passes_the_exclusion_when_checking_availability() -> 
 
     _, arguments = registry.dispatched[-1]
     assert arguments["excluded_appointment_id"] == _APPOINTMENT_ID
+
+
+# --- swapping the practitioner -----------------------------------------------
+
+
+async def test_the_prompt_requires_both_practitioners_with_both_specialties() -> None:
+    prompt = await _captured_prompt()
+
+    assert re.search(
+        r"both practitioners.*both specialties|both practitioners, with both",
+        prompt,
+        re.IGNORECASE,
+    )
+    assert re.search(r"same appointment", prompt, re.IGNORECASE)
+
+
+async def test_the_prompt_requires_stating_a_changed_length_and_only_then() -> None:
+    # FR-025: say it whenever the change alters it, and say nothing about length when
+    # it does not - an unchanged length mentioned every time is noise the patient
+    # learns to skip past.
+    prompt = await _captured_prompt()
+
+    assert re.search(r"length|how long", prompt, re.IGNORECASE)
+    assert re.search(r"differs|changes it", prompt, re.IGNORECASE)
+    assert re.search(r"say nothing about (the )?length", prompt, re.IGNORECASE)
+
+
+async def test_the_prompt_says_an_unmatched_specialty_leaves_it_alone() -> None:
+    prompt = await _captured_prompt()
+
+    assert re.search(r"name the specialties that (are|do) exist", prompt, re.IGNORECASE)
+    assert re.search(r"leave the appointment", prompt, re.IGNORECASE)
+
+
+async def test_a_swap_turn_reports_the_previous_practitioner_to_the_model() -> None:
+    # The observable guarantee: the model is handed both names, so naming both is
+    # something it can do from the tool result rather than from memory.
+    swapped = {
+        "status": "changed",
+        "change": "rescheduled",
+        "appointment": {
+            **_entry(starts_at=_NEW_STARTS_AT),
+            "practitioner_full_name": "Elizabeth Blackwell",
+            "specialty": "Dentistry",
+        },
+        "previous_starts_at": _STARTS_AT,
+        "previous_practitioner_full_name": "William Osler",
+    }
+    registry = _RecordingRegistry({"reschedule_appointment": swapped})
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "reschedule_appointment",
+                        {**_RESCHEDULE_ARGUMENTS, "new_practitioner_id": "01OTHER"},
+                    )
+                ]
+            ),
+            _text_response("Moved to Elizabeth Blackwell."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("see someone else", "ok?", "yes"))
+
+    assert result.outcome is BookingOutcome.RESCHEDULED
+    observed = registry._results["reschedule_appointment"]
+    assert observed["previous_practitioner_full_name"] == "William Osler"
+    assert observed["appointment"]["practitioner_full_name"] == "Elizabeth Blackwell"

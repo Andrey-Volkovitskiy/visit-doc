@@ -208,22 +208,22 @@ appointment with A entirely untouched.
 
 ### Tests for User Story 3 (write first, confirm failing) ⚠️
 
-- [ ] T068 [P] [US3] Extend `services/scheduler/tests/test_reschedule.py`: with `new_practitioner_id` set, practitioner, start and end change **together or not at all** (FR-003); `ends_at` is derived from the **new** practitioner's length, so an appointment can come out longer or shorter than it went in (FR-004); an unknown practitioner is refused `practitioner_not_found` with the row untouched; a swap keeping the same start succeeds when the new practitioner is free then (FR-007)
-- [ ] T069 [P] [US3] Extend `services/scheduler/tests/test_servicer_changes.py`: `new_practitioner_id` left empty means "keep the practitioner it has", and `previous_practitioner_id` comes back alongside a completed move
-- [ ] T070 [P] [US3] Extend the `appointment.rescheduled` assertions in `services/scheduler/tests/test_reschedule.py`: `old_practitioner_id` and `new_practitioner_id` are **always** present and differ on a swap, so a same-time swap cannot read as a change that did nothing (FR-038)
-- [ ] T071 [P] [US3] Extend `services/chat/tests/test_scheduling_client.py`: `ChangeApplied` carries `previous_practitioner_full_name`
-- [ ] T072 [P] [US3] Extend `services/chat/tests/test_change_tools.py`: the tool accepts `new_practitioner_id`, omits it to keep the current practitioner, and returns `previous_practitioner_full_name` on a completed swap
-- [ ] T073 [P] [US3] Extend `services/chat/tests/test_handle_booking_changes.py` with the swap confirmation rules (SC-003): both practitioners named with both specialties and framed as the same appointment changing (FR-027); the new length or end time stated **whenever it differs** and nothing said about length when it does not (FR-025); an unmatched specialty request names the specialties that do exist and leaves the appointment alone (FR-032)
+- [X] T068 [P] [US3] Extend `services/scheduler/tests/test_reschedule.py`: with `new_practitioner_id` set, practitioner, start and end change **together or not at all** (FR-003); `ends_at` is derived from the **new** practitioner's length, so an appointment can come out longer or shorter than it went in (FR-004); an unknown practitioner is refused `practitioner_not_found` with the row untouched; a swap keeping the same start succeeds when the new practitioner is free then (FR-007)
+- [X] T069 [P] [US3] Extend `services/scheduler/tests/test_servicer_changes.py`: `new_practitioner_id` left empty means "keep the practitioner it has", and `previous_practitioner_id` comes back alongside a completed move
+- [X] T070 [P] [US3] Extend the `appointment.rescheduled` assertions in `services/scheduler/tests/test_reschedule.py`: `old_practitioner_id` and `new_practitioner_id` are **always** present and differ on a swap, so a same-time swap cannot read as a change that did nothing (FR-038)
+- [X] T071 [P] [US3] Extend `services/chat/tests/test_scheduling_client.py`: `ChangeApplied` carries `previous_practitioner_full_name`
+- [X] T072 [P] [US3] Extend `services/chat/tests/test_change_tools.py`: the tool accepts `new_practitioner_id`, omits it to keep the current practitioner, and returns `previous_practitioner_full_name` on a completed swap
+- [X] T073 [P] [US3] Extend `services/chat/tests/test_handle_booking_changes.py` with the swap confirmation rules (SC-003): both practitioners named with both specialties and framed as the same appointment changing (FR-027); the new length or end time stated **whenever it differs** and nothing said about length when it does not (FR-025); an unmatched specialty request names the specialties that do exist and leaves the appointment alone (FR-032)
 
 ### Implementation for User Story 3
 
-- [ ] T074 [US3] Extend `reschedule()` in `services/scheduler/src/scheduler/repositories/appointment_repository.py` with the `new_practitioner_id` path: the new practitioner is resolved session-scoped, `ends_at` derived from **its** length, and all three columns written by the one statement; run T068 to green
-- [ ] T075 [US3] Thread `new_practitioner_id` and `previous_practitioner_id` through `services/scheduler/src/scheduler/grpc/servicer.py` and `converters.py`; run T069 to green
-- [ ] T076 [US3] Add `old_practitioner_id`/`new_practitioner_id` to the `appointment.rescheduled` event; run T070 to green
-- [ ] T077 [US3] Add `previous_practitioner_full_name` to `ChangeApplied` in `services/chat/src/chat/clients/scheduling.py`; run T071 to green
-- [ ] T078 [US3] Add `new_practitioner_id` to the `reschedule_appointment` tool schema and handler in `services/chat/src/chat/agent/tools/scheduling_tools.py`; run T072 to green
-- [ ] T079 [US3] Add the FR-025 length-disclosure and FR-027 two-practitioner rules to the system prompt in `services/chat/src/chat/agent/handle_booking.py`; run T073 to green
-- [ ] T080 [US3] Write `tests/integration/test_practitioner_swap_roundtrip.py`: one standing appointment with the original id and the new practitioner, `ends_at - starts_at` equal to the **new** practitioner's duration, and the old practitioner's slot offered again
+- [X] T074 [US3] Extend `reschedule()` in `services/scheduler/src/scheduler/repositories/appointment_repository.py` with the `new_practitioner_id` path: the new practitioner is resolved session-scoped, `ends_at` derived from **its** length, and all three columns written by the one statement; run T068 to green
+- [X] T075 [US3] Thread `new_practitioner_id` and `previous_practitioner_id` through `services/scheduler/src/scheduler/grpc/servicer.py` and `converters.py`; run T069 to green
+- [X] T076 [US3] Add `old_practitioner_id`/`new_practitioner_id` to the `appointment.rescheduled` event; run T070 to green
+- [X] T077 [US3] Add `previous_practitioner_full_name` to `ChangeApplied` in `services/chat/src/chat/clients/scheduling.py`; run T071 to green
+- [X] T078 [US3] Add `new_practitioner_id` to the `reschedule_appointment` tool schema and handler in `services/chat/src/chat/agent/tools/scheduling_tools.py`; run T072 to green
+- [X] T079 [US3] Add the FR-025 length-disclosure and FR-027 two-practitioner rules to the system prompt in `services/chat/src/chat/agent/handle_booking.py`; run T073 to green
+- [X] T080 [US3] Write `tests/integration/test_practitioner_swap_roundtrip.py`: one standing appointment with the original id and the new practitioner, `ends_at - starts_at` equal to the **new** practitioner's duration, and the old practitioner's slot offered again
 
 **Checkpoint**: all three change operations are independently functional.
 
