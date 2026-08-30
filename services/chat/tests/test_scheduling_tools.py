@@ -700,3 +700,36 @@ def test_check_availability_declares_the_exclusion_as_optional() -> None:
 
     assert "excluded_appointment_id" in tool.input_schema["properties"]
     assert "excluded_appointment_id" not in tool.input_schema["required"]
+
+
+async def test_a_cancelled_past_appointment_is_returned_with_its_label() -> None:
+    # FR-015 / SC-012: asking for cancelled ones must reach appointments whose start
+    # has already passed - which is most of them, by the time anyone asks.
+    past_cancelled = AppointmentInfo(
+        id="01PASTCANCELLED",
+        patient_id=_PATIENT_ID,
+        patient_full_name="Ada",
+        practitioner_id=_PRACTITIONER_ID,
+        practitioner_full_name="William Osler",
+        practitioner_specialty="General Practice",
+        starts_at=datetime(2026, 8, 1, 9, 0),
+        ends_at=datetime(2026, 8, 1, 10, 0),
+        status=AppointmentStatus.CANCELLED,
+    )
+    listing = AppointmentListing(
+        future=(), past=(past_cancelled,), past_truncated=False
+    )
+
+    with patch(
+        _CLIENT + ".list_appointments", new=AsyncMock(return_value=listing)
+    ) as called:
+        result = await _registry().dispatch(
+            "list_my_appointments",
+            {"time_filter": "both", "status_filter": "cancelled"},
+        )
+
+    assert called.call_args.kwargs["time_filter"] is TimeFilter.BOTH
+    assert called.call_args.kwargs["status_filter"] is StatusFilter.CANCELLED
+    assert [a["id"] for a in result["past"]] == ["01PASTCANCELLED"]
+    assert result["past"][0]["status"] == "cancelled"
+    assert result["future"] == []

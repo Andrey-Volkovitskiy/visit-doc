@@ -993,3 +993,99 @@ async def test_a_failing_read_never_produces_a_change_record() -> None:
         await _run(client, registry, _bursts("what have I got?"))
 
     assert "change.outcome_unknown" not in [log["event"] for log in logs]
+
+
+# --- asking about cancelled appointments -------------------------------------
+
+
+async def test_the_prompt_widens_the_time_axis_for_cancelled_appointments() -> None:
+    """FR-015: cancelled ones come from either side of now.
+
+    A cancellation is not something the patient is still waiting for, so "what have I
+    cancelled?" is not a question about the future. Both filters default to the
+    narrowest corner - which is right, since an unset filter must never widen - so the
+    assistant has to widen the time axis itself when the request is about cancellations.
+    """
+    prompt = await _captured_prompt()
+
+    assert re.search(
+        r"cancelled.*time_filter.*both|time_filter.*both.*cancelled",
+        prompt,
+        re.IGNORECASE,
+    )
+
+
+async def test_asking_what_was_cancelled_reaches_both_sides_of_now() -> None:
+    # The loop's own guarantee: the arguments the model produced reach the tool
+    # unchanged, so a turn that asks for cancellations across both directions really
+    # does request both legs.
+    registry = _RecordingRegistry(
+        {
+            "list_my_appointments": {
+                "future": [],
+                "past": [_entry(starts_at="2026-08-01T09:00:00", status="cancelled")],
+                "past_truncated": False,
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "list_my_appointments",
+                        {"time_filter": "both", "status_filter": "cancelled"},
+                    )
+                ]
+            ),
+            _text_response("You cancelled one appointment last month."),
+        ]
+    )
+
+    await _run(client, registry, _bursts("what have I cancelled?"))
+
+    _, arguments = registry.dispatched[-1]
+    assert arguments["status_filter"] == "cancelled"
+    assert arguments["time_filter"] == "both"
+
+
+async def test_a_past_cancelled_appointment_survives_to_the_model() -> None:
+    # SC-012: cancelled ones are returned when asked for, including those whose start
+    # time has already passed. Nothing in the loop may drop the past leg.
+    registry = _RecordingRegistry(
+        {
+            "list_my_appointments": {
+                "future": [],
+                "past": [_entry(starts_at="2026-08-01T09:00:00", status="cancelled")],
+                "past_truncated": False,
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [
+                    (
+                        "list_my_appointments",
+                        {"time_filter": "both", "status_filter": "cancelled"},
+                    )
+                ]
+            ),
+            _text_response("You cancelled the 1st of August."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("what have I cancelled?"))
+
+    observed = registry._results["list_my_appointments"]
+    assert [a["status"] for a in observed["past"]] == ["cancelled"]
+    assert result.outcome is BookingOutcome.INFORMATIONAL
+
+
+def test_the_listing_tool_tells_the_model_when_to_widen_the_time_axis() -> None:
+    from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
+
+    tool = next(t for t in SCHEDULING_TOOLS if t.name == "list_my_appointments")
+
+    assert re.search(r"cancelled", tool.description, re.IGNORECASE)
+    assert "both" in tool.description

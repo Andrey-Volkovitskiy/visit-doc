@@ -17,6 +17,7 @@ from chat.clients.scheduling import (
     ChangeApplied,
     ChangeNoOp,
     ChangeRefusal,
+    SchedulingRequestError,
     SchedulingUnavailableError,
 )
 from chat.core.config import Settings
@@ -535,3 +536,81 @@ def test_the_new_practitioner_is_optional_in_the_schema() -> None:
 
     assert "new_practitioner_id" in tool.input_schema["properties"]
     assert "new_practitioner_id" not in tool.input_schema["required"]
+
+
+# --- what a failed change is allowed to say ----------------------------------
+
+
+async def test_a_change_that_never_reached_the_scheduler_says_nothing_changed() -> (
+    None
+):
+    # The spec's wording, and the only accurate one: a cancellation that never left
+    # this service did not fail to *book* anything. Handing the model booking's
+    # sentence invites it to answer a cancellation request with "nothing was booked".
+    result = await _cancel(
+        SchedulingUnavailableError("refused", outcome_unknown=False)
+    )
+
+    assert result["status"] == "unavailable"
+    explanation = result["explanation"].lower()
+    assert "nothing was changed" in explanation
+    assert "booked" not in explanation
+
+
+async def test_a_failed_move_says_nothing_changed_too() -> None:
+    result = await _move(SchedulingUnavailableError("refused", outcome_unknown=False))
+
+    assert result["status"] == "unavailable"
+    assert "nothing was changed" in result["explanation"].lower()
+
+
+async def test_a_rejected_request_is_unavailable_not_unknown() -> None:
+    """The scheduler answered, and its answer was that it did nothing.
+
+    `SchedulingRequestError` means the request was rejected before the handler acted,
+    or the refusal named a reason this build cannot explain. Either way nothing
+    changed, and that is *known* - so reporting it as an unknown outcome would send the
+    patient to ring the clinic about something that provably did not happen.
+    """
+    result = await _cancel(SchedulingRequestError("invalid argument"))
+
+    assert result["status"] == "unavailable"
+    assert "nothing was changed" in result["explanation"].lower()
+
+
+async def test_a_rejected_move_is_unavailable_not_unknown() -> None:
+    result = await _move(SchedulingRequestError("unrecognized change failure reason"))
+
+    assert result["status"] == "unavailable"
+
+
+async def test_a_response_carrying_no_result_at_all_is_unknown() -> None:
+    # The one case that genuinely is unknown: the scheduler answered with something the
+    # contract does not allow, so what it did before answering cannot be inferred.
+    result = await _cancel(
+        SchedulingUnavailableError("no result", outcome_unknown=True)
+    )
+
+    assert result["status"] == "unknown"
+
+
+def test_the_three_failed_change_explanations_are_all_different() -> None:
+    from chat.agent.tools.scheduling_tools import (
+        _CHANGE_UNAVAILABLE_EXPLANATION,
+        _OUTCOME_UNKNOWN_EXPLANATION,
+        _UNAVAILABLE_EXPLANATION,
+    )
+
+    assert (
+        len(
+            {
+                _UNAVAILABLE_EXPLANATION,
+                _CHANGE_UNAVAILABLE_EXPLANATION,
+                _OUTCOME_UNKNOWN_EXPLANATION,
+            }
+        )
+        == 3
+    )
+    # Booking keeps its own wording; a change never borrows it.
+    assert "booked" in _UNAVAILABLE_EXPLANATION
+    assert "booked" not in _CHANGE_UNAVAILABLE_EXPLANATION

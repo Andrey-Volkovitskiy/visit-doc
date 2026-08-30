@@ -551,7 +551,9 @@ async def reschedule(
         await session.rollback()
         return _resolve_change_conflict("reschedule", appointment_id, exc)
 
-    loaded = await _load_change_context(session, appointment_id)
+    loaded = await _load_change_context(
+        session, appointment_id, session_id=session_id, patient_id=patient_id
+    )
     if loaded is None:
         raise AppointmentVanishedError(appointment_id)
     appointment, patient, practitioner_row = loaded
@@ -756,7 +758,9 @@ async def cancel(
         )
 
     await session.commit()
-    loaded = await _load_change_context(session, appointment_id)
+    loaded = await _load_change_context(
+        session, appointment_id, session_id=session_id, patient_id=patient_id
+    )
     if loaded is None:
         # Both parties are gone, so the cascade already removed the appointment. The
         # cancellation stands; there is simply nothing left to describe.
@@ -838,7 +842,9 @@ async def _refuse_change(
     )
     logger = get_logger()
     if reason is no_op_reason:
-        loaded = await _load_change_context(session, appointment_id)
+        loaded = await _load_change_context(
+        session, appointment_id, session_id=session_id, patient_id=patient_id
+    )
         if loaded is not None:
             appointment, patient, practitioner = loaded
             logger.info(
@@ -856,17 +862,33 @@ async def _refuse_change(
 
 
 async def _load_change_context(
-    session: AsyncSession, appointment_id: str
+    session: AsyncSession,
+    appointment_id: str,
+    *,
+    session_id: str,
+    patient_id: str,
 ) -> tuple[Appointment, Patient, Practitioner] | None:
     """Read back an appointment and both its parties, for rendering a change's answer.
 
-    Returns: the appointment with its patient and practitioner, or None if any of the
-        three is gone.
+    Returns: the appointment with its patient and practitioner, or None when it does
+        not resolve in this session for this patient, or when either party is gone.
 
     Read after the write rather than before it: the identities are fixed by then, and a
     read beforehand would sit inside the window the conditional update exists to close.
+
+    Scoped even though every caller has just proved ownership - by the update's own
+    predicate, or by the classification read - because that is a property of today's
+    callers rather than of this query. A caller added later inherits the predicate; it
+    cannot inherit the habit.
     """
-    appointment = await session.get(Appointment, appointment_id)
+    result = await session.execute(
+        select(Appointment).where(
+            Appointment.id == appointment_id,
+            Appointment.session_id == session_id,
+            Appointment.patient_id == patient_id,
+        )
+    )
+    appointment = result.scalars().first()
     if appointment is None:
         return None
     await session.refresh(appointment)

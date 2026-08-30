@@ -356,3 +356,18 @@ that:
 - `services/frontend/` is untouched. A change is a conversation: no new event field, no new route, no
   new component
 - Commit after each task or logical group; stop at any checkpoint to validate a story independently
+
+---
+
+## Phase 8: Convergence
+
+Findings from assessing the implementation against spec.md, plan.md and the constitution
+after Phase 7. No constitution principle is violated and nothing is missing outright; what
+remains is one requirement whose capability exists but is never reached, three places where
+a value carries more meanings than it should, and one undocumented log event.
+
+- [X] T093 Direct the assistant to widen the **time** axis whenever the patient asks about cancelled appointments, in `list_my_appointments`'s tool description and the system prompt in `services/chat/src/chat/agent/handle_booking.py` — a request for cancelled ones returns them from either side of now, since a cancellation is not something the patient is still waiting for. The filter defaults stay at the narrowest corner; only the assistant's instruction changes. Cover it in `services/chat/tests/test_handle_booking_changes.py` with a scripted turn that asks "what have I cancelled?" and dispatches `time_filter="both"`, and in `services/chat/tests/test_scheduling_tools.py` for the past leg carrying its cancelled entries per FR-015, SC-012 (partial)
+- [X] T094 Give a change that provably never reached the scheduler its own explanation in `services/chat/src/chat/agent/tools/scheduling_tools.py` — "nothing was **changed**", not `_UNAVAILABLE_EXPLANATION`'s "Nothing was booked", which is the wrong verb for a cancellation or a move; assert it in `services/chat/tests/test_change_tools.py` alongside the existing `unavailable` case per spec Edge Cases ("the scheduling capability is unreachable before a change was sent"), FR-032 (partial)
+- [X] T095 Split the two meanings `SchedulingRequestError` currently collapses in both change handlers in `services/chat/src/chat/agent/tools/scheduling_tools.py`: a request the scheduler rejected before acting, or a refusal whose reason this build cannot name, means nothing changed and that is **known** — report it as `unavailable`, matching how `book_appointment` already handles the same exception; reserve `unknown` for a response that carried no result at all. Add the two cases to `services/chat/tests/test_change_tools.py` per FR-023, plan.md "one value, one meaning" (partial)
+- [X] T096 Scope `_load_change_context()` in `services/scheduler/src/scheduler/repositories/appointment_repository.py` to `session_id` and `patient_id` rather than reading by appointment id alone, so the guarantee lives in the query instead of resting on all three callers proving ownership first; pin it with a test in `services/scheduler/tests/test_cancel.py` per FR-018 ("every lookup MUST carry the session as part of the query rather than checking it after the fact") (partial)
+- [X] T097 Remove `change.write_unconfirmed` from `services/chat/src/chat/agent/tools/scheduling_tools.py` — it records the same domain fact as the contract's `change.outcome_unknown` from a different layer, and its one extra field duplicates `scheduling.unavailable`'s — or, if it earns its place, document it in `specs/006-reschedule-and-cancel/contracts/log-events.md`, whose chat-side section currently states `change.outcome_unknown` is the only new chat-side event per contracts/log-events.md (unrequested)

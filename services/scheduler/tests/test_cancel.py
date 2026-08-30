@@ -345,3 +345,49 @@ async def test_a_refusal_emits_change_refused_with_its_single_reason(
     assert event["operation"] == "cancel"
     assert event["reason"] == ChangeFailureReason.STALE_CONFIRMATION
     assert "appointment.cancelled" not in [log["event"] for log in logs]
+
+
+# --- the read-back carries its own scope --------------------------------------
+
+
+async def test_the_change_read_back_is_scoped_to_the_session_and_patient(
+    db_session: AsyncSession,
+) -> None:
+    """FR-018: every lookup carries the session, not a check applied afterwards.
+
+    Reached directly because every caller happens to prove ownership immediately
+    beforehand - which is exactly why the guarantee must live in the query rather than
+    in that habit. A fourth caller added later inherits the predicate; it cannot
+    inherit the discipline.
+    """
+    from scheduler.repositories.appointment_repository import _load_change_context
+
+    booked = await _seed(db_session)
+
+    assert (
+        await _load_change_context(
+            db_session,
+            booked.appointment_id,
+            session_id=booked.session_id,
+            patient_id=booked.patient_id,
+        )
+        is not None
+    )
+    assert (
+        await _load_change_context(
+            db_session,
+            booked.appointment_id,
+            session_id=new_id(),
+            patient_id=booked.patient_id,
+        )
+        is None
+    )
+    assert (
+        await _load_change_context(
+            db_session,
+            booked.appointment_id,
+            session_id=booked.session_id,
+            patient_id=new_id(),
+        )
+        is None
+    )

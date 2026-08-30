@@ -782,8 +782,13 @@ def _to_change_outcome(
 ) -> ChangeApplied | ChangeNoOp | ChangeRefusal:
     """Read one change response into exactly one of its three domain outcomes.
 
-    Raises: SchedulingRequestError if the response carries no result, or a refusal
-        reason this build cannot name.
+    Raises:
+        SchedulingRequestError: the refusal named a reason this build cannot explain.
+            The refusal itself is trustworthy - nothing was changed.
+        SchedulingUnavailableError: the response carried no result at all, with
+            `outcome_unknown` true. The contract allows no such response, so what the
+            scheduler did before sending it cannot be inferred - which is the one thing
+            that separates this from a refusal we merely cannot name.
 
     `previous_practitioner_full_name` falls back to the appointment's current
     practitioner when the response names none, which is what a cancellation sends: it
@@ -798,7 +803,10 @@ def _to_change_outcome(
     if result == "no_change":
         return ChangeNoOp(appointment=_to_appointment(response.no_change.appointment))
     if result != "appointment":
-        raise SchedulingRequestError("change response carried no result")
+        get_logger().error("change.response_without_result")
+        raise SchedulingUnavailableError(
+            "change response carried no result", outcome_unknown=True
+        )
 
     appointment = _to_appointment(response.appointment)
     previous_starts_at = (

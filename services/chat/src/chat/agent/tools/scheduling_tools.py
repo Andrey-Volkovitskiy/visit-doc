@@ -58,6 +58,14 @@ _NO_ARGUMENTS: dict[str, Any] = {
 
 _UNAVAILABLE_EXPLANATION = "Booking is temporarily unavailable. Nothing was booked."
 
+# The same fact for a change. Booking's sentence is the wrong verb here: a cancellation
+# that never left this service did not fail to *book* anything, and handing the model
+# that wording invites it to answer a cancellation request with "nothing was booked".
+_CHANGE_UNAVAILABLE_EXPLANATION = (
+    "The scheduling service is temporarily unavailable, and nothing was changed. The "
+    "appointment still stands exactly as it was."
+)
+
 # Used when the scheduler stopped answering during a *write* and cannot confirm what it
 # did. Claiming nothing was booked would be a guess, and the one guess that turns into
 # the patient booking a second appointment they cannot cancel.
@@ -217,6 +225,17 @@ def _required_datetime(arguments: dict[str, Any], name: str) -> datetime:
 def _unavailable() -> ToolResult:
     """The result every path takes when nothing could be created."""
     return {"status": "unavailable", "explanation": _UNAVAILABLE_EXPLANATION}
+
+
+def _change_unavailable() -> ToolResult:
+    """The result for a change that provably did not happen.
+
+    `unavailable` rather than `unknown`, because this path is reached only when it is
+    actually known that nothing changed - either no attempt reached the scheduler, or
+    the scheduler answered by declining to act. Saying so is a fact here, not the guess
+    it would be on the unknown path.
+    """
+    return {"status": "unavailable", "explanation": _CHANGE_UNAVAILABLE_EXPLANATION}
 
 
 def _reports_unavailable(
@@ -571,15 +590,19 @@ async def reschedule_appointment(
             local_now=context.local_now,
         )
     except SchedulingUnavailableError as exc:
-        return _write_failed("reschedule", appointment_id, exc)
+        return _write_failed(exc)
     except SchedulingRequestError as exc:
+        # The scheduler answered, and its answer was that it did nothing: the request
+        # was rejected before it acted, or the refusal named a reason this build cannot
+        # explain. Nothing changed, and that is known - so this is `unavailable`, the
+        # same conclusion `book_appointment` draws from the same exception.
         get_logger().error(
             "change.response_unreadable",
             operation="reschedule",
             appointment_id=appointment_id,
             error_detail=str(exc),
         )
-        return _outcome_unknown()
+        return _change_unavailable()
 
     return _change_result(outcome, change="rescheduled")
 
@@ -619,36 +642,36 @@ async def cancel_appointment(
             local_now=context.local_now,
         )
     except SchedulingUnavailableError as exc:
-        return _write_failed("cancel", appointment_id, exc)
+        return _write_failed(exc)
     except SchedulingRequestError as exc:
+        # The scheduler answered, and its answer was that it did nothing: the request
+        # was rejected before it acted, or the refusal named a reason this build cannot
+        # explain. Nothing changed, and that is known - so this is `unavailable`, the
+        # same conclusion `book_appointment` draws from the same exception.
         get_logger().error(
             "change.response_unreadable",
             operation="cancel",
             appointment_id=appointment_id,
             error_detail=str(exc),
         )
-        return _outcome_unknown()
+        return _change_unavailable()
 
     return _change_result(outcome, change="cancelled")
 
 
-def _write_failed(
-    operation: str, appointment_id: str, exc: SchedulingUnavailableError
-) -> ToolResult:
+def _write_failed(exc: SchedulingUnavailableError) -> ToolResult:
     """Render an unreachable scheduler for a change, saying only what is known.
 
     A budget exhausted after the request was sent proves nothing about what the server
     did, so that case is `unknown`. Only when every attempt provably failed to reach the
-    scheduler is "nothing happened" a fact rather than a guess.
+    scheduler is "nothing changed" a fact rather than a guess.
+
+    The turn's own record of an unknown outcome is emitted by the node, which sees the
+    tool call that produced it - so this path writes none, and one lost write leaves one
+    record rather than two.
     """
     if not exc.outcome_unknown:
-        return _unavailable()
-    get_logger().info(
-        "change.write_unconfirmed",
-        operation=operation,
-        appointment_id=appointment_id,
-        error_detail=str(exc),
-    )
+        return _change_unavailable()
     return _outcome_unknown()
 
 
@@ -730,7 +753,11 @@ SCHEDULING_TOOLS = [
         name="list_my_appointments",
         description=(
             "Lists this patient's appointments. By default: still to come, and not "
-            "cancelled. Widen either axis only when the patient asks. Results come "
+            "cancelled. Widen either axis only when the patient asks - and note the "
+            "axes are independent, so widening one does not widen the other. For "
+            "'what have I cancelled?' pass status_filter 'cancelled' AND time_filter "
+            "'both', since a cancellation is not something the patient is still "
+            "waiting for and most of them are already in the past. Results come "
             "back as two separate lists - future and past - which are never merged. "
             "The past list holds at most the 20 most recent; if past_truncated is "
             "true, say that PART of the list is incomplete, never that the whole "

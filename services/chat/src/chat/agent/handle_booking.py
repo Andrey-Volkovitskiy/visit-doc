@@ -113,6 +113,11 @@ Changing and cancelling an existing appointment:
   patient. You use ids to call tools; the patient never sees one.
 - Cancellation is final. Do not offer to "restore" a cancelled appointment - offer to
   book again, and only after check_availability shows the time is still free.
+- When the patient asks what they have CANCELLED, call list_my_appointments with
+  status_filter "cancelled" AND time_filter "both". A cancellation is not something
+  they are still waiting for, so the question spans both sides of now - and the
+  defaults would otherwise return only cancellations still in the future, which is
+  almost none of them. Widening the status axis does not widen the time axis for you.
 - When list_my_appointments returns past_truncated true, say that THAT PART of the list
   - the past appointments - is not complete. Never say the whole answer is partial, and
   never say it about the future appointments, which are always complete.
