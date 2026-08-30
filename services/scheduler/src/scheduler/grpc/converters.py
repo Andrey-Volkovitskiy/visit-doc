@@ -242,9 +242,7 @@ def to_proto_change_failure(reason: ChangeFailureReason) -> pb.ChangeFailure:
     `detail` is for logs only - the assistant's explanation to the patient is built
     from `reason`, never from this string.
     """
-    return pb.ChangeFailure(
-        reason=_PROTO_BY_CHANGE_REASON[reason], detail=reason.value
-    )
+    return pb.ChangeFailure(reason=_PROTO_BY_CHANGE_REASON[reason], detail=reason.value)
 
 
 def read_time_filter(value: int) -> TimeFilter:

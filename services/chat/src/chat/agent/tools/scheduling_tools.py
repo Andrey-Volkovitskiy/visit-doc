@@ -572,9 +572,7 @@ async def reschedule_appointment(
     appointment_id = required_argument(arguments, "appointment_id")
     new_starts_at = _required_datetime(arguments, "new_starts_at")
     expected_starts_at = _required_datetime(arguments, "expected_starts_at")
-    expected_practitioner_id = required_argument(
-        arguments, "expected_practitioner_id"
-    )
+    expected_practitioner_id = required_argument(arguments, "expected_practitioner_id")
     try:
         outcome = await scheduling.reschedule_appointment(
             context.channel,
@@ -627,9 +625,7 @@ async def cancel_appointment(
 
     appointment_id = required_argument(arguments, "appointment_id")
     expected_starts_at = _required_datetime(arguments, "expected_starts_at")
-    expected_practitioner_id = required_argument(
-        arguments, "expected_practitioner_id"
-    )
+    expected_practitioner_id = required_argument(arguments, "expected_practitioner_id")
     try:
         outcome = await scheduling.cancel_appointment(
             context.channel,
@@ -810,8 +806,7 @@ SCHEDULING_TOOLS = [
                 "expected_starts_at": {
                     "type": "string",
                     "description": (
-                        "the start you read out to the patient, "
-                        "YYYY-MM-DDTHH:MM:SS"
+                        "the start you read out to the patient, YYYY-MM-DDTHH:MM:SS"
                     ),
                 },
                 "expected_practitioner_id": {
@@ -848,8 +843,7 @@ SCHEDULING_TOOLS = [
                 "expected_starts_at": {
                     "type": "string",
                     "description": (
-                        "the start you read out to the patient, "
-                        "YYYY-MM-DDTHH:MM:SS"
+                        "the start you read out to the patient, YYYY-MM-DDTHH:MM:SS"
                     ),
                 },
                 "expected_practitioner_id": {

@@ -350,9 +350,7 @@ async def test_a_refused_move_carries_its_reason_and_explanation() -> None:
 
 
 async def test_a_lost_move_is_reported_as_unknown() -> None:
-    result = await _move(
-        SchedulingUnavailableError("timed out", outcome_unknown=True)
-    )
+    result = await _move(SchedulingUnavailableError("timed out", outcome_unknown=True))
 
     assert result["status"] == "unknown"
 
@@ -541,15 +539,11 @@ def test_the_new_practitioner_is_optional_in_the_schema() -> None:
 # --- what a failed change is allowed to say ----------------------------------
 
 
-async def test_a_change_that_never_reached_the_scheduler_says_nothing_changed() -> (
-    None
-):
+async def test_a_change_that_never_reached_the_scheduler_says_nothing_changed() -> None:
     # The spec's wording, and the only accurate one: a cancellation that never left
     # this service did not fail to *book* anything. Handing the model booking's
     # sentence invites it to answer a cancellation request with "nothing was booked".
-    result = await _cancel(
-        SchedulingUnavailableError("refused", outcome_unknown=False)
-    )
+    result = await _cancel(SchedulingUnavailableError("refused", outcome_unknown=False))
 
     assert result["status"] == "unavailable"
     explanation = result["explanation"].lower()

@@ -90,8 +90,12 @@ def test_change_and_listing_messages_all_import() -> None:
         pb.ListAppointmentsResponse,
     ):
         assert message.DESCRIPTOR is not None
-    for enum in (pb.AppointmentStatus, pb.ChangeFailureReason, pb.TimeFilter,
-                 pb.StatusFilter):
+    for enum in (
+        pb.AppointmentStatus,
+        pb.ChangeFailureReason,
+        pb.TimeFilter,
+        pb.StatusFilter,
+    ):
         assert enum.DESCRIPTOR is not None
 
 
@@ -172,8 +176,7 @@ def test_filter_zero_values_are_the_narrowest_corner() -> None:
     # ever narrow, never widen (FR-014, research #11).
     assert pb.TimeFilter.DESCRIPTOR.values_by_number[0].name == "TIME_FILTER_FUTURE"
     assert (
-        pb.StatusFilter.DESCRIPTOR.values_by_number[0].name
-        == "STATUS_FILTER_STANDING"
+        pb.StatusFilter.DESCRIPTOR.values_by_number[0].name == "STATUS_FILTER_STANDING"
     )
 
 

@@ -661,9 +661,7 @@ async def test_a_stale_refusal_never_re_issues_the_change() -> None:
 async def test_the_prompt_requires_both_the_current_and_the_proposed_start() -> None:
     prompt = await _captured_prompt()
 
-    assert re.search(
-        r"both the current and the proposed start", prompt, re.IGNORECASE
-    )
+    assert re.search(r"both the current and the proposed start", prompt, re.IGNORECASE)
 
 
 async def test_the_prompt_says_what_to_do_per_refusal_group() -> None:
@@ -1089,3 +1087,186 @@ def test_the_listing_tool_tells_the_model_when_to_widen_the_time_axis() -> None:
 
     assert re.search(r"cancelled", tool.description, re.IGNORECASE)
     assert "both" in tool.description
+
+
+# --- the loop running out after a change already landed -----------------------
+
+
+def _exhausting_client(first: Any) -> Any:
+    """A model that makes one real call and then stalls until the loop runs out."""
+    return _client(
+        [first] + [_tool_use_response([("list_my_appointments", {})]) for _ in range(5)]
+    )
+
+
+async def test_exhausting_the_loop_after_a_cancellation_never_denies_it() -> None:
+    """The generic exhaustion reply denies a cancellation that really happened.
+
+    Worse than for a booking: a cancellation is irreversible and the freed slot may
+    already be gone, so "I wasn't able to finish that - what would you like to book?"
+    invites the patient to rebook a time that is no longer theirs, having been told
+    their cancellation failed when it did not.
+    """
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_REPLY
+
+    registry = _RecordingRegistry(
+        {
+            "cancel_appointment": _cancelled_result(),
+            "list_my_appointments": _listing([]),
+        }
+    )
+    client = _exhausting_client(
+        _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)])
+    )
+
+    _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.CANCELLED
+    assert result.reply_text != _LOOP_EXHAUSTED_REPLY
+    assert "cancelled" in result.reply_text.lower()
+    assert "book" not in result.reply_text.lower()
+
+
+async def test_exhausting_the_loop_after_a_move_never_denies_it() -> None:
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_REPLY
+
+    registry = _RecordingRegistry(
+        {
+            "reschedule_appointment": _moved_result(),
+            "list_my_appointments": _listing([]),
+        }
+    )
+    client = _exhausting_client(
+        _tool_use_response([("reschedule_appointment", _RESCHEDULE_ARGUMENTS)])
+    )
+
+    _, result = await _run(client, registry, _bursts("move it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.RESCHEDULED
+    assert result.reply_text != _LOOP_EXHAUSTED_REPLY
+    assert "William Osler" in result.reply_text
+
+
+async def test_exhausting_the_loop_after_a_no_op_reports_it_as_done() -> None:
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_REPLY
+
+    registry = _RecordingRegistry(
+        {
+            "cancel_appointment": {
+                "status": "unchanged",
+                "appointment": _entry(status="cancelled"),
+                "explanation": "Already cancelled.",
+            },
+            "list_my_appointments": _listing([]),
+        }
+    )
+    client = _exhausting_client(
+        _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)])
+    )
+
+    _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.UNCHANGED
+    assert result.reply_text != _LOOP_EXHAUSTED_REPLY
+
+
+async def test_exhausting_the_loop_after_an_unknown_outcome_claims_neither_way() -> (
+    None
+):
+    # The reply the contract is strictest about: it may not say the change happened,
+    # and it may not say nothing happened.
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_REPLY
+
+    registry = _RecordingRegistry(
+        {
+            "cancel_appointment": {"status": "unknown", "explanation": "Not known."},
+            "list_my_appointments": _listing([]),
+        }
+    )
+    client = _exhausting_client(
+        _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)])
+    )
+
+    _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
+    assert result.reply_text != _LOOP_EXHAUSTED_REPLY
+    reply = result.reply_text.lower()
+    assert "couldn't confirm" in reply or "could not confirm" in reply
+    assert "is cancelled" not in reply
+    assert "nothing" not in reply
+
+
+async def test_exhausting_the_loop_with_nothing_done_still_reports_the_failure() -> (
+    None
+):
+    # The generic reply keeps its place for every outcome that changed nothing.
+    from chat.agent.handle_booking import _LOOP_EXHAUSTED_REPLY
+
+    registry = _RecordingRegistry({"list_my_appointments": _listing([])})
+    client = _exhausting_client(_tool_use_response([("list_my_appointments", {})]))
+
+    _, result = await _run(client, registry, _bursts("what have I got?"))
+
+    assert result.outcome is BookingOutcome.INFORMATIONAL
+    assert result.reply_text == _LOOP_EXHAUSTED_REPLY
+
+
+async def test_no_exhaustion_reply_ever_carries_an_identifier() -> None:
+    from chat.agent.handle_booking import (
+        _LOOP_EXHAUSTED_CANCELLED_REPLY_PLAIN,
+        _LOOP_EXHAUSTED_RESCHEDULED_REPLY_PLAIN,
+        _LOOP_EXHAUSTED_UNCHANGED_REPLY,
+        _LOOP_EXHAUSTED_UNKNOWN_REPLY,
+    )
+
+    from .test_handle_booking import _identifiers_in
+
+    for reply in (
+        _LOOP_EXHAUSTED_CANCELLED_REPLY_PLAIN,
+        _LOOP_EXHAUSTED_RESCHEDULED_REPLY_PLAIN,
+        _LOOP_EXHAUSTED_UNCHANGED_REPLY,
+        _LOOP_EXHAUSTED_UNKNOWN_REPLY,
+    ):
+        assert _identifiers_in(reply) == []
+
+
+# --- a write tool that raised ------------------------------------------------
+
+
+async def test_a_write_tool_that_raised_is_an_unknown_outcome_not_unavailable() -> None:
+    """A handler that raised may have raised *after* the change landed.
+
+    `_dispatch` already tells the model so - its explanation says the outcome is not
+    known - but the status it returned was `error`, which folds into `UNAVAILABLE`, and
+    the composing step is now told `unavailable` means nothing was created, moved or
+    cancelled. The status has to carry the same meaning its own explanation does.
+    """
+    registry = _RecordingRegistry({"cancel_appointment": _cancelled_result()})
+    registry.raise_on = "cancel_appointment"
+    client = _client(
+        [
+            _tool_use_response([("cancel_appointment", _CANCEL_ARGUMENTS)]),
+            _text_response("I could not confirm that."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("cancel it", "sure?", "yes"))
+
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
+
+
+async def test_a_read_tool_that_raised_is_still_unavailable() -> None:
+    # A read wrote nothing by construction, so "nothing happened" stays a fact there.
+    registry = _RecordingRegistry({"list_my_appointments": _listing([])})
+    registry.raise_on = "list_my_appointments"
+    client = _client(
+        [
+            _tool_use_response([("list_my_appointments", {})]),
+            _text_response("I could not look that up."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("what have I got?"))
+
+    assert result.outcome is BookingOutcome.UNAVAILABLE

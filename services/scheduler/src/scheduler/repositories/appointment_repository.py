@@ -28,7 +28,6 @@ from shared_models.scheduling import (
 from sqlalchemy import and_, case, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
 from ulid import ULID
 
 from scheduler.core.logging import get_logger
@@ -306,9 +305,7 @@ async def list_for_patient(
         past_truncated = len(probed) > PAST_LEG_LIMIT
         past = probed[:PAST_LEG_LIMIT]
 
-    return AppointmentListing(
-        future=future, past=past, past_truncated=past_truncated
-    )
+    return AppointmentListing(future=future, past=past, past_truncated=past_truncated)
 
 
 async def _first_ineligibility(
@@ -476,27 +473,51 @@ async def reschedule(
         minutes=practitioner.appointment_duration_minutes
     )
 
-    old = aliased(Appointment, name="old")
-    statement = (
-        update(Appointment)
+    # The pre-image, read under a row lock inside the same statement. A plain
+    # `FROM appointments AS old` self-join carries no row mark: when a concurrent commit
+    # forces this update to re-check its predicate, PostgreSQL re-reads the *target* row
+    # but keeps the join relation from the original snapshot. Two identical moves - the
+    # ordinary shape of the caller's own retry - would then both match the guard's
+    # target arm, and the loser would read a stale pre-image, reporting a move it never
+    # performed and a second change record for one transition.
+    #
+    # `FOR UPDATE` makes the loser block and re-read, so the predicate below and the
+    # values it returns describe the same version of the row. This is still one
+    # statement: the lock is taken and the write decided together, so the guard remains
+    # a predicate on the write rather than a check that has already returned.
+    old = (
+        select(
+            Appointment.id.label("id"),
+            Appointment.starts_at.label("starts_at"),
+            Appointment.practitioner_id.label("practitioner_id"),
+            Appointment.idempotency_key.label("idempotency_key"),
+            Appointment.status.label("status"),
+        )
         .where(
-            Appointment.id == old.id,
             Appointment.id == appointment_id,
             Appointment.session_id == session_id,
             Appointment.patient_id == patient_id,
-            Appointment.status == AppointmentStatus.STANDING,
-            Appointment.starts_at > local_now,
+        )
+        .with_for_update()
+        .cte("old")
+    )
+    statement = (
+        update(Appointment)
+        .where(
+            Appointment.id == old.c.id,
+            old.c.status == AppointmentStatus.STANDING,
+            old.c.starts_at > local_now,
             or_(
                 # The state the patient was shown ...
                 and_(
-                    Appointment.starts_at == expected_starts_at,
-                    Appointment.practitioner_id == expected_practitioner_id,
+                    old.c.starts_at == expected_starts_at,
+                    old.c.practitioner_id == expected_practitioner_id,
                 ),
                 # ... or the state this request asks for. The second arm is what makes
                 # a re-sent change return its original outcome instead of a conflict.
                 and_(
-                    Appointment.starts_at == new_starts_at,
-                    Appointment.practitioner_id == target_practitioner_id,
+                    old.c.starts_at == new_starts_at,
+                    old.c.practitioner_id == target_practitioner_id,
                 ),
             ),
         )
@@ -518,15 +539,15 @@ async def reschedule(
             idempotency_key=case(
                 (
                     and_(
-                        old.starts_at == new_starts_at,
-                        old.practitioner_id == target_practitioner_id,
+                        old.c.starts_at == new_starts_at,
+                        old.c.practitioner_id == target_practitioner_id,
                     ),
-                    old.idempotency_key,
+                    old.c.idempotency_key,
                 ),
                 else_=str(ULID()),
             ),
         )
-        .returning(old.starts_at, old.practitioner_id)
+        .returning(old.c.starts_at, old.c.practitioner_id)
     )
     try:
         result = await session.execute(statement)
@@ -672,9 +693,7 @@ def _resolve_change_conflict(
     detail = str(exc.orig)
     for constraint, reason in _CHANGE_REFUSAL_BY_CONSTRAINT.items():
         if constraint in detail:
-            get_logger().warning(
-                "change.race_lost", operation=operation, reason=reason
-            )
+            get_logger().warning("change.race_lost", operation=operation, reason=reason)
             return _refused_change(operation, appointment_id, reason)
     raise exc
 
@@ -719,26 +738,45 @@ async def cancel(
     and is answered by the classification read, which finds it cancelled and reports a
     no-op rather than a conflict.
     """
-    old = aliased(Appointment, name="old")
+    # The same locked pre-image `reschedule()` uses, and for the same reason: an
+    # unlocked self-join can return values from before a concurrent commit. A
+    # cancellation is safe from the worst of that on its own - its `status = 'standing'`
+    # predicate excludes the row another cancellation just changed - but relying on one
+    # operation's predicates to cover a defect in the shape they share is how the other
+    # one came to have it. One shape, locked, for both.
+    #
+    # FR-018: the scope is a predicate of the write. It lives in the locked read, which
+    # takes the row and the decision together rather than checking after the fact.
+    old = (
+        select(
+            Appointment.id.label("id"),
+            Appointment.starts_at.label("starts_at"),
+            Appointment.practitioner_id.label("practitioner_id"),
+            Appointment.idempotency_key.label("idempotency_key"),
+            Appointment.status.label("status"),
+        )
+        .where(
+            Appointment.id == appointment_id,
+            Appointment.session_id == session_id,
+            Appointment.patient_id == patient_id,
+        )
+        .with_for_update()
+        .cte("old")
+    )
     statement = (
         update(Appointment)
         .where(
-            Appointment.id == old.id,
-            Appointment.id == appointment_id,
-            # FR-018: the scope is a predicate on the write itself. A check applied to
-            # the result afterwards is not a check - the row would already have moved.
-            Appointment.session_id == session_id,
-            Appointment.patient_id == patient_id,
-            Appointment.status == AppointmentStatus.STANDING,
-            Appointment.starts_at > local_now,
-            Appointment.starts_at == expected_starts_at,
-            Appointment.practitioner_id == expected_practitioner_id,
+            Appointment.id == old.c.id,
+            old.c.status == AppointmentStatus.STANDING,
+            old.c.starts_at > local_now,
+            old.c.starts_at == expected_starts_at,
+            old.c.practitioner_id == expected_practitioner_id,
         )
         .values(status=AppointmentStatus.CANCELLED)
         .returning(
-            old.starts_at,
-            old.practitioner_id,
-            old.idempotency_key,
+            old.c.starts_at,
+            old.c.practitioner_id,
+            old.c.idempotency_key,
         )
     )
     result = await session.execute(statement)
@@ -843,8 +881,8 @@ async def _refuse_change(
     logger = get_logger()
     if reason is no_op_reason:
         loaded = await _load_change_context(
-        session, appointment_id, session_id=session_id, patient_id=patient_id
-    )
+            session, appointment_id, session_id=session_id, patient_id=patient_id
+        )
         if loaded is not None:
             appointment, patient, practitioner = loaded
             logger.info(

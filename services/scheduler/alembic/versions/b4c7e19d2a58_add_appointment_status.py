@@ -102,6 +102,13 @@ def downgrade() -> None:
     op.drop_index(_KEY_INDEX, table_name="appointments")
     op.create_unique_constraint(_KEY_CONSTRAINT, "appointments", ["idempotency_key"])
 
+    # Both of these are *more* likely to fail than the key constraint above, for the
+    # same kind of reason and by way of the feature's headline flow: cancelling an
+    # appointment and rebooking the freed slot leaves a cancelled row and a standing row
+    # sharing one `tsrange` for the same patient and practitioner, which an
+    # unconditional EXCLUDE rejects. That is a real conflict rather than a migration
+    # defect - the previous release cannot represent a cancelled appointment at all - so
+    # it must be resolved before rolling back rather than silently discarded here.
     op.drop_constraint(_PRACTITIONER_OVERLAP, "appointments", type_="unique")
     op.execute(
         f"ALTER TABLE appointments ADD CONSTRAINT {_PRACTITIONER_OVERLAP} "

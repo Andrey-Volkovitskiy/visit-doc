@@ -39,9 +39,7 @@ async def _book(
         practitioner_id=practitioner_id,
         starts_at=starts_at,
         local_now=_LOCAL_NOW,
-        idempotency_key=derive_idempotency_key(
-            patient_id, practitioner_id, starts_at
-        ),
+        idempotency_key=derive_idempotency_key(patient_id, practitioner_id, starts_at),
     )
     assert isinstance(outcome, scheduling.BookingSuccess)
     return outcome
@@ -117,10 +115,14 @@ async def test_a_move_leaves_exactly_one_appointment_with_its_original_id(
         count = await session.execute(select(func.count()).select_from(Appointment))
         assert count.scalar_one() == 1
         row = (
-            await session.execute(
-                select(Appointment).where(Appointment.id == booked.appointment.id)
+            (
+                await session.execute(
+                    select(Appointment).where(Appointment.id == booked.appointment.id)
+                )
             )
-        ).scalars().one()
+            .scalars()
+            .one()
+        )
     assert row.starts_at == _TUESDAY_10AM
     assert row.status == AppointmentStatus.STANDING
 
@@ -221,9 +223,7 @@ async def test_the_vacated_slot_can_actually_be_booked_again(
     assert _TUESDAY_9AM in await _available(
         scheduling_channel, session_id, patient_id, practitioner_id
     )
-    rebooked = await _book(
-        scheduling_channel, session_id, patient_id, practitioner_id
-    )
+    rebooked = await _book(scheduling_channel, session_id, patient_id, practitioner_id)
 
     assert rebooked.idempotent_replay is False
     assert rebooked.appointment.id != booked.appointment.id
@@ -250,9 +250,7 @@ async def test_a_moved_appointment_and_its_replacement_hold_different_keys(
     await _book(scheduling_channel, session_id, patient_id, practitioner_id)
 
     async with session_factory() as session:
-        rows = list(
-            (await session.execute(select(Appointment))).scalars().all()
-        )
+        rows = list((await session.execute(select(Appointment))).scalars().all())
 
     assert len(rows) == 2
     assert len({r.idempotency_key for r in rows}) == 2

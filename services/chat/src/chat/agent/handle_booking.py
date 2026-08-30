@@ -196,6 +196,34 @@ _LOOP_EXHAUSTED_BOOKED_REPLY_PLAIN = (
     "Your appointment is booked. Was there anything else you needed?"
 )
 
+# The same problem for a change, and worse: a cancellation cannot be undone and its slot
+# may already be gone, so the generic reply would deny a cancellation that happened and
+# invite the patient to rebook a time that is no longer theirs.
+_LOOP_EXHAUSTED_CANCELLED_REPLY = (
+    "Your appointment with {practitioner} on {when} is cancelled. "
+    "Was there anything else you needed?"
+)
+_LOOP_EXHAUSTED_CANCELLED_REPLY_PLAIN = (
+    "That appointment is cancelled. Was there anything else you needed?"
+)
+_LOOP_EXHAUSTED_RESCHEDULED_REPLY = (
+    "Your appointment is now with {practitioner} on {when}. "
+    "Was there anything else you needed?"
+)
+_LOOP_EXHAUSTED_RESCHEDULED_REPLY_PLAIN = (
+    "Your appointment has been moved. Was there anything else you needed?"
+)
+_LOOP_EXHAUSTED_UNCHANGED_REPLY = (
+    "That appointment was already as you asked, so nothing needed to change. "
+    "Was there anything else you needed?"
+)
+# Says neither that the change happened nor that it did not - the only two sentences
+# this path is forbidden.
+_LOOP_EXHAUSTED_UNKNOWN_REPLY = (
+    "I couldn't confirm whether that went through. Please check with the clinic "
+    "before trying again."
+)
+
 
 class BookingOutcome(StrEnum):
     """What a booking turn actually achieved, as observed from tool results.
@@ -333,9 +361,7 @@ def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | 
         # must not raise mid-turn over an appointment that really was altered.
         outcome = _OUTCOME_BY_CHANGE.get(str(last.get("change")))
         if outcome is None:
-            get_logger().error(
-                "booking.unknown_change_kind", change=last.get("change")
-            )
+            get_logger().error("booking.unknown_change_kind", change=last.get("change"))
             outcome = BookingOutcome.OUTCOME_UNKNOWN
         return outcome, appointment.get("id")
 
@@ -359,26 +385,65 @@ def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | 
 def _exhausted_reply(results: list[dict[str, Any]], outcome: BookingOutcome) -> str:
     """Return what to tell the patient when the loop ran out of iterations.
 
-    A turn can exhaust the loop *after* `book_appointment` succeeded, when the model
-    keeps calling tools instead of writing its confirmation. Reporting the generic
-    failure then would deny an appointment that exists and cannot be cancelled, and
-    invite the patient to book a second one at a different time - which derives a
-    different key and really would create it.
-    """
-    if outcome is not BookingOutcome.BOOKED:
-        return _LOOP_EXHAUSTED_REPLY
+    A turn can exhaust the loop *after* a write succeeded, when the model keeps calling
+    tools instead of writing its confirmation. Reporting the generic failure then would
+    deny something that really happened - an appointment that exists and cannot be
+    cancelled, or a cancellation that cannot be undone - and invite the patient to act
+    on a state that is no longer true.
 
-    booked = [r for r in results if r.get("status") == "booked"]
-    appointment = booked[-1].get("appointment", {}) if booked else {}
+    So every outcome that observed a completed write gets its own reply, and the generic
+    one is left to the outcomes where nothing was written. The unknown outcome gets a
+    third kind again: it may claim neither that the change happened nor that it did not.
+    """
+    if outcome is BookingOutcome.BOOKED:
+        return _completed_exhausted_reply(
+            results,
+            "booked",
+            _LOOP_EXHAUSTED_BOOKED_REPLY,
+            _LOOP_EXHAUSTED_BOOKED_REPLY_PLAIN,
+        )
+    if outcome is BookingOutcome.CANCELLED:
+        return _completed_exhausted_reply(
+            results,
+            "changed",
+            _LOOP_EXHAUSTED_CANCELLED_REPLY,
+            _LOOP_EXHAUSTED_CANCELLED_REPLY_PLAIN,
+        )
+    if outcome is BookingOutcome.RESCHEDULED:
+        return _completed_exhausted_reply(
+            results,
+            "changed",
+            _LOOP_EXHAUSTED_RESCHEDULED_REPLY,
+            _LOOP_EXHAUSTED_RESCHEDULED_REPLY_PLAIN,
+        )
+    if outcome is BookingOutcome.UNCHANGED:
+        return _LOOP_EXHAUSTED_UNCHANGED_REPLY
+    if outcome is BookingOutcome.OUTCOME_UNKNOWN:
+        return _LOOP_EXHAUSTED_UNKNOWN_REPLY
+    return _LOOP_EXHAUSTED_REPLY
+
+
+def _completed_exhausted_reply(
+    results: list[dict[str, Any]], status: str, template: str, plain: str
+) -> str:
+    """Render the reply for a write that completed before the loop ran out.
+
+    Written here rather than by the model because the model is exactly what ran out -
+    but it may state what happened, because `_outcome_from` read that off the tool
+    result rather than off any text. Falls back to `plain` whenever the appointment
+    cannot be described, so a missing field degrades the wording rather than the claim.
+    """
+    observed = [r for r in results if r.get("status") == status]
+    appointment = observed[-1].get("appointment", {}) if observed else {}
     practitioner = appointment.get("practitioner_full_name")
     starts_at = appointment.get("starts_at")
     if not practitioner or not starts_at:
-        return _LOOP_EXHAUSTED_BOOKED_REPLY_PLAIN
+        return plain
     try:
         when = parse_local_datetime(str(starts_at)).strftime("%A %d %B at %H:%M")
     except ValueError:
-        return _LOOP_EXHAUSTED_BOOKED_REPLY_PLAIN
-    return _LOOP_EXHAUSTED_BOOKED_REPLY.format(practitioner=practitioner, when=when)
+        return plain
+    return template.format(practitioner=practitioner, when=when)
 
 
 async def handle_booking(
@@ -567,14 +632,17 @@ async def _dispatch(
             error_type=type(exc).__name__,
             error_detail=str(exc),
         )
-        return {
-            "status": "error",
-            "explanation": (
-                _WRITE_FAILED_EXPLANATION
-                if registry.writes(name)
-                else _READ_FAILED_EXPLANATION
-            ),
-        }
+        if registry.writes(name):
+            # The handler may have raised *after* the write landed - rendering its
+            # response, say - so what happened is genuinely unknown. `error` folds into
+            # `UNAVAILABLE`, which the composing step is told means nothing was
+            # created, moved or cancelled: the status has to carry the same meaning its
+            # explanation already does.
+            return {
+                "status": "unknown",
+                "explanation": _WRITE_FAILED_EXPLANATION,
+            }
+        return {"status": "error", "explanation": _READ_FAILED_EXPLANATION}
 
     logger.info(
         "booking.tool_result",

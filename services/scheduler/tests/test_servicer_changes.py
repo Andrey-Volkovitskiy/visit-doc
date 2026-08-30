@@ -325,9 +325,7 @@ async def test_a_move_missing_a_required_field_is_an_invalid_argument(
     booked = await _seed(db_session)
 
     with pytest.raises(grpc.aio.AioRpcError) as caught:
-        await stub.RescheduleAppointment(
-            _reschedule_request(booked, new_starts_at="")
-        )
+        await stub.RescheduleAppointment(_reschedule_request(booked, new_starts_at=""))
 
     assert caught.value.code() is grpc.StatusCode.INVALID_ARGUMENT
 

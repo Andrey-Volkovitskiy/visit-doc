@@ -63,20 +63,22 @@ Entities).
 
 ```python
 class AppointmentStatus(StrEnum):
-    STANDING = "standing"      # counts: blocks its slot, holds its key, listed by default
-    CANCELLED = "cancelled"    # kept, but a commitment for no one
+    STANDING = "standing"  # counts: blocks its slot, holds its key, listed by default
+    CANCELLED = "cancelled"  # kept, but a commitment for no one
 
 
 class ChangeFailureReason(StrEnum):
     # This feature's own four, evaluated first, in this order (FR-006).
-    APPOINTMENT_NOT_FOUND = "appointment_not_found"   # incl. another session's id (FR-018)
-    ALREADY_CANCELLED = "already_cancelled"           # reschedule only — see below
-    ALREADY_STARTED = "already_started"               # the appointment's CURRENT start (FR-005)
-    STALE_CONFIRMATION = "stale_confirmation"         # FR-021
+    APPOINTMENT_NOT_FOUND = (
+        "appointment_not_found"  # incl. another session's id (FR-018)
+    )
+    ALREADY_CANCELLED = "already_cancelled"  # reschedule only — see below
+    ALREADY_STARTED = "already_started"  # the appointment's CURRENT start (FR-005)
+    STALE_CONFIRMATION = "stale_confirmation"  # FR-021
     # Booking's eight, unchanged in meaning and in string value (BookingFailureReason).
     PRACTITIONER_NOT_FOUND = "practitioner_not_found"
     PATIENT_NOT_FOUND = "patient_not_found"
-    IN_PAST = "in_past"                               # the NEW start — not ALREADY_STARTED
+    IN_PAST = "in_past"  # the NEW start — not ALREADY_STARTED
     BEYOND_HORIZON = "beyond_horizon"
     OUTSIDE_SCHEDULE = "outside_schedule"
     OFF_GRID = "off_grid"
@@ -86,8 +88,8 @@ class ChangeFailureReason(StrEnum):
 
 ```python
 class TimeFilter(StrEnum):
-    FUTURE = "future"          # starts strictly after local_now
-    PAST = "past"              # starts at or before local_now, incl. one under way
+    FUTURE = "future"  # starts strictly after local_now
+    PAST = "past"  # starts at or before local_now, incl. one under way
     BOTH = "both"
 
 
@@ -116,23 +118,26 @@ Mirroring the existing `BookingSuccess` / `BookingRefusal` pair, one per wire ou
 
 ```python
 @dataclass(frozen=True)
-class ChangeApplied:      # the write moved the row
+class ChangeApplied:  # the write moved the row
     appointment: AppointmentInfo
     previous_starts_at: datetime
     previous_practitioner_full_name: str
 
-@dataclass(frozen=True)
-class ChangeNoOp:         # already in the state asked for (FR-019, FR-040)
-    appointment: AppointmentInfo
 
 @dataclass(frozen=True)
-class ChangeRefusal:      # one reason, from the twelve
+class ChangeNoOp:  # already in the state asked for (FR-019, FR-040)
+    appointment: AppointmentInfo
+
+
+@dataclass(frozen=True)
+class ChangeRefusal:  # one reason, from the twelve
     reason: ChangeFailureReason
+
 
 @dataclass(frozen=True)
 class AppointmentListing:  # FR-016's two legs, never merged into one list
-    future: list[AppointmentInfo]   # ascending
-    past: list[AppointmentInfo]     # descending, at most 20
+    future: list[AppointmentInfo]  # ascending
+    past: list[AppointmentInfo]  # descending, at most 20
     past_truncated: bool
 ```
 
@@ -145,9 +150,9 @@ identified as cancelled wherever it appears).
 ### `services/chat/src/chat/agent/handle_booking.py` — `BookingOutcome` additions
 
 ```python
-RESCHEDULED = "rescheduled"        # a move or a practitioner change took effect
-CANCELLED = "cancelled"            # a cancellation took effect
-UNCHANGED = "unchanged"            # already in the state asked for
+RESCHEDULED = "rescheduled"  # a move or a practitioner change took effect
+CANCELLED = "cancelled"  # a cancellation took effect
+UNCHANGED = "unchanged"  # already in the state asked for
 OUTCOME_UNKNOWN = "outcome_unknown"  # sent, never answered — NOT "nothing happened"
 ```
 

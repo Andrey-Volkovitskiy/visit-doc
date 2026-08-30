@@ -405,9 +405,7 @@ async def test_an_unnamed_missing_entity_blames_neither() -> None:
 
 
 async def _listed(listing: AppointmentListing) -> dict[str, Any]:
-    with patch(
-        _CLIENT + ".list_appointments", new=AsyncMock(return_value=listing)
-    ):
+    with patch(_CLIENT + ".list_appointments", new=AsyncMock(return_value=listing)):
         return await _registry().dispatch("list_my_appointments", {})
 
 
@@ -459,9 +457,7 @@ async def test_the_two_legs_are_never_merged_into_one_list() -> None:
     )
 
     result = await _listed(
-        AppointmentListing(
-            future=(_appointment(),), past=(past,), past_truncated=False
-        )
+        AppointmentListing(future=(_appointment(),), past=(past,), past_truncated=False)
     )
 
     assert [a["id"] for a in result["future"]] == ["01APPOINTMENT000000000000"]

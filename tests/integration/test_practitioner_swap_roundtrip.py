@@ -123,10 +123,14 @@ async def test_a_swap_leaves_one_appointment_with_its_id_and_the_new_practitione
         count = await session.execute(select(func.count()).select_from(Appointment))
         assert count.scalar_one() == 1
         row = (
-            await session.execute(
-                select(Appointment).where(Appointment.id == booked.appointment.id)
+            (
+                await session.execute(
+                    select(Appointment).where(Appointment.id == booked.appointment.id)
+                )
             )
-        ).scalars().one()
+            .scalars()
+            .one()
+        )
     assert row.practitioner_id == other_id
     assert row.status == AppointmentStatus.STANDING
 
@@ -236,10 +240,14 @@ async def test_a_forced_refusal_leaves_the_appointment_with_its_first_practition
     assert isinstance(refused, scheduling.ChangeRefusal)
     async with session_factory() as session:
         row = (
-            await session.execute(
-                select(Appointment).where(Appointment.id == booked.appointment.id)
+            (
+                await session.execute(
+                    select(Appointment).where(Appointment.id == booked.appointment.id)
+                )
             )
-        ).scalars().one()
+            .scalars()
+            .one()
+        )
     assert row.practitioner_id == practitioner_id
     assert row.starts_at == _TUESDAY_9AM
     assert row.status == AppointmentStatus.STANDING

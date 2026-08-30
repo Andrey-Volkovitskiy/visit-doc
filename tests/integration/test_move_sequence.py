@@ -136,10 +136,14 @@ async def test_the_appointment_ends_at_ten_holding_the_id_it_started_with(
         count = await session.execute(select(func.count()).select_from(Appointment))
         assert count.scalar_one() == 1
         row = (
-            await session.execute(
-                select(Appointment).where(Appointment.id == booked.appointment.id)
+            (
+                await session.execute(
+                    select(Appointment).where(Appointment.id == booked.appointment.id)
+                )
             )
-        ).scalars().one()
+            .scalars()
+            .one()
+        )
 
     assert row.id == booked.appointment.id
     assert row.starts_at == _TUESDAY_10AM

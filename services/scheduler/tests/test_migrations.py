@@ -412,8 +412,7 @@ async def test_the_old_unconditional_key_constraint_is_gone(
     # Dropped, not left alongside: keeping it would go on holding the key of a
     # cancelled appointment and FR-011's release would never happen.
     assert (
-        await _constraint_def(db_session, "appointments_idempotency_key_unique")
-        is None
+        await _constraint_def(db_session, "appointments_idempotency_key_unique") is None
     )
 
 

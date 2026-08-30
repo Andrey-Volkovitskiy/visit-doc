@@ -104,9 +104,7 @@ def _change_response(
         outcome.appointment, outcome.patient, outcome.practitioner
     )
     if isinstance(outcome, appointment_repository.ChangeNoOp):
-        return pb.ChangeAppointmentResponse(
-            no_change=pb.NoChange(appointment=rendered)
-        )
+        return pb.ChangeAppointmentResponse(no_change=pb.NoChange(appointment=rendered))
     if not carries_previous:
         return pb.ChangeAppointmentResponse(appointment=rendered)
     return pb.ChangeAppointmentResponse(

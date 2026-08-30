@@ -74,9 +74,7 @@ async def test_a_cancellation_racing_a_move_leaves_exactly_one_applied(
     }
 
     cancel, move = await asyncio.gather(
-        scheduling.cancel_appointment(
-            scheduling_channel, _chat_settings(), **common
-        ),
+        scheduling.cancel_appointment(scheduling_channel, _chat_settings(), **common),
         scheduling.reschedule_appointment(
             scheduling_channel,
             _chat_settings(),

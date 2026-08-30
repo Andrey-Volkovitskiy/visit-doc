@@ -777,9 +777,7 @@ async def test_a_move_releases_the_key_the_original_booking_derived(
     an appointment that is no longer in it.
     """
     booked = await _seed(db_session)
-    original_key = (
-        await _row(db_session, booked.appointment_id)
-    ).idempotency_key  # type: ignore[attr-defined]
+    original_key = (await _row(db_session, booked.appointment_id)).idempotency_key  # type: ignore[attr-defined]
 
     await _reschedule(db_session, booked)
 
@@ -798,9 +796,7 @@ async def test_the_freed_key_lets_the_original_slot_be_booked_again(
     # that follows is refused as a key-derivation defect - permanently, for as long as
     # the moved appointment stands.
     booked = await _seed(db_session)
-    original_key = (
-        await _row(db_session, booked.appointment_id)
-    ).idempotency_key  # type: ignore[attr-defined]
+    original_key = (await _row(db_session, booked.appointment_id)).idempotency_key  # type: ignore[attr-defined]
     await _reschedule(db_session, booked)
 
     outcome = await appointment_repository.book(
@@ -827,9 +823,7 @@ async def test_a_move_that_transitioned_nothing_keeps_the_key_it_had(
     # A no-op transitioned nothing, so it must write nothing - including the key. A
     # rotation here would make `appointment.unchanged` a lie about the row.
     booked = await _seed(db_session)
-    original_key = (
-        await _row(db_session, booked.appointment_id)
-    ).idempotency_key  # type: ignore[attr-defined]
+    original_key = (await _row(db_session, booked.appointment_id)).idempotency_key  # type: ignore[attr-defined]
 
     outcome = await _reschedule(db_session, booked, new_starts_at=_TUESDAY_9AM)
 
@@ -844,9 +838,7 @@ async def test_a_cancellation_leaves_the_key_on_the_row_it_created(
     # A cancellation frees the key by leaving the partial index, not by overwriting the
     # column - the row is still the record of which key created it, and it never moved.
     booked = await _seed(db_session)
-    original_key = (
-        await _row(db_session, booked.appointment_id)
-    ).idempotency_key  # type: ignore[attr-defined]
+    original_key = (await _row(db_session, booked.appointment_id)).idempotency_key  # type: ignore[attr-defined]
 
     await appointment_repository.cancel(
         db_session,
@@ -961,3 +953,94 @@ async def test_another_patients_appointment_in_the_same_session_cannot_be_moved(
     row = await _row(db_session, booked.appointment_id)
     assert row.starts_at == _TUESDAY_9AM  # type: ignore[attr-defined]
     assert row.status == AppointmentStatus.STANDING  # type: ignore[attr-defined]
+
+
+# --- two identical moves racing ----------------------------------------------
+
+
+async def test_two_identical_concurrent_moves_record_exactly_one(
+    db_session: AsyncSession,
+) -> None:
+    """One transition, one record - the pairing a retry produces.
+
+    `_call` retries a change after DEADLINE_EXCEEDED while the first attempt may still
+    be in flight, so two *identical* moves running at once is the ordinary shape of a
+    retry rather than an exotic race. Exactly one moves the appointment; the other finds
+    it already in the state it asked for and must answer no-op.
+
+    The contention is made deterministic rather than raced: another transaction takes
+    the row lock, the move blocks on it, that transaction commits the very move being
+    attempted, and only then is the blocked statement allowed to proceed. Left to
+    `asyncio.gather`, the two statements usually do not overlap at all and the test
+    passes whether or not the defect is present.
+
+    The trap it guards is `UPDATE ... FROM appointments AS old`: the `old` leg carries
+    no row mark, so when the concurrent commit forces the update to re-check its
+    predicate, PostgreSQL re-reads the target row but keeps `old` from the original
+    snapshot. The loser then matches the guard's target arm, writes values it already
+    has, and reads a *stale* pre-image back - reporting a move it did not perform, and a
+    second `appointment.rescheduled` for one transition.
+    """
+    import asyncio
+
+    from scheduler.db.session import session_factory
+    from sqlalchemy import text
+
+    booked = await _seed(db_session)
+
+    async def move() -> ChangeApplied | ChangeNoOp | ChangeRefused:
+        async with session_factory() as session:
+            # Warm the connection, so the block below is on the row lock rather than on
+            # connection setup - which is what lets the two statements truly overlap.
+            await session.execute(text("SELECT 1"))
+            return await appointment_repository.reschedule(
+                session,
+                session_id=booked.session_id,
+                patient_id=booked.patient_id,
+                appointment_id=booked.appointment_id,
+                new_starts_at=_TUESDAY_10AM,
+                new_practitioner_id=None,
+                expected_starts_at=_TUESDAY_9AM,
+                expected_practitioner_id=booked.practitioner_id,
+                local_now=_LOCAL_NOW,
+                horizon_days=_HORIZON_DAYS,
+            )
+
+    async with session_factory() as winner:
+        # Hold the row, so the move below blocks the moment it reaches its UPDATE.
+        await winner.execute(
+            text("SELECT id FROM appointments WHERE id = :id FOR UPDATE"),
+            {"id": booked.appointment_id},
+        )
+
+        with capture_logs() as logs:
+            blocked = asyncio.create_task(move())
+            await asyncio.sleep(0.3)
+            assert not blocked.done(), "the move should be waiting on the row lock"
+
+            # The winner performs exactly the move the blocked statement is attempting.
+            await winner.execute(
+                text(
+                    "UPDATE appointments SET starts_at = :start, ends_at = :end "
+                    "WHERE id = :id"
+                ),
+                {
+                    "start": _TUESDAY_10AM,
+                    "end": _TUESDAY_11AM,
+                    "id": booked.appointment_id,
+                },
+            )
+            await winner.commit()
+
+            loser = await blocked
+
+    # The appointment is already where the loser asked for it, and the loser did not
+    # move it - so it transitioned nothing.
+    assert isinstance(loser, ChangeNoOp), type(loser).__name__
+    assert loser.appointment.starts_at == _TUESDAY_10AM
+    # SC-009: one transition, one record. A stale pre-image here would report a move
+    # from 09:00 that this statement never performed.
+    assert [log["event"] for log in logs].count("appointment.rescheduled") == 0
+
+    row = await _row(db_session, booked.appointment_id)
+    assert row.starts_at == _TUESDAY_10AM  # type: ignore[attr-defined]

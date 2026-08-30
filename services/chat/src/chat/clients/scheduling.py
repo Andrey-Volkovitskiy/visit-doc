@@ -785,10 +785,12 @@ def _to_change_outcome(
     Raises:
         SchedulingRequestError: the refusal named a reason this build cannot explain.
             The refusal itself is trustworthy - nothing was changed.
-        SchedulingUnavailableError: the response carried no result at all, with
-            `outcome_unknown` true. The contract allows no such response, so what the
-            scheduler did before sending it cannot be inferred - which is the one thing
-            that separates this from a refusal we merely cannot name.
+        SchedulingUnavailableError: with `outcome_unknown` true, for the two cases where
+            the scheduler's answer cannot be read but is not a refusal - a response
+            carrying no result at all, and an appointment this build cannot render
+            (a status a newer scheduler has and this one does not). The second matters
+            most: the change *completed*, so letting it surface as a request error
+            would have the caller tell the patient nothing was changed.
 
     `previous_practitioner_full_name` falls back to the appointment's current
     practitioner when the response names none, which is what a cancellation sends: it
@@ -800,15 +802,29 @@ def _to_change_outcome(
             reason=_read_change_reason(response.failure),
             detail=response.failure.detail,
         )
-    if result == "no_change":
-        return ChangeNoOp(appointment=_to_appointment(response.no_change.appointment))
-    if result != "appointment":
+    if result != "appointment" and result != "no_change":
         get_logger().error("change.response_without_result")
         raise SchedulingUnavailableError(
             "change response carried no result", outcome_unknown=True
         )
 
-    appointment = _to_appointment(response.appointment)
+    # From here the scheduler has told us the change did not fail, so a failure to read
+    # its answer can no longer be reported as one.
+    try:
+        rendered = _to_appointment(
+            response.no_change.appointment
+            if result == "no_change"
+            else response.appointment
+        )
+    except SchedulingRequestError as exc:
+        raise SchedulingUnavailableError(
+            f"change response could not be read: {exc}", outcome_unknown=True
+        ) from exc
+
+    if result == "no_change":
+        return ChangeNoOp(appointment=rendered)
+
+    appointment = rendered
     previous_starts_at = (
         parse_local_datetime(response.previous_starts_at)
         if response.previous_starts_at

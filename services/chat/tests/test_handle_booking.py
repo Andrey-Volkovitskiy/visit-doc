@@ -566,7 +566,10 @@ async def test_a_raising_write_is_not_reported_as_having_created_nothing() -> No
     reported = json.loads(sent[-1]["content"][0]["content"])
     assert "Nothing was booked" not in reported["explanation"]
     assert "not known whether" in reported["explanation"]
-    assert result.outcome is BookingOutcome.UNAVAILABLE
+    # The outcome carries the same meaning the explanation does. `UNAVAILABLE` would
+    # not: the composing step is told that one means nothing was created, moved or
+    # cancelled, which is precisely what this path cannot claim.
+    assert result.outcome is BookingOutcome.OUTCOME_UNKNOWN
 
 
 async def test_every_tool_call_leaves_a_called_and_a_result_line() -> None:

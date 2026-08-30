@@ -749,9 +749,7 @@ async def test_a_change_reason_this_build_cannot_name_is_a_request_error() -> No
     )
     ctx, _ = _patched("CancelAppointment", [response])
     with ctx, pytest.raises(scheduling.SchedulingRequestError):
-        await scheduling.cancel_appointment(
-            _CHANNEL, _settings(), **_change_kwargs()
-        )
+        await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
 
 
 async def test_the_cancel_request_carries_the_guard_fields_verbatim() -> None:
@@ -762,9 +760,7 @@ async def test_the_cancel_request_carries_the_guard_fields_verbatim() -> None:
         [pb.ChangeAppointmentResponse(appointment=_wire_appointment())],
     )
     with ctx:
-        await scheduling.cancel_appointment(
-            _CHANNEL, _settings(), **_change_kwargs()
-        )
+        await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
 
     request = method.calls[0]["request"]
     assert request.expected_starts_at == "2026-08-18T09:00:00"
@@ -1118,3 +1114,49 @@ async def test_the_reschedule_request_carries_a_new_practitioner_when_given() ->
     assert method.calls[0]["request"].new_practitioner_id == (
         "01OTHERPRACTITIONER00000"
     )
+
+
+async def test_a_completed_change_this_build_cannot_render_is_never_a_flat_denial() -> (
+    None
+):
+    """The response said the change was applied; only its rendering failed.
+
+    A scheduler deployed ahead of this one sends an appointment status this build has
+    no member for. That is a defect, but the change *happened* - so it must not surface
+    as `SchedulingRequestError`, which the change handlers report to the patient as
+    "nothing was changed. The appointment still stands exactly as it was."
+    """
+    appointment = _wire_appointment()
+    appointment.status = 99  # a third status, from a newer scheduler
+    response = pb.ChangeAppointmentResponse(appointment=appointment)
+    ctx, _ = _patched("CancelAppointment", [response])
+
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
+        await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
+
+    assert caught.value.outcome_unknown is True
+
+
+async def test_a_no_op_this_build_cannot_render_is_also_not_a_denial() -> None:
+    # Nothing was written on this branch, but the appointment is in the state asked
+    # for - so "it still stands exactly as it was" is the wrong thing to say too.
+    appointment = _wire_appointment()
+    appointment.status = 99
+    response = pb.ChangeAppointmentResponse(
+        no_change=pb.NoChange(appointment=appointment)
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError):
+        await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
+
+
+async def test_a_refusal_this_build_cannot_name_is_still_a_request_error() -> None:
+    # Unchanged: the server declined, so nothing happened and that is known.
+    response = pb.ChangeAppointmentResponse(
+        failure=pb.ChangeFailure(reason=pb.CHANGE_FAILURE_REASON_UNSPECIFIED)
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
