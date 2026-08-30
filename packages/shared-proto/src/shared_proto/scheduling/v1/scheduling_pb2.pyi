@@ -17,6 +17,12 @@ class Weekday(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     WEEKDAY_SATURDAY: _ClassVar[Weekday]
     WEEKDAY_SUNDAY: _ClassVar[Weekday]
 
+class AppointmentStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    APPOINTMENT_STATUS_UNSPECIFIED: _ClassVar[AppointmentStatus]
+    APPOINTMENT_STATUS_STANDING: _ClassVar[AppointmentStatus]
+    APPOINTMENT_STATUS_CANCELLED: _ClassVar[AppointmentStatus]
+
 class BookingFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     BOOKING_FAILURE_REASON_UNSPECIFIED: _ClassVar[BookingFailureReason]
@@ -34,6 +40,34 @@ class RenameFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     RENAME_FAILURE_REASON_UNSPECIFIED: _ClassVar[RenameFailureReason]
     RENAME_FAILURE_REASON_NAME_TAKEN: _ClassVar[RenameFailureReason]
     RENAME_FAILURE_REASON_PATIENT_NOT_FOUND: _ClassVar[RenameFailureReason]
+
+class ChangeFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    CHANGE_FAILURE_REASON_UNSPECIFIED: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_ALREADY_CANCELLED: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_ALREADY_STARTED: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_STALE_CONFIRMATION: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_PRACTITIONER_NOT_FOUND: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_PATIENT_NOT_FOUND: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_IN_PAST: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_BEYOND_HORIZON: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_OUTSIDE_SCHEDULE: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_OFF_GRID: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_PRACTITIONER_BUSY: _ClassVar[ChangeFailureReason]
+    CHANGE_FAILURE_REASON_PATIENT_BUSY: _ClassVar[ChangeFailureReason]
+
+class TimeFilter(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    TIME_FILTER_FUTURE: _ClassVar[TimeFilter]
+    TIME_FILTER_PAST: _ClassVar[TimeFilter]
+    TIME_FILTER_BOTH: _ClassVar[TimeFilter]
+
+class StatusFilter(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    STATUS_FILTER_STANDING: _ClassVar[StatusFilter]
+    STATUS_FILTER_CANCELLED: _ClassVar[StatusFilter]
+    STATUS_FILTER_BOTH: _ClassVar[StatusFilter]
 WEEKDAY_MONDAY: Weekday
 WEEKDAY_TUESDAY: Weekday
 WEEKDAY_WEDNESDAY: Weekday
@@ -41,6 +75,9 @@ WEEKDAY_THURSDAY: Weekday
 WEEKDAY_FRIDAY: Weekday
 WEEKDAY_SATURDAY: Weekday
 WEEKDAY_SUNDAY: Weekday
+APPOINTMENT_STATUS_UNSPECIFIED: AppointmentStatus
+APPOINTMENT_STATUS_STANDING: AppointmentStatus
+APPOINTMENT_STATUS_CANCELLED: AppointmentStatus
 BOOKING_FAILURE_REASON_UNSPECIFIED: BookingFailureReason
 BOOKING_FAILURE_REASON_PRACTITIONER_BUSY: BookingFailureReason
 BOOKING_FAILURE_REASON_PATIENT_BUSY: BookingFailureReason
@@ -53,6 +90,25 @@ BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND: BookingFailureReason
 RENAME_FAILURE_REASON_UNSPECIFIED: RenameFailureReason
 RENAME_FAILURE_REASON_NAME_TAKEN: RenameFailureReason
 RENAME_FAILURE_REASON_PATIENT_NOT_FOUND: RenameFailureReason
+CHANGE_FAILURE_REASON_UNSPECIFIED: ChangeFailureReason
+CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND: ChangeFailureReason
+CHANGE_FAILURE_REASON_ALREADY_CANCELLED: ChangeFailureReason
+CHANGE_FAILURE_REASON_ALREADY_STARTED: ChangeFailureReason
+CHANGE_FAILURE_REASON_STALE_CONFIRMATION: ChangeFailureReason
+CHANGE_FAILURE_REASON_PRACTITIONER_NOT_FOUND: ChangeFailureReason
+CHANGE_FAILURE_REASON_PATIENT_NOT_FOUND: ChangeFailureReason
+CHANGE_FAILURE_REASON_IN_PAST: ChangeFailureReason
+CHANGE_FAILURE_REASON_BEYOND_HORIZON: ChangeFailureReason
+CHANGE_FAILURE_REASON_OUTSIDE_SCHEDULE: ChangeFailureReason
+CHANGE_FAILURE_REASON_OFF_GRID: ChangeFailureReason
+CHANGE_FAILURE_REASON_PRACTITIONER_BUSY: ChangeFailureReason
+CHANGE_FAILURE_REASON_PATIENT_BUSY: ChangeFailureReason
+TIME_FILTER_FUTURE: TimeFilter
+TIME_FILTER_PAST: TimeFilter
+TIME_FILTER_BOTH: TimeFilter
+STATUS_FILTER_STANDING: StatusFilter
+STATUS_FILTER_CANCELLED: StatusFilter
+STATUS_FILTER_BOTH: StatusFilter
 
 class WorkingRange(_message.Message):
     __slots__ = ("weekday", "start_time", "end_time")
@@ -89,7 +145,7 @@ class Practitioner(_message.Message):
     def __init__(self, id: _Optional[str] = ..., full_name: _Optional[str] = ..., specialty: _Optional[str] = ..., appointment_duration_minutes: _Optional[int] = ..., schedule: _Optional[_Iterable[_Union[WorkingRange, _Mapping]]] = ...) -> None: ...
 
 class Appointment(_message.Message):
-    __slots__ = ("id", "patient_id", "patient_full_name", "practitioner_id", "practitioner_full_name", "practitioner_specialty", "starts_at", "ends_at")
+    __slots__ = ("id", "patient_id", "patient_full_name", "practitioner_id", "practitioner_full_name", "practitioner_specialty", "starts_at", "ends_at", "status")
     ID_FIELD_NUMBER: _ClassVar[int]
     PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
     PATIENT_FULL_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -98,6 +154,7 @@ class Appointment(_message.Message):
     PRACTITIONER_SPECIALTY_FIELD_NUMBER: _ClassVar[int]
     STARTS_AT_FIELD_NUMBER: _ClassVar[int]
     ENDS_AT_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
     id: str
     patient_id: str
     patient_full_name: str
@@ -106,7 +163,8 @@ class Appointment(_message.Message):
     practitioner_specialty: str
     starts_at: str
     ends_at: str
-    def __init__(self, id: _Optional[str] = ..., patient_id: _Optional[str] = ..., patient_full_name: _Optional[str] = ..., practitioner_id: _Optional[str] = ..., practitioner_full_name: _Optional[str] = ..., practitioner_specialty: _Optional[str] = ..., starts_at: _Optional[str] = ..., ends_at: _Optional[str] = ...) -> None: ...
+    status: AppointmentStatus
+    def __init__(self, id: _Optional[str] = ..., patient_id: _Optional[str] = ..., patient_full_name: _Optional[str] = ..., practitioner_id: _Optional[str] = ..., practitioner_full_name: _Optional[str] = ..., practitioner_specialty: _Optional[str] = ..., starts_at: _Optional[str] = ..., ends_at: _Optional[str] = ..., status: _Optional[_Union[AppointmentStatus, str]] = ...) -> None: ...
 
 class BookingFailure(_message.Message):
     __slots__ = ("reason", "detail")
@@ -123,6 +181,20 @@ class RenameFailure(_message.Message):
     reason: RenameFailureReason
     detail: str
     def __init__(self, reason: _Optional[_Union[RenameFailureReason, str]] = ..., detail: _Optional[str] = ...) -> None: ...
+
+class ChangeFailure(_message.Message):
+    __slots__ = ("reason", "detail")
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    DETAIL_FIELD_NUMBER: _ClassVar[int]
+    reason: ChangeFailureReason
+    detail: str
+    def __init__(self, reason: _Optional[_Union[ChangeFailureReason, str]] = ..., detail: _Optional[str] = ...) -> None: ...
+
+class NoChange(_message.Message):
+    __slots__ = ("appointment",)
+    APPOINTMENT_FIELD_NUMBER: _ClassVar[int]
+    appointment: Appointment
+    def __init__(self, appointment: _Optional[_Union[Appointment, _Mapping]] = ...) -> None: ...
 
 class EnsureSessionProvisionedRequest(_message.Message):
     __slots__ = ("session_id", "chat_id")
@@ -175,20 +247,22 @@ class ListPractitionersResponse(_message.Message):
     def __init__(self, practitioners: _Optional[_Iterable[_Union[Practitioner, _Mapping]]] = ...) -> None: ...
 
 class CheckAvailabilityRequest(_message.Message):
-    __slots__ = ("session_id", "practitioner_id", "from_date", "to_date", "local_now", "patient_id")
+    __slots__ = ("session_id", "practitioner_id", "from_date", "to_date", "local_now", "patient_id", "excluded_appointment_id")
     SESSION_ID_FIELD_NUMBER: _ClassVar[int]
     PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
     FROM_DATE_FIELD_NUMBER: _ClassVar[int]
     TO_DATE_FIELD_NUMBER: _ClassVar[int]
     LOCAL_NOW_FIELD_NUMBER: _ClassVar[int]
     PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    EXCLUDED_APPOINTMENT_ID_FIELD_NUMBER: _ClassVar[int]
     session_id: str
     practitioner_id: str
     from_date: str
     to_date: str
     local_now: str
     patient_id: str
-    def __init__(self, session_id: _Optional[str] = ..., practitioner_id: _Optional[str] = ..., from_date: _Optional[str] = ..., to_date: _Optional[str] = ..., local_now: _Optional[str] = ..., patient_id: _Optional[str] = ...) -> None: ...
+    excluded_appointment_id: str
+    def __init__(self, session_id: _Optional[str] = ..., practitioner_id: _Optional[str] = ..., from_date: _Optional[str] = ..., to_date: _Optional[str] = ..., local_now: _Optional[str] = ..., patient_id: _Optional[str] = ..., excluded_appointment_id: _Optional[str] = ...) -> None: ...
 
 class CheckAvailabilityResponse(_message.Message):
     __slots__ = ("available_starts", "truncated", "appointment_duration_minutes")
@@ -226,21 +300,79 @@ class BookAppointmentResponse(_message.Message):
     idempotent_replay: bool
     def __init__(self, appointment: _Optional[_Union[Appointment, _Mapping]] = ..., failure: _Optional[_Union[BookingFailure, _Mapping]] = ..., idempotent_replay: _Optional[bool] = ...) -> None: ...
 
-class ListUpcomingAppointmentsRequest(_message.Message):
-    __slots__ = ("session_id", "patient_id", "local_now")
+class RescheduleAppointmentRequest(_message.Message):
+    __slots__ = ("session_id", "patient_id", "appointment_id", "new_starts_at", "new_practitioner_id", "expected_starts_at", "expected_practitioner_id", "local_now")
     SESSION_ID_FIELD_NUMBER: _ClassVar[int]
     PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    APPOINTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    NEW_STARTS_AT_FIELD_NUMBER: _ClassVar[int]
+    NEW_PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
+    EXPECTED_STARTS_AT_FIELD_NUMBER: _ClassVar[int]
+    EXPECTED_PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
     LOCAL_NOW_FIELD_NUMBER: _ClassVar[int]
     session_id: str
     patient_id: str
+    appointment_id: str
+    new_starts_at: str
+    new_practitioner_id: str
+    expected_starts_at: str
+    expected_practitioner_id: str
     local_now: str
-    def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., local_now: _Optional[str] = ...) -> None: ...
+    def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., appointment_id: _Optional[str] = ..., new_starts_at: _Optional[str] = ..., new_practitioner_id: _Optional[str] = ..., expected_starts_at: _Optional[str] = ..., expected_practitioner_id: _Optional[str] = ..., local_now: _Optional[str] = ...) -> None: ...
 
-class ListUpcomingAppointmentsResponse(_message.Message):
-    __slots__ = ("appointments",)
-    APPOINTMENTS_FIELD_NUMBER: _ClassVar[int]
-    appointments: _containers.RepeatedCompositeFieldContainer[Appointment]
-    def __init__(self, appointments: _Optional[_Iterable[_Union[Appointment, _Mapping]]] = ...) -> None: ...
+class CancelAppointmentRequest(_message.Message):
+    __slots__ = ("session_id", "patient_id", "appointment_id", "expected_starts_at", "expected_practitioner_id", "local_now")
+    SESSION_ID_FIELD_NUMBER: _ClassVar[int]
+    PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    APPOINTMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    EXPECTED_STARTS_AT_FIELD_NUMBER: _ClassVar[int]
+    EXPECTED_PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
+    LOCAL_NOW_FIELD_NUMBER: _ClassVar[int]
+    session_id: str
+    patient_id: str
+    appointment_id: str
+    expected_starts_at: str
+    expected_practitioner_id: str
+    local_now: str
+    def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., appointment_id: _Optional[str] = ..., expected_starts_at: _Optional[str] = ..., expected_practitioner_id: _Optional[str] = ..., local_now: _Optional[str] = ...) -> None: ...
+
+class ChangeAppointmentResponse(_message.Message):
+    __slots__ = ("appointment", "no_change", "failure", "previous_starts_at", "previous_practitioner_id")
+    APPOINTMENT_FIELD_NUMBER: _ClassVar[int]
+    NO_CHANGE_FIELD_NUMBER: _ClassVar[int]
+    FAILURE_FIELD_NUMBER: _ClassVar[int]
+    PREVIOUS_STARTS_AT_FIELD_NUMBER: _ClassVar[int]
+    PREVIOUS_PRACTITIONER_ID_FIELD_NUMBER: _ClassVar[int]
+    appointment: Appointment
+    no_change: NoChange
+    failure: ChangeFailure
+    previous_starts_at: str
+    previous_practitioner_id: str
+    def __init__(self, appointment: _Optional[_Union[Appointment, _Mapping]] = ..., no_change: _Optional[_Union[NoChange, _Mapping]] = ..., failure: _Optional[_Union[ChangeFailure, _Mapping]] = ..., previous_starts_at: _Optional[str] = ..., previous_practitioner_id: _Optional[str] = ...) -> None: ...
+
+class ListAppointmentsRequest(_message.Message):
+    __slots__ = ("session_id", "patient_id", "local_now", "time_filter", "status_filter")
+    SESSION_ID_FIELD_NUMBER: _ClassVar[int]
+    PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    LOCAL_NOW_FIELD_NUMBER: _ClassVar[int]
+    TIME_FILTER_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FILTER_FIELD_NUMBER: _ClassVar[int]
+    session_id: str
+    patient_id: str
+    local_now: str
+    time_filter: TimeFilter
+    status_filter: StatusFilter
+    def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., local_now: _Optional[str] = ..., time_filter: _Optional[_Union[TimeFilter, str]] = ..., status_filter: _Optional[_Union[StatusFilter, str]] = ...) -> None: ...
+
+class ListAppointmentsResponse(_message.Message):
+    __slots__ = ("future", "past", "past_truncated")
+    FUTURE_FIELD_NUMBER: _ClassVar[int]
+    PAST_FIELD_NUMBER: _ClassVar[int]
+    PAST_TRUNCATED_FIELD_NUMBER: _ClassVar[int]
+    future: _containers.RepeatedCompositeFieldContainer[Appointment]
+    past: _containers.RepeatedCompositeFieldContainer[Appointment]
+    past_truncated: bool
+    def __init__(self, future: _Optional[_Iterable[_Union[Appointment, _Mapping]]] = ..., past: _Optional[_Iterable[_Union[Appointment, _Mapping]]] = ..., past_truncated: _Optional[bool] = ...) -> None: ...
 
 class DeletePatientForChatRequest(_message.Message):
     __slots__ = ("session_id", "chat_id")

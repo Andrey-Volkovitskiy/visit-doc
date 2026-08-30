@@ -1,6 +1,9 @@
 from datetime import datetime, time
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +15,12 @@ from .conftest import (
     make_working_range,
     new_id,
 )
+
+_SCHEDULER_ROOT = Path(__file__).resolve().parents[1]
+
+# How PostgreSQL renders `status = 'standing'` back out of a partial constraint or
+# index, with its own casts and parenthesisation.
+_STANDING_PREDICATE = "(status)::text = 'standing'::text"
 
 
 async def _scalar(session: AsyncSession, sql: str) -> object:
@@ -325,3 +334,148 @@ async def test_idempotency_key_is_globally_unique(db_session: AsyncSession) -> N
     )
     with pytest.raises(IntegrityError):
         await db_session.commit()
+
+
+async def _constraint_def(session: AsyncSession, name: str) -> str | None:
+    result = await session.execute(
+        text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = :name"
+        ),
+        {"name": name},
+    )
+    value = result.scalar()
+    return None if value is None else str(value)
+
+
+async def _index_def(session: AsyncSession, name: str) -> str | None:
+    result = await session.execute(
+        text("SELECT indexdef FROM pg_indexes WHERE indexname = :name"),
+        {"name": name},
+    )
+    value = result.scalar()
+    return None if value is None else str(value)
+
+
+async def test_appointments_has_the_status_column(db_session: AsyncSession) -> None:
+    result = await db_session.execute(
+        text(
+            "SELECT data_type, character_maximum_length, is_nullable, column_default "
+            "FROM information_schema.columns "
+            "WHERE table_name = 'appointments' AND column_name = 'status'"
+        )
+    )
+    row = result.one()
+    assert row.data_type == "character varying"
+    assert row.character_maximum_length == 16
+    assert row.is_nullable == "NO"
+    assert "standing" in row.column_default
+
+
+async def test_the_status_check_constraint_names_both_values(
+    db_session: AsyncSession,
+) -> None:
+    definition = await _constraint_def(db_session, "appointments_status_valid")
+    assert definition is not None
+    assert "standing" in definition
+    assert "cancelled" in definition
+
+
+async def test_both_exclusion_constraints_are_partial_on_standing(
+    db_session: AsyncSession,
+) -> None:
+    # The single assertion the whole feature rests on: without this `WHERE`, a
+    # cancelled appointment goes on occupying its slot and SC-011 fails at the
+    # datastore, where no application filter could rescue it.
+    for name in (
+        "appointments_patient_no_overlap",
+        "appointments_practitioner_no_overlap",
+    ):
+        definition = await _constraint_def(db_session, name)
+        assert definition is not None, name
+        assert _STANDING_PREDICATE in definition, name
+
+
+async def test_the_idempotency_key_is_a_partial_unique_index(
+    db_session: AsyncSession,
+) -> None:
+    definition = await _index_def(
+        db_session, "ix_appointments_idempotency_key_standing"
+    )
+    assert definition is not None
+    assert "UNIQUE" in definition
+    assert _STANDING_PREDICATE in definition
+
+
+async def test_the_old_unconditional_key_constraint_is_gone(
+    db_session: AsyncSession,
+) -> None:
+    # Dropped, not left alongside: keeping it would go on holding the key of a
+    # cancelled appointment and FR-011's release would never happen.
+    assert (
+        await _constraint_def(db_session, "appointments_idempotency_key_unique")
+        is None
+    )
+
+
+async def test_the_listing_index_exists(db_session: AsyncSession) -> None:
+    definition = await _index_def(db_session, "ix_appointments_patient_status_starts")
+    assert definition is not None
+    assert "patient_id" in definition
+    assert "status" in definition
+    assert "starts_at" in definition
+
+
+def test_the_status_revision_downgrades_and_upgrades_cleanly() -> None:
+    """Round-trip the 006 revision, and leave the schema back at head.
+
+    Synchronous, and outside the `db_session` fixture, because alembic drives its own
+    sync engine: an async session holding a transaction open would deadlock the DDL
+    this takes.
+    """
+    from shared_db import sync_database_url
+    from sqlalchemy import create_engine as create_sync_engine
+
+    alembic_cfg = Config(str(_SCHEDULER_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_SCHEDULER_ROOT / "alembic"))
+    # The same env var alembic's own env.py reads, so the round trip runs against the
+    # isolated test database this suite's conftest pointed that var at.
+    engine = create_sync_engine(sync_database_url("SCHEDULER_DATABASE_URL"))
+
+    def status_columns() -> int:
+        with engine.connect() as connection:
+            return int(
+                connection.execute(
+                    text(
+                        "SELECT count(*) FROM information_schema.columns "
+                        "WHERE table_name = 'appointments' AND column_name = 'status'"
+                    )
+                ).scalar_one()
+            )
+
+    def key_constraints() -> int:
+        with engine.connect() as connection:
+            return int(
+                connection.execute(
+                    text(
+                        "SELECT count(*) FROM pg_constraint "
+                        "WHERE conname = 'appointments_idempotency_key_unique'"
+                    )
+                ).scalar_one()
+            )
+
+    try:
+        command.downgrade(alembic_cfg, "-1")
+        assert status_columns() == 0
+        # The 005 shape is genuinely restored, not merely stripped of the column: the
+        # unconditional key constraint comes back, so a downgrade leaves a database
+        # the previous release can run against.
+        assert key_constraints() == 1
+
+        command.upgrade(alembic_cfg, "head")
+        assert status_columns() == 1
+        assert key_constraints() == 0
+    finally:
+        # Head either way, so a failure mid-round-trip does not leave every later
+        # test in this session running against a half-migrated schema.
+        command.upgrade(alembic_cfg, "head")
+        engine.dispose()

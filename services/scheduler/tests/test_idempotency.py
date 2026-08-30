@@ -269,3 +269,64 @@ async def test_two_concurrent_identical_attempts_yield_one_row_and_a_replay(
     assert len(ids) == 1
     async with session_factory() as session:
         assert await _appointment_count(session) == 1
+
+
+async def test_get_by_idempotency_key_ignores_a_cancelled_row_holding_the_key(
+    db_session: AsyncSession,
+) -> None:
+    from shared_models.scheduling import AppointmentStatus
+
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    db_session.add(
+        make_appointment(
+            session_id,
+            patient.id,
+            practitioner.id,
+            _TUESDAY_9AM,
+            _TUESDAY_9AM + timedelta(hours=1),
+            idempotency_key=_KEY,
+            status=AppointmentStatus.CANCELLED,
+        )
+    )
+    await db_session.commit()
+
+    assert await appointment_repository.get_by_idempotency_key(db_session, _KEY) is None
+
+
+async def test_a_key_freed_by_cancellation_books_a_new_appointment_not_a_replay(
+    db_session: AsyncSession,
+) -> None:
+    # The worst outcome available in this feature is a cancelled appointment being
+    # replayed to a caller rebooking that slot - returning it as a fresh booking.
+    from shared_models.scheduling import AppointmentStatus
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    first = await _book(
+        db_session,
+        session_id=session_id,
+        patient_id=patient.id,
+        practitioner_id=practitioner.id,
+    )
+    assert isinstance(first, BookingCreated)
+    original_id = first.appointment.id
+
+    first.appointment.status = AppointmentStatus.CANCELLED
+    await db_session.commit()
+
+    second = await _book(
+        db_session,
+        session_id=session_id,
+        patient_id=patient.id,
+        practitioner_id=practitioner.id,
+    )
+
+    assert isinstance(second, BookingCreated)
+    assert second.idempotent_replay is False
+    assert second.appointment.id != original_id
+    assert second.appointment.status == AppointmentStatus.STANDING

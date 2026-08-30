@@ -17,7 +17,13 @@ from shared_models.localtime import (
     parse_local_date,
     parse_local_datetime,
 )
-from shared_models.scheduling import BookingFailureReason, NotFoundEntity
+from shared_models.scheduling import (
+    BookingFailureReason,
+    ChangeFailureReason,
+    NotFoundEntity,
+    StatusFilter,
+    TimeFilter,
+)
 
 from chat.agent.tools.registry import (
     Tool,
@@ -29,6 +35,9 @@ from chat.agent.tools.registry import (
 from chat.clients import scheduling
 from chat.clients.scheduling import (
     BookingRefusal,
+    ChangeApplied,
+    ChangeNoOp,
+    ChangeRefusal,
     SchedulingNotFoundError,
     SchedulingRequestError,
     SchedulingUnavailableError,
@@ -53,9 +62,57 @@ _UNAVAILABLE_EXPLANATION = "Booking is temporarily unavailable. Nothing was book
 # did. Claiming nothing was booked would be a guess, and the one guess that turns into
 # the patient booking a second appointment they cannot cancel.
 _OUTCOME_UNKNOWN_EXPLANATION = (
-    "The booking service stopped responding, so it is not known whether that "
-    "appointment was created. Do not say it was booked, and do not book it again - "
-    "tell the patient to check with the clinic before trying again."
+    "The scheduling service stopped responding, so it is not known whether that went "
+    "through. Do not say it did, do not say it did not, and do not try it again - tell "
+    "the patient to check with the clinic."
+)
+
+# One sentence per change reason. The set is closed and the scheduler picks exactly one
+# per attempt, so this mapping is total - and it is the handler's, not the model's, so
+# the model rephrases a cause it cannot invent or contradict.
+CHANGE_EXPLANATION_BY_REASON = {
+    ChangeFailureReason.APPOINTMENT_NOT_FOUND: (
+        "There is no such appointment on this patient's record."
+    ),
+    ChangeFailureReason.ALREADY_CANCELLED: (
+        "That appointment was already cancelled, so there is nothing to move."
+    ),
+    ChangeFailureReason.ALREADY_STARTED: (
+        "That appointment has already started, so it can no longer be changed."
+    ),
+    ChangeFailureReason.STALE_CONFIRMATION: (
+        "That appointment has changed since it was read out. Describe it as it now "
+        "stands and ask again - do not repeat the change."
+    ),
+    ChangeFailureReason.PRACTITIONER_NOT_FOUND: (
+        "That practitioner is not one of this clinic's."
+    ),
+    ChangeFailureReason.PATIENT_NOT_FOUND: (
+        "This chat has no patient record, so nothing could be changed."
+    ),
+    ChangeFailureReason.IN_PAST: "That new time has already passed.",
+    ChangeFailureReason.BEYOND_HORIZON: (
+        "That is further ahead than appointments can be booked."
+    ),
+    ChangeFailureReason.OUTSIDE_SCHEDULE: (
+        "That time is outside the hours this practitioner sees patients."
+    ),
+    ChangeFailureReason.OFF_GRID: (
+        "Appointments start at fixed times, and that is not one of them."
+    ),
+    ChangeFailureReason.PRACTITIONER_BUSY: (
+        "That practitioner already has something booked then."
+    ),
+    ChangeFailureReason.PATIENT_BUSY: (
+        "The patient already has another appointment overlapping that time."
+    ),
+}
+
+# What the appointment was already in the state asked for. Reported as done, never as a
+# failure and never as a second change.
+_UNCHANGED_EXPLANATION = (
+    "That appointment is already in exactly that state, so nothing needed to change. "
+    "Report it as done."
 )
 
 # One sentence per id that can fail to resolve. The scheduler names which one, so the
@@ -184,8 +241,15 @@ def _reports_unavailable(
 
 
 def _outcome_unknown() -> ToolResult:
-    """The result for a write whose fate the scheduler could not confirm."""
-    return {"status": "unavailable", "explanation": _OUTCOME_UNKNOWN_EXPLANATION}
+    """The result for a write whose fate the scheduler could not confirm.
+
+    Its own status, not a variant of `unavailable`: `unavailable` states that nothing
+    happened, and saying that about a write whose answer never arrived is exactly the
+    claim the contract forbids. Kept in `status` rather than only in the explanation so
+    the turn's outcome derivation and the composing step both see the difference, not
+    just a reader of English.
+    """
+    return {"status": "unknown", "explanation": _OUTCOME_UNKNOWN_EXPLANATION}
 
 
 # Which refusal reason to report per unresolved entity, so the model reads a cause it
@@ -344,12 +408,54 @@ async def book_appointment(
     }
 
 
-async def list_my_appointments(
-    context: ToolContext, _arguments: dict[str, Any]
-) -> ToolResult:
-    """Return this patient's upcoming appointments, earliest first.
+def _optional_enum(
+    arguments: dict[str, Any], name: str, enum: type[TimeFilter] | type[StatusFilter]
+) -> Any:
+    """Read an optional axis argument as its enum member, or None when absent.
 
-    An empty list is an explicit "nothing upcoming", not an error - a patient the
+    Raises: ToolArgumentError if the value is outside the closed set - rejected before
+        anything happens, so the model can correct the call within the same turn rather
+        than silently getting a corner it did not ask for.
+    """
+    value = arguments.get(name)
+    if value is None:
+        return None
+    try:
+        return enum(value)
+    except ValueError as exc:
+        allowed = ", ".join(member.value for member in enum)
+        raise ToolArgumentError(
+            f"{name} must be one of {allowed}, not {value!r}"
+        ) from exc
+
+
+def _rendered_appointment(appointment: Any) -> dict[str, Any]:
+    """Render one appointment for the model.
+
+    Carries `id` because a change has to name an appointment, and `status` because a
+    cancelled one must be identified as cancelled wherever it appears. Neither is ever
+    said to the patient - that is the prompt's rule, not this layer's.
+    """
+    return {
+        "id": appointment.id,
+        "practitioner_full_name": appointment.practitioner_full_name,
+        "specialty": appointment.practitioner_specialty,
+        "starts_at": format_local_datetime(appointment.starts_at),
+        "ends_at": format_local_datetime(appointment.ends_at),
+        "status": appointment.status.value,
+    }
+
+
+async def list_my_appointments(
+    context: ToolContext, arguments: dict[str, Any]
+) -> ToolResult:
+    """Return this patient's appointments, in two separately bounded legs.
+
+    Both axes are optional and default to the narrowest corner, so the unqualified
+    question answers "still to come, and not cancelled" even when the model sends no
+    arguments at all.
+
+    Two empty legs are an explicit "nothing matching", not an error - a patient the
     scheduler cannot resolve is reported as its own result instead, so the model never
     reads "no appointments" off a lookup that never happened.
 
@@ -357,13 +463,20 @@ async def list_my_appointments(
     None here.
     """
     assert context.patient_id is not None
+
+    time_filter = _optional_enum(arguments, "time_filter", TimeFilter)
+    status_filter = _optional_enum(arguments, "status_filter", StatusFilter)
     try:
-        appointments = await scheduling.list_upcoming_appointments(
+        listing = await scheduling.list_appointments(
             context.channel,
             context.settings,
             session_id=context.session_id,
             patient_id=context.patient_id,
             local_now=context.local_now,
+            time_filter=time_filter if time_filter is not None else TimeFilter.FUTURE,
+            status_filter=(
+                status_filter if status_filter is not None else StatusFilter.STANDING
+            ),
         )
     except SchedulingNotFoundError as exc:
         get_logger().error(
@@ -373,16 +486,114 @@ async def list_my_appointments(
         )
         return {"status": "unavailable", "explanation": _NO_PATIENT_LIST_EXPLANATION}
     return {
-        "appointments": [
-            {
-                "practitioner_full_name": a.practitioner_full_name,
-                "specialty": a.practitioner_specialty,
-                "starts_at": format_local_datetime(a.starts_at),
-                "ends_at": format_local_datetime(a.ends_at),
-            }
-            for a in appointments
-        ]
+        "future": [_rendered_appointment(a) for a in listing.future],
+        "past": [_rendered_appointment(a) for a in listing.past],
+        "past_truncated": listing.past_truncated,
     }
+
+
+def _change_result(
+    outcome: ChangeApplied | ChangeNoOp | ChangeRefusal, change: str
+) -> ToolResult:
+    """Render one change outcome for the model, as one of its four shapes.
+
+    Args:
+        change: What this operation is called in a completed result - "cancelled" or
+            "rescheduled" - so the model reports the change that happened rather than
+            inferring it from which tool it called.
+
+    A no-op is `unchanged`, never `refused`: the appointment is in the state that was
+    asked for, which is success. Only a `refused` result carries a reason, and its
+    explanation comes from the closed table here rather than from the wire's `detail`.
+    """
+    if isinstance(outcome, ChangeRefusal):
+        return {
+            "status": "refused",
+            "reason": outcome.reason.value,
+            "explanation": CHANGE_EXPLANATION_BY_REASON[outcome.reason],
+        }
+    if isinstance(outcome, ChangeNoOp):
+        return {
+            "status": "unchanged",
+            "appointment": _rendered_appointment(outcome.appointment),
+            "explanation": _UNCHANGED_EXPLANATION,
+        }
+    result: ToolResult = {
+        "status": "changed",
+        "change": change,
+        "appointment": _rendered_appointment(outcome.appointment),
+        "previous_starts_at": format_local_datetime(outcome.previous_starts_at),
+        "previous_practitioner_full_name": outcome.previous_practitioner_full_name,
+    }
+    return result
+
+
+async def cancel_appointment(
+    context: ToolContext, arguments: dict[str, Any]
+) -> ToolResult:
+    """Cancel one real appointment, or explain why it was not.
+
+    The guard arguments are the model's own: only it knows what it stated to the
+    patient. Re-reading the appointment here would return its current state, which
+    matches itself by definition and disables the guard completely.
+
+    An `unknown` result means the scheduler stopped answering mid-write, so whether the
+    appointment is cancelled is genuinely not known - distinct from `unavailable`, which
+    says nothing happened.
+
+    The registry guarantees a patient record before this runs, so `patient_id` is never
+    None here.
+    """
+    assert context.patient_id is not None
+
+    appointment_id = required_argument(arguments, "appointment_id")
+    expected_starts_at = _required_datetime(arguments, "expected_starts_at")
+    expected_practitioner_id = required_argument(
+        arguments, "expected_practitioner_id"
+    )
+    try:
+        outcome = await scheduling.cancel_appointment(
+            context.channel,
+            context.settings,
+            session_id=context.session_id,
+            patient_id=context.patient_id,
+            appointment_id=appointment_id,
+            expected_starts_at=expected_starts_at,
+            expected_practitioner_id=expected_practitioner_id,
+            local_now=context.local_now,
+        )
+    except SchedulingUnavailableError as exc:
+        return _write_failed("cancel", appointment_id, exc)
+    except SchedulingRequestError as exc:
+        get_logger().error(
+            "change.response_unreadable",
+            operation="cancel",
+            appointment_id=appointment_id,
+            error_detail=str(exc),
+        )
+        return _outcome_unknown()
+
+    return _change_result(outcome, change="cancelled")
+
+
+def _write_failed(
+    operation: str, appointment_id: str, exc: SchedulingUnavailableError
+) -> ToolResult:
+    """Render an unreachable scheduler for a change, saying only what is known.
+
+    A budget exhausted after the request was sent proves nothing about what the server
+    did, so that case is `unknown`. Only when every attempt provably failed to reach the
+    scheduler is "nothing happened" a fact rather than a guess.
+    """
+    if not exc.outcome_unknown:
+        return _unavailable()
+    get_logger().info(
+        "change.write_unconfirmed",
+        operation=operation,
+        appointment_id=appointment_id,
+        error_detail=str(exc),
+    )
+    return _outcome_unknown()
 
 
 SCHEDULING_TOOLS = [
@@ -453,11 +664,69 @@ SCHEDULING_TOOLS = [
     Tool(
         name="list_my_appointments",
         description=(
-            "Lists this patient's upcoming appointments, earliest first. Past "
-            "appointments are not available."
+            "Lists this patient's appointments. By default: still to come, and not "
+            "cancelled. Widen either axis only when the patient asks. Results come "
+            "back as two separate lists - future and past - which are never merged. "
+            "The past list holds at most the 20 most recent; if past_truncated is "
+            "true, say that PART of the list is incomplete, never that the whole "
+            "answer is. Every appointment carries an id you need in order to change "
+            "or cancel it - never say an id to the patient."
         ),
-        input_schema=_NO_ARGUMENTS,
+        input_schema={
+            "type": "object",
+            "properties": {
+                "time_filter": {
+                    "type": "string",
+                    "enum": [f.value for f in TimeFilter],
+                    "description": "defaults to future",
+                },
+                "status_filter": {
+                    "type": "string",
+                    "enum": [f.value for f in StatusFilter],
+                    "description": "defaults to standing (not cancelled)",
+                },
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
         handler=_reports_unavailable(list_my_appointments),
         requires_patient=True,
+    ),
+    Tool(
+        name="cancel_appointment",
+        description=(
+            "Cancels a REAL appointment. Cancellation is final - there is no way to "
+            "un-cancel, and the freed time may be taken by someone else immediately. "
+            "Only call this after the patient has explicitly confirmed, in this turn, "
+            "which appointment is being cancelled. expected_starts_at and "
+            "expected_practitioner_id must be the values you stated to the patient "
+            "when you asked them to confirm - not values you have just re-read."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "appointment_id": {"type": "string"},
+                "expected_starts_at": {
+                    "type": "string",
+                    "description": (
+                        "the start you read out to the patient, "
+                        "YYYY-MM-DDTHH:MM:SS"
+                    ),
+                },
+                "expected_practitioner_id": {
+                    "type": "string",
+                    "description": "the practitioner you read out",
+                },
+            },
+            "required": [
+                "appointment_id",
+                "expected_starts_at",
+                "expected_practitioner_id",
+            ],
+            "additionalProperties": False,
+        },
+        handler=cancel_appointment,
+        requires_patient=True,
+        writes=True,
     ),
 ]

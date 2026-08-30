@@ -18,6 +18,7 @@ from chat.agent.tools.scheduling_tools import (
 )
 from chat.clients.scheduling import (
     AppointmentInfo,
+    AppointmentListing,
     AvailabilityResult,
     BookingRefusal,
     BookingSuccess,
@@ -29,8 +30,11 @@ from chat.clients.scheduling import (
 )
 from chat.core.config import Settings
 from shared_models.scheduling import (
+    AppointmentStatus,
     BookingFailureReason,
     NotFoundEntity,
+    StatusFilter,
+    TimeFilter,
     Weekday,
 )
 from structlog.testing import capture_logs
@@ -78,6 +82,7 @@ def _appointment() -> AppointmentInfo:
         practitioner_specialty="General Practice",
         starts_at=_STARTS_AT,
         ends_at=datetime(2026, 8, 18, 10, 0),
+        status=AppointmentStatus.STANDING,
     )
 
 
@@ -244,7 +249,9 @@ async def test_a_write_of_unknown_outcome_never_claims_nothing_was_booked() -> N
     """The scheduler may have committed the appointment after we stopped waiting.
 
     Telling the patient nothing happened is the one guess that leads them to book a
-    second appointment they cannot cancel.
+    second appointment they cannot cancel. The status carries that distinction itself,
+    rather than leaving it to a reader of the explanation: `unavailable` states that
+    nothing happened, and this path cannot state that.
     """
     with patch.object(
         scheduling_tools.scheduling,
@@ -258,7 +265,8 @@ async def test_a_write_of_unknown_outcome_never_claims_nothing_was_booked() -> N
             {"practitioner_id": _PRACTITIONER_ID, "starts_at": "2026-08-18T09:00:00"},
         )
 
-    assert result["status"] == "unavailable"
+    assert result["status"] == "unknown"
+    assert "nothing was booked" not in result["explanation"].lower()
     assert "Nothing was booked" not in result["explanation"]
     assert "not known whether" in result["explanation"]
 
@@ -396,39 +404,81 @@ async def test_an_unnamed_missing_entity_blames_neither() -> None:
     assert "practitioner" not in result["explanation"]
 
 
-async def test_no_appointments_is_an_empty_list_not_an_error() -> None:
-    with patch.object(
-        scheduling_tools.scheduling,
-        "list_upcoming_appointments",
-        new=AsyncMock(return_value=()),
+async def _listed(listing: AppointmentListing) -> dict[str, Any]:
+    with patch(
+        _CLIENT + ".list_appointments", new=AsyncMock(return_value=listing)
     ):
-        result = await _registry().dispatch("list_my_appointments", {})
+        return await _registry().dispatch("list_my_appointments", {})
 
-    assert result == {"appointments": []}
+
+def _empty() -> AppointmentListing:
+    return AppointmentListing(future=(), past=(), past_truncated=False)
+
+
+async def test_no_appointments_is_two_empty_legs_not_an_error() -> None:
+    result = await _listed(_empty())
+
+    assert result == {"future": [], "past": [], "past_truncated": False}
     assert "status" not in result
 
 
-async def test_listed_appointments_carry_no_internal_ids() -> None:
-    with patch.object(
-        scheduling_tools.scheduling,
-        "list_upcoming_appointments",
-        new=AsyncMock(return_value=(_appointment(),)),
-    ):
-        result = await _registry().dispatch("list_my_appointments", {})
+async def test_a_listed_appointment_carries_its_id_and_status() -> None:
+    # The id is what a change has to name; the status is what FR-015 requires wherever
+    # a cancelled appointment appears. Neither is ever said to the patient.
+    result = await _listed(
+        AppointmentListing(future=(_appointment(),), past=(), past_truncated=False)
+    )
 
-    listed = result["appointments"][0]
+    listed = result["future"][0]
     assert set(listed) == {
+        "id",
         "practitioner_full_name",
         "specialty",
         "starts_at",
         "ends_at",
+        "status",
     }
+    assert listed["id"] == "01APPOINTMENT000000000000"
+    assert listed["status"] == "standing"
 
 
 # --- list_my_appointments ----------------------------------------------------
 
 
-async def test_upcoming_appointments_are_reported_in_the_order_received() -> None:
+async def test_the_two_legs_are_never_merged_into_one_list() -> None:
+    past = AppointmentInfo(
+        id="01PAST",
+        patient_id=_PATIENT_ID,
+        patient_full_name="Ada",
+        practitioner_id=_PRACTITIONER_ID,
+        practitioner_full_name="William Osler",
+        practitioner_specialty="General Practice",
+        starts_at=datetime(2026, 8, 1, 9, 0),
+        ends_at=datetime(2026, 8, 1, 10, 0),
+        status=AppointmentStatus.CANCELLED,
+    )
+
+    result = await _listed(
+        AppointmentListing(
+            future=(_appointment(),), past=(past,), past_truncated=False
+        )
+    )
+
+    assert [a["id"] for a in result["future"]] == ["01APPOINTMENT000000000000"]
+    assert [a["id"] for a in result["past"]] == ["01PAST"]
+    assert result["past"][0]["status"] == "cancelled"
+    assert "appointments" not in result
+
+
+async def test_a_truncated_past_leg_is_surfaced() -> None:
+    result = await _listed(
+        AppointmentListing(future=(), past=(_appointment(),), past_truncated=True)
+    )
+
+    assert result["past_truncated"] is True
+
+
+async def test_appointments_are_reported_in_the_order_received() -> None:
     later = AppointmentInfo(
         id="01SECOND",
         patient_id=_PATIENT_ID,
@@ -438,23 +488,60 @@ async def test_upcoming_appointments_are_reported_in_the_order_received() -> Non
         practitioner_specialty="Dentistry",
         starts_at=datetime(2026, 8, 19, 9, 0),
         ends_at=datetime(2026, 8, 19, 9, 30),
+        status=AppointmentStatus.STANDING,
     )
-    with patch(
-        _CLIENT + ".list_upcoming_appointments",
-        new=AsyncMock(return_value=(_appointment(), later)),
-    ):
-        result = await _registry().dispatch("list_my_appointments", {})
 
-    assert [a["starts_at"] for a in result["appointments"]] == [
+    result = await _listed(
+        AppointmentListing(
+            future=(_appointment(), later), past=(), past_truncated=False
+        )
+    )
+
+    assert [a["starts_at"] for a in result["future"]] == [
         "2026-08-18T09:00:00",
         "2026-08-19T09:00:00",
     ]
-    assert result["appointments"][1]["specialty"] == "Dentistry"
+    assert result["future"][1]["specialty"] == "Dentistry"
+
+
+async def test_both_axes_are_optional_and_default_to_the_narrowest_corner() -> None:
+    with patch(
+        _CLIENT + ".list_appointments", new=AsyncMock(return_value=_empty())
+    ) as called:
+        await _registry().dispatch("list_my_appointments", {})
+
+    kwargs = called.call_args.kwargs
+    assert kwargs["time_filter"] is TimeFilter.FUTURE
+    assert kwargs["status_filter"] is StatusFilter.STANDING
+
+
+async def test_each_axis_is_passed_through_when_the_model_widens_it() -> None:
+    with patch(
+        _CLIENT + ".list_appointments", new=AsyncMock(return_value=_empty())
+    ) as called:
+        await _registry().dispatch(
+            "list_my_appointments",
+            {"time_filter": "both", "status_filter": "cancelled"},
+        )
+
+    kwargs = called.call_args.kwargs
+    assert kwargs["time_filter"] is TimeFilter.BOTH
+    assert kwargs["status_filter"] is StatusFilter.CANCELLED
+
+
+async def test_an_axis_value_outside_the_enum_is_rejected() -> None:
+    with (
+        patch(_CLIENT + ".list_appointments", new=AsyncMock()) as called,
+        pytest.raises(ToolArgumentError),
+    ):
+        await _registry().dispatch("list_my_appointments", {"time_filter": "someday"})
+
+    called.assert_not_awaited()
 
 
 async def test_listing_appointments_passes_the_ambient_patient_and_clock() -> None:
     with patch(
-        _CLIENT + ".list_upcoming_appointments", new=AsyncMock(return_value=())
+        _CLIENT + ".list_appointments", new=AsyncMock(return_value=_empty())
     ) as called:
         await _registry().dispatch("list_my_appointments", {})
 
@@ -467,24 +554,23 @@ async def test_listing_appointments_passes_the_ambient_patient_and_clock() -> No
 async def test_an_unresolved_patient_is_not_reported_as_having_no_appointments() -> (
     None
 ):
-    """An empty list would read as "you have nothing booked", which is not known here.
+    """An empty result would read as "you have nothing booked", which is not known here.
 
     The scheduler answered that the patient does not resolve; their appointments were
     never looked at.
     """
     failure = SchedulingNotFoundError("nope", entity=NotFoundEntity.PATIENT)
-    with patch(
-        _CLIENT + ".list_upcoming_appointments", new=AsyncMock(side_effect=failure)
-    ):
+    with patch(_CLIENT + ".list_appointments", new=AsyncMock(side_effect=failure)):
         result = await _registry().dispatch("list_my_appointments", {})
 
     assert result["status"] == "unavailable"
-    assert "appointments" not in result
+    assert "future" not in result
+    assert "past" not in result
 
 
 async def test_listing_appointments_when_the_scheduler_is_down_is_unavailable() -> None:
     with patch(
-        _CLIENT + ".list_upcoming_appointments",
+        _CLIENT + ".list_appointments",
         new=AsyncMock(side_effect=SchedulingUnavailableError("down")),
     ):
         result = await _registry().dispatch("list_my_appointments", {})

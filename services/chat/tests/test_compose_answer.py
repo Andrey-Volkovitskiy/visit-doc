@@ -278,3 +278,68 @@ def test_a_booking_only_turn_reports_no_groundedness_verdict() -> None:
     assert logs[0]["grounded"] is None
     assert logs[0]["booking_outcome"] == "booked"
     assert "abstention_message" not in logs[0]
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        BookingOutcome.CANCELLED,
+        BookingOutcome.UNCHANGED,
+        BookingOutcome.OUTCOME_UNKNOWN,
+    ],
+)
+async def test_the_merged_prompt_states_which_change_actually_completed(
+    outcome: BookingOutcome,
+) -> None:
+    """A merged reply cannot claim a change the outcome does not record.
+
+    The outcome is machine-derived from the tool results, so putting it in the prompt
+    verbatim is what stops the composing model inferring a cancellation from how the
+    booking half happened to phrase itself.
+    """
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_grounded_faq(),
+        booking_reply="Something about an appointment.",
+        booking_outcome=str(outcome),
+    )
+
+    prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
+    assert f"outcome: {outcome.value}" in prompt
+
+
+async def test_the_system_prompt_forbids_claiming_an_unrecorded_change() -> None:
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_grounded_faq(),
+        booking_reply="Something about an appointment.",
+        booking_outcome=str(BookingOutcome.OUTCOME_UNKNOWN),
+    )
+
+    system = client.messages.stream.call_args.kwargs["system"]
+    assert "cancelled" in system
+    assert "rescheduled" in system
+    assert "outcome_unknown" in system
+
+
+async def test_an_unknown_outcome_may_not_be_composed_as_nothing_having_happened() -> (
+    None
+):
+    # The one sentence the unknown path forbids: a lost answer is not evidence that
+    # the change did not land.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_grounded_faq(),
+        booking_reply="I could not confirm that.",
+        booking_outcome=str(BookingOutcome.OUTCOME_UNKNOWN),
+    )
+
+    system = client.messages.stream.call_args.kwargs["system"]
+    assert "not known" in system.lower()
+    assert "did not happen" in system.lower() or "nothing happened" in system.lower()

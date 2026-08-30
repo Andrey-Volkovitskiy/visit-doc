@@ -52,12 +52,34 @@ service Scheduling {
   // Create one appointment, or explain why it was refused (FR-016..FR-021, FR-051).
   rpc BookAppointment(BookAppointmentRequest) returns (BookAppointmentResponse);
 
-  // This patient's appointments whose start is still in the future, earliest first (FR-031).
+  // Move an appointment: a new start, and optionally a new practitioner, applied together as
+  // one write (006 FR-001..FR-003). The appointment keeps its identifier and its patient.
+  //
+  // Carries NO idempotency key, deliberately (006 FR-020): the request asserts the state the
+  // appointment is to end in, so re-sending it cannot bring a second appointment into being. A
+  // key derived from that target state would be worse than none — states recur, and
+  // 09:00 -> 10:00 -> 09:00 -> 10:00 would derive the first move's key on the third and replay
+  // it, leaving the appointment at 09:00 while reporting success.
+  rpc RescheduleAppointment(RescheduleAppointmentRequest) returns (ChangeAppointmentResponse);
+
+  // Cancel an appointment. The record is retained and marked cancelled (006 FR-009): it keeps
+  // its identifier, its practitioner and its times, stops occupying its slot (006 FR-010), and
+  // releases the idempotency key that created it (006 FR-011).
+  //
+  // Cancelling an already-cancelled appointment returns `no_change`, NOT a failure — the
+  // appointment is in the state that was asked for (006 FR-017, FR-019). This is
+  // distinguishable from an appointment that never existed, which is
+  // `failure(APPOINTMENT_NOT_FOUND)`.
+  rpc CancelAppointment(CancelAppointmentRequest) returns (ChangeAppointmentResponse);
+
+  // This patient's appointments: two independent axes in, two separately bounded legs out
+  // (006 FR-013..FR-016). Replaces `ListUpcomingAppointments`, whose FUTURE + STANDING corner
+  // is exactly what it returned.
+  //
   // NOT_FOUND (detail: `NotFoundEntity.PATIENT`) when the patient does not resolve in this
-  // session — an empty list means the patient exists and has nothing upcoming, and one value
+  // session — two empty legs mean the patient exists and has nothing matching, and one value
   // must not stand for both.
-  rpc ListUpcomingAppointments(ListUpcomingAppointmentsRequest)
-      returns (ListUpcomingAppointmentsResponse);
+  rpc ListAppointments(ListAppointmentsRequest) returns (ListAppointmentsResponse);
 
   // Hard-delete this chat's patient and, by cascade, that patient's appointments (FR-039).
   // Idempotent: deleting an already-absent patient succeeds.
@@ -107,6 +129,15 @@ message Practitioner {
   repeated WorkingRange schedule = 5;  // empty => listed but never bookable
 }
 
+// Whether an appointment still counts, or was called off but kept. Every listing that can
+// contain a cancelled appointment must identify it as cancelled (006 FR-015), and a caller must
+// never have to infer status from absence. Mirrors `shared_models.AppointmentStatus` 1:1.
+enum AppointmentStatus {
+  APPOINTMENT_STATUS_UNSPECIFIED = 0;
+  APPOINTMENT_STATUS_STANDING = 1;
+  APPOINTMENT_STATUS_CANCELLED = 2;
+}
+
 message Appointment {
   string id = 1;
   string patient_id = 2;
@@ -116,6 +147,7 @@ message Appointment {
   string practitioner_specialty = 6;  // one of the ten Specialty values
   string starts_at = 7;  // local, "YYYY-MM-DDTHH:MM:SS"
   string ends_at = 8;    // local
+  AppointmentStatus status = 9;
 }
 
 // Why an evaluated booking was refused. Mirrors `shared_models.BookingFailureReason` 1:1, and is
@@ -163,6 +195,56 @@ message RenameFailure {
   RenameFailureReason reason = 1;
   // Human-readable detail for logs only, never rendered to the patient.
   string detail = 2;
+}
+
+// Why an evaluated change was refused. Twelve values: this feature's own four, then booking's
+// eight unchanged in meaning and in `shared_models` string value. Mirrors
+// `shared_models.ChangeFailureReason` 1:1.
+//
+// Evaluated in this precedence, first match reported. The four come first because each settles
+// whether the appointment can be changed at all, before any question of where it may go is
+// worth asking:
+//
+//   APPOINTMENT_NOT_FOUND -> ALREADY_CANCELLED -> ALREADY_STARTED -> STALE_CONFIRMATION
+//     -> PRACTITIONER_NOT_FOUND / PATIENT_NOT_FOUND -> IN_PAST -> BEYOND_HORIZON
+//     -> OUTSIDE_SCHEDULE -> OFF_GRID -> PRACTITIONER_BUSY / PATIENT_BUSY
+//
+// ALREADY_STARTED is NOT IN_PAST. IN_PAST is about the new start being asked for;
+// ALREADY_STARTED is about the appointment's CURRENT start, and an appointment that has begun is
+// refused even when the time it is asked to move to is perfectly valid (006 FR-005 vs FR-006).
+//
+// A CANCELLATION can only be refused by the first four; it places nothing, so booking's eight
+// are unreachable for it. ALREADY_CANCELLED is reachable only for a RESCHEDULE — for a
+// cancellation that state is the target state, and the answer is `no_change`.
+enum ChangeFailureReason {
+  CHANGE_FAILURE_REASON_UNSPECIFIED = 0;
+  CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND = 1;   // incl. another session's id (006 FR-018)
+  CHANGE_FAILURE_REASON_ALREADY_CANCELLED = 2;       // 006 FR-005, reschedule only
+  CHANGE_FAILURE_REASON_ALREADY_STARTED = 3;         // 006 FR-005, current start <= local_now
+  CHANGE_FAILURE_REASON_STALE_CONFIRMATION = 4;      // 006 FR-021
+  CHANGE_FAILURE_REASON_PRACTITIONER_NOT_FOUND = 5;
+  CHANGE_FAILURE_REASON_PATIENT_NOT_FOUND = 6;
+  CHANGE_FAILURE_REASON_IN_PAST = 7;                 // the NEW start
+  CHANGE_FAILURE_REASON_BEYOND_HORIZON = 8;
+  CHANGE_FAILURE_REASON_OUTSIDE_SCHEDULE = 9;
+  CHANGE_FAILURE_REASON_OFF_GRID = 10;
+  CHANGE_FAILURE_REASON_PRACTITIONER_BUSY = 11;
+  CHANGE_FAILURE_REASON_PATIENT_BUSY = 12;
+}
+
+message ChangeFailure {
+  ChangeFailureReason reason = 1;
+  // Human-readable detail for logs only. The assistant's explanation to the patient is
+  // generated from `reason`, never from this string.
+  string detail = 2;
+}
+
+// The appointment was already in the state the request asked for, so nothing was written
+// (006 FR-019). A separate outcome from `appointment` because the caller must be able to tell
+// one move from a move re-sent: the log carries one change record per real transition, and this
+// one instead (006 FR-040).
+message NoChange {
+  Appointment appointment = 1;  // as it stands, which is the state that was asked for
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +296,16 @@ message CheckAvailabilityRequest {
   // appointments — with ANY practitioner — are excluded, so an offered slot can never be refused by
   // FR-016's patient-overlap rule. Omitting it would reintroduce that gap, so it is not optional.
   string patient_id = 6;
+  // OPTIONAL. When set, this appointment is omitted from BOTH the practitioner's and the
+  // patient's existing commitments while computing availability, so an appointment never blocks
+  // its own change — including a change to the time it already holds (006 FR-007).
+  //
+  // Scoped to the session like every other id: an appointment id from another session excludes
+  // nothing, rather than revealing that it exists.
+  //
+  // Only the OFFER path needs this. On the write path an exclusion constraint compares distinct
+  // rows, so an UPDATE is never checked against the row's own previous interval.
+  string excluded_appointment_id = 7;
 }
 
 message CheckAvailabilityResponse {
@@ -270,14 +362,82 @@ message BookAppointmentResponse {
   bool idempotent_replay = 3;
 }
 
-message ListUpcomingAppointmentsRequest {
+// The two guard fields are on BOTH change requests. They carry the start date-time and
+// practitioner the appointment had at the moment the assistant described it to the patient, and
+// the server compares them as part of the write, never before it (006 FR-021). The comparison
+// passes when the appointment matches EITHER the described state OR the target state the request
+// asks for — the second arm is what makes a re-send safe rather than a false conflict.
+message RescheduleAppointmentRequest {
   string session_id = 1;
   string patient_id = 2;
-  string local_now = 3;  // strictly-after filter (FR-031, FR-058)
+  string appointment_id = 3;
+  string new_starts_at = 4;             // local; `ends_at` is derived server-side (006 FR-004)
+  // Empty means "keep the practitioner it has". When set, the practitioner, start and end change
+  // together in one write (006 FR-002, FR-003) — never a cancellation plus a new booking.
+  string new_practitioner_id = 5;
+  string expected_starts_at = 6;        // guard (006 FR-021)
+  string expected_practitioner_id = 7;  // guard (006 FR-021)
+  string local_now = 8;                 // 006 FR-005, FR-006, FR-035
 }
 
-message ListUpcomingAppointmentsResponse {
-  repeated Appointment appointments = 1;  // earliest first
+message CancelAppointmentRequest {
+  string session_id = 1;
+  string patient_id = 2;
+  string appointment_id = 3;
+  string expected_starts_at = 4;        // guard (006 FR-021) — applies to cancellation too
+  string expected_practitioner_id = 5;  // guard (006 FR-021)
+  string local_now = 6;                 // 006 FR-005
+}
+
+// Shared by both change RPCs: the three outcomes a change can have.
+message ChangeAppointmentResponse {
+  oneof result {
+    Appointment appointment = 1;  // the write took effect; the appointment as it now stands
+    NoChange no_change = 2;       // already in the state asked for
+    ChangeFailure failure = 3;    // one reason, by the precedence above
+  }
+  // Present only alongside `appointment`, and only for a reschedule that actually moved
+  // something. The server is the only party that knows both sides of the write atomically, and
+  // 006 FR-036/FR-038 need both. Not a convenience: reading the "before" separately would
+  // describe a state a concurrent change may already have replaced.
+  string previous_starts_at = 4;
+  string previous_practitioner_id = 5;
+}
+
+message ListAppointmentsRequest {
+  string session_id = 1;
+  string patient_id = 2;
+  string local_now = 3;  // decides which leg an appointment falls in (006 FR-035)
+  TimeFilter time_filter = 4;
+  StatusFilter status_filter = 5;
+}
+
+// The zero values are the NARROWEST corner of the grid, deliberately. proto3 gives every enum an
+// unavoidable default, and 006 FR-014 says the unqualified question returns future AND standing —
+// so an unset filter can only ever narrow, never widen. A caller that forgets to set these gets
+// the safe answer instead of a patient's cancelled history.
+enum TimeFilter {
+  TIME_FILTER_FUTURE = 0;  // starts strictly after local_now
+  TIME_FILTER_PAST = 1;    // starts at or before local_now, incl. one under way
+  TIME_FILTER_BOTH = 2;
+}
+
+enum StatusFilter {
+  STATUS_FILTER_STANDING = 0;
+  STATUS_FILTER_CANCELLED = 1;
+  STATUS_FILTER_BOTH = 2;
+}
+
+// Two legs, bounded and ordered separately (006 FR-016). They are separate fields rather than one
+// list so that neither can crowd the other out of a listing the patient explicitly asked for:
+// twenty future appointments cannot consume a cap that exists because PAST appointments
+// accumulate without limit.
+message ListAppointmentsResponse {
+  repeated Appointment future = 1;  // ascending; unbounded, since the 90-day horizon bounds it
+  repeated Appointment past = 2;    // descending (most recent first); at most 20
+  // True when the past leg elided some. Scoped to that leg alone, so it can never be read as
+  // "the whole answer is partial".
+  bool past_truncated = 3;
 }
 
 message DeletePatientForChatRequest {

@@ -769,7 +769,9 @@ async def test_a_read_only_turn_never_reaches_the_booking_tool() -> None:
 
 async def test_both_read_only_tools_receive_the_turns_own_ambient_patient() -> None:
     """The model never supplies the patient - so it cannot ask about someone else's."""
-    registry = _RecordingRegistry({"list_my_appointments": {"appointments": []}})
+    registry = _RecordingRegistry(
+        {"list_my_appointments": {"future": [], "past": [], "past_truncated": False}}
+    )
     client = _client(
         [
             _tool_use_response(
@@ -782,11 +784,13 @@ async def test_both_read_only_tools_receive_the_turns_own_ambient_patient() -> N
     await _run(client, registry, _bursts("what have I got booked?"))
 
     # The model's smuggled argument reaches the handler as a plain argument and is
-    # simply unused: the handler reads the patient from its bound context instead.
+    # simply unused: the handler reads the patient from its bound context instead. The
+    # schema is closed and names only the two listing axes, so `patient_id` is not
+    # something the tool accepts at all.
     tool_schema = next(
         t for t in SCHEDULING_TOOLS if t.name == "list_my_appointments"
     ).input_schema
-    assert tool_schema["properties"] == {}
+    assert set(tool_schema["properties"]) == {"time_filter", "status_filter"}
     assert tool_schema["additionalProperties"] is False
 
 

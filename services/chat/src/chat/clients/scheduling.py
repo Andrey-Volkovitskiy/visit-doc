@@ -37,9 +37,13 @@ from shared_models.localtime import (
     parse_local_time,
 )
 from shared_models.scheduling import (
+    AppointmentStatus,
     BookingFailureReason,
+    ChangeFailureReason,
     NotFoundEntity,
     RenameFailureReason,
+    StatusFilter,
+    TimeFilter,
     Weekday,
 )
 from shared_proto.metadata import TURN_ID_METADATA_KEY
@@ -71,6 +75,44 @@ _FAILURE_REASON_BY_PROTO = {
     pb.BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND: (
         BookingFailureReason.PATIENT_NOT_FOUND
     ),
+}
+
+_APPOINTMENT_STATUS_BY_PROTO = {
+    pb.APPOINTMENT_STATUS_STANDING: AppointmentStatus.STANDING,
+    pb.APPOINTMENT_STATUS_CANCELLED: AppointmentStatus.CANCELLED,
+}
+
+_CHANGE_REASON_BY_PROTO = {
+    pb.CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND: (
+        ChangeFailureReason.APPOINTMENT_NOT_FOUND
+    ),
+    pb.CHANGE_FAILURE_REASON_ALREADY_CANCELLED: ChangeFailureReason.ALREADY_CANCELLED,
+    pb.CHANGE_FAILURE_REASON_ALREADY_STARTED: ChangeFailureReason.ALREADY_STARTED,
+    pb.CHANGE_FAILURE_REASON_STALE_CONFIRMATION: (
+        ChangeFailureReason.STALE_CONFIRMATION
+    ),
+    pb.CHANGE_FAILURE_REASON_PRACTITIONER_NOT_FOUND: (
+        ChangeFailureReason.PRACTITIONER_NOT_FOUND
+    ),
+    pb.CHANGE_FAILURE_REASON_PATIENT_NOT_FOUND: ChangeFailureReason.PATIENT_NOT_FOUND,
+    pb.CHANGE_FAILURE_REASON_IN_PAST: ChangeFailureReason.IN_PAST,
+    pb.CHANGE_FAILURE_REASON_BEYOND_HORIZON: ChangeFailureReason.BEYOND_HORIZON,
+    pb.CHANGE_FAILURE_REASON_OUTSIDE_SCHEDULE: ChangeFailureReason.OUTSIDE_SCHEDULE,
+    pb.CHANGE_FAILURE_REASON_OFF_GRID: ChangeFailureReason.OFF_GRID,
+    pb.CHANGE_FAILURE_REASON_PRACTITIONER_BUSY: ChangeFailureReason.PRACTITIONER_BUSY,
+    pb.CHANGE_FAILURE_REASON_PATIENT_BUSY: ChangeFailureReason.PATIENT_BUSY,
+}
+
+_PROTO_BY_TIME_FILTER = {
+    TimeFilter.FUTURE: pb.TIME_FILTER_FUTURE,
+    TimeFilter.PAST: pb.TIME_FILTER_PAST,
+    TimeFilter.BOTH: pb.TIME_FILTER_BOTH,
+}
+
+_PROTO_BY_STATUS_FILTER = {
+    StatusFilter.STANDING: pb.STATUS_FILTER_STANDING,
+    StatusFilter.CANCELLED: pb.STATUS_FILTER_CANCELLED,
+    StatusFilter.BOTH: pb.STATUS_FILTER_BOTH,
 }
 
 _RENAME_REASON_BY_PROTO = {
@@ -184,7 +226,12 @@ class PatientInfo:
 
 @dataclass(frozen=True)
 class AppointmentInfo:
-    """A booked appointment, with both parties' names already resolved."""
+    """An appointment, with both parties' names already resolved.
+
+    `status` says whether it still counts. A cancelled appointment is a real record
+    that can be listed and named, so nothing above this module may treat presence
+    alone as meaning the appointment stands.
+    """
 
     id: str
     patient_id: str
@@ -194,6 +241,7 @@ class AppointmentInfo:
     practitioner_specialty: str
     starts_at: datetime
     ends_at: datetime
+    status: AppointmentStatus
 
 
 @dataclass(frozen=True)
@@ -227,6 +275,58 @@ class BookingSuccess:
 
     appointment: AppointmentInfo
     idempotent_replay: bool
+
+
+@dataclass(frozen=True)
+class ChangeApplied:
+    """A change whose write took effect, with the state it came from.
+
+    The previous values come from the same statement that wrote the new ones, so they
+    describe the state the appointment actually left - not one a concurrent change may
+    already have replaced. `previous_practitioner_full_name` is the practitioner it had,
+    equal to the current one when only the time moved.
+    """
+
+    appointment: AppointmentInfo
+    previous_starts_at: datetime
+    previous_practitioner_full_name: str
+
+
+@dataclass(frozen=True)
+class ChangeNoOp:
+    """The appointment was already in the state the request asked for.
+
+    A success, not a refusal: a re-sent change, or a patient asking for the time they
+    already have. Kept distinct from `ChangeApplied` so a caller can report one change
+    per real transition rather than one per request.
+    """
+
+    appointment: AppointmentInfo
+
+
+@dataclass(frozen=True)
+class ChangeRefusal:
+    """A change the scheduler evaluated and declined, with the single reason why."""
+
+    reason: ChangeFailureReason
+    detail: str
+
+
+@dataclass(frozen=True)
+class AppointmentListing:
+    """One patient's appointments, in two separately bounded legs.
+
+    Never merged into one list: the past leg is capped because past appointments
+    accumulate without limit, and sharing a cap with the future leg would let twenty
+    future appointments crowd out every past one.
+
+    `past_truncated` is about the past leg alone, so a caller can say *that part* of the
+    list is incomplete rather than that the whole answer is.
+    """
+
+    future: tuple[AppointmentInfo, ...]
+    past: tuple[AppointmentInfo, ...]
+    past_truncated: bool
 
 
 @dataclass(frozen=True)
@@ -414,7 +514,23 @@ def _to_practitioner(message: pb.Practitioner) -> PractitionerInfo:
 
 
 def _to_appointment(message: pb.Appointment) -> AppointmentInfo:
-    """Read a wire appointment into its domain form."""
+    """Read a wire appointment into its domain form.
+
+    Raises: SchedulingRequestError if `status` is unset or is a value this build has no
+        member for. Not defaulted to standing: proto3 sends the zero value for a field
+        nobody set, and reading that as standing would present a cancelled appointment
+        to the patient as a live one.
+    """
+    status = _APPOINTMENT_STATUS_BY_PROTO.get(message.status)
+    if status is None:
+        get_logger().error(
+            "scheduling.unknown_appointment_status",
+            proto_status=int(message.status),
+            appointment_id=message.id,
+        )
+        raise SchedulingRequestError(
+            f"unrecognized appointment status: {int(message.status)}"
+        )
     return AppointmentInfo(
         id=message.id,
         patient_id=message.patient_id,
@@ -424,6 +540,7 @@ def _to_appointment(message: pb.Appointment) -> AppointmentInfo:
         practitioner_specialty=message.practitioner_specialty,
         starts_at=parse_local_datetime(message.starts_at),
         ends_at=parse_local_datetime(message.ends_at),
+        status=status,
     )
 
 
@@ -632,35 +749,145 @@ async def book_appointment(
     )
 
 
-async def list_upcoming_appointments(
+def _read_change_reason(failure: pb.ChangeFailure) -> ChangeFailureReason:
+    """Read a refusal's reason into its domain member.
+
+    Raises: SchedulingRequestError if the reason is unset or is one this build has no
+        member for - a scheduler deployed ahead of this service. The refusal itself is
+        still trustworthy, but it cannot be explained, so it is reported as a defect
+        rather than guessed at.
+    """
+    reason = _CHANGE_REASON_BY_PROTO.get(failure.reason)
+    if reason is None:
+        get_logger().error(
+            "change.unknown_failure_reason",
+            proto_reason=int(failure.reason),
+            error_detail=failure.detail,
+        )
+        raise SchedulingRequestError(
+            f"unrecognized change failure reason: {int(failure.reason)}"
+        )
+    return reason
+
+
+def _to_change_outcome(
+    response: pb.ChangeAppointmentResponse,
+) -> ChangeApplied | ChangeNoOp | ChangeRefusal:
+    """Read one change response into exactly one of its three domain outcomes.
+
+    Raises: SchedulingRequestError if the response carries no result, or a refusal
+        reason this build cannot name.
+
+    `previous_practitioner_full_name` falls back to the appointment's current
+    practitioner when the response names no previous one, which is the case for a move
+    that kept its practitioner - it is the same person either way.
+    """
+    result = response.WhichOneof("result")
+    if result == "failure":
+        return ChangeRefusal(
+            reason=_read_change_reason(response.failure),
+            detail=response.failure.detail,
+        )
+    if result == "no_change":
+        return ChangeNoOp(appointment=_to_appointment(response.no_change.appointment))
+    if result != "appointment":
+        raise SchedulingRequestError("change response carried no result")
+
+    appointment = _to_appointment(response.appointment)
+    previous_starts_at = (
+        parse_local_datetime(response.previous_starts_at)
+        if response.previous_starts_at
+        else appointment.starts_at
+    )
+    return ChangeApplied(
+        appointment=appointment,
+        previous_starts_at=previous_starts_at,
+        previous_practitioner_full_name=appointment.practitioner_full_name,
+    )
+
+
+async def cancel_appointment(
+    channel: grpc.aio.Channel,
+    settings: Settings,
+    *,
+    session_id: str,
+    patient_id: str,
+    appointment_id: str,
+    expected_starts_at: datetime,
+    expected_practitioner_id: str,
+    local_now: datetime,
+) -> ChangeApplied | ChangeNoOp | ChangeRefusal:
+    """Cancel one appointment, or report the one reason it was not.
+
+    Args:
+        expected_starts_at: The start the assistant stated to the patient when it asked
+            them to confirm - not a value re-read just now, which would match the
+            appointment's current state by definition and disable the guard.
+        expected_practitioner_id: The practitioner it stated, for the same reason.
+
+    Returns: a `ChangeApplied` when the appointment is now cancelled, a `ChangeNoOp`
+        when it already was, or a `ChangeRefusal` naming why not.
+
+    Raises:
+        SchedulingUnavailableError: the scheduler could not answer. Its
+            `outcome_unknown` says whether the cancellation may nonetheless have
+            landed; when it is true the caller must not report that nothing happened.
+        SchedulingRequestError: the response carried a reason this build cannot name.
+    """
+    response = await _call(
+        settings,
+        "CancelAppointment",
+        _stub(channel).CancelAppointment,
+        pb.CancelAppointmentRequest(
+            session_id=session_id,
+            patient_id=patient_id,
+            appointment_id=appointment_id,
+            expected_starts_at=format_local_datetime(expected_starts_at),
+            expected_practitioner_id=expected_practitioner_id,
+            local_now=format_local_datetime(local_now),
+        ),
+    )
+    return _to_change_outcome(response)
+
+
+async def list_appointments(
     channel: grpc.aio.Channel,
     settings: Settings,
     *,
     session_id: str,
     patient_id: str,
     local_now: datetime,
-) -> tuple[AppointmentInfo, ...]:
-    """Return this patient's appointments starting after `local_now`, earliest first.
+    time_filter: TimeFilter = TimeFilter.FUTURE,
+    status_filter: StatusFilter = StatusFilter.STANDING,
+) -> AppointmentListing:
+    """Return this patient's appointments in the corner of the grid asked for.
 
     Raises:
         SchedulingUnavailableError: the scheduler could not be reached.
         SchedulingNotFoundError: no such patient in this session, which the contract
             keeps distinct from an empty result - that one means the patient exists and
-            has nothing upcoming.
+            has nothing matching.
 
-    Returns: possibly empty, meaning exactly "this patient has nothing upcoming".
+    Both filters default to the narrowest value, so the unqualified question answers
+    "still to come, and not cancelled" without a caller having to say so.
     """
     response = await _call(
         settings,
-        "ListUpcomingAppointments",
-        _stub(channel).ListUpcomingAppointments,
-        pb.ListUpcomingAppointmentsRequest(
+        "ListAppointments",
+        _stub(channel).ListAppointments,
+        pb.ListAppointmentsRequest(
             session_id=session_id,
             patient_id=patient_id,
             local_now=format_local_datetime(local_now),
+            time_filter=_PROTO_BY_TIME_FILTER[time_filter],
+            status_filter=_PROTO_BY_STATUS_FILTER[status_filter],
         ),
     )
-    return tuple(_to_appointment(a) for a in response.appointments)
+    return AppointmentListing(
+        future=tuple(_to_appointment(a) for a in response.future),
+        past=tuple(_to_appointment(a) for a in response.past),
+        past_truncated=response.past_truncated,
+    )
 
 
 async def delete_patient_for_chat(
@@ -688,9 +915,13 @@ async def delete_patient_for_chat(
 
 __all__ = [
     "AppointmentInfo",
+    "AppointmentListing",
     "AvailabilityResult",
     "BookingRefusal",
     "BookingSuccess",
+    "ChangeApplied",
+    "ChangeNoOp",
+    "ChangeRefusal",
     "DeletionResult",
     "PatientInfo",
     "PractitionerInfo",
@@ -702,11 +933,12 @@ __all__ = [
     "SchedulingUnavailableError",
     "WorkingRangeInfo",
     "book_appointment",
+    "cancel_appointment",
     "check_availability",
     "create_channel",
     "delete_patient_for_chat",
     "ensure_session_provisioned",
+    "list_appointments",
     "list_practitioners",
-    "list_upcoming_appointments",
     "rename_patient",
 ]

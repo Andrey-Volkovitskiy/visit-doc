@@ -15,6 +15,7 @@ import pytest
 import structlog
 from chat.clients import scheduling
 from chat.core.config import Settings
+from shared_models.localtime import format_local_datetime
 from shared_models.scheduling import BookingFailureReason, RenameFailureReason
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from structlog.testing import capture_logs
@@ -118,6 +119,7 @@ def _booked_response() -> pb.BookAppointmentResponse:
             practitioner_specialty="General Practice",
             starts_at="2026-08-18T09:00:00",
             ends_at="2026-08-18T10:00:00",
+            status=pb.APPOINTMENT_STATUS_STANDING,
         ),
         idempotent_replay=False,
     )
@@ -617,3 +619,274 @@ async def test_a_rename_that_never_reached_the_server_reports_a_known_outcome() 
         )
 
     assert exc_info.value.outcome_unknown is False
+
+
+async def test_a_booked_appointment_carries_its_status_off_the_wire() -> None:
+    from shared_models.scheduling import AppointmentStatus
+
+    response = _booked_response()
+    response.appointment.status = pb.APPOINTMENT_STATUS_STANDING
+    ctx, _ = _patched("BookAppointment", [response])
+    with ctx:
+        result = await scheduling.book_appointment(
+            _CHANNEL, _settings(), **_book_request_kwargs()
+        )
+
+    assert isinstance(result, scheduling.BookingSuccess)
+    assert result.appointment.status is AppointmentStatus.STANDING
+
+
+async def test_a_cancelled_appointment_reads_back_as_cancelled() -> None:
+    from shared_models.scheduling import AppointmentStatus
+
+    response = _booked_response()
+    response.appointment.status = pb.APPOINTMENT_STATUS_CANCELLED
+    ctx, _ = _patched("BookAppointment", [response])
+    with ctx:
+        result = await scheduling.book_appointment(
+            _CHANNEL, _settings(), **_book_request_kwargs()
+        )
+
+    assert isinstance(result, scheduling.BookingSuccess)
+    assert result.appointment.status is AppointmentStatus.CANCELLED
+
+
+async def test_an_unspecified_status_on_the_wire_is_not_read_as_standing() -> None:
+    # A scheduler that forgot to set the field, or one deployed behind this build.
+    # Defaulting to standing would present a cancelled appointment as a live one.
+    response = _booked_response()
+    response.appointment.ClearField("status")
+    ctx, _ = _patched("BookAppointment", [response])
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.book_appointment(
+            _CHANNEL, _settings(), **_book_request_kwargs()
+        )
+
+
+# --- changes -----------------------------------------------------------------
+
+
+def _change_kwargs() -> dict[str, Any]:
+    return {
+        "session_id": _SESSION_ID,
+        "patient_id": _PATIENT_ID,
+        "appointment_id": "01APPOINTMENT000000000000",
+        "expected_starts_at": datetime(2026, 8, 18, 9, 0),
+        "expected_practitioner_id": _PRACTITIONER_ID,
+        "local_now": _LOCAL_NOW,
+    }
+
+
+def _wire_appointment(
+    starts_at: str = "2026-08-18T09:00:00",
+    status: int = pb.APPOINTMENT_STATUS_STANDING,
+) -> pb.Appointment:
+    return pb.Appointment(
+        id="01APPOINTMENT000000000000",
+        patient_id=_PATIENT_ID,
+        patient_full_name="Ada",
+        practitioner_id=_PRACTITIONER_ID,
+        practitioner_full_name="William Osler",
+        practitioner_specialty="General Practice",
+        starts_at=starts_at,
+        ends_at="2026-08-18T10:00:00",
+        status=status,
+    )
+
+
+async def test_a_completed_cancellation_maps_onto_change_applied() -> None:
+    response = pb.ChangeAppointmentResponse(
+        appointment=_wire_appointment(status=pb.APPOINTMENT_STATUS_CANCELLED)
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+    with ctx:
+        result = await scheduling.cancel_appointment(
+            _CHANNEL, _settings(), **_change_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeApplied)
+    assert result.appointment.status.value == "cancelled"
+
+
+async def test_a_no_change_cancellation_maps_onto_change_no_op() -> None:
+    # Never a refusal: the appointment is in the state that was asked for.
+    response = pb.ChangeAppointmentResponse(
+        no_change=pb.NoChange(
+            appointment=_wire_appointment(status=pb.APPOINTMENT_STATUS_CANCELLED)
+        )
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+    with ctx:
+        result = await scheduling.cancel_appointment(
+            _CHANNEL, _settings(), **_change_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeNoOp)
+    assert result.appointment.id == "01APPOINTMENT000000000000"
+
+
+async def test_a_refused_cancellation_maps_onto_change_refusal() -> None:
+    from shared_models.scheduling import ChangeFailureReason
+
+    response = pb.ChangeAppointmentResponse(
+        failure=pb.ChangeFailure(
+            reason=pb.CHANGE_FAILURE_REASON_STALE_CONFIRMATION, detail="stale"
+        )
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+    with ctx:
+        result = await scheduling.cancel_appointment(
+            _CHANNEL, _settings(), **_change_kwargs()
+        )
+
+    assert isinstance(result, scheduling.ChangeRefusal)
+    assert result.reason is ChangeFailureReason.STALE_CONFIRMATION
+
+
+async def test_a_change_reason_this_build_cannot_name_is_a_request_error() -> None:
+    response = pb.ChangeAppointmentResponse(
+        failure=pb.ChangeFailure(reason=pb.CHANGE_FAILURE_REASON_UNSPECIFIED)
+    )
+    ctx, _ = _patched("CancelAppointment", [response])
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.cancel_appointment(
+            _CHANNEL, _settings(), **_change_kwargs()
+        )
+
+
+async def test_the_cancel_request_carries_the_guard_fields_verbatim() -> None:
+    # The guard is what the assistant stated to the patient. Re-deriving it here would
+    # make it match the appointment's current state by definition, disabling it.
+    ctx, method = _patched(
+        "CancelAppointment",
+        [pb.ChangeAppointmentResponse(appointment=_wire_appointment())],
+    )
+    with ctx:
+        await scheduling.cancel_appointment(
+            _CHANNEL, _settings(), **_change_kwargs()
+        )
+
+    request = method.calls[0]["request"]
+    assert request.expected_starts_at == "2026-08-18T09:00:00"
+    assert request.expected_practitioner_id == _PRACTITIONER_ID
+    assert request.appointment_id == "01APPOINTMENT000000000000"
+    assert request.session_id == _SESSION_ID
+    assert request.local_now == format_local_datetime(_LOCAL_NOW)
+
+
+async def test_a_cancellation_follows_the_same_two_attempt_budget() -> None:
+    ctx, method = _patched(
+        "CancelAppointment",
+        [
+            _RpcError(grpc.StatusCode.UNAVAILABLE),
+            _RpcError(grpc.StatusCode.UNAVAILABLE),
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError):
+        await scheduling.cancel_appointment(
+            _CHANNEL,
+            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
+            **_change_kwargs(),
+        )
+
+    assert len(method.calls) == 2
+
+
+async def test_a_cancellation_whose_deadline_expired_reports_an_unknown_outcome() -> (
+    None
+):
+    # A deadline is ours, not the server's: it may well have cancelled the appointment
+    # after we stopped waiting.
+    ctx, _ = _patched(
+        "CancelAppointment",
+        [
+            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
+            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
+        await scheduling.cancel_appointment(
+            _CHANNEL,
+            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
+            **_change_kwargs(),
+        )
+
+    assert caught.value.outcome_unknown is True
+
+
+# --- listing -----------------------------------------------------------------
+
+
+def _list_kwargs(**overrides: Any) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "session_id": _SESSION_ID,
+        "patient_id": _PATIENT_ID,
+        "local_now": _LOCAL_NOW,
+    }
+    kwargs.update(overrides)
+    return kwargs
+
+
+async def test_a_listing_returns_both_legs_and_the_truncation_flag() -> None:
+    response = pb.ListAppointmentsResponse(
+        future=[_wire_appointment()],
+        past=[
+            _wire_appointment(
+                starts_at="2026-08-01T09:00:00",
+                status=pb.APPOINTMENT_STATUS_CANCELLED,
+            )
+        ],
+        past_truncated=True,
+    )
+    ctx, _ = _patched("ListAppointments", [response])
+    with ctx:
+        result = await scheduling.list_appointments(
+            _CHANNEL, _settings(), **_list_kwargs()
+        )
+
+    assert isinstance(result, scheduling.AppointmentListing)
+    assert [a.starts_at for a in result.future] == [datetime(2026, 8, 18, 9, 0)]
+    assert [a.status.value for a in result.past] == ["cancelled"]
+    assert result.past_truncated is True
+
+
+async def test_a_listing_defaults_to_the_narrowest_corner_on_the_wire() -> None:
+    from shared_models.scheduling import StatusFilter, TimeFilter
+
+    ctx, method = _patched("ListAppointments", [pb.ListAppointmentsResponse()])
+    with ctx:
+        await scheduling.list_appointments(_CHANNEL, _settings(), **_list_kwargs())
+
+    request = method.calls[0]["request"]
+    assert request.time_filter == pb.TIME_FILTER_FUTURE
+    assert request.status_filter == pb.STATUS_FILTER_STANDING
+    assert TimeFilter.FUTURE.value == "future"
+    assert StatusFilter.STANDING.value == "standing"
+
+
+async def test_a_listing_carries_the_filters_it_was_given() -> None:
+    from shared_models.scheduling import StatusFilter, TimeFilter
+
+    ctx, method = _patched("ListAppointments", [pb.ListAppointmentsResponse()])
+    with ctx:
+        await scheduling.list_appointments(
+            _CHANNEL,
+            _settings(),
+            **_list_kwargs(
+                time_filter=TimeFilter.BOTH, status_filter=StatusFilter.CANCELLED
+            ),
+        )
+
+    request = method.calls[0]["request"]
+    assert request.time_filter == pb.TIME_FILTER_BOTH
+    assert request.status_filter == pb.STATUS_FILTER_CANCELLED
+
+
+async def test_an_unresolvable_patient_raises_rather_than_returning_empty_legs() -> (
+    None
+):
+    ctx, _ = _patched(
+        "ListAppointments", [_RpcError(grpc.StatusCode.NOT_FOUND, "patient_not_found")]
+    )
+    with ctx, pytest.raises(scheduling.SchedulingNotFoundError):
+        await scheduling.list_appointments(_CHANNEL, _settings(), **_list_kwargs())

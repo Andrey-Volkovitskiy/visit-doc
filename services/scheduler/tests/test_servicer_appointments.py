@@ -1,4 +1,4 @@
-"""Tests for `ListUpcomingAppointments`: what counts as upcoming, and whose it is."""
+"""Tests for `ListAppointments`: the four corners, and whose appointments they are."""
 
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 from scheduler.grpc.interceptors import LoggingInterceptor
 from scheduler.grpc.servicer import SchedulingServicer
-from shared_models.scheduling import NotFoundEntity
+from shared_models.scheduling import AppointmentStatus, NotFoundEntity
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from shared_proto.scheduling.v1 import scheduling_pb2_grpc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,21 +38,26 @@ async def _book_directly(
     patient_id: str,
     practitioner_id: str,
     starts_at: datetime,
-) -> None:
+    status: AppointmentStatus = AppointmentStatus.STANDING,
+) -> str:
     """Write an appointment straight to the table, bypassing the booking rules.
 
-    Lets a test place one in the past, which the booking path would refuse.
+    Lets a test place one in the past, or already cancelled, which the booking path
+    would refuse.
+
+    Returns: the new appointment's id.
     """
-    session.add(
-        make_appointment(
-            session_id,
-            patient_id,
-            practitioner_id,
-            starts_at,
-            starts_at + timedelta(hours=1),
-        )
+    appointment = make_appointment(
+        session_id,
+        patient_id,
+        practitioner_id,
+        starts_at,
+        starts_at + timedelta(hours=1),
+        status=status,
     )
+    session.add(appointment)
     await session.commit()
+    return appointment.id
 
 
 async def test_only_appointments_starting_after_local_now_are_listed(
@@ -72,13 +77,13 @@ async def test_only_appointments_starting_after_local_now_are_listed(
         datetime(2026, 8, 10, 9, 0),
     )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=patient.id, local_now=_LOCAL_NOW
         )
     )
 
-    assert [a.starts_at for a in response.appointments] == ["2026-08-18T09:00:00"]
+    assert [a.starts_at for a in response.future] == ["2026-08-18T09:00:00"]
 
 
 async def test_they_are_listed_earliest_first(
@@ -96,13 +101,13 @@ async def test_they_are_listed_earliest_first(
             _TUESDAY_9AM + timedelta(days=offset),
         )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=patient.id, local_now=_LOCAL_NOW
         )
     )
 
-    starts = [a.starts_at for a in response.appointments]
+    starts = [a.starts_at for a in response.future]
     assert starts == sorted(starts)
 
 
@@ -121,12 +126,12 @@ async def test_an_appointment_already_under_way_is_absent_but_still_blocks_a_boo
     # A clock reading half-way through that appointment.
     mid_appointment = "2026-08-18T09:30:00"
 
-    listed = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    listed = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=patient.id, local_now=mid_appointment
         )
     )
-    assert list(listed.appointments) == []
+    assert list(listed.future) == []
 
     # A later booking that overlaps it is still refused by the constraint.
     booked = await stub.BookAppointment(
@@ -154,13 +159,13 @@ async def test_another_patients_appointments_are_never_listed(
         db_session, session_id, theirs.id, practitioner.id, _TUESDAY_9AM
     )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=mine.id, local_now=_LOCAL_NOW
         )
     )
 
-    assert list(response.appointments) == []
+    assert list(response.future) == []
 
 
 async def test_another_sessions_patient_is_not_found_rather_than_empty(
@@ -180,8 +185,8 @@ async def test_another_sessions_patient_is_not_found_rather_than_empty(
     )
 
     with pytest.raises(grpc.aio.AioRpcError) as caught:
-        await stub.ListUpcomingAppointments(
-            pb.ListUpcomingAppointmentsRequest(
+        await stub.ListAppointments(
+            pb.ListAppointmentsRequest(
                 session_id=new_id(), patient_id=patient.id, local_now=_LOCAL_NOW
             )
         )
@@ -194,8 +199,8 @@ async def test_an_unknown_patient_is_not_found_rather_than_empty(
     stub: scheduling_pb2_grpc.SchedulingStub,
 ) -> None:
     with pytest.raises(grpc.aio.AioRpcError) as caught:
-        await stub.ListUpcomingAppointments(
-            pb.ListUpcomingAppointmentsRequest(
+        await stub.ListAppointments(
+            pb.ListAppointmentsRequest(
                 session_id=new_id(), patient_id=new_id(), local_now=_LOCAL_NOW
             )
         )
@@ -210,13 +215,13 @@ async def test_a_patient_with_nothing_booked_gets_an_empty_list_not_an_error(
     session_id = new_id()
     patient = await seed_patient(db_session, session_id)
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=patient.id, local_now=_LOCAL_NOW
         )
     )
 
-    assert list(response.appointments) == []
+    assert list(response.future) == []
 
 
 async def test_a_listed_appointment_carries_both_parties_names(
@@ -229,13 +234,13 @@ async def test_a_listed_appointment_carries_both_parties_names(
         db_session, session_id, patient.id, practitioner.id, _TUESDAY_9AM
     )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=patient.id, local_now=_LOCAL_NOW
         )
     )
 
-    listed = response.appointments[0]
+    listed = response.future[0]
     assert listed.practitioner_full_name == "Osler"
     assert listed.patient_full_name == "Ada"
     assert listed.practitioner_specialty == "General Practice"
@@ -253,12 +258,196 @@ async def test_the_callers_clock_decides_and_not_the_servers(
         db_session, session_id, patient.id, practitioner.id, _TUESDAY_9AM
     )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id,
             patient_id=patient.id,
             local_now="2030-01-01T00:00:00",
         )
     )
 
-    assert list(response.appointments) == []
+    assert list(response.future) == []
+
+
+async def test_an_unset_filter_pair_yields_the_future_standing_corner(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # The proto3 zero values are the narrowest corner deliberately, so a caller that
+    # forgets to set the filters gets the safe answer, never a patient's cancelled
+    # history.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    standing = await _book_directly(
+        db_session, session_id, patient.id, practitioner.id, _TUESDAY_9AM
+    )
+    await _book_directly(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        _TUESDAY_9AM + timedelta(days=1),
+        AppointmentStatus.CANCELLED,
+    )
+    await _book_directly(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 8, 10, 9, 0),
+    )
+
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
+            session_id=session_id, patient_id=patient.id, local_now=_LOCAL_NOW
+        )
+    )
+
+    assert [a.id for a in response.future] == [standing]
+    assert list(response.past) == []
+    assert response.past_truncated is False
+
+
+async def test_each_filter_combination_maps_to_the_right_legs(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    future_standing = await _book_directly(
+        db_session, session_id, patient.id, practitioner.id, _TUESDAY_9AM
+    )
+    future_cancelled = await _book_directly(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        _TUESDAY_9AM + timedelta(days=1),
+        AppointmentStatus.CANCELLED,
+    )
+    past_standing = await _book_directly(
+        db_session, session_id, patient.id, practitioner.id, datetime(2026, 8, 10, 9, 0)
+    )
+    past_cancelled = await _book_directly(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 8, 11, 9, 0),
+        AppointmentStatus.CANCELLED,
+    )
+
+    async def corner(
+        time_filter: int, status_filter: int
+    ) -> pb.ListAppointmentsResponse:
+        return await stub.ListAppointments(
+            pb.ListAppointmentsRequest(
+                session_id=session_id,
+                patient_id=patient.id,
+                local_now=_LOCAL_NOW,
+                time_filter=time_filter,
+                status_filter=status_filter,
+            )
+        )
+
+    future_st = await corner(pb.TIME_FILTER_FUTURE, pb.STATUS_FILTER_STANDING)
+    assert [a.id for a in future_st.future] == [future_standing]
+    assert list(future_st.past) == []
+
+    future_ca = await corner(pb.TIME_FILTER_FUTURE, pb.STATUS_FILTER_CANCELLED)
+    assert [a.id for a in future_ca.future] == [future_cancelled]
+
+    past_st = await corner(pb.TIME_FILTER_PAST, pb.STATUS_FILTER_STANDING)
+    assert [a.id for a in past_st.past] == [past_standing]
+    assert list(past_st.future) == []
+
+    past_ca = await corner(pb.TIME_FILTER_PAST, pb.STATUS_FILTER_CANCELLED)
+    assert [a.id for a in past_ca.past] == [past_cancelled]
+
+    everything = await corner(pb.TIME_FILTER_BOTH, pb.STATUS_FILTER_BOTH)
+    assert {a.id for a in everything.future} == {future_standing, future_cancelled}
+    assert {a.id for a in everything.past} == {past_standing, past_cancelled}
+
+
+async def test_every_listed_appointment_carries_its_status(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    # FR-015: a cancelled appointment is identified as cancelled wherever it appears.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    await _book_directly(
+        db_session, session_id, patient.id, practitioner.id, _TUESDAY_9AM
+    )
+    await _book_directly(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        _TUESDAY_9AM + timedelta(days=1),
+        AppointmentStatus.CANCELLED,
+    )
+
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
+            session_id=session_id,
+            patient_id=patient.id,
+            local_now=_LOCAL_NOW,
+            status_filter=pb.STATUS_FILTER_BOTH,
+        )
+    )
+
+    assert [a.status for a in response.future] == [
+        pb.APPOINTMENT_STATUS_STANDING,
+        pb.APPOINTMENT_STATUS_CANCELLED,
+    ]
+
+
+async def test_an_unresolvable_patient_aborts_rather_than_returning_two_empty_legs(
+    stub: scheduling_pb2_grpc.SchedulingStub,
+) -> None:
+    # Two empty legs mean the patient exists and has nothing matching. One value must
+    # not stand for that and for "no such patient" at once.
+    with pytest.raises(grpc.aio.AioRpcError) as caught:
+        await stub.ListAppointments(
+            pb.ListAppointmentsRequest(
+                session_id=new_id(),
+                patient_id=new_id(),
+                local_now=_LOCAL_NOW,
+                time_filter=pb.TIME_FILTER_BOTH,
+                status_filter=pb.STATUS_FILTER_BOTH,
+            )
+        )
+
+    assert caught.value.code() is grpc.StatusCode.NOT_FOUND
+    assert caught.value.details() == NotFoundEntity.PATIENT.value
+
+
+async def test_the_past_leg_reports_when_it_elided_some(
+    stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
+) -> None:
+    from scheduler.repositories.appointment_repository import PAST_LEG_LIMIT
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    for day in range(1, PAST_LEG_LIMIT + 3):
+        await _book_directly(
+            db_session,
+            session_id,
+            patient.id,
+            practitioner.id,
+            datetime(2026, 8, 17, 8, 0) - timedelta(days=day),
+        )
+
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
+            session_id=session_id,
+            patient_id=patient.id,
+            local_now=_LOCAL_NOW,
+            time_filter=pb.TIME_FILTER_PAST,
+        )
+    )
+
+    assert len(response.past) == PAST_LEG_LIMIT
+    assert response.past_truncated is True

@@ -56,7 +56,7 @@ sense of the date.
 Rules you must follow:
 - Only offer times that check_availability returned. Never invent or round one.
 - Confirm BOTH the practitioner and the exact start time with the patient before
-  calling book_appointment. An appointment cannot be cancelled or changed afterwards.
+  calling book_appointment.
   Don't ask for confirmation if the patient already confirmed this appointment before.
 - Never state or imply that an appointment exists unless book_appointment returned
   status "booked" in this turn.
@@ -64,7 +64,39 @@ Rules you must follow:
   which they want. Never choose for them.
 - Speak in plain local time ("Tuesday at 9am"). Never mention a timezone, an internal
   id, or the name of a tool.
-- If a booking was refused, explain the reason you were given and offer alternatives."""
+- If a booking was refused, explain the reason you were given and offer alternatives.
+
+Changing and cancelling an existing appointment:
+- NEVER call cancel_appointment without an explicit confirmation from the patient given
+  in the CURRENT turn. A yes from an earlier turn does not carry over.
+- A confirmation binds only for the turn it was asked in. If anything intervening has
+  happened since, answer what the patient actually said and then re-state the
+  confirmation in full before accepting a "yes".
+- A reply that neither confirms nor declines is NOT a decline. Answer it, keep the
+  offer, and ask again. Never make the patient restate the appointment, the
+  practitioner or the time they have already given you.
+- Before every change, state: the start date-time, the practitioner's full name, and
+  their specialty. For a move, state both the current and the proposed start.
+- When the request could mean more than one appointment, list the candidates and ask
+  which they mean. Never choose for them, and never act on more than one appointment
+  per confirmation.
+- expected_starts_at and expected_practitioner_id must be exactly the values you stated
+  to the patient when you asked them to confirm - never values you have just re-read.
+- Never state or imply that an appointment was moved or cancelled unless a tool
+  returned status "changed" or "unchanged" in this turn. A result of "unchanged" means
+  the appointment was already in that state: report it as done, never as a failure and
+  never as a second change.
+- On status "unknown", say the outcome is not known. Do not claim it happened, do not
+  claim it did not, and do not retry.
+- Never mention an appointment id, a practitioner id, or the name of a tool to the
+  patient. You use ids to call tools; the patient never sees one.
+- Cancellation is final. Do not offer to "restore" a cancelled appointment - offer to
+  book again, and only after check_availability shows the time is still free.
+- When list_my_appointments returns past_truncated true, say that THAT PART of the list
+  - the past appointments - is not complete. Never say the whole answer is partial, and
+  never say it about the future appointments, which are always complete.
+- If the patient has no appointments at all, say so plainly. Do not present an empty
+  list."""
 
 # The roster is read once per turn and put in front of the model, because the failure
 # it prevents is the model inventing a `practitioner_id` from a name it read in the
@@ -114,6 +146,14 @@ _INVALID_ARGUMENTS_EXPLANATION = (
     "{detail}. Correct the arguments and call it again."
 )
 
+# Which operation each change tool performs, for the change record. Read from the tool
+# name rather than the result, because the record has to be emitted for a result that
+# says only that the outcome is unknown.
+_OPERATION_BY_TOOL = {
+    "cancel_appointment": "cancel",
+    "reschedule_appointment": "reschedule",
+}
+
 _LOOP_EXHAUSTED_REPLY = (
     "I wasn't able to finish that. Could you tell me again what you'd like to book?"
 )
@@ -132,13 +172,35 @@ _LOOP_EXHAUSTED_BOOKED_REPLY_PLAIN = (
 
 
 class BookingOutcome(StrEnum):
-    """What a booking turn actually achieved, as observed from tool results."""
+    """What a booking turn actually achieved, as observed from tool results.
+
+    The members are values with meanings, so a change that completed is not a booking
+    that completed: reusing `BOOKED` for a reschedule would make one value stand for two
+    situations in exactly the place - the composing step's truth constraint - where that
+    confusion becomes a false statement to a patient.
+
+    `OUTCOME_UNKNOWN` is the one that is neither success nor failure: the request was
+    sent and no answer arrived, so what happened is genuinely not known.
+    """
 
     BOOKED = "booked"
+    RESCHEDULED = "rescheduled"
+    CANCELLED = "cancelled"
+    UNCHANGED = "unchanged"
+    OUTCOME_UNKNOWN = "outcome_unknown"
     REFUSED = "refused"
     UNAVAILABLE = "unavailable"
     AWAITING_CONFIRMATION = "awaiting_confirmation"
     INFORMATIONAL = "informational"
+
+
+# Which completed-change outcome a tool result stands for, keyed by the `change` field
+# the handler set. A completed change says which change it was rather than leaving the
+# node to infer it from which tool was called.
+_OUTCOME_BY_CHANGE = {
+    "cancelled": BookingOutcome.CANCELLED,
+    "rescheduled": BookingOutcome.RESCHEDULED,
+}
 
 
 @dataclass(frozen=True)
@@ -215,12 +277,16 @@ def _practitioner_line(entry: Any) -> str:
 def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | None]:
     """Derive the turn's outcome from the tool results it actually observed.
 
-    Returns: the outcome, and the booked appointment's id when there is one.
+    Returns: the outcome, and the appointment's id when one was booked or changed.
 
-    A booking that succeeded outranks everything: a turn that was refused once and then
-    succeeded is a success. Below that, an unreachable service outranks a refusal,
-    because "nothing was booked and we could not tell you why" is the more important
-    thing to say.
+    A completed booking or change outranks everything: a turn that was refused once and
+    then succeeded is a success. Below that, `unchanged` outranks an unknown outcome
+    because a request that provably transitioned nothing is more informative than one
+    whose fate is unclear; an unknown outcome outranks an unreachable service, because
+    "we cannot tell you whether your appointment changed" is the more important thing to
+    say than "nothing happened" - and saying the latter when the former is true is
+    exactly the claim a lost write forbids. An unreachable service still outranks a
+    refusal.
 
     A turn that wrote nothing is `awaiting_confirmation` only if it actually put times
     in front of the patient - otherwise it merely answered a question and is
@@ -232,9 +298,29 @@ def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | 
     if booked:
         appointment = booked[-1].get("appointment", {})
         return BookingOutcome.BOOKED, appointment.get("id")
+
+    changed = [r for r in results if r.get("status") == "changed"]
+    if changed:
+        last = changed[-1]
+        appointment = last.get("appointment", {})
+        # `.get()` on a value the handler set, not indexed: an unrecognized `change`
+        # must not raise mid-turn over an appointment that really was altered.
+        outcome = _OUTCOME_BY_CHANGE.get(str(last.get("change")))
+        if outcome is None:
+            get_logger().error(
+                "booking.unknown_change_kind", change=last.get("change")
+            )
+            outcome = BookingOutcome.OUTCOME_UNKNOWN
+        return outcome, appointment.get("id")
+
+    if any(r.get("status") == "unchanged" for r in results):
+        unchanged = [r for r in results if r.get("status") == "unchanged"][-1]
+        return BookingOutcome.UNCHANGED, unchanged.get("appointment", {}).get("id")
+    if any(r.get("status") == "unknown" for r in results):
+        return BookingOutcome.OUTCOME_UNKNOWN, None
     if any(r.get("status") in {"unavailable", "error"} for r in results):
         # A step that failed, whether the scheduler never answered or the handler
-        # raised. Not `booked`, because nothing here observed an appointment - the
+        # raised. Not a completed change, because nothing here observed one - the
         # result's own explanation is what says whether one might nonetheless exist.
         return BookingOutcome.UNAVAILABLE, None
     if any(r.get("status") == "refused" for r in results):
@@ -472,4 +558,31 @@ async def _dispatch(
         reason=result.get("reason"),
         duration_ms=_elapsed_ms(started),
     )
+    _record_unknown_outcome(name, arguments, result)
     return result
+
+
+def _record_unknown_outcome(
+    name: str, arguments: dict[str, Any], result: dict[str, Any]
+) -> None:
+    """Record that a change was sent and its outcome never came back.
+
+    Emitted here rather than by the scheduler, which by definition never learns that
+    its answer was lost. The transport failure itself is already described by
+    `scheduling.unavailable`; this records the domain consequence - that the outcome of
+    a write is genuinely unknown - which is an operator's problem even though the turn
+    answered the patient correctly.
+
+    `attempts` is the call budget that was spent before giving up.
+    """
+    if result.get("status") != "unknown":
+        return
+    operation = _OPERATION_BY_TOOL.get(name)
+    if operation is None:
+        return
+    get_logger().error(
+        "change.outcome_unknown",
+        operation=operation,
+        appointment_id=arguments.get("appointment_id"),
+        attempts=get_settings().SCHEDULING_MAX_ATTEMPTS,
+    )

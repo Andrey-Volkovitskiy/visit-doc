@@ -21,7 +21,7 @@ from scheduler.domain.models import (
 )
 from scheduler.repositories import practitioner_repository
 from shared_db import isolated_database_url
-from shared_models.scheduling import Specialty, Weekday
+from shared_models.scheduling import AppointmentStatus, Specialty, Weekday
 from sqlalchemy import text as sql_text
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
@@ -151,8 +151,13 @@ def make_appointment(
     ends_at: datetime,
     *,
     idempotency_key: str | None = None,
+    status: AppointmentStatus = AppointmentStatus.STANDING,
 ) -> Appointment:
-    """Build an unsaved `Appointment` with a fresh id and, unless given, a fresh key."""
+    """Build an unsaved `Appointment` with a fresh id and, unless given, a fresh key.
+
+    `status` defaults to standing, matching the column's own default: a test that does
+    not mention status is a test about an appointment that counts.
+    """
     return Appointment(
         id=new_id(),
         session_id=session_id,
@@ -161,6 +166,7 @@ def make_appointment(
         starts_at=starts_at,
         ends_at=ends_at,
         idempotency_key=idempotency_key if idempotency_key is not None else new_id(),
+        status=status,
     )
 
 

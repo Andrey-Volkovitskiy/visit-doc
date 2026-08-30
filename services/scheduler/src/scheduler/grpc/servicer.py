@@ -86,8 +86,65 @@ def _rename_failure(reason: RenameFailureReason) -> pb.RenamePatientResponse:
     )
 
 
+def _change_response(
+    outcome: appointment_repository.ChangeOutcome, *, carries_previous: bool
+) -> pb.ChangeAppointmentResponse:
+    """Render one change outcome onto the wire, as exactly one of its three results.
+
+    Args:
+        carries_previous: Whether this operation has a destination to have come from.
+            False for a cancellation, which has none - filling the previous fields in
+            would describe it as a move to the time it already had.
+    """
+    if isinstance(outcome, appointment_repository.ChangeRefused):
+        return pb.ChangeAppointmentResponse(
+            failure=converters.to_proto_change_failure(outcome.reason)
+        )
+    rendered = converters.to_proto_appointment(
+        outcome.appointment, outcome.patient, outcome.practitioner
+    )
+    if isinstance(outcome, appointment_repository.ChangeNoOp):
+        return pb.ChangeAppointmentResponse(
+            no_change=pb.NoChange(appointment=rendered)
+        )
+    if not carries_previous:
+        return pb.ChangeAppointmentResponse(appointment=rendered)
+    return pb.ChangeAppointmentResponse(
+        appointment=rendered,
+        previous_starts_at=format_local_datetime(outcome.previous_starts_at),
+        previous_practitioner_id=outcome.previous_practitioner_id,
+    )
+
+
+def _render_leg(
+    appointments: list[Any],
+    patient: Any,
+    practitioners: dict[str, Any],
+) -> list[pb.Appointment]:
+    """Render one leg of a listing, dropping any appointment whose practitioner is gone.
+
+    A practitioner deleted between the two reads takes their appointments by cascade, so
+    the row being described no longer exists either - omitting it is more accurate than
+    failing the call, which would report a healthy scheduler as unreachable.
+    """
+    rendered = []
+    for appointment in appointments:
+        practitioner = practitioners.get(appointment.practitioner_id)
+        if practitioner is None:
+            get_logger().warning(
+                "appointment.practitioner_missing",
+                appointment_id=appointment.id,
+                practitioner_id=appointment.practitioner_id,
+            )
+            continue
+        rendered.append(
+            converters.to_proto_appointment(appointment, patient, practitioner)
+        )
+    return rendered
+
+
 class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
-    """Serves the seven scheduling RPCs against the scheduler's own database.
+    """Serves the nine scheduling RPCs against the scheduler's own database.
 
     Every handler opens its own session from the shared factory and owns its
     transaction, matching the repository layer's session-as-a-parameter shape.
@@ -353,16 +410,54 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
                 idempotent_replay=outcome.idempotent_replay,
             )
 
-    async def ListUpcomingAppointments(  # noqa: N802 - fixed by the gRPC contract
+    async def CancelAppointment(  # noqa: N802 - name fixed by the gRPC contract
         self,
-        request: pb.ListUpcomingAppointmentsRequest,
+        request: pb.CancelAppointmentRequest,
         context: Any,
-    ) -> pb.ListUpcomingAppointmentsResponse:
-        """Return this patient's appointments starting after `local_now`.
+    ) -> pb.ChangeAppointmentResponse:
+        """Cancel one appointment, or explain in a typed failure why it was not.
+
+        Three outcomes, never two: the write took effect, the appointment was already
+        cancelled, or one rule refused it. Collapsing the middle one into either of the
+        others would leave the caller unable to tell a cancellation from a cancellation
+        re-sent - and telling a patient their cancellation failed when the appointment
+        is, in fact, cancelled.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+        patient_id = converters.read_required_id(request.patient_id, "patient_id")
+        appointment_id = converters.read_required_id(
+            request.appointment_id, "appointment_id"
+        )
+        expected_starts_at = converters.read_local_datetime(
+            request.expected_starts_at, "expected_starts_at"
+        )
+        expected_practitioner_id = converters.read_required_id(
+            request.expected_practitioner_id, "expected_practitioner_id"
+        )
+        local_now = converters.read_local_datetime(request.local_now, "local_now")
+
+        async with session_factory() as session:
+            outcome = await appointment_repository.cancel(
+                session,
+                session_id=session_id,
+                patient_id=patient_id,
+                appointment_id=appointment_id,
+                expected_starts_at=expected_starts_at,
+                expected_practitioner_id=expected_practitioner_id,
+                local_now=local_now,
+            )
+            return _change_response(outcome, carries_previous=False)
+
+    async def ListAppointments(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.ListAppointmentsRequest,
+        context: Any,
+    ) -> pb.ListAppointmentsResponse:
+        """Return this patient's appointments in the corner of the grid asked for.
 
         A patient that does not resolve in this session is answered with NOT_FOUND, not
-        with an empty list: an empty list is the answer for a patient who exists and has
-        nothing upcoming, and one value cannot mean both without the caller having to
+        with two empty legs: empty legs are the answer for a patient who exists and has
+        nothing matching, and one value cannot mean both without the caller having to
         guess which - a guess that reads to the patient as "you have nothing booked".
 
         An appointment whose practitioner was deleted between the two reads is omitted
@@ -372,6 +467,8 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
         session_id = converters.read_required_id(request.session_id, "session_id")
         patient_id = converters.read_required_id(request.patient_id, "patient_id")
         local_now = converters.read_local_datetime(request.local_now, "local_now")
+        time_filter = converters.read_time_filter(request.time_filter)
+        status_filter = converters.read_status_filter(request.status_filter)
 
         async with session_factory() as session:
             patient = await patient_repository.get(session, patient_id, session_id)
@@ -379,34 +476,25 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
                 await _abort(
                     context, grpc.StatusCode.NOT_FOUND, NotFoundEntity.PATIENT.value
                 )
-            appointments = await appointment_repository.list_upcoming(
+            listing = await appointment_repository.list_for_patient(
                 session,
                 session_id=session_id,
                 patient_id=patient.id,
                 local_now=local_now,
+                time_filter=time_filter,
+                status_filter=status_filter,
             )
-            if not appointments:
-                return pb.ListUpcomingAppointmentsResponse()
             practitioners = await practitioner_repository.get_by_ids(
                 session,
                 session_id,
-                [a.practitioner_id for a in appointments],
+                [a.practitioner_id for a in listing.future + listing.past],
             )
 
-        rendered = []
-        for appointment in appointments:
-            practitioner = practitioners.get(appointment.practitioner_id)
-            if practitioner is None:
-                get_logger().warning(
-                    "appointment.practitioner_missing",
-                    appointment_id=appointment.id,
-                    practitioner_id=appointment.practitioner_id,
-                )
-                continue
-            rendered.append(
-                converters.to_proto_appointment(appointment, patient, practitioner)
-            )
-        return pb.ListUpcomingAppointmentsResponse(appointments=rendered)
+        return pb.ListAppointmentsResponse(
+            future=_render_leg(listing.future, patient, practitioners),
+            past=_render_leg(listing.past, patient, practitioners),
+            past_truncated=listing.past_truncated,
+        )
 
     async def DeletePatientForChat(  # noqa: N802 - name fixed by the gRPC contract
         self,

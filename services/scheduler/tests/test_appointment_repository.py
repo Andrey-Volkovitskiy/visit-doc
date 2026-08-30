@@ -394,3 +394,107 @@ async def test_a_grandfathered_appointment_still_blocks_an_overlapping_booking(
     )
 
     assert outcome == BookingRefused(BookingFailureReason.PRACTITIONER_BUSY)
+
+
+async def test_busy_intervals_ignores_the_practitioners_cancelled_appointments(
+    db_session: AsyncSession,
+) -> None:
+    from shared_models.scheduling import AppointmentStatus
+
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    other = await seed_patient(db_session, session_id, full_name="Bram")
+    db_session.add(
+        make_appointment(
+            session_id,
+            other.id,
+            practitioner.id,
+            _TUESDAY_9AM,
+            _TUESDAY_9AM + timedelta(hours=1),
+            status=AppointmentStatus.CANCELLED,
+        )
+    )
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+    )
+
+    assert busy == []
+
+
+async def test_busy_intervals_ignores_the_patients_own_cancelled_appointments(
+    db_session: AsyncSession,
+) -> None:
+    from shared_models.scheduling import AppointmentStatus
+
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id, full_name="Dr A")
+    elsewhere = await seed_practitioner(db_session, session_id, full_name="Dr B")
+    patient = await seed_patient(db_session, session_id)
+    db_session.add(
+        make_appointment(
+            session_id,
+            patient.id,
+            elsewhere.id,
+            _TUESDAY_9AM,
+            _TUESDAY_9AM + timedelta(hours=1),
+            status=AppointmentStatus.CANCELLED,
+        )
+    )
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+    )
+
+    assert busy == []
+
+
+async def test_busy_intervals_still_reports_a_standing_appointment(
+    db_session: AsyncSession,
+) -> None:
+    from .conftest import make_appointment
+
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    other = await seed_patient(db_session, session_id, full_name="Bram")
+    db_session.add(
+        make_appointment(
+            session_id,
+            other.id,
+            practitioner.id,
+            _TUESDAY_9AM,
+            _TUESDAY_9AM + timedelta(hours=1),
+        )
+    )
+    await db_session.commit()
+
+    busy = await appointment_repository.busy_intervals(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        patient_id=patient.id,
+        from_date=_TUESDAY_9AM.date(),
+        to_date=_TUESDAY_9AM.date(),
+    )
+
+    assert [(i.start, i.end) for i in busy] == [
+        (_TUESDAY_9AM, _TUESDAY_9AM + timedelta(hours=1))
+    ]

@@ -283,7 +283,7 @@ async def test_a_deleted_patient_can_be_provisioned_afresh(
     assert second.patient_created is True
 
 
-async def test_listing_upcoming_appointments_is_scoped_to_one_patient(
+async def test_listing_appointments_is_scoped_to_one_patient(
     stub: scheduling_pb2_grpc.SchedulingStub, db_session: AsyncSession
 ) -> None:
     session_id = new_id()
@@ -302,14 +302,14 @@ async def test_listing_upcoming_appointments_is_scoped_to_one_patient(
             )
         )
 
-    response = await stub.ListUpcomingAppointments(
-        pb.ListUpcomingAppointmentsRequest(
+    response = await stub.ListAppointments(
+        pb.ListAppointmentsRequest(
             session_id=session_id, patient_id=mine.id, local_now=_LOCAL_NOW
         )
     )
 
-    assert [a.starts_at for a in response.appointments] == [_TUESDAY_9AM]
-    assert response.appointments[0].patient_full_name == "Ada"
+    assert [a.starts_at for a in response.future] == [_TUESDAY_9AM]
+    assert response.future[0].patient_full_name == "Ada"
 
 
 def test_no_scheduler_module_reads_the_host_clock() -> None:

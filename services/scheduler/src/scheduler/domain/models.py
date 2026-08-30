@@ -13,6 +13,7 @@ services own separate databases.
 from datetime import datetime, time
 from typing import Any
 
+from shared_models.scheduling import AppointmentStatus
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
@@ -25,6 +26,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
     literal_column,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ExcludeConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -44,6 +46,12 @@ _APPOINTMENT_INTERVAL: ColumnClause[Any] = literal_column("tsrange(starts_at, en
 _WORKING_RANGE_INTERVAL: ColumnClause[Any] = literal_column(
     "timerange(start_time, end_time)"
 )
+# The predicate that makes a cancelled appointment count for nothing, written once and
+# shared by the three objects that carry it. All three must agree: an exclusion
+# constraint left unconditional would go on holding a cancelled appointment's slot, and
+# a unique index left unconditional would go on holding its booking key - each failing
+# in a way no single-threaded application test can see.
+_IS_STANDING = f"status = '{AppointmentStatus.STANDING.value}'"
 
 
 class Base(DeclarativeBase):
@@ -164,22 +172,49 @@ class Appointment(Base):
     __tablename__ = "appointments"
     __table_args__ = (
         CheckConstraint("ends_at > starts_at", name="appointments_ordered"),
-        UniqueConstraint("idempotency_key", name="appointments_idempotency_key_unique"),
+        CheckConstraint(
+            "status IN ('"
+            + AppointmentStatus.STANDING.value
+            + "', '"
+            + AppointmentStatus.CANCELLED.value
+            + "')",
+            name="appointments_status_valid",
+        ),
+        # A partial unique INDEX, not a UniqueConstraint: PostgreSQL has no partial
+        # UNIQUE constraint, and the `WHERE` is the whole point - cancelling an
+        # appointment removes its row from this index, which is what frees the key in
+        # the same statement that cancels the appointment.
+        Index(
+            "ix_appointments_idempotency_key_standing",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text(_IS_STANDING),
+        ),
         ExcludeConstraint(
             ("patient_id", "="),
             (_APPOINTMENT_INTERVAL, "&&"),
             name="appointments_patient_no_overlap",
             using="gist",
+            where=text(_IS_STANDING),
         ),
         ExcludeConstraint(
             ("practitioner_id", "="),
             (_APPOINTMENT_INTERVAL, "&&"),
             name="appointments_practitioner_no_overlap",
             using="gist",
+            where=text(_IS_STANDING),
         ),
         Index("ix_appointments_session_id", "session_id"),
         Index("ix_appointments_patient_id", "patient_id"),
         Index("ix_appointments_practitioner_id", "practitioner_id"),
+        # Both legs of the two-axis listing filter on patient and status and order by
+        # start, so one composite index serves them both.
+        Index(
+            "ix_appointments_patient_status_starts",
+            "patient_id",
+            "status",
+            "starts_at",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)
@@ -199,6 +234,12 @@ class Appointment(Base):
     )
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        server_default=AppointmentStatus.STANDING.value,
+        default=AppointmentStatus.STANDING.value,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

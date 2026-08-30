@@ -36,6 +36,18 @@ Combine them into a single, natural reply. You must:
   have a confident answer to that part. Never fill the gap from your own knowledge.
 - If the appointment half did not result in a booking, never write anything that
   suggests one exists.
+- The appointment half is labelled with the outcome that actually happened. Say only
+  what that outcome records, whatever the appointment half's own wording suggests:
+    * "booked" - an appointment was created.
+    * "rescheduled" - an existing appointment moved. It was not newly booked.
+    * "cancelled" - an existing appointment was cancelled.
+    * "unchanged" - the appointment was already in the state asked for. Nothing was
+      written; report it as already done, never as a new change.
+    * "outcome_unknown" - the request was sent and no answer came back, so whether it
+      took effect is not known. Say that it is not known. Never say it happened, and
+      never say it did not happen or that nothing happened.
+    * "refused", "unavailable", "awaiting_confirmation", "informational" - nothing was
+      created, moved, or cancelled.
 - Do not mention that two specialists, tools, or internal steps were involved.
 Be concise."""
 
