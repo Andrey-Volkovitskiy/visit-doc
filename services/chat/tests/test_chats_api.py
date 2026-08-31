@@ -185,7 +185,7 @@ async def test_get_messages_404s_without_a_cookie() -> None:
 def _provisioned(full_name: str = "Ada Lovelace", *, created: bool = True) -> Mock:
     """A successful `EnsureSessionProvisioned` result."""
     return Mock(
-        patient=Mock(id="01PATIENT0000000000000000", full_name=full_name),
+        patient=Mock(id="01PATENT000000000000000000", full_name=full_name),
         practitioners=(),
         patient_created=created,
         practitioner_created=created,
@@ -274,7 +274,7 @@ async def test_a_successful_creation_logs_the_provisioned_patient() -> None:
     provisioned = next(e for e in logs if e["event"] == "patient.provisioned")
     assert created["provisioning_ok"] is True
     assert provisioned["created"] is True
-    assert provisioned["patient_id"] == "01PATIENT0000000000000000"
+    assert provisioned["patient_id"] == "01PATENT000000000000000000"
 
 
 async def test_a_chat_created_while_degraded_acquires_its_patient_on_a_later_turn() -> (
@@ -308,7 +308,7 @@ async def test_a_chat_created_while_degraded_acquires_its_patient_on_a_later_tur
     async with session_factory() as session:
         after = await session.get(Chat, chat_id)
     assert after is not None
-    assert after.patient_id == "01PATIENT0000000000000000"
+    assert after.patient_id == "01PATENT000000000000000000"
     assert after.patient_name == "Ada Lovelace"
 
 
@@ -620,7 +620,7 @@ async def _seed_chat_with_patient(name: str = "Ada Lovelace") -> tuple[str, str]
         created = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, created.id)
         await chat_repository.set_patient(
-            session, chat.id, "01PATIENT0000000000000000", name
+            session, chat.id, "01PATENT000000000000000000", name
         )
     return created.id, chat.id
 
@@ -628,7 +628,7 @@ async def _seed_chat_with_patient(name: str = "Ada Lovelace") -> tuple[str, str]
 def _renamed(full_name: str) -> PatientInfo:
     """A successful `RenamePatient` result."""
     return PatientInfo(
-        id="01PATIENT0000000000000000",
+        id="01PATENT000000000000000000",
         chat_id="01CHAT00000000000000000000",
         full_name=full_name,
     )

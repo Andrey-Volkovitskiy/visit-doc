@@ -66,7 +66,7 @@ async def seeded_entry() -> AsyncIterator[int]:
 _LOCAL_NOW = datetime(2026, 8, 14, 9, 0)
 
 
-def _registry(patient_id: str | None = "01PATIENT0000000000000000") -> ToolRegistry:
+def _registry(patient_id: str | None = "01PATENT000000000000000000") -> ToolRegistry:
     """Build a real registry over a channel no test ever dials.
 
     The mocked booking loop returns plain text unless a test asks for tool calls, so
@@ -81,7 +81,7 @@ def _registry(patient_id: str | None = "01PATIENT0000000000000000") -> ToolRegis
         ToolContext(
             channel=MagicMock(),
             settings=Settings(),
-            session_id="01SESSION0000000000000000",
+            session_id="01SESS00000000000000000000",
             patient_id=patient_id,
             local_now=_LOCAL_NOW,
         ),

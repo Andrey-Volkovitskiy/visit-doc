@@ -24,8 +24,8 @@ from .test_handle_booking import (
     _tool_use_response,
 )
 
-_APPOINTMENT_ID = "01APPOINTMENT000000000000"
-_PRACTITIONER_ID = "01PRACTITIONER0000000000"
+_APPOINTMENT_ID = "01APPT00000000000000000000"
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
 _STARTS_AT = "2026-08-18T09:00:00"
 
 _CANCEL_ARGUMENTS = {
@@ -430,7 +430,7 @@ async def test_one_confirmation_never_acts_on_more_than_one_appointment() -> Non
     registry = _RecordingRegistry(
         {
             "list_my_appointments": _listing(
-                [_entry(), _entry("01OTHER", "2026-08-19T09:00:00")]
+                [_entry(), _entry("02THER00000000000000000000", "2026-08-19T09:00:00")]
             ),
             "cancel_appointment": _cancelled_result(),
         }
@@ -836,7 +836,10 @@ async def test_a_swap_turn_reports_the_previous_practitioner_to_the_model() -> N
                 [
                     (
                         "reschedule_appointment",
-                        {**_RESCHEDULE_ARGUMENTS, "new_practitioner_id": "01OTHER"},
+                        {
+                            **_RESCHEDULE_ARGUMENTS,
+                            "new_practitioner_id": "02THER00000000000000000000",
+                        },
                     )
                 ]
             ),

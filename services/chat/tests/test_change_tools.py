@@ -23,10 +23,10 @@ from chat.clients.scheduling import (
 from chat.core.config import Settings
 from shared_models.scheduling import AppointmentStatus, ChangeFailureReason
 
-_SESSION_ID = "01SESSION0000000000000000"
-_PATIENT_ID = "01PATIENT0000000000000000"
-_PRACTITIONER_ID = "01PRACTITIONER0000000000"
-_APPOINTMENT_ID = "01APPOINTMENT000000000000"
+_SESSION_ID = "01SESS00000000000000000000"
+_PATIENT_ID = "01PATENT000000000000000000"
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
+_APPOINTMENT_ID = "01APPT00000000000000000000"
 _LOCAL_NOW = datetime(2026, 8, 17, 8, 0)
 _STARTS_AT = datetime(2026, 8, 18, 9, 0)
 _CLIENT = "chat.agent.tools.scheduling_tools.scheduling"
@@ -256,6 +256,68 @@ async def test_an_unparseable_expected_start_is_rejected_before_anything_happens
     called.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    "invented",
+    ["the_appointment_id", "need_id", "01APPT", "01APPT0000000000000000000I"],
+)
+async def test_an_invented_appointment_id_is_rejected_rather_than_sent(
+    invented: str,
+) -> None:
+    """The scheduler cannot tell an invented id from an appointment that is not there.
+
+    Both come back as `appointment_not_found`, which the model is told to relay
+    plainly - so a fabricated id becomes the assistant denying a real appointment. Held
+    here instead, as the one failure that provably changed nothing and can be corrected
+    inside the same turn.
+    """
+    from chat.agent.tools.registry import ToolArgumentError
+
+    with (
+        patch(_CLIENT + ".cancel_appointment", new=AsyncMock()) as called,
+        pytest.raises(ToolArgumentError, match="appointment_id"),
+    ):
+        await _registry().dispatch(
+            "cancel_appointment", {**_CANCEL_ARGUMENTS, "appointment_id": invented}
+        )
+
+    called.assert_not_awaited()
+
+
+async def test_an_invented_expected_practitioner_id_is_rejected_rather_than_sent() -> (
+    None
+):
+    from chat.agent.tools.registry import ToolArgumentError
+
+    with (
+        patch(_CLIENT + ".cancel_appointment", new=AsyncMock()) as called,
+        pytest.raises(ToolArgumentError, match="expected_practitioner_id"),
+    ):
+        await _registry().dispatch(
+            "cancel_appointment",
+            {**_CANCEL_ARGUMENTS, "expected_practitioner_id": "dr_osler"},
+        )
+
+    called.assert_not_awaited()
+
+
+async def test_a_lowercased_id_is_the_id_it_was_given_and_is_sent_uppercased() -> None:
+    # ULIDs are case-insensitive by definition, and the stores compare exactly.
+    with patch(
+        _CLIENT + ".cancel_appointment",
+        new=AsyncMock(
+            return_value=ChangeRefusal(
+                reason=ChangeFailureReason.ALREADY_CANCELLED, detail="already"
+            )
+        ),
+    ) as called:
+        await _registry().dispatch(
+            "cancel_appointment",
+            {**_CANCEL_ARGUMENTS, "appointment_id": _APPOINTMENT_ID.lower()},
+        )
+
+    assert called.call_args.kwargs["appointment_id"] == _APPOINTMENT_ID
+
+
 # --- the explanation table ---------------------------------------------------
 
 
@@ -466,10 +528,15 @@ async def test_the_tool_accepts_a_new_practitioner_and_passes_it_through() -> No
     ) as called:
         await _registry().dispatch(
             "reschedule_appointment",
-            {**_RESCHEDULE_ARGUMENTS, "new_practitioner_id": "01OTHER"},
+            {
+                **_RESCHEDULE_ARGUMENTS,
+                "new_practitioner_id": "02THER00000000000000000000",
+            },
         )
 
-    assert called.call_args.kwargs["new_practitioner_id"] == "01OTHER"
+    assert (
+        called.call_args.kwargs["new_practitioner_id"] == "02THER00000000000000000000"
+    )
 
 
 async def test_omitting_the_new_practitioner_keeps_the_current_one() -> None:
@@ -498,7 +565,7 @@ async def test_a_completed_swap_returns_the_previous_practitioners_name() -> Non
             previous_starts_at=_STARTS_AT,
             previous_practitioner_full_name="Elizabeth Blackwell",
         ),
-        new_practitioner_id="01OTHER",
+        new_practitioner_id="02THER00000000000000000000",
     )
 
     assert result["status"] == "changed"
@@ -522,7 +589,7 @@ async def test_a_completed_swap_returns_the_new_end_so_a_length_change_is_visibl
             previous_starts_at=_STARTS_AT,
             previous_practitioner_full_name="Elizabeth Blackwell",
         ),
-        new_practitioner_id="01OTHER",
+        new_practitioner_id="02THER00000000000000000000",
     )
 
     assert result["appointment"]["starts_at"] == "2026-08-18T10:00:00"

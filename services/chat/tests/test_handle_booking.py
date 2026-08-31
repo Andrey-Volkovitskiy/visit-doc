@@ -33,7 +33,7 @@ from structlog.testing import capture_logs
 
 _LOCAL_NOW = "2026-08-17T08:00:00"
 _ROSTER_READ = "list_practitioners"
-_PRACTITIONER_ID = "01PRACTITIONER0000000000"
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
 _STARTS_AT = "2026-08-18T09:00:00"
 
 
@@ -826,7 +826,7 @@ async def test_exhausting_the_loop_after_a_booking_never_denies_the_appointment(
             "book_appointment": {
                 "status": "booked",
                 "appointment": {
-                    "id": "01APPOINTMENT000000000000",
+                    "id": "01APPT00000000000000000000",
                     "practitioner_full_name": "William Osler",
                     "starts_at": _STARTS_AT,
                     "ends_at": "2026-08-18T10:00:00",
@@ -853,7 +853,7 @@ async def test_exhausting_the_loop_after_a_booking_never_denies_the_appointment(
     events, result = await _run(client, registry, _bursts("book me"), stream=True)
 
     assert result.outcome is BookingOutcome.BOOKED
-    assert result.appointment_id == "01APPOINTMENT000000000000"
+    assert result.appointment_id == "01APPT00000000000000000000"
     assert result.reply_text != _LOOP_EXHAUSTED_REPLY
     assert "William Osler" in result.reply_text
     assert _identifiers_in(result.reply_text) == []

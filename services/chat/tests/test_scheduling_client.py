@@ -41,9 +41,9 @@ def _client_functions_are_not_faked() -> Iterator[None]:
         yield
 
 
-_SESSION_ID = "01SESSION0000000000000000"
-_PATIENT_ID = "01PATIENT0000000000000000"
-_PRACTITIONER_ID = "01PRACTITIONER0000000000"
+_SESSION_ID = "01SESS00000000000000000000"
+_PATIENT_ID = "01PATENT000000000000000000"
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
 _LOCAL_NOW = datetime(2026, 8, 14, 9, 0)
 # Every test patches `_stub`, so the channel argument is never dereferenced - this
 # stands in for it and makes that explicit at each call site.
@@ -111,7 +111,7 @@ def _book_request_kwargs() -> dict[str, Any]:
 def _booked_response() -> pb.BookAppointmentResponse:
     return pb.BookAppointmentResponse(
         appointment=pb.Appointment(
-            id="01APPOINTMENT000000000000",
+            id="01APPT00000000000000000000",
             patient_id=_PATIENT_ID,
             patient_full_name="Ada",
             practitioner_id=_PRACTITIONER_ID,
@@ -670,7 +670,7 @@ def _change_kwargs() -> dict[str, Any]:
     return {
         "session_id": _SESSION_ID,
         "patient_id": _PATIENT_ID,
-        "appointment_id": "01APPOINTMENT000000000000",
+        "appointment_id": "01APPT00000000000000000000",
         "expected_starts_at": datetime(2026, 8, 18, 9, 0),
         "expected_practitioner_id": _PRACTITIONER_ID,
         "local_now": _LOCAL_NOW,
@@ -682,7 +682,7 @@ def _wire_appointment(
     status: int = pb.APPOINTMENT_STATUS_STANDING,
 ) -> pb.Appointment:
     return pb.Appointment(
-        id="01APPOINTMENT000000000000",
+        id="01APPT00000000000000000000",
         patient_id=_PATIENT_ID,
         patient_full_name="Ada",
         practitioner_id=_PRACTITIONER_ID,
@@ -722,7 +722,7 @@ async def test_a_no_change_cancellation_maps_onto_change_no_op() -> None:
         )
 
     assert isinstance(result, scheduling.ChangeNoOp)
-    assert result.appointment.id == "01APPOINTMENT000000000000"
+    assert result.appointment.id == "01APPT00000000000000000000"
 
 
 async def test_a_refused_cancellation_maps_onto_change_refusal() -> None:
@@ -765,7 +765,7 @@ async def test_the_cancel_request_carries_the_guard_fields_verbatim() -> None:
     request = method.calls[0]["request"]
     assert request.expected_starts_at == "2026-08-18T09:00:00"
     assert request.expected_practitioner_id == _PRACTITIONER_ID
-    assert request.appointment_id == "01APPOINTMENT000000000000"
+    assert request.appointment_id == "01APPT00000000000000000000"
     assert request.session_id == _SESSION_ID
     assert request.local_now == format_local_datetime(_LOCAL_NOW)
 
@@ -892,7 +892,7 @@ def _reschedule_kwargs(**overrides: Any) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "session_id": _SESSION_ID,
         "patient_id": _PATIENT_ID,
-        "appointment_id": "01APPOINTMENT000000000000",
+        "appointment_id": "01APPT00000000000000000000",
         "new_starts_at": datetime(2026, 8, 18, 10, 0),
         "new_practitioner_id": None,
         "expected_starts_at": datetime(2026, 8, 18, 9, 0),
@@ -1034,12 +1034,12 @@ async def test_check_availability_carries_the_excluded_appointment_id() -> None:
             from_date=date(2026, 8, 18),
             to_date=date(2026, 8, 18),
             local_now=_LOCAL_NOW,
-            excluded_appointment_id="01APPOINTMENT000000000000",
+            excluded_appointment_id="01APPT00000000000000000000",
         )
 
     assert (
         method.calls[0]["request"].excluded_appointment_id
-        == "01APPOINTMENT000000000000"
+        == "01APPT00000000000000000000"
     )
 
 
@@ -1068,7 +1068,7 @@ async def test_a_swap_carries_the_previous_practitioners_name() -> None:
     response = pb.ChangeAppointmentResponse(
         appointment=_wire_appointment(starts_at="2026-08-18T10:00:00"),
         previous_starts_at="2026-08-18T09:00:00",
-        previous_practitioner_id="01OTHERPRACTITIONER00000",
+        previous_practitioner_id="02PRACT0000000000000000000",
         previous_practitioner_full_name="Elizabeth Blackwell",
     )
     ctx, _ = _patched("RescheduleAppointment", [response])
@@ -1108,11 +1108,11 @@ async def test_the_reschedule_request_carries_a_new_practitioner_when_given() ->
         await scheduling.reschedule_appointment(
             _CHANNEL,
             _settings(),
-            **_reschedule_kwargs(new_practitioner_id="01OTHERPRACTITIONER00000"),
+            **_reschedule_kwargs(new_practitioner_id="02PRACT0000000000000000000"),
         )
 
     assert method.calls[0]["request"].new_practitioner_id == (
-        "01OTHERPRACTITIONER00000"
+        "02PRACT0000000000000000000"
     )
 
 

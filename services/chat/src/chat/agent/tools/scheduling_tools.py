@@ -30,7 +30,9 @@ from chat.agent.tools.registry import (
     ToolArgumentError,
     ToolContext,
     ToolResult,
+    optional_id_argument,
     required_argument,
+    required_id_argument,
 )
 from chat.clients import scheduling
 from chat.clients.scheduling import (
@@ -339,7 +341,8 @@ async def check_availability(
     """
     assert context.patient_id is not None
 
-    practitioner_id = required_argument(arguments, "practitioner_id")
+    practitioner_id = required_id_argument(arguments, "practitioner_id")
+    excluded_appointment_id = optional_id_argument(arguments, "excluded_appointment_id")
     from_date = _required_date(arguments, "from_date")
     to_date = _required_date(arguments, "to_date")
     try:
@@ -352,7 +355,7 @@ async def check_availability(
             from_date=from_date,
             to_date=to_date,
             local_now=context.local_now,
-            excluded_appointment_id=arguments.get("excluded_appointment_id"),
+            excluded_appointment_id=excluded_appointment_id,
         )
     except SchedulingNotFoundError as exc:
         # Distinct from an empty result, which means this practitioner exists and has
@@ -383,7 +386,7 @@ async def book_appointment(
     """
     assert context.patient_id is not None
 
-    practitioner_id = required_argument(arguments, "practitioner_id")
+    practitioner_id = required_id_argument(arguments, "practitioner_id")
     starts_at = _required_datetime(arguments, "starts_at")
     try:
         outcome = await scheduling.book_appointment(
@@ -569,10 +572,14 @@ async def reschedule_appointment(
     """
     assert context.patient_id is not None
 
-    appointment_id = required_argument(arguments, "appointment_id")
+    appointment_id = required_id_argument(arguments, "appointment_id")
     new_starts_at = _required_datetime(arguments, "new_starts_at")
+    # Absent means "keep the practitioner it has", which is the common case.
+    new_practitioner_id = optional_id_argument(arguments, "new_practitioner_id")
     expected_starts_at = _required_datetime(arguments, "expected_starts_at")
-    expected_practitioner_id = required_argument(arguments, "expected_practitioner_id")
+    expected_practitioner_id = required_id_argument(
+        arguments, "expected_practitioner_id"
+    )
     try:
         outcome = await scheduling.reschedule_appointment(
             context.channel,
@@ -581,8 +588,7 @@ async def reschedule_appointment(
             patient_id=context.patient_id,
             appointment_id=appointment_id,
             new_starts_at=new_starts_at,
-            # Absent means "keep the practitioner it has", which is the common case.
-            new_practitioner_id=arguments.get("new_practitioner_id") or None,
+            new_practitioner_id=new_practitioner_id,
             expected_starts_at=expected_starts_at,
             expected_practitioner_id=expected_practitioner_id,
             local_now=context.local_now,
@@ -623,9 +629,11 @@ async def cancel_appointment(
     """
     assert context.patient_id is not None
 
-    appointment_id = required_argument(arguments, "appointment_id")
+    appointment_id = required_id_argument(arguments, "appointment_id")
     expected_starts_at = _required_datetime(arguments, "expected_starts_at")
-    expected_practitioner_id = required_argument(arguments, "expected_practitioner_id")
+    expected_practitioner_id = required_id_argument(
+        arguments, "expected_practitioner_id"
+    )
     try:
         outcome = await scheduling.cancel_appointment(
             context.channel,
@@ -790,11 +798,22 @@ SCHEDULING_TOOLS = [
             "exact new time. expected_starts_at and expected_practitioner_id must be "
             "the values you stated to the patient when you asked them to confirm - not "
             "values you have just re-read."
+            " appointment_id is not something you can work out: it comes from a "
+            "list_my_appointments result in THIS turn. Earlier turns' tool results "
+            "are not in the conversation you can see, so call list_my_appointments "
+            "again if you do not have one - even when you already know which "
+            "appointment the patient means."
         ),
         input_schema={
             "type": "object",
             "properties": {
-                "appointment_id": {"type": "string"},
+                "appointment_id": {
+                    "type": "string",
+                    "description": (
+                        "the id this appointment carried in a list_my_appointments "
+                        "result in this turn - never one you composed"
+                    ),
+                },
                 "new_starts_at": {
                     "type": "string",
                     "description": "local date-time, YYYY-MM-DDTHH:MM:SS",
@@ -835,11 +854,22 @@ SCHEDULING_TOOLS = [
             "which appointment is being cancelled. expected_starts_at and "
             "expected_practitioner_id must be the values you stated to the patient "
             "when you asked them to confirm - not values you have just re-read."
+            " appointment_id is not something you can work out: it comes from a "
+            "list_my_appointments result in THIS turn. Earlier turns' tool results "
+            "are not in the conversation you can see, so call list_my_appointments "
+            "again if you do not have one - even when you already know which "
+            "appointment the patient means."
         ),
         input_schema={
             "type": "object",
             "properties": {
-                "appointment_id": {"type": "string"},
+                "appointment_id": {
+                    "type": "string",
+                    "description": (
+                        "the id this appointment carried in a list_my_appointments "
+                        "result in this turn - never one you composed"
+                    ),
+                },
                 "expected_starts_at": {
                     "type": "string",
                     "description": (

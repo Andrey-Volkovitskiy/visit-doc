@@ -39,9 +39,9 @@ from shared_models.scheduling import (
 )
 from structlog.testing import capture_logs
 
-_SESSION_ID = "01SESSION0000000000000000"
-_PATIENT_ID = "01PATIENT0000000000000000"
-_PRACTITIONER_ID = "01PRACTITIONER0000000000"
+_SESSION_ID = "01SESS00000000000000000000"
+_PATIENT_ID = "01PATENT000000000000000000"
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
 _LOCAL_NOW = datetime(2026, 8, 17, 8, 0)
 _STARTS_AT = datetime(2026, 8, 18, 9, 0)
 # The handlers call the gRPC client through this module, so patching it here fakes
@@ -74,7 +74,7 @@ def _registry(context: ToolContext | None = None) -> ToolRegistry:
 
 def _appointment() -> AppointmentInfo:
     return AppointmentInfo(
-        id="01APPOINTMENT000000000000",
+        id="01APPT00000000000000000000",
         patient_id=_PATIENT_ID,
         patient_full_name="Ada",
         practitioner_id=_PRACTITIONER_ID,
@@ -152,8 +152,8 @@ def test_the_same_booking_always_derives_the_same_key() -> None:
 @pytest.mark.parametrize(
     ("patient", "practitioner", "starts_at"),
     [
-        ("01OTHERPATIENT0000000000", _PRACTITIONER_ID, _STARTS_AT),
-        (_PATIENT_ID, "01OTHERPRACTITIONER00000", _STARTS_AT),
+        ("02PATENT000000000000000000", _PRACTITIONER_ID, _STARTS_AT),
+        (_PATIENT_ID, "02PRACT0000000000000000000", _STARTS_AT),
         (_PATIENT_ID, _PRACTITIONER_ID, datetime(2026, 8, 18, 10, 0)),
     ],
 )
@@ -328,7 +328,7 @@ async def test_a_practitioner_with_no_bookable_time_is_marked_as_such() -> None:
             schedule=(),
         ),
         PractitionerInfo(
-            id="01OTHER",
+            id="02THER00000000000000000000",
             full_name="Ada Ada",
             specialty="Dentistry",
             appointment_duration_minutes=30,
@@ -436,7 +436,7 @@ async def test_a_listed_appointment_carries_its_id_and_status() -> None:
         "ends_at",
         "status",
     }
-    assert listed["id"] == "01APPOINTMENT000000000000"
+    assert listed["id"] == "01APPT00000000000000000000"
     assert listed["status"] == "standing"
 
 
@@ -460,7 +460,7 @@ async def test_the_two_legs_are_never_merged_into_one_list() -> None:
         AppointmentListing(future=(_appointment(),), past=(past,), past_truncated=False)
     )
 
-    assert [a["id"] for a in result["future"]] == ["01APPOINTMENT000000000000"]
+    assert [a["id"] for a in result["future"]] == ["01APPT00000000000000000000"]
     assert [a["id"] for a in result["past"]] == ["01PAST"]
     assert result["past"][0]["status"] == "cancelled"
     assert "appointments" not in result
@@ -659,12 +659,12 @@ async def test_check_availability_passes_an_excluded_appointment_through() -> No
                 "practitioner_id": _PRACTITIONER_ID,
                 "from_date": "2026-08-18",
                 "to_date": "2026-08-18",
-                "excluded_appointment_id": "01APPOINTMENT000000000000",
+                "excluded_appointment_id": "01APPT00000000000000000000",
             },
         )
 
     assert called.call_args.kwargs["excluded_appointment_id"] == (
-        "01APPOINTMENT000000000000"
+        "01APPT00000000000000000000"
     )
 
 

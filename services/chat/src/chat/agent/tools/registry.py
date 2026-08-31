@@ -101,6 +101,61 @@ def required_argument(arguments: dict[str, Any], name: str) -> str:
     return str(value)
 
 
+# Every id a model may pass back is one this service handed it: a 26-character
+# Crockford base32 ULID. `I`, `L`, `O` and `U` are not in that alphabet.
+_ULID_LENGTH = 26
+_ULID_ALPHABET = frozenset("0123456789ABCDEFGHJKMNPQRSTVWXYZ")
+
+
+def _is_id(value: str) -> bool:
+    """Whether `value` could be an id this service issued."""
+    return len(value) == _ULID_LENGTH and set(value) <= _ULID_ALPHABET
+
+
+def required_id_argument(arguments: dict[str, Any], name: str) -> str:
+    """Return `name` as an id the model was actually given, uppercased.
+
+    Raises: ToolArgumentError if `name` is absent, null, or is not shaped like an id
+        this service issued.
+
+    The shape is checked here rather than left to the service that owns the id, because
+    the two failures are not the same fact and its answer cannot tell them apart. A
+    fabricated id comes back as `appointment_not_found` - identical to the appointment
+    genuinely not being on the patient's record - and the model relays that to the
+    patient as though their real appointment did not exist. Rejected at this boundary
+    it stays a `ToolArgumentError`: provably no effect, correctable, and the model gets
+    another attempt inside the same turn instead of the patient getting a denial.
+
+    Only the *shape* is knowable here. A well-formed id belonging to someone else is
+    the owning service's question, and it answers it with the session predicate on the
+    read.
+
+    ULIDs are defined case-insensitively, so a value the model lowercased is the id it
+    was given; it is uppercased rather than refused, since the stores compare exactly.
+    """
+    value = required_argument(arguments, name).upper()
+    if not _is_id(value):
+        raise ToolArgumentError(
+            f"{name} must be an id you read from a tool result in this turn, not "
+            f"{value!r}"
+        )
+    return value
+
+
+def optional_id_argument(arguments: dict[str, Any], name: str) -> str | None:
+    """Return `name` as an id if it was supplied at all, else None.
+
+    Raises: ToolArgumentError if `name` is present but is not shaped like an id.
+
+    Absent and empty both mean "not supplied" - a model that means to omit an optional
+    argument sometimes sends `""` instead - and an empty string is not an id either
+    way, so the two collapse to one answer rather than one of them becoming a rejection.
+    """
+    if not arguments.get(name):
+        return None
+    return required_id_argument(arguments, name)
+
+
 class ToolRegistry:
     """The tools available for one turn, bound to that turn's ambient context."""
 
