@@ -34,7 +34,7 @@ grounded content from clinic policy documents, cites its sources, and **abstains
 retrieval is weak** rather than confabulating. It hands off to a human whenever it can't confidently
 resolve something; urgent or ambiguous requests are prioritized.
 
-**Staff** (Phase 2b) work from a console that notifies them of incoming escalations, lets them take
+**Staff** (Phase 1d) work from a console that notifies them of incoming escalations, lets them take
 over a conversation and reply in the patient's own thread, and manages the practitioners and FAQ
 entries the assistant answers from. Both sides live on one screen — patient chats on the left, the
 staff console on the right — so a visitor drives an escalation and then answers it, as the session's
@@ -160,25 +160,69 @@ user can switch between, and the current clear-the-chat action becomes a single 
 the chat, its patient, and that patient's appointments together. This is the one piece of frontend
 work in the phase.
 
-#### Phase 1d — Rescheduling, cancellation, escalation, and real branching
+#### Phase 1d — Rescheduling, cancellation, escalation, and the staff console
 Complete the agent's conversational surface on top of 1c's booking. Shipped in two parts, because
 the two halves share nothing but the tool registry: the first changes appointments, the second
 changes who is talking.
 
-- **Part 1 — rescheduling and cancellation** of an existing appointment, through the same tool seam
-  and the same database-level guards that protect booking. **Shipped** as
-  `specs/006-reschedule-and-cancel/`. Both halves of that sentence held literally: no new seam, and
-  no new guard mechanism — the same two exclusion constraints, now partial on a `status` column, so
-  a cancelled appointment stops occupying its slot at the datastore rather than by an application
-  filter. The agent gains its first *mutating* capabilities, and with them the first outcome the
-  system must admit it does not know: a write whose answer never arrived is reported as unknown,
-  never as "nothing happened".
-- **Part 2 — the escalation path** — adding `escalate_to_staff` to 1c's tool registry — which is where
-  conversation shape actually becomes multi-party: staff take over and post directly into the same
-  thread the patient sees (not a separate, assistant-mediated channel), so a conversation becomes a
-  flat, ordered log of messages from any sender (patient, assistant, or staff). Escalation is a
-  state on the conversation as a whole, not per-message: once escalated, the assistant stops
-  generating replies in it until a staff member resolves it or hands it back.
+**Part 1 — rescheduling and cancellation** of an existing appointment, through the same tool seam
+and the same database-level guards that protect booking. **Shipped** as
+`specs/006-reschedule-and-cancel/`. Both halves of that sentence held literally: no new seam, and
+no new guard mechanism — the same two exclusion constraints, now partial on a `status` column, so
+a cancelled appointment stops occupying its slot at the datastore rather than by an application
+filter. The agent gains its first *mutating* capabilities, and with them the first outcome the
+system must admit it does not know: a write whose answer never arrived is reported as unknown,
+never as "nothing happened".
+
+**Part 2 — the escalation path** — adding `escalate_to_staff` to 1c's tool registry — which is where
+conversation shape actually becomes multi-party: staff take over and post directly into the same
+thread the patient sees (not a separate, assistant-mediated channel), so a conversation becomes a
+flat, ordered log of messages from any sender (patient, assistant, or staff). Escalation is a
+state on the conversation as a whole, not per-message: once escalated, the assistant stops
+generating replies in it until a staff member resolves it or hands it back.
+
+**Part 2 also carries the staff-facing interface, pulled forward from what was Phase 2b**, together
+with the two admin surfaces over data the assistant already depends on. The reason is manual
+verification: a handoff to a human that no human can see, a practitioner list editable only with
+`curl`, and an FAQ entry whose indexing state is invisible are all things that can be unit-tested
+but not *exercised*. It is also what makes 1e's threshold work possible by hand — tuning an
+abstention gate means editing the corpus and re-asking questions, repeatedly, in the real UI.
+Mostly frontend over APIs that already exist (1c's REST admin surface, the existing FAQ CRUD); the
+only new backend is what the escalation path itself needs.
+
+- **One screen, both sides.** The app demonstrates the patient experience and the staff experience
+  at once: the session's patient chats on the left, the staff interface on the right, so an
+  escalation can be watched arriving from the side that raised it. There is no login and no second
+  kind of user — the anonymous session remains the only identity, and it owns both panes.
+- **Escalated-conversation chat.** A queue of the session's conversations the assistant handed
+  off, each opening into the same thread the patient pane shows, with a composer that posts into it
+  as staff. The console owns the state transition Part 2 defines above: while a conversation is
+  escalated the assistant stays silent, until the staff member resolves it or hands it back.
+- **Staff notification.** An escalation is worth nothing if nobody happens to be looking at that
+  pane. In-app first — a live push and an unread count on the staff side, raised by a turn the user
+  may have been driving from the patient side a second earlier — because that needs no new
+  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 3+, where a
+  broker and a Notification service actually exist.
+- **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
+  practitioners, with the seeded-name defaults and the cascading deletes the service already
+  enforces. No new backend.
+- **FAQ entry management** — a UI over the existing FAQ CRUD, with one thing it must not get wrong:
+  a *saved* entry and a *searchable* entry are different states. The backend's Postgres↔Qdrant
+  ordering (deindex before deleting the row, delete-then-upsert on update) is what keeps the two
+  consistent, and the console surfaces indexing state so a staff member can tell whether what they
+  just wrote is something the assistant can actually retrieve. It is also the one admin action that
+  changes what the assistant will say, which makes it the natural place to show a retrieval or eval
+  effect later.
+- **The session stays the only boundary — there is no staff login.** A session gets exactly one
+  staff member, created with it as its patients and practitioners already are, and the app user
+  simply acts as that person. Scoping is unchanged from 1c: a session sees and manages only its own
+  chats, patients, practitioners, and staff member, and an id from another session resolves to
+  nothing. Authentication would buy nothing this scope does not already give, and would cost the
+  side-by-side demonstration that is the point of the screen. The staff member is a core-backend
+  record, alongside sessions, chats, and messages — nothing about it touches Scheduling's
+  invariants.
+
+Operational analytics over this console stay in Phase 3+.
 
 #### Phase 1e — RAG done properly
 Upgrade Phase 0's naive embed-and-top-k retrieval into a pipeline with a defensible stage for each
@@ -252,7 +296,7 @@ scores the gates read, and produces citations for chunks that answer nothing the
 This has no dependency on 1e and can be built before it. If 1e's thresholds are calibrated first,
 they need re-checking afterwards: this phase changes the text those scores are measured against.
 
-### Phase 2a — Evaluation & observability
+### Phase 2 — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does:
 
 - **A golden dataset** — 50–100 realistic patient messages labeled with expected intent(s),
@@ -265,44 +309,6 @@ The centerpiece — the ability to *measure* whether the system works, not just 
 - **Tracing with Langfuse** — per-step latency, token cost, and the full decision trace for each
   turn.
 
-### Phase 2b — Staff console and admin UI
-1d makes a conversation multi-party on the server; this is the interface that makes that real, plus
-the two admin surfaces for the data the assistant answers from. Mostly frontend over APIs that
-already exist.
-
-**One screen, both sides.** The app demonstrates the patient experience and the staff experience at
-once: the session's patient chats on the left, the staff interface on the right, so an escalation
-can be watched arriving from the side that raised it. There is no login and no second kind of user —
-the anonymous session remains the only identity, and it owns both panes.
-
-- **Escalated-conversation chat.** A queue of the session's conversations the assistant handed
-  off, each opening into the same thread the patient pane shows, with a composer that posts into it
-  as staff. The console owns the state transition 1d defined: while a conversation is escalated the
-  assistant stays silent, until the staff member resolves it or hands it back.
-- **Staff notification.** An escalation is worth nothing if nobody happens to be looking at that
-  pane. In-app first — a live push and an unread count on the staff side, raised by a turn the user
-  may have been driving from the patient side a second earlier — because that needs no new
-  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 3+, where a
-  broker and a Notification service actually exist.
-- **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
-  practitioners, with the seeded-name defaults and the cascading deletes the service already
-  enforces. No new backend.
-- **FAQ entry management** — a UI over the existing FAQ CRUD, with one thing it must not get wrong:
-  a *saved* entry and a *searchable* entry are different states. The backend's Postgres↔Qdrant
-  ordering (deindex before deleting the row, delete-then-upsert on update) is what keeps the two
-  consistent, and the console surfaces indexing state so a staff member can tell whether what they
-  just wrote is something the assistant can actually retrieve. It is also the one admin action that
-  changes what the assistant will say, which makes it the natural place to show a retrieval or eval
-  effect later.
-- **The session stays the only boundary — there is no staff login.** A session gets exactly one
-  staff member, created with it as its patients and practitioners already are, and the app user
-  simply acts as that person. Scoping is unchanged from 1c: a session sees and manages only its own
-  chats, patients, practitioners, and staff member, and an id from another session resolves to
-  nothing. Authentication would buy nothing this scope does not already give, and would cost the
-  side-by-side demonstration that is the point of the screen. The staff member is a core-backend
-  record, alongside sessions, chats, and messages — nothing about it touches Scheduling's
-  invariants.
-
 ### Phase 3+ — Platform layers (optional, if time allows)
 Added as deliberate evolution, each with a one-line rationale in the README:
 
@@ -311,7 +317,7 @@ Added as deliberate evolution, each with a one-line rationale in the README:
 - Introduce **one** message broker plus the **transactional outbox** pattern and **idempotent
   consumers** (at-least-once delivery plus idempotency gives effectively-once processing).
 - Add ClickHouse and an event stream for the analytics dashboard.
-- Extend Phase 2b's console with operational analytics, and with escalation notifications that
+- Extend 1d's staff console with operational analytics, and with escalation notifications that
   reach staff out of band (email/SMS) once a broker and a Notification service exist.
 - Containerize and deploy to Kubernetes.
 
