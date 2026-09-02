@@ -16,6 +16,8 @@ half-succeeded and swallowed its own failure is what used to leave the two store
 silently disagreeing.
 """
 
+from typing import NoReturn
+
 from fastapi import APIRouter, HTTPException, Request
 from ulid import ULID
 
@@ -99,6 +101,20 @@ def _log_dependency_unreachable(dependency: str, exc: Exception) -> None:
     )
 
 
+def _refuse_full_corpus(session_id: str, count: int, cap: int) -> NoReturn:
+    """Log the refusal and raise the 409 a create beyond the cap is answered with.
+
+    Raises: HTTPException 409, always.
+    """
+    get_logger().info(
+        "faq.create_refused", session_id=session_id, entry_count=count, cap=cap
+    )
+    raise HTTPException(
+        status_code=409,
+        detail=f"this session's corpus is full ({cap} entries) - delete one first",
+    )
+
+
 async def _write_chunks(
     request: Request,
     operation: str,
@@ -145,30 +161,21 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
     carry the entry they belong to before the row that publishes them exists. A create
     that fails leaves that id unused, which costs nothing: the sequence is not a count
     of rows.
+
+    The cap is read twice, and only the second reading enforces it. The first, here,
+    spares a full corpus the work of chunking and embedding something it will refuse;
+    the one the insert carries is what makes the cap a bound, because a count taken in
+    a transaction that ends before the insert only describes a corpus some other create
+    is free to fill in the meantime.
     """
     session_id = _require_session(request)
-    settings = get_settings()
+    cap = get_settings().FAQ_MAX_ENTRIES_PER_SESSION
     with bind_operation_id():
         try:
             async with session_factory() as session:
-                # Counted before either store is touched, so a refused create has done
-                # no work and left nothing behind.
                 count = await faq_repository.count_for_session(session, session_id)
-                if count >= settings.FAQ_MAX_ENTRIES_PER_SESSION:
-                    get_logger().info(
-                        "faq.create_refused",
-                        session_id=session_id,
-                        entry_count=count,
-                        cap=settings.FAQ_MAX_ENTRIES_PER_SESSION,
-                    )
-                    raise HTTPException(
-                        status_code=409,
-                        detail=(
-                            "this session's corpus is full "
-                            f"({settings.FAQ_MAX_ENTRIES_PER_SESSION} entries) - "
-                            "delete one first"
-                        ),
-                    )
+                if count >= cap:
+                    _refuse_full_corpus(session_id, count, cap)
                 entry_id = await faq_repository.reserve_id(session)
         except HTTPException:
             raise
@@ -183,12 +190,20 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
 
         try:
             async with session_factory() as session:
-                entry = await faq_repository.create(
-                    session, session_id, body.content, revision, entry_id
+                entry, count = await faq_repository.create_within_cap(
+                    session, session_id, body.content, revision, entry_id, cap
                 )
         except Exception as exc:
             _log_faq_failure("create", entry_id, exc, dependency="postgres")
             raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
+
+        if entry is None:
+            # Another create took the last place while this one was embedding. Nothing
+            # was inserted, so the chunks already written carry an id no row will ever
+            # name: removing them is the same silent housekeeping a delete does, not a
+            # repair of anything a reader could have seen.
+            await remove_entry_chunks(request.app.state.qdrant_client, entry_id)
+            _refuse_full_corpus(session_id, count, cap)
 
         # Ordinarily a no-op - a create's id is fresh - and here so a reserved id that
         # somehow carries chunks from an earlier attempt does not keep them.

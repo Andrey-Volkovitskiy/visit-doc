@@ -52,7 +52,8 @@ async def publish_revision(
             and the only moment the change becomes visible.
 
     Raises: FaqOperationError wrapping any failure, tagged "chunking", "embedding",
-        or "persist".
+        or "persist" - including content that yields no chunks at all, which is tagged
+        "chunking" and never published.
 
     Chunking and embedding both happen before either store is touched, so a failure in
     either has changed nothing at all. The write itself adds points and removes none,
@@ -64,10 +65,15 @@ async def publish_revision(
         chunks = chunk_content(content)
     except Exception as exc:
         raise FaqOperationError("chunking", exc) from exc
-    logger.info("faq.content_chunked", chunk_count=len(chunks))
-
     if not chunks:
-        return
+        # Not reachable through `/faq` - the request schema rejects content with no
+        # meaningful text, and a slice of meaningful content is meaningful too - but a
+        # revision is what a row is about to vouch for, so "wrote nothing" must not be
+        # able to return the same success as "wrote the chunks". A publish behind an
+        # empty revision leaves an entry that lists, answers nothing, and takes the
+        # revision it superseded with it when the sweep runs.
+        raise FaqOperationError("chunking", ValueError("content produced no chunks"))
+    logger.info("faq.content_chunked", chunk_count=len(chunks))
 
     texts = [chunk.chunk_text for chunk in chunks]
     try:
@@ -87,7 +93,13 @@ async def publish_revision(
 async def sweep_entry(
     qdrant_client: AsyncQdrantClient, faq_entry_id: int, live_revision: str
 ) -> None:
-    """Remove `faq_entry_id`'s chunks that are not part of `live_revision`.
+    """Remove `faq_entry_id`'s chunks from revisions older than `live_revision`.
+
+    Args:
+        live_revision: A revision of this entry that was live when the caller published
+            it. It need not still be the live one - a later save may have published
+            while this sweep was on its way, and one that has is left alone rather than
+            swept away by a caller holding the revision it superseded.
 
     Never raises, never reports, and never logs - not even a critical dependency event.
     A sweep is not an operation: the chunks it removes are already unreachable, because

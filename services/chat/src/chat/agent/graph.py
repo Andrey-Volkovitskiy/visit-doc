@@ -137,8 +137,8 @@ def _select_specialists(intents: list[IntentLabel]) -> list[str]:
     is worse than handing over cleanly, and booking something for a patient who has just
     asked to stop talking to a machine is worse still.
 
-    This selects *no* specialist rather than interrupting one, so FR-006 is untouched:
-    nothing is cut off mid-flight, because nothing was started.
+    This selects *no* specialist rather than interrupting one, so the turn still runs
+    to completion: nothing is cut off mid-flight, because nothing was started.
 
     Never empty: a message that matches nothing still gets the FAQ path rather than no
     answer at all.

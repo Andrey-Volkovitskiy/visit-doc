@@ -7,11 +7,11 @@ than being caught after the row has already been handed back.
 """
 
 from sqlalchemy import delete as sql_delete
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from chat.domain.models import FaqEntry
+from chat.domain.models import FaqEntry, Session
 
 
 async def reserve_id(session: AsyncSession) -> int:
@@ -75,11 +75,57 @@ async def list_all(session: AsyncSession, session_id: str) -> list[FaqEntry]:
 
 
 async def count_for_session(session: AsyncSession, session_id: str) -> int:
-    """Return how many entries `session_id` owns."""
+    """Return how many entries `session_id` owns.
+
+    Counted by the database, in one row, rather than by pulling the ids across and
+    measuring the list here - the number is all any caller wants, and this one runs
+    inside the locked section that serializes a session's creates.
+    """
     result = await session.execute(
-        select(FaqEntry.id).where(FaqEntry.session_id == session_id)
+        select(func.count())
+        .select_from(FaqEntry)
+        .where(FaqEntry.session_id == session_id)
     )
-    return len(result.scalars().all())
+    return int(result.scalar_one())
+
+
+async def create_within_cap(
+    session: AsyncSession,
+    session_id: str,
+    content: str,
+    live_revision: str,
+    entry_id: int,
+    max_entries: int,
+) -> tuple[FaqEntry | None, int]:
+    """Insert an entry unless `session_id` already owns `max_entries` of them.
+
+    Returns: the inserted entry, or None if the corpus was already at its cap, and how
+        many entries the session owned when that was decided.
+
+    Counting and inserting are one transaction, and every create for one session queues
+    behind a row lock on the session that owns the corpus - so each one counts the rows
+    of every create that committed before it, and the cap bounds the corpus rather than
+    merely usually bounding it. The lock is taken as a statement of its own on purpose:
+    a count folded into the same statement would answer from the snapshot that
+    statement began with, which is the one from before the wait. It is taken in its
+    no-key form, which conflicts with another create and with nothing that merely
+    references the session - a new chat, or any other table's foreign key check - so
+    only what has to serialize does.
+
+    A refused create writes nothing at all, so the id its caller reserved is simply
+    never used.
+    """
+    await session.execute(
+        select(Session.id)
+        .where(Session.id == session_id)
+        .with_for_update(key_share=True)
+    )
+    count = await count_for_session(session, session_id)
+    if count >= max_entries:
+        await session.rollback()
+        return None, count
+    entry = await create(session, session_id, content, live_revision, entry_id)
+    return entry, count
 
 
 async def live_revisions(session: AsyncSession, session_id: str) -> list[str]:

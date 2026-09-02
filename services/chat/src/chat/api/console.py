@@ -74,33 +74,58 @@ def _waited_seconds(state: ConversationState) -> int:
     return max(0, int((datetime.now(UTC) - state.escalated_at).total_seconds()))
 
 
+async def _release_lock(db_session: AsyncSession, chat_id: str) -> None:
+    """Release `chat_id`'s advisory lock without letting the release decide the answer.
+
+    Belongs in the `finally` of a locked section whose writes have already committed.
+    Those writes are durable whatever happens here, so a release that fails is recorded
+    and goes no further: raising would replace the answer the commit earned with a 500,
+    and a staff member told their reply was not sent sends it again - which the patient
+    reads as the clinic answering the same thing twice.
+
+    Recorded at `critical` because a lock that did not release is unreleasable from
+    here: every later turn and staff action in the chat it keys waits on it forever.
+    `release_chat_lock` records the stranded lock itself; this entry is the other half
+    of it - that the caller was nevertheless told their write succeeded, so nobody
+    reading the log has to infer which of the two happened.
+    """
+    try:
+        await chat_repository.release_chat_lock(db_session, chat_id)
+    except Exception as exc:  # noqa: BLE001 - see the docstring: nothing raised here
+        # can undo a committed write, so nothing raised here may change the answer.
+        get_logger().critical(
+            "chat.lock_release_failed", chat_id=chat_id, error_detail=str(exc)
+        )
+
+
 async def _start_pause(
     db_session: AsyncSession, chat_id: str, session_id: str, *, paused_by: str
-) -> None:
+) -> ConversationState | None:
     """Silence the assistant for the configured window, restarting any running pause.
 
     Args:
         paused_by: `"staff_message"` or `"switch"` - the two gestures that write this.
             They write the identical deadline, so this exists to make a silence
             traceable, not because anything behaves differently.
+
+    Returns: the conversation's state as the pause left it, or None if `chat_id` is not
+        this session's, in which case nothing was silenced.
+
+    The record is written from what the write reported about itself - the deadline it
+    wrote and the pause it replaced - so the section holding the chat's lock spends no
+    round trip reading back what it just did.
     """
-    before = await chat_repository.get_conversation_state(
-        db_session, chat_id, session_id
-    )
-    restarted = before is not None and before.pause_seconds_remaining is not None
-    await chat_repository.set_paused_until(
+    written = await chat_repository.set_paused_until(
         db_session, chat_id, session_id, get_settings().ASSISTANT_PAUSE_SECONDS
-    )
-    after = await chat_repository.get_conversation_state(
-        db_session, chat_id, session_id
     )
     get_logger().info(
         "assistant.paused",
         chat_id=chat_id,
-        until=after.assistant_paused_until if after is not None else None,
+        until=written.state.assistant_paused_until if written is not None else None,
         paused_by=paused_by,
-        restarted=restarted,
+        restarted=written is not None and written.restarted,
     )
+    return None if written is None else written.state
 
 
 def _state_out(state: ConversationState | None) -> AssistantStateOut:
@@ -195,13 +220,13 @@ async def post_staff_message(
             await chat_repository.clear_escalation(db_session, chat.id, session_id)
             await chat_repository.clear_attention(db_session, chat.id, session_id)
             marks_cleared = await chat_repository.clear_clearable_marks(
-                db_session, chat.id
+                db_session, chat.id, session_id
             )
             await _start_pause(
                 db_session, chat.id, session_id, paused_by="staff_message"
             )
         finally:
-            await chat_repository.release_chat_lock(db_session, chat.id)
+            await _release_lock(db_session, chat.id)
 
     ended_escalation = state is not None and state.escalated_at is not None
     logger = get_logger()
@@ -250,39 +275,42 @@ async def set_assistant(
     async with pinned_session() as db_session:
         await chat_repository.lock_chat(db_session, chat.id)
         try:
-            before = await chat_repository.get_conversation_state(
-                db_session, chat.id, session_id
-            )
             if body.enabled:
-                await _resume(db_session, chat.id, session_id, before)
+                after = await _resume(db_session, chat.id, session_id)
             else:
                 await cancel_for_chat(chat.id)
-                await _start_pause(db_session, chat.id, session_id, paused_by="switch")
-            after = await chat_repository.get_conversation_state(
-                db_session, chat.id, session_id
-            )
+                after = await _start_pause(
+                    db_session, chat.id, session_id, paused_by="switch"
+                )
         finally:
-            await chat_repository.release_chat_lock(db_session, chat.id)
+            await _release_lock(db_session, chat.id)
 
     return _state_out(after)
 
 
 async def _resume(
-    db_session: AsyncSession,
-    chat_id: str,
-    session_id: str,
-    before: ConversationState | None,
-) -> None:
+    db_session: AsyncSession, chat_id: str, session_id: str
+) -> ConversationState | None:
     """Let the assistant speak here again, clearing both silences.
+
+    Returns: the conversation's state as the clears left it, reported by the second of
+        them, or None if `chat_id` is not this session's.
+
+    Reads the state once before writing, because what a resumption *ended* - and
+    whether it ended anything at all - is only knowable from the state it found. That
+    read is this direction's alone: the state afterwards comes back from the write.
 
     Records nothing when the assistant was already speaking: a switch moved to the
     position it was already in resumed nothing, and an entry saying otherwise would put
     a resumption in the log that never happened.
     """
+    before = await chat_repository.get_conversation_state(
+        db_session, chat_id, session_id
+    )
     await chat_repository.clear_escalation(db_session, chat_id, session_id)
-    await chat_repository.clear_pause(db_session, chat_id, session_id)
+    after = await chat_repository.clear_pause(db_session, chat_id, session_id)
     if before is None or before.may_assistant_reply:
-        return
+        return after
 
     logger = get_logger()
     if before.escalated_at is not None:
@@ -294,6 +322,7 @@ async def _resume(
             waited_seconds=_waited_seconds(before),
         )
     logger.info("assistant.resumed", chat_id=chat_id, resumed_by="switch")
+    return after
 
 
 # --- the practitioner proxy ---------------------------------------------------------

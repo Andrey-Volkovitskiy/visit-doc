@@ -13,9 +13,11 @@ from typing import Self
 from unittest.mock import MagicMock, patch
 
 import pytest
+from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, MessageSender
+from chat.domain.schemas import IntentLabel
 from chat.main import app
 from chat.rag.indexing import publish_revision
 from chat.repositories import chat_repository, faq_repository
@@ -52,7 +54,9 @@ async def _chat(*, escalated: bool = False) -> tuple[str, str]:
     return session_row.id, chat.id
 
 
-async def _marked_message(chat_id: str, mark: AttentionMark | None) -> str:
+async def _marked_message(
+    session_id: str, chat_id: str, mark: AttentionMark | None
+) -> str:
     message_id = str(ULID())
     async with session_factory() as session:
         await chat_repository.create_message(
@@ -63,7 +67,9 @@ async def _marked_message(chat_id: str, mark: AttentionMark | None) -> str:
             content="is anyone there?",
         )
         if mark is not None:
-            await chat_repository.set_attention_mark(session, message_id, mark)
+            await chat_repository.set_attention_mark(
+                session, chat_id, session_id, message_id, mark
+            )
     await engine.dispose()
     return message_id
 
@@ -104,7 +110,7 @@ async def _post(
 async def test_a_staff_message_joins_the_patients_own_thread() -> None:
     # FR-020: one flat, ordered log - not a second thread the patient has to find.
     session_id, chat_id = await _chat()
-    await _marked_message(chat_id, None)
+    await _marked_message(session_id, chat_id, None)
 
     response = await _post(session_id, chat_id)
 
@@ -153,9 +159,9 @@ async def test_a_staff_message_stops_the_conversation_waiting() -> None:
 
 async def test_a_staff_message_clears_every_clearable_mark_at_once() -> None:
     session_id, chat_id = await _chat(escalated=True)
-    await _marked_message(chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
-    await _marked_message(chat_id, AttentionMark.UNANSWERED)
-    await _marked_message(chat_id, AttentionMark.UNANSWERED)
+    await _marked_message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
+    await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
+    await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
 
     await _post(session_id, chat_id)
 
@@ -166,9 +172,9 @@ async def test_a_staff_message_leaves_the_permanent_marks_alone() -> None:
     # A person answering does not mean the corpus gained the entry it was missing, or
     # that the failure did not happen.
     session_id, chat_id = await _chat(escalated=True)
-    await _marked_message(chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
-    await _marked_message(chat_id, AttentionMark.ASSISTANT_FAILED)
-    await _marked_message(chat_id, AttentionMark.UNANSWERED)
+    await _marked_message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+    await _marked_message(session_id, chat_id, AttentionMark.ASSISTANT_FAILED)
+    await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
 
     await _post(session_id, chat_id)
 
@@ -232,8 +238,8 @@ async def test_the_three_effects_of_one_post_are_recorded_together() -> None:
     # A reply that cleared four marks and ended an escalation is a different event from
     # one that cleared none (contracts/log-events.md).
     session_id, chat_id = await _chat(escalated=True)
-    await _marked_message(chat_id, AttentionMark.UNANSWERED)
-    await _marked_message(chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
+    await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
+    await _marked_message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
 
     with capture_logs() as logs:
         await _post(session_id, chat_id)
@@ -496,3 +502,102 @@ async def test_a_staff_post_racing_a_turn_leaves_no_orphaned_reply() -> None:
     async with session_factory() as session:
         messages = await chat_repository.list_messages(session, chat_id)
     assert all(m.sender != MessageSender.ASSISTANT for m in messages)
+
+
+async def test_a_turn_that_completed_before_a_staff_post_transitions_nothing() -> None:
+    # The window a cancellation cannot cover: by the time a turn writes what it decided,
+    # it has already deregistered, so the post's `cancel_for_chat` finds nothing and its
+    # clears run first. A transition applied behind them re-escalates a conversation a
+    # person is already handling - and an escalation has no deadline, so the patient's
+    # next message would be stored unanswered against the staff member replying to them.
+    session_id, chat_id = await _chat()
+    reached_the_writes = asyncio.Event()
+    staff_has_posted = asyncio.Event()
+    persist_outcome = turn_api._persist_outcome
+
+    async def stalled(*args: object, **kwargs: object) -> None:
+        """Hold the turn exactly where the race is: graph completed, nothing written."""
+        reached_the_writes.set()
+        await staff_has_posted.wait()
+        await persist_outcome(*args, **kwargs)
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn._persist_outcome", stalled),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.CALL_STAFF]
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                turn = asyncio.create_task(
+                    http.post(
+                        "/chat",
+                        json={
+                            "chat_id": chat_id,
+                            "message": "can I speak to someone please?",
+                            "local_now": LOCAL_NOW,
+                        },
+                    )
+                )
+                await asyncio.wait_for(reached_the_writes.wait(), timeout=5)
+                posted = await http.post(
+                    f"/console/chats/{chat_id}/messages", json={"content": _CONTENT}
+                )
+                staff_has_posted.set()
+                await asyncio.wait_for(turn, timeout=5)
+
+    assert posted.status_code == 201
+    state = await _state(chat_id, session_id)
+    assert state.escalated_at is None
+    assert state.attention_since is None
+    assert state.emphasized is False
+    assert await _marks(chat_id) == [None, None, None]
+
+
+# --- a release that frees nothing ---------------------------------------------------
+#
+# Everything one post writes commits inside the locked section, so by the time the lock
+# is released the reply is durable. A release reporting it held nothing is a serious
+# fault - the chat it keys can never be locked again - but it is not a reason to tell a
+# staff member their reply was not sent: they would send it again, and the patient would
+# read the same answer twice.
+
+
+async def test_a_failed_lock_release_does_not_unsend_a_committed_reply() -> None:
+    session_id, chat_id = await _chat(escalated=True)
+    not_held = chat_repository.ChatLockNotHeldError("held nothing")
+
+    with patch.object(chat_repository, "unlock_chat", side_effect=not_held):
+        response = await _post(session_id, chat_id)
+
+    assert response.status_code == 201
+    assert response.json()["content"] == _CONTENT
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.STAFF]
+    assert (await _state(chat_id, session_id)).escalated_at is None
+
+
+async def test_a_failed_lock_release_is_recorded_twice_over() -> None:
+    # The stranded lock, and that the caller was told the post succeeded anyway -
+    # neither is inferable from the other, and both are worth waking someone for.
+    session_id, chat_id = await _chat()
+    not_held = chat_repository.ChatLockNotHeldError("held nothing")
+
+    with (
+        capture_logs() as logs,
+        patch.object(chat_repository, "unlock_chat", side_effect=not_held),
+    ):
+        await _post(session_id, chat_id)
+
+    events = {entry["event"]: entry for entry in logs}
+    assert events["chat.lock_stranded"]["log_level"] == "critical"
+    assert events["chat.lock_stranded"]["chat_id"] == chat_id
+    assert events["chat.lock_release_failed"]["log_level"] == "critical"
+    assert events["chat.lock_release_failed"]["chat_id"] == chat_id
+    assert "held nothing" in events["chat.lock_release_failed"]["error_detail"]
+    assert events["staff.message_posted"]["chat_id"] == chat_id

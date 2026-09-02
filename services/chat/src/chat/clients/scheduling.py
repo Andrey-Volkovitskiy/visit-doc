@@ -1015,10 +1015,15 @@ async def delete_session(
 ) -> SessionPurge:
     """Delete everything `session_id` owns in the scheduling store.
 
-    Raises: SchedulingUnavailableError if the scheduler could not answer. Its
-        `outcome_unknown` says whether the deletion may nonetheless have happened.
-        Either way the request is safe to send again: the rpc is idempotent, and a
-        session that owns nothing is deleted successfully with every count at zero.
+    Raises:
+        SchedulingUnavailableError: the scheduler could not answer. Its
+            `outcome_unknown` says whether the deletion may nonetheless have happened.
+            Either way the request is safe to send again: the rpc is idempotent, and a
+            session that owns nothing is deleted successfully with every count at zero.
+        SchedulingRequestError: the scheduler rejected the request as invalid. Nothing
+            was deleted, and sending the same request again is rejected again.
+        SchedulingNotFoundError: the scheduler could not resolve an id the request
+            named. Nothing was read and nothing was deleted.
 
     Zero counts therefore mean "there was nothing left", never "this did not work" -
     which is what lets a caller re-run a deletion it had to report incomplete.

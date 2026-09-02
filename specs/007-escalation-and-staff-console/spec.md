@@ -968,8 +968,11 @@ assistant abstains on the same question.
 - **FR-019b**: FR-019a MUST override the existing rule that merges consecutive unanswered patient
   messages into one turn. That rule exists because a patient typing three quick lines means one
   question; a message left unanswered because a person was handling the conversation does not, and
-  merging it into a later turn would have the assistant answer something a staff member had already
-  dealt with. Messages from a silent window MUST be excluded from the burst a later turn answers.
+  merging it into a later turn would have the assistant speak over the person it is still waiting
+  for. Messages from a silent window MUST be excluded from the burst a later turn answers. They are
+  not thereby closed: their marks stay and the conversation stays emphasized until a staff member
+  replies (FR-027c), so what the assistant is told about them MUST NOT assert that anyone has
+  answered them - a silence that merely expired was answered by nobody.
 
 #### Staff in the conversation
 

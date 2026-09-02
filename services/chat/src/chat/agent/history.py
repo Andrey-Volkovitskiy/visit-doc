@@ -45,10 +45,13 @@ def exclude_silent_window(bursts: list[list[Message]]) -> list[list[Message]]:
         carrying the `unanswered` mark - the marked prefix becoming its own preceding
         burst, and only the remainder being the trailing burst a turn answers.
 
-    Messages that arrived while the assistant could not reply were kept, and a person
-    was meant to answer them; going back and answering them once a pause elapses would
-    reply to a question the patient has moved on from, or that staff already handled.
-    They stay in `bursts` as context, which is why this splits rather than drops.
+    Messages that arrived while the assistant could not reply were kept for a person to
+    answer, and a mark that is still set means no person has: a staff reply clears every
+    one of them. So the split holds back messages nothing has answered, and they go on
+    waiting for a person after it - the silence ending is not the conversation being
+    dealt with. Answering them here would speak over the staff member they are still
+    flagged for, and would answer a question the patient may have moved on from. They
+    stay in `bursts` as context, which is why this splits rather than drops.
 
     The mark is the signal because it is the only one still available on a later turn:
     a pause's deadline is gone by the time one runs, and an escalation never had one.
@@ -89,11 +92,19 @@ def derive_reply_to_message_ids(bursts: list[list[Message]]) -> list[str]:
 
 
 # What a specialist is told about the messages it must read but must not answer. One
-# sentence in one place: both specialists render it, and two copies would drift.
+# text in one place: both specialists render it, and two copies would drift.
+#
+# It says nobody has answered them because nobody has: a staff reply clears the mark
+# that puts a message here, so every message this note is rendered for is one still
+# waiting for a person. Telling the model otherwise invited it to assure the patient
+# that a human had dealt with something no human had seen.
 SILENT_WINDOW_NOTE = (
-    "Earlier messages a member of the clinic's staff was handling. Read them for "
-    "context only: do not answer them and do not act on them, because a person has "
-    "already dealt with them."
+    "Earlier messages that arrived while the conversation was with the clinic's staff "
+    "and the assistant could not reply. Nobody has answered them, and they are still "
+    "waiting for a member of staff. Read them for context only: do not answer them, do "
+    "not act on them, and do not tell the patient that they have been dealt with or "
+    "replied to. If the message you are answering asks one of them again, answer it as "
+    "newly asked."
 )
 
 

@@ -82,6 +82,23 @@ async def _apply(
         await apply_escalation(session, chat_id, session_id, message_id, requests)
 
 
+async def _post_as_staff(session_id: str, chat_id: str) -> None:
+    """Take the conversation as a staff member does, through the console's own route."""
+    await engine.dispose()
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                response = await http.post(
+                    f"/console/chats/{chat_id}/messages",
+                    json={"content": "I've got this one - let me take a look."},
+                )
+    assert response.status_code == 201
+
+
 # --- The collector: precedence, and independence from arrival order ------------------
 
 
@@ -243,6 +260,46 @@ async def test_an_empty_collector_transitions_nothing_and_marks_nothing() -> Non
     assert state.escalated_at is None
     assert state.attention_since is None
     assert await _mark_of(message_id) is None
+
+
+async def test_a_call_decided_before_a_staff_post_is_not_applied_after_it() -> None:
+    # The turn decides during the graph and applies once it has completed, so a staff
+    # member can answer in between. Applying it afterwards would re-escalate and
+    # re-mark a conversation a person is already handling - and since an escalation has
+    # no deadline, the patient's next message would then be stored unanswered against
+    # the very staff member replying to them.
+    session_id, chat_id = await _chat()
+    message_id = await _patient_message(chat_id)
+    requests = EscalationRequests()
+    requests.record(_CORPUS)
+
+    await _post_as_staff(session_id, chat_id)
+    await _apply(chat_id, session_id, message_id, requests)
+
+    state = await _state(chat_id, session_id)
+    assert state.escalated_at is None
+    assert state.attention_since is None
+    assert state.emphasized is False
+    assert await _mark_of(message_id) is None
+
+
+async def test_a_call_raised_before_the_staff_post_it_preceded_still_applies() -> None:
+    # The mirror of the test above, and what stops it from being satisfied by never
+    # escalating a conversation that has ever held a staff message: only a post *newer*
+    # than the message the turn answered means a person took it over during this turn.
+    session_id, chat_id = await _chat()
+    await _post_as_staff(session_id, chat_id)
+    async with session_factory() as session:
+        await chat_repository.clear_pause(session, chat_id, session_id)
+    message_id = await _patient_message(chat_id)
+    requests = EscalationRequests()
+    requests.record(_CORPUS)
+
+    await _apply(chat_id, session_id, message_id, requests)
+
+    state = await _state(chat_id, session_id)
+    assert state.escalation_reason == _CORPUS
+    assert await _mark_of(message_id) == AttentionMark.CORPUS_COULD_NOT_ANSWER
 
 
 async def test_a_chat_id_from_another_session_transitions_nothing() -> None:
@@ -449,6 +506,52 @@ async def test_a_failure_is_recorded_as_raised_but_not_silenced() -> None:
     assert raised[0]["silenced"] is False
     assert raised[0]["reason"] == _FAILED
     assert raised[0]["message_id"] == message_id
+
+
+async def test_a_second_failure_in_an_emphasized_conversation_transitions_nothing() -> (
+    None
+):
+    # The conversation has been waiting for a person since the first failure, so the
+    # second put it nowhere it was not already: a no-op, and a no-op logged as a raise
+    # would over-count the handoffs the record exists to count.
+    session_id, chat_id = await _chat()
+    first = EscalationRequests()
+    first.record(_FAILED)
+    await _apply(chat_id, session_id, await _patient_message(chat_id), first)
+
+    message_id = await _patient_message(chat_id)
+    requests = EscalationRequests()
+    requests.record(_FAILED)
+
+    with capture_logs() as logs:
+        await _apply(chat_id, session_id, message_id, requests)
+
+    assert [entry["event"] for entry in logs] == ["escalation.unchanged"]
+    assert logs[0]["requested_reason"] == _FAILED
+    # There is no escalation to name: a failure emphasizes without silencing.
+    assert logs[0]["existing_reason"] is None
+    assert logs[0]["message_id"] == message_id
+    # The mark is still the message's own, and the emphasis is still the first one's.
+    assert await _mark_of(message_id) == AttentionMark.ASSISTANT_FAILED
+    assert (await _state(chat_id, session_id)).emphasized is True
+
+
+async def test_a_failure_is_raised_once_however_many_times_it_is_recorded() -> None:
+    # Two tools failing in one turn is one conversation joining the queue, not two.
+    session_id, chat_id = await _chat()
+    message_id = await _patient_message(chat_id)
+    requests = EscalationRequests()
+    requests.record(_FAILED)
+    requests.record(_FAILED)
+
+    with capture_logs() as logs:
+        await _apply(chat_id, session_id, message_id, requests)
+
+    assert [entry["event"] for entry in logs] == [
+        "escalation.raised",
+        "escalation.unchanged",
+    ]
+    assert logs[0]["silenced"] is False
 
 
 async def test_both_halves_of_a_mixed_turn_are_recorded() -> None:

@@ -21,6 +21,9 @@ from chat.rag.chunking import ChunkedText
 
 COLLECTION_NAME = get_settings().QDRANT_COLLECTION_NAME
 _VECTOR_SIZE = 512  # voyage-3-lite embedding dimension (research.md #1)
+# How many of one entry's points a sweep reads to learn which revisions it holds.
+# An entry past this is swept partially, which costs storage and nothing else.
+_SWEEP_PAGE_LIMIT = 1000
 
 
 class ChunkPayload(BaseModel):
@@ -63,20 +66,46 @@ _INDEXED_PAYLOAD_FIELDS = {
 }
 
 
-async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
-    """Create the configured chunks collection and its payload indexes. Idempotent."""
-    if not await qdrant_client.collection_exists(COLLECTION_NAME):
-        await qdrant_client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
-        )
-    for field_name, schema in _INDEXED_PAYLOAD_FIELDS.items():
+async def _create_payload_indexes(
+    qdrant_client: AsyncQdrantClient, fields: dict[str, PayloadSchemaType]
+) -> None:
+    """Index each of `fields`, waiting for Qdrant to acknowledge each one.
+
+    Waited on rather than fired and forgotten: the caller is startup, and a filter
+    issued against a half-built index is a filter answering from part of the corpus.
+    """
+    for field_name, schema in fields.items():
         await qdrant_client.create_payload_index(
             collection_name=COLLECTION_NAME,
             field_name=field_name,
             field_schema=schema,
             wait=True,
         )
+
+
+async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
+    """Create the configured chunks collection and its payload indexes. Idempotent.
+
+    The indexes are reconciled against the schema the collection already reports, so a
+    collection created before a field joined `_INDEXED_PAYLOAD_FIELDS` gains that index
+    on the next start. Only what is genuinely missing is written: this runs on every
+    process start, and an index creation is a blocking write, while reading the schema
+    back is one cheap read.
+    """
+    if not await qdrant_client.collection_exists(COLLECTION_NAME):
+        await qdrant_client.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
+        )
+        await _create_payload_indexes(qdrant_client, _INDEXED_PAYLOAD_FIELDS)
+        return
+    indexed = (await qdrant_client.get_collection(COLLECTION_NAME)).payload_schema
+    missing: dict[str, PayloadSchemaType] = {}
+    for field_name, schema in _INDEXED_PAYLOAD_FIELDS.items():
+        existing = indexed.get(field_name)
+        if existing is None or existing.data_type != schema:
+            missing[field_name] = schema
+    await _create_payload_indexes(qdrant_client, missing)
 
 
 async def upsert_chunks(
@@ -170,25 +199,55 @@ async def delete_by_entry(qdrant_client: AsyncQdrantClient, faq_entry_id: int) -
 async def sweep_chunks(
     qdrant_client: AsyncQdrantClient, faq_entry_id: int, live_revision: str
 ) -> None:
-    """Delete `faq_entry_id`'s chunks that are not part of `live_revision`.
+    """Delete `faq_entry_id`'s chunks from revisions older than `live_revision`.
 
-    One predicate covers both kinds of leftover, because "not the live one" says
-    nothing about how a revision came to exist: a revision superseded by a later save,
-    and one written by a save that never published, are equally unreachable.
+    Args:
+        live_revision: A revision of this entry that was live when the caller published
+            it - not necessarily one that still is. That is the point: revisions are
+            ULIDs, and an entry's published revisions strictly increase, because a save
+            may only publish over the revision it read. So every revision older than
+            one that was ever live is dead for good, and one that is newer either is
+            live now or is a save still in flight.
+
+    The revisions to delete are read back and named, rather than addressed as
+    "everything but the live one". A predicate that deletes by what it does *not* name
+    also deletes whatever it has not heard of: a save that published in the window
+    between this caller's own publish and this delete would lose the chunks its row
+    already vouches for. Naming them cannot reach a revision this sweep never saw.
+
+    One predicate still covers both kinds of leftover, because being older than a live
+    revision says nothing about how a revision came to exist: a revision superseded by
+    a later save, and one written by a save that never published, are equally
+    unreachable.
 
     Scoped to this entry and never widened to the session: a session-wide predicate
     would delete a concurrent save's chunks in the window between their write and the
     commit that publishes them.
     """
+    belongs_to_entry = FieldCondition(
+        key="faq_entry_id", match=MatchValue(value=faq_entry_id)
+    )
+    records, _ = await qdrant_client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=Filter(must=[belongs_to_entry]),
+        limit=_SWEEP_PAGE_LIMIT,
+        with_payload=["revision"],
+        with_vectors=False,
+    )
+    superseded: set[str] = set()
+    for record in records:
+        revision = (record.payload or {}).get("revision")
+        if isinstance(revision, str) and revision < live_revision:
+            superseded.add(revision)
+    if not superseded:
+        return
     await qdrant_client.delete(
         collection_name=COLLECTION_NAME,
         points_selector=Filter(
             must=[
-                FieldCondition(key="faq_entry_id", match=MatchValue(value=faq_entry_id))
-            ],
-            must_not=[
-                FieldCondition(key="revision", match=MatchValue(value=live_revision))
-            ],
+                belongs_to_entry,
+                FieldCondition(key="revision", match=MatchAny(any=sorted(superseded))),
+            ]
         ),
     )
 

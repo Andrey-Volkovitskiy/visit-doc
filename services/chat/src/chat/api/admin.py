@@ -11,8 +11,9 @@ The guard has four properties, each of which has a wrong default:
 
 1. the secret travels in a **header**, never a query string or a path segment, which
    reach access logs and browser history where redaction does not follow;
-2. the comparison is **constant-time**, so a refusal says nothing about how much of the
-   secret was right;
+2. the comparison is **constant-time**, and made over bytes rather than text, so a
+   refusal says nothing about how much of the secret was right - and a secret written
+   in any alphabet is compared rather than raising out of the guard;
 3. both routes declare `include_in_schema=False` **on the decorator** — a router cannot
    retroactively hide its routes from the published schema;
 4. an **unset or empty configured secret refuses every request**, checked before the
@@ -27,7 +28,12 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel
 
 from chat.clients import scheduling
-from chat.clients.scheduling import SchedulingUnavailableError
+from chat.clients.scheduling import (
+    SchedulingError,
+    SchedulingNotFoundError,
+    SchedulingRequestError,
+    SchedulingUnavailableError,
+)
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
@@ -46,8 +52,9 @@ class SessionDeletionResult(BaseModel):
     """What happened to one session.
 
     `status` is `deleted` or `incomplete`, and a partial outcome is never reported as
-    success. `detail` names the store that could not be reached, so an admin re-running
-    knows what they are waiting on; the counts are present only for a session that was
+    success. `detail` names the store that did not finish and says what is known of
+    what it removed - nothing, or genuinely not known - so an admin re-running knows
+    what they are waiting on; the counts are present only for a session that was
     actually removed.
     """
 
@@ -76,11 +83,22 @@ def require_admin_secret(
     configured secret would match an empty header and open both routes to everybody,
     which is the one failure mode this guard exists to prevent. Blank counts as empty -
     a secret of spaces is a deployment that meant to set one and did not.
+
+    The comparison is made over bytes because `compare_digest` raises on a non-ASCII
+    `str`, and an exception escaping here is not a refusal: it answers differently from
+    every other one, which is exactly what a prober is looking for. The supplied value
+    is encoded back the way Starlette decoded it - latin-1, one byte per code point -
+    so what is compared is the bytes the client actually sent, against the UTF-8 bytes
+    a client sends a non-ASCII secret as.
     """
     configured = get_settings().ADMIN_SECRET.strip()
     if not configured or not x_admin_secret:
         raise HTTPException(status_code=403, detail=_REFUSED)
-    if not hmac.compare_digest(configured, x_admin_secret):
+    try:
+        provided = x_admin_secret.encode("latin-1")
+    except UnicodeEncodeError:  # no header could have carried this value
+        raise HTTPException(status_code=403, detail=_REFUSED) from None
+    if not hmac.compare_digest(configured.encode("utf-8"), provided):
         raise HTTPException(status_code=403, detail=_REFUSED)
 
 
@@ -91,6 +109,22 @@ def _refuse(route: str) -> None:
     each of those tells somebody probing this route how close they are.
     """
     get_logger().warning("admin.refused", route=route)
+
+
+def _scheduling_detail(exc: SchedulingError) -> str:
+    """Say what a failed scheduling deletion is known to have removed.
+
+    Three answers, never collapsed into one: nothing, because no attempt reached the
+    scheduler; nothing, because the scheduler answered by rejecting the request - which
+    it will answer the same way again; or genuinely unknown, because it may have done
+    the work after this service stopped waiting for it. Unknown is the fallback, since
+    a failure this build cannot place is not evidence that nothing happened.
+    """
+    if isinstance(exc, SchedulingUnavailableError) and not exc.outcome_unknown:
+        return f"scheduling deleted nothing - it could not be reached: {exc}"
+    if isinstance(exc, SchedulingNotFoundError | SchedulingRequestError):
+        return f"scheduling deleted nothing - it rejected the request: {exc}"
+    return f"scheduling may have deleted this session, or may not: {exc}"
 
 
 async def _delete_one(request: Request, session_id: str) -> SessionDeletionResult:
@@ -112,14 +146,17 @@ async def _delete_one(request: Request, session_id: str) -> SessionDeletionResul
         purged = await scheduling.delete_session(
             request.app.state.scheduling_channel, settings, session_id=session_id
         )
-    except SchedulingUnavailableError as exc:
+    except SchedulingError as exc:
+        # The base class, not the outage subclass: a status the scheduler *answered*
+        # with is this one session's failure too, and letting it escape would abandon
+        # the sweep and lose the report for every session already deleted.
         logger.warning(
             "session.delete_incomplete", session_id=session_id, failed_at="scheduling"
         )
         return SessionDeletionResult(
             session_id=session_id,
             status="incomplete",
-            detail=f"scheduling did not complete the deletion: {exc}",
+            detail=_scheduling_detail(exc),
         )
 
     try:

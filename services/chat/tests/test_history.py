@@ -542,3 +542,51 @@ def test_the_rendered_window_names_it_as_context_and_not_as_a_request() -> None:
 
 def test_nothing_is_rendered_when_nothing_was_silenced() -> None:
     assert render_silent_window([]) == ""
+
+
+def _rendered_window(*marks: str | None) -> str:
+    """Render the window a burst carrying `marks`, then a new message, leaves."""
+    history = [
+        _marked(MessageSender.PATIENT, f"earlier {i}", id=f"p{i}", mark=mark)
+        for i, mark in enumerate(marks)
+    ]
+    history.append(_marked(MessageSender.PATIENT, "and now?", id="new", mark=None))
+    return render_silent_window(
+        silent_window(exclude_silent_window(split_into_bursts(history)))
+    )
+
+
+def test_the_window_note_does_not_say_a_person_answered_the_messages() -> None:
+    # A staff reply clears every `unanswered` mark in the conversation, so a message
+    # that still carries one is a message no person has replied to. The silence it
+    # arrived in may simply have expired, with nobody ever looking.
+    rendered = _rendered_window("unanswered")
+
+    assert "already dealt with them" not in rendered
+    assert "was handling" not in rendered
+
+
+def test_the_window_note_says_the_messages_are_still_waiting_for_a_person() -> None:
+    # They stay marked and the conversation stays emphasized until a staff member
+    # replies, so this is what the model may say about them - not that they are done.
+    rendered = _rendered_window("unanswered")
+
+    assert "Nobody has answered them" in rendered
+    assert "still waiting for a member of staff" in rendered
+    assert "do not tell the patient that they have been dealt with" in rendered
+
+
+def test_the_window_note_lets_a_repeated_question_be_answered() -> None:
+    # "Do not answer them" is about the held-back burst, not about the subject. A
+    # patient who asks the same thing again has asked it in the message this turn
+    # answers, and that one is answered like any other.
+    rendered = _rendered_window("unanswered")
+
+    assert "asks one of them again, answer it as newly asked" in rendered
+
+
+def test_a_message_a_staff_reply_cleared_is_never_described_as_silenced() -> None:
+    # The other direction, and the one that must not change: a staff reply clears the
+    # mark, so the message it answered is an ordinary one again and no note is rendered
+    # about it at all.
+    assert _rendered_window(None) == ""

@@ -87,7 +87,8 @@ class EscalationRequests:
         """Every request, in the order it arrived.
 
         Kept in full even where the precedence below discards one: the precedence
-        decides the mark, and the log keeps every call (FR-033).
+        decides the mark, and the log keeps every call - a discarded request still
+        happened, and still has to be accounted for.
         """
         return tuple(self._recorded)
 
@@ -111,9 +112,9 @@ class EscalationRequests:
     def message_mark(self) -> AttentionMark | None:
         """The one mark this turn's patient message carries, or None for no call.
 
-        One mark per message: the spec models it as singular, so when a mixed-intent
-        turn raises two calls the stronger is stored and the weaker survives in the log
-        (research #6).
+        One mark per message, never a set: when a mixed-intent turn raises two calls
+        the stronger of the two is what the message carries, and the weaker survives in
+        the log rather than being lost.
         """
         reason = next(
             (reason for reason in _PRECEDENCE if reason in self._recorded), None
@@ -136,17 +137,35 @@ async def apply_escalation(
             supplied per request, so a model cannot address another message any more
             than it can address another conversation.
 
-    Does nothing at all when nothing was recorded, which is the ordinary turn.
+    Does nothing at all when nothing was recorded, which is the ordinary turn, and
+    nothing either when a person has taken the conversation over since `message_id`
+    arrived - the calls are recorded, and none of them applied.
+
+    Must be called holding `chat_id`'s advisory lock. Whether a person has taken the
+    conversation is read here rather than carried into each statement's own `WHERE`,
+    and only that lock makes the answer safe to act on: every gesture that takes a
+    conversation - a staff message, the console's switch - writes under it too, so
+    none of them can land between this read and the writes below.
     """
     mark = requests.message_mark
     if mark is None:
         return
 
-    await chat_repository.set_attention_mark(session, message_id, mark)
+    if await chat_repository.taken_over_since(session, chat_id, session_id, message_id):
+        # A person answered while this turn was still running. Applying anything now
+        # would put the conversation back in the queue they just took it out of, and
+        # re-silence the patient against the very staff member handling them.
+        _record_taken_over(requests, chat_id, message_id)
+        return
+
+    await chat_repository.set_attention_mark(
+        session, chat_id, session_id, message_id, mark
+    )
     # Set only if unset: the conversation has been waiting since the first thing that
     # needed a person, and re-stamping would send it to the back of a queue ordered by
-    # how long each has waited.
-    await chat_repository.mark_attention(session, chat_id, session_id)
+    # how long each has waited. The answer says whether this call was the one that put
+    # it there, which is the transition a non-silencing request has to point at.
+    emphasized = await chat_repository.mark_attention(session, chat_id, session_id)
 
     silencing = requests.conversation_reason
     transitioned = False
@@ -163,7 +182,15 @@ async def apply_escalation(
             else await _existing_reason(session, chat_id, session_id)
         )
 
-    _record(requests, chat_id, message_id, silencing, transitioned, existing_reason)
+    _record(
+        requests,
+        chat_id,
+        message_id,
+        silencing,
+        transitioned,
+        emphasized,
+        existing_reason,
+    )
 
 
 async def _existing_reason(
@@ -174,30 +201,69 @@ async def _existing_reason(
     return None if state is None else state.escalation_reason
 
 
+def _record_taken_over(
+    requests: EscalationRequests, chat_id: str, message_id: str
+) -> None:
+    """Record every request a person's takeover left unapplied, best-effort.
+
+    `escalation.unchanged` rather than a kind of its own: what the record has to keep
+    true is that one `escalation.raised` means one handoff, and a call that transitioned
+    nothing is what that event already stands for. `existing_reason` is None because
+    there is no escalation here - a person simply has the conversation.
+
+    Wrapped whole in a `try` for `_record`'s reason: recording follows a decision and
+    never gates one.
+    """
+    try:
+        logger = get_logger()
+        for reason in requests.recorded:
+            logger.info(
+                "escalation.unchanged",
+                chat_id=chat_id,
+                requested_reason=reason,
+                existing_reason=None,
+                message_id=message_id,
+            )
+    except Exception:  # noqa: BLE001, S110 - see the docstring: recording follows a
+        # decision and never gates one, and there is nowhere left to report a failure
+        # of the reporting path itself.
+        pass
+
+
 def _record(
     requests: EscalationRequests,
     chat_id: str,
     message_id: str,
     silencing: EscalationReason | None,
     transitioned: bool,
+    emphasized: bool,
     existing_reason: str | None,
 ) -> None:
     """Record one entry per request, best-effort.
 
+    Args:
+        transitioned: Whether this turn silenced the conversation.
+        emphasized: Whether this turn was the one that put the conversation in the
+            queue, rather than finding it waiting there already.
+
     `escalation.raised` and `escalation.unchanged` are mutually exclusive for one
-    request, and that is the point of having both: SC-010 counts escalation records
-    against conversations actually silenced, and a no-op logged as a raise would
-    over-count every one of them.
+    request, and that is the point of having both: `escalation.raised` is what a count
+    of handoffs is drawn from, and a no-op logged as a raise would over-count every
+    conversation that was already escalated. A request is therefore raised only when it
+    can point at a transition of its own - a silencing one at the escalation, a failure
+    at the emphasis - and each transition is claimed once, which leaves every other
+    request unchanged.
 
     Wrapped whole in a `try`: recording follows a transition and never gates one, so a
-    log entry that could not be written cannot un-happen a handoff that already occurred
-    (FR-034).
+    log entry that could not be written cannot un-happen a handoff that already
+    occurred.
     """
     try:
         logger = get_logger()
-        raised = False
+        raised_silencing = False
+        raised_emphasis = False
         for reason in requests.recorded:
-            if reason not in _SILENCING:
+            if reason not in _SILENCING and emphasized and not raised_emphasis:
                 # It transitioned something - the conversation became emphasized - but
                 # it did not silence, and `silenced` is the field that says so.
                 logger.info(
@@ -207,7 +273,8 @@ def _record(
                     message_id=message_id,
                     silenced=False,
                 )
-            elif transitioned and not raised and reason is silencing:
+                raised_emphasis = True
+            elif transitioned and not raised_silencing and reason is silencing:
                 logger.info(
                     "escalation.raised",
                     chat_id=chat_id,
@@ -215,12 +282,12 @@ def _record(
                     message_id=message_id,
                     silenced=True,
                 )
-                raised = True
+                raised_silencing = True
             else:
-                # Either the conversation was already escalated, or this was the
-                # weaker of two silencing calls in one turn. Both reasons are carried,
-                # because the point of the record is that the second did not overwrite
-                # the first.
+                # The conversation was already escalated, or already waiting for a
+                # person, or this was the weaker of two silencing calls in one turn.
+                # Both reasons are carried, because the point of the record is that the
+                # second did not overwrite the first.
                 logger.info(
                     "escalation.unchanged",
                     chat_id=chat_id,

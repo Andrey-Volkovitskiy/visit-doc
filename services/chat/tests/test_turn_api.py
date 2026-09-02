@@ -1387,7 +1387,7 @@ def test_the_tool_tells_the_model_to_promise_no_response_time() -> None:
 # --- 007 (FR-019a/b): the assistant never answers into a silence after the fact ----
 
 
-async def _silenced_message(chat_id: str, content: str) -> str:
+async def _silenced_message(session_id: str, chat_id: str, content: str) -> str:
     """Insert a patient message that arrived while the assistant could not reply."""
     message_id = str(ULID())
     async with session_factory() as db_session:
@@ -1399,7 +1399,7 @@ async def _silenced_message(chat_id: str, content: str) -> str:
             content=content,
         )
         await chat_repository.set_attention_mark(
-            db_session, message_id, AttentionMark.UNANSWERED
+            db_session, chat_id, session_id, message_id, AttentionMark.UNANSWERED
         )
     await engine.dispose()
     return message_id
@@ -1429,7 +1429,9 @@ async def test_a_turn_after_a_silence_answers_only_what_came_after_it(
                 adopt_seeded_session(http)
                 chat_id = await async_chat_id_for(http)
                 silenced = await _silenced_message(
-                    chat_id, "is anyone there? my appointment is wrong"
+                    seeded_session_id(),
+                    chat_id,
+                    "is anyone there? my appointment is wrong",
                 )
                 await async_turn(http, "when can I visit?")
                 history = (await http.get(f"/chats/{chat_id}/messages")).json()[
@@ -1470,7 +1472,9 @@ async def test_the_silenced_message_stays_in_the_thread(seeded_entry: int) -> No
             ) as http:
                 adopt_seeded_session(http)
                 chat_id = await async_chat_id_for(http)
-                silenced = await _silenced_message(chat_id, "is anyone there?")
+                silenced = await _silenced_message(
+                    seeded_session_id(), chat_id, "is anyone there?"
+                )
                 await async_turn(http, "when can I visit?")
                 history = (await http.get(f"/chats/{chat_id}/messages")).json()[
                     "messages"

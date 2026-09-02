@@ -6,8 +6,10 @@ from datetime import datetime
 from sqlalchemy import (
     Connection,
     Integer,
+    Select,
     and_,
     case,
+    exists,
     func,
     nullslast,
     or_,
@@ -18,6 +20,7 @@ from sqlalchemy import (
 from sqlalchemy import delete as sql_delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from ulid import PureRandomPolicy, ULIDGenerator
 
 from chat.core.logging import get_logger
@@ -106,16 +109,23 @@ async def get_chat(session: AsyncSession, chat_id: str, session_id: str) -> Chat
 
 
 async def set_patient(
-    session: AsyncSession, chat_id: str, patient_id: str, patient_name: str
+    session: AsyncSession,
+    chat_id: str,
+    session_id: str,
+    patient_id: str,
+    patient_name: str,
 ) -> None:
     """Record the scheduler-side patient this chat books on behalf of.
+
+    Scoped to `session_id` on the write itself, so a chat id from another session
+    writes nothing rather than being caught by a check after the fact.
 
     `patient_name` is cached, never authored here - it is whatever the scheduler
     reported, kept so the chat list can render without a call per row.
     """
     await session.execute(
         update(Chat)
-        .where(Chat.id == chat_id)
+        .where(Chat.id == chat_id, Chat.session_id == session_id)
         .values(patient_id=patient_id, patient_name=patient_name)
     )
     await session.commit()
@@ -302,12 +312,16 @@ async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
     return list(result.scalars().all())
 
 
-async def delete_chat(session: AsyncSession, chat_id: str) -> None:
-    """Hard-delete `chat_id`.
+async def delete_chat(session: AsyncSession, chat_id: str, session_id: str) -> None:
+    """Hard-delete `session_id`'s chat `chat_id`.
+
+    Reached through `get_chat`, so the session predicate is on the read that finds the
+    row rather than on a check applied to it afterwards: a chat belonging to another
+    session is deleted no more than one that never existed, and neither is an error.
 
     Its `Message` rows cascade via FK, not an application-level loop.
     """
-    chat = await session.get(Chat, chat_id)
+    chat = await get_chat(session, chat_id, session_id)
     if chat is None:
         return
     await session.delete(chat)
@@ -363,24 +377,69 @@ class ConversationState:
         return self.escalated_at is not None or self.attention_since is not None
 
 
+# Everything a `ConversationState` is built from, in its field order. Named once so a
+# read of the state and a write that reports the state it left select the same things:
+# two lists would be one edit away from describing the same conversation differently.
+_CONVERSATION_STATE = (
+    Chat.escalated_at,
+    Chat.escalation_reason,
+    Chat.assistant_paused_until,
+    Chat.attention_since,
+    _MAY_ASSISTANT_REPLY,
+    _PAUSE_SECONDS_REMAINING,
+)
+
+
 async def get_conversation_state(
     session: AsyncSession, chat_id: str, session_id: str
 ) -> ConversationState | None:
     """Return `chat_id`'s conversation state, or None if it is not this session's."""
     result = await session.execute(
-        select(
-            Chat.escalated_at,
-            Chat.escalation_reason,
-            Chat.assistant_paused_until,
-            Chat.attention_since,
-            _MAY_ASSISTANT_REPLY,
-            _PAUSE_SECONDS_REMAINING,
-        ).where(Chat.id == chat_id, Chat.session_id == session_id)
+        select(*_CONVERSATION_STATE).where(
+            Chat.id == chat_id, Chat.session_id == session_id
+        )
     )
     row = result.first()
     if row is None:
         return None
     return ConversationState(*row)
+
+
+async def taken_over_since(
+    session: AsyncSession, chat_id: str, session_id: str, message_id: str
+) -> bool:
+    """Whether a person has taken `chat_id` over since `message_id` arrived.
+
+    True when a staff member has posted in the conversation since that message, or when
+    the assistant is paused - the console's two gestures for taking a conversation, both
+    of which mean a person is leading it now rather than the assistant.
+
+    A conversation this session does not own answers False. Nothing is inferred from
+    that: every write this answer guards is itself scoped to the session, so such a
+    caller changes nothing either way.
+
+    Answered in one statement, against the database's own clock for the reason
+    `_PAUSE_IS_RUNNING` is read in SQL: the deadline is written by one request and read
+    by another, and a Python-side comparison would be a second clock that can disagree
+    with it.
+    """
+    anchor = aliased(Message)
+    later = aliased(Message)
+    staff_spoke = exists(
+        select(later.id)
+        .join(anchor, anchor.chat_id == later.chat_id)
+        .where(
+            anchor.id == message_id,
+            later.sender == MessageSender.STAFF.value,
+            later.created_at > anchor.created_at,
+        )
+    )
+    result = await session.execute(
+        select(or_(staff_spoke, _PAUSE_IS_RUNNING)).where(
+            Chat.id == chat_id, Chat.session_id == session_id
+        )
+    )
+    return bool(result.scalar_one_or_none())
 
 
 async def set_escalated(
@@ -421,43 +480,102 @@ async def clear_escalation(
     await session.commit()
 
 
+@dataclass(frozen=True)
+class PauseWrite:
+    """What one pause write did: the state it left, and the pause it replaced.
+
+    `restarted` is about the row as it was an instant before, which only the statement
+    that overwrote it can report - a read taken beforehand would be answering about a
+    deadline the write had not yet reached.
+    """
+
+    state: ConversationState
+    restarted: bool
+
+
 async def set_paused_until(
     session: AsyncSession, chat_id: str, session_id: str, seconds: int
-) -> None:
+) -> PauseWrite | None:
     """Silence the assistant in `chat_id` for `seconds` from now.
+
+    Returns: the conversation's state as this write left it, and whether a pause was
+        already running when it landed - or None if `chat_id` is not this session's, in
+        which case nothing was written at all. A chat this session owns always answers
+        with a state, so None never stands for "no pause was running".
 
     Restarts a pause that was already running, so a staff member sending a sequence of
     messages never has the assistant cut in between them.
+
+    Both halves of the answer come from the write itself, which is why no read runs on
+    either side of it: `RETURNING` reads the row the statement produced, and the joined
+    `previous` is the same row as it was before the statement - Postgres evaluates a
+    `FROM` entry against the pre-update snapshot. The session predicate stays on the
+    `UPDATE`'s own `WHERE`; the join adds the earlier image, not the scope.
     """
-    await session.execute(
+    previous = aliased(Chat, name="previous")
+    result = await session.execute(
         update(Chat)
-        .where(Chat.id == chat_id, Chat.session_id == session_id)
+        .where(
+            Chat.id == chat_id,
+            Chat.session_id == session_id,
+            previous.id == Chat.id,
+        )
         .values(
             assistant_paused_until=func.now()
             + func.make_interval(0, 0, 0, 0, 0, 0, seconds)
         )
+        .returning(
+            *_CONVERSATION_STATE,
+            and_(
+                previous.assistant_paused_until.is_not(None),
+                previous.assistant_paused_until > func.now(),
+            ),
+        )
     )
+    row = result.first()
     await session.commit()
+    if row is None:
+        return None
+    *state, restarted = row
+    return PauseWrite(state=ConversationState(*state), restarted=bool(restarted))
 
 
-async def clear_pause(session: AsyncSession, chat_id: str, session_id: str) -> None:
-    """Let the assistant speak in `chat_id` again."""
-    await session.execute(
+async def clear_pause(
+    session: AsyncSession, chat_id: str, session_id: str
+) -> ConversationState | None:
+    """Let the assistant speak in `chat_id` again.
+
+    Returns: the conversation's state as this write left it, or None if `chat_id` is
+        not this session's - the same answer a read of that chat gives, and for the
+        same reason: there is no such conversation here.
+
+    Reported by the write rather than by a read after it, so a caller that must render
+    the state it just changed does not go back for it.
+    """
+    result = await session.execute(
         update(Chat)
         .where(Chat.id == chat_id, Chat.session_id == session_id)
         .values(assistant_paused_until=None)
+        .returning(*_CONVERSATION_STATE)
     )
+    row = result.first()
     await session.commit()
+    if row is None:
+        return None
+    return ConversationState(*row)
 
 
-async def mark_attention(session: AsyncSession, chat_id: str, session_id: str) -> None:
+async def mark_attention(session: AsyncSession, chat_id: str, session_id: str) -> bool:
     """Record that `chat_id` needs a person, if it is not waiting already.
+
+    Returns: True if this call put the conversation in the queue, False if it was
+        waiting already and nothing changed.
 
     Left alone when already set: the conversation has been waiting since the first
     thing that needed a person, and re-stamping it would send it to the back of a queue
     ordered by how long each has waited.
     """
-    await session.execute(
+    result = await session.execute(
         update(Chat)
         .where(
             Chat.id == chat_id,
@@ -465,8 +583,11 @@ async def mark_attention(session: AsyncSession, chat_id: str, session_id: str) -
             Chat.attention_since.is_(None),
         )
         .values(attention_since=func.now())
+        .returning(Chat.id)
     )
+    emphasized = result.scalars().first() is not None
     await session.commit()
+    return emphasized
 
 
 async def clear_attention(session: AsyncSession, chat_id: str, session_id: str) -> None:
@@ -479,22 +600,50 @@ async def clear_attention(session: AsyncSession, chat_id: str, session_id: str) 
     await session.commit()
 
 
+def _owned_chat_id(chat_id: str, session_id: str) -> Select[tuple[str]]:
+    """Select `chat_id`, and nothing at all unless `session_id` owns it.
+
+    `Message` carries no session of its own, so a write addressing one reaches its
+    owner through the chat. Written as a subquery for the enclosing statement's `WHERE`
+    rather than as a lookup performed first: the scope then belongs to the write, and a
+    message id from another session addresses no row instead of addressing one that is
+    checked afterwards.
+    """
+    return select(Chat.id).where(Chat.id == chat_id, Chat.session_id == session_id)
+
+
 async def set_attention_mark(
-    session: AsyncSession, message_id: str, mark: AttentionMark
+    session: AsyncSession,
+    chat_id: str,
+    session_id: str,
+    message_id: str,
+    mark: AttentionMark,
 ) -> None:
-    """Mark `message_id` as needing a person, for `mark`'s reason."""
+    """Mark `message_id` as needing a person, for `mark`'s reason.
+
+    Scoped to `chat_id` and its owning `session_id` on the write itself, so a message
+    id naming another conversation - or another session's - marks nothing. The message
+    id alone would not do it: unique means no collision, not permission to write.
+    """
     await session.execute(
         update(Message)
-        .where(Message.id == message_id)
+        .where(
+            Message.id == message_id,
+            Message.chat_id.in_(_owned_chat_id(chat_id, session_id)),
+        )
         .values(attention_mark=mark.value)
     )
     await session.commit()
 
 
-async def clear_clearable_marks(session: AsyncSession, chat_id: str) -> int:
-    """Clear every mark in `chat_id` that a person speaking answers.
+async def clear_clearable_marks(
+    session: AsyncSession, chat_id: str, session_id: str
+) -> int:
+    """Clear every mark in `session_id`'s chat `chat_id` that a person speaking answers.
 
-    Returns: how many marks were cleared.
+    Returns: how many marks this statement cleared. Zero for a conversation that held
+        none, and zero for a chat this session does not own - which is not two meanings
+        but one, since neither cleared anything.
 
     One statement, however many marks accumulated. The permanent kinds are absent from
     its predicate rather than skipped afterwards: a staff member answering the patient
@@ -504,7 +653,7 @@ async def clear_clearable_marks(session: AsyncSession, chat_id: str) -> int:
     result = await session.execute(
         update(Message)
         .where(
-            Message.chat_id == chat_id,
+            Message.chat_id.in_(_owned_chat_id(chat_id, session_id)),
             Message.attention_mark.in_([mark.value for mark in CLEARABLE_MARKS]),
         )
         .values(attention_mark=None)

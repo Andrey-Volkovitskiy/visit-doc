@@ -4,9 +4,56 @@ import { MessageView } from "./MessageView";
 
 let nextMessageId = 0;
 
+// Marks a message this pane put on screen itself, which the server has not published
+// back to it yet. Server ids are ULIDs, so the two can never collide.
+const LOCAL_ID_PREFIX = "local-";
+
 function localId(): string {
   nextMessageId += 1;
-  return `local-${nextMessageId}`;
+  return `${LOCAL_ID_PREFIX}${nextMessageId}`;
+}
+
+/**
+ * Fold a freshly fetched history into what is on screen, keeping what it does not
+ * carry yet.
+ *
+ * A turn's `done` event is streamed before the server commits the assistant row - the
+ * stream is the fast path, and the write follows it - so a history read fired the
+ * instant a turn ends is legitimately answered without the reply already rendered
+ * here. Replacing the thread with that answer blanks the reply until the next poll
+ * tick notices the insert: a couple of seconds in which the patient's question looks
+ * unanswered. The same holds for the patient's own message while its insert is in
+ * flight.
+ *
+ * So fetched history is the authority on everything it *does* carry, and locally
+ * appended messages it does not account for are kept on the end rather than dropped.
+ * Each one leaves as soon as a later read accounts for it, so a reply is never shown
+ * twice once the server publishes its own row for it.
+ *
+ * Matched on sender and content, one server row consumed per local message, because a
+ * local message has no server id to match on. Only the rows the server has grown since
+ * this pane's last read are searched, so re-sending the same text is not mistaken for
+ * the earlier identical send.
+ */
+function reconcile(shown: Message[], history: Message[]): Message[] {
+  // Local messages are only ever appended, and a fetch only ever puts server rows
+  // ahead of them, so they are always a suffix of what is on screen.
+  const local = shown.filter((message) => message.id.startsWith(LOCAL_ID_PREFIX));
+  if (local.length === 0) return history;
+
+  const grown = history.slice(Math.max(shown.length - local.length, 0));
+  const unpublished: Message[] = [];
+  for (const message of local) {
+    const index = grown.findIndex(
+      (row) => row.sender === message.sender && row.content === message.content,
+    );
+    if (index === -1) {
+      unpublished.push(message);
+    } else {
+      grown.splice(index, 1);
+    }
+  }
+  return unpublished.length === 0 ? history : [...history, ...unpublished];
 }
 
 // Must match `ChatRequest.message`'s `max_length` in
@@ -81,7 +128,9 @@ export function ChatWindow({
     let current = true;
     void fetchChatHistory(chatId)
       .then((history) => {
-        if (current) setMessages(history);
+        // Reconciled rather than assigned: a message sent before this first read lands
+        // is already on screen and is not in the answer to it.
+        if (current) setMessages((shown) => reconcile(shown, history));
       })
       .catch((err: unknown) => {
         // A chat deleted in another tab 404s here. Reporting it beats leaving the
@@ -121,7 +170,11 @@ export function ChatWindow({
     let current = true;
     void fetchChatHistory(chatId)
       .then((history) => {
-        if (current) setMessages(history);
+        // This tick was deferred until the turn finished, and the reply the turn just
+        // rendered is committed *after* the `done` that finished it - so this answer
+        // can predate the assistant row. Reconciling keeps it on screen instead of
+        // blanking it until the next tick.
+        if (current) setMessages((shown) => reconcile(shown, history));
       })
       // A failed refetch leaves the thread as it was; the next poll tick tries again,
       // which is not worth an error banner over a message the patient has not missed.

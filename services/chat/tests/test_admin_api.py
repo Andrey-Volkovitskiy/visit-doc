@@ -15,9 +15,17 @@ And one rule about what a refusal says: nothing. Not which part was wrong, not h
 of the secret was right, and never the secret itself.
 """
 
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import patch
 
 import pytest
+from chat.clients.scheduling import (
+    SchedulingNotFoundError,
+    SchedulingRequestError,
+    SchedulingUnavailableError,
+    SessionPurge,
+)
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.main import app
@@ -29,6 +37,15 @@ from structlog.testing import capture_logs
 from .conftest import fake_anthropic_client
 
 _SECRET = "a-secret-nobody-should-see-in-a-log"
+# A passphrase an operator might plausibly pick. It reaches the guard as latin-1-decoded
+# mojibake rather than as the text written here, which is the whole point of the pair of
+# tests below.
+_NON_ASCII_SECRET = "café-Grüße-пароль"
+
+
+def _sent_as_utf8(secret: str) -> dict[str, str | bytes]:
+    """The header a real client puts on the wire for `secret`, as raw UTF-8 bytes."""
+    return {"X-Admin-Secret": secret.encode("utf-8")}
 
 
 def _settings(secret: str) -> Settings:
@@ -47,7 +64,7 @@ async def _call(
     path: str,
     *,
     configured: str = _SECRET,
-    headers: dict[str, str] | None = None,
+    headers: dict[str, str | bytes] | None = None,
     params: dict[str, str] | None = None,
 ) -> Response:
     """Send one admin request, with `configured` as the deployment's secret."""
@@ -163,6 +180,32 @@ async def test_every_refusal_is_the_identical_answer(
     assert response.json() == {"detail": "refused"}
 
 
+@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
+async def test_a_non_ascii_secret_is_accepted(path: str) -> None:
+    # `compare_digest` refuses a non-ASCII `str` outright, so a comparison made over
+    # text would fail every request an operator with an accented passphrase makes -
+    # the correct ones included.
+    response = await _call(
+        path,
+        configured=_NON_ASCII_SECRET,
+        headers=_sent_as_utf8(_NON_ASCII_SECRET),
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
+async def test_a_non_ascii_wrong_secret_is_refused_like_any_other(path: str) -> None:
+    # And refused, not crashed into: an answer that differs from every other refusal
+    # tells a prober their header was read.
+    with capture_logs() as logs:
+        response = await _call(path, headers=_sent_as_utf8("café-but-wrong"))
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "refused"}
+    assert [e["event"] for e in logs if e["event"] == "admin.refused"]
+
+
 async def test_a_refusal_records_only_which_route_it_was() -> None:
     # Not the supplied value, not its length, and not which of the three causes it was:
     # each of those tells somebody probing how close they are.
@@ -211,3 +254,109 @@ async def test_deleting_all_sessions_reports_one_result_per_session() -> None:
 
     body = response.json()
     assert {r["session_id"] for r in body["results"]} == {first, second}
+
+
+# --- one session's failure never ends the sweep ---------------------------------------
+
+
+def _scheduler_that_fails_one(failing_id: str, exc: Exception) -> Callable[..., Any]:
+    """A `delete_session` that raises `exc` for one session and clears the rest."""
+
+    async def delete_session(
+        channel: object, settings: object, *, session_id: str
+    ) -> SessionPurge:
+        if session_id == failing_id:
+            raise exc
+        return SessionPurge(
+            patients_deleted=0, practitioners_deleted=0, appointments_deleted=0
+        )
+
+    return delete_session
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        SchedulingRequestError("session_id is required"),
+        SchedulingNotFoundError("patient"),
+        SchedulingUnavailableError("scheduling is down", outcome_unknown=False),
+    ],
+)
+async def test_one_session_failing_never_ends_the_sweep(exc: Exception) -> None:
+    # FR-052: each session is attempted and reported on its own. A status the scheduler
+    # answered with is as much a per-session failure as an outage is, and escaping the
+    # sweep would lose the report for every session already deleted.
+    failing = await _session_id()
+    other = await _session_id()
+
+    with patch(
+        "chat.api.admin.scheduling.delete_session",
+        new=_scheduler_that_fails_one(failing, exc),
+    ):
+        response = await _call("/admin/sessions", headers={"X-Admin-Secret": _SECRET})
+
+    assert response.status_code == 200
+    results = {r["session_id"]: r for r in response.json()["results"]}
+    assert set(results) == {failing, other}
+    assert results[failing]["status"] == "incomplete"
+    assert results[other]["status"] == "deleted"
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        SchedulingRequestError("session_id is required"),
+        SchedulingNotFoundError("patient"),
+    ],
+)
+async def test_a_rejected_deletion_of_one_session_is_reported_not_raised(
+    exc: Exception,
+) -> None:
+    session_id = await _session_id()
+
+    with patch(
+        "chat.api.admin.scheduling.delete_session",
+        new=_scheduler_that_fails_one(session_id, exc),
+    ):
+        response = await _call(
+            f"/admin/sessions/{session_id}", headers={"X-Admin-Secret": _SECRET}
+        )
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["status"] == "incomplete"
+
+
+@pytest.mark.parametrize(
+    ("exc", "expected"),
+    [
+        (
+            SchedulingUnavailableError("timed out", outcome_unknown=True),
+            "may have deleted",
+        ),
+        (
+            SchedulingUnavailableError("connection refused", outcome_unknown=False),
+            "deleted nothing",
+        ),
+        (SchedulingRequestError("session_id is required"), "deleted nothing"),
+        (SchedulingNotFoundError("patient"), "deleted nothing"),
+    ],
+)
+async def test_an_incomplete_deletion_says_what_is_known_of_the_scheduler(
+    exc: Exception, expected: str
+) -> None:
+    # "A timeout never proves the server did nothing": a deletion whose outcome is
+    # unknown must not be reported as one that definitely removed nothing, and neither
+    # of them may be reported as a success.
+    session_id = await _session_id()
+
+    with patch(
+        "chat.api.admin.scheduling.delete_session",
+        new=_scheduler_that_fails_one(session_id, exc),
+    ):
+        response = await _call(
+            f"/admin/sessions/{session_id}", headers={"X-Admin-Secret": _SECRET}
+        )
+
+    result = response.json()["results"][0]
+    assert result["status"] == "incomplete"
+    assert expected in result["detail"]

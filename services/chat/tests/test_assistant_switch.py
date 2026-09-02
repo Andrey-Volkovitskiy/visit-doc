@@ -11,6 +11,7 @@ Both arrows into the pause write the same column with the same value: there is n
 which gesture it was.
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -43,7 +44,7 @@ async def _chat(*, escalated: EscalationReason | None = None) -> tuple[str, str]
     return session_row.id, chat.id
 
 
-async def _marked_message(chat_id: str, mark: AttentionMark) -> str:
+async def _marked_message(session_id: str, chat_id: str, mark: AttentionMark) -> str:
     message_id = str(ULID())
     async with session_factory() as session:
         await chat_repository.create_message(
@@ -53,7 +54,9 @@ async def _marked_message(chat_id: str, mark: AttentionMark) -> str:
             sender=MessageSender.PATIENT,
             content="is anyone there?",
         )
-        await chat_repository.set_attention_mark(session, message_id, mark)
+        await chat_repository.set_attention_mark(
+            session, chat_id, session_id, message_id, mark
+        )
     await engine.dispose()
     return message_id
 
@@ -195,7 +198,7 @@ async def test_turning_the_assistant_on_does_not_answer_the_patient() -> None:
     session_id, chat_id = await _chat(
         escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
     )
-    marked = await _marked_message(chat_id, AttentionMark.UNANSWERED)
+    marked = await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
     waiting_since = (await _state(chat_id, session_id)).attention_since
 
     await _switch(session_id, chat_id, True)
@@ -243,11 +246,17 @@ async def test_turning_the_assistant_off_restarts_a_running_pause() -> None:
     session_id, chat_id = await _chat()
     await _set_pause(chat_id, session_id, 5)
 
-    await _switch(session_id, chat_id, False)
+    response = await _switch(session_id, chat_id, False)
 
     remaining = (await _state(chat_id, session_id)).pause_seconds_remaining
     assert remaining is not None
     assert remaining > 5
+    # What the switch answers is the state the write left, so the tab that flipped it
+    # starts its countdown from the same deadline the next poll will report.
+    assert response.json()["assistant_may_reply"] is False
+    answered = response.json()["pause_seconds_remaining"]
+    assert answered is not None
+    assert answered >= remaining
 
 
 async def test_turning_the_assistant_off_can_never_escalate_a_conversation() -> None:
@@ -266,7 +275,7 @@ async def test_neither_direction_touches_the_emphasis_or_a_mark() -> None:
     # FR-029a: neither turning the assistant off nor turning it back on answers
     # anybody, so what is waiting stays waiting throughout.
     session_id, chat_id = await _chat()
-    marked = await _marked_message(chat_id, AttentionMark.UNANSWERED)
+    marked = await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
     async with session_factory() as session:
         await chat_repository.mark_attention(session, chat_id, session_id)
     await engine.dispose()
@@ -371,6 +380,27 @@ async def test_a_restarted_pause_is_recorded_as_a_restart() -> None:
     assert paused[0]["restarted"] is True
 
 
+@pytest.mark.parametrize("gesture", ["staff_message", "switch"])
+async def test_a_pause_records_the_deadline_it_actually_wrote(gesture: str) -> None:
+    # `until` is the record of when the assistant may speak again, so it has to be the
+    # deadline the row now holds. It is reported by the write that set it rather than
+    # read back afterwards, and a value assembled anywhere else - from this process's
+    # clock, say - would drift from the one the gate obeys.
+    session_id, chat_id = await _chat()
+
+    with capture_logs() as logs:
+        if gesture == "staff_message":
+            await _post_staff(session_id, chat_id)
+        else:
+            await _switch(session_id, chat_id, False)
+
+    paused = [entry for entry in logs if entry["event"] == "assistant.paused"]
+    assert len(paused) == 1
+    assert (
+        paused[0]["until"] == (await _state(chat_id, session_id)).assistant_paused_until
+    )
+
+
 async def test_turning_the_assistant_on_records_a_resume() -> None:
     session_id, chat_id = await _chat()
     await _set_pause(chat_id, session_id, _PAUSE_SECONDS)
@@ -389,8 +419,10 @@ async def test_a_pause_expiring_clears_no_mark_and_no_emphasis() -> None:
     # runs when the deadline passes - it is a comparison, not an event - so there is no
     # write path that could touch them, and this is what says so.
     session_id, chat_id = await _chat()
-    marked = await _marked_message(chat_id, AttentionMark.UNANSWERED)
-    permanent = await _marked_message(chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+    marked = await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
+    permanent = await _marked_message(
+        session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER
+    )
     async with session_factory() as session:
         await chat_repository.mark_attention(session, chat_id, session_id)
     await engine.dispose()
@@ -404,3 +436,61 @@ async def test_a_pause_expiring_clears_no_mark_and_no_emphasis() -> None:
     assert state.attention_since == waiting_since
     assert await _mark_of(marked) == AttentionMark.UNANSWERED
     assert await _mark_of(permanent) == AttentionMark.CORPUS_COULD_NOT_ANSWER
+
+
+# --- what one gesture costs ---------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("gesture", "reads"),
+    [("switch_off", 0), ("switch_on", 1), ("staff_message", 1)],
+)
+async def test_a_staff_gesture_reads_the_state_only_where_it_must(
+    gesture: str, reads: int
+) -> None:
+    # Every one of these reads runs inside the chat's advisory lock, on the single
+    # pinned connection holding it, while every open tab polls the console every two
+    # seconds. So each write reports what it did - the deadline it wrote, the pause it
+    # replaced, the state it left - and the only read left is the one no write can
+    # answer: what a resumption ended, which is knowable only from the state it found.
+    session_id, chat_id = await _chat(
+        escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
+    )
+    reads_taken = 0
+    read_state = chat_repository.get_conversation_state
+
+    async def counted(*args: Any, **kwargs: Any) -> ConversationState | None:
+        nonlocal reads_taken
+        reads_taken += 1
+        return await read_state(*args, **kwargs)
+
+    with patch.object(chat_repository, "get_conversation_state", counted):
+        if gesture == "staff_message":
+            response = await _post_staff(session_id, chat_id)
+        else:
+            response = await _switch(session_id, chat_id, gesture == "switch_on")
+
+    assert response.status_code in (200, 201)
+    assert reads_taken == reads
+
+
+async def test_a_failed_lock_release_does_not_undo_the_switch() -> None:
+    # The same shape as a staff post: the pause is committed inside the locked section,
+    # so a release that freed nothing would otherwise answer 500 for a switch that has
+    # already moved - and the staff member would flip it back and forth to find out.
+    session_id, chat_id = await _chat()
+    not_held = chat_repository.ChatLockNotHeldError("held nothing")
+
+    with (
+        capture_logs() as logs,
+        patch.object(chat_repository, "unlock_chat", side_effect=not_held),
+    ):
+        response = await _switch(session_id, chat_id, False)
+
+    assert response.status_code == 200
+    assert response.json()["assistant_may_reply"] is False
+    assert (await _state(chat_id, session_id)).may_assistant_reply is False
+    failed = [e for e in logs if e["event"] == "chat.lock_release_failed"]
+    assert len(failed) == 1
+    assert failed[0]["log_level"] == "critical"
+    assert failed[0]["chat_id"] == chat_id

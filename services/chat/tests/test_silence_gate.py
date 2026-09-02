@@ -15,6 +15,7 @@ import structlog
 from chat.core.config import get_settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
+from chat.domain.schemas import IntentLabel
 from chat.main import app
 from chat.repositories import chat_repository
 from chat.repositories.chat_repository import ConversationState
@@ -340,3 +341,106 @@ async def test_a_turn_after_the_pause_expires_is_answered_normally() -> None:
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
+
+
+# --- what the turn after the silence is told about what it holds back ---------------
+
+
+async def _post_as_staff(session_id: str, chat_id: str, content: str) -> None:
+    """Reply as staff, which is what ends a silence by actually answering it."""
+    await engine.dispose()
+    with TestClient(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://t"
+        ) as http:
+            http.cookies.set("visitdoc_session_id", session_id)
+            response = await http.post(
+                f"/console/chats/{chat_id}/messages", json={"content": content}
+            )
+    assert response.status_code == 201, response.text
+
+
+async def _booking_prompt(session_id: str, chat_id: str, message: str) -> str:
+    """Send `message` into a conversation the assistant may answer again.
+
+    Returns: the one user entry the booking loop put in front of the model - which is
+        where the held-back messages are described, if there are any.
+
+    Routed through the booking specialist because that loop's entry is the whole of
+    what the model reads; the FAQ path would need a seeded corpus to reach its own.
+    """
+    await engine.dispose()
+    client = fake_anthropic_client(
+        ["ignored"], intents=[IntentLabel.BOOKING], booking_reply="Which day suits you?"
+    )
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = client
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                response = await http.post(
+                    "/chat",
+                    json={
+                        "chat_id": chat_id,
+                        "message": message,
+                        "local_now": LOCAL_NOW,
+                    },
+                )
+    assert response.status_code == 200
+    # The booking loop and the classifier share `.messages.create`; only the former
+    # sends tools.
+    sent = [
+        call.kwargs["messages"]
+        for call in client.messages.create.await_args_list
+        if call.kwargs.get("tools") is not None
+    ]
+    assert sent, "the booking specialist never ran"
+    return str(sent[0][-1]["content"])
+
+
+async def test_a_pause_that_expired_with_no_reply_is_not_described_as_handled() -> None:
+    # The failure this guards: a pause that nobody followed up leaves its messages
+    # marked, and the note used to tell the model a person had dealt with them - in a
+    # conversation no person had ever spoken in.
+    session_id, chat_id = await _paused_chat()
+    await _send(session_id, chat_id, "can I move my Tuesday appointment?")
+    async with session_factory() as session:
+        await chat_repository.set_paused_until(session, chat_id, session_id, -1)
+    assert all(m.sender == MessageSender.PATIENT for m in await _messages(chat_id))
+
+    entry = await _booking_prompt(session_id, chat_id, "book me on Friday")
+
+    assert "can I move my Tuesday appointment?" in entry
+    assert "already dealt with them" not in entry
+    assert "Nobody has answered them" in entry
+
+
+async def test_the_held_back_message_goes_on_waiting_for_a_person() -> None:
+    # It is held back from the answer, not dropped: the mark stays and the conversation
+    # stays emphasized, so the staff side still shows it needing someone.
+    session_id, chat_id = await _paused_chat()
+    await _send(session_id, chat_id, "can I move my Tuesday appointment?")
+    async with session_factory() as session:
+        await chat_repository.set_paused_until(session, chat_id, session_id, -1)
+
+    await _booking_prompt(session_id, chat_id, "book me on Friday")
+
+    messages = await _messages(chat_id)
+    assert messages[0].attention_mark == AttentionMark.UNANSWERED
+    assert (await _state(chat_id, session_id)).emphasized is True
+
+
+async def test_a_message_a_staff_member_answered_leaves_no_window_at_all() -> None:
+    # The direction that must not change: a staff reply clears the mark, so the message
+    # it answered is an ordinary one again and nothing is held back or annotated.
+    session_id, chat_id = await _paused_chat()
+    await _send(session_id, chat_id, "can I move my Tuesday appointment?")
+    await _post_as_staff(session_id, chat_id, "Yes - I have moved it to Thursday.")
+    async with session_factory() as session:
+        await chat_repository.set_paused_until(session, chat_id, session_id, -1)
+
+    entry = await _booking_prompt(session_id, chat_id, "book me on Friday")
+
+    assert entry == "book me on Friday"

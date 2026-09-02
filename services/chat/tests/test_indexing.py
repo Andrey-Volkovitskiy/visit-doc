@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
 import structlog
 from chat.core.correlation import bind_operation_id
 from chat.rag.chunking import ChunkedText
 from chat.rag.indexing import (
+    FaqOperationError,
     publish_revision,
     remove_entry_chunks,
     sweep_entry,
@@ -73,6 +75,26 @@ async def test_publish_revision_logs_substeps_correlated_by_operation_id() -> No
     assert list(events) == ["faq.content_chunked", "faq.chunks_embedded"]
     assert events["faq.content_chunked"]["chunk_count"] == 2
     assert events["faq.chunks_embedded"]["chunk_count"] == 2
+
+
+async def test_publish_revision_refuses_to_publish_a_revision_with_no_chunks() -> None:
+    # A revision with no points behind it would be a row vouching for an answer the
+    # store cannot produce - and the sweep that follows the publish would take the
+    # previous revision's chunks with it. So an empty chunking result is a typed
+    # failure, not a success that happened to write nothing.
+    with (
+        patch("chat.rag.indexing.chunk_content", return_value=[]),
+        patch("chat.rag.indexing.embed_texts") as embed,
+        patch("chat.rag.indexing.upsert_chunks") as upsert,
+        pytest.raises(FaqOperationError) as raised,
+    ):
+        await publish_revision(
+            MagicMock(), MagicMock(), "01SESSION", 1, "01REVISION", "- - -"
+        )
+
+    assert raised.value.failed_step == "chunking"
+    embed.assert_not_called()
+    upsert.assert_not_called()
 
 
 async def test_the_sweep_addresses_one_entry_and_spares_its_live_revision() -> None:

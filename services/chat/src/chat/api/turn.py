@@ -83,6 +83,60 @@ async def _resolve_chat(request: Request, chat_id: str) -> Chat:
     return chat
 
 
+async def _persist_outcome(
+    chat: Chat,
+    patient_message_id: str,
+    reply_to_message_ids: list[str],
+    escalation: EscalationRequests,
+    done_event: ChatDoneEvent | None,
+    answer: str,
+) -> None:
+    """Write what this turn produced and what it decided, under the chat's lock.
+
+    Args:
+        done_event: The completion event whose reply is to be stored, or None when
+            there is none to store - the pipeline did not complete, or a newer message
+            superseded this turn.
+        answer: The text streamed to the patient, stored whenever `done_event` carries
+            no message of its own.
+
+    Holds the lock a staff post takes, for the whole of both writes: the reply and the
+    transition either both precede a staff member taking the conversation over or both
+    follow it, never one of each. Without it the transition lands on top of the clears
+    that post just made, and the conversation falls silent again with a person already
+    in it.
+    """
+    # Pinned, because the section commits and the lock lives on the connection rather
+    # than on the transaction - see `pinned_session`.
+    async with pinned_session() as db_session:
+        await chat_repository.lock_chat(db_session, chat.id)
+        try:
+            if done_event is not None:
+                # `message` is set only when there is no streamed text to show, which
+                # today is the FAQ abstention case. `grounded` stays NULL for a
+                # booking-only reply: it was never retrieved against, so it is neither
+                # grounded nor abstaining.
+                await chat_repository.create_message(
+                    db_session,
+                    id=str(ULID()),
+                    chat_id=chat.id,
+                    sender=MessageSender.ASSISTANT,
+                    content=done_event.message or answer,
+                    grounded=done_event.grounded,
+                    citations=[c.model_dump() for c in done_event.citations],
+                    reply_to_message_ids=reply_to_message_ids,
+                )
+            # After the graph has completed and the reply has been delivered: the turn
+            # runs to its end and the conversation transitions at the end of it, so a
+            # mixed-intent message whose halves both ran delivers both before anything
+            # is silenced.
+            await apply_escalation(
+                db_session, chat.id, chat.session_id, patient_message_id, escalation
+            )
+        finally:
+            await chat_repository.release_chat_lock(db_session, chat.id)
+
+
 async def _event_stream(
     qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
@@ -178,40 +232,28 @@ async def _event_stream(
                         elif isinstance(event, ChatDoneEvent):
                             done_event = event
 
-                    # Inserted only once the pipeline completes successfully
-                    # (abstention included), and only if a newer message hasn't already
-                    # superseded this one (FR-015, research.md #3/#9).
-                    if done_event is not None and clear_if_current(chat.id, task):
-                        # `message` is set only when there is no streamed text to show,
-                        # which today is the FAQ abstention case. `grounded` stays NULL
-                        # for a booking-only reply: it was never retrieved against, so
-                        # it is neither grounded nor abstaining.
-                        content = done_event.message or "".join(answer_parts)
-                        citations = [c.model_dump() for c in done_event.citations]
-                        async with session_factory() as insert_session:
-                            await chat_repository.create_message(
-                                insert_session,
-                                id=str(ULID()),
-                                chat_id=chat.id,
-                                sender=MessageSender.ASSISTANT,
-                                content=content,
-                                grounded=done_event.grounded,
-                                citations=citations,
-                                reply_to_message_ids=reply_to_message_ids,
-                            )
-
-                    # After the graph has completed and the reply has been delivered:
-                    # the turn runs to its end and the conversation transitions at the
-                    # end of it, so a mixed-intent message whose halves both ran
-                    # delivers both before anything is silenced.
-                    async with session_factory() as escalation_session:
-                        await apply_escalation(
-                            escalation_session,
-                            chat.id,
-                            chat.session_id,
-                            patient_message.id,
-                            escalation,
-                        )
+                    # Stored only once the pipeline completes successfully (abstention
+                    # included), and only if a newer message hasn't already superseded
+                    # this one (FR-015, research.md #3/#9).
+                    #
+                    # Deregistered here rather than after the writes below, because
+                    # those take the chat's lock: a staff post takes that lock first and
+                    # only then asks for a cancellation, so a turn still registered
+                    # while queued on the lock would be a cancellation waiting on the
+                    # very lock its canceller holds.
+                    reply = (
+                        done_event
+                        if done_event is not None and clear_if_current(chat.id, task)
+                        else None
+                    )
+                    await _persist_outcome(
+                        chat,
+                        patient_message.id,
+                        reply_to_message_ids,
+                        escalation,
+                        reply,
+                        "".join(answer_parts),
+                    )
                 except TurnPipelineError as exc:
                     logger = get_logger()
                     logger.error(
@@ -280,7 +322,11 @@ async def _event_stream(
                     # constructed: the requirement is not that no reply is stored, it is
                     # that no call is made.
                     await chat_repository.set_attention_mark(
-                        db_session, patient_message.id, AttentionMark.UNANSWERED
+                        db_session,
+                        chat.id,
+                        chat.session_id,
+                        patient_message.id,
+                        AttentionMark.UNANSWERED,
                     )
                     await chat_repository.mark_attention(
                         db_session, chat.id, chat.session_id

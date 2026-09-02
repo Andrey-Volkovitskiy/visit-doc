@@ -673,4 +673,92 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
     expect(screen.queryByTestId("error")).toBeNull();
   });
+
+  it("keeps a just-streamed reply the deferred refetch's history does not carry yet", async () => {
+    // The server queues `done` before it commits the assistant row, so the read this
+    // pane fires the instant the turn ends is legitimately answered by a history that
+    // stops short of the reply already on screen. Assigning that answer to the thread
+    // blanks the reply until the next tick notices the insert - a couple of seconds in
+    // which the patient's question looks unanswered.
+    let finishTurn!: () => void;
+    const turnFinishes = new Promise<void>((resolve) => {
+      finishTurn = resolve;
+    });
+
+    async function* turn(): AsyncGenerator<ChatEvent> {
+      yield { type: "token", text: "Visiting hours are 8am to 5pm." };
+      // Held open so the poll tick below lands mid-stream, which is what defers it to
+      // the moment the turn ends.
+      await turnFinishes;
+      yield { type: "done", grounded: true, answer_source: "faq", citations: [] };
+    }
+
+    function serverRow(
+      index: number,
+      sender: Message["sender"],
+      content: string,
+    ): Message {
+      return {
+        id: `m${index}`,
+        sender,
+        content,
+        grounded: null,
+        citations: null,
+        attention_mark: null,
+        created_at: `2026-09-01T12:0${index}:00Z`,
+      };
+    }
+
+    // The patient's own row has committed; the assistant's has not. The staff line is
+    // the landmark that proves this answer reached the thread at all - without it the
+    // rendered result is indistinguishable from the refetch never having been applied.
+    const withoutTheReply = [
+      serverRow(1, "patient", "when can I visit?"),
+      serverRow(2, "staff", "I've got this one."),
+    ];
+    const withTheReply = [
+      ...withoutTheReply,
+      serverRow(3, "assistant", "Visiting hours are 8am to 5pm."),
+    ];
+
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(withoutTheReply)
+      .mockResolvedValue(withTheReply);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(turn());
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() =>
+      expect(screen.getByText("Visiting hours are 8am to 5pm.")).toBeInTheDocument(),
+    );
+
+    // The poll sees the patient row and advances; the tick is deferred, not dropped.
+    rerender(<ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:02:00Z" />);
+    expect(fetchChatHistory).toHaveBeenCalledTimes(1);
+
+    finishTurn();
+    await waitFor(() =>
+      expect(screen.getByText("I've got this one.")).toBeInTheDocument(),
+    );
+    // The reply survives a history that does not know about it yet.
+    expect(screen.getByText("Visiting hours are 8am to 5pm.")).toBeInTheDocument();
+
+    // And it is not shown twice once a later read does account for it: the local copy
+    // leaves as the server's own row arrives.
+    rerender(<ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:03:00Z" />);
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+    expect(
+      screen.getAllByText("Visiting hours are 8am to 5pm."),
+    ).toHaveLength(1);
+  });
 });

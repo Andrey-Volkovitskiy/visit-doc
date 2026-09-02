@@ -171,8 +171,13 @@ Three filters, and no other query reaches the collection:
 | Purpose | Filter |
 |---|---|
 | **Retrieval** (FR-039a, FR-042d) | `must=[MatchAny(revision, <this session's live revisions>)]` |
-| **Per-entry sweep** (FR-042h) | `must=[MatchValue(faq_entry_id, id)]`, `must_not=[MatchValue(revision, live)]` |
+| **Per-entry sweep** (FR-042h) | `must=[MatchValue(faq_entry_id, id)]`, `must=[MatchAny(revision, <this entry's revisions older than live>)]` |
 | **Session delete** (FR-039c) | `must=[MatchValue(session_id, id)]` |
+
+The sweep names the revisions it deletes rather than excluding the one it was given: it scrolls the
+entry's points first, keeps those older than the live revision, and deletes exactly those. A
+`must_not` on its own revision would delete a concurrent save's points too, since a predicate that
+addresses everything it does not name reaches whatever it has never heard of.
 
 Retrieval's filter carries the session predicate and the live-revision predicate as **one term**:
 a revision id is minted by one session's save and never shared, so filtering to that session's live

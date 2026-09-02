@@ -620,7 +620,7 @@ async def _seed_chat_with_patient(name: str = "Ada Lovelace") -> tuple[str, str]
         created = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, created.id)
         await chat_repository.set_patient(
-            session, chat.id, "01PATENT000000000000000000", name
+            session, chat.id, created.id, "01PATENT000000000000000000", name
         )
     return created.id, chat.id
 

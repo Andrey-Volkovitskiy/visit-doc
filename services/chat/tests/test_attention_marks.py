@@ -35,7 +35,7 @@ async def _chat() -> tuple[str, str]:
     return session_row.id, chat.id
 
 
-async def _message(chat_id: str, mark: AttentionMark | None) -> str:
+async def _message(session_id: str, chat_id: str, mark: AttentionMark | None) -> str:
     message_id = str(ULID())
     async with session_factory() as session:
         await chat_repository.create_message(
@@ -46,7 +46,9 @@ async def _message(chat_id: str, mark: AttentionMark | None) -> str:
             content="does it matter what I say",
         )
         if mark is not None:
-            await chat_repository.set_attention_mark(session, message_id, mark)
+            await chat_repository.set_attention_mark(
+                session, chat_id, session_id, message_id, mark
+            )
     return message_id
 
 
@@ -58,15 +60,17 @@ async def _mark_of(message_id: str) -> str | None:
 
 async def test_a_staff_message_clears_every_clearable_mark_at_once() -> None:
     # However many accumulated: a person spoke, and that is what those marks asked for.
-    _, chat_id = await _chat()
+    session_id, chat_id = await _chat()
     clearable = [
-        await _message(chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON),
-        await _message(chat_id, AttentionMark.UNANSWERED),
-        await _message(chat_id, AttentionMark.UNANSWERED),
+        await _message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON),
+        await _message(session_id, chat_id, AttentionMark.UNANSWERED),
+        await _message(session_id, chat_id, AttentionMark.UNANSWERED),
     ]
 
     async with session_factory() as session:
-        cleared = await chat_repository.clear_clearable_marks(session, chat_id)
+        cleared = await chat_repository.clear_clearable_marks(
+            session, chat_id, session_id
+        )
 
     assert cleared == 3
     for message_id in clearable:
@@ -76,12 +80,14 @@ async def test_a_staff_message_clears_every_clearable_mark_at_once() -> None:
 async def test_permanent_marks_survive_a_staff_message() -> None:
     # A staff member answering the patient does not mean the corpus gained the entry it
     # was missing, or that the failure did not happen.
-    _, chat_id = await _chat()
-    corpus = await _message(chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
-    failed = await _message(chat_id, AttentionMark.ASSISTANT_FAILED)
+    session_id, chat_id = await _chat()
+    corpus = await _message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+    failed = await _message(session_id, chat_id, AttentionMark.ASSISTANT_FAILED)
 
     async with session_factory() as session:
-        cleared = await chat_repository.clear_clearable_marks(session, chat_id)
+        cleared = await chat_repository.clear_clearable_marks(
+            session, chat_id, session_id
+        )
 
     assert cleared == 0
     assert await _mark_of(corpus) == AttentionMark.CORPUS_COULD_NOT_ANSWER
@@ -89,13 +95,13 @@ async def test_permanent_marks_survive_a_staff_message() -> None:
 
 
 async def test_clearing_one_chats_marks_leaves_another_chats_alone() -> None:
-    _, mine = await _chat()
-    _, theirs = await _chat()
-    ours = await _message(mine, AttentionMark.UNANSWERED)
-    other = await _message(theirs, AttentionMark.UNANSWERED)
+    my_session, mine = await _chat()
+    their_session, theirs = await _chat()
+    ours = await _message(my_session, mine, AttentionMark.UNANSWERED)
+    other = await _message(their_session, theirs, AttentionMark.UNANSWERED)
 
     async with session_factory() as session:
-        await chat_repository.clear_clearable_marks(session, mine)
+        await chat_repository.clear_clearable_marks(session, mine, my_session)
 
     assert await _mark_of(ours) is None
     assert await _mark_of(other) == AttentionMark.UNANSWERED
@@ -109,6 +115,55 @@ async def test_the_clearable_set_is_exactly_the_two_the_grid_names() -> None:
         "patient_asked_for_person",
         "unanswered",
     }
+
+
+# --- whose message, and whose conversation ------------------------------------------
+#
+# Both statements that touch a mark carry the owning session in their own `WHERE`. A
+# message id is unique, which says nothing about who may write to the row it names -
+# and a mark is exactly what a caller would address by an id taken from a request body.
+
+
+async def test_a_mark_is_not_set_on_another_sessions_message() -> None:
+    my_session, my_chat = await _chat()
+    their_session, their_chat = await _chat()
+    theirs = await _message(their_session, their_chat, None)
+
+    async with session_factory() as session:
+        await chat_repository.set_attention_mark(
+            session, my_chat, my_session, theirs, AttentionMark.UNANSWERED
+        )
+
+    assert await _mark_of(theirs) is None
+
+
+async def test_a_mark_is_not_set_through_another_sessions_chat() -> None:
+    # The chat named is the one the message really belongs to, and the session named is
+    # not its owner - so the pair, not the message id alone, is what has to refuse.
+    my_session, _ = await _chat()
+    their_session, their_chat = await _chat()
+    theirs = await _message(their_session, their_chat, None)
+
+    async with session_factory() as session:
+        await chat_repository.set_attention_mark(
+            session, their_chat, my_session, theirs, AttentionMark.UNANSWERED
+        )
+
+    assert await _mark_of(theirs) is None
+
+
+async def test_clearing_marks_leaves_another_sessions_conversation_alone() -> None:
+    my_session, _ = await _chat()
+    their_session, their_chat = await _chat()
+    theirs = await _message(their_session, their_chat, AttentionMark.UNANSWERED)
+
+    async with session_factory() as session:
+        cleared = await chat_repository.clear_clearable_marks(
+            session, their_chat, my_session
+        )
+
+    assert cleared == 0
+    assert await _mark_of(theirs) == AttentionMark.UNANSWERED
 
 
 # --- 007 (US2): the two axes at conversation level, which are not one --------------
@@ -163,7 +218,7 @@ async def _send_as_patient(session_id: str, chat_id: str, content: str) -> Respo
 async def _failed_conversation() -> tuple[str, str, str]:
     """Return `(session_id, chat_id, message_id)` after one `assistant_failed` call."""
     session_id, chat_id = await _chat()
-    message_id = await _message(chat_id, None)
+    message_id = await _message(session_id, chat_id, None)
     requests = EscalationRequests()
     requests.record(EscalationReason.ASSISTANT_FAILED)
     async with session_factory() as session:
@@ -218,8 +273,8 @@ async def test_a_conversation_holding_only_permanent_marks_is_not_emphasized() -
     # FR-027e. The marks are still on their messages and still say why they are there;
     # what they no longer do is claim a person is still needed.
     session_id, chat_id = await _chat()
-    corpus = await _message(chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
-    failed = await _message(chat_id, AttentionMark.ASSISTANT_FAILED)
+    corpus = await _message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+    failed = await _message(session_id, chat_id, AttentionMark.ASSISTANT_FAILED)
     async with session_factory() as session:
         await chat_repository.mark_attention(session, chat_id, session_id)
 
@@ -237,10 +292,10 @@ async def test_the_switch_answers_nobody_in_either_direction() -> None:
     # which is what makes the control safe to use freely.
     session_id, chat_id = await _chat()
     marks = [
-        await _message(chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON),
-        await _message(chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER),
-        await _message(chat_id, AttentionMark.ASSISTANT_FAILED),
-        await _message(chat_id, AttentionMark.UNANSWERED),
+        await _message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON),
+        await _message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER),
+        await _message(session_id, chat_id, AttentionMark.ASSISTANT_FAILED),
+        await _message(session_id, chat_id, AttentionMark.UNANSWERED),
     ]
     async with session_factory() as session:
         await chat_repository.mark_attention(session, chat_id, session_id)

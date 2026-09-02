@@ -53,7 +53,11 @@ async def provision_patient(channel: grpc.aio.Channel, chat: Chat) -> str | None
 
     async with session_factory() as db_session:
         await chat_repository.set_patient(
-            db_session, chat.id, result.patient.id, result.patient.full_name
+            db_session,
+            chat.id,
+            chat.session_id,
+            result.patient.id,
+            result.patient.full_name,
         )
     chat.patient_id = result.patient.id
     chat.patient_name = result.patient.full_name

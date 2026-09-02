@@ -1,11 +1,17 @@
+import asyncio
 from collections.abc import AsyncIterator
 
 import pytest
 from chat.db.session import session_factory
+from chat.domain.models import FaqEntry, Session
 from chat.repositories import chat_repository, faq_repository
+from sqlalchemy import select
 from ulid import ULID
 
 _CONTENT = "Visiting hours are 8am to 5pm."
+# Long enough that a create which does not wait for the lock has finished by the time
+# it elapses, short enough not to slow the suite down when one correctly waits.
+_LOCK_WAIT_SECONDS = 0.5
 
 
 async def _new_session_id() -> str:
@@ -15,6 +21,11 @@ async def _new_session_id() -> str:
 
 def _revision() -> str:
     return str(ULID())
+
+
+async def _reserved_id() -> int:
+    async with session_factory() as session:
+        return await faq_repository.reserve_id(session)
 
 
 @pytest.fixture
@@ -57,6 +68,22 @@ async def test_list_all_includes_created_entry(session_id: str, entry_id: int) -
     assert any(e.id == entry_id for e in all_entries)
 
 
+async def test_count_for_session_counts_only_this_sessions_entries(
+    session_id: str, entry_id: int
+) -> None:
+    # The number the cap is compared against, so it has to be this session's own - and
+    # the predicate is on the count itself, not applied to rows read back and tallied
+    # here.
+    other = await _new_session_id()
+    async with session_factory() as session:
+        await faq_repository.create(session, other, _CONTENT, _revision())
+        await faq_repository.create(session, session_id, _CONTENT, _revision())
+
+    async with session_factory() as session:
+        assert await faq_repository.count_for_session(session, session_id) == 2
+        assert await faq_repository.count_for_session(session, other) == 1
+
+
 async def test_publish_replaces_the_content_and_the_live_revision(
     session_id: str, entry_id: int
 ) -> None:
@@ -91,6 +118,64 @@ async def test_publish_writes_nothing_when_the_expected_revision_is_stale(
         survivor = await faq_repository.get(session, session_id, entry_id)
     assert survivor is not None
     assert survivor.content == _CONTENT
+
+
+async def test_create_within_cap_inserts_while_there_is_room(session_id: str) -> None:
+    async with session_factory() as session:
+        entry, count = await faq_repository.create_within_cap(
+            session,
+            session_id,
+            _CONTENT,
+            _revision(),
+            await _reserved_id(),
+            max_entries=2,
+        )
+    assert count == 0
+    assert entry is not None
+    async with session_factory() as session:
+        assert len(await faq_repository.list_all(session, session_id)) == 1
+
+
+async def test_create_within_cap_counts_only_after_the_create_ahead_of_it(
+    session_id: str, entry_id: int
+) -> None:
+    # What makes the cap a bound rather than a likelihood: a create counts the corpus
+    # only once every create in front of it has committed. The lock is held here by a
+    # transaction of the test's own, so the wait is a fact of the statement rather than
+    # a matter of timing - without it this create counts one entry, finds room, and
+    # takes a place the entry inserted below has already taken.
+    async with session_factory() as holder:
+        await holder.execute(
+            select(Session.id)
+            .where(Session.id == session_id)
+            .with_for_update(key_share=True)
+        )
+
+        async def _second_create() -> tuple[FaqEntry | None, int]:
+            async with session_factory() as session:
+                return await faq_repository.create_within_cap(
+                    session,
+                    session_id,
+                    _CONTENT,
+                    _revision(),
+                    await _reserved_id(),
+                    max_entries=2,
+                )
+
+        waiting = asyncio.create_task(_second_create())
+        done, _ = await asyncio.wait({waiting}, timeout=_LOCK_WAIT_SECONDS)
+        assert not done, "the create counted the corpus without waiting for the lock"
+
+        async with session_factory() as session:
+            await faq_repository.create(session, session_id, _CONTENT, _revision())
+        await holder.rollback()
+
+        entry, count = await waiting
+
+    assert entry is None
+    assert count == 2
+    async with session_factory() as session:
+        assert len(await faq_repository.list_all(session, session_id)) == 2
 
 
 async def test_delete(session_id: str) -> None:

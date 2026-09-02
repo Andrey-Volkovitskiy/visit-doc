@@ -250,7 +250,7 @@ async def delete_chat(chat_id: str, request: Request) -> None:
 
     turn_cancelled = await cancel_for_chat(chat.id)
     async with session_factory() as db_session:
-        await chat_repository.delete_chat(db_session, chat.id)
+        await chat_repository.delete_chat(db_session, chat.id, session_id)
 
     get_logger().info(
         "chat.deleted",

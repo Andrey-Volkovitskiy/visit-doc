@@ -117,12 +117,30 @@ async def test_set_patient_records_the_scheduler_side_patient_and_its_name() -> 
         created_session = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, created_session.id)
 
-        await chat_repository.set_patient(session, chat.id, "PATIENT01", "Ada Lovelace")
+        await chat_repository.set_patient(
+            session, chat.id, created_session.id, "PATIENT01", "Ada Lovelace"
+        )
         found = await chat_repository.get_chat(session, chat.id, created_session.id)
 
     assert found is not None
     assert found.patient_id == "PATIENT01"
     assert found.patient_name == "Ada Lovelace"
+
+
+async def test_set_patient_ignores_a_chat_id_from_another_session() -> None:
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        stranger = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, owner.id)
+
+        await chat_repository.set_patient(
+            session, chat.id, stranger.id, "PATIENT01", "Ada Lovelace"
+        )
+        found = await chat_repository.get_chat(session, chat.id, owner.id)
+
+    assert found is not None
+    assert found.patient_id is None
+    assert found.patient_name is None
 
 
 async def test_list_chats_for_session_is_empty_for_a_session_with_none() -> None:
@@ -225,7 +243,7 @@ async def test_delete_chat_removes_all_its_messages() -> None:
             content="hi",
         )
 
-        await chat_repository.delete_chat(session, chat.id)
+        await chat_repository.delete_chat(session, chat.id, created_session.id)
 
         remaining = await chat_repository.list_messages(session, chat.id)
 
@@ -237,7 +255,7 @@ async def test_delete_chat_leaves_session_untouched() -> None:
         created_session = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, created_session.id)
 
-        await chat_repository.delete_chat(session, chat.id)
+        await chat_repository.delete_chat(session, chat.id, created_session.id)
 
         still_there = await chat_repository.get_session(session, created_session.id)
 
@@ -246,7 +264,21 @@ async def test_delete_chat_leaves_session_untouched() -> None:
 
 async def test_delete_chat_is_noop_for_unknown_chat_id() -> None:
     async with session_factory() as session:
-        await chat_repository.delete_chat(session, "nonexistent-id")  # must not raise
+        created_session = await chat_repository.create_session(session)
+        # Must not raise.
+        await chat_repository.delete_chat(session, "nonexistent-id", created_session.id)
+
+
+async def test_delete_chat_ignores_a_chat_id_from_another_session() -> None:
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        stranger = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, owner.id)
+
+        await chat_repository.delete_chat(session, chat.id, stranger.id)
+        survivor = await chat_repository.get_chat(session, chat.id, owner.id)
+
+    assert survivor is not None
 
 
 async def test_lock_chat_blocks_a_second_holder_until_released() -> None:
@@ -482,6 +514,17 @@ async def test_clearing_the_escalation_leaves_the_attention_alone() -> None:
     state = await _state(session_id, chat_id)
     assert state.may_assistant_reply is True
     assert state.emphasized is True
+
+
+async def test_marking_attention_says_whether_it_queued_the_conversation() -> None:
+    session_id, chat_id = await _fresh_chat()
+
+    async with session_factory() as session:
+        first = await chat_repository.mark_attention(session, chat_id, session_id)
+        again = await chat_repository.mark_attention(session, chat_id, session_id)
+
+    assert first is True
+    assert again is False
 
 
 async def test_attention_is_not_restamped_while_a_conversation_is_already_waiting() -> (

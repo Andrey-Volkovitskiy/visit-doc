@@ -59,6 +59,7 @@ async def _chat(
 
 
 async def _message(
+    session_id: str,
     chat_id: str,
     *,
     mark: AttentionMark | None = None,
@@ -74,7 +75,9 @@ async def _message(
             content="is anyone there?",
         )
         if mark is not None:
-            await chat_repository.set_attention_mark(session, message_id, mark)
+            await chat_repository.set_attention_mark(
+                session, chat_id, session_id, message_id, mark
+            )
     await engine.dispose()
     return message_id
 
@@ -219,7 +222,7 @@ async def test_a_conversation_counts_once_however_many_marks_it_holds() -> None:
         session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
     )
     for _ in range(4):
-        await _message(crowded, mark=AttentionMark.UNANSWERED)
+        await _message(session_id, crowded, mark=AttentionMark.UNANSWERED)
     await _chat(session_id, waiting=True)
     await _chat(session_id)
 
@@ -256,7 +259,7 @@ def _order(body: dict[str, Any]) -> list[str]:
 async def test_emphasized_conversations_sort_above_the_rest() -> None:
     session_id = await _session()
     quiet_but_recent = await _chat(session_id)
-    await _message(quiet_but_recent)
+    await _message(session_id, quiet_but_recent)
     needs_a_person = await _chat(
         session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
     )
@@ -300,9 +303,9 @@ async def test_a_later_call_does_not_send_a_conversation_to_the_back() -> None:
 async def test_unemphasized_conversations_keep_the_existing_activity_order() -> None:
     session_id = await _session()
     stale = await _chat(session_id)
-    await _message(stale)
+    await _message(session_id, stale)
     active = await _chat(session_id)
-    await _message(active)
+    await _message(session_id, active)
 
     assert _order((await _get(session_id)).json()) == [active, stale]
 
@@ -367,7 +370,7 @@ async def test_the_listing_never_contains_a_session_id() -> None:
 async def test_a_row_carries_the_name_and_the_newest_message_time() -> None:
     session_id = await _session()
     chat_id = await _chat(session_id, patient_name="Ada Lovelace")
-    await _message(chat_id)
+    await _message(session_id, chat_id)
 
     row = _by_id((await _get(session_id)).json())[chat_id]
 

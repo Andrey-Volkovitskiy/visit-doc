@@ -351,7 +351,10 @@ capabilities — full rationale and alternatives considered live in
   hidden — **leaked storage instead of a lost answer**. Chunks nothing vouches for are removed by a
   per-entry sweep that is idempotent, never load-bearing, and **silent**: it raises no event at all,
   because a sweep is not an operation that can fail — the chunks it removes were already
-  unreachable.
+  unreachable. It deletes only revisions **older** than one that was live, named explicitly rather
+  than addressed as "everything but the live one": an entry's published revisions strictly increase,
+  so a predicate that deletes by what it does not name would destroy the chunks of a save that
+  published while the sweep was on its way.
 - **Session-scoped retrieval, as a filter term rather than a post-check.** Each entry names one
   live revision, revision ids are minted per save and never shared, so filtering a search to *this
   session's live revisions* scopes both the session and the revision in a single `MatchAny` term.

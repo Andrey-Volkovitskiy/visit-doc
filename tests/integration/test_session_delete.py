@@ -132,7 +132,7 @@ async def _seed_chat_side(session_id: str) -> tuple[str, int]:
             content="is anyone there?",
         )
         await chat_repository.set_attention_mark(
-            session, message_id, AttentionMark.UNANSWERED
+            session, chat.id, session_id, message_id, AttentionMark.UNANSWERED
         )
         await chat_repository.mark_attention(session, chat.id, session_id)
         from chat.repositories import faq_repository
