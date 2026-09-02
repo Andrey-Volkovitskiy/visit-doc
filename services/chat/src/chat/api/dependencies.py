@@ -12,6 +12,6 @@ def get_voyage_client(request: Request) -> AsyncClient:
     startup isn't guaranteed to propagate into each request's own asyncio task, so it
     must be set here, within the same task that will go on to call `embed_texts`.
     """
-    voyageai.aiosession.set(request.app.state.voyage_session)
+    voyageai.aiosession.set(request.app.state.http_session)
     client: AsyncClient = request.app.state.voyage_client
     return client

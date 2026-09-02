@@ -78,3 +78,51 @@ describe("MessageView booking replies", () => {
     expect(screen.getByTestId("citations")).toBeInTheDocument();
   });
 });
+
+// --- 007 (FR-023): three senders, two labels --------------------------------------
+//
+// With two senders, position and styling were enough and neither needed a label. With
+// three, the patient has to be able to tell a human's reply from a generated one -
+// which is what FR-021 is for, and which a role label does exactly.
+
+describe("MessageView role labels", () => {
+  it("labels a staff message 'Staff'", () => {
+    render(<MessageView sender="staff" content="I've looked at your bill." />);
+
+    const message = screen.getByTestId("message");
+    expect(message).toHaveAttribute("data-sender", "staff");
+    expect(message).toHaveTextContent("Staff");
+  });
+
+  it("labels an assistant message 'AI assistant'", () => {
+    render(<MessageView sender="assistant" content="Visiting hours are 8am to 5pm." />);
+
+    expect(screen.getByTestId("message")).toHaveTextContent("AI assistant");
+  });
+
+  it("leaves the patient's own messages unlabelled", () => {
+    // They are the reader's own; a label would say nothing they do not already know.
+    render(<MessageView sender="patient" content="When can I visit?" />);
+
+    expect(screen.queryByTestId("role-label")).toBeNull();
+  });
+
+  it("names no person on any message", () => {
+    // There is no staff member to name (research #10), and a human-sounding name would
+    // invite the patient to believe there is one.
+    const { container } = render(
+      <MessageView sender="staff" content="I've got this one." />,
+    );
+
+    expect(container.textContent).toBe("StaffI've got this one.");
+  });
+
+  it("tells a staff reply apart from an assistant one at a glance", () => {
+    const staff = render(<MessageView sender="staff" content="Same words." />);
+    const staffLabel = staff.getByTestId("role-label").textContent;
+    staff.unmount();
+    const assistant = render(<MessageView sender="assistant" content="Same words." />);
+
+    expect(assistant.getByTestId("role-label").textContent).not.toBe(staffLabel);
+  });
+});

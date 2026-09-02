@@ -29,6 +29,7 @@ class NodeResult:
     """
 
     def __init__(self) -> None:
+        """Start with an empty payload, for the node to fill in as it works."""
         self._payload: dict[str, Any] = {}
 
     def set(self, **fields: Any) -> None:

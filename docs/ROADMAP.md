@@ -187,8 +187,11 @@ verification: a handoff to a human that no human can see, a practitioner list ed
 `curl`, and an FAQ entry whose indexing state is invisible are all things that can be unit-tested
 but not *exercised*. It is also what makes 1e's threshold work possible by hand — tuning an
 abstention gate means editing the corpus and re-asking questions, repeatedly, in the real UI.
-Mostly frontend over APIs that already exist (1c's REST admin surface, the existing FAQ CRUD); the
-only new backend is what the escalation path itself needs.
+Mostly frontend over APIs that already exist (1c's REST admin surface, the existing FAQ CRUD), but
+**not only** what the escalation path needs: two capabilities cross the service boundary as well.
+The practitioner screen is proxied through the core backend, because the session that authorizes a
+change lives in a cookie the browser cannot read; and resetting a demonstration needs a
+`DeleteSession` rpc the scheduler did not have.
 
 - **One screen, both sides.** The app demonstrates the patient experience and the staff experience
   at once: the session's patient chats on the left, the staff interface on the right, so an
@@ -206,13 +209,14 @@ only new backend is what the escalation path itself needs.
 - **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
   practitioners, with the seeded-name defaults and the cascading deletes the service already
   enforces. No new backend.
-- **FAQ entry management** — a UI over the existing FAQ CRUD, with one thing it must not get wrong:
-  a *saved* entry and a *searchable* entry are different states. The backend's Postgres↔Qdrant
-  ordering (deindex before deleting the row, delete-then-upsert on update) is what keeps the two
-  consistent, and the console surfaces indexing state so a staff member can tell whether what they
-  just wrote is something the assistant can actually retrieve. It is also the one admin action that
-  changes what the assistant will say, which makes it the natural place to show a retrieval or eval
-  effect later.
+- **FAQ entry management** — a UI over the existing FAQ CRUD, and the screen shows **no indexing
+  state at all**, because that state no longer exists. A *saved* entry and a *searchable* entry
+  used to be different states, kept consistent by a Postgres↔Qdrant ordering; 007 replaced that
+  with additive chunk revisions, where the row names the one revision retrieval may search and an
+  entry cannot be stored without one. Listed and searchable became the same fact, so an indicator
+  could only ever read "yes" — and a signal that can never fire teaches a staff member to rely on
+  a warning that would not come. It is still the one admin action that changes what the assistant
+  will say, which makes it the natural place to show a retrieval or eval effect later.
 - **The session stays the only boundary — there is no staff login.** A session gets exactly one
   staff member, created with it as its patients and practitioners already are, and the app user
   simply acts as that person. Scoping is unchanged from 1c: a session sees and manages only its own
@@ -306,6 +310,18 @@ The centerpiece — the ability to *measure* whether the system works, not just 
   turn), and **end-to-end task success** (did the booking land in the correct database state?).
 - **CI-gated evals** — run the suite in GitHub Actions on every commit and fail the build on a
   metric regression.
+- **End-to-end tests in a real browser** — the `tests/e2e/` tier, held open since Phase 0, is filled
+  here. Not earlier: 1e replaces `grounded` with a typed verdict and rebuilds citations from the
+  reranked shortlist, so a suite written before it would assert against a contract already
+  scheduled to change. Kept deliberately small — three to five journeys aimed at the one class of
+  defect no other tier can reach, **frontend state across time**, where a pane, the 2-second poll
+  and a reload disagree: an escalation raised in the patient pane and answered from the staff pane,
+  a pause counting down in two tabs, a booking that lands in Scheduling's own database. Driven by
+  `pytest-playwright`, so the tier stays pytest behind `make test-e2e`. Alone among the tiers it may
+  spend live model calls (see `docs/testing-strategy.md`) — which is exactly what keeps it off the
+  per-push gate the unit tier holds, and what forces its assertions onto structure rather than onto
+  the model's wording. The 13-scenario `quickstart.md` stays a manual walk-through: its value is
+  that a person reads it before a demo, which automating it would remove rather than preserve.
 - **Tracing with Langfuse** — per-step latency, token cost, and the full decision trace for each
   turn.
 

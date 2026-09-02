@@ -12,6 +12,7 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from chat.api.session_cookie import COOKIE_NAME
 from chat.core.config import Settings
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
 from fastapi.testclient import TestClient
@@ -189,6 +190,7 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
         ),
         patch("chat.api.chats.scheduling.delete_patient_for_chat", new=_unreachable()),
         patch("chat.api.chats.scheduling.rename_patient", new=_unreachable()),
+        patch("chat.api.admin.scheduling.delete_session", new=_unreachable()),
     ):
         yield
 
@@ -521,14 +523,60 @@ _CHAT_ID_ATTR = "_visitdoc_chat_id"
 _chat_id_lock = asyncio.Lock()
 
 
+# The session a seeding fixture built its corpus for. FAQ entries belong to exactly one
+# session, so a client that minted its own would retrieve nothing and every grounded
+# test would silently become an abstention test. Set by `seed_faq_entry`, cleared after
+# each test by `_reset_seeded_session`.
+_seeded_session_id: str | None = None
+
+
+def set_seeded_session(session_id: str | None) -> None:
+    """Record the session a seeded corpus belongs to, for `chat_id_for` to adopt."""
+    global _seeded_session_id
+    _seeded_session_id = session_id
+
+
+@pytest.fixture(autouse=True)
+def _reset_seeded_session() -> Iterator[None]:
+    yield
+    set_seeded_session(None)
+
+
+def seeded_session_id() -> str:
+    """Return the session a seeding fixture built its corpus for.
+
+    Raises: AssertionError if no seeding fixture is active - a test asking for this
+        without one would otherwise retrieve against an empty corpus and quietly
+        become an abstention test.
+    """
+    assert _seeded_session_id is not None, "no seeded corpus in this test"
+    return _seeded_session_id
+
+
+def adopt_seeded_session(client: TestClient | HttpxAsyncClient) -> None:
+    """Point `client` at the session a seeding fixture built its corpus for.
+
+    Only needed by a test that creates its chats directly rather than through
+    `chat_id_for`/`turn`, which adopt it on the client's behalf.
+    """
+    if _seeded_session_id is not None and COOKIE_NAME not in client.cookies:
+        client.cookies.set(COOKIE_NAME, _seeded_session_id)
+
+
 def chat_id_for(client: TestClient) -> str:
     """Return the client's chat, creating one on first use.
 
     A chat is an explicit resource created by `POST /chats`, so every turn needs one to
     address. Caching it on the client keeps a multi-turn test talking to the same chat.
+
+    If a seeding fixture has built a corpus for a particular session, the client adopts
+    that session's cookie before creating its chat - an unrecognized cookie would mint
+    a new session, whose corpus is empty, and the seeded entry would be unreachable.
     """
     chat_id = getattr(client, _CHAT_ID_ATTR, None)
     if chat_id is None:
+        if _seeded_session_id is not None and COOKIE_NAME not in client.cookies:
+            client.cookies.set(COOKIE_NAME, _seeded_session_id)
         chat_id = client.post("/chats").json()["id"]
         setattr(client, _CHAT_ID_ATTR, chat_id)
     return str(chat_id)
@@ -555,6 +603,8 @@ async def async_chat_id_for(client: HttpxAsyncClient) -> str:
     async with _chat_id_lock:
         chat_id = getattr(client, _CHAT_ID_ATTR, None)
         if chat_id is None:
+            if _seeded_session_id is not None and COOKIE_NAME not in client.cookies:
+                client.cookies.set(COOKIE_NAME, _seeded_session_id)
             chat_id = (await client.post("/chats")).json()["id"]
             setattr(client, _CHAT_ID_ATTR, chat_id)
         return str(chat_id)

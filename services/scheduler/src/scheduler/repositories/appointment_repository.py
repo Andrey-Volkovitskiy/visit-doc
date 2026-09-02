@@ -25,7 +25,7 @@ from shared_models.scheduling import (
     StatusFilter,
     TimeFilter,
 )
-from sqlalchemy import and_, case, or_, select, update
+from sqlalchemy import and_, case, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
@@ -144,6 +144,7 @@ class IdempotencyKeyMismatchError(Exception):
     def __init__(
         self, stored_appointment_id: str, mismatched_fields: list[str]
     ) -> None:
+        """Name the stored appointment and the fields that differ from it."""
         super().__init__(
             f"idempotency key reused with different {', '.join(mismatched_fields)}"
         )
@@ -838,6 +839,7 @@ class AppointmentVanishedError(Exception):
     """
 
     def __init__(self, appointment_id: str) -> None:
+        """Build the error, recording the appointment whose change committed."""
         super().__init__(f"appointment {appointment_id} vanished after its change")
         self.appointment_id = appointment_id
 
@@ -1176,3 +1178,19 @@ async def _get_patient(
         )
     )
     return result.scalars().first()
+
+
+async def count_for_session(session: AsyncSession, session_id: str) -> int:
+    """Return how many appointments `session_id` owns, whatever their status.
+
+    Counted before the deletion that removes them, because they go by cascade rather
+    than by a statement of their own - so this is the only moment their number is
+    knowable. Status-blind, matching the cascade: a cancelled appointment is still that
+    session's row.
+    """
+    result = await session.execute(
+        select(func.count())
+        .select_from(Appointment)
+        .where(Appointment.session_id == session_id)
+    )
+    return int(result.scalar_one())

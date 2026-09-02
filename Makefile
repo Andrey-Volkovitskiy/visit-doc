@@ -1,6 +1,7 @@
 .PHONY: sync lint format typecheck typecheck-python typecheck-frontend \
         test test-unit test-frontend test-integration test-e2e \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
+        services-up services-down services-status migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history
 
 sync:
@@ -58,6 +59,24 @@ run-scheduler-dev:
 
 run-frontend-dev:
 	cd services/frontend && npm run dev
+
+# All three services in the background at once, for manual testing. Each records its pid under
+# .run/ and is stopped by that pid - never with `pkill -f "chat.main"`, whose pattern also matches
+# the shell running that very command and kills the caller with it.
+services-up:
+	@./scripts/dev-services.sh up all
+
+services-down:
+	@./scripts/dev-services.sh down all
+
+services-status:
+	@./scripts/dev-services.sh status all
+
+# Bring both dev databases to head. `run-chat-dev`/`run-scheduler-dev` each do their own half;
+# this is for the background services above, which deliberately don't migrate on start.
+migrate:
+	uv run --directory services/scheduler alembic upgrade head
+	uv run --directory services/chat alembic upgrade head
 
 db-up:
 	docker compose up -d

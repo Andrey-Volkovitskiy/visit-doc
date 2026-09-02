@@ -463,7 +463,9 @@ def test_the_status_revision_downgrades_and_upgrades_cleanly() -> None:
             )
 
     try:
-        command.downgrade(alembic_cfg, "-1")
+        # Explicit revisions, not "-1": a later head would otherwise silently change
+        # which revision this round trip exercises.
+        command.downgrade(alembic_cfg, "8f21c4a7b3d0")
         assert status_columns() == 0
         # The 005 shape is genuinely restored, not merely stripped of the column: the
         # unconditional key constraint comes back, so a downgrade leaves a database
@@ -478,3 +480,37 @@ def test_the_status_revision_downgrades_and_upgrades_cleanly() -> None:
         # test in this session running against a half-migrated schema.
         command.upgrade(alembic_cfg, "head")
         engine.dispose()
+
+
+# --- 007: the deployment starts from an empty system ------------------------------
+
+
+async def test_the_reset_revision_removes_every_session_s_scheduling_data(
+    db_session: AsyncSession,
+) -> None:
+    # Data only: this revision changes no column, and its whole job is that nothing
+    # written before 007 survives into a system whose chat side has also been emptied.
+    session_id = new_id()
+    practitioner = make_practitioner(session_id)
+    patient = make_patient(session_id)
+    db_session.add_all([practitioner, patient])
+    await db_session.flush()
+    db_session.add(
+        make_appointment(
+            session_id,
+            patient.id,
+            practitioner.id,
+            datetime(2026, 10, 1, 9, 0),
+            datetime(2026, 10, 1, 9, 30),
+        )
+    )
+    await db_session.commit()
+
+    alembic_cfg = Config(str(_SCHEDULER_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_SCHEDULER_ROOT / "alembic"))
+    command.downgrade(alembic_cfg, "b4c7e19d2a58")
+    command.upgrade(alembic_cfg, "head")
+
+    for table in ("practitioners", "patients", "appointments"):
+        remaining = await db_session.execute(text(f"SELECT count(*) FROM {table}"))
+        assert remaining.scalar_one() == 0, f"{table} survived the reset"

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatWindow } from "../src/components/ChatWindow";
 import * as chatStream from "../src/lib/chatStream";
 import type { ChatEvent, Message } from "../src/lib/chatStream";
@@ -26,6 +26,7 @@ describe("ChatWindow", () => {
         content: "I'm going to come on Tuesday",
         grounded: null,
         citations: null,
+        attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
       },
       {
@@ -34,6 +35,7 @@ describe("ChatWindow", () => {
         content: "Noted.",
         grounded: true,
         citations: [],
+        attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
       },
     ];
@@ -56,6 +58,7 @@ describe("ChatWindow", () => {
         content: "When can I see",
         grounded: null,
         citations: null,
+        attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
       },
       {
@@ -64,6 +67,7 @@ describe("ChatWindow", () => {
         content: "Dr. Josh?",
         grounded: null,
         citations: null,
+        attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
       },
       {
@@ -72,6 +76,7 @@ describe("ChatWindow", () => {
         content: "Dr. Josh is available Tuesdays.",
         grounded: true,
         citations: [],
+        attention_mark: null,
         created_at: "2026-08-06T00:00:02Z",
       },
     ];
@@ -315,9 +320,19 @@ describe("ChatWindow", () => {
       await aCancelled;
       yield { type: "cancelled" };
     }
+    // Turn B's second token is released by the test rather than by a timer. On a timer
+    // it raced the assertions below: the bubble's text grows to "the surviving reply
+    // continues", and an exact-text query for the first half stops matching, so under
+    // load this failed on which of two independent clocks won rather than on anything
+    // the component did.
+    let continueB!: () => void;
+    const bContinues = new Promise<void>((resolve) => {
+      continueB = resolve;
+    });
+
     async function* turnB(): AsyncGenerator<ChatEvent> {
       yield { type: "token", text: "the surviving reply" };
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await bContinues;
       yield { type: "token", text: " continues" };
     }
 
@@ -344,7 +359,18 @@ describe("ChatWindow", () => {
     await waitFor(() => {
       expect(screen.queryByText("superseded partial")).toBeNull();
     });
+    // B is held mid-stream, so this is the text it had when A was cancelled - the whole
+    // point of the assertion, and no longer a guess about how far B had got.
     expect(screen.getByText("the surviving reply")).toBeInTheDocument();
+
+    // And it is still B's own slot afterwards: the next token appends to what survived
+    // rather than starting a fresh bubble, which is what a cleared shared slot would do.
+    continueB();
+    await waitFor(() => {
+      expect(
+        screen.getByText("the surviving reply continues"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("sends a second message via Enter while the first is still in flight", async () => {
@@ -489,6 +515,7 @@ describe("ChatWindow", () => {
           content: "in the first chat",
           grounded: null,
           citations: null,
+          attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
         },
       ],
@@ -499,6 +526,7 @@ describe("ChatWindow", () => {
           content: "in the other chat",
           grounded: null,
           citations: null,
+          attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
         },
       ],
@@ -513,5 +541,136 @@ describe("ChatWindow", () => {
     rerender(<ChatWindow chatId="other" />);
     await waitFor(() => expect(screen.getByText("in the other chat")).toBeInTheDocument());
     expect(screen.queryByText("in the first chat")).toBeNull();
+  });
+});
+
+// --- 007 (FR-029c): a staff reply appears without a reload -------------------------
+
+describe("ChatWindow: refetching when the poll says the thread moved", () => {
+  // These assert on *how many* reads happened, which the spies in the rest of this
+  // file accumulate across tests.
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function history(...contents: string[]): Message[] {
+    return contents.map((content, index) => ({
+      id: `m${index}`,
+      sender: index % 2 === 0 ? ("patient" as const) : ("staff" as const),
+      content,
+      grounded: null,
+      citations: null,
+      attention_mark: null,
+      created_at: `2026-09-01T12:0${index}:00Z`,
+    }));
+  }
+
+  it("loads the thread again when the newest message time advances", async () => {
+    // Something wrote into this conversation that this pane did not - a staff reply -
+    // and the poll is how it finds out. No channel of its own, no reload.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("is anyone there?"))
+      .mockResolvedValue(history("is anyone there?", "I've got this one."));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent(
+        "I've got this one.",
+      ),
+    );
+    expect(fetchChatHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not refetch while the poll keeps reporting the same time", async () => {
+    // A 2-second poll that refetched every thread on every tick would cost one history
+    // read per tick per open tab to learn that nothing had happened.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValue(history("is anyone there?"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+
+    expect(fetchChatHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not refetch on the first value it sees for a conversation", async () => {
+    // That value describes the history it has just loaded, so there is nothing new in
+    // it to fetch.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValue(history("is anyone there?"));
+
+    render(<ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />);
+
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
+    expect(fetchChatHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it("fetches the first message written into an open chat the poll called empty", async () => {
+    // `null` is the poll's real answer about a chat holding nothing, not the absence of
+    // an answer, and only distinguishing the two catches this case: a staff member's
+    // opening line into a chat the patient already has open. Its timestamp is both the
+    // first value this pane ever sees and genuinely news to it, so the "first value
+    // describes the history just loaded" shortcut would swallow exactly one message.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce([])
+      .mockResolvedValue(history("I've got this one."));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt={null} />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
+    expect(screen.queryAllByTestId("message")).toHaveLength(0);
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent(
+        "I've got this one.",
+      ),
+    );
+    expect(fetchChatHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves the thread alone when a refetch fails", async () => {
+    // The next tick tries again; an error banner over a message the patient has not
+    // missed would only teach them to ignore the one that matters.
+    vi.spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("is anyone there?"))
+      .mockRejectedValue(new Error("network blip"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" />,
+    );
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+    expect(screen.queryByTestId("error")).toBeNull();
   });
 });

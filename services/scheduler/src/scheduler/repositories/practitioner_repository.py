@@ -380,3 +380,18 @@ async def delete(session: AsyncSession, practitioner: Practitioner) -> None:
     """
     await session.delete(practitioner)
     await session.commit()
+
+
+async def delete_for_session(session: AsyncSession, session_id: str) -> int:
+    """Delete every practitioner `session_id` owns. Return how many were removed.
+
+    Scoped on the `DELETE` itself, for the same reason every other statement here is:
+    a row belonging to another session must not resolve at all, rather than be caught
+    by a check after it has already been read.
+    """
+    result = await session.execute(
+        sa_delete(Practitioner)
+        .where(Practitioner.session_id == session_id)
+        .returning(Practitioner.id)
+    )
+    return len(list(result.scalars().all()))

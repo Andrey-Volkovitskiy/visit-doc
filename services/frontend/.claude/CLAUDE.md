@@ -23,16 +23,22 @@ npm run build    # tsc -b && vite build
 
 ```
 src/
-├── App.tsx              # owns the chat list, the active chat, and the error banner
-├── components/          # ChatList, ChatWindow, MessageView — presentational + local state
-├── lib/chatStream.ts    # THE network layer: every fetch and the NDJSON stream parser
+├── App.tsx              # owns the two panes, the chat list, the active chat, the error banner
+├── components/          # ChatList, ChatWindow, MessageView, StaffConsole, StaffThread,
+│                        #   PractitionerAdmin, FaqAdmin — presentational + local state
+├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
+├── lib/consoleApi.ts    # the staff side's network layer, same rules
+├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 └── main.tsx             # StrictMode root
 tests/                   # vitest + @testing-library/react, one file per module
 ```
 
-**Every network call goes through `src/lib/chatStream.ts`.** No component calls `fetch` directly.
-That is what keeps the wire contract — endpoint paths, request shapes, error handling — in one
-reviewable place instead of spread across components.
+**Every network call goes through a `src/lib/` module — `chatStream.ts` for the patient side,
+`consoleApi.ts` for the console.** No component calls `fetch` directly. That is what keeps the wire
+contract — endpoint paths, request shapes, error handling — in one reviewable place per surface
+instead of spread across components. Two modules rather than one because they are two surfaces with
+two audiences; a third surface is a reason for a third module, not for a component reaching for
+`fetch`.
 
 ## Talking to the backend
 
@@ -78,10 +84,16 @@ reviewable place instead of spread across components.
 `tests/` mirrors `src/`, one file per module, run by vitest with jsdom and
 `@testing-library/react`. Assert through what a user sees — visible text, and the `data-testid`
 hooks components already expose (`chat-list`, `chat-list-item`, `chat-list-error`, `messages`,
-`message`, `citations`, `error`, `length-error`, `no-chat`) — rather than component internals.
+`message`, `role-label`, `attention-mark`, `citations`, `error`, `length-error`, `no-chat`,
+`patient-pane`, `staff-pane`, `staff-console`, `staff-conversations`, `staff-conversation`,
+`staff-thread`, `staff-no-thread`, `staff-no-conversations`, `staff-error`, `attention-total`,
+`assistant-switch`, `pause-countdown`, `practitioner-admin`, `practitioner`, `working-range`,
+`no-practitioners`, `practitioner-error`, `faq-admin`, `faq-entry`, `no-faq-entries`,
+`faq-error`) — rather than component internals.
 
-- Network is faked at the `chatStream` seam: `vi.spyOn(chatStream, "askChat")` and friends, so a
-  test exercises the real component against a controlled wire, never a real server.
+- Network is faked at the `chatStream`/`consoleApi` seam: `vi.spyOn(chatStream, "askChat")` and
+  friends, so a test exercises the real component against a controlled wire, never a real server.
+  A test rendering `App` has to stub both, since the two panes read from both.
 - The repo-wide mocking discipline in [`docs/testing-strategy.md`](../../docs/testing-strategy.md)
   applies here too: do not assert that rendered text equals a string you handed the mock — that
   only proves the mock returned it. Assert on what the component *did* with it (which bubble it

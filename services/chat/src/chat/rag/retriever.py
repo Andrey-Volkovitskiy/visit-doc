@@ -16,6 +16,7 @@ class TurnPipelineError(Exception):
     """
 
     def __init__(self, pipeline_step: str, cause: Exception) -> None:
+        """Tag `cause` with the pipeline step that raised it."""
         super().__init__(str(cause))
         self.pipeline_step = pipeline_step
         self.cause = cause
@@ -25,13 +26,26 @@ async def search_faq(
     qdrant_client: AsyncQdrantClient,
     voyage_client: AsyncClient,
     query: str,
+    live_revisions: list[str],
     limit: int = 5,
 ) -> list[RetrievedChunk]:
     """Embed `query` and return the nearest FAQ chunks, with their similarity scores.
 
+    Args:
+        live_revisions: Every revision the caller's session currently publishes. An
+            empty list means the session has no corpus, which is the ordinary starting
+            state of every session - not a failed read, which raises instead.
+
     Raises: TurnPipelineError wrapping any failure in embedding or retrieval.
+
+    Returns immediately on an empty `live_revisions`: no filter value could match, so
+    embedding the query and searching would spend two dependencies to learn what the
+    empty list already said.
     """
     logger = get_logger()
+    if not live_revisions:
+        logger.info("turn.retrieval_skipped_empty_corpus")
+        return []
 
     try:
         vectors = await embed_texts(voyage_client, [query], input_type="query")
@@ -40,7 +54,7 @@ async def search_faq(
     logger.info("turn.message_embedded")
 
     try:
-        chunks = await search(qdrant_client, vectors[0], limit=limit)
+        chunks = await search(qdrant_client, vectors[0], live_revisions, limit=limit)
     except Exception as exc:
         raise TurnPipelineError("retrieval", exc) from exc
 

@@ -14,21 +14,28 @@ from unittest.mock import MagicMock, patch
 import pytest
 import structlog
 from chat.agent import graph as graph_module
-from chat.agent.tools.registry import ToolContext, ToolRegistry
+from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
+from chat.agent.tools.registry import ToolContext
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.core.config import Settings
 from chat.db.session import session_factory
-from chat.domain.models import Message, MessageSender
+from chat.domain.models import (
+    EscalationReason,
+    Message,
+    MessageSender,
+)
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
-from chat.rag.indexing import deindex_faq_entry, index_faq_entry
-from chat.repositories import faq_repository
+from chat.rag.indexing import publish_revision, remove_entry_chunks
+from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 from structlog.testing import capture_logs
+from ulid import ULID
 
 from .conftest import (
     fake_anthropic_client,
     fake_classify_intent_client,
     fake_embed_texts,
+    set_seeded_session,
 )
 
 _ENTRY_CONTENT = "Visiting hours are 8am to 5pm."
@@ -36,6 +43,11 @@ _ENTRY_CONTENT = "Visiting hours are 8am to 5pm."
 
 def _patient_message(content: str, id: str) -> Message:
     return Message(sender=MessageSender.PATIENT, content=content, id=id)
+
+
+# The revisions the seeding fixture published, so `_run_turn` retrieves against the
+# same corpus the fixture built rather than an empty one.
+_seeded_revisions: list[str] = []
 
 
 @pytest.fixture
@@ -49,50 +61,69 @@ async def seeded_entry() -> AsyncIterator[int]:
     qdrant_client = create_client(settings)
     await ensure_collection(qdrant_client)
 
+    revision = str(ULID())
+    _seeded_revisions.append(revision)
     async with session_factory() as session:
-        entry = await faq_repository.create(session, _ENTRY_CONTENT)
+        seeded_session = await chat_repository.create_session(session)
+        entry = await faq_repository.create(
+            session, seeded_session.id, _ENTRY_CONTENT, revision
+        )
+    # An entry belongs to exactly one session, so the client has to talk to that one.
+    set_seeded_session(seeded_session.id)
 
     with patch("chat.rag.indexing.embed_texts", fake_embed_texts):
-        await index_faq_entry(qdrant_client, MagicMock(), entry.id, _ENTRY_CONTENT)
+        await publish_revision(
+            qdrant_client,
+            MagicMock(),
+            seeded_session.id,
+            entry.id,
+            revision,
+            _ENTRY_CONTENT,
+        )
 
     yield entry.id
 
-    await deindex_faq_entry(qdrant_client, entry.id)
+    _seeded_revisions.clear()
+    await remove_entry_chunks(qdrant_client, entry.id)
     async with session_factory() as session:
-        await faq_repository.delete(session, entry.id)
+        await faq_repository.delete(session, seeded_session.id, entry.id)
     await qdrant_client.close()
 
 
 _LOCAL_NOW = datetime(2026, 8, 14, 9, 0)
 
 
-def _registry(patient_id: str | None = "01PATENT000000000000000000") -> ToolRegistry:
-    """Build a real registry over a channel no test ever dials.
+def _tool_context(patient_id: str | None = "01PATENT000000000000000000") -> ToolContext:
+    """Build the turn's ambient facts over a channel no test ever dials.
 
     The mocked booking loop returns plain text unless a test asks for tool calls, so
-    the channel stays untouched - but the registry itself is real, so the tool names
-    and schemas the model would see are the production ones.
+    the channel stays untouched - and the registry each node builds over this is the
+    production one, so the tool names and schemas the model would see are real.
 
-    The registry is also where the turn's patient lives, so a test exercising a chat
-    with no patient record varies it here rather than in the graph's own state.
+    This is also where the turn's patient lives, so a test exercising a chat with no
+    patient record varies it here rather than in the graph's own state.
     """
-    return ToolRegistry(
-        SCHEDULING_TOOLS,
-        ToolContext(
-            channel=MagicMock(),
-            settings=Settings(),
-            session_id="01SESS00000000000000000000",
-            patient_id=patient_id,
-            local_now=_LOCAL_NOW,
-        ),
+    return ToolContext(
+        channel=MagicMock(),
+        settings=Settings(),
+        session_id="01SESS00000000000000000000",
+        patient_id=patient_id,
+        local_now=_LOCAL_NOW,
     )
 
 
 async def _run_turn(
-    anthropic_client: MagicMock, message: str, *, patient_id: str | None = "01PATIENT"
+    anthropic_client: MagicMock,
+    message: str,
+    *,
+    patient_id: str | None = "01PATIENT",
+    live_revisions: list[str] | None = None,
+    escalation: EscalationRequests | None = None,
 ) -> list[ChatTokenEvent | ChatDoneEvent]:
     qdrant_client = create_client(Settings())
     bursts = [[_patient_message(message, id="turn-1")]]
+    if live_revisions is None:
+        live_revisions = list(_seeded_revisions)
     events = [
         event
         async for event in graph_module.run_turn(
@@ -101,9 +132,11 @@ async def _run_turn(
             anthropic_client,
             bursts,
             ["turn-1"],
+            live_revisions,
+            escalation=escalation if escalation is not None else EscalationRequests(),
             patient_name="Ada Lovelace",
             local_now=_LOCAL_NOW,
-            registry=_registry(patient_id),
+            tool_context=_tool_context(patient_id),
         )
     ]
     await qdrant_client.close()
@@ -231,9 +264,11 @@ async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_repl
                 anthropic_client,
                 bursts,
                 ["turn-1"],
+                list(_seeded_revisions),
+                escalation=EscalationRequests(),
                 patient_name="Ada Lovelace",
                 local_now=_LOCAL_NOW,
-                registry=_registry(),
+                tool_context=_tool_context(),
             ):
                 pass
 
@@ -342,7 +377,6 @@ def test_both_intents_fan_out_concurrently_and_merge(seeded_entry: int) -> None:
 @pytest.mark.parametrize(
     "intents",
     [
-        [IntentLabel.CALL_STAFF],
         [IntentLabel.UNKNOWN],
         [IntentLabel.CLASSIFICATION_FAILED],
     ],
@@ -449,3 +483,165 @@ def test_faq_events_carry_their_own_node_name_under_the_fan_out(
 
     retrieved = next(e for e in logs if e["event"] == "faq.retrieved")
     assert retrieved["node"] == "answer_faq"
+
+
+# --- 007: `call_staff` is a decision, not a question for a model ------------------
+
+
+def test_call_staff_takes_the_whole_turn(seeded_entry: int) -> None:
+    # The only outcome is the handoff. Nothing is retrieved and nothing is generated,
+    # even for a question this corpus could have answered - a visitor who has asked for
+    # a person is going to get one, and the conversation falls silent from their next
+    # message, so answering half of what they said and then going quiet is worse than
+    # handing over cleanly.
+    collector = EscalationRequests()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["never generated"], intents=[IntentLabel.CALL_STAFF]
+        )
+        events = asyncio.run(
+            _run_turn(anthropic_client, "when can I visit?", escalation=collector)
+        )
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    assert list(collector.recorded) == [EscalationReason.PATIENT_ASKED_FOR_PERSON]
+
+    token_events = [e for e in events if isinstance(e, ChatTokenEvent)]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert "".join(e.text for e in token_events) == HANDOFF_MESSAGE
+    assert done_event.answer_source == "hand_off"
+    # Never retrieved against, so neither grounded nor abstaining - and nothing to cite.
+    assert done_event.grounded is None
+    assert done_event.citations == []
+
+
+@pytest.mark.parametrize(
+    "forbidden",
+    ["turn.retrieval_completed", "faq.retrieved", "turn.groundedness_verdict"],
+)
+def test_a_handed_off_turn_retrieves_nothing(seeded_entry: int, forbidden: str) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(intents=[IntentLabel.CALL_STAFF])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    assert forbidden not in [entry["event"] for entry in logs]
+
+
+def test_a_handed_off_turn_costs_one_classification_and_nothing_else(
+    seeded_entry: int,
+) -> None:
+    # The label the classifier already returned is the whole decision, so no second
+    # model is asked to agree with it and no generation is paid for.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["never generated"], intents=[IntentLabel.CALL_STAFF]
+        )
+        asyncio.run(_run_turn(anthropic_client, "can I speak to someone?"))
+
+    assert anthropic_client.messages.create.await_count == 1
+    assert anthropic_client.messages.stream.call_count == 0
+
+
+def test_call_staff_suppresses_a_booking_on_the_same_message(
+    seeded_entry: int,
+) -> None:
+    # "book me Friday and have someone call me" books nothing. The accepted cost of
+    # the rule above, and the safer half of it: writing an appointment for a patient
+    # who has just asked to stop talking to a machine is the harder thing to undo.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            intents=[IntentLabel.CALL_STAFF, IntentLabel.BOOKING]
+        )
+        events = asyncio.run(
+            _run_turn(anthropic_client, "book me Friday, and have someone call me")
+        )
+
+    # No tool-bearing model call was made at all, so nothing was booked.
+    assert not [
+        call
+        for call in anthropic_client.messages.create.await_args_list
+        if call.kwargs.get("tools")
+    ]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source == "hand_off"
+
+
+def test_a_handed_off_turn_is_reported_as_its_own_outcome(
+    seeded_entry: int,
+) -> None:
+    # Not "booking", which is what reading the outcome off an absent groundedness
+    # verdict would have filed every handoff as.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(intents=[IntentLabel.CALL_STAFF])
+        asyncio.run(_run_turn(anthropic_client, "can I speak to someone?"))
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["outcome"] == "handed_off"
+    assert completed["answer_source"] == "hand_off"
+    assert completed["answer_text"] == HANDOFF_MESSAGE
+
+
+@pytest.mark.parametrize("intents", [[IntentLabel.FAQ_QUESTION], [IntentLabel.UNKNOWN]])
+def test_a_turn_nobody_asked_for_a_person_in_records_nothing(
+    seeded_entry: int, intents: list[IntentLabel]
+) -> None:
+    collector = EscalationRequests()
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(["Visiting hours."], intents=intents)
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit?", escalation=collector)
+        )
+
+    assert list(collector.recorded) == []
+
+
+# --- 007: each node reaches for its own tools, not the system's -------------------
+
+
+def _tools_offered(client: MagicMock) -> set[str]:
+    """Return the tool names the booking loop's model call actually carried."""
+    offered = [
+        call
+        for call in client.messages.create.await_args_list
+        if call.kwargs.get("tools")
+    ]
+    assert offered, "the booking loop made no tool-bearing model call"
+    return {tool["name"] for tool in offered[0].kwargs["tools"]}
+
+
+def test_the_booking_node_is_offered_the_tools_it_declares(seeded_entry: int) -> None:
+    # Its own set, built at the node: the scheduling capabilities, plus the one for a
+    # patient who asks for a person in the middle of booking with one.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(intents=[IntentLabel.BOOKING])
+        asyncio.run(_run_turn(anthropic_client, "book me Tuesday at 9"))
+
+    assert _tools_offered(anthropic_client) == {
+        tool.name for tool in SCHEDULING_TOOLS
+    } | {"escalate_to_staff"}
+
+
+def test_the_faq_node_is_offered_no_tools_at_all(seeded_entry: int) -> None:
+    # It makes no tool calls, so it is handed no capability to make one. A registry
+    # shared by the whole graph would have offered it every tool in the system.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    assert "tools" not in anthropic_client.messages.stream.call_args.kwargs
+    assert not [
+        call
+        for call in anthropic_client.messages.create.await_args_list
+        if call.kwargs.get("tools")
+    ]

@@ -12,6 +12,7 @@ _EXPECTED_RPCS = {
     "RescheduleAppointment",
     "CancelAppointment",
     "DeletePatientForChat",
+    "DeleteSession",
 }
 
 
@@ -200,3 +201,28 @@ def test_list_upcoming_appointments_is_gone_from_the_contract() -> None:
     assert "ListUpcomingAppointments" not in service.methods_by_name
     assert not hasattr(pb, "ListUpcomingAppointmentsRequest")
     assert not hasattr(pb, "ListUpcomingAppointmentsResponse")
+
+
+def test_session_deletion_messages_import() -> None:
+    # One assertion per name the 007 delta adds, so a stub regenerated from a
+    # half-applied proto names the message it is missing.
+    for message in (pb.DeleteSessionRequest, pb.DeleteSessionResponse):
+        assert message.DESCRIPTOR is not None
+
+
+def test_delete_session_reports_what_it_removed() -> None:
+    # An admin is owed what happened rather than that something happened, and zero
+    # counts are the honest answer for a session that owned nothing.
+    fields = pb.DeleteSessionResponse.DESCRIPTOR.fields_by_name
+    assert {
+        "patients_deleted",
+        "practitioners_deleted",
+        "appointments_deleted",
+    } <= set(fields)
+
+
+def test_delete_session_carries_no_idempotency_key() -> None:
+    # It creates nothing, so a re-send cannot duplicate anything - and re-running one
+    # reported incomplete has to be safe, which a key would not make it.
+    fields = pb.DeleteSessionRequest.DESCRIPTOR.fields_by_name
+    assert set(fields) == {"session_id"}

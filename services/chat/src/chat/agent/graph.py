@@ -2,7 +2,7 @@
 
 ```
                        ┌──> answer_faq ─────┐
-START ──> classify_intent                    ├──> compose_answer ──> END
+START ──> classify_intent ──> hand_off ──────├──> compose_answer ──> END
                        └──> handle_booking ─┘
 ```
 
@@ -41,13 +41,16 @@ from chat.agent.compose_answer import (
     compose_answer,
     record_single_specialist_completion,
 )
+from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
 from chat.agent.handle_booking import BookingResult, handle_booking
 from chat.agent.history import bound_to_last_n_turns
 from chat.agent.node_logging import node_span
-from chat.agent.tools.registry import ToolRegistry
+from chat.agent.tools.registry import ToolContext, ToolRegistry
+from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
+from chat.agent.tools.staff_tools import STAFF_TOOLS
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
-from chat.domain.models import Message
+from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import (
     AnswerSource,
     ChatDoneEvent,
@@ -57,15 +60,29 @@ from chat.domain.schemas import (
 
 _ANSWER_FAQ = "answer_faq"
 _HANDLE_BOOKING = "handle_booking"
+_HAND_OFF = "hand_off"
 _COMPOSE_ANSWER = "compose_answer"
 
-# Which specialist each classified intent implies. Anything not listed - call_staff,
-# unknown, a failed classification - falls back to the FAQ path, which is today's
-# default; escalation is a later phase.
+# Which specialist each classified intent implies. Anything not listed - unknown, a
+# failed classification - falls back to the FAQ path, which is today's default.
+# `call_staff` is absent because it is not a specialist's job at all: see
+# `_select_specialists`.
 _SPECIALIST_BY_INTENT = {
     IntentLabel.FAQ_QUESTION: _ANSWER_FAQ,
     IntentLabel.BOOKING: _HANDLE_BOOKING,
 }
+
+# What the booking specialist may call - declared here, beside the node it belongs to,
+# rather than assembled into one registry the whole graph shares. A node's capabilities
+# are part of what that node *is*: a shared bag means a node added later silently
+# inherits every tool in the system, and a model sees capabilities its own step was
+# never meant to have.
+#
+# `escalate_to_staff` is in it because a patient can ask for a person in the middle of
+# booking one ("forget it, just have someone call me"), and this is the only node with a
+# tool loop to act on that. The FAQ node builds no registry at all: it makes no tool
+# calls, so it is given none.
+_BOOKING_TOOLS = [*SCHEDULING_TOOLS, *STAFF_TOOLS]
 
 
 class _GraphState(TypedDict):
@@ -77,17 +94,28 @@ class _GraphState(TypedDict):
 
     `faq_result` and `booking_result` are deliberately separate keys - the two branches
     can run at once, and concurrent writes to one key are what LangGraph rejects.
+
+    `escalation` is a shared mutable object rather than a written key for the same
+    reason: both specialists may record a call to staff into it, and only a channel
+    reducer would let two branches write one key. Appending to it is not a state write,
+    and what it resolves to does not depend on the order they appended.
+
+    `tool_context` is the turn's ambient facts, not a registry: each node that uses
+    tools builds its own over these, from its own declared set.
     """
 
     bursts: list[list[Message]]
     reply_to_message_ids: list[str]
+    live_revisions: list[str]
+    escalation: EscalationRequests
     patient_name: str
     local_now: datetime
-    registry: ToolRegistry | None
+    tool_context: ToolContext | None
     specialists: list[str]
     merge_required: bool
     faq_result: FaqResult | None
     booking_result: BookingResult | None
+    handed_off: bool
 
 
 def clear_graph_cache() -> None:
@@ -101,11 +129,22 @@ def clear_graph_cache() -> None:
 
 
 def _select_specialists(intents: list[IntentLabel]) -> list[str]:
-    """Return the specialist node(s) `intents` implies, in a stable order.
+    """Return the node(s) `intents` implies, in a stable order.
 
-    Never empty: a message that matches no specialist still gets the FAQ path rather
-    than no answer at all.
+    `call_staff` takes the whole turn and suppresses every other label on it. A visitor
+    who has asked for a person is going to get one, and the conversation falls silent
+    from their next message - so answering half of what they said and then going quiet
+    is worse than handing over cleanly, and booking something for a patient who has just
+    asked to stop talking to a machine is worse still.
+
+    This selects *no* specialist rather than interrupting one, so FR-006 is untouched:
+    nothing is cut off mid-flight, because nothing was started.
+
+    Never empty: a message that matches nothing still gets the FAQ path rather than no
+    answer at all.
     """
+    if IntentLabel.CALL_STAFF in intents:
+        return [_HAND_OFF]
     selected = {
         _SPECIALIST_BY_INTENT[intent]
         for intent in intents
@@ -156,6 +195,12 @@ def _build_graph(
                 logger.error("intent.classification_failed", error_detail=str(exc))
                 intents = [IntentLabel.CLASSIFICATION_FAILED]
             logger.info("intent.classified", intents=intents)
+            if IntentLabel.CALL_STAFF in intents:
+                # The label *is* the decision, so nothing is asked to make it again:
+                # no model call, and no dependence on whether the corpus happens to
+                # ground the sentence the patient used to ask for a human. Recorded
+                # like every other call to staff, and applied once the turn completes.
+                state["escalation"].record(EscalationReason.PATIENT_ASKED_FOR_PERSON)
 
             specialists = _select_specialists(intents)
             merge_required = len(specialists) > 1
@@ -181,6 +226,8 @@ def _build_graph(
                 anthropic_client,
                 state["bursts"],
                 state["reply_to_message_ids"],
+                state["live_revisions"],
+                escalation=state["escalation"],
                 stream=streaming,
             ):
                 # In streaming mode the events go to the patient and the trailing
@@ -202,15 +249,16 @@ def _build_graph(
     async def handle_booking_node(state: _GraphState) -> dict[str, object]:
         """Run the booking loop, streaming or collecting depending on the route.
 
-        Raises: RuntimeError if the turn was routed to booking without a tool registry.
+        Raises: RuntimeError if the turn was routed to booking without a tool context.
         """
         writer = get_stream_writer()
         streaming = not state["merge_required"]
-        registry = state["registry"]
+        context = state["tool_context"]
         result: BookingResult | None = None
         async with node_span(_HANDLE_BOOKING) as span:
-            if registry is None:
-                raise RuntimeError("booking requires a tool registry")
+            if context is None:
+                raise RuntimeError("booking requires a tool context")
+            registry = ToolRegistry(_BOOKING_TOOLS, context)
             async for event in handle_booking(
                 anthropic_client,
                 registry,
@@ -218,6 +266,7 @@ def _build_graph(
                 patient_name=state["patient_name"],
                 local_now=state["local_now"].isoformat(),
                 stream=streaming,
+                escalation=state["escalation"],
             ):
                 if isinstance(event, BookingResult):
                     result = event
@@ -243,6 +292,27 @@ def _build_graph(
             )
         return {"booking_result": result}
 
+    async def hand_off_node(state: _GraphState) -> dict[str, object]:
+        """Tell the visitor a person has been fetched, and do nothing else.
+
+        No retrieval, no embedding, no generation, no tool call - the classification
+        that produced the label is the only model call this turn makes. The sentence is
+        fixed because there is nothing here for a model to decide, and the router has
+        already recorded the call to staff that `turn.py` applies once this completes.
+        """
+        writer = get_stream_writer()
+        async with node_span(_HAND_OFF) as span:
+            writer(ChatTokenEvent(text=HANDOFF_MESSAGE))
+            writer(
+                ChatDoneEvent(
+                    grounded=None,
+                    citations=[],
+                    answer_source=AnswerSource.HAND_OFF,
+                )
+            )
+            span.set(answer_chars=len(HANDOFF_MESSAGE))
+        return {"handed_off": True}
+
     async def compose_answer_node(state: _GraphState) -> None:
         """Emit the turn's reply and completion, merging only when both halves ran."""
         writer = get_stream_writer()
@@ -253,7 +323,7 @@ def _build_graph(
         async with node_span(_COMPOSE_ANSWER) as span:
             if not state["merge_required"]:
                 answer_text, citations, grounded, source = _single_specialist_reply(
-                    faq_result, booking_result
+                    faq_result, booking_result, handed_off=state["handed_off"]
                 )
                 record_single_specialist_completion(
                     completion,
@@ -302,28 +372,35 @@ def _build_graph(
     builder.add_node("classify_intent", classify_intent_node)
     builder.add_node(_ANSWER_FAQ, answer_faq_node)
     builder.add_node(_HANDLE_BOOKING, handle_booking_node)
+    builder.add_node(_HAND_OFF, hand_off_node)
     builder.add_node(_COMPOSE_ANSWER, compose_answer_node)
     builder.add_edge(START, "classify_intent")
     builder.add_conditional_edges(
         "classify_intent",
         lambda state: state["specialists"],
-        [_ANSWER_FAQ, _HANDLE_BOOKING],
+        [_ANSWER_FAQ, _HANDLE_BOOKING, _HAND_OFF],
     )
     builder.add_edge(_ANSWER_FAQ, _COMPOSE_ANSWER)
     builder.add_edge(_HANDLE_BOOKING, _COMPOSE_ANSWER)
+    builder.add_edge(_HAND_OFF, _COMPOSE_ANSWER)
     builder.add_edge(_COMPOSE_ANSWER, END)
     return builder.compile()
 
 
 def _single_specialist_reply(
-    faq_result: FaqResult | None, booking_result: BookingResult | None
+    faq_result: FaqResult | None,
+    booking_result: BookingResult | None,
+    *,
+    handed_off: bool = False,
 ) -> tuple[str, list[dict[str, object]], bool | None, AnswerSource]:
-    """Describe the reply a single specialist already streamed.
+    """Describe the reply a single node already streamed.
 
     Returns: its text, its citations as logged, its groundedness verdict (None for a
-        booking reply, which was never retrieved against), and which specialist
-        produced it.
+        booking reply or a handoff, neither of which was retrieved against), and which
+        node produced it.
     """
+    if handed_off:
+        return HANDOFF_MESSAGE, [], None, AnswerSource.HAND_OFF
     if booking_result is not None:
         return booking_result.reply_text, [], None, AnswerSource.BOOKING
     if faq_result is not None:
@@ -342,10 +419,12 @@ async def run_turn(
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
+    live_revisions: list[str],
     *,
+    escalation: EscalationRequests,
     patient_name: str,
     local_now: datetime,
-    registry: ToolRegistry | None,
+    tool_context: ToolContext | None,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Run this turn's graph: classify, fan out to the specialist(s), then compose.
 
@@ -353,9 +432,15 @@ async def run_turn(
         bursts: The chat's full conversation history (oldest first), split into
             contiguous same-side runs, with the trailing burst always patient-sided.
         reply_to_message_ids: The patient message id(s) the trailing burst represents.
-        registry: The turn's tool registry, or None when scheduling is not wired up.
-            It already carries the turn's session, chat, and patient, so none of those
-            are threaded through the graph state as a second copy that could drift.
+        live_revisions: Every revision this session publishes, read before the graph is
+            entered so an empty list cannot be confused with a failed read.
+        escalation: The turn's collector of calls to staff, filled by whichever
+            specialist decides a person is needed and applied by the caller once this
+            has completed.
+        tool_context: The turn's ambient facts, or None when scheduling is not wired
+            up. It already carries the turn's session, patient and clock, so none of
+            those are threaded through the graph state as a second copy that could
+            drift. Each node builds its own registry over it, from its own tool set.
 
     Raises: TurnPipelineError propagated from `answer_faq_node` - a classification
         failure never raises here, only logs.
@@ -364,13 +449,16 @@ async def run_turn(
     state: _GraphState = {
         "bursts": bursts,
         "reply_to_message_ids": reply_to_message_ids,
+        "live_revisions": live_revisions,
+        "escalation": escalation,
         "patient_name": patient_name,
         "local_now": local_now,
-        "registry": registry,
+        "tool_context": tool_context,
         "specialists": [],
         "merge_required": False,
         "faq_result": None,
         "booking_result": None,
+        "handed_off": False,
     }
     async for event in graph.astream(state, stream_mode="custom"):
         # `astream`'s own return type is untyped (`dict[str, Any] | Any`) - every value

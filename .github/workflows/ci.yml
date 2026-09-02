@@ -87,8 +87,10 @@ jobs:
         env:
           POSTGRES_USER: visitdoc
           POSTGRES_PASSWORD: visitdoc
-          # This tier only drives the scheduler's own database; chat's client talks to
-          # a live servicer over gRPC rather than to chat's Postgres.
+          # Both services' databases now, not just the scheduler's: since 007 this tier
+          # also drives chat's own stores (the FAQ corpus's session isolation, the
+          # practitioner proxy, the two-store session delete). The image creates one
+          # database, so the other is created by an explicit step below.
           POSTGRES_DB: visitdoc_scheduler_test
         ports:
           - 5432:5432
@@ -97,8 +99,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      qdrant:
+        image: qdrant/qdrant:v1.18.3
+        ports:
+          - 6333:6333
+          - 6334:6334
     env:
-      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_scheduler_test
+      DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_chat_test
       SCHEDULER_DATABASE_URL: postgresql+asyncpg://visitdoc:visitdoc@localhost:5432/visitdoc_scheduler_test
       QDRANT_URL: http://localhost:6333
       ANTHROPIC_API_KEY: unused-in-ci
@@ -106,6 +113,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Provision the chat test database
+        run: PGPASSWORD=visitdoc psql -h localhost -U visitdoc -d visitdoc_scheduler_test -c "CREATE DATABASE visitdoc_chat_test;"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

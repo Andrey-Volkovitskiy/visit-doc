@@ -336,3 +336,52 @@ capabilities — full rationale and alternatives considered live in
   booked", and a deadline we stopped waiting on is no evidence the server stopped working. The
   distinction is now visible to the turn's outcome derivation, to the composing step's truth
   constraint, and to the tests.
+
+## Escalation and the Staff Console: technology choices
+
+- **Additive chunk revisions, and one publishing commit.** A FAQ save chunks and embeds *before*
+  either store is written, writes its chunks under a **new revision**, and publishes with one local
+  `UPDATE` whose `WHERE` carries the revision it expects to supersede. Nothing is deleted,
+  overwritten or reverted. The previous design deleted an entry's chunks and re-upserted them, and
+  its failures were repaired by a best-effort compensating write — which could half-succeed and
+  swallow its own failure, leaving Postgres claiming content Qdrant had no vectors for. Under
+  additive revisions there is nothing to compensate for: a failure before the commit changed
+  nothing observable, and a failure *of* the commit is the change not happening, so the entry goes
+  on answering exactly the text it was answering a moment ago. The trade is named rather than
+  hidden — **leaked storage instead of a lost answer**. Chunks nothing vouches for are removed by a
+  per-entry sweep that is idempotent, never load-bearing, and **silent**: it raises no event at all,
+  because a sweep is not an operation that can fail — the chunks it removes were already
+  unreachable.
+- **Session-scoped retrieval, as a filter term rather than a post-check.** Each entry names one
+  live revision, revision ids are minted per save and never shared, so filtering a search to *this
+  session's live revisions* scopes both the session and the revision in a single `MatchAny` term.
+  A shared corpus stopped being tenable the moment the console gained a delete button: one
+  visitor's edit would otherwise change what every other visitor is answered. The predicate is on
+  the search itself and never on its results, which is the difference between a chunk that is not
+  retrieved and one that is retrieved and discarded — only the second shows up as a leak in
+  citations, groundedness, or a log.
+- **Polling one endpoint, not a push channel.** Both panes are kept in step by a 2-second poll of
+  `GET /console/conversations`. This deviates from the ROADMAP's wording ("a live push") and is a
+  correctness argument rather than a shortcut: every mark and every silence is *stored state*, so a
+  poll reads the truth and self-heals — a dropped answer costs one interval of staleness. A dropped
+  push leaves a pane wrong indefinitely with nothing to correct it, and being wrong about which
+  conversation needs a person is the failure the whole surface exists to prevent. One endpoint
+  serves both sides: the staff list renders it, and the patient pane refetches its open thread when
+  that conversation's newest message advances past what it holds.
+- **Two silences, two columns.** `escalated_at` answers *may the assistant speak*; `attention_since`
+  answers *has a person acted*. They are cleared by different things and disagree in both
+  directions — a failed tool call emphasizes a conversation without silencing it, and the console's
+  switch ends a silence without clearing the emphasis, because taking a conversation is not
+  answering it. One column carrying both passes almost every test and fails exactly those two.
+- **The pause is a stored deadline, compared against the database's clock.** Everywhere else in
+  this system a date-time judgement is made against the visitor's `local_now`; this one is not,
+  because it is a deadline between two people. A client clock would let a patient end a staff
+  member's pause, and two open tabs would count down differently. `assistant_paused_until > now()`
+  is evaluated in SQL, and the countdown a tab renders is the server's own arithmetic.
+- **A second transport across the chat↔scheduler boundary.** Practitioner administration is proxied
+  over the scheduler's existing `/practitioners` REST API while everything else crosses that
+  boundary as gRPC. The browser cannot call it directly — the session that authorizes a change is
+  in an `HttpOnly` cookie — and re-encoding that CRUD as three RPCs would put a second copy of one
+  contract across the boundary, where every future rule change would land in two places or diverge
+  in one. The proxy makes **one attempt and never retries**: a retried `POST` would create two
+  practitioners, so an unknown outcome is reported as unknown.

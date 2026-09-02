@@ -7,7 +7,9 @@ import {
   localNow,
   parseNdjsonStream,
   renameChatPatient,
+  type AttentionMark,
   type ChatEvent,
+  type Message,
 } from "../src/lib/chatStream";
 
 function fakeResponse(lines: string[]): Response {
@@ -243,5 +245,96 @@ describe("renameChatPatient", () => {
       "That name cannot be used for this chat.",
     );
     fetchSpy.mockRestore();
+  });
+});
+
+// --- 007 (US1): the silent terminal event, and the third sender --------------------
+
+describe("the silent terminal event", () => {
+  it("parses as its own terminal event, distinct from done and cancelled", async () => {
+    // `cancelled` tells a client to discard a message that is in fact being kept, and
+    // an empty `done` announces a reply that does not exist - so a third situation
+    // gets a third value (research #4).
+    const response = fakeResponse([JSON.stringify({ type: "silent" })]);
+
+    const events: ChatEvent[] = [];
+    for await (const event of parseNdjsonStream(response)) {
+      events.push(event);
+    }
+
+    expect(events).toEqual([{ type: "silent" }]);
+    expect(events[0]!.type).not.toBe("done");
+    expect(events[0]!.type).not.toBe("cancelled");
+  });
+
+  it("carries no reply, no citations and no groundedness verdict", async () => {
+    const response = fakeResponse([JSON.stringify({ type: "silent" })]);
+
+    const [event] = await collect(parseNdjsonStream(response));
+
+    expect(Object.keys(event!)).toEqual(["type"]);
+  });
+});
+
+async function collect(events: AsyncGenerator<ChatEvent>): Promise<ChatEvent[]> {
+  const collected: ChatEvent[] = [];
+  for await (const event of events) collected.push(event);
+  return collected;
+}
+
+describe("a message's sender and mark", () => {
+  it("accepts a staff message carrying no mark", () => {
+    const message: Message = {
+      id: "01M",
+      sender: "staff",
+      content: "I've got this one.",
+      grounded: null,
+      citations: null,
+      attention_mark: null,
+      created_at: "2026-09-01T12:00:00",
+    };
+
+    expect(message.sender).toBe("staff");
+  });
+
+  it("accepts each of the four kinds of mark on a patient message", () => {
+    const marks: AttentionMark[] = [
+      "patient_asked_for_person",
+      "corpus_could_not_answer",
+      "assistant_failed",
+      "unanswered",
+    ];
+
+    const marked = marks.map((attention_mark) => ({
+      id: "01M",
+      sender: "patient" as const,
+      content: "is anyone there?",
+      grounded: null,
+      citations: null,
+      attention_mark,
+      created_at: "2026-09-01T12:00:00",
+    }));
+
+    expect(marked.map((m) => m.attention_mark)).toEqual(marks);
+  });
+
+  it("has no staff_name field for a name this system does not have", () => {
+    // FR-021/FR-022: `sender` already carries everything the label states, so a name
+    // field would be a second source for a fact - and would name a person who is not
+    // there. The `@ts-expect-error` is the real assertion; `tsc` fails if the field
+    // ever becomes legal.
+    const message: Message = {
+      id: "01M",
+      sender: "staff",
+      content: "I've got this one.",
+      grounded: null,
+      citations: null,
+      attention_mark: null,
+      created_at: "2026-09-01T12:00:00",
+      // @ts-expect-error - no message carries a staff name
+      staff_name: "Whoever",
+    };
+
+    expect(Object.keys(message)).toContain("sender");
   });
 });

@@ -566,3 +566,44 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
         return pb.DeletePatientForChatResponse(
             patient_existed=existed, appointments_deleted=deleted
         )
+
+    async def DeleteSession(  # noqa: N802 - name fixed by the gRPC contract
+        self,
+        request: pb.DeleteSessionRequest,
+        context: Any,
+    ) -> pb.DeleteSessionResponse:
+        """Delete everything one session owns here, and report what went.
+
+        One transaction, so a caller reporting per session has two outcomes to
+        distinguish rather than a spectrum. Idempotent: a session that owns nothing -
+        including one that never existed - succeeds with every count at zero, because
+        "already gone" and "was never here" are the same end state and nobody acts
+        differently on them.
+
+        Appointments follow their practitioner and their patient by cascade, and those
+        cascades are status-blind, so cancelled appointments go with the rest.
+        """
+        session_id = converters.read_required_id(request.session_id, "session_id")
+
+        async with session_factory() as session:
+            appointments = await appointment_repository.count_for_session(
+                session, session_id
+            )
+            practitioners = await practitioner_repository.delete_for_session(
+                session, session_id
+            )
+            patients = await patient_repository.delete_for_session(session, session_id)
+            await session.commit()
+
+        get_logger().info(
+            "session.purged",
+            session_id=session_id,
+            patients_deleted=patients,
+            practitioners_deleted=practitioners,
+            appointments_deleted=appointments,
+        )
+        return converters.to_delete_session_response(
+            patients_deleted=patients,
+            practitioners_deleted=practitioners,
+            appointments_deleted=appointments,
+        )

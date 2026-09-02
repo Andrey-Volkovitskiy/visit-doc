@@ -77,11 +77,17 @@ class ChatTokenEvent(BaseModel):
 
 
 class AnswerSource(StrEnum):
-    """Which specialist(s) produced the reply a turn ended with."""
+    """Which specialist(s) produced the reply a turn ended with.
+
+    `HAND_OFF` is the one that produced no answer at all: the visitor asked for a
+    person, so the turn fetched one and told them so, and nothing was retrieved,
+    booked or generated.
+    """
 
     FAQ = "faq"
     BOOKING = "booking"
     MERGED = "merged"
+    HAND_OFF = "hand_off"
 
 
 class ChatDoneEvent(BaseModel):
@@ -113,21 +119,126 @@ class ChatCancelledEvent(BaseModel):
     type: Literal["cancelled"] = "cancelled"
 
 
+class ChatSilentEvent(BaseModel):
+    """Terminal NDJSON event: the assistant may not speak in this conversation.
+
+    Emitted instead of `ChatDoneEvent` when the conversation is escalated or the
+    assistant is paused in it. The message was accepted and stored, and it carries the
+    mark saying nothing answered it - so a client renders nothing for this and leaves
+    the message in the thread.
+
+    A third terminal value rather than a reuse of the other two, because both already
+    mean something else: `cancelled` tells a client to discard a message that is in fact
+    being kept, and an empty `done` announces a reply that does not exist.
+    """
+
+    type: Literal["silent"] = "silent"
+
+
 class MessageOut(BaseModel):
     """A single message in a chat's history.
 
-    `grounded`/`citations` are only meaningful for `sender="assistant"`; always None
-    for a patient message.
+    `grounded`/`citations` are only meaningful for `sender="assistant"`; always None for
+    a patient message and for a staff one, which was never retrieved against.
+
+    `attention_mark` is only ever set on a patient message: which of the four kinds it
+    is, or None for no mark. There is deliberately no field naming the person who wrote
+    a staff message - `sender` carries everything a client's label states, and this
+    system has no such person to name.
     """
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    sender: Literal["patient", "assistant"]
+    sender: Literal["patient", "assistant", "staff"]
     content: str
     grounded: bool | None = None
     citations: list[Citation] | None = None
+    attention_mark: (
+        Literal[
+            "patient_asked_for_person",
+            "corpus_could_not_answer",
+            "assistant_failed",
+            "unanswered",
+        ]
+        | None
+    ) = None
     created_at: datetime
+
+
+class StaffMessageWrite(BaseModel):
+    """`POST /console/chats/{chat_id}/messages` request body.
+
+    The same bounds and the same meaningless-content rule a patient message faces: a
+    staff member typing whitespace into the composer has said nothing either.
+    """
+
+    content: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("content")
+    @classmethod
+    def _reject_meaningless_content(cls, value: str) -> str:
+        """Raises: ValueError if `value` has no meaningful text."""
+        if is_meaningless(value):
+            raise ValueError("content must contain meaningful text")
+        return value
+
+
+class ConsoleConversationOut(BaseModel):
+    """One conversation as the staff side lists it.
+
+    `emphasized`, `assistant_may_reply` and `pause_seconds_remaining` are derived rather
+    than stored, so the switch a staff member sees and the gate a turn obeys are the
+    same answer. `pause_seconds_remaining` is null whenever no pause is running -
+    including while escalated, which has no deadline for a countdown to show.
+
+    Carries no session id: no response on this surface repeats the credential the
+    browser is not allowed to read.
+    """
+
+    chat_id: str
+    patient_name: str | None
+    last_message_at: datetime | None
+    emphasized: bool
+    escalated: bool
+    escalation_reason: str | None
+    attention_since: datetime | None
+    assistant_may_reply: bool
+    pause_seconds_remaining: int | None
+
+
+class ConsoleConversationsResponse(BaseModel):
+    """`GET /console/conversations` response body - the one polled read model.
+
+    `attention_total` counts *conversations* needing a person, once each however many
+    marks sit inside one: four unanswered messages in a thread are one person's problem,
+    not four.
+    """
+
+    attention_total: int
+    conversations: list[ConsoleConversationOut]
+
+
+class AssistantSwitchWrite(BaseModel):
+    """`POST /console/chats/{chat_id}/assistant` request body.
+
+    `enabled` is the position the switch is being moved to, not a toggle: two tabs
+    showing the same conversation must not turn it into a race over whose click was
+    second.
+    """
+
+    enabled: bool
+
+
+class AssistantStateOut(BaseModel):
+    """What the assistant may do in one conversation, after a change to it.
+
+    Both fields are derived from the stored columns, so the answer returned here is the
+    same one the poll will report a moment later.
+    """
+
+    assistant_may_reply: bool
+    pause_seconds_remaining: int | None
 
 
 class ChatHistoryResponse(BaseModel):

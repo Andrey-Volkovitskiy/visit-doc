@@ -3,16 +3,21 @@ from unittest.mock import MagicMock, patch
 import structlog
 from chat.core.correlation import bind_operation_id
 from chat.rag.chunking import ChunkedText
-from chat.rag.indexing import deindex_faq_entry, index_faq_entry
+from chat.rag.indexing import (
+    publish_revision,
+    remove_entry_chunks,
+    sweep_entry,
+)
+from chat.rag.retriever import search_faq
 from structlog.testing import capture_logs
 
 
-async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> None:
+async def test_publish_revision_chunks_embeds_and_writes_in_that_order() -> None:
+    # Both stores are untouched until the last of the three, so a failure in either of
+    # the first two changed nothing at all. And nothing is deleted: the revision being
+    # answered from stays intact until a commit elsewhere names a different one live.
     calls: list[str] = []
     chunks = [ChunkedText(chunk_index=0, chunk_text="hello")]
-
-    async def fake_delete(*_args: object) -> None:
-        calls.append("delete")
 
     def fake_chunk(_content: str) -> list[ChunkedText]:
         calls.append("chunk")
@@ -27,32 +32,39 @@ async def test_index_faq_entry_deletes_then_chunks_embeds_upserts_in_order() -> 
     async def fake_upsert(*_args: object) -> None:
         calls.append("upsert")
 
+    async def fake_delete(*_args: object) -> None:
+        calls.append("delete")
+
     with (
-        patch("chat.rag.indexing.delete_by_entry", fake_delete),
         patch("chat.rag.indexing.chunk_content", fake_chunk),
         patch("chat.rag.indexing.embed_texts", fake_embed),
         patch("chat.rag.indexing.upsert_chunks", fake_upsert),
+        patch("chat.rag.indexing.delete_by_entry", fake_delete),
+        patch("chat.rag.indexing.sweep_chunks", fake_delete),
     ):
-        await index_faq_entry(MagicMock(), MagicMock(), 1, "hello")
+        await publish_revision(
+            MagicMock(), MagicMock(), "01SESSION", 1, "01REVISION", "hello"
+        )
 
-    assert calls == ["delete", "chunk", "embed", "upsert"]
+    assert calls == ["chunk", "embed", "upsert"]
 
 
-async def test_index_faq_entry_logs_substeps_correlated_by_operation_id() -> None:
+async def test_publish_revision_logs_substeps_correlated_by_operation_id() -> None:
     chunks = [
         ChunkedText(chunk_index=0, chunk_text="hello"),
         ChunkedText(chunk_index=1, chunk_text="world"),
     ]
 
     with (
-        patch("chat.rag.indexing.delete_by_entry"),
         patch("chat.rag.indexing.chunk_content", return_value=chunks),
         patch("chat.rag.indexing.embed_texts", return_value=[[0.1], [0.2]]),
         patch("chat.rag.indexing.upsert_chunks"),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
         bind_operation_id(),
     ):
-        await index_faq_entry(MagicMock(), MagicMock(), 1, "hello world")
+        await publish_revision(
+            MagicMock(), MagicMock(), "01SESSION", 1, "01REVISION", "hello world"
+        )
 
     operation_ids = {entry["operation_id"] for entry in logs}
     events = {entry["event"]: entry for entry in logs}
@@ -63,21 +75,72 @@ async def test_index_faq_entry_logs_substeps_correlated_by_operation_id() -> Non
     assert events["faq.chunks_embedded"]["chunk_count"] == 2
 
 
-async def test_deindex_faq_entry_calls_delete_by_entry() -> None:
-    with patch("chat.rag.indexing.delete_by_entry") as mock_delete:
-        await deindex_faq_entry(MagicMock(), 1)
+async def test_the_sweep_addresses_one_entry_and_spares_its_live_revision() -> None:
+    with patch("chat.rag.indexing.sweep_chunks") as sweep:
+        await sweep_entry(MagicMock(), 7, "01LIVEREVISION")
 
-    mock_delete.assert_called_once()
+    assert sweep.call_args.args[1:] == (7, "01LIVEREVISION")
 
 
-async def test_deindex_faq_entry_logs_no_chunking_or_embedding_substeps() -> None:
+async def test_a_failed_sweep_raises_nothing_and_logs_nothing() -> None:
+    # FR-042h in its strongest form: not even a critical dependency event. A sweep is
+    # not an operation, so nothing about it failing is an operator's problem.
     with (
-        patch("chat.rag.indexing.delete_by_entry"),
+        patch("chat.rag.indexing.sweep_chunks", side_effect=RuntimeError("down")),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
         bind_operation_id(),
     ):
-        await deindex_faq_entry(MagicMock(), 1)
+        await sweep_entry(MagicMock(), 1, "01LIVEREVISION")
 
-    events = {entry["event"] for entry in logs}
-    assert "faq.content_chunked" not in events
-    assert "faq.chunks_embedded" not in events
+    assert logs == []
+
+
+async def test_removing_a_deleted_entrys_chunks_is_equally_silent() -> None:
+    # The row is already gone, so its revisions are unpublished and unreachable:
+    # reporting a leak here would be reporting a delete that in fact succeeded.
+    with (
+        patch("chat.rag.indexing.delete_by_entry", side_effect=RuntimeError("down")),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+        bind_operation_id(),
+    ):
+        await remove_entry_chunks(MagicMock(), 1)
+
+    assert logs == []
+
+
+async def test_removing_a_deleted_entrys_chunks_addresses_that_entry() -> None:
+    with patch("chat.rag.indexing.delete_by_entry") as delete:
+        await remove_entry_chunks(MagicMock(), 7)
+
+    assert delete.call_args.args[1] == 7
+
+
+# --- 007: an empty corpus costs nothing, and is not a failed read -----------------
+
+
+async def test_search_faq_with_no_live_revisions_calls_no_dependency() -> None:
+    # With no live revisions there is no filter value that could match, so embedding
+    # the query and searching would spend two dependencies to learn what the empty
+    # list already said. Asserted as an absence: the calls must not happen at all.
+    with (
+        patch("chat.rag.retriever.embed_texts") as embed,
+        patch("chat.rag.retriever.search") as search_points,
+    ):
+        found = await search_faq(MagicMock(), MagicMock(), "anything", [])
+
+    assert found == []
+    embed.assert_not_called()
+    search_points.assert_not_called()
+
+
+async def test_search_faq_with_live_revisions_passes_them_to_the_search() -> None:
+    # The revisions reach the store as a filter term on the search itself, not as a
+    # predicate applied to whatever came back.
+    revisions = ["01REVISIONAAA", "01REVISIONBBB"]
+    with (
+        patch("chat.rag.retriever.embed_texts", return_value=[[0.1]]),
+        patch("chat.rag.retriever.search", return_value=[]) as search_points,
+    ):
+        await search_faq(MagicMock(), MagicMock(), "anything", revisions)
+
+    assert search_points.call_args.args[2] == revisions

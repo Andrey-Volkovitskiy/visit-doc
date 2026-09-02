@@ -33,7 +33,9 @@ have already handled them, and their outputs are below.
 Combine them into a single, natural reply. You must:
 - Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
 - If the question half says there is no confident answer, say plainly that you do not
-  have a confident answer to that part. Never fill the gap from your own knowledge.
+  have a confident answer to that part, and that a staff member has been notified and
+  will reply in this conversation. Never fill the gap from your own knowledge, and
+  never promise when they will reply.
 - If the appointment half did not result in a booking, never write anything that
   suggests one exists.
 - The appointment half is labelled with the outcome that actually happened. Say only
@@ -63,6 +65,7 @@ class TurnCompletion:
     """
 
     def __init__(self) -> None:
+        """Start the slot empty - no path has recorded a completion yet."""
         self._fields: dict[str, Any] | None = None
 
     def set(self, **fields: Any) -> None:
@@ -176,8 +179,17 @@ async def compose_answer(
     )
 
 
-def _single_specialist_outcome(grounded: bool | None) -> str:
-    """Describe a single-specialist turn's outcome for its `turn.completed` line."""
+def _single_specialist_outcome(
+    answer_source: AnswerSource, grounded: bool | None
+) -> str:
+    """Describe a single-specialist turn's outcome for its `turn.completed` line.
+
+    `answer_source` decides before `grounded` does: a handoff and a booking reply both
+    carry no groundedness verdict, and reading one off the other would file every
+    handed-off turn in the log as a booking.
+    """
+    if answer_source is AnswerSource.HAND_OFF:
+        return "handed_off"
     if grounded is None:
         return "booking"
     return "grounded" if grounded else "abstained"
@@ -200,7 +212,7 @@ def record_single_specialist_completion(
     than a property each specialist has to remember.
     """
     fields: dict[str, object] = {
-        "outcome": _single_specialist_outcome(grounded),
+        "outcome": _single_specialist_outcome(answer_source, grounded),
         "answer_source": answer_source,
         "answer_text": answer_text,
         "grounded": grounded,
@@ -228,7 +240,8 @@ def _build_prompt(
         else:
             parts.append(
                 "Answer to the question part:\n"
-                "There is no confident answer to this part. Say so plainly."
+                "There is no confident answer to this part. Say so plainly, and say "
+                "that a staff member has been notified and will reply here."
             )
     if booking_reply is not None:
         parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")

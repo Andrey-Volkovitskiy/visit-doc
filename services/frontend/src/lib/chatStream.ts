@@ -4,7 +4,13 @@ export interface Citation {
   chunk_text: string;
 }
 
-export type AnswerSource = "faq" | "booking" | "merged";
+/**
+ * Which step produced the reply.
+ *
+ * `hand_off` is the one that produced no answer: the visitor asked for a person, so the
+ * turn fetched one and said so, and nothing was retrieved or booked.
+ */
+export type AnswerSource = "faq" | "booking" | "merged" | "hand_off";
 
 export interface ChatTokenEvent {
   type: "token";
@@ -24,14 +30,44 @@ export interface ChatCancelledEvent {
   type: "cancelled";
 }
 
-export type ChatEvent = ChatTokenEvent | ChatDoneEvent | ChatCancelledEvent;
+/**
+ * The assistant may not speak in this conversation, so nothing was generated.
+ *
+ * A third terminal value because the other two already mean something else:
+ * `cancelled` says to discard a message that is in fact being kept, and an empty `done`
+ * announces a reply that does not exist. The client renders nothing for it — the
+ * patient's message simply stays in the thread.
+ */
+export interface ChatSilentEvent {
+  type: "silent";
+}
 
+export type ChatEvent =
+  | ChatTokenEvent
+  | ChatDoneEvent
+  | ChatCancelledEvent
+  | ChatSilentEvent;
+
+/** Why one patient message needs a person. Never set on any other sender's message. */
+export type AttentionMark =
+  | "patient_asked_for_person"
+  | "corpus_could_not_answer"
+  | "assistant_failed"
+  | "unanswered";
+
+/**
+ * One message in a chat's history.
+ *
+ * There is deliberately no `staff_name`: `sender` already carries everything a label
+ * states, and this system has no person behind a staff reply to name.
+ */
 export interface Message {
   id: string;
-  sender: "patient" | "assistant";
+  sender: "patient" | "assistant" | "staff";
   content: string;
   grounded: boolean | null;
   citations: Citation[] | null;
+  attention_mark: AttentionMark | null;
   created_at: string;
 }
 
@@ -151,7 +187,7 @@ export interface ChatPatient {
  * Falls back to `fallback` when there is no readable `detail` — an empty body, a
  * non-JSON one, or a proxy's own error page.
  */
-async function detailOf(response: Response, fallback: string): Promise<string> {
+export async function detailOf(response: Response, fallback: string): Promise<string> {
   try {
     const body = (await response.json()) as { detail?: unknown };
     return typeof body.detail === "string" ? body.detail : fallback;

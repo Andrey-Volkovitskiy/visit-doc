@@ -253,6 +253,7 @@ def _reports_unavailable(
 
     @wraps(handler)
     async def _wrapper(context: ToolContext, arguments: dict[str, Any]) -> ToolResult:
+        """Answer `unavailable` when the wrapped handler cannot reach the scheduler."""
         try:
             return await handler(context, arguments)
         except SchedulingUnavailableError:

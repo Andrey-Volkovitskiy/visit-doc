@@ -8,7 +8,7 @@ def test_get_voyage_client_binds_shared_session_into_aiosession_contextvar() -> 
     session = object()
     client = object()
     request = MagicMock()
-    request.app.state.voyage_session = session
+    request.app.state.http_session = session
     request.app.state.voyage_client = client
 
     try:

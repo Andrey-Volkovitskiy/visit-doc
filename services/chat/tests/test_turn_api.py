@@ -6,13 +6,22 @@ from unittest.mock import MagicMock, patch
 import pytest
 import structlog
 from chat.agent import generation_registry
+from chat.agent.answer_faq import _ABSTENTION_MESSAGE
+from chat.agent.escalation import HANDOFF_MESSAGE
+from chat.agent.tools.staff_tools import ESCALATE_TO_STAFF
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
-from chat.domain.models import MessageSender
+from chat.domain.models import (
+    AttentionMark,
+    Chat,
+    EscalationReason,
+    MessageSender,
+)
 from chat.domain.schemas import IntentLabel
 from chat.main import app
-from chat.rag.indexing import deindex_faq_entry, index_faq_entry
+from chat.rag.indexing import publish_revision, remove_entry_chunks
 from chat.repositories import chat_repository, faq_repository
+from chat.repositories.chat_repository import ConversationState
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -23,6 +32,7 @@ from ulid import ULID
 from .conftest import (
     LOCAL_NOW,
     FakeAnthropicStream,
+    adopt_seeded_session,
     async_chat_id_for,
     async_turn,
     chat_id_for,
@@ -30,6 +40,8 @@ from .conftest import (
     fake_anthropic_client_gated,
     fake_anthropic_client_sequence,
     fake_embed_texts,
+    seeded_session_id,
+    set_seeded_session,
     turn,
 )
 
@@ -45,12 +57,25 @@ async def seeded_entry() -> AsyncIterator[int]:
     qdrant_client = create_client(settings)
     await ensure_collection(qdrant_client)
 
+    revision = str(ULID())
     async with session_factory() as session:
-        entry = await faq_repository.create(session, _ENTRY_CONTENT)
+        seeded_session = await chat_repository.create_session(session)
+        entry = await faq_repository.create(
+            session, seeded_session.id, _ENTRY_CONTENT, revision
+        )
+    # An entry belongs to exactly one session, so the client has to talk to that one.
+    set_seeded_session(seeded_session.id)
 
     with patch("chat.rag.indexing.embed_texts", fake_embed_texts):
         # voyage_client is irrelevant here: embed_texts is faked and ignores it.
-        await index_faq_entry(qdrant_client, MagicMock(), entry.id, _ENTRY_CONTENT)
+        await publish_revision(
+            qdrant_client,
+            MagicMock(),
+            seeded_session.id,
+            entry.id,
+            revision,
+            _ENTRY_CONTENT,
+        )
 
     # This fixture's own DB writes above bind `chat.db.session.engine`'s pool to
     # pytest-asyncio's session loop. Since `POST /chat` now touches the same engine
@@ -63,9 +88,9 @@ async def seeded_entry() -> AsyncIterator[int]:
     yield entry.id
 
     await engine.dispose()
-    await deindex_faq_entry(qdrant_client, entry.id)
+    await remove_entry_chunks(qdrant_client, entry.id)
     async with session_factory() as session:
-        await faq_repository.delete(session, entry.id)
+        await faq_repository.delete(session, seeded_session.id, entry.id)
     await qdrant_client.close()
 
 
@@ -198,41 +223,25 @@ def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> 
     )
 
 
-@pytest.mark.parametrize(
-    ("message", "mocked_intents", "expected_intents"),
-    [
-        (
-            "I need to talk to someone about a billing problem",
-            [IntentLabel.CALL_STAFF],
-            ["call_staff"],
-        ),
-        (
-            "what's the weather like today?",
-            [IntentLabel.UNKNOWN],
-            ["unknown"],
-        ),
-    ],
-)
-def test_a_message_reaching_no_specialist_still_gets_the_faq_path(
-    message: str,
-    mocked_intents: list[IntentLabel],
-    expected_intents: list[str],
-) -> None:
-    """Neither `call_staff` nor `unknown` has a specialist of its own yet, so both fall
-    back to the FAQ path. Each case here also has no "visit"/"hours" keyword, so
-    `fake_embed_texts` routes it to abstain - the reply is exactly the abstention, never
-    a fabricated booking or hand-off confirmation.
+def test_a_message_reaching_no_specialist_still_gets_the_faq_path() -> None:
+    """`unknown` has no specialist of its own, so it falls back to the FAQ path.
+
+    The message carries no "visit"/"hours" keyword, so `fake_embed_texts` routes it to
+    abstain - and the reply is exactly the abstention, never a fabricated booking or
+    hand-off confirmation.
     """
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        mock_anthropic_cls.return_value = fake_anthropic_client(intents=mocked_intents)
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.UNKNOWN]
+        )
         with (
             capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
             TestClient(app) as client,
         ):
-            response = turn(client, message)
+            response = turn(client, "what's the weather like today?")
 
     assert response.status_code == 200
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
@@ -240,10 +249,40 @@ def test_a_message_reaching_no_specialist_still_gets_the_faq_path(
     assert lines[0]["type"] == "done"
     assert lines[0]["grounded"] is False
     assert lines[0]["answer_source"] == "faq"
-    assert lines[0]["message"] == "I don't have a confident answer to that."
+    assert lines[0]["message"] == _ABSTENTION_MESSAGE
 
     classified = next(e for e in logs if e["event"] == "intent.classified")
-    assert [i.value for i in classified["intents"]] == expected_intents
+    assert [i.value for i in classified["intents"]] == ["unknown"]
+
+
+def test_a_message_asking_for_a_person_gets_the_handoff_and_nothing_else() -> None:
+    # `call_staff` is not a fall-through: it takes the whole turn. The patient is told a
+    # staff member has it, and nothing is retrieved, generated or booked on the way.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["never generated"], intents=[IntentLabel.CALL_STAFF]
+        )
+        mock_anthropic_cls.return_value = anthropic_client
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app) as client,
+        ):
+            response = turn(client, "I need to talk to someone about a billing problem")
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    streamed = "".join(line["text"] for line in lines if line["type"] == "token")
+    assert streamed == HANDOFF_MESSAGE
+    assert lines[-1]["answer_source"] == "hand_off"
+    assert lines[-1]["message"] != _ABSTENTION_MESSAGE
+
+    events = [entry["event"] for entry in logs]
+    assert "turn.retrieval_completed" not in events
+    assert "turn.groundedness_verdict" not in events
+    assert anthropic_client.messages.stream.call_count == 0
 
 
 def test_classification_failure_does_not_block_the_faq_reply(seeded_entry: int) -> None:
@@ -575,8 +614,9 @@ async def test_concurrent_messages_on_existing_chat_both_reach_history(
     until the first's message insert has fully committed.
     """
     async with session_factory() as db_session:
-        session_row = await chat_repository.create_session(db_session)
-        await chat_repository.create_chat(db_session, session_row.id)
+        # The seeded corpus belongs to one session, so this turn has to run in it -
+        # a session of its own would retrieve nothing and abstain.
+        await chat_repository.create_chat(db_session, seeded_session_id())
 
     real_list_messages = chat_repository.list_messages
     started = asyncio.Event()
@@ -606,7 +646,7 @@ async def test_concurrent_messages_on_existing_chat_both_reach_history(
         transport = ASGITransport(app=app)
         with TestClient(app):
             async with AsyncClient(transport=transport, base_url="http://t") as ac:
-                ac.cookies.set("visitdoc_session_id", session_row.id)
+                ac.cookies.set("visitdoc_session_id", seeded_session_id())
                 # Doesn't itself carry any FAQ-matching signal - abstains, never
                 # reaches Claude (see fake_embed_texts).
                 first_task = asyncio.create_task(
@@ -718,18 +758,40 @@ def test_session_cookie_issued_on_first_chat_and_reused_by_every_turn(
     assert client.cookies["visitdoc_session_id"] == session_id
 
 
-def test_followup_reply_uses_earlier_message_as_history(seeded_entry: int) -> None:
+async def _end_escalation(chat_id: str) -> None:
+    """Let the assistant speak again in `chat_id`, as a person taking it would.
+
+    An abstention hands the conversation to staff and silences the assistant in it, so
+    a second turn in the same chat only happens once somebody has ended that. Done
+    directly here because these two tests are about how history carries forward, not
+    about how an escalation ends.
+    """
+    session_id = await _session_of(chat_id)
+    async with session_factory() as db_session:
+        await chat_repository.clear_escalation(db_session, chat_id, session_id)
+
+
+async def test_followup_reply_uses_earlier_message_as_history(
+    seeded_entry: int,
+) -> None:
+    await engine.dispose()
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
         anthropic_client = fake_anthropic_client(["Tuesday hours are 8am to 5pm."])
         mock_anthropic_cls.return_value = anthropic_client
-        with TestClient(app) as client:
-            # Doesn't itself carry any FAQ-matching signal - abstains, but is still
-            # persisted and available as context for the next turn (FR-003).
-            turn(client, "I'm going to come on Tuesday")
-            turn(client, "what are your working hours that day?")
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                # Doesn't itself carry any FAQ-matching signal - abstains, but is still
+                # persisted and available as context for the next turn (FR-003).
+                await async_turn(http, "I'm going to come on Tuesday")
+                await _end_escalation(chat_id)
+                await async_turn(http, "what are your working hours that day?")
 
     calls = anthropic_client.messages.stream.call_args_list
     assert len(calls) == 1  # message 1 abstained - never reached Claude
@@ -739,17 +801,24 @@ def test_followup_reply_uses_earlier_message_as_history(seeded_entry: int) -> No
     )
 
 
-def test_followup_still_abstains_when_neither_message_is_grounded(
+async def test_followup_still_abstains_when_neither_message_is_grounded(
     seeded_entry: int,
 ) -> None:
+    await engine.dispose()
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
         mock_anthropic_cls.return_value = fake_anthropic_client()
-        with TestClient(app) as client:
-            turn(client, "hello")
-            response = turn(client, "how are you")
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                await async_turn(http, "hello")
+                await _end_escalation(chat_id)
+                response = await async_turn(http, "how are you")
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
@@ -767,8 +836,9 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
     # requests from the start, rather than trying to read it off an in-flight
     # response - message 1 and message 2 still genuinely overlap server-side, as two
     # independently scheduled `asyncio.Task`s.
-    async with session_factory() as db_session:
-        session_row = await chat_repository.create_session(db_session)
+    # The seeded corpus belongs to one session, so this turn runs in that one -
+    # a fresh session's corpus is empty and every message would abstain.
+    burst_session_id = seeded_session_id()
 
     gate = asyncio.Event()
     started = asyncio.Event()
@@ -786,7 +856,7 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
             TestClient(app),
         ):
             async with AsyncClient(transport=transport, base_url="http://t") as ac:
-                ac.cookies.set("visitdoc_session_id", session_row.id)
+                ac.cookies.set("visitdoc_session_id", burst_session_id)
                 first_task = asyncio.create_task(
                     async_turn(ac, "What are your working hours")
                 )
@@ -934,7 +1004,7 @@ def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
     messages = history_response.json()["messages"]
     assert messages[1]["grounded"] is False
     assert messages[1]["citations"] == []
-    assert messages[1]["content"] == "I don't have a confident answer to that."
+    assert messages[1]["content"] == _ABSTENTION_MESSAGE
 
 
 def test_get_chat_history_persists_across_simulated_reload(seeded_entry: int) -> None:
@@ -1004,6 +1074,7 @@ def test_a_second_chat_in_one_session_carries_no_memory_of_the_first(
         anthropic_client = fake_anthropic_client(["ok"])
         mock_anthropic_cls.return_value = anthropic_client
         with TestClient(app) as client:
+            adopt_seeded_session(client)
             first_chat = client.post("/chats").json()["id"]
             client.post(
                 "/chat",
@@ -1102,3 +1173,310 @@ def test_a_mixed_intent_turn_persists_the_merged_reply(seeded_entry: int) -> Non
     # The persisted reply is the one the patient saw, not a second rendering of it.
     assert assistant[0]["content"] == streamed
     assert assistant[0]["content"] != ""
+
+
+# --- 007 (FR-042j): an unreachable corpus is never reported as an empty one --------
+
+
+def test_an_empty_corpus_abstains_rather_than_failing() -> None:
+    # The ordinary starting state of every session. Nothing is wrong, so nothing is
+    # reported as wrong - the turn completes and says it has no confident answer.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["unused"])
+        with TestClient(app) as client:
+            response = turn(client, "when can I visit?")
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["grounded"] is False
+
+
+def test_an_unreadable_corpus_fails_the_turn_and_never_abstains() -> None:
+    # The failure this exists to prevent: telling the patient the corpus has no answer
+    # for them, which is a claim nothing verified. A read that failed is a dependency
+    # failure and must be reported as one - so zero `done` lines, and no abstention.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.repositories.faq_repository.live_revisions",
+            side_effect=RuntimeError("connection refused"),
+        ),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["unused"])
+        with TestClient(app, raise_server_exceptions=False) as client:
+            response = turn(client, "when can I visit?")
+
+    assert response.status_code == 503
+    # The point of the requirement: no abstention, because nothing checked the corpus.
+    assert "done" not in response.text
+    assert "grounded" not in response.text
+
+
+# --- 007 (US1): abstention hands the conversation to a person ----------------------
+
+
+async def _session_of(chat_id: str) -> str:
+    async with session_factory() as db_session:
+        chat = await db_session.get(Chat, chat_id)
+        assert chat is not None
+        return chat.session_id
+
+
+async def _conversation_state(chat_id: str) -> ConversationState:
+    session_id = await _session_of(chat_id)
+    async with session_factory() as db_session:
+        state = await chat_repository.get_conversation_state(
+            db_session, chat_id, session_id
+        )
+    assert state is not None
+    return state
+
+
+async def _marks_in(chat_id: str) -> list[str | None]:
+    async with session_factory() as db_session:
+        messages = await chat_repository.list_messages(db_session, chat_id)
+    return [m.attention_mark for m in messages]
+
+
+async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) -> None:
+    # FR-003b: the signal that produces the abstention is the signal that escalates,
+    # so the two can never disagree - and the patient is not left at a dead end.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(["never generated"])
+        mock_anthropic_cls.return_value = anthropic_client
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                response = await async_turn(http, "what is the weather today?")
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["grounded"] is False
+    # No speculative answer alongside the abstention: the turn produced no tokens at
+    # all, so there is nothing for a patient to mistake for an answer (FR-003b).
+    assert not [line for line in lines if line["type"] == "token"]
+
+    state = await _conversation_state(chat_id)
+    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+    assert state.may_assistant_reply is False
+    assert state.attention_since is not None
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
+    # Recorded before any generation call, and here that is provable rather than
+    # ordered: an abstaining turn makes no generation call at all.
+    assert anthropic_client.messages.stream.call_count == 0
+
+
+async def test_an_empty_corpus_abstention_escalates_with_no_exemption() -> None:
+    # FR-003c/SC-001a. The most tempting exemption in the feature - "there was nothing
+    # to find, so nobody need be called" - and the spec rules it out in terms: a
+    # visitor whose question the clinic has no answer for is exactly who needs a person.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["never generated"])
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                response = await async_turn(http, "when can I visit?")
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["grounded"] is False
+    state = await _conversation_state(chat_id)
+    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+
+
+async def test_a_turn_that_escalates_delivers_its_whole_reply_first(
+    seeded_entry: int,
+) -> None:
+    # FR-006: the turn runs to completion and the state takes effect at the end of it.
+    # A mixed-intent message whose FAQ half abstains and whose booking half answers
+    # delivers both halves, and escalates afterwards (spec Edge Cases).
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Here is ", "what I can tell you."],
+            intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                response = await async_turn(
+                    http, "what is the weather, and can I book Friday?"
+                )
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()[
+                    "messages"
+                ]
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    streamed = "".join(line["text"] for line in lines if line["type"] == "token")
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["answer_source"] == "merged"
+    assert streamed != ""
+    # The reply was delivered in full and stored, not withheld because the turn was
+    # about to hand the conversation over.
+    assistant = [m for m in history if m["sender"] == "assistant"]
+    assert len(assistant) == 1
+    assert assistant[0]["content"] == streamed
+
+    state = await _conversation_state(chat_id)
+    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+
+
+async def test_the_handoff_turn_asks_the_patient_for_no_confirmation() -> None:
+    # FR-004: unlike a change to an appointment, an escalation alters no record the
+    # patient holds and is reversible - so one turn both answers and hands over, with
+    # no "are you sure?" round trip in between.
+    await engine.dispose()
+    reply = "A staff member has been notified and will reply in this conversation."
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING],
+            booking_tool_calls=[[("escalate_to_staff", {})]],
+            booking_reply=reply,
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                response = await async_turn(http, "can I speak to someone please")
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()[
+                    "messages"
+                ]
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    # The reply reached the patient in this same turn: silence begins with the *next*
+    # message, not with the one that asked for a person (spec Edge Cases).
+    assert [m["sender"] for m in history] == ["patient", "assistant"]
+    assert (await _conversation_state(chat_id)).may_assistant_reply is False
+
+
+def test_the_tool_tells_the_model_to_promise_no_response_time() -> None:
+    # FR-005's "names no timeframe" is a property of the instruction, not of one
+    # sampled reply: asserting it against a scripted response would only prove the
+    # script. What is checkable is that the model is told, in the one place it reads.
+    description = ESCALATE_TO_STAFF.description.lower()
+    assert "reply" in description
+    assert "this same conversation" in description or "this conversation" in description
+    assert "do not promise a response time" in description
+
+
+# --- 007 (FR-019a/b): the assistant never answers into a silence after the fact ----
+
+
+async def _silenced_message(chat_id: str, content: str) -> str:
+    """Insert a patient message that arrived while the assistant could not reply."""
+    message_id = str(ULID())
+    async with session_factory() as db_session:
+        await chat_repository.create_message(
+            db_session,
+            id=message_id,
+            chat_id=chat_id,
+            sender=MessageSender.PATIENT,
+            content=content,
+        )
+        await chat_repository.set_attention_mark(
+            db_session, message_id, AttentionMark.UNANSWERED
+        )
+    await engine.dispose()
+    return message_id
+
+
+async def test_a_turn_after_a_silence_answers_only_what_came_after_it(
+    seeded_entry: int,
+) -> None:
+    # FR-019a/FR-019b and SC-009b, end to end. The burst-merging rule of 003 would pull
+    # the silenced message into this turn - it is an unanswered patient message
+    # immediately preceding this one - and answering it would reply to something a
+    # staff member was meant to deal with.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        mock_anthropic_cls.return_value = anthropic_client
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app),
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                silenced = await _silenced_message(
+                    chat_id, "is anyone there? my appointment is wrong"
+                )
+                await async_turn(http, "when can I visit?")
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()[
+                    "messages"
+                ]
+
+    received = next(e for e in logs if e["event"] == "turn.message_received")
+    answered = [m for m in history if m["sender"] == "assistant"]
+
+    # The turn answers one message, and it is not the silenced one.
+    assert len(received["message_ids_unified"]) == 1
+    assert silenced not in received["message_ids_unified"]
+    assert len(answered) == 1
+
+    # And what the FAQ path was asked is that one message alone - while the silenced
+    # message is still in front of the model, which is the other half of FR-019a: it
+    # remains part of the conversation read for context, and is never the question.
+    sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
+    prompt = str(sent[-1]["content"])
+    assert "when can I visit?" in prompt
+    assert "my appointment is wrong" in prompt
+    assert "my appointment is wrong" not in prompt.split("Question:")[-1]
+    assert "do not answer them" in prompt
+
+
+async def test_the_silenced_message_stays_in_the_thread(seeded_entry: int) -> None:
+    # It is kept, not dropped: it is part of the conversation, and a staff member
+    # reading the thread has to see what the patient said while nobody answered.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["Visiting hours."])
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                silenced = await _silenced_message(chat_id, "is anyone there?")
+                await async_turn(http, "when can I visit?")
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()[
+                    "messages"
+                ]
+
+    kept = next(m for m in history if m["id"] == silenced)
+    assert kept["content"] == "is anyone there?"
+    # Still marked: only a staff message clears it, and none was posted.
+    assert kept["attention_mark"] == "unanswered"

@@ -12,7 +12,7 @@ from chat.core.config import Settings
 
 # Settings fields whose value is itself a secret (FR-017 known-value matching). Add new
 # secret fields here as they're introduced - both lists feed the redaction processor.
-_SECRET_SETTINGS_FIELDS = ("ANTHROPIC_API_KEY", "VOYAGE_API_KEY")
+_SECRET_SETTINGS_FIELDS = ("ANTHROPIC_API_KEY", "VOYAGE_API_KEY", "ADMIN_SECRET")
 # Settings fields holding a URL whose embedded password (if any) is the secret.
 _SECRET_URL_SETTINGS_FIELDS = ("DATABASE_URL", "QDRANT_URL")
 

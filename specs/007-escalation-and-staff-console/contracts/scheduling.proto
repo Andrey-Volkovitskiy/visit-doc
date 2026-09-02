@@ -1,0 +1,85 @@
+// Contract: packages/shared-proto/protos/scheduling/v1/scheduling.proto — the 007 DELTA.
+//
+// Feature: 007-escalation-and-staff-console | Date: 2026-09-01
+//
+// This file is NOT the whole service. It shows only what 007 adds to the contract 005 established
+// and 006 extended; every rpc, message and enum not restated here is unchanged. Apply this delta to
+// the real file, then regenerate the stubs per packages/shared-proto/README.md — INCLUDING the
+// manual import fixup, which is not optional.
+//
+// ONE rpc is added. No existing rpc, message, enum, or field number changes.
+//
+// Why this one crosses the boundary as gRPC while practitioner administration does NOT
+// (see contracts/http-api.md and research #20/#21): this is system-to-system, it is a capability the
+// scheduler does not have at all (FR-047), and no human form drives it. Its nearest neighbour in
+// every respect — DeletePatientForChat — is already an rpc, and a capability that generalizes one
+// belongs beside it. Practitioner administration is the opposite case: a human CRUD surface the
+// scheduler already publishes as REST, which would become a second copy of one contract if it were
+// re-encoded here.
+
+syntax = "proto3";
+
+package scheduling.v1;
+
+service Scheduling {
+  // ... every existing rpc unchanged ...
+
+  // Hard-delete everything this session owns in the scheduling store: its practitioners, its
+  // patients, and — by the FK cascades 005 created — their appointments (FR-047).
+  //
+  // Those cascades are deliberately status-blind (006 research #4), so CANCELLED appointments are
+  // removed along with standing ones. That is the required behaviour here: FR-047 says "everything
+  // that session owns", and a cancelled appointment is still that session's row.
+  //
+  // ONE transaction. Either the session's scheduler-side rows are gone or none of them are, so the
+  // caller's per-session report (FR-051) has two outcomes to distinguish rather than a spectrum.
+  //
+  // IDEMPOTENT, and that is load-bearing rather than incidental: FR-051 requires re-running a
+  // deletion that was reported incomplete to be safe and to converge. Deleting a session that owns
+  // nothing — including one that never existed — succeeds with every count at zero. It is NOT
+  // reported as NOT_FOUND, because "already gone" and "was never here" are the same end state for
+  // this operation and the caller does not act differently on them.
+  //
+  // No idempotency key: this rpc creates nothing, so a re-send cannot duplicate anything. The key
+  // in BookAppointment exists to make a retried CREATE safe, which is a problem a delete does not
+  // have.
+  rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse);
+}
+
+message DeleteSessionRequest {
+  // The session whose rows are to be removed. Unlike every other request in this contract, this is
+  // not a scoping predicate on someone else's identity — it IS the target. The caller is the core
+  // backend acting for an admin (FR-046), and the secret that authorized it never crosses this
+  // boundary: the scheduler is told which session to remove, not who asked.
+  string session_id = 1;
+}
+
+message DeleteSessionResponse {
+  // What was actually removed. Returned because FR-051 requires the admin to be told what
+  // happened rather than that something happened, and because zero counts are the honest answer for
+  // a session that owned nothing — distinguishable in the report from a call that failed.
+  int32 patients_deleted = 1;
+  int32 practitioners_deleted = 2;
+  int32 appointments_deleted = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Failure handling across this boundary — unchanged, and restated because it decides FR-051
+// ---------------------------------------------------------------------------
+//
+// 005's rule holds without amendment: a refusal the server evaluated is a SUCCESSFUL rpc carrying a
+// typed failure, and a transport failure is a gRPC status code. This rpc has no evaluated refusal —
+// there is nothing for the scheduler to refuse — so every non-OK outcome is transport, and the
+// caller maps it exactly as 006 does:
+//
+//   UNAVAILABLE (never reached the server) -> the session is reported "incomplete", and NOTHING was
+//                                             removed scheduler-side. Safe to re-run.
+//   DEADLINE_EXCEEDED / an error status     -> the session is reported "incomplete", and whether
+//                                             anything was removed is UNKNOWN. Also safe to re-run,
+//                                             because the rpc is idempotent — which is why
+//                                             idempotence is a requirement of this rpc and not a
+//                                             convenience.
+//
+// In neither case may the caller report success, and in neither case may it report "nothing was
+// deleted": a deadline is the caller's, not the callee's, and its expiring means the answer did not
+// arrive, not that the work did not happen (006 FR-023, and this project's own principle).

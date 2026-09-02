@@ -1,5 +1,14 @@
 import sqlalchemy as sa
-from chat.domain.models import Chat, FaqEntry, Message, Session
+from chat.domain.models import (
+    CLEARABLE_MARKS,
+    AttentionMark,
+    Chat,
+    EscalationReason,
+    FaqEntry,
+    Message,
+    MessageSender,
+    Session,
+)
 
 
 def test_faq_entry_table_name() -> None:
@@ -94,3 +103,76 @@ def test_message_grounded_and_citations_are_nullable() -> None:
 
 def test_message_has_created_at() -> None:
     assert "created_at" in Message.__table__.c
+
+
+# --- 007: the three closed sets a conversation's state is written from -------------
+
+
+def test_message_sender_has_exactly_three_members() -> None:
+    """A conversation holds messages from three senders and no more (FR-020).
+
+    Pinned as an exact set rather than a membership check: a fourth value added
+    without a migration would widen `sender` silently, and `split_into_bursts`
+    partitions on patient-or-not, so a new non-patient sender would join the
+    clinic's side of the conversation without anyone deciding that it should.
+    """
+    assert {member.value for member in MessageSender} == {
+        "patient",
+        "assistant",
+        "staff",
+    }
+
+
+def test_attention_mark_has_exactly_the_four_kinds() -> None:
+    """FR-027a's four kinds, and nothing else."""
+    assert {member.value for member in AttentionMark} == {
+        "patient_asked_for_person",
+        "corpus_could_not_answer",
+        "assistant_failed",
+        "unanswered",
+    }
+
+
+def test_escalation_reason_has_exactly_the_three_triggers() -> None:
+    """FR-007a: the reasons are the triggers, and there is no fourth value."""
+    assert {member.value for member in EscalationReason} == {
+        "patient_asked_for_person",
+        "corpus_could_not_answer",
+        "assistant_failed",
+    }
+
+
+def test_escalation_reasons_are_a_subset_of_mark_kinds() -> None:
+    """FR-027b: the first three mark kinds correspond exactly to the three reasons.
+
+    Pinned member-by-member because the two enums are declared separately and could
+    drift into disagreeing about a value's spelling - at which point a call to staff
+    would set a mark nothing recognizes.
+    """
+    for reason in EscalationReason:
+        assert reason.value in {member.value for member in AttentionMark}
+
+
+def test_clearable_marks_are_exactly_the_two_a_staff_message_clears() -> None:
+    """FR-027c's lifetime column, as one constant.
+
+    This is the `IN` list of the clearing statement. A permanent mark appearing here
+    would erase a diagnostic record; a clearable one missing would leave an answered
+    request outstanding forever - and both are invisible in any test that only checks
+    that *something* was cleared.
+    """
+    assert CLEARABLE_MARKS == frozenset(
+        {AttentionMark.PATIENT_ASKED_FOR_PERSON, AttentionMark.UNANSWERED}
+    )
+
+
+def test_permanent_marks_are_the_complement_and_record_a_system_gap() -> None:
+    """The other two kinds never clear: a staff member answering the patient does not
+    mean the corpus gained the entry it was missing, or that the failure did not
+    happen (FR-027c).
+    """
+    permanent = set(AttentionMark) - CLEARABLE_MARKS
+    assert permanent == {
+        AttentionMark.CORPUS_COULD_NOT_ANSWER,
+        AttentionMark.ASSISTANT_FAILED,
+    }

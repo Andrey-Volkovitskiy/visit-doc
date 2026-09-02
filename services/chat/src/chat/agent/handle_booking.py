@@ -24,15 +24,19 @@ from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
 from shared_models.localtime import parse_local_datetime
 
+from chat.agent.escalation import EscalationRequests
 from chat.agent.history import (
     bound_to_last_n_turns,
+    render_silent_window,
+    silent_window,
     to_claude_messages,
     to_loggable_messages,
+    trailing_question,
 )
 from chat.agent.tools.registry import ToolArgumentError, ToolRegistry
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
-from chat.domain.models import Message
+from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import ChatTokenEvent
 
 _MAX_TOKENS = 1024
@@ -198,6 +202,16 @@ _OPERATION_BY_TOOL = {
     "cancel_appointment": "cancel",
     "reschedule_appointment": "reschedule",
 }
+
+# The two result statuses that mean the assistant could not answer, as distinct from
+# `refused`, which is an answer. `error` is absent: it is what a *read* that raised is
+# reported as, and that path records its own call above - reading it here too would
+# record the same failure twice.
+_FAILED_STATUSES = frozenset({"unavailable", "unknown"})
+
+# Labels the half of a rewritten entry that is actually the request, for the turns that
+# follow a silence. Absent from every other turn, whose entries are untouched.
+_ANSWERING_HEADING = "The message you are answering:"
 
 _LOOP_EXHAUSTED_REPLY = (
     "I wasn't able to finish that. Could you tell me again what you'd like to book?"
@@ -478,6 +492,7 @@ async def handle_booking(
     patient_name: str,
     local_now: str,
     stream: bool,
+    escalation: EscalationRequests,
 ) -> AsyncIterator[ChatTokenEvent | BookingResult]:
     """Run one booking turn, emitting its reply when streaming and always a result.
 
@@ -486,6 +501,8 @@ async def handle_booking(
         stream: True when this is the turn's only specialist, so its reply goes straight
             to the patient. False when another specialist also ran and a later step
             composes one reply from both results.
+        escalation: This turn's collector of calls to staff. A tool call that *failed* -
+            as distinct from one that was refused - records one into it.
 
     Yields: in streaming mode, one `ChatTokenEvent` carrying the whole reply, then
         exactly one `BookingResult` as the final item.
@@ -511,9 +528,21 @@ async def handle_booking(
         local_now=local_now,
         practitioners=_practitioners_section(await _read_roster(registry)),
     )
-    messages: list[MessageParam] = list(
-        to_claude_messages(bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS))
-    )
+    bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
+    messages: list[MessageParam] = list(to_claude_messages(bounded))
+    silenced = render_silent_window(silent_window(bounded))
+    if silenced:
+        # This loop has no question field of its own - the prompt above tells the model
+        # to answer the last message in the conversation - and after a silent window
+        # that last entry is the window and the new message rejoined into one, with
+        # nothing to tell them apart by. Restated here so it can: acting on the window
+        # would cancel or book something a person had already taken over.
+        messages[-1] = {
+            "role": "user",
+            "content": (
+                f"{silenced}\n\n{_ANSWERING_HEADING}\n{trailing_question(bounded)}"
+            ),
+        }
     tools = registry.to_anthropic_tools()
     observed: list[dict[str, Any]] = []
     tool_calls = 0
@@ -577,6 +606,7 @@ async def handle_booking(
                     block.name,
                     dict(block.input) if isinstance(block.input, dict) else {},
                     iteration,
+                    escalation,
                 )
                 for block in tool_uses
             )
@@ -612,7 +642,11 @@ async def handle_booking(
 
 
 async def _dispatch(
-    registry: ToolRegistry, name: str, arguments: dict[str, Any], iteration: int
+    registry: ToolRegistry,
+    name: str,
+    arguments: dict[str, Any],
+    iteration: int,
+    escalation: EscalationRequests,
 ) -> dict[str, Any]:
     """Run one tool call, reporting a handler failure to the model rather than raising.
 
@@ -629,6 +663,12 @@ async def _dispatch(
     Arguments that could not be read are the one failure reported as having created
     nothing even for a write: they are rejected before the handler calls anything, so
     there is no attempt whose fate could be in doubt.
+
+    A *failure* here calls a person; a *refusal* does not. A refusal is an answer - the
+    slot is taken, the appointment has already started - and an alternative is offered
+    with it. A failure is the absence of an answer, and arguments that could not be read
+    are not one either: the model gets another attempt inside the same turn, so
+    escalating would call a person for a typo it then corrected.
     """
     logger = get_logger()
     logger.info(
@@ -638,6 +678,7 @@ async def _dispatch(
     try:
         result = await registry.dispatch(name, arguments)
     except ToolArgumentError as exc:
+        # Deliberately records nothing: see the docstring.
         logger.warning(
             "booking.tool_arguments_invalid",
             tool_name=name,
@@ -649,6 +690,9 @@ async def _dispatch(
             "explanation": _INVALID_ARGUMENTS_EXPLANATION.format(detail=exc),
         }
     except Exception as exc:  # noqa: BLE001 - reported to the model, not raised
+        # A handler that raised, or a name the registry does not hold: either way the
+        # assistant could not do what it was asked.
+        escalation.record(EscalationReason.ASSISTANT_FAILED)
         logger.error(
             "booking.tool_failed",
             tool_name=name,
@@ -684,6 +728,8 @@ async def _dispatch(
         reason=result.get("reason"),
         duration_ms=_elapsed_ms(started),
     )
+    if result.get("status") in _FAILED_STATUSES:
+        escalation.record(EscalationReason.ASSISTANT_FAILED)
     _record_unknown_outcome(name, arguments, result)
     return result
 

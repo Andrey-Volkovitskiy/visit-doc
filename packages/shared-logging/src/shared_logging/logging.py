@@ -128,6 +128,7 @@ def make_redact_secrets_processor(
     def _processor(
         _logger: WrappedLogger, _method_name: str, event_dict: EventDict
     ) -> EventDict:
+        """Replace any of `settings`' live secret values found in `event_dict`."""
         return _redact_secrets(event_dict, known_secrets)
 
     return _processor
@@ -145,6 +146,7 @@ def _build_console_renderer() -> _ConsoleRenderer:
     renderer = structlog.dev.ConsoleRenderer(level_styles=_LEVEL_STYLES, colors=True)
 
     def _render(logger: WrappedLogger, method_name: str, event_dict: EventDict) -> str:
+        """Render one entry, dimming it whole when it was logged at debug level."""
         line = renderer(logger, method_name, event_dict)
         if method_name != "debug":
             return line
@@ -212,6 +214,7 @@ class SafeLogger:
     """
 
     def __init__(self, logger: WrappedLogger) -> None:
+        """Hold the logger every level method below logs through."""
         self._logger = logger
 
     def debug(self, event: str, **kwargs: Any) -> None:

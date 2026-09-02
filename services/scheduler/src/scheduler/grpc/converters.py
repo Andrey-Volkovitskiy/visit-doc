@@ -279,3 +279,19 @@ def read_status_filter(value: int) -> StatusFilter:
     if status_filter is None:
         raise ConversionError(f"unrecognized status_filter: {int(value)}")
     return status_filter
+
+
+def to_delete_session_response(
+    *, patients_deleted: int, practitioners_deleted: int, appointments_deleted: int
+) -> pb.DeleteSessionResponse:
+    """Render what one session's deletion actually removed.
+
+    Zero counts are an honest answer rather than an absent one: a session that owned
+    nothing is deleted successfully, and the caller's report distinguishes that from a
+    call that failed.
+    """
+    return pb.DeleteSessionResponse(
+        patients_deleted=patients_deleted,
+        practitioners_deleted=practitioners_deleted,
+        appointments_deleted=appointments_deleted,
+    )

@@ -99,6 +99,23 @@ uv add --package chat <package>           # add a dep to services/chat
 uv add --package shared-proto <package>   # add a dep to a shared package
 ```
 
+### Running the stack by hand
+
+`make run-chat-dev` / `make run-scheduler-dev` / `make run-frontend-dev` each hold a terminal. To
+put all three in the background instead — which is what manual testing of a whole flow needs —
+`make services-up`, `make services-status`, `make services-down`, with `make migrate` first if the
+dev databases are behind. Each service's pid and log live under `.run/` (gitignored).
+
+**Stop them with `make services-down`, never with `pkill -f "chat.main"`.** That pattern also
+matches the command line of the shell running it, so it kills the caller — and anything else whose
+command line happens to quote the module name. `scripts/dev-services.sh` kills a recorded pid and
+`pkill -P` for its child, which cannot match anything by accident.
+
+`scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a
+turn and stream the reply, read the thread or the staff console, post as staff, flip the assistant
+switch, add a FAQ entry. It exists so that exercising a flow by hand doesn't start with rebuilding
+a cookie jar and a `curl` invocation from memory. Run it with no arguments for the usage block.
+
 Regenerating the gRPC stubs (after editing `packages/shared-proto/protos/scheduling/v1/scheduling.proto`)
 is documented in `packages/shared-proto/README.md` — it requires a manual import fixup after
 running `protoc`, don't skip that step.
@@ -175,7 +192,12 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 ### Target shape (AI-core phase, per ROADMAP)
 
 - **Core backend** — FastAPI, hosting the agent, RAG, chat, and auth. Single deployable for
-  everything except Scheduling.
+  everything except Scheduling. Beyond `/chat`, `/chats` and `/faq` it publishes `/console/*` (the
+  staff side: the polled conversation listing, posting as staff, the assistant switch, and a proxy
+  of the scheduler's practitioner API) and `/admin/*` (session deletion — guarded by one header
+  secret, and declared `include_in_schema=False` so it appears in no published schema). Those two
+  live in separate modules on purpose: a maintenance surface sharing a module with a published one
+  is one refactor away from sharing its router.
 - **Scheduling service** — a separate FastAPI service with its own PostgreSQL, the one deliberate
   service boundary in this phase. Owns doctor calendars, availability, booking, and changes to a
   booking. Talks to the core backend over gRPC (`CheckAvailability`, `BookAppointment`,
@@ -201,10 +223,19 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   structurally from what was actually retrieved and placed in context, never self-reported by the
   LLM (avoids hallucinated citations) — and an explicit **abstention path** plus a **groundedness
   check** before any FAQ answer is returned.
-- Any entity with both a Postgres row and a derived Qdrant index (e.g. `FaqEntry`/`FaqChunk`) keeps
-  them consistent via a fixed ordering: deindex from Qdrant *before* deleting the Postgres row on
-  delete, and always delete-then-upsert (never diff) the index on update — so the vector store can
-  never outlive or go stale relative to its source of truth.
+- **Postgres decides what Qdrant may answer from.** For any entity with both a Postgres row and a
+  derived Qdrant index (e.g. `FaqEntry`/`FaqChunk`), the row is the sole authority on which indexed
+  content is live, and retrieval carries that as a predicate on the search itself. Points the row
+  does not vouch for — superseded by a later write, orphaned by a failed one, left behind by a
+  delete — must be unreachable: never retrieved, never cited, never counted toward groundedness.
+  Removing them is housekeeping that may fail, retry, or lag; it must never be what makes them
+  unanswerable. Leaked points are an accepted cost, an answer drawn from one is not.
+  Concretely, since 007: a save is **additive**. It writes its chunks under a new revision, deletes
+  nothing, and publishes with one local commit whose `WHERE` carries the revision it expects to
+  supersede — so a failure at any step leaves the entry answering the text it was answering a
+  moment ago, and there is no compensating write to half-succeed. The delete-then-upsert ordering
+  this bullet used to prescribe is superseded by that, and a delete now removes the **row first**,
+  which is what makes the entry unanswerable at that instant.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across

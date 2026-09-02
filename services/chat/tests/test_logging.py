@@ -20,6 +20,7 @@ def _settings() -> Settings:
         QDRANT_URL="http://localhost:6333",
         ANTHROPIC_API_KEY="sk-ant-test-key",
         VOYAGE_API_KEY="voyage-test-key",
+        ADMIN_SECRET="adm1n-s3cr3t-value",
     )
 
 
@@ -50,3 +51,22 @@ def test_this_services_database_password_is_redacted() -> None:
     result = _redact({"event": "turn.error", "error_detail": "auth: s3cr3t-pass"})
 
     assert "s3cr3t-pass" not in str(result["error_detail"])
+
+
+def test_the_admin_secret_is_redacted_by_value_under_any_key_name() -> None:
+    # The known-value arm of the redaction chain. The secret guards two routes that
+    # delete every session, and it travels on a request header - so it can surface
+    # inside an exception message under a key nobody thought to name "secret".
+    result = _redact(
+        {"event": "admin.refused", "detail": "sent adm1n-s3cr3t-value in a header"}
+    )
+
+    assert "adm1n-s3cr3t-value" not in str(result["detail"])
+
+
+def test_the_admin_secret_is_redacted_by_key_name_regardless_of_value() -> None:
+    # The key-name arm, which catches a secret introduced before anyone adds it to the
+    # known-value list. Neither arm alone is sufficient.
+    result = _redact({"event": "admin.refused", "admin_secret": "anything-at-all"})
+
+    assert "anything-at-all" not in str(result["admin_secret"])

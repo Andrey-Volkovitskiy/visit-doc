@@ -391,3 +391,19 @@ class DeletePatientForChatResponse(_message.Message):
     patient_existed: bool
     appointments_deleted: int
     def __init__(self, patient_existed: _Optional[bool] = ..., appointments_deleted: _Optional[int] = ...) -> None: ...
+
+class DeleteSessionRequest(_message.Message):
+    __slots__ = ("session_id",)
+    SESSION_ID_FIELD_NUMBER: _ClassVar[int]
+    session_id: str
+    def __init__(self, session_id: _Optional[str] = ...) -> None: ...
+
+class DeleteSessionResponse(_message.Message):
+    __slots__ = ("patients_deleted", "practitioners_deleted", "appointments_deleted")
+    PATIENTS_DELETED_FIELD_NUMBER: _ClassVar[int]
+    PRACTITIONERS_DELETED_FIELD_NUMBER: _ClassVar[int]
+    APPOINTMENTS_DELETED_FIELD_NUMBER: _ClassVar[int]
+    patients_deleted: int
+    practitioners_deleted: int
+    appointments_deleted: int
+    def __init__(self, patients_deleted: _Optional[int] = ..., practitioners_deleted: _Optional[int] = ..., appointments_deleted: _Optional[int] = ...) -> None: ...

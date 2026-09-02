@@ -5,6 +5,7 @@ free-standing create or delete, only the create-if-absent that provisioning call
 the delete-for-chat that chat deletion calls.
 """
 
+from sqlalchemy import delete as sql_delete
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -183,3 +184,18 @@ async def delete_for_chat(
         appointments_deleted=appointments_deleted,
     )
     return True, appointments_deleted
+
+
+async def delete_for_session(session: AsyncSession, session_id: str) -> int:
+    """Delete every patient `session_id` owns. Return how many were removed.
+
+    Scoped on the `DELETE` itself, so another session's rows are never loaded, let alone
+    removed. Their appointments follow by the FK cascade, which is deliberately
+    status-blind: a cancelled appointment is still that session's row.
+    """
+    result = await session.execute(
+        sql_delete(Patient)
+        .where(Patient.session_id == session_id)
+        .returning(Patient.id)
+    )
+    return len(list(result.scalars().all()))

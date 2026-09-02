@@ -9,13 +9,14 @@ Nothing here knows what scheduling is; `scheduling_tools.py` supplies the entrie
 """
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, cast
 
 import grpc
 from anthropic.types import ToolParam
 
+from chat.agent.escalation import EscalationRequests
 from chat.core.config import Settings
 
 # What a handler returns: a small JSON-serializable object the model reads back as a
@@ -41,6 +42,12 @@ class ToolContext:
 
     `patient_id` is None when this chat has no patient record yet, which is the normal
     state of a chat created while scheduling was unreachable.
+
+    `escalation` is this turn's collector of calls to staff. It is ambient for the same
+    reason the rest of this is: a model must not be able to hand over a conversation
+    other than the one it is in. It always exists, so a handler never has to ask whether
+    it may record - a context built without one collects into a throwaway, which is
+    what a test wants and what production never does.
     """
 
     channel: grpc.aio.Channel
@@ -48,6 +55,7 @@ class ToolContext:
     session_id: str
     patient_id: str | None
     local_now: datetime
+    escalation: EscalationRequests = field(default_factory=EscalationRequests)
 
 
 @dataclass(frozen=True)
@@ -160,6 +168,7 @@ class ToolRegistry:
     """The tools available for one turn, bound to that turn's ambient context."""
 
     def __init__(self, tools: list[Tool], context: ToolContext) -> None:
+        """Index `tools` by name and hold the context every handler is called with."""
         self._tools = {tool.name: tool for tool in tools}
         self._context = context
 

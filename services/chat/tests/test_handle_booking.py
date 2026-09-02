@@ -13,13 +13,20 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from chat.agent.escalation import EscalationRequests
 from chat.agent.handle_booking import (
     _LOOP_EXHAUSTED_REPLY,
     BookingOutcome,
     BookingResult,
     handle_booking,
 )
-from chat.agent.tools.registry import Tool, ToolContext, ToolRegistry
+from chat.agent.history import exclude_silent_window, split_into_bursts
+from chat.agent.tools.registry import (
+    Tool,
+    ToolArgumentError,
+    ToolContext,
+    ToolRegistry,
+)
 from chat.agent.tools.scheduling_tools import (
     _EXPLANATION_BY_REASON,
     _UNAVAILABLE_EXPLANATION,
@@ -27,8 +34,9 @@ from chat.agent.tools.scheduling_tools import (
     derive_idempotency_key,
 )
 from chat.core.config import Settings
-from chat.domain.models import Message, MessageSender
+from chat.domain.models import EscalationReason, Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent
+from shared_models.scheduling import BookingFailureReason, ChangeFailureReason
 from structlog.testing import capture_logs
 
 _LOCAL_NOW = "2026-08-17T08:00:00"
@@ -57,6 +65,9 @@ class _RecordingRegistry(ToolRegistry):
         self.dispatched: list[tuple[str, dict[str, Any]]] = []
         # Set by a test whose point is a handler failing rather than answering.
         self.raise_on: str | None = None
+        # Set by a test about arguments that could not be read - a failure raised
+        # before the handler calls anything, which is why it is not the one above.
+        self.argument_error_on: str | None = None
         # `handle_booking` reads the roster through the registry before the model's
         # first turn, so every turn needs a result for it - a test names one itself
         # only when the roster is what that test is about.
@@ -95,6 +106,8 @@ class _RecordingRegistry(ToolRegistry):
         self, _context: ToolContext, _arguments: dict[str, Any]
     ) -> dict[str, Any]:
         name = self.dispatched[-1][0]
+        if name == self.argument_error_on:
+            raise ToolArgumentError(f"{name} could not be read")
         if name == self.raise_on:
             raise RuntimeError("handler blew up")
         return self._results[name]
@@ -151,6 +164,7 @@ async def _run(
     bursts: list[list[Message]],
     *,
     stream: bool = True,
+    escalation: EscalationRequests | None = None,
 ) -> tuple[list[ChatTokenEvent], BookingResult]:
     events: list[ChatTokenEvent] = []
     result: BookingResult | None = None
@@ -161,6 +175,7 @@ async def _run(
         patient_name="Ada Lovelace",
         local_now=_LOCAL_NOW,
         stream=stream,
+        escalation=escalation if escalation is not None else EscalationRequests(),
     ):
         if isinstance(item, BookingResult):
             result = item
@@ -1081,3 +1096,206 @@ async def test_an_empty_roster_is_not_reported_as_an_unreadable_one() -> None:
     system = _system_prompt(client)
     assert "no practitioners" in system
     assert "could not be read" not in system
+
+
+# --- 007 (FR-003a): a failure calls a person; a refusal never does -----------------
+#
+# The line this feature draws, and the one an implementation blurs by escalating on
+# "anything that was not a success". A refusal *is* an answer - the slot is taken, the
+# time is outside the practitioner's hours - and 006 already requires an alternative to
+# be offered with each. A failure is the absence of an answer.
+
+_FAILING_STATUSES = [
+    {"status": "unavailable", "explanation": _UNAVAILABLE_EXPLANATION},
+    {"status": "unknown", "explanation": "it is not known whether that went through"},
+]
+
+
+async def _booking_turn_with(
+    result: dict[str, Any] | None = None,
+    *,
+    tool: str = "check_availability",
+    raise_on: str | None = None,
+    argument_error_on: str | None = None,
+    requested_tool: str | None = None,
+) -> EscalationRequests:
+    """Run one turn whose single model tool call gets `result`, and return what it
+    recorded into the turn's escalation collector."""
+    registry = _RecordingRegistry({tool: result} if result is not None else {})
+    registry.raise_on = raise_on
+    registry.argument_error_on = argument_error_on
+    client = _client(
+        [
+            _tool_use_response([(requested_tool or tool, {})]),
+            _text_response("Here is where that leaves us."),
+        ]
+    )
+    escalation = EscalationRequests()
+    await _run(client, registry, _bursts("book me in"), escalation=escalation)
+    return escalation
+
+
+@pytest.mark.parametrize("result", _FAILING_STATUSES)
+async def test_a_failed_tool_result_calls_a_person(result: dict[str, Any]) -> None:
+    escalation = await _booking_turn_with(result)
+
+    assert list(escalation.recorded) == [EscalationReason.ASSISTANT_FAILED]
+
+
+async def test_a_handler_that_raises_calls_a_person() -> None:
+    escalation = await _booking_turn_with(
+        {"available_starts": []}, raise_on="check_availability"
+    )
+
+    assert list(escalation.recorded) == [EscalationReason.ASSISTANT_FAILED]
+
+
+async def test_a_tool_the_registry_does_not_hold_calls_a_person() -> None:
+    # It never ran, so nothing it might have done is in question - but the model asked
+    # for a capability that does not exist, which is the assistant failing.
+    escalation = await _booking_turn_with(
+        {"available_starts": []}, requested_tool="reschedule_everything"
+    )
+
+    assert list(escalation.recorded) == [EscalationReason.ASSISTANT_FAILED]
+
+
+@pytest.mark.parametrize(
+    "reason", [*list(BookingFailureReason), *list(ChangeFailureReason)]
+)
+async def test_a_refusal_calls_nobody(reason: str) -> None:
+    escalation = await _booking_turn_with(
+        {"status": "refused", "reason": reason, "explanation": "not this time"}
+    )
+
+    assert list(escalation.recorded) == []
+
+
+async def test_arguments_that_could_not_be_read_call_nobody() -> None:
+    # Raised before the handler calls anything, so it provably had no effect and the
+    # model gets another attempt inside the same turn. Escalating here would call a
+    # person for a typo the model then corrected.
+    escalation = await _booking_turn_with(
+        {"available_starts": []}, argument_error_on="check_availability"
+    )
+
+    assert list(escalation.recorded) == []
+
+
+async def test_a_successful_booking_calls_nobody() -> None:
+    escalation = await _booking_turn_with(
+        {
+            "status": "booked",
+            "appointment": {"id": "01APPOINTMENT", "starts_at": _STARTS_AT},
+        },
+        tool="book_appointment",
+    )
+
+    assert list(escalation.recorded) == []
+
+
+async def test_two_failures_in_one_turn_are_both_recorded() -> None:
+    # The precedence resolving them into one mark is `EscalationRequests`'s business;
+    # what happens here is that neither is dropped on the way in (FR-033).
+    registry = _RecordingRegistry(
+        {
+            "check_availability": {
+                "status": "unavailable",
+                "explanation": _UNAVAILABLE_EXPLANATION,
+            }
+        }
+    )
+    client = _client(
+        [
+            _tool_use_response(
+                [("check_availability", {}), ("check_availability", {})]
+            ),
+            _text_response("I could not reach the schedule."),
+        ]
+    )
+    escalation = EscalationRequests()
+
+    await _run(client, registry, _bursts("book me in"), escalation=escalation)
+
+    assert list(escalation.recorded) == [
+        EscalationReason.ASSISTANT_FAILED,
+        EscalationReason.ASSISTANT_FAILED,
+    ]
+
+
+async def test_an_unreadable_roster_alone_calls_nobody() -> None:
+    # The roster read is the node's own, made to build a prompt, and its failure is
+    # already handled by design: the turn runs, told it does not know who works here,
+    # and answers correctly. Calling a person for that would call one for a turn that
+    # succeeded - and a real scheduling outage still escalates, because every tool call
+    # the model then makes fails through `_dispatch`.
+    registry = _RecordingRegistry(
+        {
+            _ROSTER_READ: {
+                "status": "unavailable",
+                "explanation": _UNAVAILABLE_EXPLANATION,
+            }
+        }
+    )
+    client = _client([_text_response("I can't reach the clinic's schedule.")])
+    escalation = EscalationRequests()
+
+    await _run(client, registry, _bursts("who works here?"), escalation=escalation)
+
+    assert list(escalation.recorded) == []
+
+
+# --- 007 (FR-019a): the loop is told which half of the tail is the request ---------
+#
+# This loop has no question field of its own - its prompt says "answer the last message
+# in the conversation" - and after a silent window `to_claude_messages` has rejoined the
+# window with the new message into one entry. Acting on the window would cancel or book
+# something a person had already taken over.
+
+
+def _after_a_silence(silenced: str, current: str) -> list[list[Message]]:
+    """Build the bursts a turn following a silent window actually runs on."""
+    window = _message(silenced, "p1", MessageSender.PATIENT)
+    window.attention_mark = "unanswered"
+    return exclude_silent_window(
+        split_into_bursts([window, _message(current, "p2", MessageSender.PATIENT)])
+    )
+
+
+def _first_user_entry(client: MagicMock) -> str:
+    sent = client.messages.create.await_args_list[0].kwargs["messages"]
+    return str(sent[-1]["content"])
+
+
+async def test_the_silent_window_is_kept_but_marked_as_not_the_request() -> None:
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Friday at 9 it is.")])
+
+    await _run(
+        client,
+        registry,
+        _after_a_silence("cancel my Tuesday appointment", "book me Friday at 9"),
+    )
+
+    entry = _first_user_entry(client)
+    # Both are in front of the model - the window is context, not something erased.
+    assert "cancel my Tuesday appointment" in entry
+    assert "book me Friday at 9" in entry
+    # And only one of them is the request.
+    answering = entry.split("The message you are answering:")[-1]
+    assert "book me Friday at 9" in answering
+    assert "cancel my Tuesday appointment" not in answering
+    assert "do not act on them" in entry
+
+
+async def test_an_ordinary_turn_is_handed_the_conversation_unchanged() -> None:
+    # No silence, no rewriting: the entry is exactly what `to_claude_messages` rendered,
+    # so every booking turn that follows no silence is untouched by this.
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Which practitioner?")])
+
+    await _run(client, registry, _bursts("book me Friday at 9"))
+
+    entry = _first_user_entry(client)
+    assert entry == "book me Friday at 9"
+    assert "The message you are answering:" not in entry

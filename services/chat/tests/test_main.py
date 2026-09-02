@@ -31,7 +31,7 @@ def test_lifespan_shares_anthropic_and_voyage_clients_on_state() -> None:
     with TestClient(app):
         assert app.state.anthropic_client is not None
         assert app.state.voyage_client is not None
-        assert app.state.voyage_session is not None
+        assert app.state.http_session is not None
 
 
 def test_lifespan_failure_logs_critical_event_with_no_correlation_id() -> None:

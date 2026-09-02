@@ -142,6 +142,7 @@ class SchedulingUnavailableError(SchedulingError):
     """
 
     def __init__(self, detail: str, *, outcome_unknown: bool = True) -> None:
+        """Build the error, defaulting to the cautious answer that a write may exist."""
         super().__init__(detail)
         self.outcome_unknown = outcome_unknown
 
@@ -159,6 +160,7 @@ class SchedulingNotFoundError(SchedulingError):
     """
 
     def __init__(self, detail: str, *, entity: NotFoundEntity | None = None) -> None:
+        """Build the error, recording which id failed to resolve when one was named."""
         super().__init__(detail)
         self.entity = entity
 
@@ -999,6 +1001,41 @@ async def delete_patient_for_chat(
     )
 
 
+@dataclass(frozen=True)
+class SessionPurge:
+    """What a session's deletion removed from the scheduling store."""
+
+    patients_deleted: int
+    practitioners_deleted: int
+    appointments_deleted: int
+
+
+async def delete_session(
+    channel: grpc.aio.Channel, settings: Settings, *, session_id: str
+) -> SessionPurge:
+    """Delete everything `session_id` owns in the scheduling store.
+
+    Raises: SchedulingUnavailableError if the scheduler could not answer. Its
+        `outcome_unknown` says whether the deletion may nonetheless have happened.
+        Either way the request is safe to send again: the rpc is idempotent, and a
+        session that owns nothing is deleted successfully with every count at zero.
+
+    Zero counts therefore mean "there was nothing left", never "this did not work" -
+    which is what lets a caller re-run a deletion it had to report incomplete.
+    """
+    response = await _call(
+        settings,
+        "DeleteSession",
+        _stub(channel).DeleteSession,
+        pb.DeleteSessionRequest(session_id=session_id),
+    )
+    return SessionPurge(
+        patients_deleted=response.patients_deleted,
+        practitioners_deleted=response.practitioners_deleted,
+        appointments_deleted=response.appointments_deleted,
+    )
+
+
 __all__ = [
     "AppointmentInfo",
     "AppointmentListing",
@@ -1017,12 +1054,14 @@ __all__ = [
     "SchedulingNotFoundError",
     "SchedulingRequestError",
     "SchedulingUnavailableError",
+    "SessionPurge",
     "WorkingRangeInfo",
     "book_appointment",
     "cancel_appointment",
     "check_availability",
     "create_channel",
     "delete_patient_for_chat",
+    "delete_session",
     "ensure_session_provisioned",
     "list_appointments",
     "list_practitioners",

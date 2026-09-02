@@ -41,5 +41,16 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(uv run mypy *)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh *)",
+      "Bash(npm test)",
+      "Bash(make lint)",
+      "Bash(make typecheck)",
+      "Bash(uv run ruff format --check *)",
+      "Bash(make services-status)"
+    ]
   }
 }

@@ -12,7 +12,10 @@
   `tests/integration/` is real as of spec 005: it runs `chat`'s own gRPC client against a live
   scheduling servicer backed by a real `visitdoc_scheduler_test` database, covering the booking
   round trip, the idempotent replay, and the cross-store deletion cascade — the contract the chat
-  unit tier's fakes stand in for. `tests/e2e/` is still a placeholder (no full frontend+chat+
+  unit tier's fakes stand in for. Since 007 it also drives `chat`'s **own** stores, so its
+  `conftest.py` isolates `DATABASE_URL` and `QDRANT_COLLECTION_NAME` exactly as the chat unit tier
+  does: the FAQ corpus's session isolation, the practitioner proxy against a live REST surface, and
+  the two-store session delete all need both sides real at once. `tests/e2e/` is still a placeholder (no full frontend+chat+
   scheduler flow is automated yet).
 
 ## Naming
@@ -86,8 +89,45 @@ test happened to need when it was written. A boundary fake is a guarantee the wh
 on, so a gap in it is not "that path is untested" — it is a live call on the wrong event loop,
 failing with a loop-binding or timeout error attributed to whatever the test was actually about.
 When a new function is added to a faked boundary, add it to the autouse fixture in the same
-change: `_scheduler_is_unreachable_by_default` fakes both `ensure_session_provisioned` and
-`delete_patient_for_chat` for exactly this reason.
+change: `_scheduler_is_unreachable_by_default` fakes `ensure_session_provisioned`,
+`delete_patient_for_chat`, `rename_patient` and `delete_session` for exactly this reason.
+
+## Live paid APIs: manual testing and e2e only
+
+The repo-root `.env` holds working `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` values, and **manual**
+testing is free to use them. Running the services by hand (`make run-chat-dev` /
+`make run-scheduler-dev`), walking a feature's `quickstart.md`, or reproducing a reported problem
+interactively all talk to the live Claude and Voyage APIs — that is what they are for. It is the
+only place the real model's wording, latency, tool-calling and retrieval quality are ever observed,
+and no amount of mocked coverage substitutes for it. Spending real tokens that way is expected, not
+something to apologise for or work around.
+
+**The unit and integration tiers may never reach either API.** The reasons are in "Mocking
+discipline" above and none of them is about cost alone: a live call makes the test
+non-deterministic, dependent on network access and a valid key, and slow. Both tiers already fake
+the two boundaries — `services/chat/tests/conftest.py`'s `fake_anthropic_client(...)` under the
+autouse `_paid_apis_are_blocked` guard, and `tests/integration/conftest.py`'s own stand-ins for
+`AsyncAnthropic` and Voyage embeddings. These two tiers are the fast gate: they run on every push,
+must pass with no key configured at all, and give the same answer every time.
+
+**The e2e tier may.** `tests/e2e/` drives the whole system as a user does — a browser against
+running services — and stubbing the model there would remove the only thing that tier tests that
+the others do not. Three consequences follow from that permission, and they are the price of it:
+
+- **e2e never joins the per-push gate.** It runs on pull requests to `main`, and by hand before a
+  demo. A tier that spends tokens and depends on a remote service cannot be the thing standing
+  between a commit and a merge.
+- **Assert on structure, never on wording.** That an answer arrived carrying citations, that a
+  stream was cancelled, that a mark cleared, that a booking reached the scheduler's database — all
+  reproducible. The sentence the model wrote is not, and an assertion on it is a test that fails on
+  a Tuesday for no reason.
+- **A missing key fails the tier loudly, and skips nothing.** A silently skipped e2e run reads
+  exactly like a passing one.
+
+So the dividing line is where a test sits, not what it feels like: **unit and integration mock the
+paid boundary; e2e and a human at a keyboard are what exercise it.** A unit test written to check
+"does the real model actually do this?" is still in the wrong place — that question belongs to e2e
+or to a quickstart scenario.
 
 ## Fixtures
 
@@ -212,6 +252,25 @@ make test-frontend      # vitest, in services/frontend
 make test-integration   # uv run pytest tests/integration
 make test-e2e           # uv run pytest tests/e2e
 ```
+
+### Running them while you work
+
+The tiers are not the same size, and treating them as if they were is what makes a change feel
+slow. Rough shape on a developer machine: `test-frontend` ~15s, `test-integration` ~45s, the
+scheduler and package suites ~2m together, and **`services/chat/tests` alone is 5-9 minutes** — it
+holds most of the coverage and every test in it talks to real Postgres and real Qdrant.
+
+- **Iterate with a scoped run**, not the whole tier: `uv run pytest services/chat/tests/test_turn_api.py`,
+  or `-k` a name. Seconds instead of minutes, and the failure you are chasing is the only thing on
+  screen.
+- **Run the full tier in the background and collect it once**, rather than watching it — start it,
+  do something else, read the result when it lands. Polling a nine-minute suite costs the nine
+  minutes *and* your attention.
+- **Run it once more before you call the work done.** A scoped run proves the thing you changed; it
+  says nothing about what you changed underneath something else.
+- **`pytest-xdist` is not the shortcut here.** The chat suite shares one module-level async engine
+  bound to a session-scoped event loop, and the scheduler suite truncates every table between
+  tests — parallel workers would collide on both. Speed has to come from scoping, not from workers.
 
 `test-unit`, `test-frontend`, and `test-integration` all run in CI (`.github/workflows/ci.yml`).
 `test-e2e` stays manual until that tier has real tests.

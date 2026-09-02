@@ -1,20 +1,62 @@
-"""FAQ content CRUD endpoints."""
+"""`/faq` — the corpus one session's assistant answers from.
+
+Every route filters on the cookie session, so an entry belonging to somebody else is
+reported exactly as one that never existed.
+
+The write path is the feature's deepest change and its shape is the whole point. A save
+chunks and embeds *before* either store is written, adds its chunks under a **new
+revision**, and publishes with one local commit — the single moment the entry becomes
+visible to a listing and to retrieval alike. Nothing is deleted, overwritten or
+reverted, so a failure at any step leaves the entry answering exactly the text it was
+answering a moment ago, and the accepted cost is leaked storage rather than a lost
+answer.
+
+There is deliberately no compensating write. One existed, and a best-effort repair that
+half-succeeded and swallowed its own failure is what used to leave the two stores
+silently disagreeing.
+"""
 
 from fastapi import APIRouter, HTTPException, Request
-from qdrant_client import AsyncQdrantClient
-from voyageai.client_async import AsyncClient
+from ulid import ULID
 
 from chat.api.dependencies import get_voyage_client
+from chat.api.session_cookie import read_session_id
+from chat.core.config import get_settings
 from chat.core.correlation import bind_operation_id
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
 from chat.domain.schemas import FaqEntry, FaqEntryWrite
-from chat.rag.indexing import FaqOperationError, deindex_faq_entry, index_faq_entry
+from chat.rag.indexing import (
+    FaqOperationError,
+    publish_revision,
+    remove_entry_chunks,
+    sweep_entry,
+)
 from chat.repositories import faq_repository
 
 router = APIRouter()
 
 _NOT_FOUND = "No entry with this ID."
+_CONFLICT = "That entry was changed by another save. Please try again."
+# Which external system a failed step was against, for the critical event. "chunking"
+# is absent on purpose: it is pure computation, and nothing was unreachable.
+_DEPENDENCY_BY_STEP = {"embedding": "voyage", "persist": "qdrant"}
+_UNAVAILABLE = "the clinic's documents could not be saved; nothing was changed"
+
+
+def _require_session(request: Request) -> str:
+    """Return the caller's session id.
+
+    Raises: HTTPException 404 if the request carries no session cookie.
+
+    A visitor with no session owns no corpus, so an entry they name cannot exist for
+    them - reported identically to one that belongs to somebody else, so a probing
+    caller learns nothing from which case it hit.
+    """
+    session_id = read_session_id(request)
+    if session_id is None:
+        raise HTTPException(status_code=404, detail=_NOT_FOUND)
+    return session_id
 
 
 def _log_faq_failure(
@@ -23,15 +65,14 @@ def _log_faq_failure(
     """Log `faq.operation_failed`, plus a critical event if `dependency` is given.
 
     Args:
-        dependency: The failing external system's name ("postgres"/"qdrant") when the
-            failure is a dependency being unreachable, or None for a failure outside
-            that critical-event scope (e.g. chunking).
+        dependency: The failing external system's name when the failure is a dependency
+            being unreachable, or None for a failure outside that critical-event scope.
     """
     logger = get_logger()
     if isinstance(exc, FaqOperationError):
         failed_step, cause = exc.failed_step, exc.cause
     else:
-        failed_step, cause = "persist", exc
+        failed_step, cause = "publish", exc
     logger.error(
         "faq.operation_failed",
         operation=operation,
@@ -58,38 +99,127 @@ def _log_dependency_unreachable(dependency: str, exc: Exception) -> None:
     )
 
 
+async def _write_chunks(
+    request: Request,
+    operation: str,
+    session_id: str,
+    entry_id: int,
+    revision: str,
+    content: str,
+) -> None:
+    """Chunk, embed and write this save's chunks under `revision`.
+
+    Raises: HTTPException 503 if any step failed. Nothing observable changed: the entry
+        is still answering from whatever revision its row names, and the retry is the
+        same request again.
+    """
+    try:
+        await publish_revision(
+            request.app.state.qdrant_client,
+            get_voyage_client(request),
+            session_id,
+            entry_id,
+            revision,
+            content,
+        )
+    except FaqOperationError as exc:
+        _log_faq_failure(
+            operation,
+            entry_id,
+            exc,
+            dependency=_DEPENDENCY_BY_STEP.get(exc.failed_step),
+        )
+        raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
+
+
 @router.post("/faq", status_code=201)
 async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
-    """Create a new FAQ entry."""
+    """Add an entry to this session's corpus.
+
+    Raises:
+        HTTPException 404: the request carries no session cookie.
+        HTTPException 409: this session's corpus is already at its cap.
+        HTTPException 503: a dependency was unreachable, and nothing was created.
+
+    The id is reserved from the sequence before anything is written, so the chunks can
+    carry the entry they belong to before the row that publishes them exists. A create
+    that fails leaves that id unused, which costs nothing: the sequence is not a count
+    of rows.
+    """
+    session_id = _require_session(request)
+    settings = get_settings()
     with bind_operation_id():
         try:
             async with session_factory() as session:
-                entry = await faq_repository.create(session, body.content)
+                # Counted before either store is touched, so a refused create has done
+                # no work and left nothing behind.
+                count = await faq_repository.count_for_session(session, session_id)
+                if count >= settings.FAQ_MAX_ENTRIES_PER_SESSION:
+                    get_logger().info(
+                        "faq.create_refused",
+                        session_id=session_id,
+                        entry_count=count,
+                        cap=settings.FAQ_MAX_ENTRIES_PER_SESSION,
+                    )
+                    raise HTTPException(
+                        status_code=409,
+                        detail=(
+                            "this session's corpus is full "
+                            f"({settings.FAQ_MAX_ENTRIES_PER_SESSION} entries) - "
+                            "delete one first"
+                        ),
+                    )
+                entry_id = await faq_repository.reserve_id(session)
+        except HTTPException:
+            raise
         except Exception as exc:
             _log_faq_failure("create", None, exc, dependency="postgres")
-            raise
+            raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
 
-        qdrant_client = request.app.state.qdrant_client
-        voyage_client = get_voyage_client(request)
+        revision = str(ULID())
+        await _write_chunks(
+            request, "create", session_id, entry_id, revision, body.content
+        )
+
         try:
-            await index_faq_entry(qdrant_client, voyage_client, entry.id, entry.content)
-        except FaqOperationError as exc:
-            dependency = "qdrant" if exc.failed_step == "persist" else None
-            _log_faq_failure("create", entry.id, exc, dependency=dependency)
             async with session_factory() as session:
-                await faq_repository.delete(session, entry.id)
-            raise
+                entry = await faq_repository.create(
+                    session, session_id, body.content, revision, entry_id
+                )
+        except Exception as exc:
+            _log_faq_failure("create", entry_id, exc, dependency="postgres")
+            raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
 
-        get_logger().info("faq.entry_created", entry_id=entry.id)
+        # Ordinarily a no-op - a create's id is fresh - and here so a reserved id that
+        # somehow carries chunks from an earlier attempt does not keep them.
+        await sweep_entry(request.app.state.qdrant_client, entry.id, revision)
+        get_logger().info(
+            "faq.entry_created",
+            entry_id=entry.id,
+            session_id=session_id,
+            revision=revision,
+        )
         return FaqEntry.model_validate(entry)
 
 
 @router.get("/faq")
-async def list_faq_entries() -> list[FaqEntry]:
-    """List existing FAQ entries."""
+async def list_faq_entries(request: Request) -> list[FaqEntry]:
+    """List this session's FAQ entries.
+
+    A visitor with no session has an empty corpus, which is the ordinary starting state
+    of every session rather than an error - so this returns an empty list, never a 404.
+
+    Every entry listed is one the assistant can answer from, and there is no field
+    saying so: an entry owns a live revision or it cannot be stored, so a retrievability
+    indicator could never report anything but "yes" - and a signal that can never fire
+    teaches a reader to rely on one that would not warn them.
+    """
+    session_id = read_session_id(request)
+    if session_id is None:
+        return []
     try:
         async with session_factory() as session:
-            entries = await faq_repository.list_all(session)
+            entries = await faq_repository.list_all(session, session_id)
     except Exception as exc:
         _log_dependency_unreachable("postgres", exc)
         raise
@@ -97,11 +227,12 @@ async def list_faq_entries() -> list[FaqEntry]:
 
 
 @router.get("/faq/{entry_id}")
-async def get_faq_entry(entry_id: int) -> FaqEntry:
-    """Retrieve a single FAQ entry by ID."""
+async def get_faq_entry(entry_id: int, request: Request) -> FaqEntry:
+    """Retrieve one of this session's FAQ entries by ID."""
+    session_id = _require_session(request)
     try:
         async with session_factory() as session:
-            entry = await faq_repository.get(session, entry_id)
+            entry = await faq_repository.get(session, session_id, entry_id)
     except Exception as exc:
         _log_dependency_unreachable("postgres", exc)
         raise
@@ -110,85 +241,94 @@ async def get_faq_entry(entry_id: int) -> FaqEntry:
     return FaqEntry.model_validate(entry)
 
 
-async def _revert_faq_update(
-    qdrant_client: AsyncQdrantClient,
-    voyage_client: AsyncClient,
-    entry_id: int,
-    previous_content: str | None,
-) -> None:
-    """Best-effort revert to `previous_content` after a failed update re-index.
-
-    Called when `index_faq_entry` fails on the new content mid-update: re-indexes the
-    previous content, then reverts Postgres to match, so the entry falls back to its
-    last known-good state - both Postgres and Qdrant reflecting the old content - rather
-    than Postgres claiming content that isn't backed by any vectors. Any failure during
-    this compensation is swallowed so it doesn't mask the original exception, which the
-    caller re-raises regardless of whether this succeeds.
-    """
-    if previous_content is None:
-        return
-    try:
-        await index_faq_entry(qdrant_client, voyage_client, entry_id, previous_content)
-        async with session_factory() as session:
-            await faq_repository.update(session, entry_id, previous_content)
-    except Exception:  # noqa: BLE001, S110 - best-effort; must not mask the original failure
-        pass
-
-
 @router.put("/faq/{entry_id}")
 async def update_faq_entry(
     entry_id: int, body: FaqEntryWrite, request: Request
 ) -> FaqEntry:
-    """Replace the content of an existing FAQ entry; re-indexes it."""
+    """Replace an entry's content, publishing a new revision of its chunks.
+
+    Raises:
+        HTTPException 404: no such entry in this session.
+        HTTPException 409: another save published while this one was preparing. A
+            failed, retryable save - not a missing entry.
+        HTTPException 503: a dependency was unreachable, and nothing was changed.
+
+    The revision this save expects to supersede is read here, inside the operation, and
+    never supplied by the caller: a caller-supplied one would let a stale client publish
+    over a save it never saw.
+    """
+    session_id = _require_session(request)
     with bind_operation_id():
         try:
             async with session_factory() as session:
-                previous = await faq_repository.get(session, entry_id)
-                previous_content = previous.content if previous is not None else None
-                entry = await faq_repository.update(session, entry_id, body.content)
+                previous = await faq_repository.get(session, session_id, entry_id)
         except Exception as exc:
             _log_faq_failure("update", entry_id, exc, dependency="postgres")
-            raise
-        if entry is None:
+            raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
+        if previous is None:
             raise HTTPException(status_code=404, detail=_NOT_FOUND)
+        superseded = previous.live_revision
 
-        qdrant_client = request.app.state.qdrant_client
-        voyage_client = get_voyage_client(request)
+        revision = str(ULID())
+        await _write_chunks(
+            request, "update", session_id, entry_id, revision, body.content
+        )
+
         try:
-            await index_faq_entry(qdrant_client, voyage_client, entry.id, entry.content)
-        except FaqOperationError as exc:
-            dependency = "qdrant" if exc.failed_step == "persist" else None
-            _log_faq_failure("update", entry.id, exc, dependency=dependency)
-            await _revert_faq_update(
-                qdrant_client, voyage_client, entry.id, previous_content
-            )
-            raise
+            async with session_factory() as session:
+                entry = await faq_repository.publish(
+                    session, session_id, entry_id, body.content, revision, superseded
+                )
+        except Exception as exc:
+            _log_faq_failure("update", entry_id, exc, dependency="postgres")
+            raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
 
-        get_logger().info("faq.entry_updated", entry_id=entry.id)
+        if entry is None:
+            # The guard matched no row: another save had already superseded the
+            # revision this one read. An ordinary outcome, and the loser is told its
+            # save failed rather than told its entry is gone.
+            get_logger().info(
+                "faq.publish_conflict",
+                entry_id=entry_id,
+                session_id=session_id,
+                expected_revision=superseded,
+            )
+            raise HTTPException(status_code=409, detail=_CONFLICT)
+
+        await sweep_entry(request.app.state.qdrant_client, entry.id, revision)
+        get_logger().info(
+            "faq.entry_updated",
+            entry_id=entry.id,
+            session_id=session_id,
+            revision=revision,
+            superseded_revision=superseded,
+        )
         return FaqEntry.model_validate(entry)
 
 
 @router.delete("/faq/{entry_id}", status_code=204)
 async def delete_faq_entry(entry_id: int, request: Request) -> None:
-    """Delete an existing FAQ entry.
+    """Delete an entry from this session's corpus.
 
-    Deindexes first, so a partial failure never leaves orphaned, still-retrievable
-    chunks behind.
+    Raises: HTTPException 404 if this session has no such entry.
+
+    The row goes **first**, which un-publishes every revision it named and makes the
+    entry unanswerable at that instant. Removing its chunks follows as housekeeping, and
+    its failure is not reported: the chunks are already unreachable, so reporting a leak
+    as a failed delete would send somebody back to re-run something that already
+    achieved every observable effect.
     """
+    session_id = _require_session(request)
     with bind_operation_id():
         try:
-            await deindex_faq_entry(request.app.state.qdrant_client, entry_id)
-        except FaqOperationError as exc:
-            _log_faq_failure("delete", entry_id, exc, dependency="qdrant")
-            raise
-
-        try:
             async with session_factory() as session:
-                deleted = await faq_repository.delete(session, entry_id)
+                deleted = await faq_repository.delete(session, session_id, entry_id)
         except Exception as exc:
             _log_faq_failure("delete", entry_id, exc, dependency="postgres")
-            raise
+            raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
 
         if not deleted:
             raise HTTPException(status_code=404, detail=_NOT_FOUND)
-        get_logger().info("faq.entry_deleted", entry_id=entry_id)
+
+        await remove_entry_chunks(request.app.state.qdrant_client, entry_id)
+        get_logger().info("faq.entry_deleted", entry_id=entry_id, session_id=session_id)

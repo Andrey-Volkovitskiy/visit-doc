@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatList } from "./components/ChatList";
 import { ChatWindow } from "./components/ChatWindow";
+import { FaqAdmin } from "./components/FaqAdmin";
+import { PractitionerAdmin } from "./components/PractitionerAdmin";
+import { StaffConsole } from "./components/StaffConsole";
+import { StaffThread } from "./components/StaffThread";
+import { setAssistant } from "./lib/consoleApi";
+import { useConsolePoll } from "./lib/useConsolePoll";
 import {
   createChat,
   deleteChat,
@@ -13,7 +19,44 @@ import {
 function App() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [staffChatId, setStaffChatId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Whether this browser has a session yet, which is the precondition for every
+  // session-scoped panel below. The session cookie is HttpOnly, so the SPA cannot look:
+  // this is only ever the server's own answer, either `session_exists` on a listing or
+  // the fact that a POST /chats came back.
+  //
+  // Monotonic on purpose. A session is minted once and never withdrawn while the page is
+  // open, so this latches true and is never set back from a later listing — a panel that
+  // unmounted on one transient answer would throw away whatever a staff member had typed
+  // into it, and remounting is not a refresh of anything.
+  const [sessionExists, setSessionExists] = useState(false);
+  // One poll, every pane: the staff list renders it, and both open threads refetch when
+  // their conversation's newest message advances past what they hold — which is what
+  // makes a staff reply appear in the patient's thread, and a patient message appear in
+  // the staff member's, with no channel of its own to keep in step.
+  const poll = useConsolePoll();
+  const activeLastMessageAt =
+    poll.conversations.find((c) => c.chat_id === activeChatId)?.last_message_at ??
+    null;
+  const staffConversation = poll.conversations.find(
+    (c) => c.chat_id === staffChatId,
+  );
+
+  // The poll re-reads the switch's position a moment later anyway, so nothing is
+  // cached from the response here - which is what stops two tabs disagreeing about a
+  // conversation one of them just took.
+  function handleSetAssistant(enabled: boolean): void {
+    if (staffChatId === null) return;
+    setError(null);
+    void setAssistant(staffChatId, enabled).catch((err: unknown) => {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not change the assistant for this conversation.",
+      );
+    });
+  }
 
   // The server returns the list already ordered - chats holding messages first,
   // newest message first - so "the chat I was last talking in" is simply the first
@@ -30,6 +73,11 @@ function App() {
     // refetched — the server's ordering puts a brand-new, message-less chat first
     // among its peers, which is exactly where prepending puts it.
     const created = await createChat();
+    // A returned chat proves a session: this call either minted one and set its cookie,
+    // or was made under one that was already there. Either way the panels that need one
+    // may now mount, and this is the only signal a first arrival ever gets — the
+    // provisioning POST is the very thing that creates what they read.
+    setSessionExists(true);
     setChats((prev) => [created, ...prev]);
     setActiveChatId(created.id);
   }, []);
@@ -57,6 +105,7 @@ function App() {
           });
           return;
         }
+        setSessionExists(true);
         setActiveChatId((current) => current ?? listing.chats[0]?.id ?? null);
       })
       .catch((err: unknown) => {
@@ -104,9 +153,14 @@ function App() {
     );
   }
 
+  // Both sides at once, with no way in and out: this is a single-visitor
+  // demonstration, so the staff member and the patient are the same person in two
+  // panes. There is no authentication in this phase and no prompt for one.
   return (
     <div>
       <h1>VisitDoc</h1>
+      <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+        <div data-testid="patient-pane" style={{ flex: 1, minWidth: 0 }}>
       <ChatList
         chats={chats}
         activeChatId={activeChatId}
@@ -133,7 +187,56 @@ function App() {
           if (activeChatId !== null && chats[0]?.id === activeChatId) return;
           void load().catch(() => undefined);
         }}
+        lastMessageAt={activeLastMessageAt}
       />
+        </div>
+        <div data-testid="staff-pane" style={{ flex: 1, minWidth: 0 }}>
+          <h2>Staff</h2>
+          <StaffConsole
+            conversations={poll.conversations}
+            attentionTotal={poll.attentionTotal}
+            activeChatId={staffChatId}
+            onSelect={setStaffChatId}
+          />
+          <StaffThread
+            chatId={staffChatId}
+            assistantMayReply={staffConversation?.assistant_may_reply ?? true}
+            pauseSecondsRemaining={
+              staffConversation?.pause_seconds_remaining ?? null
+            }
+            // The same poll, serving the staff side's open thread as it already serves
+            // the patient's: a patient message arriving into the conversation a staff
+            // member is reading appears there without them clicking away and back.
+            lastMessageAt={staffConversation?.last_message_at ?? null}
+            onSetAssistant={handleSetAssistant}
+          />
+          {/*
+            Not rendered until a session exists, which is what makes the wrong state
+            unrepresentable rather than recovered from. Each of these panels reads
+            something owned by the session and fetches it once, on mount: their effect
+            has no reason to run a second time, so a fetch made before the session
+            existed is the only answer they would ever have. On a first arrival that
+            answer is a 401 from GET /console/practitioners, and the panel went on
+            showing "no session" over an empty roster while the session it was minted
+            beside sat there holding practitioners.
+
+            Withholding them until `sessionExists` means the mount that performs the
+            fetch cannot happen too early — there is no early state to repair, no second
+            fetch to schedule, and nothing in the network layer that has to know about
+            any of this. FaqAdmin joins them not because it misbehaves today but because
+            it has the identical shape: GET /faq answering 200-with-an-empty-list for a
+            session-less caller is the endpoint's choice, and a panel that is only
+            correct while that choice holds is a panel resting on someone else's status
+            code.
+          */}
+          {sessionExists && (
+            <>
+              <PractitionerAdmin />
+              <FaqAdmin />
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

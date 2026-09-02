@@ -8,6 +8,9 @@ from anthropic.types import ThinkingBlock, ToolUseBlock
 from chat.agent.history import (
     bound_to_last_n_turns,
     derive_reply_to_message_ids,
+    exclude_silent_window,
+    render_silent_window,
+    silent_window,
     split_into_bursts,
     to_claude_messages,
     to_loggable_messages,
@@ -276,3 +279,266 @@ def test_to_loggable_messages_drops_the_thinking_signature() -> None:
     ][0]
 
     assert logged_block == {"thinking": "", "type": "thinking"}
+
+
+# --- 007 (FR-026): a third sender, and the seam 003 left for it --------------------
+#
+# `split_into_bursts` and `to_claude_messages` were written against the patient /
+# not-patient distinction rather than against `sender == ASSISTANT`, and both docstrings
+# say so. These tests pin that claim: if either needs a change for a staff message, the
+# docstrings are what must be corrected with it.
+
+
+def test_a_staff_message_joins_the_clinics_side_of_the_conversation() -> None:
+    history = [
+        _row(MessageSender.PATIENT, "is anyone there?", id="p1"),
+        _row(MessageSender.ASSISTANT, "I've asked a colleague to look.", id="a1"),
+        _row(MessageSender.STAFF, "Hi - I've got this now.", id="s1"),
+        _row(MessageSender.PATIENT, "thank you", id="p2"),
+    ]
+
+    bursts = split_into_bursts(history)
+
+    assert [_ids(burst) for burst in bursts] == [["p1"], ["a1", "s1"], ["p2"]]
+
+
+def test_a_staff_burst_reaches_claude_as_the_assistant_role() -> None:
+    history = [
+        _row(MessageSender.PATIENT, "is anyone there?", id="p1"),
+        _row(MessageSender.STAFF, "Hi - I've got this now.", id="s1"),
+        _row(MessageSender.PATIENT, "thank you", id="p2"),
+    ]
+
+    entries = to_claude_messages(split_into_bursts(history))
+
+    assert entries == [
+        {"role": "user", "content": "is anyone there?"},
+        {"role": "assistant", "content": "Hi - I've got this now."},
+        {"role": "user", "content": "thank you"},
+    ]
+
+
+def test_a_staff_message_ends_a_patients_burst() -> None:
+    # It is a reply, so the messages before it are answered and the ones after it are
+    # a new turn - which is what keeps `derive_reply_to_message_ids` honest.
+    history = [
+        _row(MessageSender.PATIENT, "are you there", id="p1"),
+        _row(MessageSender.PATIENT, "hello?", id="p2"),
+        _row(MessageSender.STAFF, "I'm here.", id="s1"),
+        _row(MessageSender.PATIENT, "great", id="p3"),
+    ]
+
+    bursts = split_into_bursts(history)
+
+    assert derive_reply_to_message_ids(bursts) == ["p3"]
+
+
+def test_an_assistant_reply_and_a_staff_reply_merge_into_one_entry() -> None:
+    history = [
+        _row(MessageSender.PATIENT, "when can I visit?", id="p1"),
+        _row(MessageSender.ASSISTANT, "I don't have a confident answer.", id="a1"),
+        _row(MessageSender.STAFF, "Visiting hours are 8am to 5pm.", id="s1"),
+    ]
+
+    entries = to_claude_messages(split_into_bursts(history))
+
+    assert entries == [
+        {"role": "user", "content": "when can I visit?"},
+        {
+            "role": "assistant",
+            "content": (
+                "I don't have a confident answer.\n\nVisiting hours are 8am to 5pm."
+            ),
+        },
+    ]
+
+
+# --- 007 (FR-019a/b): a turn answers only what arrived after the silence -----------
+
+
+def _marked(sender: MessageSender, content: str, id: str, mark: str | None) -> Message:
+    row = _row(sender, content, id)
+    row.attention_mark = mark
+    return row
+
+
+def test_messages_that_arrived_while_silent_are_not_answered_retroactively() -> None:
+    # FR-019a: a person was meant to answer them. Coming back to them once a pause
+    # elapses answers a question the patient has moved on from, or that staff handled.
+    history = [
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "hello?", id="p2", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p3", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert derive_reply_to_message_ids(bursts) == ["p3"]
+
+
+def test_the_silenced_messages_stay_in_the_history_as_context() -> None:
+    # The spec requires it in terms: they remain part of the conversation it reads for
+    # context. Which is why this splits the burst rather than dropping anything.
+    history = [
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p2", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert [_ids(burst) for burst in bursts] == [["p1"], ["p2"]]
+
+
+def test_a_cleared_mark_puts_its_message_back_in_the_burst() -> None:
+    # A staff reply clears the clearable marks, and a staff reply would have broken the
+    # burst anyway - so an unmarked message is simply an ordinary one again.
+    history = [
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark=None),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p2", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert derive_reply_to_message_ids(bursts) == ["p1", "p2"]
+
+
+def test_only_the_last_silenced_message_decides_where_the_split_falls() -> None:
+    history = [
+        _marked(MessageSender.PATIENT, "one", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "two", id="p2", mark=None),
+        _marked(MessageSender.PATIENT, "three", id="p3", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "four", id="p4", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert [_ids(burst) for burst in bursts] == [["p1", "p2", "p3"], ["p4"]]
+
+
+def test_a_permanent_mark_does_not_exclude_its_message() -> None:
+    # Only `unanswered` records that nothing answered a message. The other three record
+    # that staff were called, on turns that answered the patient perfectly well.
+    history = [
+        _marked(MessageSender.PATIENT, "book me in", id="p1", mark="assistant_failed"),
+        _marked(MessageSender.PATIENT, "and again", id="p2", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert derive_reply_to_message_ids(bursts) == ["p1", "p2"]
+
+
+def test_an_unmarked_history_is_returned_exactly_as_it_was() -> None:
+    history = [
+        _row(MessageSender.PATIENT, "when can I visit?", id="p1"),
+        _row(MessageSender.ASSISTANT, "8am to 5pm.", id="a1"),
+        _row(MessageSender.PATIENT, "and on Sunday?", id="p2"),
+    ]
+    bursts = split_into_bursts(history)
+
+    assert exclude_silent_window(bursts) == bursts
+
+
+def test_an_empty_history_survives_the_exclusion() -> None:
+    assert exclude_silent_window([]) == []
+
+
+def test_the_split_bursts_rejoin_into_one_user_entry() -> None:
+    # The Messages API requires strict alternation, and the split above is the one
+    # place in the system that produces two consecutive patient-sided bursts. This is
+    # where they are put back together, so no caller has to remember to.
+    history = [
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p2", mark=None),
+    ]
+
+    entries = to_claude_messages(exclude_silent_window(split_into_bursts(history)))
+
+    assert entries == [
+        {"role": "user", "content": "are you there?\n\nwhat are your hours?"}
+    ]
+
+
+def test_rejoining_keeps_the_alternation_around_it() -> None:
+    history = [
+        _row(MessageSender.PATIENT, "when can I visit?", id="p1"),
+        _row(MessageSender.ASSISTANT, "8am to 5pm.", id="a1"),
+        _marked(MessageSender.PATIENT, "are you there?", id="p2", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "and on Sunday?", id="p3", mark=None),
+    ]
+
+    entries = to_claude_messages(exclude_silent_window(split_into_bursts(history)))
+
+    assert [entry["role"] for entry in entries] == ["user", "assistant", "user"]
+    assert entries[-1]["content"] == "are you there?\n\nand on Sunday?"
+
+
+def test_the_silent_window_is_the_burst_the_exclusion_held_back() -> None:
+    history = [
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "hello?", id="p2", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p3", mark=None),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert _ids(silent_window(bursts)) == ["p1", "p2"]
+
+
+def test_an_ordinary_history_has_no_silent_window() -> None:
+    # `split_into_bursts` never produces two consecutive patient-sided bursts, so the
+    # shape this looks for exists only where the exclusion made it.
+    history = [
+        _row(MessageSender.PATIENT, "when can I visit?", id="p1"),
+        _row(MessageSender.ASSISTANT, "8am to 5pm.", id="a1"),
+        _row(MessageSender.PATIENT, "and on Sunday?", id="p2"),
+    ]
+
+    assert silent_window(split_into_bursts(history)) == []
+    assert silent_window(exclude_silent_window(split_into_bursts(history))) == []
+
+
+def test_a_burst_of_quick_messages_is_not_a_silent_window() -> None:
+    # Three lines typed in a row are one question, and 003's merging rule still owns
+    # them - nothing was silenced, so nothing is held back.
+    history = [
+        _row(MessageSender.PATIENT, "When can I see", id="p1"),
+        _row(MessageSender.PATIENT, "Dr. Josh?", id="p2"),
+    ]
+
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    assert silent_window(bursts) == []
+    assert derive_reply_to_message_ids(bursts) == ["p1", "p2"]
+
+
+def test_an_empty_history_has_no_silent_window() -> None:
+    assert silent_window([]) == []
+
+
+def test_the_rendered_window_names_it_as_context_and_not_as_a_request() -> None:
+    # The whole point of rendering it separately: a model reading one merged entry has
+    # nothing to tell the two apart by, and acting on the window would answer - or
+    # cancel - something a person had already taken over.
+    history = [
+        _marked(
+            MessageSender.PATIENT,
+            "cancel my Tuesday slot",
+            id="p1",
+            mark="unanswered",
+        ),
+        _marked(MessageSender.PATIENT, "when can I visit?", id="p2", mark=None),
+    ]
+
+    rendered = render_silent_window(
+        silent_window(exclude_silent_window(split_into_bursts(history)))
+    )
+
+    assert "cancel my Tuesday slot" in rendered
+    assert "when can I visit?" not in rendered
+    assert "do not answer them" in rendered
+    assert "do not act on them" in rendered
+
+
+def test_nothing_is_rendered_when_nothing_was_silenced() -> None:
+    assert render_silent_window([]) == ""

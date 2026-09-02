@@ -10,7 +10,9 @@ from fastapi import FastAPI
 from voyageai.client_async import AsyncClient
 
 from chat.agent.graph import clear_graph_cache
+from chat.api.admin import router as admin_router
 from chat.api.chats import router as chats_router
+from chat.api.console import router as console_router
 from chat.api.faq import router as faq_router
 from chat.api.turn import router as turn_router
 from chat.clients.scheduling import create_channel
@@ -32,8 +34,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     Qdrant and Anthropic get pooling for free by reusing the client instance. Voyage's
     `AsyncClient` doesn't - it opens a fresh `aiohttp.ClientSession` per `embed()` call
     unless handed a shared session via the `voyageai.aiosession` contextvar - so a plain
-    shared `aiohttp.ClientSession` is also created and stored on state here, to be bound
-    into that contextvar per-request elsewhere. Each client's/session's cleanup is
+    shared `aiohttp.ClientSession` is also created and stored on state here, bound into
+    that contextvar per-request elsewhere and reused by the console's practitioner
+    proxy, which is the other thing this service speaks HTTP to. Each client's and
+    session's cleanup is
     registered on an `AsyncExitStack` right after construction, so a later step failing
     during startup, or one close() raising during shutdown, can never leave an earlier
     one's connections unclosed.
@@ -55,8 +59,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
         stack.push_async_callback(anthropic_client.close)
         voyage_client = AsyncClient(api_key=settings.VOYAGE_API_KEY)
-        voyage_session = aiohttp.ClientSession()
-        stack.push_async_callback(voyage_session.close)
+        # One pool, two callers: Voyage's client is handed it through its contextvar,
+        # and the console's practitioner proxy sends its own requests over it. A second
+        # session would be a second set of connections for no reason.
+        http_session = aiohttp.ClientSession()
+        stack.push_async_callback(http_session.close)
 
         # A gRPC channel is a connection pool, so it is built once and shared like the
         # clients above. Deliberately *not* connected eagerly: the scheduler being down
@@ -67,7 +74,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         app.state.qdrant_client = qdrant_client
         app.state.anthropic_client = anthropic_client
         app.state.voyage_client = voyage_client
-        app.state.voyage_session = voyage_session
+        app.state.http_session = http_session
         app.state.scheduling_channel = scheduling_channel
         # Registered before the yield so it runs on the way out whatever happens: the
         # compiled-graph cache keys on the clients above, and would otherwise keep this
@@ -80,7 +87,9 @@ def create_app() -> FastAPI:
     """Build the FastAPI application."""
     configure_logging(get_settings())
     app = FastAPI(title="VisitDoc — Grounded FAQ Chat", lifespan=lifespan)
+    app.include_router(admin_router)
     app.include_router(chats_router)
+    app.include_router(console_router)
     app.include_router(faq_router)
     app.include_router(turn_router)
     return app

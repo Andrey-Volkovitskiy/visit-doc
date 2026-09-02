@@ -79,6 +79,11 @@ class SchedulingStub:
                 request_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.SerializeToString,
                 response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.FromString,
                 _registered_method=True)
+        self.DeleteSession = channel.unary_unary(
+                '/scheduling.v1.Scheduling/DeleteSession',
+                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionRequest.SerializeToString,
+                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionResponse.FromString,
+                _registered_method=True)
 
 
 class SchedulingServicer:
@@ -179,6 +184,24 @@ class SchedulingServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DeleteSession(self, request, context):
+        """Hard-delete everything this session owns here: its practitioners, its patients, and - by the
+        FK cascades 005 created - their appointments (007 FR-047). Those cascades are deliberately
+        status-blind, so CANCELLED appointments go with the rest: a cancelled appointment is still
+        that session's row.
+
+        One transaction, so the caller's per-session report has two outcomes to distinguish rather
+        than a spectrum. Idempotent, and that is load-bearing rather than incidental: re-running a
+        deletion reported incomplete must be safe and must converge. Deleting a session that owns
+        nothing - including one that never existed - succeeds with every count at zero, and is NOT
+        NOT_FOUND: "already gone" and "was never here" are the same end state here.
+
+        No idempotency key: this creates nothing, so a re-send cannot duplicate anything.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SchedulingServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -226,6 +249,11 @@ def add_SchedulingServicer_to_server(servicer, server):
                     servicer.DeletePatientForChat,
                     request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.FromString,
                     response_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.SerializeToString,
+            ),
+            'DeleteSession': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteSession,
+                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionRequest.FromString,
+                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -471,6 +499,33 @@ class Scheduling:
             '/scheduling.v1.Scheduling/DeletePatientForChat',
             scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatRequest.SerializeToString,
             scheduling_dot_v1_dot_scheduling__pb2.DeletePatientForChatResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteSession(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/scheduling.v1.Scheduling/DeleteSession',
+            scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionRequest.SerializeToString,
+            scheduling_dot_v1_dot_scheduling__pb2.DeleteSessionResponse.FromString,
             options,
             channel_credentials,
             insecure,

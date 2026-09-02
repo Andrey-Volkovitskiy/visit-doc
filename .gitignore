@@ -220,3 +220,6 @@ __marimo__/
 # Node (services/frontend)
 node_modules/
 *.tsbuildinfo
+
+# Background dev services (pids, logs, cookie jar) - see scripts/dev-services.sh
+.run/

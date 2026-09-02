@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from chat.agent.generation_registry import register_and_cancel_previous
 from chat.api.session_cookie import COOKIE_NAME
@@ -781,3 +781,38 @@ async def test_an_empty_name_is_rejected_before_the_scheduler_is_called() -> Non
 
     assert response.status_code == 422
     rename.assert_not_awaited()
+
+
+# --- 007: creating a session costs nothing in the retrieval path -------------------
+
+
+def test_creating_a_session_touches_neither_the_embedder_nor_the_retrieval_store() -> (
+    None
+):
+    # A new session's corpus is empty because nothing seeded it, not because a seeding
+    # step failed - so provisioning must not gain a corpus step at all. Asserted as an
+    # absence, which is the only way to state "no step was added".
+    with (
+        patch("chat.rag.indexing.embed_texts") as embed,
+        patch("chat.repositories.qdrant_repository.upsert_chunks") as upsert,
+        TestClient(app) as client,
+    ):
+        response = client.post("/chats")
+
+    assert response.status_code == 201
+    embed.assert_not_called()
+    upsert.assert_not_called()
+
+
+def test_a_chat_is_created_even_when_the_retrieval_store_refuses_every_call() -> None:
+    # Nothing about session creation reaches Qdrant, so a store that answers nothing
+    # cannot stop a visitor getting a chat. If this ever fails, provisioning acquired a
+    # dependency it is not supposed to have.
+    with TestClient(app) as client:
+        client.app.state.qdrant_client = MagicMock(  # type: ignore[attr-defined]
+            side_effect=RuntimeError("qdrant down")
+        )
+        response = client.post("/chats")
+
+    assert response.status_code == 201
+    assert response.json()["id"]

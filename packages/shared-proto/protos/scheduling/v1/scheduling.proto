@@ -84,6 +84,20 @@ service Scheduling {
   // Hard-delete this chat's patient and, by cascade, that patient's appointments (FR-039).
   // Idempotent: deleting an already-absent patient succeeds.
   rpc DeletePatientForChat(DeletePatientForChatRequest) returns (DeletePatientForChatResponse);
+
+  // Hard-delete everything this session owns here: its practitioners, its patients, and - by the
+  // FK cascades 005 created - their appointments (007 FR-047). Those cascades are deliberately
+  // status-blind, so CANCELLED appointments go with the rest: a cancelled appointment is still
+  // that session's row.
+  //
+  // One transaction, so the caller's per-session report has two outcomes to distinguish rather
+  // than a spectrum. Idempotent, and that is load-bearing rather than incidental: re-running a
+  // deletion reported incomplete must be safe and must converge. Deleting a session that owns
+  // nothing - including one that never existed - succeeds with every count at zero, and is NOT
+  // NOT_FOUND: "already gone" and "was never here" are the same end state here.
+  //
+  // No idempotency key: this creates nothing, so a re-send cannot duplicate anything.
+  rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse);
 }
 
 // ---------------------------------------------------------------------------
@@ -454,4 +468,21 @@ message DeletePatientForChatRequest {
 message DeletePatientForChatResponse {
   bool patient_existed = 1;
   int32 appointments_deleted = 2;
+}
+
+// Unlike every other request here, the session is not a scoping predicate on someone else's
+// identity - it IS the target. The caller is the core backend acting for an admin, and the secret
+// that authorized it never crosses this boundary: the scheduler is told which session to remove,
+// not who asked.
+message DeleteSessionRequest {
+  string session_id = 1;
+}
+
+// What was actually removed, because an admin is owed what happened rather than that something
+// happened - and because zero counts are the honest answer for a session that owned nothing,
+// distinguishable in the report from a call that failed.
+message DeleteSessionResponse {
+  int32 patients_deleted = 1;
+  int32 practitioners_deleted = 2;
+  int32 appointments_deleted = 3;
 }

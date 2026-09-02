@@ -19,9 +19,22 @@ interface ChatWindowProps {
   chatId: string | null;
   /** Called after a turn completes, so the chat list can refresh its ordering. */
   onTurnComplete?: () => void;
+  /**
+   * The newest message time the console poll reports for this chat.
+   *
+   * When it advances past the value this pane last acted on, something wrote into the
+   * thread that this pane did not — a staff reply — and the history is refetched. That
+   * is the whole mechanism by which a staff reply appears here without a reload, and it
+   * rides the one poll that already runs rather than opening a channel of its own.
+   */
+  lastMessageAt?: string | null;
 }
 
-export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
+export function ChatWindow({
+  chatId,
+  onTurnComplete,
+  lastMessageAt,
+}: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   // Keyed by turn rather than a single string: several turns can be in flight at once
@@ -38,6 +51,18 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
   // started, or its final `done` event (and the reply the server already
   // persisted) would be thrown away client-side, only reappearing on reload.
   const activeControllersRef = useRef<Set<AbortController>>(new Set());
+  // The poll value this pane has already accounted for. Compared by identity rather
+  // than by clock arithmetic: an optimistic local message carries the browser's own
+  // time, and comparing a server timestamp against it would make a skewed clock decide
+  // whether a staff reply is ever shown.
+  //
+  // `undefined` is "nothing accounted for yet" and is distinct from `null`, which is a
+  // real answer the poll gives about a chat holding no messages. Collapsing the two
+  // would lose exactly one message: the first ever written into an open, empty chat by
+  // someone other than this pane. Its timestamp would be the first non-null value seen,
+  // the branch below would file it as "describes the history just loaded", and a staff
+  // member's opening line would sit unfetched until a reload.
+  const handledLastMessageAtRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     // Switching chats abandons whatever the previous one had in flight: its reply
@@ -47,6 +72,7 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
       controller.abort();
     }
     activeControllersRef.current.clear();
+    handledLastMessageAtRef.current = undefined;
     setMessages([]);
     setStreaming({});
     setError(null);
@@ -72,6 +98,38 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
       current = false;
     };
   }, [chatId]);
+
+  const streamingCount = Object.keys(streaming).length;
+
+  useEffect(() => {
+    // `undefined` here means the caller is not feeding this pane the poll at all, which
+    // is a different thing from a chat the poll says is empty.
+    if (chatId === null || lastMessageAt === undefined) return;
+    if (handledLastMessageAtRef.current === lastMessageAt) return;
+    if (handledLastMessageAtRef.current === undefined) {
+      // The first value seen for this chat describes the history just loaded, so there
+      // is nothing new in it to fetch.
+      handledLastMessageAtRef.current = lastMessageAt;
+      return;
+    }
+    // Left unhandled while a reply is streaming, so this tick is retried once the turn
+    // finishes: replacing the history mid-stream would race the reply about to be
+    // appended to it.
+    if (streamingCount > 0) return;
+    handledLastMessageAtRef.current = lastMessageAt;
+
+    let current = true;
+    void fetchChatHistory(chatId)
+      .then((history) => {
+        if (current) setMessages(history);
+      })
+      // A failed refetch leaves the thread as it was; the next poll tick tries again,
+      // which is not worth an error banner over a message the patient has not missed.
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [chatId, lastMessageAt, streamingCount]);
 
   function clearStreaming(turnKey: string): void {
     setStreaming((prev) => {
@@ -102,6 +160,7 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
         content: messageText,
         grounded: null,
         citations: null,
+        attention_mark: null,
         created_at: new Date().toISOString(),
       },
     ]);
@@ -113,6 +172,11 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
         if (event.type === "token") {
           accumulated += event.text;
           setStreaming((prev) => ({ ...prev, [turnKey]: accumulated }));
+        } else if (event.type === "silent") {
+          // A person is handling this conversation, so nothing was generated and there
+          // is nothing to render. The message stays in the thread exactly as sent.
+          clearStreaming(turnKey);
+          return;
         } else if (event.type === "cancelled") {
           // Superseded by a newer message - remove the in-progress bubble and any
           // partial tokens entirely; never shown as final, never as an error. Only
@@ -132,6 +196,7 @@ export function ChatWindow({ chatId, onTurnComplete }: ChatWindowProps) {
               content: event.message ?? accumulated,
               grounded: event.grounded,
               citations: event.citations,
+              attention_mark: null,
               created_at: new Date().toISOString(),
             },
           ]);
