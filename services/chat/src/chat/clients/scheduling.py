@@ -13,9 +13,11 @@ Two kinds of failure are deliberately kept apart:
   have landed - a deadline we stopped waiting on does not stop the server working - so
   the assistant can say "nothing was created" only when that is actually known.
 
-`SchedulingRequestError` sits outside both: it means this service sent something the
-contract forbids, which is a defect here rather than anything the patient can act on.
-`SchedulingNotFoundError` covers an id that did not resolve, and names which one.
+`SchedulingRequestError` sits outside both: the scheduler and this service disagree
+about the contract - either this service sent something the contract forbids, or the
+answer carried a value this build cannot read. A defect either way, rather than anything
+the patient can act on. `SchedulingNotFoundError` covers an id that did not resolve, and
+names which one.
 
 All three share `SchedulingError`, so a caller that must not fail on *any* scheduling
 problem can say so in one `except` that a fourth kind cannot slip past.
@@ -24,7 +26,7 @@ problem can say so in one `except` that a fourth kind cannot slip past.
 import asyncio
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Any
 from weakref import WeakKeyDictionary
 
@@ -80,6 +82,20 @@ _FAILURE_REASON_BY_PROTO = {
 _APPOINTMENT_STATUS_BY_PROTO = {
     pb.APPOINTMENT_STATUS_STANDING: AppointmentStatus.STANDING,
     pb.APPOINTMENT_STATUS_CANCELLED: AppointmentStatus.CANCELLED,
+}
+
+# Zero is deliberately absent: on the wire it is `WEEKDAY_UNSPECIFIED`, the value
+# proto3 sends for a field nobody populated, and it names no day. The wire's days run
+# 1..7 while `shared_models.Weekday` runs 0..6, so this is a real translation rather
+# than a pass-through.
+_WEEKDAY_BY_PROTO = {
+    pb.WEEKDAY_MONDAY: Weekday.MONDAY,
+    pb.WEEKDAY_TUESDAY: Weekday.TUESDAY,
+    pb.WEEKDAY_WEDNESDAY: Weekday.WEDNESDAY,
+    pb.WEEKDAY_THURSDAY: Weekday.THURSDAY,
+    pb.WEEKDAY_FRIDAY: Weekday.FRIDAY,
+    pb.WEEKDAY_SATURDAY: Weekday.SATURDAY,
+    pb.WEEKDAY_SUNDAY: Weekday.SUNDAY,
 }
 
 _CHANGE_REASON_BY_PROTO = {
@@ -166,12 +182,55 @@ class SchedulingNotFoundError(SchedulingError):
 
 
 class SchedulingRequestError(SchedulingError):
-    """Raised when the scheduler rejected the request as malformed or contradictory.
+    """Raised when the scheduler and this service disagree about the contract.
 
-    A defect in this service, never something the patient chose - the only case that
-    reaches it in practice is an idempotency key presented with a request it was not
-    derived from. Not retryable: sending the same thing again produces the same answer.
+    Either direction: a request the scheduler rejected as malformed or contradictory -
+    an idempotency key presented with a request it was not derived from - or an answer
+    carrying a value this build cannot read, whether a member a newer scheduler has and
+    this one does not or a timestamp that is not the offset-free local form. A defect
+    either way, never something the patient chose, and not retryable: sending the same
+    thing again produces the same answer.
+
+    Raised only where nothing was written, or where a write is known not to have
+    happened. A value that could not be read *after* the scheduler said a write landed
+    is a `SchedulingUnavailableError` with `outcome_unknown` true instead - reporting
+    that one as a request error would have the caller deny a real appointment.
     """
+
+
+def _read_timestamp(value: str, field: str) -> datetime:
+    """Read a wire timestamp into its naive `datetime`.
+
+    Raises: SchedulingRequestError if `value` is not an offset-free local date-time -
+        including the empty string proto3 sends for a timestamp nobody set.
+
+    Wraps exactly the one call that reads the wire string, so an unreadable answer is
+    the only thing that becomes a scheduling error: a `ValueError` from anywhere else,
+    including a caller handing this module a timezone-aware `datetime` of its own,
+    stays the defect it is instead of being reported as the scheduler's.
+    """
+    try:
+        return parse_local_datetime(value)
+    except ValueError as exc:
+        get_logger().error(
+            "scheduling.unreadable_timestamp", field=field, wire_value=value
+        )
+        raise SchedulingRequestError(f"unreadable {field}: {value!r}") from exc
+
+
+def _read_time_of_day(value: str, field: str) -> time:
+    """Read a wire time-of-day into its naive `time`.
+
+    Raises: SchedulingRequestError if `value` is not an offset-free local time.
+
+    Wraps exactly the one call that reads the wire string, for the reason
+    `_read_timestamp()` gives.
+    """
+    try:
+        return parse_local_time(value)
+    except ValueError as exc:
+        get_logger().error("scheduling.unreadable_time", field=field, wire_value=value)
+        raise SchedulingRequestError(f"unreadable {field}: {value!r}") from exc
 
 
 @dataclass(frozen=True)
@@ -197,6 +256,9 @@ class PractitionerInfo:
     def bookable(self) -> bool:
         """Whether any whole appointment fits inside any of this schedule's ranges.
 
+        Raises: SchedulingRequestError propagated from `_range_minutes()` if a range
+            carries hours this build cannot read.
+
         False for an empty schedule, and for a duration longer than every range - both
         of which leave the practitioner listed but with no time to offer.
         """
@@ -209,11 +271,11 @@ class PractitionerInfo:
     def _range_minutes(working_range: WorkingRangeInfo) -> int:
         """Return `working_range`'s length in whole minutes.
 
-        Raises: ValueError propagated from `parse_local_time()` if either end is not a
-            local time.
+        Raises: SchedulingRequestError propagated from `_read_time_of_day()` if either
+            end is not an offset-free local time.
         """
-        start = parse_local_time(working_range.start_time)
-        end = parse_local_time(working_range.end_time)
+        start = _read_time_of_day(working_range.start_time, "working range start")
+        end = _read_time_of_day(working_range.end_time, "working range end")
         return (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
 
 
@@ -497,8 +559,40 @@ async def _call(
     raise SchedulingUnavailableError(last_detail, outcome_unknown=outcome_unknown)
 
 
+def _read_weekday(proto_weekday: Any, practitioner_id: str) -> Weekday:
+    """Read a wire weekday into its domain member.
+
+    Raises: SchedulingRequestError if the range names no weekday at all, or names one
+        this build has no member for - a scheduler deployed ahead of this service.
+
+    The unspecified zero value is rejected rather than defaulted: proto3 sends it for a
+    field nobody set, and reading it as Monday would put a practitioner in front of the
+    patient working hours they may not work. The two are logged apart because they are
+    different defects - one is a range that lost its weekday, the other a day this
+    build does not know.
+    """
+    if proto_weekday == pb.WEEKDAY_UNSPECIFIED:
+        get_logger().error("scheduling.unset_weekday", practitioner_id=practitioner_id)
+        raise SchedulingRequestError("working range names no weekday")
+    weekday = _WEEKDAY_BY_PROTO.get(proto_weekday)
+    if weekday is None:
+        get_logger().error(
+            "scheduling.unknown_weekday",
+            proto_weekday=int(proto_weekday),
+            practitioner_id=practitioner_id,
+        )
+        raise SchedulingRequestError(f"unrecognized weekday: {int(proto_weekday)}")
+    return weekday
+
+
 def _to_practitioner(message: pb.Practitioner) -> PractitionerInfo:
-    """Read a wire practitioner into its domain form."""
+    """Read a wire practitioner into its domain form.
+
+    Raises: SchedulingRequestError if a working range names no weekday, or one this
+        build has no member for. Not dropped from the schedule instead: a day missing
+        from it reads as a practitioner who does not work then, which is a wrong answer
+        rather than an incomplete one.
+    """
     return PractitionerInfo(
         id=message.id,
         full_name=message.full_name,
@@ -506,7 +600,7 @@ def _to_practitioner(message: pb.Practitioner) -> PractitionerInfo:
         appointment_duration_minutes=message.appointment_duration_minutes,
         schedule=tuple(
             WorkingRangeInfo(
-                weekday=Weekday(r.weekday),
+                weekday=_read_weekday(r.weekday, message.id),
                 start_time=r.start_time,
                 end_time=r.end_time,
             )
@@ -518,10 +612,15 @@ def _to_practitioner(message: pb.Practitioner) -> PractitionerInfo:
 def _to_appointment(message: pb.Appointment) -> AppointmentInfo:
     """Read a wire appointment into its domain form.
 
-    Raises: SchedulingRequestError if `status` is unset or is a value this build has no
-        member for. Not defaulted to standing: proto3 sends the zero value for a field
-        nobody set, and reading that as standing would present a cancelled appointment
-        to the patient as a live one.
+    Raises:
+        SchedulingRequestError: `status` is unset or is a value this build has no
+            member for, or either timestamp is not an offset-free local date-time. The
+            status is not defaulted to standing: proto3 sends the zero value for a
+            field nobody set, and reading that as standing would present a cancelled
+            appointment to the patient as a live one.
+
+    A caller that has already been told a write landed must convert that error rather
+    than propagate it - it says the answer could not be read, not that nothing happened.
     """
     status = _APPOINTMENT_STATUS_BY_PROTO.get(message.status)
     if status is None:
@@ -540,8 +639,8 @@ def _to_appointment(message: pb.Appointment) -> AppointmentInfo:
         practitioner_id=message.practitioner_id,
         practitioner_full_name=message.practitioner_full_name,
         practitioner_specialty=message.practitioner_specialty,
-        starts_at=parse_local_datetime(message.starts_at),
-        ends_at=parse_local_datetime(message.ends_at),
+        starts_at=_read_timestamp(message.starts_at, "appointment start"),
+        ends_at=_read_timestamp(message.ends_at, "appointment end"),
         status=status,
     )
 
@@ -552,9 +651,14 @@ async def ensure_session_provisioned(
     """Create this chat's patient, and one practitioner if the session has none.
 
     Raises:
-        SchedulingUnavailableError: the scheduler could not be reached.
+        SchedulingUnavailableError: the scheduler could not be reached. Its
+            `outcome_unknown` says whether the patient may nonetheless have been
+            created - which costs a caller nothing to ignore, since this rpc is
+            idempotent and a later attempt returns whatever the first one created.
         SchedulingNotFoundError: `chat_id` already belongs to another session's
-            patient, which is never answered with that patient.
+            patient, which is never answered with that patient. Nothing was created.
+        SchedulingRequestError: the scheduler rejected the request as malformed.
+            Nothing was created, and sending the same request again is rejected again.
 
     Idempotent: calling it again for a chat that already has a patient returns that
     patient with `patient_created` false, creating nothing.
@@ -633,7 +737,16 @@ async def list_practitioners(
 ) -> tuple[PractitionerInfo, ...]:
     """Return every practitioner in this session.
 
-    Raises: SchedulingUnavailableError if the scheduler could not be reached.
+    Raises:
+        SchedulingUnavailableError: the scheduler could not be reached. A read, so
+            nothing was written and the request is always safe to send again.
+        SchedulingRequestError: the scheduler rejected the request as malformed, or a
+            working range in its answer named no weekday at all or one this build has
+            no member for - a defect either way, not something a caller can resolve by
+            asking differently.
+        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
+            a session the scheduler holds no practitioners for is an empty tuple rather
+            than an id that did not resolve.
     """
     response = await _call(
         settings,
@@ -664,9 +777,16 @@ async def check_availability(
             appointment currently holds is missing from its own options.
 
     Raises:
-        SchedulingUnavailableError: the scheduler could not answer.
+        SchedulingUnavailableError: the scheduler could not answer. A read, so nothing
+            was written and the request is always safe to send again.
         SchedulingNotFoundError: no such practitioner or patient in this session; its
             `entity` says which, so the caller never has to assume.
+        SchedulingRequestError: the scheduler rejected the request - `to_date` before
+            `from_date`, or a field it could not read - or its answer carried a start
+            time that is not an offset-free local date-time. Nothing was read either
+            way, and sending the same request again is answered the same way.
+        ValueError: propagated from `shared_models.localtime` if `local_now` carries a
+            timezone offset, which is a defect in the caller rather than in the answer.
 
     Availability is patient-relative: a slot colliding with this patient's own
     appointment - with any practitioner - is already gone from the result.
@@ -690,7 +810,8 @@ async def check_availability(
     )
     return AvailabilityResult(
         available_starts=tuple(
-            parse_local_datetime(start) for start in response.available_starts
+            _read_timestamp(start, "available start")
+            for start in response.available_starts
         ),
         appointment_duration_minutes=response.appointment_duration_minutes,
         truncated=response.truncated,
@@ -714,14 +835,19 @@ async def book_appointment(
         from an identical earlier attempt - or a `BookingRefusal` naming why not.
 
     Raises:
-        SchedulingUnavailableError: the scheduler could not answer. Its
-            `outcome_unknown` distinguishes "nothing was created" from "this may have
-            been created and we cannot tell".
+        SchedulingUnavailableError: the scheduler could not answer, or it answered with
+            an appointment this build cannot read. Its `outcome_unknown` distinguishes
+            "nothing was created" from "this may have been created and we cannot tell",
+            and the unreadable answer is always the second: the appointment exists, and
+            only its rendering failed.
         SchedulingRequestError: `idempotency_key` was already used for a *different*
             booking, or the refusal carried a reason this build cannot name; nothing was
             created either way.
         SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
             an unknown patient or practitioner is a typed `BookingRefusal` instead.
+        ValueError: propagated from `shared_models.localtime` if `starts_at` or
+            `local_now` carries a timezone offset, which is a defect in the caller
+            rather than in the answer.
     """
     response = await _call(
         settings,
@@ -752,9 +878,19 @@ async def book_appointment(
                 f"unrecognized booking failure reason: {int(response.failure.reason)}"
             )
         return BookingRefusal(reason=reason, detail=response.failure.detail)
+
+    # The scheduler has answered with an appointment, so it exists. A failure to render
+    # it can no longer be reported as a request error, which every caller reads as
+    # "nothing was created" - the one claim that turns an uncancellable appointment
+    # into a second one.
+    try:
+        appointment = _to_appointment(response.appointment)
+    except SchedulingRequestError as exc:
+        raise SchedulingUnavailableError(
+            f"booking response could not be read: {exc}", outcome_unknown=True
+        ) from exc
     return BookingSuccess(
-        appointment=_to_appointment(response.appointment),
-        idempotent_replay=response.idempotent_replay,
+        appointment=appointment, idempotent_replay=response.idempotent_replay
     )
 
 
@@ -792,7 +928,8 @@ def _to_change_outcome(
             carrying no result at all, and an appointment this build cannot render
             (a status a newer scheduler has and this one does not). The second matters
             most: the change *completed*, so letting it surface as a request error
-            would have the caller tell the patient nothing was changed.
+            would have the caller tell the patient nothing was changed. An unreadable
+            `previous_starts_at` is the same case, and takes the same route.
 
     `previous_practitioner_full_name` falls back to the appointment's current
     practitioner when the response names none, which is what a cancellation sends: it
@@ -813,25 +950,21 @@ def _to_change_outcome(
     # From here the scheduler has told us the change did not fail, so a failure to read
     # its answer can no longer be reported as one.
     try:
-        rendered = _to_appointment(
-            response.no_change.appointment
-            if result == "no_change"
-            else response.appointment
+        if result == "no_change":
+            return ChangeNoOp(
+                appointment=_to_appointment(response.no_change.appointment)
+            )
+        appointment = _to_appointment(response.appointment)
+        previous_starts_at = (
+            _read_timestamp(response.previous_starts_at, "previous start")
+            if response.previous_starts_at
+            else appointment.starts_at
         )
     except SchedulingRequestError as exc:
         raise SchedulingUnavailableError(
             f"change response could not be read: {exc}", outcome_unknown=True
         ) from exc
 
-    if result == "no_change":
-        return ChangeNoOp(appointment=rendered)
-
-    appointment = rendered
-    previous_starts_at = (
-        parse_local_datetime(response.previous_starts_at)
-        if response.previous_starts_at
-        else appointment.starts_at
-    )
     return ChangeApplied(
         appointment=appointment,
         previous_starts_at=previous_starts_at,
@@ -873,7 +1006,16 @@ async def reschedule_appointment(
         SchedulingUnavailableError: the scheduler could not answer. Its
             `outcome_unknown` says whether the move may nonetheless have landed; when it
             is true the caller must not report that nothing happened.
-        SchedulingRequestError: the response carried a reason this build cannot name.
+        SchedulingRequestError: the scheduler rejected the request as malformed, or the
+            response carried a reason this build cannot name. Nothing was moved either
+            way - the first is refused before the write, and the second accompanies a
+            refusal.
+        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
+            an appointment, patient or practitioner that does not resolve is a typed
+            `ChangeRefusal` instead.
+        ValueError: propagated from `shared_models.localtime` if any of the three
+            `datetime` arguments carries a timezone offset, which is a defect in the
+            caller rather than in the answer.
     """
     response = await _call(
         settings,
@@ -920,7 +1062,16 @@ async def cancel_appointment(
         SchedulingUnavailableError: the scheduler could not answer. Its
             `outcome_unknown` says whether the cancellation may nonetheless have
             landed; when it is true the caller must not report that nothing happened.
-        SchedulingRequestError: the response carried a reason this build cannot name.
+        SchedulingRequestError: the scheduler rejected the request as malformed, or the
+            response carried a reason this build cannot name. Nothing was cancelled
+            either way - the first is refused before the write, and the second
+            accompanies a refusal.
+        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
+            an appointment, patient or practitioner that does not resolve is a typed
+            `ChangeRefusal` instead.
+        ValueError: propagated from `shared_models.localtime` if `expected_starts_at`
+            or `local_now` carries a timezone offset, which is a defect in the caller
+            rather than in the answer.
     """
     response = await _call(
         settings,
@@ -951,10 +1102,18 @@ async def list_appointments(
     """Return this patient's appointments in the corner of the grid asked for.
 
     Raises:
-        SchedulingUnavailableError: the scheduler could not be reached.
+        SchedulingUnavailableError: the scheduler could not be reached. A read, so
+            nothing was written and the request is always safe to send again.
         SchedulingNotFoundError: no such patient in this session, which the contract
             keeps distinct from an empty result - that one means the patient exists and
             has nothing matching.
+        SchedulingRequestError: the scheduler rejected the request as malformed, or its
+            answer carried an appointment status this build has no member for or a
+            timestamp that is not an offset-free local date-time. No listing is
+            returned in any of those cases, and none of them is evidence about the
+            appointments themselves.
+        ValueError: propagated from `shared_models.localtime` if `local_now` carries a
+            timezone offset, which is a defect in the caller rather than in the answer.
 
     Both filters default to the narrowest value, so the unqualified question answers
     "still to come, and not cancelled" without a caller having to say so.
@@ -983,11 +1142,18 @@ async def delete_patient_for_chat(
 ) -> DeletionResult:
     """Delete this chat's patient and, by cascade, that patient's appointments.
 
-    Raises: SchedulingUnavailableError if the scheduler could not answer. Its
-        `outcome_unknown` says whether the deletion may nonetheless have happened -
-        false means nothing was deleted, true means it is genuinely not known. The
-        request is safe to send again either way: deleting an already-absent patient
-        succeeds, reporting `patient_existed` false.
+    Raises:
+        SchedulingUnavailableError: the scheduler could not answer. Its
+            `outcome_unknown` says whether the deletion may nonetheless have happened -
+            false means nothing was deleted, true means it is genuinely not known. The
+            request is safe to send again either way: deleting an already-absent
+            patient succeeds, reporting `patient_existed` false.
+        SchedulingRequestError: the scheduler rejected the request as malformed, which
+            it does before touching anything - nothing was deleted, and sending the
+            same request again is rejected again.
+        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
+            a chat whose patient is already gone is a success carrying
+            `patient_existed` false, not an id that did not resolve.
     """
     response = await _call(
         settings,
@@ -1022,8 +1188,9 @@ async def delete_session(
             session that owns nothing is deleted successfully with every count at zero.
         SchedulingRequestError: the scheduler rejected the request as invalid. Nothing
             was deleted, and sending the same request again is rejected again.
-        SchedulingNotFoundError: the scheduler could not resolve an id the request
-            named. Nothing was read and nothing was deleted.
+        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
+            a session the scheduler holds nothing for is deleted successfully with
+            every count at zero, not an id that did not resolve.
 
     Zero counts therefore mean "there was nothing left", never "this did not work" -
     which is what lets a caller re-run a deletion it had to report incomplete.

@@ -108,12 +108,13 @@ class ChatDoneEvent(BaseModel):
 
 
 class ChatCancelledEvent(BaseModel):
-    """Terminal NDJSON event: this request's generation was superseded.
+    """Terminal NDJSON event: this request produced no reply, and nothing was stored.
 
     Emitted instead of `ChatDoneEvent` when a newer message on the same chat arrived
-    before this one finished generating - no reply was stored for this request; any
-    `token` events already received for it should be discarded, not shown as final or
-    as an error.
+    before this one finished generating, or when a person took the conversation over
+    before its reply could be written. Either way no reply was stored for this request;
+    any `token` events already received for it should be discarded, not shown as final
+    or as an error.
     """
 
     type: Literal["cancelled"] = "cancelled"

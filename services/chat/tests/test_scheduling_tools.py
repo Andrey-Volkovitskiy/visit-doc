@@ -729,3 +729,98 @@ async def test_a_cancelled_past_appointment_is_returned_with_its_label() -> None
     assert [a["id"] for a in result["past"]] == ["01PASTCANCELLED"]
     assert result["past"][0]["status"] == "cancelled"
     assert result["future"] == []
+
+
+# --- a read the scheduler answered unreadably ---------------------------------
+
+
+@pytest.mark.parametrize(
+    ("tool_name", "client_function", "arguments", "success_key"),
+    [
+        ("list_practitioners", "list_practitioners", {}, "practitioners"),
+        (
+            "check_availability",
+            "check_availability",
+            {
+                "practitioner_id": _PRACTITIONER_ID,
+                "from_date": "2026-08-18",
+                "to_date": "2026-08-19",
+            },
+            "available_starts",
+        ),
+        ("list_my_appointments", "list_appointments", {}, "future"),
+    ],
+)
+async def test_a_read_answered_unreadably_is_unavailable_not_an_empty_result(
+    tool_name: str, client_function: str, arguments: dict[str, Any], success_key: str
+) -> None:
+    # A weekday, a status or a rejection this build cannot read leaves the read with no
+    # answer at all - which must not reach the model as the empty list that means "the
+    # clinic has none of these", and must not escape into the booking loop's generic
+    # net, which reports a failure it cannot explain.
+    with (
+        patch(
+            _CLIENT + "." + client_function,
+            new=AsyncMock(
+                side_effect=SchedulingRequestError("unrecognized weekday: 9")
+            ),
+        ),
+        capture_logs() as logs,
+    ):
+        result = await _registry().dispatch(tool_name, arguments)
+
+    assert result["status"] == "unavailable"
+    assert success_key not in result
+    assert [
+        entry["tool_name"]
+        for entry in logs
+        if entry["event"] == "read.response_unreadable"
+    ] == [tool_name]
+
+
+async def test_a_practitioner_whose_hours_cannot_be_read_is_unavailable() -> None:
+    # The one unreadable value that survives into a domain object: a working range is
+    # only read when `bookable` is asked for, which happens here rather than in the
+    # client. It must take the same route as every other answer this build cannot
+    # read - not out of the handler as an exception the loop cannot explain.
+    practitioner = PractitionerInfo(
+        id=_PRACTITIONER_ID,
+        full_name="William Osler",
+        specialty="General Practice",
+        appointment_duration_minutes=60,
+        schedule=(WorkingRangeInfo(Weekday.TUESDAY, "09:00+02:00", "17:00"),),
+    )
+    with (
+        patch(
+            _CLIENT + ".list_practitioners",
+            new=AsyncMock(return_value=(practitioner,)),
+        ),
+        capture_logs() as logs,
+    ):
+        result = await _registry().dispatch("list_practitioners", {})
+
+    assert result["status"] == "unavailable"
+    assert "practitioners" not in result
+    assert any(entry["event"] == "read.response_unreadable" for entry in logs)
+
+
+async def test_a_booking_this_build_cannot_read_is_never_a_flat_denial() -> None:
+    # The scheduler answered with the appointment, so it exists; only rendering it
+    # failed. The client says so with an unknown outcome, and the tool has to relay
+    # that rather than the `unavailable` it says when nothing was created.
+    with patch.object(
+        scheduling_tools.scheduling,
+        "book_appointment",
+        new=AsyncMock(
+            side_effect=SchedulingUnavailableError(
+                "booking response could not be read", outcome_unknown=True
+            )
+        ),
+    ):
+        result = await _registry().dispatch(
+            "book_appointment",
+            {"practitioner_id": _PRACTITIONER_ID, "starts_at": "2026-08-18T09:00:00"},
+        )
+
+    assert result["status"] == "unknown"
+    assert "Nothing was booked" not in result["explanation"]

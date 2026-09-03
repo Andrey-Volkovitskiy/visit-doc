@@ -243,20 +243,41 @@ def _change_unavailable() -> ToolResult:
 def _reports_unavailable(
     handler: Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]],
 ) -> Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]]:
-    """Turn an unreachable scheduler into the model-readable `unavailable` result.
+    """Turn a read the scheduler did not answer into the model-readable result.
 
     For the read-only tools only, and written once here rather than as a `try` in each
     of them: a failed read wrote nothing by construction, so there is exactly one thing
-    to say about it. `book_appointment` is deliberately not wrapped - a write that may
-    or may not have landed has a second thing to say, and answers for itself.
+    to say about it, whether the scheduler could not be reached or answered with
+    something this build cannot read. `book_appointment` is deliberately not wrapped -
+    a write that may or may not have landed has a second thing to say, and answers for
+    itself.
+
+    `unavailable` carries its own `status`, which no read's success shape has - so a
+    refusal here is never mistaken for the empty list, the empty availability or the
+    empty listing that each of them legitimately returns.
     """
 
     @wraps(handler)
     async def _wrapper(context: ToolContext, arguments: dict[str, Any]) -> ToolResult:
-        """Answer `unavailable` when the wrapped handler cannot reach the scheduler."""
+        """Answer `unavailable` when the wrapped handler got no usable answer."""
         try:
             return await handler(context, arguments)
         except SchedulingUnavailableError:
+            return _unavailable()
+        except SchedulingRequestError as exc:
+            # The scheduler answered, and its answer was one this build cannot read -
+            # a rejected request, a value a newer scheduler has and this one has no
+            # member for, or a timestamp that is not the offset-free local form. The
+            # client names all three with this one error, so there is nothing else for
+            # a read to catch. Nothing was read, and that is known, so the tool says the
+            # same thing it says about a scheduler it never reached rather than letting
+            # the error fall through to the loop's generic net, which reports a failure
+            # it cannot explain.
+            get_logger().error(
+                "read.response_unreadable",
+                tool_name=handler.__name__,
+                error_detail=str(exc),
+            )
             return _unavailable()
 
     return _wrapper

@@ -173,6 +173,7 @@ async def test_list_chats_puts_chats_with_messages_ahead_of_chats_without() -> N
             session,
             id=str(ULID()),
             chat_id=with_message.id,
+            session_id=created_session.id,
             sender=MessageSender.PATIENT,
             content="hi",
         )
@@ -198,6 +199,7 @@ async def test_list_chats_orders_chats_with_messages_by_newest_message() -> None
             session,
             id=str(ULID()),
             chat_id=newer.id,
+            session_id=created_session.id,
             sender=MessageSender.PATIENT,
             content="first",
         )
@@ -206,6 +208,7 @@ async def test_list_chats_orders_chats_with_messages_by_newest_message() -> None
             session,
             id=str(ULID()),
             chat_id=older.id,
+            session_id=created_session.id,
             sender=MessageSender.PATIENT,
             content="second",
         )
@@ -239,6 +242,7 @@ async def test_delete_chat_removes_all_its_messages() -> None:
             session,
             id=str(ULID()),
             chat_id=chat.id,
+            session_id=created_session.id,
             sender=MessageSender.PATIENT,
             content="hi",
         )
@@ -279,6 +283,183 @@ async def test_delete_chat_ignores_a_chat_id_from_another_session() -> None:
         survivor = await chat_repository.get_chat(session, chat.id, owner.id)
 
     assert survivor is not None
+
+
+# --- messages: the insert reaches a chat this session owns, or no row at all --------
+
+
+async def test_create_message_returns_the_message_it_wrote() -> None:
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, created_session.id)
+
+        written = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            session_id=created_session.id,
+            sender=MessageSender.PATIENT,
+            content="hello",
+        )
+
+    assert written is not None
+    assert written.chat_id == chat.id
+    assert written.sender == MessageSender.PATIENT
+    assert written.content == "hello"
+    assert written.created_at is not None
+
+
+async def test_create_message_writes_nothing_into_another_sessions_chat() -> None:
+    """A chat id on its own must not admit a message: unique is not permission.
+
+    The refusal has to be visible in the return value too - a caller that cannot tell
+    it apart from a write would go on to answer, log, or render a message the thread
+    does not hold.
+    """
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        stranger = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, owner.id)
+
+        refused = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            session_id=stranger.id,
+            sender=MessageSender.PATIENT,
+            content="not mine to send",
+        )
+        held = await chat_repository.list_messages(session, chat.id)
+
+    assert refused is None
+    assert held == []
+
+
+async def test_create_message_writes_nothing_into_an_unknown_chat() -> None:
+    # The same answer a chat from another session gets, for the same reason `get_chat`
+    # gives one answer to both: neither names a chat this session may write into.
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+
+        refused = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id="nonexistent-id",
+            session_id=created_session.id,
+            sender=MessageSender.PATIENT,
+            content="nowhere to land",
+        )
+
+    assert refused is None
+
+
+# --- what an assistant reply's insert declined to write, and why --------------------
+#
+# The insert carries two predicates in one `WHERE` - the chat is this session's, and
+# nobody has taken it over - so "wrote nothing" covers two situations that have nothing
+# to do with each other. Folded into one answer, a chat deleted mid-turn is recorded and
+# reasoned about as a staff member taking the conversation, when no person did anything.
+
+
+async def _answered_chat() -> tuple[str, str, str]:
+    """Return a fresh `(session_id, chat_id, message_id)` with one patient message."""
+    async with session_factory() as session:
+        session_row = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, session_row.id)
+        message = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            session_id=session_row.id,
+            sender=MessageSender.PATIENT,
+            content="when can I visit?",
+        )
+    assert message is not None
+    return session_row.id, chat.id, message.id
+
+
+async def _reply_answering(
+    session_id: str, chat_id: str, message_id: str
+) -> chat_repository.ReplyWrite:
+    """Write one assistant reply to `message_id`, returning what the write answered."""
+    async with session_factory() as session:
+        return await chat_repository.create_assistant_reply_unless_taken_over(
+            session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            answering_message_id=message_id,
+            content="Visiting hours are 8am to 5pm.",
+            grounded=True,
+            citations=None,
+            reply_to_message_ids=[message_id],
+        )
+
+
+async def test_a_reply_nobody_took_over_is_stored() -> None:
+    session_id, chat_id, message_id = await _answered_chat()
+
+    write = await _reply_answering(session_id, chat_id, message_id)
+
+    assert write is chat_repository.ReplyWrite.STORED
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [
+        MessageSender.PATIENT,
+        MessageSender.ASSISTANT,
+    ]
+
+
+async def test_a_reply_a_staff_post_beat_is_refused_as_a_takeover() -> None:
+    session_id, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.STAFF,
+            content="I've got this one.",
+        )
+
+    write = await _reply_answering(session_id, chat_id, message_id)
+
+    assert write is chat_repository.ReplyWrite.TAKEN_OVER
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.PATIENT, MessageSender.STAFF]
+
+
+async def test_a_reply_into_a_deleted_chat_is_not_reported_as_a_takeover() -> None:
+    # `DELETE /chats/{id}` landing while the turn was generating. Nothing was written
+    # here either, but nobody took the conversation over - there is no conversation.
+    # Told apart because the caller acts on the difference: one is a person leading the
+    # chat, and reporting it for a chat that no longer exists puts a staff member in a
+    # conversation nobody ever touched.
+    session_id, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        await chat_repository.delete_chat(session, chat_id, session_id)
+
+    write = await _reply_answering(session_id, chat_id, message_id)
+
+    assert write is chat_repository.ReplyWrite.CHAT_GONE
+
+
+async def test_a_reply_into_another_sessions_chat_is_not_reported_as_a_takeover() -> (
+    None
+):
+    # The other half of the ownership predicate, and the same answer: a chat id from
+    # another session names no conversation this caller may be answering in.
+    _, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        stranger = await chat_repository.create_session(session)
+
+    write = await _reply_answering(stranger.id, chat_id, message_id)
+
+    assert write is chat_repository.ReplyWrite.CHAT_GONE
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.PATIENT]
 
 
 async def test_lock_chat_blocks_a_second_holder_until_released() -> None:
@@ -356,7 +537,7 @@ async def test_chat_lock_is_taken_and_released_on_one_connection_across_a_commit
     The sibling checkout in the middle is what makes the difference observable. Without
     it the pool usually returns the very same connection and the bug hides.
     """
-    _, chat_id = await _fresh_chat()
+    session_id, chat_id = await _fresh_chat()
 
     async with pinned_session() as session:
         backend_pid_before = (
@@ -368,6 +549,7 @@ async def test_chat_lock_is_taken_and_released_on_one_connection_across_a_commit
             session,
             id=str(ULID()),
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="a message, committed inside the locked section",
         )
@@ -399,11 +581,13 @@ async def test_lock_chat_refuses_a_session_that_borrows_its_connection() -> None
 
 
 async def test_release_chat_lock_surfaces_a_release_that_freed_nothing() -> None:
-    """A release that freed nothing means the lock is stranded - never a success.
+    """A release that freed nothing is never reported as a success.
 
     Postgres answers `pg_advisory_unlock` with false rather than an error, so the only
-    thing separating "released" from "still held, and now unreachable" is that this is
-    raised rather than swallowed.
+    thing separating "released" from "this connection was not holding it" is that this
+    is raised rather than swallowed. Which of the two the second one is - a lock still
+    held elsewhere, or one already gone with the connection that took it - is not
+    knowable from here, and neither the error nor its log entry claims to know.
     """
     async with pinned_session() as session:
         with pytest.raises(chat_repository.ChatLockNotHeldError):

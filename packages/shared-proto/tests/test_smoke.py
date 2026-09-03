@@ -226,3 +226,42 @@ def test_delete_session_carries_no_idempotency_key() -> None:
     # reported incomplete has to be safe, which a key would not make it.
     fields = pb.DeleteSessionRequest.DESCRIPTOR.fields_by_name
     assert set(fields) == {"session_id"}
+
+
+def test_weekday_zero_is_the_unset_sentinel_and_never_a_day() -> None:
+    # proto3 sends the zero value for a field nobody set, so a day sitting at zero
+    # makes an unpopulated `WorkingRange.weekday` indistinguishable from a deliberate
+    # one - a practitioner presented as working hours they may not work.
+    values = {v.name for v in pb.Weekday.DESCRIPTOR.values}
+    assert values == {
+        "WEEKDAY_UNSPECIFIED",
+        "WEEKDAY_MONDAY",
+        "WEEKDAY_TUESDAY",
+        "WEEKDAY_WEDNESDAY",
+        "WEEKDAY_THURSDAY",
+        "WEEKDAY_FRIDAY",
+        "WEEKDAY_SATURDAY",
+        "WEEKDAY_SUNDAY",
+    }
+    assert pb.Weekday.DESCRIPTOR.values_by_number[0].name == "WEEKDAY_UNSPECIFIED"
+
+
+def test_a_working_range_nobody_populated_names_no_weekday() -> None:
+    assert pb.WorkingRange().weekday == pb.WEEKDAY_UNSPECIFIED
+    assert pb.WorkingRange().weekday != pb.WEEKDAY_MONDAY
+
+
+def test_the_seven_days_run_monday_first() -> None:
+    # The wire numbering is its own, one ahead of `shared_models.Weekday` and of
+    # `date.weekday()`, because the sentinel takes zero. Each side maps at its
+    # boundary; nothing passes the integer through.
+    ordered = [
+        pb.WEEKDAY_MONDAY,
+        pb.WEEKDAY_TUESDAY,
+        pb.WEEKDAY_WEDNESDAY,
+        pb.WEEKDAY_THURSDAY,
+        pb.WEEKDAY_FRIDAY,
+        pb.WEEKDAY_SATURDAY,
+        pb.WEEKDAY_SUNDAY,
+    ]
+    assert ordered == [1, 2, 3, 4, 5, 6, 7]

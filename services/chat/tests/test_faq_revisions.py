@@ -33,6 +33,7 @@ from chat.repositories.qdrant_repository import (
 )
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue
 from structlog.testing import capture_logs
 
 from .conftest import fake_anthropic_client, fake_embed_texts
@@ -53,13 +54,29 @@ async def _entries(session_id: str) -> list[FaqEntry]:
         return await faq_repository.list_all(session, session_id)
 
 
-async def _points() -> list[ChunkPayload]:
-    """Return every chunk currently in the retrieval store."""
+async def _points(session_id: str) -> list[ChunkPayload]:
+    """Return every chunk `session_id` owns, filtered the way production filters.
+
+    Scoped on the read rather than after it, like `delete_by_session`: every caller
+    compares this against one session's revisions, so a scroll of the whole collection
+    would let a chunk written by anything else - another session's save, a leak from
+    somewhere unrelated - read as this session's and blame the code under test for it.
+    That it currently reads the same either way is an artefact of the autouse
+    `_clear_chat_tables` fixture emptying the collection per test, not a property of
+    the thing under test.
+    """
     qdrant_client = create_client(Settings())
     try:
         await ensure_collection(qdrant_client)
         records, _ = await qdrant_client.scroll(
-            collection_name=COLLECTION_NAME, limit=1000, with_payload=True
+            collection_name=COLLECTION_NAME,
+            scroll_filter=Filter(
+                must=[
+                    FieldCondition(key="session_id", match=MatchValue(value=session_id))
+                ]
+            ),
+            limit=1000,
+            with_payload=True,
         )
     finally:
         await qdrant_client.close()
@@ -137,10 +154,11 @@ async def test_a_create_publishes_one_revision_and_lists_it() -> None:
     assert response.status_code == 201
     entries = await _entries(session_id)
     assert [e.content for e in entries] == [_FIRST]
-    chunks = await _points()
+    # `_points` filters on the session, so finding this entry's chunks through it at
+    # all is what pins that they carry the session that wrote them.
+    chunks = await _points(session_id)
     assert {c.revision for c in chunks} == {entries[0].live_revision}
     assert {c.faq_entry_id for c in chunks} == {entries[0].id}
-    assert {c.session_id for c in chunks} == {session_id}
 
 
 async def test_the_row_is_the_last_thing_written() -> None:
@@ -185,7 +203,7 @@ async def test_a_creates_id_is_reserved_before_its_chunks_are_written() -> None:
     await _create(session_id)
 
     entries = await _entries(session_id)
-    chunks = await _points()
+    chunks = await _points(session_id)
     assert chunks
     assert all(c.faq_entry_id == entries[0].id for c in chunks)
 
@@ -272,7 +290,7 @@ async def test_content_that_chunks_to_nothing_is_refused_not_published() -> None
     created = await _create(session_id, _FIRST)
     entry_id = created.json()["id"]
     before = (await _entries(session_id))[0]
-    chunks_before = {(c.revision, c.chunk_index) for c in await _points()}
+    chunks_before = {(c.revision, c.chunk_index) for c in await _points(session_id)}
 
     response = await _update(
         session_id,
@@ -285,7 +303,9 @@ async def test_content_that_chunks_to_nothing_is_refused_not_published() -> None
     after = (await _entries(session_id))[0]
     assert after.content == _FIRST
     assert after.live_revision == before.live_revision
-    assert chunks_before <= {(c.revision, c.chunk_index) for c in await _points()}
+    assert chunks_before <= {
+        (c.revision, c.chunk_index) for c in await _points(session_id)
+    }
 
 
 async def test_a_failed_save_performs_no_compensating_write() -> None:
@@ -296,7 +316,7 @@ async def test_a_failed_save_performs_no_compensating_write() -> None:
     created = await _create(session_id, _FIRST)
     entry_id = created.json()["id"]
     live_before = (await _entries(session_id))[0].live_revision
-    chunks_before = {(c.revision, c.chunk_index) for c in await _points()}
+    chunks_before = {(c.revision, c.chunk_index) for c in await _points(session_id)}
 
     await _update(
         session_id,
@@ -305,7 +325,7 @@ async def test_a_failed_save_performs_no_compensating_write() -> None:
         patches=[_publishing_commit_fails("chat.api.faq.faq_repository.publish")],
     )
 
-    chunks_after = {(c.revision, c.chunk_index) for c in await _points()}
+    chunks_after = {(c.revision, c.chunk_index) for c in await _points(session_id)}
     # The new revision's chunks are simply left where they were written: unreachable,
     # because no row names them, and swept by the next successful save.
     assert chunks_before <= chunks_after
@@ -333,7 +353,7 @@ async def test_two_saves_racing_on_one_entry_leave_exactly_one_live_revision() -
     statuses = sorted(r.status_code for r in (first, second) if isinstance(r, Response))
     assert statuses[0] == 200
     entry = (await _entries(session_id))[0]
-    live = [c for c in await _points() if c.revision == entry.live_revision]
+    live = [c for c in await _points(session_id) if c.revision == entry.live_revision]
     assert live
     assert entry.content in {
         "One version of the answer.",
@@ -411,7 +431,9 @@ async def test_two_creates_racing_at_the_cap_cannot_push_a_session_past_it() -> 
     # And the refused create left nothing behind: the chunks it had already written
     # belong to an id no row will ever name, so they are removed rather than leaked
     # into a store the rows no longer account for.
-    assert {c.revision for c in await _points()} == {e.live_revision for e in entries}
+    assert {c.revision for c in await _points(session_id)} == {
+        e.live_revision for e in entries
+    }
 
 
 # --- retrying ------------------------------------------------------------------------
@@ -430,7 +452,7 @@ async def test_a_failed_save_succeeds_on_resubmission_with_no_manual_repair() ->
     assert response.status_code == 200
     entry = (await _entries(session_id))[0]
     assert entry.content == _SECOND
-    live = [c for c in await _points() if c.revision == entry.live_revision]
+    live = [c for c in await _points(session_id) if c.revision == entry.live_revision]
     assert live
     assert all(_SECOND[:20] in c.chunk_text for c in live)
 
@@ -449,12 +471,13 @@ async def test_resubmitting_a_save_that_already_succeeded_changes_nothing_visibl
     entries = await _entries(session_id)
     assert len(entries) == 1
     assert entries[0].content == _SECOND
-    # A second publish is a new revision, and exactly one of them is live.
-    assert len([c.revision for c in await _points() if c.revision == first_live]) >= 0
-    live = {
-        c.revision for c in await _points() if c.revision == entries[0].live_revision
-    }
-    assert len(live) == 1
+    # A second publish is a new revision, and exactly one of them is live: the
+    # resubmission supersedes the revision it read, and the sweep that follows its
+    # publishing commit takes the superseded one's chunks with it. So an identical
+    # resubmission accumulates nothing - not a second entry, and not a second
+    # answerable revision behind the one entry.
+    assert entries[0].live_revision != first_live
+    assert {c.revision for c in await _points(session_id)} == {entries[0].live_revision}
 
 
 # --- the sweep ------------------------------------------------------------------------
@@ -468,7 +491,7 @@ async def test_the_sweep_removes_this_entrys_superseded_revisions() -> None:
 
     await _update(session_id, entry_id, _SECOND)
 
-    revisions = {c.revision for c in await _points()}
+    revisions = {c.revision for c in await _points(session_id)}
     assert first_live not in revisions
     assert revisions == {(await _entries(session_id))[0].live_revision}
 
@@ -485,12 +508,12 @@ async def test_the_sweep_removes_a_revision_that_was_never_published() -> None:
         _SECOND,
         patches=[_publishing_commit_fails("chat.api.faq.faq_repository.publish")],
     )
-    assert len({c.revision for c in await _points()}) == 2
+    assert len({c.revision for c in await _points(session_id)}) == 2
 
     await _update(session_id, entry_id, "A third attempt, which succeeds.")
 
     entry = (await _entries(session_id))[0]
-    assert {c.revision for c in await _points()} == {entry.live_revision}
+    assert {c.revision for c in await _points(session_id)} == {entry.live_revision}
 
 
 async def test_a_late_sweep_spares_the_revision_that_overtook_it() -> None:
@@ -511,7 +534,7 @@ async def test_a_late_sweep_spares_the_revision_that_overtook_it() -> None:
     finally:
         await qdrant_client.close()
 
-    assert {c.revision for c in await _points()} == {live}
+    assert {c.revision for c in await _points(session_id)} == {live}
 
 
 async def test_the_sweep_is_idempotent() -> None:
@@ -526,7 +549,7 @@ async def test_the_sweep_is_idempotent() -> None:
     finally:
         await qdrant_client.close()
 
-    assert {c.revision for c in await _points()} == {entry.live_revision}
+    assert {c.revision for c in await _points(session_id)} == {entry.live_revision}
 
 
 async def test_a_failed_sweep_fails_nothing_and_says_nothing() -> None:
@@ -568,6 +591,24 @@ async def test_the_sweep_never_widens_past_the_entry_it_is_for() -> None:
 
     await _update(session_id, first.json()["id"], _SECOND)
 
-    revisions = {c.revision for c in await _points()}
+    revisions = {c.revision for c in await _points(session_id)}
     assert other_entry_revision in revisions
     assert second.status_code == 201
+
+
+async def test_a_save_leaves_another_sessions_corpus_untouched() -> None:
+    # The sweep is scoped to one entry, and an entry belongs to one session, so a save
+    # here cannot reach a corpus over there. This is also what `_points`' own session
+    # filter buys: with an unscoped scroll the other session's chunks would arrive in
+    # this session's view, and a leak from anywhere at all would read as this save's.
+    mine = await _session_id()
+    theirs = await _session_id()
+    created = await _create(mine, _FIRST)
+    await _create(theirs, "Parking is free for the first hour.")
+
+    await _update(mine, created.json()["id"], _SECOND)
+
+    my_entry = (await _entries(mine))[0]
+    their_entry = (await _entries(theirs))[0]
+    assert {c.revision for c in await _points(mine)} == {my_entry.live_revision}
+    assert {c.revision for c in await _points(theirs)} == {their_entry.live_revision}

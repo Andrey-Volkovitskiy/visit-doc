@@ -8,7 +8,7 @@ FR-027c an implementation gets wrong by clearing the column.
 
 import asyncio
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Self
 from unittest.mock import MagicMock, patch
 
@@ -17,7 +17,7 @@ from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, MessageSender
-from chat.domain.schemas import IntentLabel
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
 from chat.main import app
 from chat.rag.indexing import publish_revision
 from chat.repositories import chat_repository, faq_repository
@@ -63,6 +63,7 @@ async def _marked_message(
             session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="is anyone there?",
         )
@@ -555,14 +556,17 @@ async def test_a_turn_that_completed_before_a_staff_post_transitions_nothing() -
     assert state.escalated_at is None
     assert state.attention_since is None
     assert state.emphasized is False
-    assert await _marks(chat_id) == [None, None, None]
+    # Two messages, not three: the handoff sentence is a reply, and one written behind
+    # the staff member's own is the reply FR-013a discards.
+    assert await _marks(chat_id) == [None, None]
 
 
 # --- a release that frees nothing ---------------------------------------------------
 #
 # Everything one post writes commits inside the locked section, so by the time the lock
-# is released the reply is durable. A release reporting it held nothing is a serious
-# fault - the chat it keys can never be locked again - but it is not a reason to tell a
+# is released the reply is durable. A release reporting it held nothing is worth
+# investigating - the lock may be stranded on a connection nothing here can reach, and
+# the chat it keys would then never be lockable again - but it is not a reason to tell a
 # staff member their reply was not sent: they would send it again, and the patient would
 # read the same answer twice.
 
@@ -583,8 +587,12 @@ async def test_a_failed_lock_release_does_not_unsend_a_committed_reply() -> None
 
 
 async def test_a_failed_lock_release_is_recorded_twice_over() -> None:
-    # The stranded lock, and that the caller was told the post succeeded anyway -
-    # neither is inferable from the other, and both are worth waking someone for.
+    # The release that freed nothing, and that the caller was told the post succeeded
+    # anyway - neither is inferable from the other, and both are worth investigating.
+    # Neither is `critical`: `pg_advisory_unlock` answers false both when another live
+    # connection still holds the lock and when the connection that took it has been
+    # replaced, which released everything that backend held. Claiming a stranded lock
+    # at the loudest level available would be asserting the worse of the two.
     session_id, chat_id = await _chat()
     not_held = chat_repository.ChatLockNotHeldError("held nothing")
 
@@ -595,9 +603,256 @@ async def test_a_failed_lock_release_is_recorded_twice_over() -> None:
         await _post(session_id, chat_id)
 
     events = {entry["event"]: entry for entry in logs}
-    assert events["chat.lock_stranded"]["log_level"] == "critical"
-    assert events["chat.lock_stranded"]["chat_id"] == chat_id
-    assert events["chat.lock_release_failed"]["log_level"] == "critical"
+    assert events["chat.lock_not_held"]["log_level"] == "error"
+    assert events["chat.lock_not_held"]["chat_id"] == chat_id
+    assert events["chat.lock_release_failed"]["log_level"] == "error"
     assert events["chat.lock_release_failed"]["chat_id"] == chat_id
     assert "held nothing" in events["chat.lock_release_failed"]["error_detail"]
     assert events["staff.message_posted"]["chat_id"] == chat_id
+
+
+# --- a reply that finished generating and still lost -------------------------------
+#
+# The cancellation tests above interrupt a turn mid-sentence. The narrower window is the
+# one after it: the graph has produced its `done` event, and the staff post lands before
+# the turn has written anything. FR-013a is about the reply, not about how far it got -
+# one nobody stored must not reach the patient either, or it sits in their window with
+# the staff message under it and is gone from the thread on the next reload.
+
+
+class _StalledGraph:
+    """A `run_turn` stand-in that finishes generating, then waits to be released.
+
+    Holds the turn exactly in the window under test: every event produced, nothing
+    written yet.
+    """
+
+    def __init__(self, generated: asyncio.Event, release: asyncio.Event) -> None:
+        self._generated = generated
+        self._release = release
+
+    async def __call__(
+        self, *args: object, **kwargs: object
+    ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
+        yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
+        yield ChatDoneEvent(grounded=True, citations=[])
+        self._generated.set()
+        await self._release.wait()
+
+
+async def _turn_racing_a_staff_post(session_id: str, chat_id: str) -> Response:
+    """Run a turn that finishes generating, post as staff, then let the turn go on."""
+    generated = asyncio.Event()
+    release = asyncio.Event()
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn.run_turn", _StalledGraph(generated, release)),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                turn = asyncio.create_task(
+                    http.post(
+                        "/chat",
+                        json={
+                            "chat_id": chat_id,
+                            "message": "when can I visit?",
+                            "local_now": LOCAL_NOW,
+                        },
+                    )
+                )
+                await asyncio.wait_for(generated.wait(), timeout=5)
+                posted = await http.post(
+                    f"/console/chats/{chat_id}/messages",
+                    json={"content": "I've got this one - 8am to 5pm."},
+                )
+                release.set()
+                response = await asyncio.wait_for(turn, timeout=5)
+
+    assert posted.status_code == 201
+    return response
+
+
+async def test_a_finished_reply_a_staff_post_beat_is_never_streamed() -> None:
+    session_id, chat_id = await _chat()
+
+    response = await _turn_racing_a_staff_post(session_id, chat_id)
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert not any(line["type"] == "done" for line in lines)
+    assert lines[-1] == {"type": "cancelled"}
+
+
+async def test_a_finished_reply_a_staff_post_beat_is_never_stored() -> None:
+    # The other half of the same guarantee, so a `done` suppressed while the reply was
+    # written anyway would not read as a pass.
+    session_id, chat_id = await _chat()
+
+    await _turn_racing_a_staff_post(session_id, chat_id)
+
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.PATIENT, MessageSender.STAFF]
+
+
+# --- the gap between deregistering and the writes -----------------------------------
+#
+# A turn deregisters itself *before* taking the chat's lock, deliberately: a staff post
+# takes that lock first and only then asks for a cancellation, so a turn still
+# registered while queued on the lock would be a cancellation waiting on the very lock
+# its canceller holds. That leaves a window - deregistered, nothing written yet - where
+# `cancel_for_chat` finds nothing to cancel and the gesture's own writes commit first.
+# FR-013a is about the reply, not about whether anything managed to cancel it: one
+# written behind a staff member's own is exactly the reply it says must not be left
+# standing beside theirs.
+
+
+class _FinishedGraph:
+    """A `run_turn` stand-in that produces one complete reply and returns."""
+
+    async def __call__(
+        self, *args: object, **kwargs: object
+    ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
+        yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
+        yield ChatDoneEvent(grounded=True, citations=[])
+
+
+async def _turn_racing_a_gesture(
+    session_id: str,
+    chat_id: str,
+    gesture: Callable[[AsyncClient], Awaitable[Response]],
+) -> tuple[Response, Response]:
+    """Hold a turn in the write gap, land `gesture` in it, then let the turn go on.
+
+    Returns: the turn's streamed response, and the gesture's own.
+
+    Only the *first* turn is held, so a gesture that is itself a second turn runs to
+    completion inside the window rather than stalling in it too.
+    """
+    reached_the_writes = asyncio.Event()
+    gesture_landed = asyncio.Event()
+    persist_outcome = turn_api._persist_outcome
+    calls = 0
+
+    async def stalled(*args: object, **kwargs: object) -> object:
+        """Hold the turn exactly where the race is: deregistered, nothing written."""
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            reached_the_writes.set()
+            await gesture_landed.wait()
+        return await persist_outcome(*args, **kwargs)
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn.run_turn", _FinishedGraph()),
+        patch("chat.api.turn._persist_outcome", stalled),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                turn = asyncio.create_task(
+                    http.post(
+                        "/chat",
+                        json={
+                            "chat_id": chat_id,
+                            "message": "when can I visit?",
+                            "local_now": LOCAL_NOW,
+                        },
+                    )
+                )
+                await asyncio.wait_for(reached_the_writes.wait(), timeout=5)
+                gesture_response = await asyncio.wait_for(gesture(http), timeout=5)
+                gesture_landed.set()
+                turn_response = await asyncio.wait_for(turn, timeout=5)
+
+    return turn_response, gesture_response
+
+
+def _staff_post(chat_id: str) -> Callable[[AsyncClient], Awaitable[Response]]:
+    """Return a gesture that posts as staff into `chat_id`."""
+    return lambda http: http.post(
+        f"/console/chats/{chat_id}/messages", json={"content": _CONTENT}
+    )
+
+
+async def test_a_staff_post_in_the_write_gap_leaves_no_assistant_reply() -> None:
+    session_id, chat_id = await _chat()
+
+    _, posted = await _turn_racing_a_gesture(session_id, chat_id, _staff_post(chat_id))
+
+    assert posted.status_code == 201
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.PATIENT, MessageSender.STAFF]
+
+
+async def test_a_staff_post_in_the_write_gap_ends_the_turn_without_an_answer() -> None:
+    # The other half of the same guarantee: a reply nobody stored must not be left on
+    # the patient's screen either, or the staff message sits under an answer that is
+    # gone from the thread on the next reload.
+    session_id, chat_id = await _chat()
+
+    response, _ = await _turn_racing_a_gesture(
+        session_id, chat_id, _staff_post(chat_id)
+    )
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert not any(line["type"] == "done" for line in lines)
+    assert lines[-1] == {"type": "cancelled"}
+
+
+async def test_the_switch_going_off_in_the_write_gap_discards_the_reply() -> None:
+    # FR-017c: on exactly FR-013a's terms, by the same mechanism and not a second one.
+    session_id, chat_id = await _chat()
+
+    response, switched = await _turn_racing_a_gesture(
+        session_id,
+        chat_id,
+        lambda http: http.post(
+            f"/console/chats/{chat_id}/assistant", json={"enabled": False}
+        ),
+    )
+
+    assert switched.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1] == {"type": "cancelled"}
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [MessageSender.PATIENT]
+
+
+async def test_a_superseding_patient_message_in_the_write_gap_keeps_the_reply() -> None:
+    # The deliberate opposite. FR-013a discards a reply because a *person* is now
+    # leading the conversation and two answers to one question contradict each other.
+    # A patient's own next message is neither: nothing has contradicted the answer they
+    # already asked for, and this turn won the supersede race outright - it deregistered
+    # before the newer one registered, which is what `clear_if_current` reports.
+    session_id, chat_id = await _chat()
+
+    response, superseding = await _turn_racing_a_gesture(
+        session_id,
+        chat_id,
+        lambda http: http.post(
+            "/chat",
+            json={
+                "chat_id": chat_id,
+                "message": "and on weekends?",
+                "local_now": LOCAL_NOW,
+            },
+        ),
+    )
+
+    for streamed in (response, superseding):
+        lines = [json.loads(line) for line in streamed.text.strip().splitlines()]
+        assert lines[-1]["type"] == "done"
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert sum(m.sender == MessageSender.ASSISTANT for m in messages) == 2

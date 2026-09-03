@@ -14,7 +14,13 @@ from chat.agent.generation_registry import cancel_for_chat
 from chat.api.provisioning import provision_patient
 from chat.api.session_cookie import read_session_id, set_session_cookie
 from chat.clients import scheduling
-from chat.clients.scheduling import RenameRefusal, SchedulingUnavailableError
+from chat.clients.scheduling import (
+    RenameRefusal,
+    SchedulingError,
+    SchedulingNotFoundError,
+    SchedulingRequestError,
+    SchedulingUnavailableError,
+)
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.db.session import session_factory
@@ -125,6 +131,18 @@ _NO_PATIENT_YET = "this chat has no patient yet - send a message first, then ren
 _NAME_TAKEN = "another chat in this session already uses that name"
 
 
+def _proves_nothing_happened(exc: SchedulingError) -> bool:
+    """Whether this failure is one the scheduler decided before writing anything.
+
+    True for the two it answers *with* - a request it rejected, an id that did not
+    resolve - which it settles ahead of the write, so "nothing happened" is a fact a
+    route may state. False for every other kind, including one added after this was
+    written: a failure this build cannot place is not evidence that nothing happened,
+    and a 502 saying so would be a guess wearing a fact's wording.
+    """
+    return isinstance(exc, SchedulingNotFoundError | SchedulingRequestError)
+
+
 @router.patch("/chats/{chat_id}/patient")
 async def rename_chat_patient(
     chat_id: str, body: ChatPatientUpdate, request: Request
@@ -140,9 +158,12 @@ async def rename_chat_patient(
         HTTPException 504: the scheduler may or may not have applied the rename. The
             request is safe to send again - renaming to a name already held changes
             nothing - so the caller is told to retry rather than told an outcome.
-        SchedulingRequestError: propagated - the scheduler rejected the request as
-            malformed, or refused it for a reason this build cannot name. A defect
-            here, not something the caller chose, so it surfaces as a 500.
+        HTTPException 502: the scheduler answered by rejecting the request, so nothing
+            was renamed. A defect on this side rather than anything the caller chose,
+            and sending the same request again is rejected again.
+        HTTPException 504: also for a scheduling failure this build cannot place, which
+            says nothing about whether the name was applied - so it is answered the way
+            an expired deadline is, with a retry rather than an outcome.
 
     The scheduler is written first and its answer, not the requested name, is what gets
     cached: it owns the value, and a name it normalized or refused must never be the one
@@ -179,6 +200,31 @@ async def rename_chat_patient(
         raise HTTPException(
             status_code=503, detail="scheduling is unavailable; nothing was renamed"
         ) from exc
+    except SchedulingError as exc:
+        # The base class, not only the outage subclass: the scheduler *answering* with
+        # a rejection is this request's failure too, and letting it escape would answer
+        # a route that knows what happened with an unexplained 500. What the caller is
+        # told, though, is only what the failure supports - a rejection is decided
+        # before the rename, so "nothing was renamed" is a fact; anything else is not.
+        nothing_happened = _proves_nothing_happened(exc)
+        get_logger().error(
+            "patient.rename_rejected",
+            chat_id=chat.id,
+            patient_id=chat.patient_id,
+            error_type=type(exc).__name__,
+            error_detail=str(exc),
+            outcome_known=nothing_happened,
+        )
+        if nothing_happened:
+            raise HTTPException(
+                status_code=502,
+                detail="scheduling refused the request; nothing was renamed",
+            ) from exc
+        raise HTTPException(
+            status_code=504,
+            detail="scheduling failed in a way this build cannot place; the rename may "
+            "or may not have been applied - try again",
+        ) from exc
 
     if isinstance(result, RenameRefusal):
         if result.reason is RenameFailureReason.NAME_TAKEN:
@@ -207,6 +253,12 @@ async def delete_chat(chat_id: str, request: Request) -> None:
             - so the caller is told to retry rather than told an outcome. Reporting
             "nothing was deleted" here would be a guess, and the one that leaves a chat
             bound to a patient that no longer exists.
+        HTTPException 502: the scheduler answered by rejecting the request, so nothing
+            was deleted - here or there. A defect on this side rather than anything the
+            caller chose, and sending the same request again is rejected again.
+        HTTPException 504: also for a scheduling failure this build cannot place, which
+            is not evidence that the patient survived - so it is answered the way an
+            expired deadline is, with a retry rather than an outcome.
 
     The scheduler goes first deliberately. Of the two orderings only this one has a
     benign failure mode: a crash between the steps leaves a chat pointing at a patient
@@ -246,6 +298,30 @@ async def delete_chat(chat_id: str, request: Request) -> None:
             ) from exc
         raise HTTPException(
             status_code=503, detail="scheduling is unavailable; nothing was deleted"
+        ) from exc
+    except SchedulingError as exc:
+        # As in the rename above: a status the scheduler *answered* with is this
+        # request's failure too, and only a rejection - decided before anything is
+        # deleted - lets the caller be told that nothing was. Either way nothing local
+        # is deleted: the chat, its patient and any in-flight turn are left as they
+        # were, which is what makes the retry this offers safe.
+        nothing_happened = _proves_nothing_happened(exc)
+        get_logger().error(
+            "chat.delete_rejected",
+            chat_id=chat.id,
+            error_type=type(exc).__name__,
+            error_detail=str(exc),
+            outcome_known=nothing_happened,
+        )
+        if nothing_happened:
+            raise HTTPException(
+                status_code=502,
+                detail="scheduling refused the request; nothing was deleted",
+            ) from exc
+        raise HTTPException(
+            status_code=504,
+            detail="scheduling failed in a way this build cannot place; the deletion "
+            "may or may not have been applied - try again",
         ) from exc
 
     turn_cancelled = await cancel_for_chat(chat.id)

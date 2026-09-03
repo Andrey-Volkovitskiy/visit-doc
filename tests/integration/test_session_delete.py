@@ -128,6 +128,7 @@ async def _seed_chat_side(session_id: str) -> tuple[str, int]:
             session,
             id=message_id,
             chat_id=chat.id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="is anyone there?",
         )

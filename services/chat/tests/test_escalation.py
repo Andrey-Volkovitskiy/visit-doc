@@ -47,13 +47,14 @@ async def _chat() -> tuple[str, str]:
     return session_row.id, chat.id
 
 
-async def _patient_message(chat_id: str) -> str:
+async def _patient_message(session_id: str, chat_id: str) -> str:
     message_id = str(ULID())
     async with session_factory() as session:
         await chat_repository.create_message(
             session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="is anyone there?",
         )
@@ -78,8 +79,19 @@ async def _mark_of(message_id: str) -> str | None:
 async def _apply(
     chat_id: str, session_id: str, message_id: str, requests: EscalationRequests
 ) -> None:
+    """Apply `requests` the way a turn does - establishing the takeover fact first.
+
+    A turn reads that fact once, under the chat's lock, and hands it to
+    `apply_escalation`; this stands in for the turn, so the tests below still exercise
+    the predicate and not a boolean the test chose.
+    """
     async with session_factory() as session:
-        await apply_escalation(session, chat_id, session_id, message_id, requests)
+        taken_over = await chat_repository.taken_over_since(
+            session, chat_id, session_id, message_id
+        )
+        await apply_escalation(
+            session, chat_id, session_id, message_id, requests, taken_over=taken_over
+        )
 
 
 async def _post_as_staff(session_id: str, chat_id: str) -> None:
@@ -182,7 +194,7 @@ def test_every_recorded_request_is_kept_however_the_precedence_resolved() -> Non
 
 async def test_a_silencing_reason_sets_escalation_attention_and_the_mark() -> None:
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
 
@@ -200,7 +212,7 @@ async def test_assistant_failed_emphasizes_without_silencing() -> None:
     # FR-003d. The single most collapsible rule in the feature: one column carrying
     # both axes passes every other test in this file and fails this one.
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_FAILED)
 
@@ -218,13 +230,13 @@ async def test_a_second_escalation_keeps_the_first_reason() -> None:
     # FR-007: the reason that silenced the conversation is the one a staff member
     # reads, and a later call must not rewrite the history it records.
     session_id, chat_id = await _chat()
-    first_message = await _patient_message(chat_id)
+    first_message = await _patient_message(session_id, chat_id)
     first = EscalationRequests()
     first.record(_CORPUS)
     await _apply(chat_id, session_id, first_message, first)
     escalated_at = (await _state(chat_id, session_id)).escalated_at
 
-    second_message = await _patient_message(chat_id)
+    second_message = await _patient_message(session_id, chat_id)
     second = EscalationRequests()
     second.record(_ASKED)
     await _apply(chat_id, session_id, second_message, second)
@@ -236,13 +248,13 @@ async def test_a_second_escalation_keeps_the_first_reason() -> None:
 
 async def test_a_later_call_does_not_restamp_how_long_it_has_waited() -> None:
     session_id, chat_id = await _chat()
-    first_message = await _patient_message(chat_id)
+    first_message = await _patient_message(session_id, chat_id)
     first = EscalationRequests()
     first.record(_ASKED)
     await _apply(chat_id, session_id, first_message, first)
     waiting_since = (await _state(chat_id, session_id)).attention_since
 
-    second_message = await _patient_message(chat_id)
+    second_message = await _patient_message(session_id, chat_id)
     second = EscalationRequests()
     second.record(_FAILED)
     await _apply(chat_id, session_id, second_message, second)
@@ -252,7 +264,7 @@ async def test_a_later_call_does_not_restamp_how_long_it_has_waited() -> None:
 
 async def test_an_empty_collector_transitions_nothing_and_marks_nothing() -> None:
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
 
     await _apply(chat_id, session_id, message_id, EscalationRequests())
 
@@ -269,7 +281,7 @@ async def test_a_call_decided_before_a_staff_post_is_not_applied_after_it() -> N
     # no deadline, the patient's next message would then be stored unanswered against
     # the very staff member replying to them.
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_CORPUS)
 
@@ -291,7 +303,7 @@ async def test_a_call_raised_before_the_staff_post_it_preceded_still_applies() -
     await _post_as_staff(session_id, chat_id)
     async with session_factory() as session:
         await chat_repository.clear_pause(session, chat_id, session_id)
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_CORPUS)
 
@@ -305,7 +317,7 @@ async def test_a_call_raised_before_the_staff_post_it_preceded_still_applies() -
 async def test_a_chat_id_from_another_session_transitions_nothing() -> None:
     session_id, chat_id = await _chat()
     other_session_id, _ = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
 
@@ -378,7 +390,7 @@ async def test_an_escalation_binds_exactly_one_conversation() -> None:
     session_id, escalated_chat = await _chat()
     async with session_factory() as session:
         sibling = await chat_repository.create_chat(session, session_id)
-    message_id = await _patient_message(escalated_chat)
+    message_id = await _patient_message(session_id, escalated_chat)
     requests = EscalationRequests()
     requests.record(_ASKED)
 
@@ -394,7 +406,7 @@ async def test_a_conversation_can_be_escalated_again_after_one_ended() -> None:
     # FR-010: the second escalation is a fresh one with its own waiting time, not a
     # resumption of the first.
     session_id, chat_id = await _chat()
-    first_message = await _patient_message(chat_id)
+    first_message = await _patient_message(session_id, chat_id)
     first = EscalationRequests()
     first.record(_CORPUS)
     await _apply(chat_id, session_id, first_message, first)
@@ -404,7 +416,7 @@ async def test_a_conversation_can_be_escalated_again_after_one_ended() -> None:
         await chat_repository.clear_escalation(session, chat_id, session_id)
         await chat_repository.clear_attention(session, chat_id, session_id)
 
-    second_message = await _patient_message(chat_id)
+    second_message = await _patient_message(session_id, chat_id)
     second = EscalationRequests()
     second.record(_ASKED)
     await _apply(chat_id, session_id, second_message, second)
@@ -421,7 +433,7 @@ async def test_the_escalated_mark_is_a_property_of_the_stored_conversation() -> 
     # half of this; without both, persistence is tested only for the silence that
     # expires anyway.
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
     await _apply(chat_id, session_id, message_id, requests)
@@ -438,7 +450,7 @@ async def test_the_escalated_mark_is_a_property_of_the_stored_conversation() -> 
 
 async def test_a_restarted_backend_still_generates_nothing_in_that_chat() -> None:
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
     await _apply(chat_id, session_id, message_id, requests)
@@ -478,7 +490,7 @@ async def test_one_escalation_record_means_one_handoff() -> None:
             session_id, chat_id = await _chat()
             # Three calls against one conversation; only the first silences it.
             for reason in (_ASKED, _CORPUS, _ASKED):
-                message_id = await _patient_message(chat_id)
+                message_id = await _patient_message(session_id, chat_id)
                 requests = EscalationRequests()
                 requests.record(reason)
                 await _apply(chat_id, session_id, message_id, requests)
@@ -494,7 +506,7 @@ async def test_one_escalation_record_means_one_handoff() -> None:
 
 async def test_a_failure_is_recorded_as_raised_but_not_silenced() -> None:
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_FAILED)
 
@@ -517,9 +529,11 @@ async def test_a_second_failure_in_an_emphasized_conversation_transitions_nothin
     session_id, chat_id = await _chat()
     first = EscalationRequests()
     first.record(_FAILED)
-    await _apply(chat_id, session_id, await _patient_message(chat_id), first)
+    await _apply(
+        chat_id, session_id, await _patient_message(session_id, chat_id), first
+    )
 
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_FAILED)
 
@@ -539,7 +553,7 @@ async def test_a_second_failure_in_an_emphasized_conversation_transitions_nothin
 async def test_a_failure_is_raised_once_however_many_times_it_is_recorded() -> None:
     # Two tools failing in one turn is one conversation joining the queue, not two.
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_FAILED)
     requests.record(_FAILED)
@@ -557,7 +571,7 @@ async def test_a_failure_is_raised_once_however_many_times_it_is_recorded() -> N
 async def test_both_halves_of_a_mixed_turn_are_recorded() -> None:
     # The precedence decides the mark; the log keeps every call (research #6).
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_CORPUS)
     requests.record(_FAILED)
@@ -576,7 +590,7 @@ async def test_a_failed_record_never_stops_the_transition() -> None:
     # FR-034: recording follows a transition and never gates one - a log entry that
     # could not be written cannot un-happen a handoff that already occurred.
     session_id, chat_id = await _chat()
-    message_id = await _patient_message(chat_id)
+    message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
 

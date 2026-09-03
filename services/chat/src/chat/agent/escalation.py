@@ -128,6 +128,8 @@ async def apply_escalation(
     session_id: str,
     message_id: str,
     requests: EscalationRequests,
+    *,
+    taken_over: bool,
 ) -> None:
     """Apply one turn's collected calls to staff, and record every one of them.
 
@@ -136,22 +138,25 @@ async def apply_escalation(
             call, and the only message a turn can mark. Bound by the caller rather than
             supplied per request, so a model cannot address another message any more
             than it can address another conversation.
+        taken_over: Whether a person has taken the conversation over since `message_id`
+            arrived. Supplied rather than read here because the caller has already
+            established it under the same lock - the reply's own insert evaluates it in
+            its `WHERE` - and one turn's two writes must act on one answer, not on two
+            reads of it.
 
     Does nothing at all when nothing was recorded, which is the ordinary turn, and
-    nothing either when a person has taken the conversation over since `message_id`
-    arrived - the calls are recorded, and none of them applied.
+    nothing either when `taken_over` - the calls are recorded, and none of them applied.
 
-    Must be called holding `chat_id`'s advisory lock. Whether a person has taken the
-    conversation is read here rather than carried into each statement's own `WHERE`,
-    and only that lock makes the answer safe to act on: every gesture that takes a
-    conversation - a staff message, the console's switch - writes under it too, so
-    none of them can land between this read and the writes below.
+    Must be called holding `chat_id`'s advisory lock. That lock is what makes
+    `taken_over` still true by the time the writes below act on it: every gesture that
+    takes a conversation - a staff message, the console's switch - writes under it too,
+    so none of them can land between the caller establishing it and this returning.
     """
     mark = requests.message_mark
     if mark is None:
         return
 
-    if await chat_repository.taken_over_since(session, chat_id, session_id, message_id):
+    if taken_over:
         # A person answered while this turn was still running. Applying anything now
         # would put the conversation back in the queue they just took it out of, and
         # re-silence the patient against the very staff member handling them.

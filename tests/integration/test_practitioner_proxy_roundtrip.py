@@ -32,8 +32,10 @@ from .test_booking_roundtrip import _chat_settings
 _TUESDAY = date(2026, 8, 18)
 _TUESDAY_9AM = datetime(2026, 8, 18, 9, 0)
 _LOCAL_NOW = datetime(2026, 8, 17, 8, 0)
-# `Weekday` is Monday-based and numeric, matching `date.weekday()` - the wire carries
-# the number, not a name, so this is the value a console form sends too.
+# `Weekday` is Monday-based and numeric, matching `date.weekday()` - the HTTP surface
+# carries the number, not a name, so this is the value a console form sends too. The
+# gRPC contract's own `Weekday` numbering differs, reserving zero for "unset"; the
+# scheduler maps between the two at that boundary.
 _TUESDAY_WEEKDAY = Weekday.TUESDAY.value
 
 

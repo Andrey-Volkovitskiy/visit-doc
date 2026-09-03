@@ -6,7 +6,7 @@ taxonomy are exercised without a running scheduler.
 """
 
 from collections.abc import Iterator
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, cast
 from unittest.mock import patch
 
@@ -16,7 +16,11 @@ import structlog
 from chat.clients import scheduling
 from chat.core.config import Settings
 from shared_models.localtime import format_local_datetime
-from shared_models.scheduling import BookingFailureReason, RenameFailureReason
+from shared_models.scheduling import (
+    BookingFailureReason,
+    RenameFailureReason,
+    Weekday,
+)
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from structlog.testing import capture_logs
 
@@ -511,6 +515,110 @@ async def test_a_practitioner_with_a_range_fitting_one_slot_is_bookable() -> Non
     assert practitioners[0].bookable is True
 
 
+async def test_an_unnamed_weekday_is_reported_as_a_defect() -> None:
+    # A scheduler deployed ahead of this service. It has to arrive as the typed error
+    # every caller of this client already handles - a bare `ValueError` escapes them
+    # all and lands wherever the caller catches everything.
+    ctx, _ = _patched(
+        "ListPractitioners",
+        [
+            pb.ListPractitionersResponse(
+                practitioners=[
+                    pb.Practitioner(
+                        id=_PRACTITIONER_ID,
+                        full_name="William Osler",
+                        specialty="General Practice",
+                        appointment_duration_minutes=60,
+                        schedule=[
+                            pb.WorkingRange(
+                                weekday=99, start_time="09:00", end_time="17:00"
+                            )
+                        ],
+                    )
+                ]
+            )
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.list_practitioners(
+            _CHANNEL, _settings(), session_id=_SESSION_ID
+        )
+
+
+async def test_a_working_range_with_no_weekday_set_is_not_read_as_monday() -> None:
+    # proto3 sends the zero value for a field nobody set, so an unpopulated weekday
+    # arrives as zero. Reading that as a day would put a practitioner on the console
+    # and in front of the patient working hours they may not work, so the wire's zero
+    # is the unset sentinel and reading it fails loudly instead.
+    ctx, _ = _patched(
+        "ListPractitioners",
+        [
+            pb.ListPractitionersResponse(
+                practitioners=[
+                    pb.Practitioner(
+                        id=_PRACTITIONER_ID,
+                        full_name="William Osler",
+                        specialty="General Practice",
+                        appointment_duration_minutes=60,
+                        schedule=[
+                            pb.WorkingRange(start_time="09:00", end_time="17:00")
+                        ],
+                    )
+                ]
+            )
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.list_practitioners(
+            _CHANNEL, _settings(), session_id=_SESSION_ID
+        )
+
+
+@pytest.mark.parametrize(
+    ("wire", "expected"),
+    [
+        (pb.WEEKDAY_MONDAY, Weekday.MONDAY),
+        (pb.WEEKDAY_TUESDAY, Weekday.TUESDAY),
+        (pb.WEEKDAY_WEDNESDAY, Weekday.WEDNESDAY),
+        (pb.WEEKDAY_THURSDAY, Weekday.THURSDAY),
+        (pb.WEEKDAY_FRIDAY, Weekday.FRIDAY),
+        (pb.WEEKDAY_SATURDAY, Weekday.SATURDAY),
+        (pb.WEEKDAY_SUNDAY, Weekday.SUNDAY),
+    ],
+)
+async def test_each_named_weekday_reads_back_as_its_domain_member(
+    wire: int, expected: Weekday
+) -> None:
+    # The wire numbering is one ahead of the domain's, so this pins the mapping
+    # rather than the pass-through it would be if the two ever coincided again.
+    ctx, _ = _patched(
+        "ListPractitioners",
+        [
+            pb.ListPractitionersResponse(
+                practitioners=[
+                    pb.Practitioner(
+                        id=_PRACTITIONER_ID,
+                        full_name="William Osler",
+                        specialty="General Practice",
+                        appointment_duration_minutes=60,
+                        schedule=[
+                            pb.WorkingRange(
+                                weekday=wire, start_time="09:00", end_time="17:00"
+                            )
+                        ],
+                    )
+                ]
+            )
+        ],
+    )
+    with ctx:
+        practitioners = await scheduling.list_practitioners(
+            _CHANNEL, _settings(), session_id=_SESSION_ID
+        )
+
+    assert practitioners[0].schedule[0].weekday is expected
+
+
 # --- renaming a patient --------------------------------------------------------
 
 
@@ -654,13 +762,17 @@ async def test_a_cancelled_appointment_reads_back_as_cancelled() -> None:
 async def test_an_unspecified_status_on_the_wire_is_not_read_as_standing() -> None:
     # A scheduler that forgot to set the field, or one deployed behind this build.
     # Defaulting to standing would present a cancelled appointment as a live one.
+    # The appointment itself exists - the scheduler answered with it - so this is the
+    # unknown-outcome error, not the one that means nothing was created.
     response = _booked_response()
     response.appointment.ClearField("status")
     ctx, _ = _patched("BookAppointment", [response])
-    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
         await scheduling.book_appointment(
             _CHANNEL, _settings(), **_book_request_kwargs()
         )
+
+    assert caught.value.outcome_unknown is True
 
 
 # --- changes -----------------------------------------------------------------
@@ -1160,3 +1272,139 @@ async def test_a_refusal_this_build_cannot_name_is_still_a_request_error() -> No
 
     with ctx, pytest.raises(scheduling.SchedulingRequestError):
         await scheduling.cancel_appointment(_CHANNEL, _settings(), **_change_kwargs())
+
+
+# --- an answer this build cannot read ------------------------------------------
+
+
+async def test_an_unreadable_working_range_is_reported_as_a_defect() -> None:
+    # The same fact as an unnamed weekday, arriving in the other half of the range: a
+    # time string this build cannot read. `bookable` is what reads it, so the error
+    # surfaces there rather than out of the call - still typed, still handled by every
+    # caller of this client.
+    ctx, _ = _patched(
+        "ListPractitioners",
+        [
+            pb.ListPractitionersResponse(
+                practitioners=[
+                    pb.Practitioner(
+                        id=_PRACTITIONER_ID,
+                        full_name="William Osler",
+                        specialty="General Practice",
+                        appointment_duration_minutes=60,
+                        schedule=[
+                            pb.WorkingRange(
+                                weekday=1, start_time="09:00+02:00", end_time="17:00"
+                            )
+                        ],
+                    )
+                ]
+            )
+        ],
+    )
+    with ctx:
+        practitioners = await scheduling.list_practitioners(
+            _CHANNEL, _settings(), session_id=_SESSION_ID
+        )
+
+    with pytest.raises(scheduling.SchedulingRequestError):
+        _ = practitioners[0].bookable
+
+
+async def test_an_availability_timestamp_carrying_an_offset_is_a_defect() -> None:
+    # There is no timezone in this system, so an offset is not a differently-expressed
+    # local time - it is a value this build cannot read. It has to arrive as the typed
+    # error the read tools already answer `unavailable` to, not as a bare `ValueError`
+    # that escapes them.
+    ctx, _ = _patched(
+        "CheckAvailability",
+        [
+            pb.CheckAvailabilityResponse(
+                available_starts=["2026-08-18T09:00:00+02:00"],
+                appointment_duration_minutes=60,
+            )
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.check_availability(
+            _CHANNEL,
+            _settings(),
+            session_id=_SESSION_ID,
+            practitioner_id=_PRACTITIONER_ID,
+            patient_id=_PATIENT_ID,
+            from_date=date(2026, 8, 17),
+            to_date=date(2026, 8, 21),
+            local_now=_LOCAL_NOW,
+        )
+
+
+async def test_a_listed_appointment_with_an_unreadable_timestamp_is_a_defect() -> None:
+    ctx, _ = _patched(
+        "ListAppointments",
+        [
+            pb.ListAppointmentsResponse(
+                future=[_wire_appointment(starts_at="2026-08-18T09:00:00+02:00")]
+            )
+        ],
+    )
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.list_appointments(_CHANNEL, _settings(), **_list_kwargs())
+
+
+async def test_an_appointment_with_no_timestamp_at_all_is_a_defect() -> None:
+    # proto3 sends the empty string for a timestamp nobody set, which is exactly the
+    # deployment skew the status mapping already guards against - not corruption.
+    appointment = _wire_appointment()
+    appointment.ClearField("starts_at")
+    ctx, _ = _patched(
+        "ListAppointments", [pb.ListAppointmentsResponse(future=[appointment])]
+    )
+    with ctx, pytest.raises(scheduling.SchedulingRequestError):
+        await scheduling.list_appointments(_CHANNEL, _settings(), **_list_kwargs())
+
+
+async def test_a_caller_supplied_aware_datetime_stays_a_value_error() -> None:
+    # The other half of the split: an argument this service built wrong is its own
+    # defect, and must not be reported as the scheduler answering unreadably.
+    ctx, _ = _patched("ListAppointments", [pb.ListAppointmentsResponse()])
+    with ctx, pytest.raises(ValueError) as caught:
+        await scheduling.list_appointments(
+            _CHANNEL,
+            _settings(),
+            **_list_kwargs(local_now=datetime(2026, 8, 14, 9, 0, tzinfo=timezone.utc)),
+        )
+
+    assert not isinstance(caught.value, scheduling.SchedulingError)
+
+
+async def test_a_booked_appointment_this_build_cannot_read_is_never_a_flat_denial() -> (
+    None
+):
+    # The appointment exists - the scheduler answered with it. Reporting the typed
+    # request error would have the tool tell the patient nothing was booked.
+    response = _booked_response()
+    response.appointment.starts_at = "2026-08-18T09:00:00+02:00"
+    ctx, _ = _patched("BookAppointment", [response])
+
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
+        await scheduling.book_appointment(
+            _CHANNEL, _settings(), **_book_request_kwargs()
+        )
+
+    assert caught.value.outcome_unknown is True
+
+
+async def test_an_unreadable_previous_start_is_never_a_flat_denial() -> None:
+    # The move completed; only the state it came from could not be read.
+    response = pb.ChangeAppointmentResponse(
+        appointment=_wire_appointment(starts_at="2026-08-18T10:00:00"),
+        previous_starts_at="2026-08-18T09:00:00+02:00",
+    )
+    ctx, _ = _patched("RescheduleAppointment", [response])
+
+    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as caught:
+        await scheduling.reschedule_appointment(
+            _CHANNEL, _settings(), **_reschedule_kwargs()
+        )
+
+    assert caught.value.outcome_unknown is True

@@ -1,8 +1,9 @@
 """`POST /chat` — the streaming turn endpoint."""
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import datetime
+from enum import StrEnum
 
 import grpc
 from anthropic import AsyncAnthropic
@@ -49,6 +50,57 @@ _CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_
 _PATIENT_PLACEHOLDER_NAME = "the patient"
 
 
+class ChatVanishedError(RuntimeError):
+    """Raised when the chat a turn resolved is no longer the session's by the time the
+    turn's message is written - deleted in between the two.
+    """
+
+
+class ReplyOutcome(StrEnum):
+    """What became of the reply a turn generated.
+
+    Four values because the caller owes the patient a different ending for each, or owes
+    the log a different account of it, and a `bool` would fold them together. A write
+    that failed is none of these - it raises, so a turn whose outcome is unknown never
+    reports one.
+
+    Only `STORED` ends the turn in a reply. Every other member - including any added
+    later - ends it in `cancelled`, so the ending a turn gives the patient is decided
+    by one comparison rather than by a branch per member that a new one could miss.
+    """
+
+    # The reply is in the thread, and only now may the patient be shown it.
+    STORED = "stored"
+    # A person took the conversation over while this turn was finishing. Nothing was
+    # written, and the patient sees the turn end without an answer (FR-013a).
+    TAKEN_OVER = "taken_over"
+    # This turn produced no reply to store - it was superseded before it completed.
+    NOT_GENERATED = "not_generated"
+    # The chat was deleted while this turn was running, so the reply had nowhere to go.
+    # Distinct from `TAKEN_OVER` because no person did anything: recording it as a
+    # takeover would put a staff member in a conversation nobody ever touched.
+    CHAT_GONE = "chat_gone"
+
+
+# The write's own three answers in this turn's terms. `NOT_GENERATED` has no counterpart
+# here on purpose: it is the outcome of a turn that attempted no write at all.
+_OUTCOME_BY_REPLY_WRITE = {
+    chat_repository.ReplyWrite.STORED: ReplyOutcome.STORED,
+    chat_repository.ReplyWrite.TAKEN_OVER: ReplyOutcome.TAKEN_OVER,
+    chat_repository.ReplyWrite.CHAT_GONE: ReplyOutcome.CHAT_GONE,
+}
+
+
+def _log_chat_vanished(chat_id: str, message_id: str) -> None:
+    """Record that the chat this turn was answering was deleted while it ran.
+
+    `info`, not `error`: a conversation deleted mid-turn is a race this turn is built to
+    lose safely - nothing was written and nothing is inconsistent - and it must not read
+    in the log like the pipeline failures around it.
+    """
+    get_logger().info("turn.chat_vanished", chat_id=chat_id, message_id=message_id)
+
+
 def _silenced_by(state: chat_repository.ConversationState | None) -> str | None:
     """Return which state stops the assistant replying here, or None if none does.
 
@@ -90,7 +142,9 @@ async def _persist_outcome(
     escalation: EscalationRequests,
     done_event: ChatDoneEvent | None,
     answer: str,
-) -> None:
+    *,
+    on_stored: Callable[[ChatDoneEvent], None],
+) -> ReplyOutcome:
     """Write what this turn produced and what it decided, under the chat's lock.
 
     Args:
@@ -99,42 +153,87 @@ async def _persist_outcome(
             superseded this turn.
         answer: The text streamed to the patient, stored whenever `done_event` carries
             no message of its own.
+        on_stored: Called with `done_event` the moment its insert has committed, and
+            not called at all otherwise. Called from inside the locked section on
+            purpose: it is what shows the patient the reply, the insert having
+            succeeded is the whole of what makes that safe, and deferring it until
+            this returns would let a failure in the escalation writes below strand a
+            reply that is in the thread and was never delivered.
+
+    Returns: what became of the reply - see `ReplyOutcome`. The caller needs it to
+        decide whether the patient may be shown one.
+
+    Raises: the store's own error if a write could not be completed.
 
     Holds the lock a staff post takes, for the whole of both writes: the reply and the
     transition either both precede a staff member taking the conversation over or both
     follow it, never one of each. Without it the transition lands on top of the clears
     that post just made, and the conversation falls silent again with a person already
     in it.
+
+    The lock is not on its own enough to decide the reply, though - it is taken *after*
+    this turn has deregistered itself, so a staff member can post in between and find no
+    generation to cancel. That is why the reply's write carries the takeover guard in
+    its own `WHERE` rather than relying on having got here first.
+
+    Waits for the lock however long it takes. The wait is bounded in practice by what
+    every holder does under it - a handful of statements, never a person's typing - and
+    a bounded wait would have to answer with either a reply nobody stored or writes
+    nobody serialized, both worse than the wait itself.
     """
     # Pinned, because the section commits and the lock lives on the connection rather
     # than on the transaction - see `pinned_session`.
     async with pinned_session() as db_session:
         await chat_repository.lock_chat(db_session, chat.id)
         try:
+            outcome = ReplyOutcome.NOT_GENERATED
             if done_event is not None:
                 # `message` is set only when there is no streamed text to show, which
                 # today is the FAQ abstention case. `grounded` stays NULL for a
                 # booking-only reply: it was never retrieved against, so it is neither
                 # grounded nor abstaining.
-                await chat_repository.create_message(
+                write = await chat_repository.create_assistant_reply_unless_taken_over(
                     db_session,
                     id=str(ULID()),
                     chat_id=chat.id,
-                    sender=MessageSender.ASSISTANT,
+                    session_id=chat.session_id,
+                    answering_message_id=patient_message_id,
                     content=done_event.message or answer,
                     grounded=done_event.grounded,
                     citations=[c.model_dump() for c in done_event.citations],
                     reply_to_message_ids=reply_to_message_ids,
                 )
-            # After the graph has completed and the reply has been delivered: the turn
+                outcome = _OUTCOME_BY_REPLY_WRITE[write]
+                if outcome is ReplyOutcome.STORED:
+                    on_stored(done_event)
+                if outcome is ReplyOutcome.CHAT_GONE:
+                    _log_chat_vanished(chat.id, patient_message_id)
+            # The insert above evaluated the takeover guard in its own `WHERE`, so its
+            # answer is the one to act on here; only a turn that wrote nothing has to
+            # ask, and it asks once. Nothing can change the answer in between - every
+            # gesture that takes a conversation writes under this same lock.
+            taken_over = (
+                outcome is ReplyOutcome.TAKEN_OVER
+                if done_event is not None
+                else await chat_repository.taken_over_since(
+                    db_session, chat.id, chat.session_id, patient_message_id
+                )
+            )
+            # Last, and after the reply above has been both written and shown: the turn
             # runs to its end and the conversation transitions at the end of it, so a
             # mixed-intent message whose halves both ran delivers both before anything
             # is silenced.
             await apply_escalation(
-                db_session, chat.id, chat.session_id, patient_message_id, escalation
+                db_session,
+                chat.id,
+                chat.session_id,
+                patient_message_id,
+                escalation,
+                taken_over=taken_over,
             )
+            return outcome
         finally:
-            await chat_repository.release_chat_lock(db_session, chat.id)
+            await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
 
 async def _event_stream(
@@ -158,14 +257,23 @@ async def _event_stream(
             no answer for them.
 
     Raises: TurnPipelineError propagated from `run_pipeline`'s task, if the pipeline
-        failed.
+        failed before this turn's ending was sent.
 
     Cancels any still-running generation for `chat` before starting this one; yields a
     `cancelled` line instead of a reply if this turn is itself superseded before it
-    completes. Yields a `silent` line, and nothing else, when the assistant may not
-    speak in this conversation.
+    completes, if a person took the conversation over before its reply was stored, or if
+    the chat was deleted while the turn ran. Yields a `silent` line, and nothing else,
+    when the assistant may not speak in this conversation.
+
+    Every turn ends in exactly one terminal line - `done`, `cancelled` or `silent` - or
+    in a broken stream, and never in a stream that simply stops: a client that saw no
+    ending leaves the turn in progress on the patient's screen for as long as they stay
+    in the conversation. `done` is sent only once the reply behind it has committed,
+    and nothing after a terminal line may change or add to it.
     """
-    queue: asyncio.Queue[ChatTokenEvent | ChatDoneEvent | None] = asyncio.Queue()
+    queue: asyncio.Queue[ChatTokenEvent | ChatDoneEvent | ChatCancelledEvent | None] = (
+        asyncio.Queue()
+    )
     escalation = EscalationRequests()
 
     with bind_turn_id() as turn_id:
@@ -210,6 +318,13 @@ async def _event_stream(
                 """Run this turn's graph, queue its events, persist the reply.
 
                 Raises: TurnPipelineError propagated from `answer_faq_node`.
+
+                Tokens are queued as they arrive, but the `done` event is queued only
+                once the reply behind it has committed - the patient is never shown a
+                finished reply the thread does not hold. Exactly one terminal event is
+                queued either way: `done` when the reply was stored, `cancelled` for
+                every other ending, so no completed turn leaves the patient's pane
+                waiting on a line that never comes.
                 """
                 answer_parts: list[str] = []
                 done_event: ChatDoneEvent | None = None
@@ -226,11 +341,29 @@ async def _event_stream(
                         local_now=local_now,
                         tool_context=tool_context,
                     ):
-                        queue.put_nowait(event)
-                        if isinstance(event, ChatTokenEvent):
-                            answer_parts.append(event.text)
-                        elif isinstance(event, ChatDoneEvent):
+                        if isinstance(event, ChatDoneEvent):
+                            # Held back rather than streamed as it arrives: `done` is
+                            # the patient being shown a finished reply, and whether
+                            # this one is a reply the thread will hold is not settled
+                            # until the registry check and the writes below.
                             done_event = event
+                            continue
+                        if isinstance(event, ChatTokenEvent):
+                            queue.put_nowait(event)
+                            answer_parts.append(event.text)
+                            continue
+                        # Neither shape this turn's contract declares. `run_turn` casts
+                        # what `graph.astream` yields rather than checking it, so a
+                        # third shape arrives here as an assertion nobody made good.
+                        # Dropped rather than forwarded, because a line the client
+                        # cannot name is read by its parser as a completed turn and
+                        # would end the turn on an empty reply; dropped rather than
+                        # raised, because a reply that generated fine is not worth
+                        # discarding over one event nothing here can interpret. Logged,
+                        # so a drift in what the graph writes is not silent.
+                        get_logger().error(
+                            "turn.unknown_event", event_type=type(event).__name__
+                        )
 
                     # Stored only once the pipeline completes successfully (abstention
                     # included), and only if a newer message hasn't already superseded
@@ -246,14 +379,29 @@ async def _event_stream(
                         if done_event is not None and clear_if_current(chat.id, task)
                         else None
                     )
-                    await _persist_outcome(
+                    outcome = await _persist_outcome(
                         chat,
                         patient_message.id,
                         reply_to_message_ids,
                         escalation,
                         reply,
                         "".join(answer_parts),
+                        # `done` goes on the wire from inside the write, the instant
+                        # the reply's insert commits: streamed only once it is stored,
+                        # so the reply on screen and the reply in the thread are the
+                        # same one, and no later failure can leave a stored reply
+                        # undelivered.
+                        on_stored=queue.put_nowait,
                     )
+                    if outcome is not ReplyOutcome.STORED:
+                        # The other half of the pair, so exactly one terminal event
+                        # leaves this turn however it ended: `done` above when the reply
+                        # was written, `cancelled` here for every other outcome - a
+                        # person taking the conversation, a supersede, or whatever a
+                        # later member names. To the patient they are the same thing,
+                        # a turn that ends without an answer, and the tokens already
+                        # sent are not one.
+                        queue.put_nowait(ChatCancelledEvent())
                 except TurnPipelineError as exc:
                     logger = get_logger()
                     logger.error(
@@ -283,79 +431,125 @@ async def _event_stream(
             return task
 
         task: asyncio.Task[None] | None = None
-        # Pinned, because the section below commits (the patient message's insert) and
-        # the lock it holds lives on the connection, not on the transaction. An
-        # engine-bound session would hand that connection back at the commit and take
-        # the lock with it - see `pinned_session`.
-        async with pinned_session() as db_session:
-            # Serializes this whole section per chat: without it, a concurrent sibling
-            # message's history read can miss a message whose insert hasn't committed
-            # yet - and a staff post could land between this turn passing the gate and
-            # its generation being registered, leaving a reply nothing could cancel.
-            await chat_repository.lock_chat(db_session, chat.id)
-            try:
-                # Read inside the lock, in the same section that inserts the message: a
-                # staff post landing between the read and the insert would otherwise
-                # produce a message answered by an assistant that had already been
-                # silenced. This is also the only point that provably precedes
-                # classification, retrieval, every tool call and every generation call.
-                state = await chat_repository.get_conversation_state(
-                    db_session, chat.id, chat.session_id
-                )
-                history_rows = await chat_repository.list_messages(db_session, chat.id)
-                # Inserted synchronously, as soon as it's validated - before generation
-                # starts (research.md #3). Reuses `turn_id` as its id (research.md #4).
-                patient_message = await chat_repository.create_message(
-                    db_session,
-                    id=turn_id,
-                    chat_id=chat.id,
-                    sender=MessageSender.PATIENT,
-                    content=message,
-                )
-                silenced_by = _silenced_by(state)
-                if silenced_by is None:
-                    task = await launch(history_rows, patient_message)
-                else:
-                    # Kept, not rejected, and marked with the reason nothing answered
-                    # it - which is also the signal a later turn reads to know it must
-                    # not answer it retroactively. No registry is built and no graph is
-                    # constructed: the requirement is not that no reply is stored, it is
-                    # that no call is made.
-                    await chat_repository.set_attention_mark(
-                        db_session,
-                        chat.id,
-                        chat.session_id,
-                        patient_message.id,
-                        AttentionMark.UNANSWERED,
-                    )
-                    await chat_repository.mark_attention(
+        try:
+            # Pinned, because the section below commits (the patient message's insert)
+            # and the lock it holds lives on the connection, not on the transaction. An
+            # engine-bound session would hand that connection back at the commit and
+            # take the lock with it - see `pinned_session`.
+            async with pinned_session() as db_session:
+                # Serializes this whole section per chat: without it, a concurrent
+                # sibling message's history read can miss a message whose insert hasn't
+                # committed yet - and a staff post could land between this turn passing
+                # the gate and its generation being registered, leaving a reply nothing
+                # could cancel.
+                await chat_repository.lock_chat(db_session, chat.id)
+                try:
+                    # Read inside the lock, in the same section that inserts the
+                    # message: a staff post landing between the read and the insert
+                    # would otherwise produce a message answered by an assistant that
+                    # had already been silenced. This is also the only point that
+                    # provably precedes classification, retrieval, every tool call and
+                    # every generation call.
+                    state = await chat_repository.get_conversation_state(
                         db_session, chat.id, chat.session_id
                     )
-                    get_logger().info(
-                        "message.unanswered",
-                        chat_id=chat.id,
-                        message_id=patient_message.id,
-                        silenced_by=silenced_by,
+                    history_rows = await chat_repository.list_messages(
+                        db_session, chat.id
                     )
-            finally:
-                await chat_repository.release_chat_lock(db_session, chat.id)
+                    # Inserted synchronously, as soon as it's validated - before
+                    # generation starts (research.md #3). Reuses `turn_id` as its id
+                    # (research.md #4).
+                    patient_message = await chat_repository.create_message(
+                        db_session,
+                        id=turn_id,
+                        chat_id=chat.id,
+                        session_id=chat.session_id,
+                        sender=MessageSender.PATIENT,
+                        content=message,
+                    )
+                    if patient_message is None:
+                        # The chat stopped being this session's between being resolved
+                        # and being written into - deleted, in that window. Nothing was
+                        # stored, so there is nothing to answer. Raised rather than
+                        # returned, so the lock's release and this session's close both
+                        # unwind before the ending below is sent.
+                        raise ChatVanishedError(
+                            f"chat {chat.id} vanished before its message was stored"
+                        )
+                    silenced_by = _silenced_by(state)
+                    if silenced_by is None:
+                        task = await launch(history_rows, patient_message)
+                    else:
+                        # Kept, not rejected, and marked with the reason nothing
+                        # answered it - which is also the signal a later turn reads to
+                        # know it must not answer it retroactively. No registry is built
+                        # and no graph is constructed: the requirement is not that no
+                        # reply is stored, it is that no call is made.
+                        await chat_repository.set_attention_mark(
+                            db_session,
+                            chat.id,
+                            chat.session_id,
+                            patient_message.id,
+                            AttentionMark.UNANSWERED,
+                        )
+                        await chat_repository.mark_attention(
+                            db_session, chat.id, chat.session_id
+                        )
+                        get_logger().info(
+                            "message.unanswered",
+                            chat_id=chat.id,
+                            message_id=patient_message.id,
+                            silenced_by=silenced_by,
+                        )
+                finally:
+                    await chat_repository.release_chat_lock_after_commit(
+                        db_session, chat.id
+                    )
+        except ChatVanishedError:
+            # An expected race, not a failure, and caught here because letting it out
+            # cannot end the turn well: this response's status line went out before the
+            # body did, so a raise from a body iterator reaches the patient as a dropped
+            # connection and the log as an ASGI crash - indistinguishable from the
+            # pipeline genuinely breaking. `cancelled` is the true ending, the same one
+            # the reply's own write earns when the chat goes in the later window.
+            _log_chat_vanished(chat.id, turn_id)
+            yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
+            return
 
         if task is None:
             yield (ChatSilentEvent().model_dump_json() + "\n").encode()
             return
 
+        streamed_terminal = False
         while True:
             item = await queue.get()
             if item is None:
                 break
             yield (item.model_dump_json() + "\n").encode()
+            if not isinstance(item, ChatTokenEvent):
+                streamed_terminal = True
 
         if task.cancelled():
-            yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
+            if not streamed_terminal:
+                yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
             return
+        # Collected before it is decided what to do with it, so a failure nobody ends up
+        # raising is still taken off the task rather than warned about at collection.
         exc = task.exception()
+        if streamed_terminal:
+            # The turn is settled and the patient has been told how it ended, so nothing
+            # here may say otherwise. A failure after that point - an escalation write,
+            # a lock release - is recorded where it happened and goes no further:
+            # breaking the stream now would replace an answer already in the thread with
+            # an error, and hand the patient back a question that has been answered.
+            return
         if exc is not None:
             raise exc
+        # No terminal event, and no failure to account for the absence: the pipeline
+        # completed without settling a reply. The patient is owed an ending regardless -
+        # a stream that just stops leaves the turn in progress on their screen - and
+        # `cancelled` is the true one, since nothing was stored to show them.
+        yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
 
 
 @router.post("/chat")

@@ -71,6 +71,7 @@ async def _message(
             session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=sender,
             content="is anyone there?",
         )

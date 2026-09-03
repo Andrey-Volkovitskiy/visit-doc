@@ -48,6 +48,39 @@ booking reply both carry `grounded: null`, so reading the outcome off that alone
 handed-off turn in the log as a booking — and the one number SC-010 and the escalation records exist
 to make countable is how often a person was actually fetched.
 
+### `turn.chat_vanished` — new
+
+| Event | Level | Fields | When |
+|---|---|---|---|
+| `turn.chat_vanished` | info | `chat_id`, `message_id`, `turn_id` (bound) | `DELETE /chats/{chat_id}` landed while a turn was running, in one of the two windows no cancellation covers: before the turn's message was written, so the registry did not hold it yet, or after it deregistered and before its reply was written. Nothing was stored either way, and the turn ends in `cancelled`. |
+
+**`info`, not `error`, and its own event.** It is a race a turn is built to lose safely — nothing is
+written and nothing is inconsistent — so it must not read like `turn.error`. Its own kind, rather
+than folded into the takeover no-op, because no person did anything: recording it as a takeover
+would put a staff member in a conversation nobody ever touched.
+
+### `patient.rename_rejected` / `chat.delete_rejected` - new
+
+| Event | Level | Fields | When |
+|---|---|---|---|
+| `patient.rename_rejected` | error | `chat_id`, `patient_id`, `error_type`, `error_detail`, `outcome_known` (bool) | `PATCH /chats/{chat_id}` reached the scheduler and the scheduler answered with a failure rather than an outage. |
+| `chat.delete_rejected` | error | `chat_id`, `error_type`, `error_detail`, `outcome_known` (bool) | `DELETE /chats/{chat_id}`, same shape. |
+
+**`outcome_known` is the field that matters**, and it is why one event covers both answers instead
+of two. It is true only for the subclasses that are decided *before* the write - a rejection, or an
+id the scheduler does not know - and those are the only ones the caller is told "nothing was
+renamed/deleted" about, with a 502. Anything else this build cannot place answers 504 and claims
+nothing, because a scheduling failure it has never seen is not evidence that nothing happened.
+
+**`error`, not `warning`:** an outage is ordinary and is not logged here at all; reaching this event
+means the scheduler answered something the route did not expect, which is either a contract drift or
+a defect. The names read as "rejected" because that was the only case when they were written; a
+`false` `outcome_known` is the entry saying it was something else.
+
+**Neither carries a correlation id.** `bind_turn_id` is entered by `POST /chat` and
+`bind_operation_id` by the FAQ routes; a rename or a delete is neither, so these two entries are
+correlated by `chat_id` alone.
+
 ---
 
 ## The FAQ write path — chat service

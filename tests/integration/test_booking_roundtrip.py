@@ -94,6 +94,12 @@ async def test_the_booking_round_trip_lands_a_row_in_the_scheduler(
     )
     assert [p.full_name for p in listed] == ["William Osler"]
     assert listed[0].bookable is True
+    # The days survive the crossing unchanged. The wire's `Weekday` numbering is not
+    # the stored one - zero there is the unset sentinel - so this is the one place the
+    # two ends' mappings are proven to agree rather than each tested against a fake.
+    assert [r.weekday for r in listed[0].schedule] == [
+        weekday for weekday, _, _ in DEFAULT_SCHEDULE
+    ]
 
     availability = await scheduling.check_availability(
         scheduling_channel,

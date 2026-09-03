@@ -7,7 +7,10 @@ import pytest
 import structlog
 from chat.agent import generation_registry
 from chat.agent.answer_faq import _ABSTENTION_MESSAGE
-from chat.agent.escalation import HANDOFF_MESSAGE
+from chat.agent.escalation import (
+    HANDOFF_MESSAGE,
+    EscalationRequests,
+)
 from chat.agent.tools.staff_tools import ESCALATE_TO_STAFF
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
@@ -17,7 +20,12 @@ from chat.domain.models import (
     EscalationReason,
     MessageSender,
 )
-from chat.domain.schemas import IntentLabel
+from chat.domain.schemas import (
+    ChatDoneEvent,
+    ChatSilentEvent,
+    ChatTokenEvent,
+    IntentLabel,
+)
 from chat.main import app
 from chat.rag.indexing import publish_revision, remove_entry_chunks
 from chat.repositories import chat_repository, faq_repository
@@ -26,6 +34,7 @@ from chat.repositories.qdrant_repository import create_client, ensure_collection
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.testing import capture_logs
 from ulid import ULID
 
@@ -1031,6 +1040,7 @@ async def test_get_chat_history_shows_burst_without_forced_alternation() -> None
             db_session,
             id=str(ULID()),
             chat_id=chat.id,
+            session_id=session_row.id,
             sender=MessageSender.PATIENT,
             content="When can I see",
         )
@@ -1038,6 +1048,7 @@ async def test_get_chat_history_shows_burst_without_forced_alternation() -> None
             db_session,
             id=str(ULID()),
             chat_id=chat.id,
+            session_id=session_row.id,
             sender=MessageSender.PATIENT,
             content="Dr. Josh?",
         )
@@ -1045,6 +1056,7 @@ async def test_get_chat_history_shows_burst_without_forced_alternation() -> None
             db_session,
             id=str(ULID()),
             chat_id=chat.id,
+            session_id=session_row.id,
             sender=MessageSender.ASSISTANT,
             content="Dr. Josh is available Tuesdays.",
             grounded=True,
@@ -1395,6 +1407,7 @@ async def _silenced_message(session_id: str, chat_id: str, content: str) -> str:
             db_session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content=content,
         )
@@ -1484,3 +1497,254 @@ async def test_the_silenced_message_stays_in_the_thread(seeded_entry: int) -> No
     assert kept["content"] == "is anyone there?"
     # Still marked: only a staff message clears it, and none was posted.
     assert kept["attention_mark"] == "unanswered"
+
+
+# --- a release that frees nothing ---------------------------------------------------
+#
+# A turn holds the chat's lock twice, and both sections commit before they let it go:
+# the patient's message is inserted under the first, the reply and the transition under
+# the second. A release reporting it held nothing is a serious fault - the chat it keys
+# can never be locked again - but it is not a reason to fail a turn whose writes are
+# already durable. Failing the first would report a stored message as a failed send and
+# invite the patient to type it again; failing the second would break the stream after
+# the reply had already been generated and stored.
+
+
+def _failing_release(*, on_call: int) -> object:
+    """Return a `release_chat_lock` that really releases, then reports it did not.
+
+    Args:
+        on_call: Which of the turn's two releases fails - 1 is the patient message's
+            section, 2 is `_persist_outcome`'s.
+
+    The real release still runs, so the advisory lock does not strand and the rest of
+    the turn can take it; only the answer the caller gets is under test.
+    """
+    real_release = chat_repository.release_chat_lock
+    calls = 0
+
+    async def release(session: object, chat_id: str) -> None:
+        nonlocal calls
+        calls += 1
+        await real_release(session, chat_id)  # type: ignore[arg-type]
+        if calls == on_call:
+            raise chat_repository.ChatLockNotHeldError("held nothing")
+
+    return release
+
+
+@pytest.mark.parametrize("on_call", [1, 2])
+def test_a_failed_lock_release_does_not_fail_a_committed_turn(
+    seeded_entry: int, on_call: int
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch.object(
+            chat_repository, "release_chat_lock", _failing_release(on_call=on_call)
+        ),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."]
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert any(c["entry_id"] == seeded_entry for c in lines[-1]["citations"])
+
+    failed = [e for e in logs if e["event"] == "chat.lock_release_failed"]
+    assert len(failed) == 1
+    assert failed[0]["log_level"] == "error"
+    assert failed[0]["chat_id"] == chat_id
+    assert "held nothing" in failed[0]["error_detail"]
+
+
+@pytest.mark.parametrize("on_call", [1, 2])
+def test_a_failed_lock_release_leaves_the_turn_s_writes_in_the_thread(
+    seeded_entry: int, on_call: int
+) -> None:
+    # The half that matters to the patient: the message they sent and the answer they
+    # were shown are both in the thread afterwards, so neither is retyped and neither
+    # reappears from a reload as something they never saw.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch.object(
+            chat_repository, "release_chat_lock", _failing_release(on_call=on_call)
+        ),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."]
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert [m["sender"] for m in history] == ["patient", "assistant"]
+    assert history[0]["content"] == "when can I visit?"
+    assert history[1]["citations"]
+
+
+# --- how a turn ends ----------------------------------------------------------------
+#
+# One guarantee, three ways of breaking it. A turn's reply reaches the patient only once
+# the row holding it has committed, and every turn ends in exactly one terminal line -
+# `done`, `cancelled` or `silent` - or in a broken stream. A stream that simply stops is
+# none of those: the client saw no ending, so the turn stays in progress on the
+# patient's screen for as long as they stay in the conversation.
+
+
+_STUB_REPLY = "Visiting hours are 8am to 5pm."
+
+
+class _StubGraph:
+    """A `run_turn` stand-in yielding exactly the events it was built with.
+
+    Records `reason` into the turn's own collector first when given - the same object
+    the specialists fill, so the escalation writes that follow are the real ones.
+    """
+
+    def __init__(self, *events: object, reason: EscalationReason | None = None) -> None:
+        self._events = events
+        self._reason = reason
+
+    async def __call__(self, *args: object, **kwargs: object) -> AsyncIterator[object]:
+        escalation = kwargs.get("escalation")
+        if self._reason is not None and isinstance(escalation, EscalationRequests):
+            escalation.record(self._reason)
+        for event in self._events:
+            yield event
+
+
+async def _write_that_fails(*args: object, **kwargs: object) -> None:
+    """Stand in for a write the store could not complete."""
+    raise RuntimeError("connection reset by peer")
+
+
+def test_an_escalation_write_that_fails_does_not_cost_the_patient_the_reply() -> None:
+    # The reply commits first and the escalation writes follow it under the same lock,
+    # so a failure in the second must not swallow the first. A broken stream here puts
+    # the question back in the composer under an error banner - inviting the patient to
+    # ask again something that is already answered in the thread.
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatDoneEvent(grounded=True, citations=[]),
+                reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
+            ),
+        ),
+        patch.object(chat_repository, "set_attention_mark", _write_that_fails),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    # The other half: the reply the patient was shown is the one the thread holds.
+    assert [m["sender"] for m in history] == ["patient", "assistant"]
+
+
+def test_a_turn_that_settles_no_reply_still_tells_the_patient_it_ended() -> None:
+    # A pipeline that completes without a `done` settles no reply, and used to queue no
+    # terminal event either: the stream ended cleanly, no error fired, and the
+    # in-progress bubble stayed on screen until the patient switched chats.
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn.run_turn", _StubGraph(ChatTokenEvent(text=_STUB_REPLY))),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1] == {"type": "cancelled"}
+    # `cancelled` and not `done`, because it is the true one: nothing was stored.
+    assert [m["sender"] for m in history] == ["patient"]
+
+
+def test_an_event_shape_the_turn_cannot_name_is_dropped_rather_than_fatal() -> None:
+    # `run_turn` casts what the graph yields rather than checking it, so a third shape
+    # arrives as an assertion nobody made good. Unguarded, it took the whole turn down
+    # with an AttributeError - discarding a reply that had generated perfectly well.
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatSilentEvent(),
+                ChatDoneEvent(grounded=True, citations=[]),
+            ),
+        ),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert [m["sender"] for m in history] == ["patient", "assistant"]
+    # Dropped, not forwarded: a line the client cannot name is read by its parser as a
+    # completed turn, which would end the turn on an empty reply.
+    assert not any(line["type"] == "silent" for line in lines)
+    unknown = [entry for entry in logs if entry["event"] == "turn.unknown_event"]
+    assert len(unknown) == 1
+    assert unknown[0]["log_level"] == "error"
+    assert unknown[0]["event_type"] == "ChatSilentEvent"
+
+
+def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() -> None:
+    # The reply's own insert evaluates the takeover guard in its `WHERE`, and the lock
+    # it runs under is what holds that answer still - so a second read of the same fact
+    # in the same locked section can only agree with the first. Asking twice is not
+    # merely wasted: it is two answers where the turn's two writes must act on one.
+    reads: list[str] = []
+    real_taken_over_since = chat_repository.taken_over_since
+
+    async def counting_taken_over_since(
+        session: AsyncSession, chat_id: str, session_id: str, message_id: str
+    ) -> bool:
+        reads.append(message_id)
+        return await real_taken_over_since(session, chat_id, session_id, message_id)
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatDoneEvent(grounded=False, citations=[]),
+                reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
+            ),
+        ),
+        patch.object(chat_repository, "taken_over_since", counting_taken_over_since),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert reads == []
+    # And not because the escalation was skipped: it applied, off the insert's answer.
+    assert history[0]["attention_mark"] == AttentionMark.CORPUS_COULD_NOT_ANSWER

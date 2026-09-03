@@ -17,13 +17,15 @@ function localId(): string {
  * Fold a freshly fetched history into what is on screen, keeping what it does not
  * carry yet.
  *
- * A turn's `done` event is streamed before the server commits the assistant row - the
- * stream is the fast path, and the write follows it - so a history read fired the
- * instant a turn ends is legitimately answered without the reply already rendered
- * here. Replacing the thread with that answer blanks the reply until the next poll
- * tick notices the insert: a couple of seconds in which the patient's question looks
- * unanswered. The same holds for the patient's own message while its insert is in
- * flight.
+ * A turn's `done` event is streamed only once the server has committed the assistant
+ * row, so a read *issued after* a turn ends always carries its reply. A read still in
+ * flight *across* one does not: the mount/chat-switch fetch and the poll-driven
+ * refetch are each answered from the thread as it stood when they were issued, and
+ * anything this pane appended in the meantime is not in that answer - the patient's own
+ * bubble, put up the moment they hit send and before its insert has landed, or a reply
+ * that arrived while the fetch was outstanding. Replacing the thread with that answer
+ * blanks them until the next poll tick notices the inserts: a couple of seconds in
+ * which the patient's question looks unsent, or unanswered.
  *
  * So fetched history is the authority on everything it *does* carry, and locally
  * appended messages it does not account for are kept on the end rather than dropped.
@@ -170,10 +172,10 @@ export function ChatWindow({
     let current = true;
     void fetchChatHistory(chatId)
       .then((history) => {
-        // This tick was deferred until the turn finished, and the reply the turn just
-        // rendered is committed *after* the `done` that finished it - so this answer
-        // can predate the assistant row. Reconciling keeps it on screen instead of
-        // blanking it until the next tick.
+        // Deferred until no turn was streaming, but issued before whatever started
+        // afterwards: a send made while this was in flight, and the reply it drew, are
+        // both missing from an answer that was composed before either existed.
+        // Reconciling keeps them on screen instead of blanking them until the next tick.
         if (current) setMessages((shown) => reconcile(shown, history));
       })
       // A failed refetch leaves the thread as it was; the next poll tick tries again,
@@ -231,9 +233,10 @@ export function ChatWindow({
           clearStreaming(turnKey);
           return;
         } else if (event.type === "cancelled") {
-          // Superseded by a newer message - remove the in-progress bubble and any
-          // partial tokens entirely; never shown as final, never as an error. Only
-          // this turn's, so a sibling turn still streaming keeps its own.
+          // This turn produced no reply - superseded by a newer message, or a person
+          // took the conversation over before it was written. Remove the in-progress
+          // bubble and any partial tokens entirely; never shown as final, never as an
+          // error. Only this turn's, so a sibling turn still streaming keeps its own.
           clearStreaming(turnKey);
           return;
         } else {
@@ -246,7 +249,13 @@ export function ChatWindow({
               // `message` is set only when there is no streamed text to show (the
               // FAQ abstention case); otherwise the accumulated tokens are the
               // reply, whether it came from the FAQ path, the booking path, or both.
-              content: event.message ?? accumulated,
+              // Falsy rather than nullish, so an empty `message` falls back to the
+              // tokens exactly as the server's own `done_event.message or answer`
+              // does. Diverging here renders a bubble holding text the thread does
+              // not hold, and `reconcile` matches on content - so that bubble would
+              // never be accounted for by a history read, and would sit on screen
+              // until the chat is switched away from.
+              content: event.message || accumulated,
               grounded: event.grounded,
               citations: event.citations,
               attention_mark: null,
@@ -267,6 +276,13 @@ export function ChatWindow({
       setInput(messageText);
     } finally {
       activeControllersRef.current.delete(controller);
+      // The client half of the server's guarantee that every turn ends in exactly one
+      // terminal event: whatever ended this one - a terminal event, an abort, a broken
+      // stream, or a stream that simply stopped - the in-progress bubble goes with it.
+      // A no-op on every path that has already cleared its own, and the only thing
+      // standing between a stream that ends without an ending and a bubble the patient
+      // watches until they switch chats.
+      clearStreaming(turnKey);
     }
   }
 

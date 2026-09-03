@@ -1,25 +1,30 @@
 """Tests for the `/chats` resource: listing, creating, deleting, and history."""
 
 import asyncio
+import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from chat.agent.generation_registry import register_and_cancel_previous
+from chat.api import turn as turn_api
 from chat.api.session_cookie import COOKIE_NAME
 from chat.clients.scheduling import (
     PatientInfo,
     RenameRefusal,
+    SchedulingError,
     SchedulingNotFoundError,
     SchedulingRequestError,
     SchedulingUnavailableError,
 )
 from chat.db.session import session_factory
 from chat.domain.models import Chat, MessageSender
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent
 from chat.main import app
 from chat.repositories import chat_repository
 from fastapi.testclient import TestClient
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Response
 from shared_models.scheduling import RenameFailureReason
 from structlog.contextvars import merge_contextvars
 from structlog.testing import capture_logs
@@ -67,12 +72,13 @@ async def _seed_session_with_chats(count: int) -> tuple[str, list[str]]:
     return created.id, chat_ids
 
 
-async def _add_message(chat_id: str, content: str) -> None:
+async def _add_message(session_id: str, chat_id: str, content: str) -> None:
     async with session_factory() as session:
         await chat_repository.create_message(
             session,
             id=str(ULID()),
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content=content,
         )
@@ -130,7 +136,7 @@ async def test_list_chats_puts_the_chat_with_the_newest_message_first() -> None:
     session_id, chat_ids = await _seed_session_with_chats(3)
     # Only the middle chat gets a message; the third was created most recently, so a
     # coalesced "newest activity" sort would wrongly put it first.
-    await _add_message(chat_ids[1], "hello")
+    await _add_message(session_id, chat_ids[1], "hello")
 
     async with _api(session_id) as client:
         listed = (await client.get("/chats")).json()["chats"]
@@ -153,8 +159,8 @@ async def test_list_chats_never_shows_another_sessions_chats() -> None:
 
 async def test_get_messages_returns_the_chats_own_history() -> None:
     session_id, chat_ids = await _seed_session_with_chats(2)
-    await _add_message(chat_ids[0], "in the first chat")
-    await _add_message(chat_ids[1], "in the second chat")
+    await _add_message(session_id, chat_ids[0], "in the first chat")
+    await _add_message(session_id, chat_ids[1], "in the second chat")
 
     async with _api(session_id) as client:
         body = (await client.get(f"/chats/{chat_ids[0]}/messages")).json()
@@ -366,7 +372,7 @@ def _deleted(*, existed: bool = True, appointments: int = 2) -> Mock:
 
 async def test_deleting_a_chat_removes_it_and_its_messages() -> None:
     session_id, chat_ids = await _seed_session_with_chats(2)
-    await _add_message(chat_ids[0], "hello")
+    await _add_message(session_id, chat_ids[0], "hello")
 
     with patch(_DELETE, new=AsyncMock(return_value=_deleted())):
         async with _api(session_id) as client:
@@ -381,7 +387,7 @@ async def test_deleting_a_chat_removes_it_and_its_messages() -> None:
 
 async def test_deleting_a_chat_leaves_the_sessions_other_chats_untouched() -> None:
     session_id, chat_ids = await _seed_session_with_chats(3)
-    await _add_message(chat_ids[1], "kept")
+    await _add_message(session_id, chat_ids[1], "kept")
 
     with patch(_DELETE, new=AsyncMock(return_value=_deleted())):
         async with _api(session_id) as client:
@@ -510,6 +516,96 @@ async def test_a_refused_deletion_leaves_an_in_flight_turn_running() -> None:
     cancel_call.assert_not_awaited()
 
 
+async def test_a_deletion_the_scheduler_refuses_is_answered_not_raised() -> None:
+    """The route has to survive every scheduling failure, not only an outage.
+
+    A status the scheduler answered with escaped as an unexplained 500 while only the
+    outage subclass was caught - on a route that knows exactly what happened, since a
+    rejected request is refused before anything is deleted.
+    """
+    for failure in (
+        SchedulingRequestError("malformed"),
+        SchedulingNotFoundError("chat_not_found"),
+    ):
+        session_id, chat_ids = await _seed_session_with_chats(1)
+
+        with patch(_DELETE, new=AsyncMock(side_effect=failure)):
+            async with _api(session_id) as client:
+                response = await client.delete(f"/chats/{chat_ids[0]}")
+
+        assert response.status_code == 502, failure
+        assert "nothing was deleted" in response.json()["detail"]
+        async with session_factory() as session:
+            assert (
+                await chat_repository.get_chat(session, chat_ids[0], session_id)
+                is not None
+            )
+
+
+async def test_a_refused_deletion_is_logged_as_the_defect_it_is() -> None:
+    session_id, chat_ids = await _seed_session_with_chats(1)
+
+    with (
+        patch(_DELETE, new=AsyncMock(side_effect=SchedulingRequestError("malformed"))),
+        patch(
+            "chat.api.chats.cancel_for_chat", new=AsyncMock(return_value=True)
+        ) as cancel_call,
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            await client.delete(f"/chats/{chat_ids[0]}")
+
+    rejected = next(e for e in logs if e["event"] == "chat.delete_rejected")
+    assert rejected["error_type"] == "SchedulingRequestError"
+    assert rejected["chat_id"] == chat_ids[0]
+    # Nothing was deleted, so the reply being written for this chat is not destroyed.
+    cancel_call.assert_not_awaited()
+
+
+class _FourthSchedulingError(SchedulingError):
+    """A scheduling failure of a kind this build has no branch for.
+
+    The base class exists so one `except` covers every scheduling failure, including
+    the next one added - which is exactly why an answer reached through it must not
+    state what happened on the scheduler's side.
+    """
+
+
+async def test_a_deletion_failure_this_build_cannot_place_claims_no_outcome() -> None:
+    """A later subclass must not inherit the 502's claim that nothing was deleted.
+
+    Only a rejection the scheduler decided before writing anything supports that, and
+    a kind this build cannot place is not evidence of one.
+    """
+    session_id, chat_ids = await _seed_session_with_chats(1)
+
+    with (
+        patch(
+            _DELETE, new=AsyncMock(side_effect=_FourthSchedulingError("unplaceable"))
+        ),
+        patch(
+            "chat.api.chats.cancel_for_chat", new=AsyncMock(return_value=True)
+        ) as cancel_call,
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            response = await client.delete(f"/chats/{chat_ids[0]}")
+
+    assert response.status_code == 504
+    detail = response.json()["detail"]
+    assert "may or may not have been applied" in detail
+    assert "nothing" not in detail
+    # Answering what is not known is still an answer: it may not escape unlogged.
+    logged = next(e for e in logs if e["event"] == "chat.delete_rejected")
+    assert logged["error_type"] == "_FourthSchedulingError"
+    assert logged["outcome_known"] is False
+    cancel_call.assert_not_awaited()
+    async with session_factory() as session:
+        assert (
+            await chat_repository.get_chat(session, chat_ids[0], session_id) is not None
+        )
+
+
 async def test_a_session_surviving_with_zero_chats_is_a_valid_state() -> None:
     session_id, chat_ids = await _seed_session_with_chats(1)
 
@@ -546,6 +642,131 @@ async def test_deleting_a_chat_mid_turn_cancels_it_and_records_no_reply() -> Non
     deleted = next(e for e in logs if e["event"] == "chat.deleted")
     assert deleted["turn_cancelled"] is True
     async with session_factory() as session:
+        assert await chat_repository.list_messages(session, chat_id) == []
+
+
+# --- the two windows a deletion can land in that no cancellation covers -------------
+#
+# `cancel_for_chat` only reaches a turn the registry is holding, and a turn is in it for
+# less than its whole life: not yet at the start, while the patient's message is being
+# written, and no longer at the end, while its reply is. A delete landing in either
+# window cancels nothing and takes the chat out from under a turn that keeps running.
+# Neither is a failure - both are races a turn is built to lose safely - so neither may
+# read as one: not as an ASGI crash on the wire, and not as a staff member taking a
+# conversation over in the log.
+
+
+class _FinishedGraph:
+    """A `run_turn` stand-in that produces one complete reply and returns."""
+
+    async def __call__(
+        self, *args: object, **kwargs: object
+    ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
+        yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
+        yield ChatDoneEvent(grounded=True, citations=[])
+
+
+async def _delete_racing_a_turn(
+    session_id: str, chat_id: str, module: ModuleType, stall: str
+) -> tuple[Response, Response, list[dict[str, object]]]:
+    """Hold a turn at `module.stall`, delete its chat there, then let the turn go on.
+
+    Args:
+        module: The module holding the call to wrap, patched there rather than at the
+            import site so the turn's own lookup finds the wrapper.
+        stall: The attribute to wrap - the point the turn is held at while the
+            deletion lands.
+
+    Returns: the turn's streamed response, the deletion's own, and the log entries both
+        produced.
+    """
+    reached_the_stall = asyncio.Event()
+    delete_landed = asyncio.Event()
+    stalled_at = getattr(module, stall)
+
+    async def stalling(*args: object, **kwargs: object) -> object:
+        reached_the_stall.set()
+        await delete_landed.wait()
+        return await stalled_at(*args, **kwargs)
+
+    with (
+        patch(_DELETE, new=AsyncMock(return_value=_deleted(appointments=0))),
+        patch("chat.api.turn.run_turn", _FinishedGraph()),
+        patch.object(module, stall, stalling),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            turn = asyncio.create_task(
+                client.post(
+                    "/chat",
+                    json={
+                        "chat_id": chat_id,
+                        "message": "when can I visit?",
+                        "local_now": LOCAL_NOW,
+                    },
+                )
+            )
+            await asyncio.wait_for(reached_the_stall.wait(), timeout=5)
+            deletion = await asyncio.wait_for(client.delete(f"/chats/{chat_id}"), 5)
+            delete_landed.set()
+            streamed = await asyncio.wait_for(turn, timeout=5)
+
+    return streamed, deletion, logs
+
+
+async def test_a_chat_deleted_before_its_message_lands_still_ends_the_turn() -> None:
+    # The turn is not in the registry yet - it registers only once its message is
+    # written - so the deletion cancels nothing and the insert finds no chat to write
+    # into. Left to propagate, that reached the patient as a dropped connection: the
+    # response's status line is sent before its body, so uvicorn can only log "Exception
+    # in ASGI application" and hang up, leaving the turn in progress on their screen.
+    session_id, chat_ids = await _seed_session_with_chats(1)
+    chat_id = chat_ids[0]
+
+    streamed, deletion, logs = await _delete_racing_a_turn(
+        session_id, chat_id, chat_repository, "create_message"
+    )
+
+    assert deletion.status_code == 204
+    # Nothing was cancelled, which is what leaves this turn running into a chat that has
+    # stopped existing rather than being stopped along with it.
+    deleted = next(e for e in logs if e["event"] == "chat.deleted")
+    assert deleted["turn_cancelled"] is False
+    assert streamed.status_code == 200
+    lines = [json.loads(line) for line in streamed.text.strip().splitlines()]
+    assert lines == [{"type": "cancelled"}]
+    vanished = next(e for e in logs if e["event"] == "turn.chat_vanished")
+    assert vanished["log_level"] == "info"
+    assert vanished["chat_id"] == chat_id
+    # An expected race, and not one line of this may read like a broken pipeline.
+    assert not any(e["event"] == "turn.error" for e in logs)
+
+
+async def test_a_chat_deleted_in_the_write_gap_is_not_recorded_as_a_takeover() -> None:
+    # The other window: the turn deregisters before taking the chat's lock, so the
+    # deletion again cancels nothing and the reply's insert lands on a chat that is
+    # gone. Its `WHERE` carries the takeover guard beside the ownership one, so a bool
+    # answer folded the two together and this was logged, and reasoned about, as a staff
+    # member having taken the conversation - when nobody touched it.
+    session_id, chat_ids = await _seed_session_with_chats(1)
+    chat_id = chat_ids[0]
+
+    streamed, deletion, logs = await _delete_racing_a_turn(
+        session_id, chat_id, turn_api, "_persist_outcome"
+    )
+
+    assert deletion.status_code == 204
+    deleted = next(e for e in logs if e["event"] == "chat.deleted")
+    assert deleted["turn_cancelled"] is False
+    lines = [json.loads(line) for line in streamed.text.strip().splitlines()]
+    assert not any(line["type"] == "done" for line in lines)
+    assert lines[-1] == {"type": "cancelled"}
+    vanished = next(e for e in logs if e["event"] == "turn.chat_vanished")
+    assert vanished["log_level"] == "info"
+    assert vanished["chat_id"] == chat_id
+    # And the reply really was not written - the chat and its thread are both gone.
+    async with session_factory() as session:
+        assert await chat_repository.get_chat(session, chat_id, session_id) is None
         assert await chat_repository.list_messages(session, chat_id) == []
 
 
@@ -767,6 +988,78 @@ async def test_an_unknown_outcome_is_reported_as_unknown_not_as_a_failure() -> N
     detail = response.json()["detail"]
     assert "may not have been applied" in detail
     assert "nothing" not in detail
+
+
+async def test_a_rename_the_scheduler_refuses_is_answered_not_raised() -> None:
+    """The route has to survive every scheduling failure, not only an outage.
+
+    A rejection is refused before the patient is renamed, so this answers what is known
+    - rather than escaping as a 500 that says nothing about whether the name changed.
+    """
+    for failure in (
+        SchedulingRequestError("malformed"),
+        SchedulingNotFoundError("patient_not_found"),
+    ):
+        session_id, chat_id = await _seed_chat_with_patient()
+
+        with patch(_RENAME, new=AsyncMock(side_effect=failure)):
+            async with _api(session_id) as client:
+                response = await client.patch(
+                    f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
+                )
+                listed = (await client.get("/chats")).json()["chats"]
+
+        assert response.status_code == 502, failure
+        assert "nothing was renamed" in response.json()["detail"]
+        assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
+
+
+async def test_a_refused_rename_is_logged_as_the_defect_it_is() -> None:
+    session_id, chat_id = await _seed_chat_with_patient()
+
+    with (
+        patch(_RENAME, new=AsyncMock(side_effect=SchedulingRequestError("malformed"))),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            await client.patch(
+                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
+            )
+
+    rejected = next(e for e in logs if e["event"] == "patient.rename_rejected")
+    assert rejected["error_type"] == "SchedulingRequestError"
+    assert rejected["chat_id"] == chat_id
+
+
+async def test_a_rename_failure_this_build_cannot_place_claims_no_outcome() -> None:
+    """The rename route owes a later subclass the same caution the deletion does.
+
+    A failure it cannot place says nothing about whether the scheduler applied the
+    name, so the caller is told to try again - which a rename is always safe to do.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+
+    with (
+        patch(
+            _RENAME, new=AsyncMock(side_effect=_FourthSchedulingError("unplaceable"))
+        ),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            response = await client.patch(
+                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
+            )
+            listed = (await client.get("/chats")).json()["chats"]
+
+    assert response.status_code == 504
+    detail = response.json()["detail"]
+    assert "may or may not have been applied" in detail
+    assert "nothing" not in detail
+    logged = next(e for e in logs if e["event"] == "patient.rename_rejected")
+    assert logged["error_type"] == "_FourthSchedulingError"
+    assert logged["outcome_known"] is False
+    # The cached name is this service's own, so what happened to it *is* known.
+    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
 
 
 async def test_an_empty_name_is_rejected_before_the_scheduler_is_called() -> None:

@@ -156,6 +156,38 @@ describe("ChatWindow", () => {
     });
   });
 
+  it("keeps the streamed tokens when done carries an empty message", async () => {
+    // The server stores `done_event.message or answer` - an empty `message` is stored
+    // as the streamed text. Rendering the empty string instead would put a bubble on
+    // screen holding text the thread does not hold, and `reconcile` matches on
+    // content, so no history read could ever account for it.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(
+      fakeEvents([
+        { type: "token", text: "Visiting hours are 8am to 5pm." },
+        {
+          type: "done",
+          grounded: true,
+          citations: [],
+          answer_source: "faq",
+          message: "",
+        },
+      ]),
+    );
+
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() =>
+      expect(screen.getByText("Visiting hours are 8am to 5pm.")).toBeInTheDocument(),
+    );
+    // The reply is a settled message, not a bubble still being streamed into.
+    expect(screen.getAllByTestId("message")).toHaveLength(2);
+  });
+
   it("sends the message when Enter is pressed without Shift", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
@@ -306,6 +338,35 @@ describe("ChatWindow", () => {
     expect(screen.queryByTestId("error")).toBeNull();
   });
 
+  it("clears the in-progress bubble when a stream ends with no terminal event", async () => {
+    // The server promises exactly one terminal event per turn; this is what the pane
+    // does when it cannot keep that promise. Nothing else on this path clears the
+    // bubble - no `done`, no `cancelled`, no error to catch - so the partial answer
+    // used to sit on screen until the patient switched chats.
+    async function* endedWithoutAnEnding(): AsyncGenerator<ChatEvent> {
+      yield { type: "token", text: "half an answer" };
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(endedWithoutAnEnding());
+
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "When can I see" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() => {
+      expect(screen.getByText("half an answer")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("half an answer")).toBeNull();
+    });
+    // The patient's own message stays: it was sent, and nothing said otherwise.
+    expect(screen.getByText("When can I see")).toBeInTheDocument();
+    expect(screen.queryByTestId("error")).toBeNull();
+  });
+
   it("keeps a second turn's streamed text when an earlier turn is cancelled", async () => {
     // The component deliberately lets several turns run at once. With one shared
     // streaming slot, turn A's `cancelled` handler cleared the bubble outright and
@@ -334,6 +395,10 @@ describe("ChatWindow", () => {
       yield { type: "token", text: "the surviving reply" };
       await bContinues;
       yield { type: "token", text: " continues" };
+      // Held open rather than ended here: a turn that ends - however it ends - takes
+      // its in-progress bubble with it, and the assertion below is about the bubble
+      // still being B's own while B is still streaming into it.
+      await new Promise(() => {});
     }
 
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
@@ -757,6 +822,70 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     rerender(<ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:03:00Z" />);
     await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(3));
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+    expect(
+      screen.getAllByText("Visiting hours are 8am to 5pm."),
+    ).toHaveLength(1);
+  });
+
+  it("accounts for a reply whose done event carried an empty message", async () => {
+    // The same reconciliation, on the one `done` shape that used to be rendered
+    // differently from the way the server stores it. A bubble holding the empty
+    // string can never match the row the server wrote from the tokens, so it would
+    // not leave when that row arrived - it would sit there, empty, until the chat was
+    // switched away from.
+    function serverRow(
+      index: number,
+      sender: Message["sender"],
+      content: string,
+    ): Message {
+      return {
+        id: `m${index}`,
+        sender,
+        content,
+        grounded: null,
+        citations: null,
+        attention_mark: null,
+        created_at: `2026-09-01T12:0${index}:00Z`,
+      };
+    }
+
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([
+        serverRow(1, "patient", "when can I visit?"),
+        serverRow(2, "assistant", "Visiting hours are 8am to 5pm."),
+      ]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(
+      fakeEvents([
+        { type: "token", text: "Visiting hours are 8am to 5pm." },
+        {
+          type: "done",
+          grounded: true,
+          citations: [],
+          answer_source: "faq",
+          message: "",
+        },
+      ]),
+    );
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    rerender(<ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:02:00Z" />);
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    // Two rows and nothing left over: the server's own reply replaced the local one
+    // rather than joining it.
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
     expect(
       screen.getAllByText("Visiting hours are 8am to 5pm."),
     ).toHaveLength(1);

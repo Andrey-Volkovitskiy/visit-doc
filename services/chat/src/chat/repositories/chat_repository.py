@@ -2,15 +2,23 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
+    Boolean,
+    ColumnElement,
     Connection,
+    Insert,
     Integer,
     Select,
+    String,
+    Text,
     and_,
     case,
     exists,
     func,
+    insert,
+    literal,
     nullslast,
     or_,
     select,
@@ -18,6 +26,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy import delete as sql_delete
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -156,6 +165,10 @@ class UnpinnedChatLockError(RuntimeError):
 class ChatLockNotHeldError(RuntimeError):
     """Raised when Postgres reports that the connection asked to release a chat's
     advisory lock was not holding it.
+
+    Says nothing about where the lock went. Postgres answers false both when another,
+    live connection is still holding it and when nobody is - the connection that took
+    it having been replaced, which releases whatever it held.
     """
 
 
@@ -200,14 +213,15 @@ async def unlock_chat(session: AsyncSession, chat_id: str) -> None:
     """Release the advisory lock `lock_chat` took for `chat_id`.
 
     Raises: ChatLockNotHeldError if Postgres reports this connection was not holding
-        that lock - the lock is then still held by whichever connection took it, and
-        nothing on this path can reach it any more.
+        that lock - whatever became of the lock, this path can no longer reach it.
 
     `pg_advisory_unlock` answers false rather than raising when it releases nothing,
     which reads exactly like a release that worked. Turning that into an error is what
-    keeps a stranded lock from being indistinguishable from a successful unlock: the
-    chat it keys is now permanently unlockable, and every later turn or staff action in
-    it would wait on the lock forever.
+    keeps the two apart. It does not tell them apart from each other, though: false is
+    equally the answer when another live connection is still holding the lock - and the
+    chat it keys is then unlockable for that connection's lifetime, every later turn or
+    staff action in it waiting forever - and when the connection that took it has since
+    been replaced, which released it along with everything else that backend held.
     """
     released = (
         await session.execute(
@@ -237,10 +251,10 @@ async def release_chat_lock(session: AsyncSession, chat_id: str) -> None:
     which governs `commit()` and not `rollback()` - forcing a doomed refresh once
     `session` closes and they are used detached.
 
-    A lock that could not be released is logged before it is re-raised, because this
-    runs in a `finally`: the exception it raises may be the one the caller sees, or it
-    may be replacing one already in flight, and a stranded lock is too damaging to
-    depend on which of those happens.
+    A release that freed nothing is logged before it is re-raised, because this runs
+    in a `finally`: the exception it raises may be the one the caller sees, or it may
+    be replacing one already in flight, and what happened here is too important to
+    depend on which of those does.
     """
     try:
         try:
@@ -249,8 +263,90 @@ async def release_chat_lock(session: AsyncSession, chat_id: str) -> None:
             await session.rollback()
             await unlock_chat(session, chat_id)
     except ChatLockNotHeldError:
-        get_logger().critical("chat.lock_stranded", chat_id=chat_id)
+        # The event says only what Postgres reported - this connection was not holding
+        # the lock - because that is the whole of what is known here. Whether a lock is
+        # *stranded* is a further fact this side cannot see, and the likeliest way to
+        # get here is the one where none is: the connection was replaced under us (a
+        # terminated backend, a restart, a reset, a proxy drop), and a dead backend
+        # releases its own advisory locks. `error` rather than `critical` for the same
+        # reason - a `critical` that fires on the survivable case teaches people to
+        # scroll past `critical`.
+        get_logger().error("chat.lock_not_held", chat_id=chat_id)
         raise
+
+
+async def release_chat_lock_after_commit(session: AsyncSession, chat_id: str) -> None:
+    """Release `chat_id`'s advisory lock without letting the release decide the answer.
+
+    Belongs in the `finally` of a locked section whose writes have already committed.
+    Those writes are durable whatever happens here, so a release that fails is recorded
+    and goes no further: raising would replace the answer the commit earned with a 500
+    or a truncated stream, and a caller told their write did not happen sends it again -
+    which the patient reads as the clinic answering the same thing twice.
+
+    `release_chat_lock` records the release that freed nothing; this entry is the other
+    half of it - that the caller was nevertheless told their write succeeded, so nobody
+    reading the log has to infer which of the two happened. Both sit at `error`, and
+    deliberately not at `critical`: the lock may be held on a connection nothing here
+    can reach, in which case the chat it keys is stuck, or it may already be gone with
+    the connection that took it, in which case nothing is wrong but this entry.
+    """
+    try:
+        await release_chat_lock(session, chat_id)
+    except Exception as exc:  # noqa: BLE001 - see the docstring: nothing raised here
+        # can undo a committed write, so nothing raised here may change the answer.
+        get_logger().error(
+            "chat.lock_release_failed", chat_id=chat_id, error_detail=str(exc)
+        )
+
+
+def _insert_into_owned_chat(
+    *,
+    id: str,
+    chat_id: str,
+    session_id: str,
+    sender: MessageSender,
+    content: str,
+    grounded: bool | None,
+    citations: list[dict[str, object]] | None,
+    reply_to_message_ids: list[str] | None,
+    unless: ColumnElement[bool] | None = None,
+) -> Insert:
+    """Build the insert of one message into `chat_id`, if `session_id` owns it.
+
+    Args:
+        unless: A further condition on the chat that must be false for the row to be
+            written. None for a write nothing but ownership guards.
+
+    An `INSERT ... FROM SELECT` over `chats` rather than an insert of a row built here:
+    `Message` carries no session of its own, so the only way the scope can belong to
+    the write is for the write to read the chat. A chat id from another session then
+    selects no row and inserts nothing, instead of being checked either side of a write
+    that already happened.
+    """
+    source = select(
+        literal(id, String),
+        Chat.id,
+        literal(sender.value, String),
+        literal(content, Text),
+        literal(grounded, Boolean),
+        literal(citations, JSONB),
+        literal(reply_to_message_ids, JSONB),
+    ).where(Chat.id == chat_id, Chat.session_id == session_id)
+    if unless is not None:
+        source = source.where(~unless)
+    return insert(Message).from_select(
+        [
+            "id",
+            "chat_id",
+            "sender",
+            "content",
+            "grounded",
+            "citations",
+            "reply_to_message_ids",
+        ],
+        source,
+    )
 
 
 async def create_message(
@@ -258,13 +354,14 @@ async def create_message(
     *,
     id: str,
     chat_id: str,
+    session_id: str,
     sender: MessageSender,
     content: str,
     grounded: bool | None = None,
     citations: list[dict[str, object]] | None = None,
     reply_to_message_ids: list[str] | None = None,
-) -> Message:
-    """Insert a new `Message` and return it.
+) -> Message | None:
+    """Insert a new `Message` into `session_id`'s chat `chat_id` and return it.
 
     Args:
         id: Caller-supplied, never generated here - a patient message reuses the
@@ -273,20 +370,33 @@ async def create_message(
             answers, in order (more than one for a merged burst). Not meaningful for a
             patient message.
 
+    Returns: the message written, or None if `session_id` does not own `chat_id` and
+        nothing was written. The two are told apart so that no caller can report, or
+        answer, a message the thread does not hold.
+
+    Scoped on the write itself rather than by the caller having resolved the chat
+    first: a chat id from another session - or one deleted since it was resolved -
+    writes nothing rather than being caught by a check that the insert has already
+    outrun.
+
     Append-only: a `Message` is written once, in full, with no "complete"/pending step.
     """
-    message = Message(
-        id=id,
-        chat_id=chat_id,
-        sender=sender,
-        content=content,
-        grounded=grounded,
-        citations=citations,
-        reply_to_message_ids=reply_to_message_ids,
+    result = await session.execute(
+        _insert_into_owned_chat(
+            id=id,
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=sender,
+            content=content,
+            grounded=grounded,
+            citations=citations,
+            reply_to_message_ids=reply_to_message_ids,
+        ).returning(Message)
     )
-    session.add(message)
+    message = result.scalars().first()
     await session.commit()
-    await session.refresh(message)
+    if message is None:
+        return None
     get_logger().info(
         "message.persisted",
         message_id=message.id,
@@ -295,6 +405,93 @@ async def create_message(
         content=content,
     )
     return message
+
+
+class ReplyWrite(StrEnum):
+    """What became of one assistant reply's insert.
+
+    Three members because the insert declines to write for two unrelated reasons, and a
+    caller owes the conversation something different for each. A write that could not be
+    attempted is none of them - it raises, so "nobody is expecting this reply" is never
+    confused with "the store did not answer".
+    """
+
+    # The reply is in the thread.
+    STORED = "stored"
+    # A person is leading the conversation now, so the assistant's reply is not wanted.
+    TAKEN_OVER = "taken_over"
+    # The chat is no longer this session's - deleted while the reply was generating.
+    # Nobody took anything over; there is simply no conversation left to answer.
+    CHAT_GONE = "chat_gone"
+
+
+async def create_assistant_reply_unless_taken_over(
+    session: AsyncSession,
+    *,
+    id: str,
+    chat_id: str,
+    session_id: str,
+    answering_message_id: str,
+    content: str,
+    grounded: bool | None,
+    citations: list[dict[str, object]] | None,
+    reply_to_message_ids: list[str] | None,
+) -> ReplyWrite:
+    """Insert one assistant reply, unless a person has taken the conversation over.
+
+    Args:
+        answering_message_id: The patient message this reply answers - the anchor a
+            takeover is measured from, so a staff message that predates it does not
+            count against a reply the patient is still owed.
+
+    Returns: what became of the reply - see `ReplyWrite`. A write that could not be
+        attempted raises rather than answering one of them.
+
+    The guard is the `WHERE` of the insert itself, not a check preceding it: between a
+    read and a separate write a staff member can post, and the reply that lands behind
+    theirs is exactly the one FR-013a says must never stand beside it. It carries the
+    session predicate for the same reason - a chat id alone says nothing about who may
+    be answered in it.
+
+    Both predicates live in one `WHERE`, so an insert that writes nothing cannot say
+    which of them stopped it. The ownership half is therefore asked again, alongside the
+    insert rather than after it: the insert is a data-modifying CTE, which Postgres runs
+    exactly once and to completion whatever the enclosing query reads, so one statement
+    answers both halves and a takeover is never reported for a chat that is simply gone.
+    """
+    inserted = (
+        _insert_into_owned_chat(
+            id=id,
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.ASSISTANT,
+            content=content,
+            grounded=grounded,
+            citations=citations,
+            reply_to_message_ids=reply_to_message_ids,
+            unless=_taken_over_since(answering_message_id),
+        )
+        .returning(Message.id)
+        .cte("inserted")
+    )
+    result = await session.execute(
+        select(
+            exists(select(inserted.c.id)),
+            exists(_owned_chat_id(chat_id, session_id)),
+        )
+    )
+    stored, chat_owned = result.one()
+    await session.commit()
+    if not stored:
+        return ReplyWrite.TAKEN_OVER if chat_owned else ReplyWrite.CHAT_GONE
+    get_logger().info(
+        "message.persisted",
+        message_id=id,
+        chat_id=chat_id,
+        sender=MessageSender.ASSISTANT,
+        content=content,
+    )
+    return ReplyWrite.STORED
 
 
 async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
@@ -405,23 +602,19 @@ async def get_conversation_state(
     return ConversationState(*row)
 
 
-async def taken_over_since(
-    session: AsyncSession, chat_id: str, session_id: str, message_id: str
-) -> bool:
-    """Whether a person has taken `chat_id` over since `message_id` arrived.
+def _taken_over_since(message_id: str) -> ColumnElement[bool]:
+    """A predicate on `Chat`: has a person taken it over since `message_id` arrived?
 
     True when a staff member has posted in the conversation since that message, or when
     the assistant is paused - the console's two gestures for taking a conversation, both
     of which mean a person is leading it now rather than the assistant.
 
-    A conversation this session does not own answers False. Nothing is inferred from
-    that: every write this answer guards is itself scoped to the session, so such a
-    caller changes nothing either way.
+    Built as an expression rather than answered here so the guard can travel into the
+    `WHERE` of the write it protects, instead of being read once and trusted afterwards.
 
-    Answered in one statement, against the database's own clock for the reason
-    `_PAUSE_IS_RUNNING` is read in SQL: the deadline is written by one request and read
-    by another, and a Python-side comparison would be a second clock that can disagree
-    with it.
+    Read against the database's own clock for the reason `_PAUSE_IS_RUNNING` is read in
+    SQL: the deadline is written by one request and read by another, and a Python-side
+    comparison would be a second clock that can disagree with it.
     """
     anchor = aliased(Message)
     later = aliased(Message)
@@ -434,8 +627,20 @@ async def taken_over_since(
             later.created_at > anchor.created_at,
         )
     )
+    return or_(staff_spoke, _PAUSE_IS_RUNNING)
+
+
+async def taken_over_since(
+    session: AsyncSession, chat_id: str, session_id: str, message_id: str
+) -> bool:
+    """Whether a person has taken `chat_id` over since `message_id` arrived.
+
+    A conversation this session does not own answers False. Nothing is inferred from
+    that: every write this answer guards is itself scoped to the session, so such a
+    caller changes nothing either way.
+    """
     result = await session.execute(
-        select(or_(staff_spoke, _PAUSE_IS_RUNNING)).where(
+        select(_taken_over_since(message_id)).where(
             Chat.id == chat_id, Chat.session_id == session_id
         )
     )

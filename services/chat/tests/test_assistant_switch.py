@@ -51,6 +51,7 @@ async def _marked_message(session_id: str, chat_id: str, mark: AttentionMark) ->
             session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="is anyone there?",
         )
@@ -492,5 +493,5 @@ async def test_a_failed_lock_release_does_not_undo_the_switch() -> None:
     assert (await _state(chat_id, session_id)).may_assistant_reply is False
     failed = [e for e in logs if e["event"] == "chat.lock_release_failed"]
     assert len(failed) == 1
-    assert failed[0]["log_level"] == "critical"
+    assert failed[0]["log_level"] == "error"
     assert failed[0]["chat_id"] == chat_id

@@ -46,7 +46,7 @@ is set if it was not already.
 | `type` | Meaning | Client |
 |---|---|---|
 | `done` | the turn produced a reply | render it |
-| `cancelled` | a newer message superseded this turn | discard the tokens received |
+| `cancelled` | this turn produced no reply: a newer message superseded it, or a person took the conversation over before its reply was written | discard the tokens received |
 | `silent` | **NEW** — the assistant may not speak here; the message is kept | render nothing |
 
 `silent` is a third value because the other two already mean something else: `cancelled` tells a
@@ -72,11 +72,28 @@ client renders the streamed tokens, exactly as it does for the other three.
 
 ### Cancellation by a staff message
 
-A staff message posted while a turn is generating cancels it, and the partial reply is discarded
-entirely (FR-013a). This is the mechanism that already exists: a reply is persisted only if its task
-is still the registered one when it finishes, so a cancelled turn stores nothing. The staff-post
-handler and the turn handler serialize on the chat's existing advisory lock, and the turn's task is
-registered **inside** that lock, so no turn can start between a cancel and the pause that follows it.
+A staff message posted while a turn is generating cancels it, and the reply is discarded entirely
+(FR-013a). Two mechanisms carry that, because the cancellation alone cannot reach every moment:
+
+- **While the turn is registered** — a reply is persisted only if its task is still the registered
+  one when it finishes, so a cancelled turn stores nothing. The staff-post handler and the turn
+  handler serialize on the chat's existing advisory lock, and the turn's task is registered
+  **inside** that lock, so no turn can start between a cancel and the pause that follows it.
+- **After it has deregistered** — a turn deregisters itself *before* taking the lock its writes
+  need, deliberately: a staff post takes that lock first and only then asks for a cancellation, so a
+  turn still registered while queued on the lock would be a cancellation waiting on the very lock
+  its canceller holds. In that window `cancel_for_chat` finds nothing, so the reply's own `INSERT`
+  carries the guard instead — it writes only where no staff message has arrived since the patient
+  message it answers and no pause is running. A refused write ends the turn with `cancelled`, on
+  the same terms as a supersede.
+
+The same guard covers the switch (FR-017c): turning the assistant off writes the pause, and a pause
+is one of the two things the guard reads.
+
+A **patient's** own next message is deliberately not covered by it. Nothing has contradicted the
+answer they already asked for, and a turn that deregistered before the newer one registered won the
+supersede race outright — so its reply stands, and the registry check remains the only thing that
+decides that case.
 
 ---
 

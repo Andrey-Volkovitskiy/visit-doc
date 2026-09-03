@@ -2,9 +2,11 @@
 
 import uuid
 from dataclasses import dataclass
+from http import HTTPStatus
 
 from pydantic import BaseModel
 from qdrant_client import AsyncQdrantClient
+from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
     Distance,
     FieldCondition,
@@ -17,6 +19,7 @@ from qdrant_client.http.models import (
 )
 
 from chat.core.config import Settings, get_settings
+from chat.core.logging import get_logger
 from chat.rag.chunking import ChunkedText
 
 COLLECTION_NAME = get_settings().QDRANT_COLLECTION_NAME
@@ -83,6 +86,28 @@ async def _create_payload_indexes(
         )
 
 
+async def _create_collection(qdrant_client: AsyncQdrantClient) -> None:
+    """Create the chunks collection, tolerating another process having just made it.
+
+    Two processes starting together both find the collection absent and both ask for
+    it; the loser is answered `409 Conflict`, which says the collection exists - the
+    state this was asking for. That one status is therefore not a failure. Every other
+    status, and every other error, still fails the start: a process whose collection is
+    not there answers from nothing, which is worse than not starting.
+    """
+    try:
+        await qdrant_client.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
+        )
+    except UnexpectedResponse as exc:
+        if exc.status_code != HTTPStatus.CONFLICT:
+            raise
+        get_logger().info(
+            "qdrant.collection_created_concurrently", collection=COLLECTION_NAME
+        )
+
+
 async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
     """Create the configured chunks collection and its payload indexes. Idempotent.
 
@@ -91,14 +116,15 @@ async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
     on the next start. Only what is genuinely missing is written: this runs on every
     process start, and an index creation is a blocking write, while reading the schema
     back is one cheap read.
+
+    The reconciliation runs on the just-created collection too, rather than the create
+    branch writing every index and returning. That is what makes concurrent starts safe
+    all the way through: the process that lost the create race reads back whatever the
+    winner has managed to build so far and finishes the job, instead of assuming the
+    collection it did not make is already indexed.
     """
     if not await qdrant_client.collection_exists(COLLECTION_NAME):
-        await qdrant_client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
-        )
-        await _create_payload_indexes(qdrant_client, _INDEXED_PAYLOAD_FIELDS)
-        return
+        await _create_collection(qdrant_client)
     indexed = (await qdrant_client.get_collection(COLLECTION_NAME)).payload_schema
     missing: dict[str, PayloadSchemaType] = {}
     for field_name, schema in _INDEXED_PAYLOAD_FIELDS.items():

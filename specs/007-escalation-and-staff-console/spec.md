@@ -721,6 +721,10 @@ assistant abstains on the same question.
 - **Staff posts while the assistant is mid-sentence**: the generation is cancelled and the partial
   reply is thrown away, so the patient is never left with half an assistant answer sitting next to a
   staff message that contradicts it (FR-013a).
+- **Staff posts in the instant between a turn finishing and its reply being written**: there is no
+  generation left to cancel, and the reply is discarded all the same. FR-013a is about the reply,
+  not about how far it got — a complete one written behind a staff member's own is the reply it says
+  must not be left standing beside theirs, and the patient sees the turn end without an answer.
 - **The staff member posts at the same moment the patient does**: both messages land, ordered by
   arrival, and neither replaces the other. A thread is an append-only log.
 - **The conversation is deleted while escalated or paused**: it goes with its marks, its messages,

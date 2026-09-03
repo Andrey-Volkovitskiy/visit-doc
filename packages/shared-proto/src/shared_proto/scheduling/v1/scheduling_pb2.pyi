@@ -9,6 +9,7 @@ DESCRIPTOR: _descriptor.FileDescriptor
 
 class Weekday(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
+    WEEKDAY_UNSPECIFIED: _ClassVar[Weekday]
     WEEKDAY_MONDAY: _ClassVar[Weekday]
     WEEKDAY_TUESDAY: _ClassVar[Weekday]
     WEEKDAY_WEDNESDAY: _ClassVar[Weekday]
@@ -68,6 +69,7 @@ class StatusFilter(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     STATUS_FILTER_STANDING: _ClassVar[StatusFilter]
     STATUS_FILTER_CANCELLED: _ClassVar[StatusFilter]
     STATUS_FILTER_BOTH: _ClassVar[StatusFilter]
+WEEKDAY_UNSPECIFIED: Weekday
 WEEKDAY_MONDAY: Weekday
 WEEKDAY_TUESDAY: Weekday
 WEEKDAY_WEDNESDAY: Weekday

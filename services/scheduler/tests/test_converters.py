@@ -1,11 +1,13 @@
-"""Tests for the wire<->domain translations that carry an appointment's status."""
+"""Tests for the wire<->domain translations of an appointment's status and a weekday."""
 
-from datetime import datetime
+from datetime import datetime, time
+from typing import cast
 
 import pytest
+from scheduler.domain.models import WorkingRange
 from scheduler.grpc import converters
-from scheduler.grpc.converters import ConversionError
-from shared_models.scheduling import AppointmentStatus
+from scheduler.grpc.converters import ConversionError, StoredStateError
+from shared_models.scheduling import AppointmentStatus, Weekday
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 
 from .conftest import make_appointment, make_patient, make_practitioner, new_id
@@ -120,3 +122,54 @@ def test_a_malformed_request_field_is_still_a_caller_defect() -> None:
         converters.read_local_datetime("not a date", "starts_at")
     with pytest.raises(ConversionError):
         converters.read_appointment_status(pb.APPOINTMENT_STATUS_UNSPECIFIED)
+
+
+def _working_range(weekday: Weekday) -> WorkingRange:
+    return WorkingRange(
+        id=new_id(),
+        practitioner_id=new_id(),
+        weekday=weekday,
+        start_time=time(9, 0),
+        end_time=time(17, 0),
+    )
+
+
+@pytest.mark.parametrize(
+    ("domain", "wire"),
+    [
+        (Weekday.MONDAY, pb.WEEKDAY_MONDAY),
+        (Weekday.TUESDAY, pb.WEEKDAY_TUESDAY),
+        (Weekday.WEDNESDAY, pb.WEEKDAY_WEDNESDAY),
+        (Weekday.THURSDAY, pb.WEEKDAY_THURSDAY),
+        (Weekday.FRIDAY, pb.WEEKDAY_FRIDAY),
+        (Weekday.SATURDAY, pb.WEEKDAY_SATURDAY),
+        (Weekday.SUNDAY, pb.WEEKDAY_SUNDAY),
+    ],
+)
+def test_each_stored_weekday_is_rendered_as_its_named_wire_value(
+    domain: Weekday, wire: int
+) -> None:
+    # The stored numbering is Python's `date.weekday()`; the wire's is one ahead,
+    # because zero there is the unset sentinel. The mapping is what keeps them apart,
+    # so every day is pinned rather than assumed to pass through.
+    assert converters.to_proto_weekday(domain) == wire
+    assert converters.to_proto_working_range(_working_range(domain)).weekday == wire
+
+
+def test_no_working_range_is_ever_rendered_with_an_unspecified_weekday() -> None:
+    # Zero on the wire means "nobody set this". A stored Monday rendered as zero would
+    # be indistinguishable from a range that lost its weekday in transit, and the
+    # reader could only guess - which is how a practitioner ends up presented as
+    # working hours they do not work.
+    for weekday in Weekday:
+        rendered = converters.to_proto_working_range(_working_range(weekday))
+        assert rendered.weekday != pb.WEEKDAY_UNSPECIFIED
+
+
+def test_a_stored_weekday_outside_the_closed_set_is_not_a_caller_defect() -> None:
+    # The column is a plain SmallInteger, so a row written by something other than this
+    # service can carry a number no day maps to. It must not render as zero ("unset")
+    # nor travel raw, and - like a corrupt stored status - it is not the caller's
+    # doing, so it must not become INVALID_ARGUMENT.
+    with pytest.raises(StoredStateError):
+        converters.to_proto_working_range(_working_range(cast("Weekday", 9)))

@@ -74,30 +74,6 @@ def _waited_seconds(state: ConversationState) -> int:
     return max(0, int((datetime.now(UTC) - state.escalated_at).total_seconds()))
 
 
-async def _release_lock(db_session: AsyncSession, chat_id: str) -> None:
-    """Release `chat_id`'s advisory lock without letting the release decide the answer.
-
-    Belongs in the `finally` of a locked section whose writes have already committed.
-    Those writes are durable whatever happens here, so a release that fails is recorded
-    and goes no further: raising would replace the answer the commit earned with a 500,
-    and a staff member told their reply was not sent sends it again - which the patient
-    reads as the clinic answering the same thing twice.
-
-    Recorded at `critical` because a lock that did not release is unreleasable from
-    here: every later turn and staff action in the chat it keys waits on it forever.
-    `release_chat_lock` records the stranded lock itself; this entry is the other half
-    of it - that the caller was nevertheless told their write succeeded, so nobody
-    reading the log has to infer which of the two happened.
-    """
-    try:
-        await chat_repository.release_chat_lock(db_session, chat_id)
-    except Exception as exc:  # noqa: BLE001 - see the docstring: nothing raised here
-        # can undo a committed write, so nothing raised here may change the answer.
-        get_logger().critical(
-            "chat.lock_release_failed", chat_id=chat_id, error_detail=str(exc)
-        )
-
-
 async def _start_pause(
     db_session: AsyncSession, chat_id: str, session_id: str, *, paused_by: str
 ) -> ConversationState | None:
@@ -182,7 +158,7 @@ async def post_staff_message(
     """Post as staff into the patient's own thread, taking the conversation with it.
 
     Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
-        another session.
+        another session - or stopped being this one's while the post was being written.
 
     Replying *is* taking the conversation, so one post also ends any escalation, stops
     the conversation waiting, and clears every mark a person speaking answers - the
@@ -209,9 +185,15 @@ async def post_staff_message(
                 db_session,
                 id=str(ULID()),
                 chat_id=chat.id,
+                session_id=session_id,
                 sender=MessageSender.STAFF,
                 content=body.content,
             )
+            if message is None:
+                # The conversation stopped being this session's between being resolved
+                # and being posted into - deleted, in that window. The same 404 the
+                # resolve itself would have given, since nothing was written.
+                raise HTTPException(status_code=404, detail="chat not found")
             # Read before the clears, because what this post *ended* is only knowable
             # from the state it found.
             state = await chat_repository.get_conversation_state(
@@ -226,7 +208,7 @@ async def post_staff_message(
                 db_session, chat.id, session_id, paused_by="staff_message"
             )
         finally:
-            await _release_lock(db_session, chat.id)
+            await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
     ended_escalation = state is not None and state.escalated_at is not None
     logger = get_logger()
@@ -283,7 +265,7 @@ async def set_assistant(
                     db_session, chat.id, session_id, paused_by="switch"
                 )
         finally:
-            await _release_lock(db_session, chat.id)
+            await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
     return _state_out(after)
 

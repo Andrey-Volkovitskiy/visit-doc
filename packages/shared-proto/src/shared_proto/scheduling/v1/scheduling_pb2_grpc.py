@@ -91,7 +91,9 @@ class SchedulingServicer:
 
     def EnsureSessionProvisioned(self, request, context):
         """Idempotent per-session provisioning: creates this chat's patient if absent, and one
-        default practitioner if the session has none. Safe to call on every visit (FR-042, FR-045).
+        default practitioner if the session has none. Safe to call on every visit - a session that
+        is already provisioned is left exactly as it stands, so the caller need not remember whether
+        it has called before.
         NOT_FOUND when `chat_id` already belongs to a patient of another session: the chat is unique
         across the whole store, so a mismatched one is never answered with that patient.
         """
@@ -108,14 +110,18 @@ class SchedulingServicer:
         raise NotImplementedError('Method not implemented!')
 
     def ListPractitioners(self, request, context):
-        """Every practitioner in the session, with specialty and schedule (FR-030).
+        """Every practitioner in the session, with specialty and schedule. The schedule travels with
+        the practitioner rather than behind a second call, so a listing is enough to say who is
+        bookable and when.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def CheckAvailability(self, request, context):
-        """Bookable start times for one practitioner over a window (FR-024).
+        """Bookable start times for one practitioner over a window, relative to one patient: a start
+        this patient is already busy at is not offered, so an offer can never be refused by the
+        patient-overlap rule that follows it.
         NOT_FOUND when the practitioner or the patient does not resolve in this session:
         this response has no typed-failure channel, and an empty result already means
         something else entirely (see CheckAvailabilityResponse.truncated). The status
@@ -129,7 +135,9 @@ class SchedulingServicer:
         raise NotImplementedError('Method not implemented!')
 
     def BookAppointment(self, request, context):
-        """Create one appointment, or explain why it was refused (FR-016..FR-021, FR-051).
+        """Create one appointment, or explain why it was refused - the refusal being a normal outcome
+        carried as data, so the caller can tell the patient which rule stopped the booking rather
+        than that something went wrong.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -137,9 +145,11 @@ class SchedulingServicer:
 
     def RescheduleAppointment(self, request, context):
         """Move an appointment: a new start, and optionally a new practitioner, applied together as
-        one write (006 FR-001..FR-003). The appointment keeps its identifier and its patient.
+        one write - never a cancellation followed by a fresh booking, which could half-succeed and
+        leave the patient with no appointment at all. The appointment keeps its identifier and its
+        patient.
 
-        Carries NO idempotency key, deliberately (006 FR-020): the request asserts the state the
+        Carries NO idempotency key, deliberately: the request asserts the state the
         appointment is to end in, so re-sending it cannot bring a second appointment into being. A
         key derived from that target state would be worse than none — states recur, and
         09:00 -> 10:00 -> 09:00 -> 10:00 would derive the first move's key on the third and replay
@@ -150,12 +160,13 @@ class SchedulingServicer:
         raise NotImplementedError('Method not implemented!')
 
     def CancelAppointment(self, request, context):
-        """Cancel an appointment. The record is retained and marked cancelled (006 FR-009): it keeps
-        its identifier, its practitioner and its times, stops occupying its slot (006 FR-010), and
-        releases the idempotency key that created it (006 FR-011).
+        """Cancel an appointment. The record is retained and marked cancelled rather than deleted: it
+        keeps its identifier, its practitioner and its times, so it can still be listed and named,
+        while it stops occupying its slot and releases the idempotency key that created it - the
+        same time may be booked again.
 
         Cancelling an already-cancelled appointment returns `no_change`, NOT a failure — the
-        appointment is in the state that was asked for (006 FR-017, FR-019). This is
+        appointment is in the state that was asked for, and there is nothing to refuse. This is
         distinguishable from an appointment that never existed, which is
         `failure(APPOINTMENT_NOT_FOUND)`.
         """
@@ -164,9 +175,9 @@ class SchedulingServicer:
         raise NotImplementedError('Method not implemented!')
 
     def ListAppointments(self, request, context):
-        """This patient's appointments: two independent axes in, two separately bounded legs out
-        (006 FR-013..FR-016). Replaces `ListUpcomingAppointments`, whose FUTURE + STANDING corner
-        is exactly what it returned.
+        """This patient's appointments: two independent axes in - past/future and standing/cancelled -
+        and two separately bounded legs out, so neither leg can crowd the other out of a listing the
+        patient explicitly asked for.
 
         NOT_FOUND (detail: `NotFoundEntity.PATIENT`) when the patient does not resolve in this
         session — two empty legs mean the patient exists and has nothing matching, and one value
@@ -177,7 +188,7 @@ class SchedulingServicer:
         raise NotImplementedError('Method not implemented!')
 
     def DeletePatientForChat(self, request, context):
-        """Hard-delete this chat's patient and, by cascade, that patient's appointments (FR-039).
+        """Hard-delete this chat's patient and, by cascade, that patient's appointments.
         Idempotent: deleting an already-absent patient succeeds.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -186,9 +197,8 @@ class SchedulingServicer:
 
     def DeleteSession(self, request, context):
         """Hard-delete everything this session owns here: its practitioners, its patients, and - by the
-        FK cascades 005 created - their appointments (007 FR-047). Those cascades are deliberately
-        status-blind, so CANCELLED appointments go with the rest: a cancelled appointment is still
-        that session's row.
+        FK cascades - their appointments. Those cascades are deliberately status-blind, so CANCELLED
+        appointments go with the rest: a cancelled appointment is still that session's row.
 
         One transaction, so the caller's per-session report has two outcomes to distinguish rather
         than a spectrum. Idempotent, and that is load-bearing rather than incidental: re-running a

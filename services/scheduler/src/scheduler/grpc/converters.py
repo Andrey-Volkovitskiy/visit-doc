@@ -10,7 +10,6 @@ formatted at its call site, so there is one name for the operation rather than t
 """
 
 from datetime import date, datetime
-from typing import cast
 
 from shared_models.localtime import (
     format_local_datetime,
@@ -45,6 +44,21 @@ _PROTO_BY_APPOINTMENT_STATUS = {
 }
 _APPOINTMENT_STATUS_BY_PROTO: dict[int, AppointmentStatus] = {
     int(proto): status for status, proto in _PROTO_BY_APPOINTMENT_STATUS.items()
+}
+
+# The weekday mapping, spelled out rather than derived by an offset. The wire reserves
+# zero for "nobody set this", so its days run 1..7 while the stored column runs 0..6 -
+# Python's own `date.weekday()`, which is what the availability rules compare against.
+# Writing the correspondence out is what keeps a renumber on either side from silently
+# shifting every practitioner's schedule by a day.
+_PROTO_BY_WEEKDAY: dict[Weekday, "pb.Weekday"] = {
+    Weekday.MONDAY: pb.WEEKDAY_MONDAY,
+    Weekday.TUESDAY: pb.WEEKDAY_TUESDAY,
+    Weekday.WEDNESDAY: pb.WEEKDAY_WEDNESDAY,
+    Weekday.THURSDAY: pb.WEEKDAY_THURSDAY,
+    Weekday.FRIDAY: pb.WEEKDAY_FRIDAY,
+    Weekday.SATURDAY: pb.WEEKDAY_SATURDAY,
+    Weekday.SUNDAY: pb.WEEKDAY_SUNDAY,
 }
 
 
@@ -180,16 +194,34 @@ def read_appointment_status(value: int) -> AppointmentStatus:
 
 
 def to_proto_working_range(working_range: WorkingRange) -> pb.WorkingRange:
-    """Render one working range onto the wire."""
-    # The proto enum and `shared_models.Weekday` share their numbering by construction,
-    # so the domain value goes onto the wire as the plain int protobuf stores. The cast
-    # is for the generated stub, which types the field as its enum wrapper - a wrapper
-    # that is not actually callable at runtime.
+    """Render one working range onto the wire.
+
+    Raises: StoredStateError if the stored weekday is outside the closed set, which the
+        `CHECK` constraint makes a corrupted row rather than a caller defect.
+    """
     return pb.WorkingRange(
-        weekday=cast("pb.Weekday", Weekday(working_range.weekday).value),
+        weekday=to_proto_weekday(_read_stored_weekday(working_range.weekday)),
         start_time=format_local_time(working_range.start_time),
         end_time=format_local_time(working_range.end_time),
     )
+
+
+def to_proto_weekday(weekday: Weekday) -> "pb.Weekday":
+    """Render a weekday onto the wire."""
+    return _PROTO_BY_WEEKDAY[weekday]
+
+
+def _read_stored_weekday(value: int) -> Weekday:
+    """Read a stored weekday column into its domain member.
+
+    Raises: StoredStateError if the column holds a number outside the closed set, which
+        the `CHECK` constraint makes a corrupted row rather than anything the caller
+        did.
+    """
+    try:
+        return Weekday(value)
+    except ValueError as exc:
+        raise StoredStateError(f"unrecognized stored weekday: {value!r}") from exc
 
 
 def to_proto_practitioner(

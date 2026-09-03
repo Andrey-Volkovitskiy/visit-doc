@@ -42,6 +42,7 @@ async def _message(session_id: str, chat_id: str, mark: AttentionMark | None) ->
             session,
             id=message_id,
             chat_id=chat_id,
+            session_id=session_id,
             sender=MessageSender.PATIENT,
             content="does it matter what I say",
         )
@@ -222,7 +223,9 @@ async def _failed_conversation() -> tuple[str, str, str]:
     requests = EscalationRequests()
     requests.record(EscalationReason.ASSISTANT_FAILED)
     async with session_factory() as session:
-        await apply_escalation(session, chat_id, session_id, message_id, requests)
+        await apply_escalation(
+            session, chat_id, session_id, message_id, requests, taken_over=False
+        )
     return session_id, chat_id, message_id
 
 

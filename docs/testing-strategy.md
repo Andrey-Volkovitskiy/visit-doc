@@ -243,6 +243,19 @@ one loop — `services/chat/tests/test_chats_api.py`'s `_api()` and
 `services/scheduler/tests/conftest.py`'s `admin_api()` are the two helpers that wrap this. Sync
 tests may keep using `TestClient` freely.
 
+**Overlapping requests share one lifespan, always.** `chat.main.app` is a module-level singleton,
+so `with TestClient(app):` is not just a client — it runs a lifespan that *replaces*
+`app.state.qdrant_client` (and the rest of that state) and closes it again on the way out. Two of
+those blocks open at once means the second one's client is what both in-flight requests are using,
+and whichever block exits first closes it under the other. The damage is quiet where it matters
+most: a request that loses its Qdrant client mid-flight fails in `remove_entry_chunks`/`sweep_entry`,
+which are silent by requirement, so the test sees leaked chunks and blames the code under test for
+a teardown the harness did. So a per-request helper that opens its own `TestClient(app)` is fine
+only while its calls are sequential; the moment two of them are `gather`ed or `create_task`ed, they
+must be issued through **one** `with TestClient(app):` block, with the `AsyncClient` inside it —
+`services/chat/tests/test_faq_revisions.py`'s `_running_app(...)` is the extracted form of that
+pattern, and `test_turn_api.py`/`test_staff_messages.py`'s concurrency tests are the inline form.
+
 ## Commands
 
 ```bash
