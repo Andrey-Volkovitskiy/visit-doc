@@ -35,9 +35,9 @@ from chat.agent.tools.scheduling_tools import (
     derive_idempotency_key,
 )
 from chat.core.config import Settings
+from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent
-from chat.rag.retriever import TurnPipelineError
 from shared_models.scheduling import BookingFailureReason, ChangeFailureReason
 from structlog.testing import capture_logs
 

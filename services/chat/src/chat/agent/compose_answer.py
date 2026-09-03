@@ -17,6 +17,7 @@ from anthropic import AsyncAnthropic
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.config import get_settings
 from chat.core.correlation import turn_elapsed_ms
+from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.schemas import (
     AnswerSource,
@@ -24,7 +25,6 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     Citation,
 )
-from chat.rag.retriever import TurnPipelineError
 
 _MAX_TOKENS = 1024
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose

@@ -21,9 +21,9 @@ in which the logging path is working.
 |---|---|---|---|
 | `escalation.raised` | info | `chat_id`, `reason`, `message_id`, `silenced` (bool), `turn_id` (bound) | A call to staff **transitioned** something: the conversation became escalated, or (for `assistant_failed`) it became emphasized without being silenced. `silenced` is what distinguishes those, and is `false` exactly when `reason` is `assistant_failed` (FR-003d). |
 | `escalation.unchanged` | info | `chat_id`, `requested_reason`, `existing_reason`, `message_id`, `turn_id` | A call that **transitioned nothing**: the conversation was already escalated, or already emphasized, or a person had taken it over while the turn ran. **Its own event kind**, so one `escalation.raised` still means one handoff (FR-007, SC-010). Both reasons are carried, because the point of the record is that the second did **not** overwrite the first — `existing_reason` is null where there is no escalation to name, which is every no-op that is not one. |
-| `escalation.ended` | info | `chat_id`, `ended_by` (`staff_message` \| `switch`), `escalated_for` (the reason it had), `waited_seconds` | The silencing state was cleared. Exactly two things can do it and the field names which (FR-009a). `waited_seconds` is how long the conversation was escalated, which is the one number this phase records about response time. |
+| `escalation.ended` | info | `chat_id`, `ended_by` (`staff_message` \| `switch`), `escalated_for` (the reason it had), `waited_seconds` | The silencing state was cleared. Exactly two things can do it and the field names which (FR-009a). `waited_seconds` is how long the conversation was escalated, which is the one number this phase records about response time. **Emitted only when the clearing write actually landed** — a conversation deleted while the gesture ran had its escalation ended by nothing, and a phantom entry here is worse than a phantom elsewhere, since its duration inflates every count and response time taken over the event. |
 | `assistant.paused` | info | `chat_id`, `until`, `paused_by` (`staff_message` \| `switch`), `restarted` (bool) | The 2-minute pause started or restarted (FR-013, FR-014, FR-017b). `restarted` is true when a pause was already running, which is what makes a sequence of staff messages legible as one lead rather than several. **`paused_by` is the only place the two triggers differ at all** — the deadline they write is identical, so this field exists to make a silence traceable, not because anything behaves differently (research #24). **Emitted only when the write actually landed** — a conversation deleted between the gesture resolving it and the write reaching it was never silenced, and an entry there would be a silence to count that never happened. |
-| `assistant.resumed` | info | `chat_id`, `resumed_by` (`expiry` \| `switch`) | The assistant may speak again. Exactly two things can do it. Note `expiry` is **not** emitted by a timer — nothing runs when a deadline passes; it is emitted by the first turn that finds the pause elapsed, which is the moment the resumption becomes observable. A **staff message is not a resume**: it ends an escalation and starts a pause, so the assistant stays silent across it (FR-009a, FR-013). |
+| `assistant.resumed` | info | `chat_id`, `resumed_by` (`expiry` \| `switch`) | The assistant may speak again. Exactly two things can do it. Note `expiry` is **not** emitted by a timer — nothing runs when a deadline passes; it is emitted by the first turn that finds the pause elapsed, which is the moment the resumption becomes observable. A **staff message is not a resume**: it ends an escalation and starts a pause, so the assistant stays silent across it (FR-009a, FR-013). **Emitted only when the write actually landed** — a conversation deleted between the switch resolving it and the clears reaching it was never resumed, and an entry there would be a resumption to count that never happened. |
 | `message.unanswered` | info | `chat_id`, `message_id`, `silenced_by` (`escalation` \| `pause`), `turn_id` | A patient message arrived while the assistant was silent, was kept, and was marked (FR-019). `silenced_by` says which of the two states was in force, which the mark itself does not record. |
 | `staff.message_posted` | info | `chat_id`, `message_id`, `marks_cleared` (int), `ended_escalation` (bool), `cancelled_generation` (bool) | A staff member posted. The three booleans/counts are the three side effects of one act (FR-009a, FR-013a, FR-027c) — a reply that cleared four marks and cancelled a generation is a different event from one that cleared none. **Emitted only when the conversation was still there when the post finished** — a chat deleted mid-post takes the message with it by cascade, and an entry there would name a message id nothing can be found under, counting a reply the patient never saw as one they were sent. |
 
@@ -65,12 +65,34 @@ answer is produced from (FR-015), and a write the store refused is not the store
 `persistence` is deliberately absent from the step-to-dependency mapping alongside `embedding` and
 `groundedness`.
 
-**`generation` covers every model call a turn makes**, not just the FAQ specialist's: the merge's
-composing call and each iteration of the booking loop's tool-use call are tagged with it too. The
-dependency is the same one and the outage is the same outage, so which specialist the classifier
-happened to pick must not decide whether FR-015's alert fires. The booking loop's *tools* are
-outside that tag — a tool that fails is answered to the model and the loop continues, and a
-scheduler outage is already reported as `dependency="scheduler"` by the client that made the call.
+**`generation` covers every model call a turn can fail on**, not just the FAQ specialist's: the
+merge's composing call and each iteration of the booking loop's tool-use call are tagged with it
+too. The dependency is the same one and the outage is the same outage, so which specialist the
+classifier happened to pick must not decide whether FR-015's alert fires. The booking loop's
+*tools* are outside that tag — a tool that fails is answered to the model and the loop continues,
+and a scheduler outage is already reported as `dependency="scheduler"` by the client that made the
+call.
+
+**The classification call is the one model call `generation` does not cover, and it raises the
+alert itself.** It cannot be tagged, because a failed classification does not fail the turn: it is
+recorded as `classification_failed` and the turn falls back to the FAQ path, so no
+`TurnPipelineError` is raised and `turn.error` never fires for it. That left one outage silent —
+with the model API unreachable and a corpus that cannot answer the question, the classification
+call is the *only* model call the turn makes, since the FAQ path abstains before generating, and
+the turn ended with no `turn.error` and no alert. So `intent.classification_failed` raises
+`critical.dependency_unreachable` (`dependency="anthropic_api"`) beside itself, leaving what the
+turn does for the patient exactly as it was. A turn whose corpus *does* answer raises it twice —
+once here and once from the generation step — which is two failed calls to one dependency honestly
+reported, not one event counted twice.
+
+**`intent.classification_failed` gains `dependency_unreachable` (bool), and only `true` raises the
+alert.** Not every classification failure is a dependency failure: a response that came back and
+would not validate against the structured-output schema, or one carrying `classification_failed`
+itself, is the API answering — what failed is the response, not reaching it, and an alert that
+fires for those is one an operator learns to ignore. `true` is set only for the shapes that mean
+the request was never served: a connection error, a timeout, or a 5xx. A 4xx and an exhausted rate
+limit are answers, and are `false` — the same rule the scheduling client already applies to itself,
+where a status the server answered with is a defect rather than an outage.
 
 ### `turn.chat_vanished` — new
 

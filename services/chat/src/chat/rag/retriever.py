@@ -3,23 +3,10 @@
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
 
+from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.rag.embeddings import embed_texts
 from chat.repositories.qdrant_repository import RetrievedChunk, search
-
-
-class TurnPipelineError(Exception):
-    """Tags which pipeline step failed during a chat turn.
-
-    Raised, not logged, at the point of failure - logging happens once, centrally,
-    by the caller.
-    """
-
-    def __init__(self, pipeline_step: str, cause: Exception) -> None:
-        """Tag `cause` with the pipeline step that raised it."""
-        super().__init__(str(cause))
-        self.pipeline_step = pipeline_step
-        self.cause = cause
 
 
 async def search_faq(

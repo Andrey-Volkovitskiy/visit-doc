@@ -34,7 +34,7 @@ from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
 from chat.agent.answer_faq import answer_faq
-from chat.agent.classify_intent import classify_intent
+from chat.agent.classify_intent import ClassificationFailedError, classify_intent
 from chat.agent.compose_answer import (
     FaqResult,
     TurnCompletion,
@@ -156,6 +156,37 @@ def _select_specialists(intents: list[IntentLabel]) -> list[str]:
     return [name for name in (_ANSWER_FAQ, _HANDLE_BOOKING) if name in selected]
 
 
+def _record_classification_failure(exc: Exception) -> None:
+    """Record a failed classification, raising the outage alert only if it was one.
+
+    This entry is the whole record such a failure leaves. The turn does not fail on it
+    - it falls back to the FAQ path - so no `TurnPipelineError` is raised and nothing
+    downstream reports it; and against a corpus that cannot answer the FAQ path
+    abstains before generating, so the failed call is the only model call the turn
+    made. Without the critical event here, a model API that is down is invisible for
+    exactly that turn.
+
+    Only a failure that names the API as unreachable raises it. A response that came
+    back and would not parse is the API answering, and an alert that fires for that is
+    one an operator learns to ignore.
+    """
+    unreachable = (
+        isinstance(exc, ClassificationFailedError) and exc.dependency_unreachable
+    )
+    logger = get_logger()
+    logger.error(
+        "intent.classification_failed",
+        error_detail=str(exc),
+        dependency_unreachable=unreachable,
+    )
+    if unreachable:
+        logger.critical(
+            "critical.dependency_unreachable",
+            dependency="anthropic_api",
+            error_detail=str(exc),
+        )
+
+
 @lru_cache
 def _build_graph(
     qdrant_client: AsyncQdrantClient,
@@ -193,7 +224,7 @@ def _build_graph(
             except Exception as exc:  # noqa: BLE001 - a classification failure must
                 # never fail the request; it's recorded as CLASSIFICATION_FAILED
                 # instead, after logging the cause for visibility.
-                logger.error("intent.classification_failed", error_detail=str(exc))
+                _record_classification_failure(exc)
                 intents = [IntentLabel.CLASSIFICATION_FAILED]
             logger.info("intent.classified", intents=intents)
             if IntentLabel.CALL_STAFF in intents:

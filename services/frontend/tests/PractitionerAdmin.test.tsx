@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PractitionerAdmin } from "../src/components/PractitionerAdmin";
 import * as consoleApi from "../src/lib/consoleApi";
@@ -241,5 +241,76 @@ describe("PractitionerAdmin: the credential the page never holds", () => {
         "x-session-id",
       );
     }
+  });
+});
+
+describe("PractitionerAdmin: writes that must happen once", () => {
+  it("adds one practitioner, not two, when the button is clicked again before it lands", async () => {
+    // There is no form to read here, so nothing about a second click looks different
+    // from the first - it simply creates a second row, with a second pool-assigned name.
+    let landCreate: (created: Practitioner) => void = () => undefined;
+    const create = vi.spyOn(consoleApi, "createPractitioner").mockReturnValue(
+      new Promise<Practitioner>((resolve) => {
+        landCreate = resolve;
+      }),
+    );
+
+    render(<PractitionerAdmin />);
+    fireEvent.click(await screen.findByText("Add practitioner"));
+    fireEvent.click(screen.getByText("Add practitioner"));
+
+    expect(create).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      landCreate(practitioner({ id: "01PRACT0000000000000000002" }));
+    });
+  });
+
+  it("lets the duration be cleared and retyped", async () => {
+    // `Number("")` is 0, so writing it into the row repainted the field as a "0" the
+    // staff member had to clear before they could type anything.
+    render(<PractitionerAdmin />);
+    const minutes = await screen.findByLabelText("Appointment minutes");
+
+    fireEvent.change(minutes, { target: { value: "" } });
+
+    expect(minutes).toHaveValue(null);
+    fireEvent.change(minutes, { target: { value: "45" } });
+    expect(minutes).toHaveValue(45);
+  });
+
+  it("refuses to save a duration that is not a number yet", async () => {
+    // Rather than sending the last one that was: the staff member is mid-edit, and
+    // saving a value they have already typed over is a change they did not ask for.
+    // `Number("")` would have sent 0; a half-typed "1e" is NaN, which `JSON.stringify`
+    // writes as an explicit null on a PATCH whose contract leaves omitted fields alone.
+    const save = vi.spyOn(consoleApi, "updatePractitioner");
+
+    render(<PractitionerAdmin />);
+    const minutes = await screen.findByLabelText("Appointment minutes");
+    fireEvent.change(minutes, { target: { value: "" } });
+    fireEvent.click(screen.getByText("Save"));
+
+    expect(save).not.toHaveBeenCalled();
+    expect(screen.getByTestId("practitioner-error")).toBeInTheDocument();
+  });
+
+  it("saves the number once the duration is one again", async () => {
+    const save = vi
+      .spyOn(consoleApi, "updatePractitioner")
+      .mockResolvedValue(practitioner({ appointment_duration_minutes: 45 }));
+
+    render(<PractitionerAdmin />);
+    const minutes = await screen.findByLabelText("Appointment minutes");
+    fireEvent.change(minutes, { target: { value: "" } });
+    fireEvent.change(minutes, { target: { value: "45" } });
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        "01PRACT0000000000000000000",
+        expect.objectContaining({ appointment_duration_minutes: 45 }),
+      ),
+    );
   });
 });

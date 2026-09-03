@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createFaqEntry,
   deleteFaqEntry,
@@ -23,6 +23,15 @@ export function FaqAdmin() {
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Whether a create is in flight, for the button to show. `creating` repaints it;
+  // `creatingRef` is what actually stops a second call, and the two are not
+  // alternatives - see `handleCreate`.
+  const [creating, setCreating] = useState(false);
+  // The same latch as the handler can see it. A ref rather than reading `creating`,
+  // because two clicks dispatched in one React batch both run against the render that
+  // preceded them: the state the first set has not committed, so a guard reading it lets
+  // the second through - and the button is still painted enabled for the same reason.
+  const creatingRef = useRef(false);
 
   const report = useCallback((err: unknown, fallback: string): void => {
     setError(err instanceof Error ? err.message : fallback);
@@ -37,13 +46,27 @@ export function FaqAdmin() {
 
   async function handleCreate(): Promise<void> {
     if (!draft.trim()) return;
+    // A staff member who clicks again because nothing appeared to happen must not add
+    // the entry twice. The box is only cleared once the create lands, so a second call
+    // before then reads the very same text and passes the very same guard - and each
+    // copy is separately chunked, embedded and indexed, and each counts against the
+    // session's entry cap.
+    if (creatingRef.current) return;
     setError(null);
+    creatingRef.current = true;
+    setCreating(true);
     try {
       const created = await createFaqEntry(draft);
       setEntries((prev) => [...prev, created]);
       setDraft("");
     } catch (err) {
       report(err, "Could not add that entry.");
+    } finally {
+      // Released however this ended, including the failure above: the text is still in
+      // the box by design, and a latch left closed would leave a staff member holding an
+      // entry they can no longer add.
+      creatingRef.current = false;
+      setCreating(false);
     }
   }
 
@@ -81,7 +104,11 @@ export function FaqAdmin() {
           placeholder="Something the assistant should be able to answer from..."
         />
       </label>
-      <button onClick={() => void handleCreate()}>Add entry</button>
+      {/* Disabled while the create is out so the wait is visible; the handler's own
+          latch is what makes a second click harmless either way. */}
+      <button onClick={() => void handleCreate()} disabled={creating}>
+        Add entry
+      </button>
 
       {entries.length === 0 ? (
         <p data-testid="no-faq-entries">Nothing here yet.</p>

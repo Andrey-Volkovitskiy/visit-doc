@@ -175,19 +175,47 @@ def bound_to_last_n_turns(
     return kept_bursts + trailing
 
 
-def _from_first_patient_burst(bursts: list[list[Message]]) -> list[list[Message]]:
-    """Return `bursts` from its first patient-sided burst onwards.
+# What a model is told about the clinic's own words that open the window it can see.
+# One text in one place, for the same reason `SILENT_WINDOW_NOTE` is.
+#
+# The opposite instruction to that one, and deliberately so: these are the clinic's
+# own earlier words, the patient has already seen them, and whatever the patient says
+# next is very often an answer to them - so the model must read them *and* act on them.
+# The silent window's messages are the ones nobody has answered; these are the ones the
+# patient is answering.
+OPENING_CLINIC_NOTE = (
+    "Earlier in this conversation the clinic said the following. The message you are "
+    "answering may well be a reply to it, so read it as part of the question and act "
+    "on it. It is the clinic's own words, not the patient's - never attribute it to "
+    "them."
+)
 
-    Returns: the run of `bursts` starting at its first patient-sided burst, or an empty
-        list when it holds none at all.
 
-    A clinic-sided burst at the front is the one burst the window cannot explain:
-    whatever it answers is either off the front of the window - `bound_to_last_n_turns`
-    cuts a fixed number of bursts, and a silent window's split makes that cut land
-    mid-turn - or was never said, as when staff open a conversation the patient has not
-    spoken in yet. It is dropped rather than relabelled: calling the clinic's words the
-    patient's would put a sentence the patient never wrote into every later turn of the
-    conversation.
+def _split_at_first_patient_burst(
+    bursts: list[list[Message]],
+) -> tuple[list[list[Message]], list[list[Message]]]:
+    """Split `bursts` where the patient first speaks.
+
+    Returns: the clinic-sided bursts that come before the patient's first, and the run
+        from that first patient burst onwards. The second is empty only for a history
+        holding no patient message at all.
+
+    A clinic-sided burst at the front is the one burst the window cannot pair: whatever
+    it answers is either off the front of the window - `bound_to_last_n_turns` cuts a
+    fixed number of bursts, and a silent window's split makes that cut land mid-turn -
+    or was never said, as when staff open a conversation the patient has not spoken in
+    yet. The Messages API requires the first entry to use the `user` role, so it cannot
+    be rendered where it sits.
+
+    It is separated rather than discarded. Dropping it loses conversation the model
+    needs: staff who open with "Dr. Chen has a slot Friday at 3 - shall I book it?" and
+    a patient who replies "yes please" leave a turn whose whole subject is in the burst
+    that went, and a classifier reading "yes please" alone cannot find the booking
+    intent in it. Relabelling it as the patient's is the other wrong answer - that puts
+    a sentence the patient never wrote into their mouth for the rest of the
+    conversation. So it is carried as labelled context instead, which is what
+    `render_silent_window` already does for the other run of messages the alternating
+    list cannot hold.
     """
     first_patient = next(
         (
@@ -198,8 +226,8 @@ def _from_first_patient_burst(bursts: list[list[Message]]) -> list[list[Message]
         None,
     )
     if first_patient is None:
-        return []
-    return bursts[first_patient:]
+        return bursts, []
+    return bursts[:first_patient], bursts[first_patient:]
 
 
 def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
@@ -219,17 +247,23 @@ def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
     in two - and the Messages API requires strict alternation, so the rejoining happens
     here rather than being a rule every caller of that function has to remember.
 
-    Leading clinic-sided bursts are dropped for the same reason: the Messages API also
-    requires the first entry to use the `user` role and rejects the whole call
+    Leading clinic-sided bursts are handled here for the same reason: the Messages API
+    also requires the first entry to use the `user` role and rejects the whole call
     otherwise, which would fail every model call of the turn, not just this rendering.
+    They are not dropped - they are folded into the first `user` entry behind
+    `OPENING_CLINIC_NOTE`, so the clinic's own opening words still reach every
+    specialist, the classifier included. See `_split_at_first_patient_burst` for why
+    neither dropping nor relabelling them is good enough.
+
     Both rules belong to the wire format, so they are enforced where the wire format is
     built - the burst structure itself is left as it was, since `trailing_question`,
     `silent_window` and `derive_reply_to_message_ids` read it for their own purposes.
     Returns an empty list only for a history holding no patient message at all, which
     a turn never has: the message it is answering is always in it.
     """
+    opening_clinic, answerable = _split_at_first_patient_burst(bursts)
     entries: list[MessageParam] = []
-    for burst in _from_first_patient_burst(bursts):
+    for burst in answerable:
         is_patient = burst[0].sender == MessageSender.PATIENT
         role: _Role = "user" if is_patient else "assistant"
         content = "\n\n".join(m.content for m in burst)
@@ -240,6 +274,21 @@ def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
             )
             continue
         entries.append(cast(MessageParam, {"role": role, "content": content}))
+    if not entries:
+        return entries
+    if opening_clinic:
+        # Prepended to the first entry rather than sent as one of its own: an entry of
+        # its own would have to carry a role, and the two roles available are the two
+        # wrong answers - `assistant` is what the API refuses first, and `user` is the
+        # relabelling that puts the clinic's words in the patient's mouth. Inside the
+        # entry, behind a note naming whose words they are, it is context rather than
+        # attribution.
+        said = "\n\n".join(m.content for burst in opening_clinic for m in burst)
+        first = cast(str, entries[0]["content"])
+        entries[0] = cast(
+            MessageParam,
+            {"role": "user", "content": f"{OPENING_CLINIC_NOTE}\n{said}\n\n{first}"},
+        )
     return entries
 
 

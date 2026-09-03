@@ -347,6 +347,35 @@ async def test_a_switch_that_silenced_nothing_records_no_pause() -> None:
     assert [entry for entry in logs if entry["event"] == "assistant.paused"] == []
 
 
+async def test_a_switch_that_resumed_nothing_records_no_resumption() -> None:
+    # The same window in the on direction, which reads the state it records from before
+    # writing rather than being told it by the write: the conversation is deleted after
+    # that read, so the clears match no row and nothing is resumed. `escalation.ended`
+    # is the worse of the two entries there - it carries a duration, so a wait that was
+    # never ended inflates every count and response time taken over the event.
+    session_id, chat_id = await _chat(
+        escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
+    )
+    await _set_pause(chat_id, session_id, _PAUSE_SECONDS)
+    clear_escalation = chat_repository.clear_escalation
+
+    async def delete_after_clearing(*args: Any, **kwargs: Any) -> None:
+        await clear_escalation(*args, **kwargs)
+        async with session_factory() as session:
+            await chat_repository.delete_chat(session, chat_id, session_id)
+
+    with (
+        patch.object(chat_repository, "clear_escalation", delete_after_clearing),
+        capture_logs() as logs,
+    ):
+        response = await _switch(session_id, chat_id, True)
+
+    assert response.status_code == 404
+    recorded = [entry["event"] for entry in logs]
+    assert "assistant.resumed" not in recorded
+    assert "escalation.ended" not in recorded
+
+
 # --- an escalation has no deadline --------------------------------------------------
 
 

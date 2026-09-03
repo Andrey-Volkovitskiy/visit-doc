@@ -11,8 +11,10 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 import structlog
+from anthropic import OverloadedError
 from chat.agent import graph as graph_module
 from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
 from chat.agent.tools.registry import ToolContext
@@ -246,6 +248,84 @@ def test_classification_failure_is_recorded_and_does_not_block_the_faq_reply(
     )
     assert failure_logged["log_level"] == "error"
     assert failure_logged["error_detail"] == "boom"
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.grounded is True
+
+
+def test_a_model_outage_during_classification_raises_the_dependency_alert(
+    seeded_entry: int,
+) -> None:
+    # The classification call cannot be tagged `generation` - a failed classification
+    # does not fail the turn, so no `TurnPipelineError` is raised and `turn.error` never
+    # fires for it. Without an alert raised here, an unreachable model API is invisible
+    # for the whole turn whenever the FAQ path abstains before generating, which is
+    # exactly the turn a corpus that cannot answer produces: the classification call is
+    # then the only model call the turn makes.
+    #
+    # A 529 specifically, because that is how an Anthropic outage most often arrives and
+    # because the SDK gives it its own `OverloadedError` that does *not* subclass
+    # `InternalServerError` - a check written as a tuple of exception classes misses it.
+    outage = OverloadedError(
+        "overloaded",
+        response=httpx.Response(
+            529, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        ),
+        body=None,
+    )
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=outage
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    failure_logged = next(
+        e for e in logs if e["event"] == "intent.classification_failed"
+    )
+    assert failure_logged["dependency_unreachable"] is True
+    alerts = [
+        e
+        for e in logs
+        if e["event"] == "critical.dependency_unreachable"
+        and e["dependency"] == "anthropic_api"
+    ]
+    assert len(alerts) == 1
+    assert alerts[0]["log_level"] == "critical"
+    # And the turn is untouched by it: still the FAQ fallback, still an answer.
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.grounded is True
+
+
+def test_a_classification_answer_that_would_not_parse_raises_no_alert(
+    seeded_entry: int,
+) -> None:
+    # The other half of the rule, and the reason it is a rule rather than "alert on any
+    # classification failure": a response that came back and would not validate is the
+    # API reachable and answering. So is a refused key and an enforced quota. An alert
+    # that fires for those is one an operator learns to ignore, which costs the alert
+    # its only purpose.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=ValueError("not json")
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    failure_logged = next(
+        e for e in logs if e["event"] == "intent.classification_failed"
+    )
+    assert failure_logged["dependency_unreachable"] is False
+    assert not [e for e in logs if e["event"] == "critical.dependency_unreachable"]
+    # Still recorded, and still a fallback rather than a failed turn.
+    assert failure_logged["log_level"] == "error"
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.grounded is True

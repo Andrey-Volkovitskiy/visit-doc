@@ -37,9 +37,13 @@ export interface ConsoleConversation {
 /**
  * The one polled answer, serving both panes.
  *
- * `attention_total` counts conversations needing a person — once each, however many
- * marks sit inside one — so it is read from here rather than counted from
- * `conversations`, which cannot see inside them.
+ * `attention_total` counts conversations needing a person, once each however many marks
+ * sit inside one. It is read from here rather than counted from `conversations` because
+ * the rule for what needs a person belongs to one side: the server already collapses a
+ * conversation's marks into `emphasized`, and a client that re-derived the total would
+ * be a second place that rule has to be changed, free to disagree with the first.
+ * Deriving it is possible — `emphasized` is on every row — which is exactly why the
+ * reason to prefer the field has to be a real one.
  */
 export interface ConsoleListing {
   attention_total: number;

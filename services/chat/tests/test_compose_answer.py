@@ -14,8 +14,8 @@ from chat.agent.compose_answer import (
 )
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.correlation import bind_turn_id
+from chat.core.errors import TurnPipelineError
 from chat.domain.schemas import AnswerSource, ChatDoneEvent, ChatTokenEvent, Citation
-from chat.rag.retriever import TurnPipelineError
 from structlog.testing import capture_logs
 
 from .conftest import FakeAnthropicStream, FakeTextEvent

@@ -35,10 +35,10 @@ from chat.agent.history import (
 )
 from chat.agent.tools.registry import ToolArgumentError, ToolRegistry
 from chat.core.config import get_settings
+from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import ChatTokenEvent
-from chat.rag.retriever import TurnPipelineError
 
 _MAX_TOKENS = 1024
 # The capability the node reads for itself, before the model gets a turn.

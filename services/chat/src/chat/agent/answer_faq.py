@@ -29,11 +29,12 @@ from chat.agent.history import (
     trailing_question,
 )
 from chat.core.config import get_settings
+from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, Citation
 from chat.rag.groundedness import is_grounded
-from chat.rag.retriever import TurnPipelineError, search_faq
+from chat.rag.retriever import search_faq
 
 _SYSTEM_PROMPT = (
     "You are a clinic assistant. Answer the visitor's question using ONLY the provided "

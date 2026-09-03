@@ -12,6 +12,7 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from chat.agent.compose_answer import _SYSTEM_PROMPT as COMPOSE_SYSTEM_PROMPT
 from chat.api.session_cookie import COOKIE_NAME
 from chat.core.config import Settings
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
@@ -412,12 +413,6 @@ def fake_anthropic_client(
     client.close = AsyncMock()
 
     if compose_error is not None:
-        # Imported here rather than at module level: `chat.agent.compose_answer`
-        # reaches `chat.repositories.qdrant_repository`, which reads its collection
-        # name from `get_settings()` at import time - importing it above would freeze
-        # the cached settings on the dev collection before this file's own override
-        # has run.
-        from chat.agent.compose_answer import _SYSTEM_PROMPT as COMPOSE_SYSTEM_PROMPT
 
         def _stream(*_args: object, **kwargs: object) -> FakeAnthropicStream:
             # `.messages.stream` serves two callers: the FAQ specialist and the

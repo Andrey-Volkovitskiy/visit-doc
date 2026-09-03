@@ -13,11 +13,20 @@ shared `docs/` file with a single reader.
 npm run dev      # vite dev server on :5173, proxying the API to :8000
 npm test         # vitest run (also `make test-frontend` from the repo root)
 npm run build    # tsc -b && vite build
-./node_modules/.bin/tsc --noEmit    # typecheck only
+./node_modules/.bin/tsc -b --noEmit # typecheck only
 ```
 
 `tsc`/`vitest` are not installed globally and should not be — use `npm test` or the local
 `./node_modules/.bin/` binaries, never a bare `tsc`/`vitest`.
+
+**The `-b` in that typecheck is load-bearing, not a stylistic flag.** `tsconfig.json` here is a
+solution-style config: `"files": []` plus references to `tsconfig.app.json` and `tsconfig.node.json`.
+So `tsc --noEmit` resolves that root config, finds no files listed in it, checks **nothing**, and
+exits 0 — including with a blatant type error sitting in `src/`. It is not a weak check, it is no
+check at all, and it looks exactly like a passing one. `tsc -b --noEmit` walks the references and
+checks both projects (`tsc -p tsconfig.app.json --noEmit` checks just the app half). Verified by
+putting `export const x: number = "nope"` in `src/`: the first form exits 0, the second reports
+`TS2322`.
 
 ## Layout
 

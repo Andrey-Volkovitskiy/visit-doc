@@ -850,7 +850,10 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     const fetchChatHistory = vi
       .spyOn(chatStream, "fetchChatHistory")
       .mockResolvedValueOnce(history("is anyone there?"))
-      .mockReturnValueOnce(slowRead);
+      .mockReturnValueOnce(slowRead)
+      // What the tick arriving mid-read asks. It is deliberately not suppressed: see the
+      // assertion at the end.
+      .mockResolvedValue(history("is anyone there?", "I've got this one."));
 
     const { rerender } = render(
       <ChatWindow
@@ -885,8 +888,110 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     });
 
     expect(screen.getByTestId("messages")).toHaveTextContent("I've got this one.");
-    // And that tick did not ask the same question a second time behind its back.
-    expect(fetchChatHistory).toHaveBeenCalledTimes(2);
+    // A tick that is still owed a read issues one, even with another outstanding, and
+    // that is the point rather than an oversight: suppressing it would make this pane's
+    // liveness depend on the outstanding read completing, so a wedged connection - the
+    // very case a retry exists for - would stop the refetch for as long as it hangs, and
+    // a read that never settles would stop it for good. `useConsolePoll` refuses the
+    // same trade for the same reason. The cost is bounded by how far a read runs behind
+    // the interval, and an answer is only ever discarded for being the older one.
+    expect(fetchChatHistory).toHaveBeenCalledTimes(3);
+  });
+
+  it("discards a read from an earlier visit to the chat now open again", async () => {
+    // Leaving a chat and coming back is a second visit, not the same one. A read issued
+    // during the first still names the chat on screen, so comparing ids accepts it - and
+    // it answers about a history this pane has since thrown away and reloaded. Only its
+    // number says so.
+    let answerFirstVisit!: (rows: Message[]) => void;
+    const firstVisitRead = new Promise<Message[]>((resolve) => {
+      answerFirstVisit = resolve;
+    });
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("first visit"))
+      .mockReturnValueOnce(firstVisitRead)
+      .mockResolvedValue(history("reloaded"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={1} />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" pollTick={2} />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    rerender(
+      <ChatWindow chatId="01OTHER" lastMessageAt="2026-09-01T12:01:00Z" pollTick={3} />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent("reloaded"),
+    );
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" pollTick={4} />,
+    );
+    await act(async () => undefined);
+
+    await act(async () => {
+      answerFirstVisit(history("from the first visit"));
+      await firstVisitRead;
+    });
+
+    expect(screen.getByTestId("messages")).not.toHaveTextContent("from the first visit");
+  });
+
+  it("takes over from an opening read that failed, on a tick reporting the same value", async () => {
+    // The read that opens a chat used to have its poll value filed as handled whether or
+    // not it landed. When it failed, every later tick reported the very value already
+    // filed, so nothing fetched the history and the pane sat blank behind the banner
+    // until somebody wrote into the thread.
+    vi.spyOn(chatStream, "fetchChatHistory")
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValue(history("loaded on the retry"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={1} />,
+    );
+    await waitFor(() => expect(screen.getByTestId("error").textContent).not.toBe(""));
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={2} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent("loaded on the retry"),
+    );
+  });
+
+  it("goes on reading the history while an earlier read hangs", async () => {
+    // A read that never settles must not disable this pane. An in-flight latch cleared
+    // in `.finally` never runs for a request that hangs - and none of these reads carries
+    // a timeout or an abort signal - so the refetch would be dead until a full reload.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("first"))
+      .mockReturnValueOnce(new Promise<Message[]>(() => undefined))
+      .mockResolvedValue(history("first", "arrived anyway"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={1} />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:01:00Z" pollTick={2} />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    // That read for 12:01 never answers. A later message must still be read.
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:02:00Z" pollTick={3} />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent("arrived anyway"),
+    );
   });
 
   it("discards a read that answers after the chat was switched away from", async () => {

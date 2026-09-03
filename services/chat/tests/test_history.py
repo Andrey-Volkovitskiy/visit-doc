@@ -6,6 +6,7 @@ data-model.md), and `to_claude_messages()`'s same-side merge into alternating
 
 from anthropic.types import ThinkingBlock, ToolUseBlock
 from chat.agent.history import (
+    OPENING_CLINIC_NOTE,
     bound_to_last_n_turns,
     derive_reply_to_message_ids,
     exclude_silent_window,
@@ -598,7 +599,10 @@ def test_a_message_a_staff_reply_cleared_is_never_described_as_silenced() -> Non
 # rejection fails the whole call - so a history that opens on the clinic's side breaks
 # every model call of the turn, not just the one that rendered it. Nothing upstream
 # guarantees the first burst is patient-sided, so `to_claude_messages` guarantees it
-# here.
+# here - by folding that burst into the first `user` entry behind a note, never by
+# discarding it. What the clinic said is usually what the patient's next message is
+# answering, so dropping it would take the subject of the turn away from every
+# specialist, the classifier included.
 
 
 def test_a_staff_message_the_patient_never_answered_does_not_open_the_history() -> None:
@@ -611,7 +615,11 @@ def test_a_staff_message_the_patient_never_answered_does_not_open_the_history() 
 
     entries = to_claude_messages(split_into_bursts(history))
 
-    assert entries == [{"role": "user", "content": "oh hi - what are your hours?"}]
+    assert [entry["role"] for entry in entries] == ["user"]
+    # Carried, not dropped: the patient is replying to it.
+    assert "Hi - this is the clinic, following up." in entries[0]["content"]
+    assert "oh hi - what are your hours?" in entries[0]["content"]
+    assert OPENING_CLINIC_NOTE in entries[0]["content"]
 
 
 def test_a_reply_whose_question_was_truncated_away_does_not_open_the_history() -> None:
@@ -632,11 +640,42 @@ def test_a_reply_whose_question_was_truncated_away_does_not_open_the_history() -
 
     assert bounded[0][0].id == "a4"  # the dangling reply
     assert entries[0]["role"] == "user"
-    assert entries[0]["content"] == "patient message 5"
+    assert "patient message 5" in entries[0]["content"]
+    # And the dangling reply is still in there, labelled rather than thrown away.
+    assert "reply 4" in entries[0]["content"]
+    assert OPENING_CLINIC_NOTE in entries[0]["content"]
 
 
-def test_dropping_the_opening_reply_leaves_the_bursts_themselves_alone() -> None:
-    # The drop belongs to the wire format, not to the conversation: the silent window
+def test_a_clinic_question_the_patient_answered_reaches_the_model() -> None:
+    # The reason the burst is carried rather than dropped. Staff open with a question
+    # and the patient answers it; everything the turn is about is in the clinic's
+    # message, so a render that discarded it would hand the classifier "yes please" on
+    # its own - unclassifiable, and certainly not a booking - and hand whichever
+    # specialist ran a question it cannot see.
+    history = [
+        _row(
+            MessageSender.STAFF,
+            "Dr. Chen has a slot Friday at 3 - shall I book it?",
+            id="s1",
+        ),
+        _row(MessageSender.PATIENT, "yes please", id="p1"),
+    ]
+
+    entries = to_claude_messages(bound_to_last_n_turns(split_into_bursts(history)))
+
+    # Legal on the wire, and the clinic's question is in the one entry there is.
+    assert [entry["role"] for entry in entries] == ["user"]
+    content = entries[0]["content"]
+    assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in content
+    assert "yes please" in content
+    # And it is labelled as the clinic's, so the model neither answers it as the
+    # patient's words nor attributes it to them.
+    assert OPENING_CLINIC_NOTE in content
+    assert content.index(OPENING_CLINIC_NOTE) < content.index("yes please")
+
+
+def test_carrying_the_opening_reply_leaves_the_bursts_themselves_alone() -> None:
+    # The fold belongs to the wire format, not to the conversation: the silent window
     # and the message this turn answers are still read off the bursts, unchanged.
     history = [
         _row(MessageSender.STAFF, "Hi - this is the clinic, following up.", id="s1"),
@@ -650,6 +689,8 @@ def test_dropping_the_opening_reply_leaves_the_bursts_themselves_alone() -> None
     assert [_ids(burst) for burst in bursts] == [["s1"], ["p1"], ["p2"]]
     assert _ids(silent_window(bursts)) == ["p1"]
     assert derive_reply_to_message_ids(bursts) == ["p2"]
-    assert entries == [
-        {"role": "user", "content": "are you there?\n\nwhat are your hours?"}
-    ]
+    assert [entry["role"] for entry in entries] == ["user"]
+    assert entries[0]["content"] == (
+        f"{OPENING_CLINIC_NOTE}\nHi - this is the clinic, following up."
+        "\n\nare you there?\n\nwhat are your hours?"
+    )

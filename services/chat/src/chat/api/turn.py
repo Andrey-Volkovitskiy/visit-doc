@@ -26,6 +26,7 @@ from chat.api.provisioning import provision_patient
 from chat.api.session_cookie import read_session_id
 from chat.core.config import get_settings
 from chat.core.correlation import bind_turn_id
+from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import AttentionMark, Chat, Message, MessageSender
@@ -36,7 +37,6 @@ from chat.domain.schemas import (
     ChatSilentEvent,
     ChatTokenEvent,
 )
-from chat.rag.retriever import TurnPipelineError
 from chat.repositories import chat_repository, faq_repository
 
 router = APIRouter()

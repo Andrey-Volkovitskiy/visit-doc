@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createPractitioner,
   deletePractitioner,
@@ -52,6 +52,26 @@ function withRange(
 export function PractitionerAdmin() {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Whether a create is in flight, for the button to show. `creating` repaints it;
+  // `creatingRef` is what actually stops a second call, and the two are not
+  // alternatives - see `handleCreate`.
+  const [creating, setCreating] = useState(false);
+  // The same latch as the handler can see it. A ref rather than reading `creating`,
+  // because two clicks dispatched in one React batch both run against the render that
+  // preceded them: the state the first set has not committed, so a guard reading it lets
+  // the second through - and the button is still painted enabled for the same reason.
+  const creatingRef = useRef(false);
+  // The raw text of a duration field mid-edit, keyed by practitioner, for the ones that
+  // are not currently a number at all.
+  //
+  // A `type="number"` input still hands over a string, and the two strings a person
+  // types on the way to a number are not numbers: `Number("")` is `0` and `Number("1e")`
+  // is `NaN`. Writing either into the row meant the field could not be cleared to
+  // retype - it repainted as the `0` it had just been told - and a Save in that moment
+  // sent a duration nobody chose, or a `NaN` that `JSON.stringify` writes as an explicit
+  // `null` on a PATCH whose contract is that omitted fields are left untouched. So the
+  // row keeps the last real number and this keeps what is on screen, until it is one.
+  const [durationDrafts, setDurationDrafts] = useState<Record<string, string>>({});
 
   const report = useCallback((err: unknown, fallback: string): void => {
     setError(err instanceof Error ? err.message : fallback);
@@ -77,7 +97,14 @@ export function PractitionerAdmin() {
   }
 
   async function handleCreate(): Promise<void> {
+    // A staff member who clicks again because nothing appeared to happen must not get
+    // two practitioners. There is no form to read here, so nothing about the second
+    // call looks different from the first - it simply creates a second row, with a
+    // second pool-assigned name.
+    if (creatingRef.current) return;
     setError(null);
+    creatingRef.current = true;
+    setCreating(true);
     try {
       // Empty on purpose: the name, the specialty, the duration and the schedule are
       // all defaulted by the service that owns them.
@@ -85,10 +112,33 @@ export function PractitionerAdmin() {
       setPractitioners((prev) => [...prev, created]);
     } catch (err) {
       report(err, "Could not add a practitioner.");
+    } finally {
+      creatingRef.current = false;
+      setCreating(false);
+    }
+  }
+
+  /** Record what was typed into a duration field, and the number if it is one yet. */
+  function editDuration(id: string, raw: string): void {
+    setDurationDrafts((prev) => ({ ...prev, [id]: raw }));
+    const parsed = Number(raw);
+    if (raw.trim() !== "" && Number.isInteger(parsed) && parsed > 0) {
+      edit(id, (p) => ({ ...p, appointment_duration_minutes: parsed }));
+      setDurationDrafts((prev) => {
+        const { [id]: _settled, ...rest } = prev;
+        return rest;
+      });
     }
   }
 
   async function handleSave(practitioner: Practitioner): Promise<void> {
+    // A draft still held for this row means its duration field is not a number right
+    // now. Refusing beats sending the last one that was: the staff member is mid-edit,
+    // and saving a value they have already typed over is a change they did not ask for.
+    if (durationDrafts[practitioner.id] !== undefined) {
+      setError("Appointment minutes must be a whole number of minutes.");
+      return;
+    }
     setError(null);
     try {
       replace(
@@ -119,7 +169,11 @@ export function PractitionerAdmin() {
   return (
     <div data-testid="practitioner-admin">
       <h3>Practitioners</h3>
-      <button onClick={() => void handleCreate()}>Add practitioner</button>
+      {/* Disabled while the create is out so the wait is visible; the handler's own
+          latch is what makes a second click harmless either way. */}
+      <button onClick={() => void handleCreate()} disabled={creating}>
+        Add practitioner
+      </button>
       {practitioners.length === 0 ? (
         <p data-testid="no-practitioners">No practitioners yet.</p>
       ) : (
@@ -155,13 +209,11 @@ export function PractitionerAdmin() {
               <input
                 aria-label="Appointment minutes"
                 type="number"
-                value={practitioner.appointment_duration_minutes}
-                onChange={(e) =>
-                  edit(practitioner.id, (p) => ({
-                    ...p,
-                    appointment_duration_minutes: Number(e.target.value),
-                  }))
+                value={
+                  durationDrafts[practitioner.id] ??
+                  String(practitioner.appointment_duration_minutes)
                 }
+                onChange={(e) => editDuration(practitioner.id, e.target.value)}
               />
               <ul>
                 {practitioner.schedule.map((range, index) => (

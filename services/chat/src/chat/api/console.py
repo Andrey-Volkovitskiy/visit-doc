@@ -306,16 +306,22 @@ async def _resume(
     whether it ended anything at all - is only knowable from the state it found. That
     read is this direction's alone: the state afterwards comes back from the write.
 
-    Records nothing when the assistant was already speaking: a switch moved to the
-    position it was already in resumed nothing, and an entry saying otherwise would put
-    a resumption in the log that never happened.
+    Records nothing when the assistant was already speaking, and nothing when the
+    clears matched no row: a switch moved to the position it was already in resumed
+    nothing, and neither did one applied to a conversation that stopped being this
+    session's. An entry saying otherwise would put a resumption in the log that never
+    happened - and an `escalation.ended` beside it a wait that never ended, carrying a
+    duration that inflates every count and response time taken over the event.
     """
     before = await chat_repository.get_conversation_state(
         db_session, chat_id, session_id
     )
     await chat_repository.clear_escalation(db_session, chat_id, session_id)
     after = await chat_repository.clear_pause(db_session, chat_id, session_id)
-    if before is None or before.may_assistant_reply:
+    # `after` answers for both clears, not just its own: a deleted chat never comes
+    # back, so a conversation that vanished under the first is missing from the second
+    # too - and `clear_escalation` reports nothing that could be asked instead.
+    if after is None or before is None or before.may_assistant_reply:
         return after
 
     logger = get_logger()

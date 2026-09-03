@@ -640,7 +640,12 @@ describe("StaffThread: following the poll", () => {
     const fetchThread = vi
       .spyOn(consoleApi, "fetchThread")
       .mockResolvedValueOnce(thread({ content: "when can I visit?" }))
-      .mockReturnValueOnce(slowRead);
+      .mockReturnValueOnce(slowRead)
+      // What the tick arriving mid-read asks. It is deliberately not suppressed: see the
+      // assertion at the end.
+      .mockResolvedValue(
+        thread({ content: "when can I visit?" }, { content: "anyone there?" }),
+      );
 
     const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
@@ -659,8 +664,14 @@ describe("StaffThread: following the poll", () => {
     });
 
     expect(screen.getByTestId("staff-thread")).toHaveTextContent("anyone there?");
-    // And that tick did not ask the same question a second time behind its back.
-    expect(fetchThread).toHaveBeenCalledTimes(2);
+    // A tick that is still owed a read issues one, even with another outstanding, and
+    // that is the point rather than an oversight: suppressing it would make this pane's
+    // liveness depend on the outstanding read completing, so a wedged connection - the
+    // very case a retry exists for - would stop the refetch for as long as it hangs, and
+    // a read that never settles would stop it for good. `useConsolePoll` refuses the
+    // same trade for the same reason. The cost is bounded by how far a read runs behind
+    // the interval, and an answer is only ever discarded for being the older one.
+    expect(fetchThread).toHaveBeenCalledTimes(3);
   });
 
   it("discards a read that answers after another conversation was opened", async () => {
@@ -824,5 +835,151 @@ describe("StaffThread: following the poll", () => {
     );
 
     await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not let a read issued before a staff post take the reply back off screen", async () => {
+    // The `posting` guard stops a read being *issued* across the post; it says nothing
+    // about one already out. That read was composed before the reply existed, so
+    // applying it would erase the reply in front of the person who just wrote it, for as
+    // long as a poll interval. Landing the post retires every read still in flight.
+    let answerSlowRead!: (messages: Message[]) => void;
+    const slowRead = new Promise<Message[]>((resolve) => {
+      answerSlowRead = resolve;
+    });
+    let landPost!: (posted: Message) => void;
+    const post = new Promise<Message>((resolve) => {
+      landPost = resolve;
+    });
+    vi.spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "are you there?" }))
+      .mockReturnValueOnce(slowRead)
+      // What the refetch after the post reads: the server has the reply by then, so it
+      // carries it. That refetch is wanted - it is what brings the cleared marks - and
+      // the marker is deliberately left unfiled on the post so it still happens.
+      .mockResolvedValue(
+        thread({ content: "are you there?" }, { content: "On it.", sender: "staff" }),
+      );
+    vi.spyOn(consoleApi, "postStaffMessage").mockReturnValueOnce(post);
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    // A patient message arrives and the read for it is slow.
+    rerender(polled("2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(consoleApi.fetchThread).toHaveBeenCalledTimes(2));
+
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "On it." },
+    });
+    fireEvent.click(screen.getByText("Send as staff"));
+    await act(async () => {
+      landPost(message({ id: "s1", sender: "staff", content: "On it." }));
+      await post;
+    });
+    expect(screen.getByTestId("staff-thread")).toHaveTextContent("On it.");
+
+    // The pre-post read now answers.
+    await act(async () => {
+      answerSlowRead(thread({ content: "are you there?" }, { content: "hello?" }));
+      await slowRead;
+    });
+
+    expect(screen.getByTestId("staff-thread")).toHaveTextContent("On it.");
+  });
+
+  it("discards a read from an earlier visit to the conversation now open again", async () => {
+    // Leaving a conversation and coming back is a second visit, not the same one. A read
+    // issued during the first still names the conversation on screen, so comparing ids
+    // accepts it - and it answers about a thread this pane has since thrown away and
+    // reloaded. Only its number says so.
+    const OTHER = "01CHAT000000000000000099";
+    let answerFirstVisit!: (messages: Message[]) => void;
+    const firstVisitRead = new Promise<Message[]>((resolve) => {
+      answerFirstVisit = resolve;
+    });
+    vi.spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "first visit" }))
+      .mockReturnValueOnce(firstVisitRead)
+      .mockResolvedValue(thread({ content: "reloaded" }));
+
+    function pane(chatId: string, lastMessageAt: string, pollTick: number) {
+      return (
+        <StaffThread
+          chatId={chatId}
+          assistantMayReply={false}
+          pauseSecondsRemaining={null}
+          lastMessageAt={lastMessageAt}
+          pollTick={pollTick}
+          onSetAssistant={vi.fn()}
+        />
+      );
+    }
+
+    const { rerender } = render(pane(CHAT_ID, "2026-09-01T12:00:00", 1));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+    rerender(pane(CHAT_ID, "2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(consoleApi.fetchThread).toHaveBeenCalledTimes(2));
+
+    rerender(pane(OTHER, "2026-09-01T12:01:00", 3));
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-thread")).toHaveTextContent("reloaded"),
+    );
+    rerender(pane(CHAT_ID, "2026-09-01T12:01:00", 4));
+    await act(async () => undefined);
+
+    await act(async () => {
+      answerFirstVisit(thread({ content: "from the first visit" }));
+      await firstVisitRead;
+    });
+
+    expect(screen.getByTestId("staff-thread")).not.toHaveTextContent(
+      "from the first visit",
+    );
+  });
+
+  it("takes over from an opening read that failed, on a tick reporting the same value", async () => {
+    // The read that opens a conversation used to have its poll value filed as handled
+    // whether or not it landed. When it failed, every later tick reported the very value
+    // already filed, so nothing fetched the thread and the pane sat blank behind the
+    // banner until somebody wrote into the conversation.
+    vi.spyOn(consoleApi, "fetchThread")
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValue(thread({ content: "loaded on the retry" }));
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() => expect(screen.getByTestId("staff-error")).toBeTruthy());
+
+    rerender(polled("2026-09-01T12:00:00", 2));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-thread")).toHaveTextContent(
+        "loaded on the retry",
+      ),
+    );
+    // And the banner goes with it: it described a load this answer just disproved.
+    expect(screen.queryByTestId("staff-error")).toBeNull();
+  });
+
+  it("goes on reading the thread while an earlier read hangs", async () => {
+    // A read that never settles must not disable this pane. An in-flight latch cleared
+    // in `.finally` never runs for a request that hangs - and none of these reads carries
+    // a timeout or an abort signal - so the refetch would be dead until a full reload.
+    vi.spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "first" }))
+      .mockReturnValueOnce(new Promise<Message[]>(() => undefined))
+      .mockResolvedValue(thread({ content: "first" }, { content: "arrived anyway" }));
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(polled("2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(consoleApi.fetchThread).toHaveBeenCalledTimes(2));
+
+    // That read for 12:01 never answers. A later message must still be read.
+    rerender(polled("2026-09-01T12:02:00", 3));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-thread")).toHaveTextContent("arrived anyway"),
+    );
   });
 });

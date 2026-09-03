@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FaqAdmin } from "../src/components/FaqAdmin";
 import * as consoleApi from "../src/lib/consoleApi";
@@ -167,6 +167,53 @@ describe("FaqAdmin: writing", () => {
     await waitFor(() =>
       expect(screen.getByTestId("no-faq-entries")).toBeInTheDocument(),
     );
+  });
+
+  it("adds one entry, not two, when the button is clicked again before it lands", async () => {
+    // The box is only cleared once the create lands, so a second click before then reads
+    // the very same text and passes the very same guard. Two identical entries are each
+    // chunked, embedded and indexed, and each counts against the session's entry cap.
+    let landCreate: (created: FaqEntry) => void = () => undefined;
+    const create = vi.spyOn(consoleApi, "createFaqEntry").mockReturnValue(
+      new Promise<FaqEntry>((resolve) => {
+        landCreate = resolve;
+      }),
+    );
+
+    render(<FaqAdmin />);
+    fireEvent.change(await screen.findByLabelText("New entry"), {
+      target: { value: "We open at 8am." },
+    });
+    fireEvent.click(screen.getByText("Add entry"));
+    fireEvent.click(screen.getByText("Add entry"));
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith("We open at 8am.");
+
+    await act(async () => {
+      landCreate(entry({ id: 9, content: "We open at 8am." }));
+    });
+  });
+
+  it("takes the next entry after one that failed", async () => {
+    // The latch is released on the error path too: the text stays in the box by design,
+    // and a latch left closed would leave a staff member holding an entry they can no
+    // longer add.
+    const create = vi
+      .spyOn(consoleApi, "createFaqEntry")
+      .mockRejectedValueOnce(new Error("nope"))
+      .mockResolvedValue(entry({ id: 9, content: "We open at 8am." }));
+
+    render(<FaqAdmin />);
+    fireEvent.change(await screen.findByLabelText("New entry"), {
+      target: { value: "We open at 8am." },
+    });
+    fireEvent.click(screen.getByText("Add entry"));
+    await waitFor(() => expect(screen.getByTestId("faq-error")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Add entry"));
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(2));
   });
 
   it("sends nothing for whitespace alone", async () => {

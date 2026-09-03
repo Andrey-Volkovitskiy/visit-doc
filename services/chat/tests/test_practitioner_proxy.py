@@ -336,7 +336,17 @@ async def test_url_metacharacters_in_an_id_cannot_reshape_the_scheduler_path(
         "/practitioners/abc?admin=1",
         "/practitioners/abc#frag",
         "/practitioners/..",
+        "/practitioners/.",
         "practitioners",
+        # Characters an enumerate-the-metacharacters guard let straight through, while
+        # `forward` sends the path verbatim. A space alone malforms the request line;
+        # a backslash is read as `/` by some intermediaries; CR/LF and NUL have no
+        # business in a URL at all; nor is a non-ASCII character an encoded path.
+        "/practitioners/abc def",
+        "/practitioners/a\\b",
+        "/practitioners/abc\r\nX-Session-Id: other",
+        "/practitioners/abc\x00d",
+        "/practitioners/caf\u00e9",
     ],
 )
 async def test_the_transport_refuses_a_path_that_is_not_one(path: str) -> None:

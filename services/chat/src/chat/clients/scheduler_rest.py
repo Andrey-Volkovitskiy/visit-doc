@@ -16,6 +16,7 @@ because the first response was slow. An outcome nobody knows is reported as unkn
 which is the rule a lost write already imposes everywhere else in this system.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
@@ -37,6 +38,12 @@ _TIMEOUT_SECONDS = 5
 # The two segments a URL parser reads as a move up or sideways rather than as a name.
 # Nothing else made of dots means anything to it, so nothing else needs escaping.
 _RELATIVE_SEGMENTS = frozenset({".", ".."})
+
+# Anything RFC 3986 does not allow in an already-percent-encoded path: unreserved
+# characters, the sub-delimiters, `:@`, the `/` between segments, and the `%` that
+# begins an escape. `?` and `#` are absent deliberately - they are legal in a URL but
+# they end the path, which is the whole of what this transport is allowed to send.
+_DISALLOWED_IN_PATH = re.compile(r"[^A-Za-z0-9\-._~!$&'()*+,;=:@/%]")
 
 
 class SchedulerUnreachableError(Exception):
@@ -162,11 +169,21 @@ def _reject_anything_that_is_not_a_path(path: str) -> None:
     future caller to remember `path_segment`. A caller that forgets fails here, with
     nothing sent and the mistake named, rather than silently addressing an endpoint and
     a query string that whoever supplied the value chose.
+
+    The character check is an **allow-list**, and that is the point: naming the
+    characters to forbid means the guard only ever knows about the ones somebody thought
+    of, and `forward` sends the path it is given verbatim (`encoded=True`), so anything
+    the guard misses is anything the guard misses. A space alone malforms the request
+    line, a backslash is read as `/` by some intermediaries, and a control character has
+    no business in a URL at all. Only what RFC 3986 allows in an already-encoded path is
+    accepted, so the next metacharacter nobody thought of is refused by default.
     """
     if not path.startswith("/"):
         raise ValueError(f"scheduler path must be absolute: {path!r}")
-    if "?" in path or "#" in path:
-        raise ValueError(f"scheduler path must carry no query or fragment: {path!r}")
+    if _DISALLOWED_IN_PATH.search(path) is not None:
+        raise ValueError(
+            f"scheduler path has a character that is not legal in one: {path!r}"
+        )
     if any(segment in _RELATIVE_SEGMENTS for segment in path.split("/")):
         raise ValueError(f"scheduler path must have no relative segment: {path!r}")
 
