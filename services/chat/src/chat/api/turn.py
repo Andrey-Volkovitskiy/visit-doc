@@ -435,6 +435,7 @@ async def _event_stream(
                         anthropic_client,
                         bursts,
                         reply_to_message_ids,
+                        chat.session_id,
                         live_revisions,
                         escalation=escalation,
                         patient_name=chat.patient_name or _PATIENT_PLACEHOLDER_NAME,
@@ -473,12 +474,17 @@ async def _event_stream(
                     # those take the chat's lock: a staff post takes that lock first and
                     # only then asks for a cancellation, so a turn still registered
                     # while queued on the lock would be a cancellation waiting on the
-                    # very lock its canceller holds.
-                    reply = (
-                        done_event
-                        if done_event is not None and clear_if_current(chat.id, task)
-                        else None
-                    )
+                    # very lock its canceller holds - and `pg_advisory_lock` has no
+                    # timeout to end that wait.
+                    #
+                    # Its own statement, and not a term in the expression below: a turn
+                    # that settled no reply queues on the same lock as one that did, so
+                    # it may not be the one turn whose deregistration a short-circuit
+                    # skips. The answer still decides the reply - False means a newer
+                    # turn superseded this one, whose reply is the one the thread is
+                    # owed, not this one's.
+                    still_current = clear_if_current(chat.id, task)
+                    reply = done_event if still_current else None
                     try:
                         outcome = await _persist_outcome(
                             chat,
@@ -534,6 +540,11 @@ async def _event_stream(
                     raise
                 finally:
                     queue.put_nowait(None)
+                    # A second deregistration, for the paths that never reached the one
+                    # above: a pipeline step that raised, or this task being cancelled
+                    # mid-graph. Harmless after it - the registry has nothing of this
+                    # task left to remove, and a newer turn's entry is not this task's
+                    # to clear.
                     clear_if_current(chat.id, task)
 
             task: asyncio.Task[None] = asyncio.create_task(run_pipeline())

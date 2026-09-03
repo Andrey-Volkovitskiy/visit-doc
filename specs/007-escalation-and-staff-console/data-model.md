@@ -153,7 +153,7 @@ true because there is nothing that could need one.
 
 | Field | Change | Notes |
 |---|---|---|
-| `session_id` | **NEW** | The owning session. Used by the **session-wide** delete, which runs after the rows are gone and has no other handle on them (FR-039c). |
+| `session_id` | **NEW** | The owning session. A term on **every** filter below, and the only handle the **session-wide** delete has left once the rows are gone (FR-039c). |
 | `revision` | **NEW** | The revision this chunk belongs to (FR-042b). |
 | `faq_entry_id` | unchanged | Now load-bearing for the sweep, which addresses an entry's revisions without reading the index's contents. |
 | `chunk_index`, `chunk_text` | unchanged | |
@@ -166,13 +166,19 @@ Points are **immutable**: a save writes new points under a new revision and dele
 modifies nothing (FR-042b). Point ids stay random UUIDs, which is now a property rather than an
 accident — nothing addresses a point by id, so nothing can collide with a revision still being read.
 
-Three filters, and no other query reaches the collection:
+Four filters, and no other query reaches the collection:
 
 | Purpose | Filter |
 |---|---|
-| **Retrieval** (FR-039a, FR-042d) | `must=[MatchAny(revision, <this session's live revisions>)]` |
-| **Per-entry sweep** (FR-042h) | `must=[MatchValue(faq_entry_id, id)]`, `must=[MatchAny(revision, <this entry's revisions older than live>)]` |
+| **Retrieval** (FR-039a, FR-042d) | `must=[MatchValue(session_id, id), MatchAny(revision, <this session's live revisions>)]` |
+| **Per-entry delete** | `must=[MatchValue(session_id, id), MatchValue(faq_entry_id, id)]` |
+| **Per-entry sweep** (FR-042h) | `must=[MatchValue(session_id, id), MatchValue(faq_entry_id, id)]`, plus `MatchAny(revision, <this entry's revisions older than live>)` on the delete |
 | **Session delete** (FR-039c) | `must=[MatchValue(session_id, id)]` |
+
+Every one of them carries the session, including the three where another term already looks
+sufficient. A revision and an entry id are both unique, but unique only means no collision — it
+says nothing about who may read or delete the points carrying one, so the scope is a term on the
+query rather than a property inferred from an id's uniqueness.
 
 The sweep names the revisions it deletes rather than excluding the one it was given: it scrolls the
 entry's points first, keeps those older than the live revision, and deletes exactly those. A

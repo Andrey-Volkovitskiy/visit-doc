@@ -106,6 +106,7 @@ class _GraphState(TypedDict):
 
     bursts: list[list[Message]]
     reply_to_message_ids: list[str]
+    session_id: str
     live_revisions: list[str]
     escalation: EscalationRequests
     patient_name: str
@@ -226,6 +227,7 @@ def _build_graph(
                 anthropic_client,
                 state["bursts"],
                 state["reply_to_message_ids"],
+                state["session_id"],
                 state["live_revisions"],
                 escalation=state["escalation"],
                 stream=streaming,
@@ -249,7 +251,8 @@ def _build_graph(
     async def handle_booking_node(state: _GraphState) -> dict[str, object]:
         """Run the booking loop, streaming or collecting depending on the route.
 
-        Raises: RuntimeError if the turn was routed to booking without a tool context.
+        Raises: RuntimeError if the turn was routed to booking without a tool context,
+            or TurnPipelineError propagated from `handle_booking()`.
         """
         writer = get_stream_writer()
         streaming = not state["merge_required"]
@@ -314,7 +317,10 @@ def _build_graph(
         return {"handed_off": True}
 
     async def compose_answer_node(state: _GraphState) -> None:
-        """Emit the turn's reply and completion, merging only when both halves ran."""
+        """Emit the turn's reply and completion, merging only when both halves ran.
+
+        Raises: TurnPipelineError propagated from `compose_answer()` on a merged turn.
+        """
         writer = get_stream_writer()
         faq_result = state.get("faq_result")
         booking_result = state.get("booking_result")
@@ -419,6 +425,7 @@ async def run_turn(
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
+    session_id: str,
     live_revisions: list[str],
     *,
     escalation: EscalationRequests,
@@ -432,23 +439,28 @@ async def run_turn(
         bursts: The chat's full conversation history (oldest first), split into
             contiguous same-side runs, with the trailing burst always patient-sided.
         reply_to_message_ids: The patient message id(s) the trailing burst represents.
-        live_revisions: Every revision this session publishes, read before the graph is
+        session_id: The session this turn belongs to, and the corpus retrieval is scoped
+            to. Held in the state rather than read off `tool_context`, which is None
+            whenever scheduling is not wired up - what retrieval may reach must not
+            depend on whether this deployment has a scheduler.
+        live_revisions: Every revision that session publishes, read before the graph is
             entered so an empty list cannot be confused with a failed read.
         escalation: The turn's collector of calls to staff, filled by whichever
             specialist decides a person is needed and applied by the caller once this
             has completed.
         tool_context: The turn's ambient facts, or None when scheduling is not wired
-            up. It already carries the turn's session, patient and clock, so none of
-            those are threaded through the graph state as a second copy that could
-            drift. Each node builds its own registry over it, from its own tool set.
+            up. Each node builds its own registry over it, from its own tool set.
 
-    Raises: TurnPipelineError propagated from `answer_faq_node` - a classification
-        failure never raises here, only logs.
+    Raises: TurnPipelineError propagated from whichever node made the failing call -
+        `answer_faq_node`, `handle_booking_node` or `compose_answer_node` - and
+        RuntimeError from `handle_booking_node` without a tool context. A
+        classification failure never raises here, only logs.
     """
     graph = _build_graph(qdrant_client, voyage_client, anthropic_client)
     state: _GraphState = {
         "bursts": bursts,
         "reply_to_message_ids": reply_to_message_ids,
+        "session_id": session_id,
         "live_revisions": live_revisions,
         "escalation": escalation,
         "patient_name": patient_name,

@@ -691,21 +691,35 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
 
   it("does not refetch while the poll keeps reporting the same time", async () => {
     // A 2-second poll that refetched every thread on every tick would cost one history
-    // read per tick per open tab to learn that nothing had happened.
+    // read per tick per open tab to learn that nothing had happened. The ticks arrive
+    // regardless - they are what lets a failed read be retried - so it is the marker,
+    // not the absence of a tick, that has to keep them free.
     const fetchChatHistory = vi
       .spyOn(chatStream, "fetchChatHistory")
       .mockResolvedValue(history("is anyone there?"));
 
     const { rerender } = render(
-      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={1}
+      />,
     );
     await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(1));
 
     rerender(
-      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={2}
+      />,
     );
     rerender(
-      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" />,
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={3}
+      />,
     );
 
     expect(fetchChatHistory).toHaveBeenCalledTimes(1);
@@ -771,6 +785,163 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
 
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
     expect(screen.queryByTestId("error")).toBeNull();
+  });
+
+  it("brings in the message a failed refetch missed, on a later tick reporting the same time", async () => {
+    // The failed read is the only thing that went wrong, and the poll has nothing new to
+    // say about it: the staff reply is still the newest message, so every later tick
+    // reports the very same time. Only a marker that records what was actually read can
+    // notice the read is still owed - one recorded when the read was *issued* matches
+    // every one of those ticks, and the reply stays off the screen until somebody writes
+    // into the thread again.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("is anyone there?"))
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValue(history("is anyone there?", "I've got this one."));
+
+    const { rerender } = render(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={1}
+      />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:01:00Z"
+        pollTick={2}
+      />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+    // Let that read fail before the next tick arrives, as a 2-second interval would.
+    await act(async () => undefined);
+    expect(screen.getAllByTestId("message")).toHaveLength(1);
+
+    rerender(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:01:00Z"
+        pollTick={3}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent(
+        "I've got this one.",
+      ),
+    );
+  });
+
+  it("applies a read that was still outstanding when the next tick arrived", async () => {
+    // A read slower than the two-second interval spans a tick, and every tick re-runs
+    // the effect. That says nothing about the answer: what makes one stale is the chat
+    // being switched away from, and this chat is still open. Judging it by "the effect
+    // has re-run since" instead throws away every read that crosses a tick boundary, and
+    // against a backend consistently slower than the interval the pane never updates at
+    // all - a read reissued forever and never landing.
+    let answerSlowRead!: (rows: Message[]) => void;
+    const slowRead = new Promise<Message[]>((resolve) => {
+      answerSlowRead = resolve;
+    });
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("is anyone there?"))
+      .mockReturnValueOnce(slowRead);
+
+    const { rerender } = render(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={1}
+      />,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:01:00Z"
+        pollTick={2}
+      />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    // The next tick arrives while that read is still outstanding.
+    rerender(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:01:00Z"
+        pollTick={3}
+      />,
+    );
+
+    await act(async () => {
+      answerSlowRead(history("is anyone there?", "I've got this one."));
+      await slowRead;
+    });
+
+    expect(screen.getByTestId("messages")).toHaveTextContent("I've got this one.");
+    // And that tick did not ask the same question a second time behind its back.
+    expect(fetchChatHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it("discards a read that answers after the chat was switched away from", async () => {
+    // The other half of judging a read by the chat it was issued for: a poll-driven read
+    // outstanding across a chat switch is answered from a thread no longer on screen,
+    // and appending that answer would put one chat's messages under another's name.
+    let answerSlowRead!: (rows: Message[]) => void;
+    const slowRead = new Promise<Message[]>((resolve) => {
+      answerSlowRead = resolve;
+    });
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("in the first chat"))
+      .mockReturnValueOnce(slowRead)
+      .mockResolvedValue(history("in the other chat"));
+
+    const { rerender } = render(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:00:00Z"
+        pollTick={1}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("in the first chat")).toBeInTheDocument(),
+    );
+
+    rerender(
+      <ChatWindow
+        chatId={CHAT_ID}
+        lastMessageAt="2026-09-01T12:01:00Z"
+        pollTick={2}
+      />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    // The patient opens another chat while that read is still outstanding.
+    rerender(
+      <ChatWindow
+        chatId="01OTHER"
+        lastMessageAt="2026-09-01T12:05:00Z"
+        pollTick={3}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("in the other chat")).toBeInTheDocument(),
+    );
+
+    await act(async () => {
+      answerSlowRead(history("in the first chat", "a staff reply to the first chat"));
+      await slowRead;
+    });
+
+    expect(screen.queryByText("a staff reply to the first chat")).toBeNull();
+    expect(screen.getByText("in the other chat")).toBeInTheDocument();
   });
 
   it("keeps a just-streamed reply the deferred refetch's history does not carry yet", async () => {

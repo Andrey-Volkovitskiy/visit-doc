@@ -90,24 +90,30 @@ async def _start_pause(
     The record is written from what the write reported about itself - the deadline it
     wrote and the pause it replaced - so the section holding the chat's lock spends no
     round trip reading back what it just did.
+
+    Records nothing when the write matched no row: a conversation that stopped being
+    this session's silenced nothing, and an entry saying otherwise would put a pause in
+    the log that never ran - one an operator would count, and would go looking for
+    behind a patient's next unanswered message.
     """
     written = await chat_repository.set_paused_until(
         db_session, chat_id, session_id, get_settings().ASSISTANT_PAUSE_SECONDS
     )
+    if written is None:
+        return None
+
     get_logger().info(
         "assistant.paused",
         chat_id=chat_id,
-        until=written.state.assistant_paused_until if written is not None else None,
+        until=written.state.assistant_paused_until,
         paused_by=paused_by,
-        restarted=written is not None and written.restarted,
+        restarted=written.restarted,
     )
-    return None if written is None else written.state
+    return written.state
 
 
-def _state_out(state: ConversationState | None) -> AssistantStateOut:
+def _state_out(state: ConversationState) -> AssistantStateOut:
     """Render what the assistant may do, for a caller that just changed it."""
-    if state is None:
-        return AssistantStateOut(assistant_may_reply=True, pause_seconds_remaining=None)
     return AssistantStateOut(
         assistant_may_reply=state.may_assistant_reply,
         pause_seconds_remaining=state.pause_seconds_remaining,
@@ -158,7 +164,8 @@ async def post_staff_message(
     """Post as staff into the patient's own thread, taking the conversation with it.
 
     Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
-        another session - or stopped being this one's while the post was being written.
+        another session - or stopped being this one's while the post was being written,
+        the cascade that removed it having taken the post with it.
 
     Replying *is* taking the conversation, so one post also ends any escalation, stops
     the conversation waiting, and clears every mark a person speaking answers - the
@@ -204,15 +211,25 @@ async def post_staff_message(
             marks_cleared = await chat_repository.clear_clearable_marks(
                 db_session, chat.id, session_id
             )
-            await _start_pause(
+            paused = await _start_pause(
                 db_session, chat.id, session_id, paused_by="staff_message"
             )
+            if state is None or paused is None:
+                # The conversation was deleted after the insert committed: the state
+                # read found no row, or the pause closing the section did - and the
+                # cascade took the message with the chat. Asked once, at the end,
+                # because a deleted chat never comes back: whichever statement it
+                # vanished under, the last one finds nothing too. The clears between
+                # them cannot answer it at all - none distinguishes a chat that is gone
+                # from one with nothing to clear. A 201 here would hand a staff member
+                # a message id their own thread does not hold and no refetch will find.
+                raise HTTPException(status_code=404, detail="chat not found")
         finally:
             await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
-    ended_escalation = state is not None and state.escalated_at is not None
+    ended_escalation = state.escalated_at is not None
     logger = get_logger()
-    if ended_escalation and state is not None:
+    if ended_escalation:
         logger.info(
             "escalation.ended",
             chat_id=chat.id,
@@ -238,7 +255,8 @@ async def set_assistant(
     """Turn the assistant on or off in one conversation.
 
     Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
-        another session.
+        another session - or stopped being this one's while the switch was being
+        applied.
 
     On clears both silences - the escalation and any running pause. Off writes the
     identical pause a staff message writes, and cancels any reply in flight. Neither
@@ -264,6 +282,12 @@ async def set_assistant(
                 after = await _start_pause(
                     db_session, chat.id, session_id, paused_by="switch"
                 )
+            if after is None:
+                # The conversation stopped being this session's between being resolved
+                # and being written to - deleted, in that window. The same 404 the
+                # resolve itself would have given, since nothing was written: neither
+                # direction of the switch moved, and there is no state to report.
+                raise HTTPException(status_code=404, detail="chat not found")
         finally:
             await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
@@ -323,6 +347,11 @@ async def _proxy(
     request: Request, method: str, path: str, body: Any | None = None
 ) -> Response:
     """Forward one practitioner request to the scheduler and relay its answer.
+
+    Args:
+        path: The scheduler-side path. Any value a route interpolated into it - an id
+            out of this request's own URL - must have come through
+            `scheduler_rest.path_segment`, or it is free to choose the endpoint.
 
     Raises:
         HTTPException 401: the request carries no session cookie, so there is no
@@ -384,11 +413,18 @@ async def update_practitioner(
 ) -> Response:
     """Edit a practitioner; fields the caller omits are left untouched."""
     return await _proxy(
-        request, "PATCH", f"/practitioners/{practitioner_id}", body or {}
+        request,
+        "PATCH",
+        f"/practitioners/{scheduler_rest.path_segment(practitioner_id)}",
+        body or {},
     )
 
 
 @router.delete("/console/practitioners/{practitioner_id}")
 async def delete_practitioner(practitioner_id: str, request: Request) -> Response:
     """Delete a practitioner and, by the scheduler's cascade, their appointments."""
-    return await _proxy(request, "DELETE", f"/practitioners/{practitioner_id}")
+    return await _proxy(
+        request,
+        "DELETE",
+        f"/practitioners/{scheduler_rest.path_segment(practitioner_id)}",
+    )

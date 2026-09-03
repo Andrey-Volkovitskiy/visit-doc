@@ -24,22 +24,27 @@ from chat.db.session import engine, session_factory
 from chat.domain.models import FaqEntry
 from chat.main import app
 from chat.rag import indexing
+from chat.rag.chunking import ChunkedText
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import (
     COLLECTION_NAME,
     ChunkPayload,
     create_client,
     ensure_collection,
+    search,
+    upsert_chunks,
 )
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 from qdrant_client.http.models import FieldCondition, Filter, MatchValue
 from structlog.testing import capture_logs
+from ulid import ULID
 
 from .conftest import fake_anthropic_client, fake_embed_texts
 
 _FIRST = "Visiting hours are 8am to 5pm on weekdays."
 _SECOND = "Visiting hours are 9am to 6pm on weekdays."
+_VECTOR = [0.1] * 512
 
 
 async def _session_id() -> str:
@@ -81,6 +86,32 @@ async def _points(session_id: str) -> list[ChunkPayload]:
     finally:
         await qdrant_client.close()
     return [ChunkPayload.model_validate(r.payload) for r in records if r.payload]
+
+
+def _chunks_of(points: list[ChunkPayload], entry_id: int) -> list[ChunkPayload]:
+    """Return one entry's chunks out of a session's points, in chunk order."""
+    return sorted(
+        (p for p in points if p.faq_entry_id == entry_id), key=lambda p: p.chunk_index
+    )
+
+
+async def _top_match(session_id: str, query: str) -> int:
+    """Return the entry retrieval reaches first for `query`, filtered as production is.
+
+    The live revisions come from Postgres and the search carries them, so a chunk no
+    row vouches for cannot be what this returns. `fake_embed_texts` ignores its client
+    argument, which is why one is not built here.
+    """
+    async with session_factory() as session:
+        revisions = await faq_repository.live_revisions(session, session_id)
+    await engine.dispose()
+    [vector] = await fake_embed_texts(None, [query], input_type="query")
+    qdrant_client = create_client(Settings())
+    try:
+        retrieved = await search(qdrant_client, session_id, vector, revisions)
+    finally:
+        await qdrant_client.close()
+    return retrieved[0].faq_entry_id
 
 
 @asynccontextmanager
@@ -206,6 +237,42 @@ async def test_a_creates_id_is_reserved_before_its_chunks_are_written() -> None:
     chunks = await _points(session_id)
     assert chunks
     assert all(c.faq_entry_id == entries[0].id for c in chunks)
+
+
+async def test_a_create_sweeps_nothing_and_leaves_the_corpus_it_joins_intact() -> None:
+    # A create's id comes from the sequence, which never returns a value twice, so the
+    # only chunks that can be carrying it are the ones this create just wrote - there
+    # is no older revision of this entry for a sweep to find.
+    session_id = await _session_id()
+    parking = "Parking is free for the first hour."
+    await _create(session_id, _FIRST)
+    existing = (await _entries(session_id))[0]
+    existing_chunks = _chunks_of(await _points(session_id), existing.id)
+
+    swept: list[Any] = []
+
+    async def _recording_sweep(*args: Any, **kwargs: Any) -> None:
+        swept.append(args)
+
+    response = await _create(
+        session_id,
+        parking,
+        patches=[patch("chat.rag.indexing.sweep_chunks", _recording_sweep)],
+    )
+
+    assert response.status_code == 201
+    assert swept == []
+    created_id = response.json()["id"]
+    entries = {e.id: e for e in await _entries(session_id)}
+    points = await _points(session_id)
+    created_chunks = _chunks_of(points, created_id)
+    assert created_chunks
+    assert {c.revision for c in created_chunks} == {entries[created_id].live_revision}
+    assert _chunks_of(points, existing.id) == existing_chunks
+    # And the corpus answers exactly as it did: the new entry is retrievable, and the
+    # one it joined still answers what it always answered.
+    assert await _top_match(session_id, parking) == created_id
+    assert await _top_match(session_id, _FIRST) == existing.id
 
 
 # --- the three failure points -------------------------------------------------------
@@ -530,7 +597,7 @@ async def test_a_late_sweep_spares_the_revision_that_overtook_it() -> None:
     live = (await _entries(session_id))[0].live_revision
     qdrant_client = create_client(Settings())
     try:
-        await indexing.sweep_entry(qdrant_client, entry_id, overtaken)
+        await indexing.sweep_entry(qdrant_client, session_id, entry_id, overtaken)
     finally:
         await qdrant_client.close()
 
@@ -544,8 +611,12 @@ async def test_the_sweep_is_idempotent() -> None:
     entry = (await _entries(session_id))[0]
     qdrant_client = create_client(Settings())
     try:
-        await indexing.sweep_entry(qdrant_client, entry_id, entry.live_revision)
-        await indexing.sweep_entry(qdrant_client, entry_id, entry.live_revision)
+        await indexing.sweep_entry(
+            qdrant_client, session_id, entry_id, entry.live_revision
+        )
+        await indexing.sweep_entry(
+            qdrant_client, session_id, entry_id, entry.live_revision
+        )
     finally:
         await qdrant_client.close()
 
@@ -594,6 +665,63 @@ async def test_the_sweep_never_widens_past_the_entry_it_is_for() -> None:
     revisions = {c.revision for c in await _points(session_id)}
     assert other_entry_revision in revisions
     assert second.status_code == 201
+
+
+async def _plant_foreign_chunk(session_id: str, faq_entry_id: int) -> str:
+    """Write one chunk owned by `session_id` under `faq_entry_id`, and return its
+    revision.
+
+    Deliberately impossible through the API: entry ids come from one sequence, so no
+    two sessions ever really share one. That is the point - it manufactures the only
+    state in which the entry term alone would reach the wrong session's chunks, so a
+    test using it pins the session predicate rather than the uniqueness of an id.
+    """
+    revision = str(ULID())
+    qdrant_client = create_client(Settings())
+    try:
+        await upsert_chunks(
+            qdrant_client,
+            session_id,
+            faq_entry_id,
+            revision,
+            [ChunkedText(chunk_index=0, chunk_text="theirs")],
+            [_VECTOR],
+        )
+    finally:
+        await qdrant_client.close()
+    return revision
+
+
+async def test_a_delete_reaches_only_the_deleting_sessions_chunks() -> None:
+    # The delete carries the caller's session all the way to the store, so an entry id
+    # that matches somebody else's chunks does not empty them.
+    mine = await _session_id()
+    theirs = await _session_id()
+    entry_id = (await _create(mine, _FIRST)).json()["id"]
+    their_revision = await _plant_foreign_chunk(theirs, entry_id)
+
+    response = await _call(mine, "DELETE", f"/faq/{entry_id}")
+
+    assert response.status_code == 204
+    assert await _points(mine) == []
+    assert {c.revision for c in await _points(theirs)} == {their_revision}
+
+
+async def test_a_saves_sweep_reaches_only_the_saving_sessions_chunks() -> None:
+    # And the same for the sweep an update runs afterwards: it deletes what its own
+    # session superseded, and a foreign chunk older than the revision it publishes is
+    # still not its to remove.
+    mine = await _session_id()
+    theirs = await _session_id()
+    entry_id = (await _create(mine, _FIRST)).json()["id"]
+    their_revision = await _plant_foreign_chunk(theirs, entry_id)
+
+    response = await _update(mine, entry_id, _SECOND)
+
+    assert response.status_code == 200
+    live = (await _entries(mine))[0].live_revision
+    assert {c.revision for c in await _points(mine)} == {live}
+    assert {c.revision for c in await _points(theirs)} == {their_revision}
 
 
 async def test_a_save_leaves_another_sessions_corpus_untouched() -> None:

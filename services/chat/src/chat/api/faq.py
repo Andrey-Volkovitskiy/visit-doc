@@ -160,7 +160,8 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
     The id is reserved from the sequence before anything is written, so the chunks can
     carry the entry they belong to before the row that publishes them exists. A create
     that fails leaves that id unused, which costs nothing: the sequence is not a count
-    of rows.
+    of rows, and it never hands that id out again - so the only chunks this entry can
+    ever have are the ones written just above, and there is nothing here to sweep.
 
     The cap is read twice, and only the second reading enforces it. The first, here,
     spares a full corpus the work of chunking and embedding something it will refuse;
@@ -202,12 +203,11 @@ async def create_faq_entry(body: FaqEntryWrite, request: Request) -> FaqEntry:
             # was inserted, so the chunks already written carry an id no row will ever
             # name: removing them is the same silent housekeeping a delete does, not a
             # repair of anything a reader could have seen.
-            await remove_entry_chunks(request.app.state.qdrant_client, entry_id)
+            await remove_entry_chunks(
+                request.app.state.qdrant_client, session_id, entry_id
+            )
             _refuse_full_corpus(session_id, count, cap)
 
-        # Ordinarily a no-op - a create's id is fresh - and here so a reserved id that
-        # somehow carries chunks from an earlier attempt does not keep them.
-        await sweep_entry(request.app.state.qdrant_client, entry.id, revision)
         get_logger().info(
             "faq.entry_created",
             entry_id=entry.id,
@@ -310,7 +310,9 @@ async def update_faq_entry(
             )
             raise HTTPException(status_code=409, detail=_CONFLICT)
 
-        await sweep_entry(request.app.state.qdrant_client, entry.id, revision)
+        await sweep_entry(
+            request.app.state.qdrant_client, session_id, entry.id, revision
+        )
         get_logger().info(
             "faq.entry_updated",
             entry_id=entry.id,
@@ -345,5 +347,5 @@ async def delete_faq_entry(entry_id: int, request: Request) -> None:
         if not deleted:
             raise HTTPException(status_code=404, detail=_NOT_FOUND)
 
-        await remove_entry_chunks(request.app.state.qdrant_client, entry_id)
+        await remove_entry_chunks(request.app.state.qdrant_client, session_id, entry_id)
         get_logger().info("faq.entry_deleted", entry_id=entry_id, session_id=session_id)

@@ -35,6 +35,7 @@ from .conftest import (
     fake_anthropic_client,
     fake_classify_intent_client,
     fake_embed_texts,
+    seeded_session_id,
     set_seeded_session,
 )
 
@@ -48,6 +49,14 @@ def _patient_message(content: str, id: str) -> Message:
 # The revisions the seeding fixture published, so `_run_turn` retrieves against the
 # same corpus the fixture built rather than an empty one.
 _seeded_revisions: list[str] = []
+# What a turn with no seeding fixture runs as. Retrieval is scoped to a session as well
+# as to revisions, so a turn needs one even when there is nothing for it to find.
+_SESSION_WITH_NO_CORPUS = "01SESSIONWITHNOCORPUS00000"
+
+
+def _retrieving_session() -> str:
+    """The session a turn runs as: the seeded corpus's owner, or one owning nothing."""
+    return seeded_session_id() if _seeded_revisions else _SESSION_WITH_NO_CORPUS
 
 
 @pytest.fixture
@@ -84,7 +93,7 @@ async def seeded_entry() -> AsyncIterator[int]:
     yield entry.id
 
     _seeded_revisions.clear()
-    await remove_entry_chunks(qdrant_client, entry.id)
+    await remove_entry_chunks(qdrant_client, seeded_session.id, entry.id)
     async with session_factory() as session:
         await faq_repository.delete(session, seeded_session.id, entry.id)
     await qdrant_client.close()
@@ -132,6 +141,7 @@ async def _run_turn(
             anthropic_client,
             bursts,
             ["turn-1"],
+            _retrieving_session(),
             live_revisions,
             escalation=escalation if escalation is not None else EscalationRequests(),
             patient_name="Ada Lovelace",
@@ -264,6 +274,7 @@ async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_repl
                 anthropic_client,
                 bursts,
                 ["turn-1"],
+                seeded_session_id(),
                 list(_seeded_revisions),
                 escalation=EscalationRequests(),
                 patient_name="Ada Lovelace",

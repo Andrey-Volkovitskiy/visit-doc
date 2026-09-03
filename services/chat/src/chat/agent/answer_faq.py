@@ -55,6 +55,7 @@ async def answer_faq(
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
+    session_id: str,
     live_revisions: list[str],
     *,
     escalation: EscalationRequests,
@@ -68,10 +69,12 @@ async def answer_faq(
             always the trailing burst - the query this turn retrieves for and answers.
             Bounded here to the last few turns before any model call.
         reply_to_message_ids: The patient message id(s) this turn is answering.
-        live_revisions: Every revision this turn's session currently publishes - the
-            whole of what retrieval may search. Read before this function is entered,
-            so an empty list provably means an empty corpus rather than a read that
-            failed.
+        session_id: The session this turn belongs to, and the only corpus retrieval may
+            reach - carried to the search as a term of its own rather than left to the
+            revisions to imply.
+        live_revisions: Every revision that session currently publishes - the whole of
+            what retrieval may search. Read before this function is entered, so an empty
+            list provably means an empty corpus rather than a read that failed.
         escalation: This turn's collector of calls to staff. An abstention records one
             into it; nothing here writes the transition, which belongs to the end of the
             turn.
@@ -97,7 +100,9 @@ async def answer_faq(
     message = trailing_question(bounded)
     silenced = render_silent_window(silent_window(bounded))
 
-    chunks = await search_faq(qdrant_client, voyage_client, message, live_revisions)
+    chunks = await search_faq(
+        qdrant_client, voyage_client, message, session_id, live_revisions
+    )
     logger.info(
         "faq.retrieved",
         chunk_count=len(chunks),

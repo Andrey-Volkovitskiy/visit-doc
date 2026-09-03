@@ -91,9 +91,12 @@ async def publish_revision(
 
 
 async def sweep_entry(
-    qdrant_client: AsyncQdrantClient, faq_entry_id: int, live_revision: str
+    qdrant_client: AsyncQdrantClient,
+    session_id: str,
+    faq_entry_id: int,
+    live_revision: str,
 ) -> None:
-    """Remove `faq_entry_id`'s chunks from revisions older than `live_revision`.
+    """Remove `session_id`'s chunks of `faq_entry_id` older than `live_revision`.
 
     Args:
         live_revision: A revision of this entry that was live when the caller published
@@ -108,13 +111,13 @@ async def sweep_entry(
     operations that genuinely failed, which is the confusion this path exists to avoid.
     """
     try:
-        await sweep_chunks(qdrant_client, faq_entry_id, live_revision)
+        await sweep_chunks(qdrant_client, session_id, faq_entry_id, live_revision)
     except Exception:  # noqa: BLE001, S110 - see the docstring: silent by requirement
         pass
 
 
 async def remove_entry_chunks(
-    qdrant_client: AsyncQdrantClient, faq_entry_id: int
+    qdrant_client: AsyncQdrantClient, session_id: str, faq_entry_id: int
 ) -> None:
     """Remove every chunk of a deleted entry, on the same silent terms as the sweep.
 
@@ -123,6 +126,6 @@ async def remove_entry_chunks(
     to re-run something that already achieved every observable effect.
     """
     try:
-        await delete_by_entry(qdrant_client, faq_entry_id)
+        await delete_by_entry(qdrant_client, session_id, faq_entry_id)
     except Exception:  # noqa: BLE001, S110 - see the docstring: silent by requirement
         pass

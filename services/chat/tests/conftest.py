@@ -378,11 +378,13 @@ def fake_anthropic_client(
     tokens: list[str] | None = None,
     *,
     stream_error: Exception | None = None,
+    compose_error: Exception | None = None,
     intents: list[IntentLabel] | None = None,
     classify_error: Exception | None = None,
     classify_gate: asyncio.Event | None = None,
     classify_started: asyncio.Event | None = None,
     booking_reply: str = DEFAULT_BOOKING_REPLY,
+    booking_error: Exception | None = None,
     booking_tool_calls: list[list[tuple[str, dict[str, object]]]] | None = None,
 ) -> MagicMock:
     """Stand-in for `AsyncAnthropic`, set on `chat.main.AsyncAnthropic`'s patched
@@ -400,10 +402,33 @@ def fake_anthropic_client(
     it's exercising; otherwise classification silently succeeding must never be
     mistaken for a real assertion on it (docs/testing-strategy.md's mocking-discipline
     note).
+
+    `stream_error` fails every streaming call; `compose_error` fails only the composing
+    step's. A mixed-intent turn streams twice on this one client - the FAQ specialist
+    first, then the merge - so failing both would never reach the second, and the
+    merge's own failure handling would be untestable.
     """
     client = MagicMock()
     client.close = AsyncMock()
-    if stream_error is not None:
+
+    if compose_error is not None:
+        # Imported here rather than at module level: `chat.agent.compose_answer`
+        # reaches `chat.repositories.qdrant_repository`, which reads its collection
+        # name from `get_settings()` at import time - importing it above would freeze
+        # the cached settings on the dev collection before this file's own override
+        # has run.
+        from chat.agent.compose_answer import _SYSTEM_PROMPT as COMPOSE_SYSTEM_PROMPT
+
+        def _stream(*_args: object, **kwargs: object) -> FakeAnthropicStream:
+            # `.messages.stream` serves two callers: the FAQ specialist and the
+            # composing step, told apart by the system prompt each sends - the same
+            # trick `_create` below uses for classification and the booking loop.
+            if kwargs.get("system") == COMPOSE_SYSTEM_PROMPT:
+                raise compose_error
+            return FakeAnthropicStream(tokens or [])
+
+        client.messages.stream.side_effect = _stream
+    elif stream_error is not None:
         client.messages.stream.side_effect = stream_error
     else:
         client.messages.stream.return_value = FakeAnthropicStream(tokens or [])
@@ -414,6 +439,7 @@ def fake_anthropic_client(
         started=classify_started,
         client=client,
         booking_reply=booking_reply,
+        booking_error=booking_error,
         booking_tool_calls=booking_tool_calls,
     )
     return client
@@ -427,6 +453,7 @@ def fake_classify_intent_client(
     started: asyncio.Event | None = None,
     client: MagicMock | None = None,
     booking_reply: str = DEFAULT_BOOKING_REPLY,
+    booking_error: Exception | None = None,
     booking_tool_calls: list[list[tuple[str, dict[str, object]]]] | None = None,
 ) -> MagicMock:
     """Stand-in for `AsyncAnthropic` when only `.messages.create(...)` is exercised, via
@@ -444,6 +471,9 @@ def fake_classify_intent_client(
     `client` (if given) is configured in place instead of building a fresh `MagicMock`
     - lets `fake_anthropic_client`/`fake_anthropic_client_gated` layer a default
     classification onto a client they've already set `.messages.stream`/`.close` on.
+    `booking_error` (if given) is raised by the booking loop's call only, leaving
+    classification working - a turn cannot reach the loop without being classified
+    into it first.
     """
     if client is None:
         client = MagicMock()
@@ -460,6 +490,8 @@ def fake_classify_intent_client(
         # and the booking loop (tool use). They are told apart by the parameter each
         # sends, so one mocked client can stand in for both on a mixed-intent turn.
         if kwargs.get("tools") is not None:
+            if booking_error is not None:
+                raise booking_error
             if booking_responses:
                 return booking_responses.pop(0)
             return _mock_text_response(booking_reply)

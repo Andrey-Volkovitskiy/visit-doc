@@ -6,6 +6,7 @@ derived. Assertions are on unmocked artifacts - the dispatched calls, the derive
 outcome, the messages that reached the model - never on canned reply text.
 """
 
+import asyncio
 import json
 import re
 from datetime import datetime
@@ -36,6 +37,7 @@ from chat.agent.tools.scheduling_tools import (
 from chat.core.config import Settings
 from chat.domain.models import EscalationReason, Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent
+from chat.rag.retriever import TurnPipelineError
 from shared_models.scheduling import BookingFailureReason, ChangeFailureReason
 from structlog.testing import capture_logs
 
@@ -1299,3 +1301,55 @@ async def test_an_ordinary_turn_is_handed_the_conversation_unchanged() -> None:
     entry = _first_user_entry(client)
     assert entry == "book me Friday at 9"
     assert "The message you are answering:" not in entry
+
+
+async def test_a_model_outage_mid_loop_is_tagged_as_a_generation_failure() -> None:
+    # The loop's own model call, on the iteration after a tool round trip: the turn
+    # ends by naming the dependency that failed, not by reaching the pipeline's
+    # catch-all as an untagged node crash.
+    registry = _RecordingRegistry({"check_availability": {"status": "ok", "slots": []}})
+    client = _client(
+        [
+            _tool_use_response([("check_availability", {"date": "2026-08-18"})]),
+            RuntimeError("overloaded"),
+        ]
+    )
+
+    with pytest.raises(TurnPipelineError) as raised:
+        await _run(client, registry, _bursts("anything free Tuesday?"))
+
+    assert raised.value.pipeline_step == "generation"
+    assert "overloaded" in str(raised.value.cause)
+    # The tool did run first, so the wrap covers the model call and not the iteration.
+    assert _model_dispatched(registry) == ["check_availability"]
+
+
+async def test_a_tool_that_fails_is_not_reported_as_a_generation_failure() -> None:
+    # The other direction of the same mis-attribution. A handler that raises is
+    # answered to the model and the loop carries on, so nothing about it may name the
+    # model API as the thing that was unreachable.
+    registry = _RecordingRegistry({})
+    registry.raise_on = "check_availability"
+    client = _client(
+        [
+            _tool_use_response([("check_availability", {"date": "2026-08-18"})]),
+            _text_response("I could not check that just now."),
+        ]
+    )
+
+    _, result = await _run(client, registry, _bursts("anything free Tuesday?"))
+
+    # It raised nothing, and the loop went back to the model with the failure in hand.
+    assert client.messages.create.await_count == 2
+    assert result.tool_calls == 1
+
+
+async def test_a_cancelled_booking_loop_is_still_a_cancellation() -> None:
+    # A staff member taking the conversation cancels the turn's task mid-call. That
+    # must stay a cancellation: converting it into a pipeline error would log an
+    # Anthropic outage every time a person stepped in.
+    registry = _RecordingRegistry({})
+    client = _client([asyncio.CancelledError()])
+
+    with pytest.raises(asyncio.CancelledError):
+        await _run(client, registry, _bursts("book me Friday at 9"))

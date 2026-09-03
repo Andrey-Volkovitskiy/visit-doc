@@ -175,6 +175,33 @@ def bound_to_last_n_turns(
     return kept_bursts + trailing
 
 
+def _from_first_patient_burst(bursts: list[list[Message]]) -> list[list[Message]]:
+    """Return `bursts` from its first patient-sided burst onwards.
+
+    Returns: the run of `bursts` starting at its first patient-sided burst, or an empty
+        list when it holds none at all.
+
+    A clinic-sided burst at the front is the one burst the window cannot explain:
+    whatever it answers is either off the front of the window - `bound_to_last_n_turns`
+    cuts a fixed number of bursts, and a silent window's split makes that cut land
+    mid-turn - or was never said, as when staff open a conversation the patient has not
+    spoken in yet. It is dropped rather than relabelled: calling the clinic's words the
+    patient's would put a sentence the patient never wrote into every later turn of the
+    conversation.
+    """
+    first_patient = next(
+        (
+            index
+            for index, burst in enumerate(bursts)
+            if burst[0].sender == MessageSender.PATIENT
+        ),
+        None,
+    )
+    if first_patient is None:
+        return []
+    return bursts[first_patient:]
+
+
 def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
     """Build the alternating `user`/`assistant` list for a Claude `messages` call.
 
@@ -191,9 +218,18 @@ def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
     never produces them, but `exclude_silent_window` does - it splits one patient burst
     in two - and the Messages API requires strict alternation, so the rejoining happens
     here rather than being a rule every caller of that function has to remember.
+
+    Leading clinic-sided bursts are dropped for the same reason: the Messages API also
+    requires the first entry to use the `user` role and rejects the whole call
+    otherwise, which would fail every model call of the turn, not just this rendering.
+    Both rules belong to the wire format, so they are enforced where the wire format is
+    built - the burst structure itself is left as it was, since `trailing_question`,
+    `silent_window` and `derive_reply_to_message_ids` read it for their own purposes.
+    Returns an empty list only for a history holding no patient message at all, which
+    a turn never has: the message it is answering is always in it.
     """
     entries: list[MessageParam] = []
-    for burst in bursts:
+    for burst in _from_first_patient_burst(bursts):
         is_patient = burst[0].sender == MessageSender.PATIENT
         role: _Role = "user" if is_patient else "assistant"
         content = "\n\n".join(m.content for m in burst)

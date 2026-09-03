@@ -590,3 +590,66 @@ def test_a_message_a_staff_reply_cleared_is_never_described_as_silenced() -> Non
     # mark, so the message it answered is an ordinary one again and no note is rendered
     # about it at all.
     assert _rendered_window(None) == ""
+
+
+# --- the rendered history always opens on the patient ------------------------------
+#
+# The Messages API rejects a `messages` list whose first entry is not `user`, and the
+# rejection fails the whole call - so a history that opens on the clinic's side breaks
+# every model call of the turn, not just the one that rendered it. Nothing upstream
+# guarantees the first burst is patient-sided, so `to_claude_messages` guarantees it
+# here.
+
+
+def test_a_staff_message_the_patient_never_answered_does_not_open_the_history() -> None:
+    # Staff can post into a conversation the patient has not spoken in yet; the
+    # patient's first message then follows a clinic-sided burst.
+    history = [
+        _row(MessageSender.STAFF, "Hi - this is the clinic, following up.", id="s1"),
+        _row(MessageSender.PATIENT, "oh hi - what are your hours?", id="p1"),
+    ]
+
+    entries = to_claude_messages(split_into_bursts(history))
+
+    assert entries == [{"role": "user", "content": "oh hi - what are your hours?"}]
+
+
+def test_a_reply_whose_question_was_truncated_away_does_not_open_the_history() -> None:
+    # A silent window splits the trailing burst in two, which makes the complete-turn
+    # run an odd number of bursts - so the even-sized window `bound_to_last_n_turns`
+    # keeps starts on a reply whose own question is off the front of it.
+    history = [row for i in range(1, 9) for row in _turn(i)] + [
+        _marked(
+            MessageSender.PATIENT, "are you there?", id="p_silent", mark="unanswered"
+        ),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p_now", mark=None),
+    ]
+    bounded = bound_to_last_n_turns(
+        exclude_silent_window(split_into_bursts(history)), n=5
+    )
+
+    entries = to_claude_messages(bounded)
+
+    assert bounded[0][0].id == "a4"  # the dangling reply
+    assert entries[0]["role"] == "user"
+    assert entries[0]["content"] == "patient message 5"
+
+
+def test_dropping_the_opening_reply_leaves_the_bursts_themselves_alone() -> None:
+    # The drop belongs to the wire format, not to the conversation: the silent window
+    # and the message this turn answers are still read off the bursts, unchanged.
+    history = [
+        _row(MessageSender.STAFF, "Hi - this is the clinic, following up.", id="s1"),
+        _marked(MessageSender.PATIENT, "are you there?", id="p1", mark="unanswered"),
+        _marked(MessageSender.PATIENT, "what are your hours?", id="p2", mark=None),
+    ]
+    bursts = exclude_silent_window(split_into_bursts(history))
+
+    entries = to_claude_messages(bursts)
+
+    assert [_ids(burst) for burst in bursts] == [["s1"], ["p1"], ["p2"]]
+    assert _ids(silent_window(bursts)) == ["p1"]
+    assert derive_reply_to_message_ids(bursts) == ["p2"]
+    assert entries == [
+        {"role": "user", "content": "are you there?\n\nwhat are your hours?"}
+    ]

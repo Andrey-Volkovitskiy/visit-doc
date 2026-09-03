@@ -188,6 +188,10 @@ function App() {
           void load().catch(() => undefined);
         }}
         lastMessageAt={activeLastMessageAt}
+        // And how many times that poll has answered, so a refetch of this thread that
+        // failed is attempted again on the next tick rather than waiting on a value
+        // that has already stopped changing.
+        pollTick={poll.tick}
       />
         </div>
         <div data-testid="staff-pane" style={{ flex: 1, minWidth: 0 }}>
@@ -208,6 +212,7 @@ function App() {
             // the patient's: a patient message arriving into the conversation a staff
             // member is reading appears there without them clicking away and back.
             lastMessageAt={staffConversation?.last_message_at ?? null}
+            pollTick={poll.tick}
             onSetAssistant={handleSetAssistant}
           />
           {/*

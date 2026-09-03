@@ -185,7 +185,11 @@ face. `201` returns the created `MessageOut`.
 Allowed in **every** conversation of the session, escalated or not (FR-024). There is no conversation
 a staff member must escalate first in order to speak in, and none they may not speak in twice.
 
-`404` if the chat belongs to another session or does not exist.
+`404` if the chat belongs to another session or does not exist — including when it stopped existing
+partway through the six steps, where the cascade that removed the chat has already taken the
+inserted message with it. The insert having committed does not make `201` the honest answer: by the
+time the response is written the message provably is not in the thread, and a staff member told
+their reply landed would find no trace of it on the next read.
 
 ---
 
@@ -225,6 +229,12 @@ position, and not something a staff member can manufacture.
 
 Returns the conversation's row in the same shape `GET /console/conversations` uses, so the caller
 does not have to wait for the next poll to see the result.
+
+`404` if the chat belongs to another session or does not exist — including when it stopped existing
+between being resolved and being written to, where the write matches no row and neither direction of
+the switch moved: nothing was written, so there is no state to report. The staff message route
+answers that window the same way, though not for the same reason — there the insert had already
+landed, and the cascade took it away again.
 
 ---
 

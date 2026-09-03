@@ -71,18 +71,31 @@ interface ChatWindowProps {
   /**
    * The newest message time the console poll reports for this chat.
    *
-   * When it advances past the value this pane last acted on, something wrote into the
+   * When it advances past the value this pane last read, something wrote into the
    * thread that this pane did not — a staff reply — and the history is refetched. That
    * is the whole mechanism by which a staff reply appears here without a reload, and it
    * rides the one poll that already runs rather than opening a channel of its own.
    */
   lastMessageAt?: string | null;
+  /**
+   * How many times that poll has answered, which changes on every tick.
+   *
+   * It is what makes a *retry* possible at all. `lastMessageAt` stops changing the
+   * moment the newest message is the newest message, so an effect watching only it runs
+   * once per new message and never again — a read that failed would have nothing left to
+   * wake it. Ticking this instead lets the refetch below be attempted every couple of
+   * seconds for as long as it is still owed, and cost nothing on the ticks where it is
+   * not. Omitted by a caller not feeding this pane the poll, which then behaves as it
+   * always did: a refetch per new value, and no retry.
+   */
+  pollTick?: number;
 }
 
 export function ChatWindow({
   chatId,
   onTurnComplete,
   lastMessageAt,
+  pollTick,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -100,10 +113,11 @@ export function ChatWindow({
   // started, or its final `done` event (and the reply the server already
   // persisted) would be thrown away client-side, only reappearing on reload.
   const activeControllersRef = useRef<Set<AbortController>>(new Set());
-  // The poll value this pane has already accounted for. Compared by identity rather
-  // than by clock arithmetic: an optimistic local message carries the browser's own
-  // time, and comparing a server timestamp against it would make a skewed clock decide
-  // whether a staff reply is ever shown.
+  // The poll value this pane has already read the history for — recorded when that read
+  // *lands*, never when it is issued, so it means "accounted for" and not "attempted".
+  // Compared by identity rather than by clock arithmetic: an optimistic local message
+  // carries the browser's own time, and comparing a server timestamp against it would
+  // make a skewed clock decide whether a staff reply is ever shown.
   //
   // `undefined` is "nothing accounted for yet" and is distinct from `null`, which is a
   // real answer the poll gives about a chat holding no messages. Collapsing the two
@@ -112,6 +126,17 @@ export function ChatWindow({
   // the branch below would file it as "describes the history just loaded", and a staff
   // member's opening line would sit unfetched until a reload.
   const handledLastMessageAtRef = useRef<string | null | undefined>(undefined);
+  // Whether a poll-driven read is still outstanding. Since the effect below now re-runs
+  // on every tick, a tick arriving mid-read would otherwise ask the same question a
+  // second time; it is skipped instead, and whatever the outstanding answer does not
+  // cover is still unhandled when it arrives, so the tick after it acts on it.
+  const refetchInFlightRef = useRef(false);
+  // The chat this pane is showing, as a read that closed over an older one can see it.
+  // A poll-driven read is judged stale by *this*, and only by this: `chatId` inside such
+  // a callback is the chat the read was issued for, and comparing the two is the whole
+  // question of whether its answer still belongs on screen. Unmounting needs no guard of
+  // its own — React drops a state update for a component that is gone.
+  const shownChatIdRef = useRef<string | null>(chatId);
 
   useEffect(() => {
     // Switching chats abandons whatever the previous one had in flight: its reply
@@ -122,6 +147,11 @@ export function ChatWindow({
     }
     activeControllersRef.current.clear();
     handledLastMessageAtRef.current = undefined;
+    // Set before the refetch effect below can run for the new chat, since effects run in
+    // the order they are declared: a read still outstanding for the old one now compares
+    // unequal and its answer is dropped, where a read issued from here on compares equal
+    // however many poll ticks pass while it is in flight.
+    shownChatIdRef.current = chatId;
     setMessages([]);
     setStreaming({});
     setError(null);
@@ -167,24 +197,43 @@ export function ChatWindow({
     // finishes: replacing the history mid-stream would race the reply about to be
     // appended to it.
     if (streamingCount > 0) return;
-    handledLastMessageAtRef.current = lastMessageAt;
+    // One read at a time; see the ref's own note.
+    if (refetchInFlightRef.current) return;
 
-    let current = true;
+    refetchInFlightRef.current = true;
     void fetchChatHistory(chatId)
       .then((history) => {
+        // Judged by the chat it was issued for, never by whether this effect has re-run
+        // since it was: with the tick among its dependencies it re-runs every couple of
+        // seconds, and a read outstanding across one of those is not stale — it is only
+        // slower than the poll. Discarding it for that would waste every read that
+        // crosses a tick boundary, and against a backend slower than the interval the
+        // pane would never update at all. Switching chats is what makes an answer wrong,
+        // and it is what this compares.
+        if (shownChatIdRef.current !== chatId) return;
+        // Marked handled here, on the answer that actually arrived, and not up at the
+        // point the read was issued. Marking it there made the marker mean "attempted",
+        // which loses the message a failed read was fetching: the staff reply is still
+        // the newest message afterwards, so the poll goes on reporting the very time
+        // already filed as handled, and no tick until someone writes into the thread
+        // again would disagree with it.
+        handledLastMessageAtRef.current = lastMessageAt;
         // Deferred until no turn was streaming, but issued before whatever started
         // afterwards: a send made while this was in flight, and the reply it drew, are
         // both missing from an answer that was composed before either existed.
         // Reconciling keeps them on screen instead of blanking them until the next tick.
-        if (current) setMessages((shown) => reconcile(shown, history));
+        setMessages((shown) => reconcile(shown, history));
       })
-      // A failed refetch leaves the thread as it was; the next poll tick tries again,
-      // which is not worth an error banner over a message the patient has not missed.
-      .catch(() => undefined);
-    return () => {
-      current = false;
-    };
-  }, [chatId, lastMessageAt, streamingCount]);
+      // A failed refetch leaves the thread as it was and the tick unhandled, so the next
+      // one genuinely does try again - which is worth more than an error banner over a
+      // message the patient has not missed.
+      .catch(() => undefined)
+      .finally(() => {
+        // Cleared whether or not this pane still wants the answer: a chat switched away
+        // from mid-read must not leave the new chat's refetch blocked forever.
+        refetchInFlightRef.current = false;
+      });
+  }, [chatId, lastMessageAt, pollTick, streamingCount]);
 
   function clearStreaming(turnKey: string): void {
     setStreaming((prev) => {

@@ -26,15 +26,19 @@ async def search_faq(
     qdrant_client: AsyncQdrantClient,
     voyage_client: AsyncClient,
     query: str,
+    session_id: str,
     live_revisions: list[str],
     limit: int = 5,
 ) -> list[RetrievedChunk]:
     """Embed `query` and return the nearest FAQ chunks, with their similarity scores.
 
     Args:
-        live_revisions: Every revision the caller's session currently publishes. An
-            empty list means the session has no corpus, which is the ordinary starting
-            state of every session - not a failed read, which raises instead.
+        session_id: The session whose corpus this search may reach. Passed beside the
+            revisions rather than inferred from them, and both become terms on the
+            search itself.
+        live_revisions: Every revision that session currently publishes. An empty list
+            means the session has no corpus, which is the ordinary starting state of
+            every session - not a failed read, which raises instead.
 
     Raises: TurnPipelineError wrapping any failure in embedding or retrieval.
 
@@ -54,7 +58,9 @@ async def search_faq(
     logger.info("turn.message_embedded")
 
     try:
-        chunks = await search(qdrant_client, vectors[0], live_revisions, limit=limit)
+        chunks = await search(
+            qdrant_client, session_id, vectors[0], live_revisions, limit=limit
+        )
     except Exception as exc:
         raise TurnPipelineError("retrieval", exc) from exc
 

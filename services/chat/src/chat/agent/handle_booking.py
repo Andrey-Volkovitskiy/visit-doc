@@ -38,6 +38,7 @@ from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import ChatTokenEvent
+from chat.rag.retriever import TurnPipelineError
 
 _MAX_TOKENS = 1024
 # The capability the node reads for itself, before the model gets a turn.
@@ -507,6 +508,10 @@ async def handle_booking(
     Yields: in streaming mode, one `ChatTokenEvent` carrying the whole reply, then
         exactly one `BookingResult` as the final item.
 
+    Raises: TurnPipelineError wrapping any failure of the loop's model call. A tool
+        that fails is not one of those - it is answered to the model and the loop
+        continues.
+
     The reply is emitted whole rather than token by token, unlike the FAQ path. Only the
     loop's *last* model call produces the reply - every earlier one is a tool request -
     and which call is the last is not known until it comes back without tool blocks. So
@@ -557,13 +562,20 @@ async def handle_booking(
             messages=to_loggable_messages(messages),
         )
         started = time.monotonic()
-        response = await anthropic_client.messages.create(
-            model=settings.GENERATION_MODEL,
-            max_tokens=_MAX_TOKENS,
-            system=system,
-            messages=messages,
-            tools=tools,
-        )
+        try:
+            response = await anthropic_client.messages.create(
+                model=settings.GENERATION_MODEL,
+                max_tokens=_MAX_TOKENS,
+                system=system,
+                messages=messages,
+                tools=tools,
+            )
+        except Exception as exc:
+            # Only the model call is inside this - the tool dispatch below reports its
+            # own failures to the model and never raises. Widening it to the rest of
+            # the iteration would file a scheduler outage under `generation` and send
+            # an operator to the model API for it.
+            raise TurnPipelineError("generation", exc) from exc
         model_duration_ms = _elapsed_ms(started)
         tool_uses = [block for block in response.content if block.type == "tool_use"]
         reply_text = "".join(

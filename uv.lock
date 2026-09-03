@@ -398,6 +398,7 @@ name = "chat"
 version = "0.1.0"
 source = { editable = "services/chat" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "alembic" },
     { name = "anthropic" },
     { name = "asyncpg" },
@@ -415,6 +416,7 @@ dependencies = [
     { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "voyageai" },
+    { name = "yarl" },
 ]
 
 [package.dev-dependencies]
@@ -424,6 +426,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.14.3" },
     { name = "alembic", specifier = ">=1.18.5" },
     { name = "anthropic", specifier = ">=0.120.2" },
     { name = "asyncpg", specifier = ">=0.31.0" },
@@ -441,6 +444,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=26.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
     { name = "voyageai", specifier = ">=0.5.0" },
+    { name = "yarl", specifier = ">=1.24.5" },
 ]
 
 [package.metadata.requires-dev]

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StaffThread } from "../src/components/StaffThread";
 import * as consoleApi from "../src/lib/consoleApi";
@@ -185,6 +185,108 @@ describe("StaffThread: writing into it", () => {
 
     expect(post).not.toHaveBeenCalled();
   });
+
+  it("posts one reply, not two, when the send is clicked again before it lands", async () => {
+    // A staff member who clicks again because nothing appeared to happen must not put a
+    // second copy of the same sentence into a patient's thread. The box is only cleared
+    // once the post lands, so a second call before then reads the very same text and
+    // passes the very same guards - and both copies are stored, not just shown.
+    let landPost: (posted: Message) => void = () => undefined;
+    const post = vi.spyOn(consoleApi, "postStaffMessage").mockReturnValue(
+      new Promise<Message>((resolve) => {
+        landPost = resolve;
+      }),
+    );
+
+    renderThread();
+    fireEvent.change(await screen.findByLabelText("reply as staff"), {
+      target: { value: "On it." },
+    });
+    fireEvent.click(screen.getByText("Send as staff"));
+    fireEvent.click(screen.getByText("Send as staff"));
+
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith(CHAT_ID, "On it.");
+
+    await act(async () => {
+      landPost(message({ id: "s1", sender: "staff", content: "On it." }));
+    });
+  });
+
+  it("refuses the second send in the handler, before any repaint could disable it", async () => {
+    // Both clicks land in one batch, so nothing has re-rendered between them: the button
+    // still carries the enabled markup React painted before the first, and a guard read
+    // from state would still read the state that first click has not committed yet. What
+    // stops the duplicate here is the handler's own latch.
+    let landPost: (posted: Message) => void = () => undefined;
+    const post = vi.spyOn(consoleApi, "postStaffMessage").mockReturnValue(
+      new Promise<Message>((resolve) => {
+        landPost = resolve;
+      }),
+    );
+
+    renderThread();
+    fireEvent.change(await screen.findByLabelText("reply as staff"), {
+      target: { value: "On it." },
+    });
+    const send = screen.getByText("Send as staff");
+    await act(async () => {
+      fireEvent.click(send);
+      fireEvent.click(send);
+    });
+
+    expect(post).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      landPost(message({ id: "s1", sender: "staff", content: "On it." }));
+    });
+  });
+
+  it("says the send is under way, so nobody clicks again to find out", async () => {
+    let landPost: (posted: Message) => void = () => undefined;
+    vi.spyOn(consoleApi, "postStaffMessage").mockReturnValue(
+      new Promise<Message>((resolve) => {
+        landPost = resolve;
+      }),
+    );
+
+    renderThread();
+    fireEvent.change(await screen.findByLabelText("reply as staff"), {
+      target: { value: "On it." },
+    });
+    fireEvent.click(screen.getByText("Send as staff"));
+
+    await waitFor(() =>
+      expect(screen.getByText("Send as staff")).toBeDisabled(),
+    );
+
+    await act(async () => {
+      landPost(message({ id: "s1", sender: "staff", content: "On it." }));
+    });
+    // And it takes the reply again afterwards - the guard is for the send in flight, not
+    // for the rest of the shift.
+    expect(screen.getByText("Send as staff")).toBeEnabled();
+  });
+
+  it("takes the next send after one that failed", async () => {
+    // The failed reply is still in the box by design; a latch left closed would leave a
+    // staff member holding text they can no longer send.
+    const post = vi
+      .spyOn(consoleApi, "postStaffMessage")
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValue(message({ id: "s1", sender: "staff", content: "On it." }));
+
+    renderThread();
+    fireEvent.change(await screen.findByLabelText("reply as staff"), {
+      target: { value: "On it." },
+    });
+    fireEvent.click(screen.getByText("Send as staff"));
+    await waitFor(() => expect(screen.getByTestId("staff-error")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Send as staff"));
+
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(2));
+  });
 });
 
 // --- 007 (US2): the mark on the message that needs a person -----------------------
@@ -370,25 +472,18 @@ describe("StaffThread: following the poll", () => {
     );
   }
 
-  function renderPolled(lastMessageAt: string | null) {
-    return render(
-      <StaffThread
-        chatId={CHAT_ID}
-        assistantMayReply={false}
-        pauseSecondsRemaining={null}
-        lastMessageAt={lastMessageAt}
-        onSetAssistant={vi.fn()}
-      />,
-    );
+  function renderPolled(lastMessageAt: string | null, pollTick?: number) {
+    return render(polled(lastMessageAt, pollTick));
   }
 
-  function polled(lastMessageAt: string | null) {
+  function polled(lastMessageAt: string | null, pollTick?: number) {
     return (
       <StaffThread
         chatId={CHAT_ID}
         assistantMayReply={false}
         pauseSecondsRemaining={null}
         lastMessageAt={lastMessageAt}
+        pollTick={pollTick}
         onSetAssistant={vi.fn()}
       />
     );
@@ -455,16 +550,18 @@ describe("StaffThread: following the poll", () => {
 
   it("does not refetch while the poll keeps reporting the same time", async () => {
     // A 2-second poll that reread every open thread on every tick would cost one
-    // history read per tick per open tab to learn that nothing had happened.
+    // history read per tick per open tab to learn that nothing had happened. The ticks
+    // arrive regardless - they are what lets a failed read be retried - so it is the
+    // marker, not the absence of a tick, that has to keep them free.
     const fetchThread = vi
       .spyOn(consoleApi, "fetchThread")
       .mockResolvedValue(thread({ content: "when can I visit?" }));
 
-    const { rerender } = renderPolled("2026-09-01T12:00:00");
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
     await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(1));
 
-    rerender(polled("2026-09-01T12:00:00"));
-    rerender(polled("2026-09-01T12:00:00"));
+    rerender(polled("2026-09-01T12:00:00", 2));
+    rerender(polled("2026-09-01T12:00:00", 3));
 
     expect(fetchThread).toHaveBeenCalledTimes(1);
   });
@@ -497,6 +594,122 @@ describe("StaffThread: following the poll", () => {
     await waitFor(() => expect(consoleApi.fetchThread).toHaveBeenCalledTimes(2));
     expect(screen.getByTestId("staff-thread")).toHaveTextContent("when can I visit?");
     expect(screen.queryByTestId("staff-error")).toBeNull();
+  });
+
+  it("brings in the message a failed refetch missed, on a later tick reporting the same time", async () => {
+    // Nothing else has happened, so the poll goes on reporting the very time whose read
+    // failed. A marker recorded when that read was *issued* matches every one of those
+    // ticks, and the patient's message stays off the staff member's screen until they
+    // click away and back. Recording what was actually read is what leaves the tick
+    // owed, and the next one pays it.
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "when can I visit?" }))
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValue(
+        thread({ content: "when can I visit?" }, { content: "anyone there?" }),
+      );
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(polled("2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+    // Let that read fail before the next tick arrives, as a 2-second interval would.
+    await act(async () => undefined);
+    expect(screen.getAllByTestId("message")).toHaveLength(1);
+
+    rerender(polled("2026-09-01T12:01:00", 3));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-thread")).toHaveTextContent("anyone there?"),
+    );
+  });
+
+  it("applies a read that was still outstanding when the next tick arrived", async () => {
+    // A read slower than the two-second interval spans a tick, and every tick re-runs
+    // the effect. That says nothing about the answer: what makes one stale is the
+    // conversation being closed, and this one is still open. Judging it by "the effect
+    // has re-run since" instead throws away every read that crosses a tick boundary, and
+    // against a backend consistently slower than the interval the thread never updates
+    // at all - a read reissued forever and never landing.
+    let answerSlowRead!: (messages: Message[]) => void;
+    const slowRead = new Promise<Message[]>((resolve) => {
+      answerSlowRead = resolve;
+    });
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "when can I visit?" }))
+      .mockReturnValueOnce(slowRead);
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    rerender(polled("2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+
+    // The next tick arrives while that read is still outstanding.
+    rerender(polled("2026-09-01T12:01:00", 3));
+
+    await act(async () => {
+      answerSlowRead(
+        thread({ content: "when can I visit?" }, { content: "anyone there?" }),
+      );
+      await slowRead;
+    });
+
+    expect(screen.getByTestId("staff-thread")).toHaveTextContent("anyone there?");
+    // And that tick did not ask the same question a second time behind its back.
+    expect(fetchThread).toHaveBeenCalledTimes(2);
+  });
+
+  it("discards a read that answers after another conversation was opened", async () => {
+    // The other half of judging a read by the conversation it was issued for: one
+    // outstanding across a change of conversation is answered from a thread no longer on
+    // screen, and showing that answer would put one patient's messages under another's
+    // name - the one mistake this pane must never make.
+    let answerSlowRead!: (messages: Message[]) => void;
+    const slowRead = new Promise<Message[]>((resolve) => {
+      answerSlowRead = resolve;
+    });
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(thread({ content: "when can I visit?" }))
+      .mockReturnValueOnce(slowRead)
+      .mockResolvedValue(thread({ content: "a different patient entirely" }));
+
+    const { rerender } = renderPolled("2026-09-01T12:00:00", 1);
+    await waitFor(() =>
+      expect(screen.getByText("when can I visit?")).toBeInTheDocument(),
+    );
+
+    rerender(polled("2026-09-01T12:01:00", 2));
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+
+    // The staff member opens another conversation while that read is outstanding.
+    rerender(
+      <StaffThread
+        chatId="01OTHER"
+        assistantMayReply={false}
+        pauseSecondsRemaining={null}
+        lastMessageAt="2026-09-01T12:05:00"
+        pollTick={3}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("a different patient entirely")).toBeInTheDocument(),
+    );
+
+    await act(async () => {
+      answerSlowRead(
+        thread({ content: "when can I visit?" }, { content: "anyone there?" }),
+      );
+      await slowRead;
+    });
+
+    expect(screen.queryByText("anyone there?")).toBeNull();
+    expect(screen.getByText("a different patient entirely")).toBeInTheDocument();
   });
 
   it("shows a staff member's own reply once, not twice, after the refetch it causes", async () => {

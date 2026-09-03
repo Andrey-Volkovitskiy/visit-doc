@@ -13,9 +13,12 @@ whole reason this proxy exists rather than the browser calling that surface itse
 import json
 from typing import Any, Self
 from unittest.mock import patch
+from urllib.parse import unquote
 
 import aiohttp
 import pytest
+import yarl
+from chat.clients import scheduler_rest
 from chat.db.session import engine, session_factory
 from chat.main import app
 from chat.repositories import chat_repository
@@ -39,7 +42,7 @@ class _RecordedRequest:
     def __init__(
         self,
         method: str,
-        url: str,
+        url: yarl.URL,
         body: Any | None,
         headers: dict[str, str],
         timeout: aiohttp.ClientTimeout | None,
@@ -90,7 +93,7 @@ class _FakeHttpSession:
     def request(
         self,
         method: str,
-        url: str,
+        url: yarl.URL,
         *,
         json: Any | None = None,
         headers: dict[str, str] | None = None,
@@ -176,7 +179,7 @@ async def test_every_route_forwards_to_the_service_that_owns_practitioners(
     assert len(transport.requests) == 1
     sent = transport.requests[0]
     assert sent.method == expected_method
-    assert sent.url.endswith(expected_path)
+    assert str(sent.url).endswith(expected_path)
 
 
 @pytest.mark.parametrize(
@@ -282,6 +285,76 @@ async def test_a_delete_relays_the_schedulers_empty_success() -> None:
 
     assert response.status_code == 204
     assert response.content == b""
+
+
+# --- the id is a name, never an address ----------------------------------------------
+
+
+@pytest.mark.parametrize("method", ["PATCH", "DELETE"])
+@pytest.mark.parametrize(
+    ("encoded_id", "decoded_id"),
+    [
+        ("abc%3Fadmin=1", "abc?admin=1"),
+        ("abc%23frag", "abc#frag"),
+        ("%2E%2E", ".."),
+        ("%2E", "."),
+    ],
+)
+async def test_url_metacharacters_in_an_id_cannot_reshape_the_scheduler_path(
+    method: str, encoded_id: str, decoded_id: str
+) -> None:
+    # Starlette hands the route its path param already unquoted, so whoever sent the
+    # request chooses those characters. Interpolated raw they would be read by the HTTP
+    # client's URL parser, not by this code: `?` puts an attacker's query string on an
+    # internal write endpoint carrying the victim's session, `#` truncates the path
+    # before the id, and `..` walks up to the collection itself.
+    session_id = await _session_id()
+    transport = _FakeHttpSession(status=200, payload=_PRACTITIONER)
+
+    await _call(
+        transport,
+        method,
+        f"/console/practitioners/{encoded_id}",
+        session_id=session_id,
+        body={} if method == "PATCH" else None,
+    )
+
+    # What the request line will actually carry: one segment below /practitioners,
+    # with no query and no fragment, still readable as the id that was asked for.
+    sent = transport.requests[0].url
+    assert sent.raw_path.startswith("/practitioners/")
+    segment = sent.raw_path.removeprefix("/practitioners/")
+    assert "/" not in segment
+    assert unquote(segment) == decoded_id
+    assert sent.query_string == ""
+    assert not sent.fragment
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/practitioners/abc?admin=1",
+        "/practitioners/abc#frag",
+        "/practitioners/..",
+        "practitioners",
+    ],
+)
+async def test_the_transport_refuses_a_path_that_is_not_one(path: str) -> None:
+    # The encoding above is a caller's discipline, and a future caller can forget it.
+    # This is the transport's own promise that a path is a path: it fails here, having
+    # sent nothing, rather than addressing whatever the string turned out to name.
+    transport = _FakeHttpSession(status=200, payload=_PRACTITIONER)
+
+    with pytest.raises(ValueError):
+        await scheduler_rest.forward(
+            transport,  # type: ignore[arg-type]
+            "http://scheduler:8001",
+            "PATCH",
+            path,
+            "01SESSION000000000000000000",
+        )
+
+    assert transport.requests == []
 
 
 # --- transport failures, which the scheduler cannot report ---------------------------

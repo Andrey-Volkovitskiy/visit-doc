@@ -169,17 +169,24 @@ async def upsert_chunks(
 
 async def search(
     qdrant_client: AsyncQdrantClient,
+    session_id: str,
     query_vector: list[float],
     live_revisions: list[str],
     limit: int = 5,
 ) -> list[RetrievedChunk]:
-    """Return the nearest chunks to `query_vector` among `live_revisions`.
+    """Return the nearest chunks to `query_vector` among `session_id`'s live revisions.
 
     Args:
         live_revisions: Every revision the caller's own session currently publishes.
-            Applied as a filter term on the search itself, never as a check on its
-            results - so a chunk of a superseded revision, or of another session's
-            entry, is not retrieved rather than retrieved and discarded.
+
+    Both terms are filters on the search itself, never checks on its results, so a
+    chunk of a superseded revision, or of another session's entry, is not retrieved
+    rather than retrieved and discarded.
+
+    The session term is not made redundant by the revision one. A revision is a ULID,
+    and unique only means no collision - it says nothing about who may read the points
+    carrying it, so a revision reaching this function from anywhere but the caller's own
+    rows would otherwise resolve. The predicate is what makes it resolve to nothing.
 
     An empty `live_revisions` matches nothing and returns an empty list.
     """
@@ -189,7 +196,10 @@ async def search(
         collection_name=COLLECTION_NAME,
         query=query_vector,
         query_filter=Filter(
-            must=[FieldCondition(key="revision", match=MatchAny(any=live_revisions))]
+            must=[
+                FieldCondition(key="session_id", match=MatchValue(value=session_id)),
+                FieldCondition(key="revision", match=MatchAny(any=live_revisions)),
+            ]
         ),
         limit=limit,
         with_payload=True,
@@ -210,22 +220,37 @@ async def search(
     return results
 
 
-async def delete_by_entry(qdrant_client: AsyncQdrantClient, faq_entry_id: int) -> None:
-    """Delete all chunks for `faq_entry_id`."""
+async def delete_by_entry(
+    qdrant_client: AsyncQdrantClient, session_id: str, faq_entry_id: int
+) -> None:
+    """Delete every chunk `session_id` owns for `faq_entry_id`.
+
+    Scoped to the session as well as the entry, though an entry id comes from one shared
+    sequence and so is already unique. Unique only means no collision: it says nothing
+    about who may delete the points carrying it, and an id arriving from anywhere but
+    the caller's own rows must address nothing rather than address somebody else's
+    chunks.
+    """
     await qdrant_client.delete(
         collection_name=COLLECTION_NAME,
         points_selector=Filter(
             must=[
-                FieldCondition(key="faq_entry_id", match=MatchValue(value=faq_entry_id))
+                FieldCondition(key="session_id", match=MatchValue(value=session_id)),
+                FieldCondition(
+                    key="faq_entry_id", match=MatchValue(value=faq_entry_id)
+                ),
             ]
         ),
     )
 
 
 async def sweep_chunks(
-    qdrant_client: AsyncQdrantClient, faq_entry_id: int, live_revision: str
+    qdrant_client: AsyncQdrantClient,
+    session_id: str,
+    faq_entry_id: int,
+    live_revision: str,
 ) -> None:
-    """Delete `faq_entry_id`'s chunks from revisions older than `live_revision`.
+    """Delete `session_id`'s chunks of `faq_entry_id` older than `live_revision`.
 
     Args:
         live_revision: A revision of this entry that was live when the caller published
@@ -246,16 +271,18 @@ async def sweep_chunks(
     a later save, and one written by a save that never published, are equally
     unreachable.
 
-    Scoped to this entry and never widened to the session: a session-wide predicate
-    would delete a concurrent save's chunks in the window between their write and the
-    commit that publishes them.
+    The session term narrows this and never widens it: the entry term still decides
+    *which* chunks are candidates, because a predicate covering every entry of the
+    session would delete a concurrent save's chunks in the window between their write
+    and the commit that publishes them.
     """
-    belongs_to_entry = FieldCondition(
-        key="faq_entry_id", match=MatchValue(value=faq_entry_id)
-    )
+    belongs_to_caller = [
+        FieldCondition(key="session_id", match=MatchValue(value=session_id)),
+        FieldCondition(key="faq_entry_id", match=MatchValue(value=faq_entry_id)),
+    ]
     records, _ = await qdrant_client.scroll(
         collection_name=COLLECTION_NAME,
-        scroll_filter=Filter(must=[belongs_to_entry]),
+        scroll_filter=Filter(must=belongs_to_caller),
         limit=_SWEEP_PAGE_LIMIT,
         with_payload=["revision"],
         with_vectors=False,
@@ -271,7 +298,7 @@ async def sweep_chunks(
         collection_name=COLLECTION_NAME,
         points_selector=Filter(
             must=[
-                belongs_to_entry,
+                *belongs_to_caller,
                 FieldCondition(key="revision", match=MatchAny(any=sorted(superseded))),
             ]
         ),

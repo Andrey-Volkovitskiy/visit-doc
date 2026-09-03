@@ -41,18 +41,20 @@ async def test_ensure_collection_is_idempotent() -> None:
 async def test_upsert_search_delete_round_trip() -> None:
     client = _client()
     await ensure_collection(client)
-    revision = str(ULID())
+    session_id, revision = str(ULID()), str(ULID())
     chunks = [ChunkedText(chunk_index=0, chunk_text="visiting hours are 8am to 5pm")]
 
     await upsert_chunks(
-        client, str(ULID()), _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR]
+        client, session_id, _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR]
     )
-    found = await search(client, _TEST_VECTOR, [revision], limit=10)
+    found = await search(client, session_id, _TEST_VECTOR, [revision], limit=10)
     matches = [r for r in found if r.faq_entry_id == _TEST_ENTRY_ID]
     assert matches and matches[0].chunk_text == chunks[0].chunk_text
 
-    await delete_by_entry(client, _TEST_ENTRY_ID)
-    found_after_delete = await search(client, _TEST_VECTOR, [revision], limit=10)
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
+    found_after_delete = await search(
+        client, session_id, _TEST_VECTOR, [revision], limit=10
+    )
     assert all(r.faq_entry_id != _TEST_ENTRY_ID for r in found_after_delete)
 
     await client.close()
@@ -89,51 +91,110 @@ async def test_search_returns_only_chunks_of_the_revisions_it_was_given() -> Non
         [_TEST_VECTOR],
     )
 
-    found = await search(client, _TEST_VECTOR, [live], limit=10)
+    found = await search(client, session_id, _TEST_VECTOR, [live], limit=10)
 
     assert [chunk.chunk_text for chunk in found] == ["live text"]
 
-    await delete_by_entry(client, _TEST_ENTRY_ID)
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
 
 
 async def test_search_cannot_reach_another_sessions_chunks() -> None:
-    # A revision id is minted by one session's save and never shared, so filtering to
-    # this session's live revisions scopes both at once - the session predicate and the
-    # live-revision predicate are the same term.
+    # The deliberate cross-session case: the caller supplies the *owner's* own live
+    # revision, the one value that would match if the revision term were the only one.
+    # Nothing here rests on a revision being unguessable - it is handed over - so what
+    # is being pinned is the session predicate itself rather than ULID uniqueness.
     client = _client()
     await ensure_collection(client)
-    theirs = str(ULID())
+    owner, intruder, theirs = str(ULID()), str(ULID()), str(ULID())
     await upsert_chunks(
         client,
-        str(ULID()),
+        owner,
         _TEST_ENTRY_ID,
         theirs,
         [ChunkedText(chunk_index=0, chunk_text="theirs")],
         [_TEST_VECTOR],
     )
 
-    assert await search(client, _TEST_VECTOR, [str(ULID())], limit=10) == []
+    assert await search(client, intruder, _TEST_VECTOR, [theirs], limit=10) == []
+    still_theirs = await search(client, owner, _TEST_VECTOR, [theirs], limit=10)
+    assert [chunk.chunk_text for chunk in still_theirs] == ["theirs"]
 
-    await delete_by_entry(client, _TEST_ENTRY_ID)
+    await delete_by_entry(client, owner, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_delete_by_entry_cannot_reach_another_sessions_chunks() -> None:
+    # The same case for the delete: the intruder names an entry id that really exists,
+    # which is the only id that could match if the entry term stood alone. An entry id
+    # is unique across sessions, so nothing but the session predicate keeps this from
+    # emptying somebody else's entry.
+    client = _client()
+    await ensure_collection(client)
+    owner, intruder, revision = str(ULID()), str(ULID()), str(ULID())
+    await upsert_chunks(
+        client,
+        owner,
+        _TEST_ENTRY_ID,
+        revision,
+        [ChunkedText(chunk_index=0, chunk_text="theirs")],
+        [_TEST_VECTOR],
+    )
+
+    await delete_by_entry(client, intruder, _TEST_ENTRY_ID)
+
+    survived = await search(client, owner, _TEST_VECTOR, [revision], limit=10)
+    assert [chunk.chunk_text for chunk in survived] == ["theirs"]
+
+    await delete_by_entry(client, owner, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_the_sweep_cannot_reach_another_sessions_chunks() -> None:
+    # And for the sweep, whose delete would otherwise be addressed by an entry id and a
+    # revision it read back itself. The intruder names the owner's entry and passes a
+    # revision newer than the owner's, so every point the owner holds is older than the
+    # one it was given - the whole set the sweep exists to remove.
+    client = _client()
+    await ensure_collection(client)
+    owner, intruder = str(ULID()), str(ULID())
+    # Sorted rather than minted in order: two ULIDs from the same millisecond differ
+    # only in their random tail, and this test needs `newer` to be the greater one.
+    theirs, newer = sorted((str(ULID()), str(ULID())))
+    await upsert_chunks(
+        client,
+        owner,
+        _TEST_ENTRY_ID,
+        theirs,
+        [ChunkedText(chunk_index=0, chunk_text="theirs")],
+        [_TEST_VECTOR],
+    )
+
+    await sweep_chunks(client, intruder, _TEST_ENTRY_ID, newer)
+
+    survived = await search(client, owner, _TEST_VECTOR, [theirs], limit=10)
+    assert [chunk.chunk_text for chunk in survived] == ["theirs"]
+
+    await delete_by_entry(client, owner, _TEST_ENTRY_ID)
     await client.close()
 
 
 async def test_search_with_no_live_revisions_returns_nothing() -> None:
     client = _client()
     await ensure_collection(client)
+    session_id = str(ULID())
     await upsert_chunks(
         client,
-        str(ULID()),
+        session_id,
         _TEST_ENTRY_ID,
         str(ULID()),
         [ChunkedText(chunk_index=0, chunk_text="anything")],
         [_TEST_VECTOR],
     )
 
-    assert await search(client, _TEST_VECTOR, [], limit=10) == []
+    assert await search(client, session_id, _TEST_VECTOR, [], limit=10) == []
 
-    await delete_by_entry(client, _TEST_ENTRY_ID)
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
 
 
@@ -156,12 +217,14 @@ async def test_the_sweep_removes_older_revisions_and_spares_a_newer_one() -> Non
             [_TEST_VECTOR],
         )
 
-    await sweep_chunks(client, _TEST_ENTRY_ID, given)
+    await sweep_chunks(client, session_id, _TEST_ENTRY_ID, given)
 
-    found = await search(client, _TEST_VECTOR, [older, given, newer], limit=10)
+    found = await search(
+        client, session_id, _TEST_VECTOR, [older, given, newer], limit=10
+    )
     assert {chunk.chunk_text for chunk in found} == {given, newer}
 
-    await delete_by_entry(client, _TEST_ENTRY_ID)
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
 
 

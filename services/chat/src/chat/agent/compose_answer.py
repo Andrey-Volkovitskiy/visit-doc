@@ -24,6 +24,7 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     Citation,
 )
+from chat.rag.retriever import TurnPipelineError
 
 _MAX_TOKENS = 1024
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
@@ -136,6 +137,8 @@ async def compose_answer(
 
     Yields: the composed reply's tokens, then exactly one `ChatDoneEvent`.
 
+    Raises: TurnPipelineError wrapping any failure of the composing call.
+
     Citations are carried through from the chunks the FAQ half actually retrieved and
     are never re-reported by the composing model, so a merged answer cites exactly what
     a single-specialist answer would have.
@@ -143,16 +146,19 @@ async def compose_answer(
     prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
 
     answer_parts: list[str] = []
-    async with anthropic_client.messages.stream(
-        model=get_settings().GENERATION_MODEL,
-        max_tokens=_MAX_TOKENS,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        async for event in stream:
-            if event.type == "text":
-                answer_parts.append(event.text)
-                yield ChatTokenEvent(text=event.text)
+    try:
+        async with anthropic_client.messages.stream(
+            model=get_settings().GENERATION_MODEL,
+            max_tokens=_MAX_TOKENS,
+            system=_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": prompt}],
+        ) as stream:
+            async for event in stream:
+                if event.type == "text":
+                    answer_parts.append(event.text)
+                    yield ChatTokenEvent(text=event.text)
+    except Exception as exc:
+        raise TurnPipelineError("generation", exc) from exc
 
     answer_text = "".join(answer_parts)
     citations = faq_result.citations if faq_result is not None else []

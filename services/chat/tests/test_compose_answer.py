@@ -1,5 +1,8 @@
 """Tests for the merge step: what survives it, and what it is forbidden to invent."""
 
+import asyncio
+from collections.abc import AsyncIterator
+from typing import Self
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,9 +15,10 @@ from chat.agent.compose_answer import (
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.correlation import bind_turn_id
 from chat.domain.schemas import AnswerSource, ChatDoneEvent, ChatTokenEvent, Citation
+from chat.rag.retriever import TurnPipelineError
 from structlog.testing import capture_logs
 
-from .conftest import FakeAnthropicStream
+from .conftest import FakeAnthropicStream, FakeTextEvent
 
 _CITATION = Citation(entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5.")
 _REPLY_IDS = ["01TURN"]
@@ -343,3 +347,68 @@ async def test_an_unknown_outcome_may_not_be_composed_as_nothing_having_happened
     system = client.messages.stream.call_args.kwargs["system"]
     assert "not known" in system.lower()
     assert "did not happen" in system.lower() or "nothing happened" in system.lower()
+
+
+async def test_a_failing_composing_call_is_tagged_as_a_generation_failure() -> None:
+    # Untagged, this reached the turn's catch-all as `pipeline_step="unknown"` and
+    # raised no `critical.dependency_unreachable` - so the same Anthropic outage
+    # alerted on a FAQ-only turn and stayed silent on a merged one.
+    client = MagicMock()
+    client.messages.stream.side_effect = RuntimeError("overloaded")
+
+    with pytest.raises(TurnPipelineError) as raised:
+        await _compose(
+            client,
+            faq_result=_grounded_faq(),
+            booking_reply="Friday at 9 it is.",
+            booking_outcome=str(BookingOutcome.BOOKED),
+        )
+
+    assert raised.value.pipeline_step == "generation"
+    assert "overloaded" in str(raised.value.cause)
+
+
+class _StallingStream:
+    """A stream that yields one token and then never produces another."""
+
+    def __init__(self, first_token: str, started: asyncio.Event) -> None:
+        self._first_token = first_token
+        self._started = started
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *_exc: object) -> None:
+        return None
+
+    def __aiter__(self) -> AsyncIterator[FakeTextEvent]:
+        return self._generate()
+
+    async def _generate(self) -> AsyncIterator[FakeTextEvent]:
+        yield FakeTextEvent(self._first_token)
+        self._started.set()
+        await asyncio.Event().wait()
+
+
+async def test_cancelling_a_merged_turn_is_still_a_cancellation() -> None:
+    # A staff member taking the conversation cancels the turn's task while the merge
+    # is mid-stream. `except Exception` must not see that - `CancelledError` is a
+    # `BaseException` - or every takeover would be logged as a model outage.
+    started = asyncio.Event()
+    client = MagicMock()
+    client.messages.stream.return_value = _StallingStream("Visiting ", started)
+
+    async def consume() -> None:
+        await _compose(
+            client,
+            faq_result=_grounded_faq(),
+            booking_reply="Friday at 9 it is.",
+            booking_outcome=str(BookingOutcome.BOOKED),
+        )
+
+    task = asyncio.create_task(consume())
+    await started.wait()
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task

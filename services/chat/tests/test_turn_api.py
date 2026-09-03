@@ -99,7 +99,7 @@ async def seeded_entry() -> AsyncIterator[int]:
     yield entry.id
 
     await engine.dispose()
-    await remove_entry_chunks(qdrant_client, entry.id)
+    await remove_entry_chunks(qdrant_client, seeded_session.id, entry.id)
     async with session_factory() as session:
         await faq_repository.delete(session, seeded_session.id, entry.id)
     await qdrant_client.close()
@@ -595,6 +595,71 @@ def test_generation_failure_logs_turn_error_with_step(seeded_entry: int) -> None
     assert len(turn_ids) == 1
     assert events["turn.error"]["pipeline_step"] == "generation"
     assert "boom" in events["turn.error"]["error_detail"]
+
+
+def test_a_merged_turn_reports_a_model_outage_as_a_generation_failure(
+    seeded_entry: int,
+) -> None:
+    # The same outage as the FAQ-only case above, on a turn the classifier happened to
+    # route to two specialists. Untagged, the composing call reached the pipeline's
+    # catch-all as `pipeline_step="unknown"` and raised no outage at all - so whether
+    # FR-015's alert fired depended on which specialist ran, not on what failed.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting ", "hours are 8am to 5pm."],
+            intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+            compose_error=RuntimeError("overloaded"),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False) as client,
+        ):
+            turn(client, "when can I visit, and can I book Friday?")
+
+    errors = [entry for entry in logs if entry["event"] == "turn.error"]
+    assert [entry["pipeline_step"] for entry in errors] == ["generation"]
+    # Filtered by dependency rather than counted: the booking half also reads the
+    # roster, and no scheduler runs in this tier, so that call raises its own outage.
+    outages = [
+        entry
+        for entry in logs
+        if entry["event"] == "critical.dependency_unreachable"
+        and entry["dependency"] == "anthropic_api"
+    ]
+    assert len(outages) == 1
+    assert "overloaded" in outages[0]["error_detail"]
+
+
+def test_a_booking_turn_reports_a_model_outage_as_a_generation_failure() -> None:
+    # The third generation call site. The booking loop's model call sits between tool
+    # dispatches, so an untagged failure there read as a graph node blowing up -
+    # pointing an operator at the pipeline while Anthropic was the thing that was down.
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING],
+            booking_error=RuntimeError("overloaded"),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False) as client,
+        ):
+            turn(client, "I'd like an appointment on Friday")
+
+    errors = [entry for entry in logs if entry["event"] == "turn.error"]
+    assert [entry["pipeline_step"] for entry in errors] == ["generation"]
+    # Filtered by dependency rather than counted: the booking half also reads the
+    # roster, and no scheduler runs in this tier, so that call raises its own outage.
+    outages = [
+        entry
+        for entry in logs
+        if entry["event"] == "critical.dependency_unreachable"
+        and entry["dependency"] == "anthropic_api"
+    ]
+    assert len(outages) == 1
+    assert "overloaded" in outages[0]["error_detail"]
 
 
 async def test_generation_failure_clears_in_flight_registry_entry(
@@ -1711,6 +1776,35 @@ def test_a_turn_that_settles_no_reply_still_tells_the_patient_it_ended() -> None
     assert lines[-1] == {"type": "cancelled"}
     # `cancelled` and not `done`, because it is the true one: nothing was stored.
     assert [m["sender"] for m in history] == ["patient"]
+
+
+def test_a_turn_that_settles_no_reply_deregisters_before_it_takes_the_lock() -> None:
+    # Deregistration used to sit behind a short-circuiting `and`, so a turn that settled
+    # no reply skipped it entirely and was still registered when it queued on the chat's
+    # lock for its own writes. A staff post takes that lock first and only then asks for
+    # a cancellation, so what it awaited was a task blocked on the very lock the post
+    # itself was holding - and `pg_advisory_lock` has no timeout to end that wait.
+    registered_when_locked: list[bool] = []
+    real_lock_chat = chat_repository.lock_chat
+
+    async def recording_lock_chat(db_session: AsyncSession, chat_id: str) -> None:
+        registered_when_locked.append(chat_id in generation_registry._in_flight)
+        await real_lock_chat(db_session, chat_id)
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn.run_turn", _StubGraph(ChatTokenEvent(text=_STUB_REPLY))),
+        patch.object(chat_repository, "lock_chat", recording_lock_chat),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            response = turn(client, "when can I visit?")
+
+    assert response.status_code == 200
+    # Twice, and neither one may find this turn still cancellable: the first takes the
+    # lock to insert the patient's message, before the turn is registered at all, and
+    # the second to write its outcome, after it has deregistered itself.
+    assert registered_when_locked == [False, False]
 
 
 def test_an_event_shape_the_turn_cannot_name_is_dropped_rather_than_fatal() -> None:

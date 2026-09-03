@@ -21,6 +21,11 @@ async def reserve_id(session: AsyncSession) -> int:
     create write its indexed chunks - each carrying the entry they belong to - before
     the row that makes them live exists. A reserved id that is never published is
     simply skipped; the sequence is not a count of rows.
+
+    The value is never returned twice, to this caller or any other, and nothing resets
+    the sequence - so an id from here is fresh, and no chunk written by an earlier
+    attempt can be carrying it. A create therefore has no older revision of its own to
+    sweep, and adding a sweep to that path would only ever scroll and find nothing.
     """
     result = await session.execute(text("SELECT nextval('faq_entries_id_seq')"))
     return int(result.scalar_one())

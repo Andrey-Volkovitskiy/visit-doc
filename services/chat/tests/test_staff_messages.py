@@ -9,14 +9,14 @@ FR-027c an implementation gets wrong by clearing the column.
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Self
+from typing import Any, Self
 from unittest.mock import MagicMock, patch
 
 import pytest
 from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
-from chat.domain.models import AttentionMark, EscalationReason, MessageSender
+from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
 from chat.main import app
 from chat.rag.indexing import publish_revision
@@ -224,6 +224,63 @@ async def test_a_request_with_no_session_cookie_is_reported_the_same_way() -> No
     response = await _post(None, chat_id)
 
     assert response.status_code == 404
+
+
+def _deleting_after_the_insert(
+    session_id: str, chat_id: str
+) -> Callable[..., Awaitable[Message | None]]:
+    """Insert exactly as the route asked, then delete the chat out from under it."""
+    insert = chat_repository.create_message
+
+    async def create_then_delete(*args: Any, **kwargs: Any) -> Message | None:
+        message = await insert(*args, **kwargs)
+        async with session_factory() as session:
+            await chat_repository.delete_chat(session, chat_id, session_id)
+        return message
+
+    return create_then_delete
+
+
+async def test_a_chat_deleted_after_the_post_landed_is_reported_as_gone() -> None:
+    # The window the lock does not close, since no deletion takes it: another tab, or
+    # the admin sweep, removes the conversation after the insert has committed, and the
+    # cascade takes the staff message with it. A 201 there would hand a staff member a
+    # message id their own thread does not hold and no refetch will find.
+    session_id, chat_id = await _chat()
+
+    with patch.object(
+        chat_repository,
+        "create_message",
+        _deleting_after_the_insert(session_id, chat_id),
+    ):
+        response = await _post(session_id, chat_id)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "chat not found"
+    async with session_factory() as session:
+        assert await chat_repository.list_messages(session, chat_id) == []
+
+
+async def test_a_post_the_cascade_removed_is_recorded_as_no_post_at_all() -> None:
+    # The same window, read from the log instead of the status line. A
+    # `staff.message_posted` entry there names a message nothing can be found under,
+    # and counts a reply the patient will never see as one they were sent.
+    session_id, chat_id = await _chat(escalated=True)
+
+    with (
+        patch.object(
+            chat_repository,
+            "create_message",
+            _deleting_after_the_insert(session_id, chat_id),
+        ),
+        capture_logs() as logs,
+    ):
+        response = await _post(session_id, chat_id)
+
+    assert response.status_code == 404
+    events = [entry["event"] for entry in logs]
+    assert "staff.message_posted" not in events
+    assert "escalation.ended" not in events
 
 
 @pytest.mark.parametrize("content", ["", "   ", "a" * 2001])

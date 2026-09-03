@@ -97,11 +97,11 @@ async def test_publish_revision_refuses_to_publish_a_revision_with_no_chunks() -
     upsert.assert_not_called()
 
 
-async def test_the_sweep_addresses_one_entry_and_spares_its_live_revision() -> None:
+async def test_the_sweep_addresses_one_entry_of_one_session() -> None:
     with patch("chat.rag.indexing.sweep_chunks") as sweep:
-        await sweep_entry(MagicMock(), 7, "01LIVEREVISION")
+        await sweep_entry(MagicMock(), "01SESSION", 7, "01LIVEREVISION")
 
-    assert sweep.call_args.args[1:] == (7, "01LIVEREVISION")
+    assert sweep.call_args.args[1:] == ("01SESSION", 7, "01LIVEREVISION")
 
 
 async def test_a_failed_sweep_raises_nothing_and_logs_nothing() -> None:
@@ -112,7 +112,7 @@ async def test_a_failed_sweep_raises_nothing_and_logs_nothing() -> None:
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
         bind_operation_id(),
     ):
-        await sweep_entry(MagicMock(), 1, "01LIVEREVISION")
+        await sweep_entry(MagicMock(), "01SESSION", 1, "01LIVEREVISION")
 
     assert logs == []
 
@@ -125,16 +125,18 @@ async def test_removing_a_deleted_entrys_chunks_is_equally_silent() -> None:
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
         bind_operation_id(),
     ):
-        await remove_entry_chunks(MagicMock(), 1)
+        await remove_entry_chunks(MagicMock(), "01SESSION", 1)
 
     assert logs == []
 
 
-async def test_removing_a_deleted_entrys_chunks_addresses_that_entry() -> None:
+async def test_removing_a_deleted_entrys_chunks_addresses_that_session_and_entry() -> (
+    None
+):
     with patch("chat.rag.indexing.delete_by_entry") as delete:
-        await remove_entry_chunks(MagicMock(), 7)
+        await remove_entry_chunks(MagicMock(), "01SESSION", 7)
 
-    assert delete.call_args.args[1] == 7
+    assert delete.call_args.args[1:] == ("01SESSION", 7)
 
 
 # --- 007: an empty corpus costs nothing, and is not a failed read -----------------
@@ -148,7 +150,7 @@ async def test_search_faq_with_no_live_revisions_calls_no_dependency() -> None:
         patch("chat.rag.retriever.embed_texts") as embed,
         patch("chat.rag.retriever.search") as search_points,
     ):
-        found = await search_faq(MagicMock(), MagicMock(), "anything", [])
+        found = await search_faq(MagicMock(), MagicMock(), "anything", "01SESSION", [])
 
     assert found == []
     embed.assert_not_called()
@@ -156,13 +158,14 @@ async def test_search_faq_with_no_live_revisions_calls_no_dependency() -> None:
 
 
 async def test_search_faq_with_live_revisions_passes_them_to_the_search() -> None:
-    # The revisions reach the store as a filter term on the search itself, not as a
-    # predicate applied to whatever came back.
+    # The session and the revisions both reach the store as filter terms on the search
+    # itself, not as predicates applied to whatever came back.
     revisions = ["01REVISIONAAA", "01REVISIONBBB"]
     with (
         patch("chat.rag.retriever.embed_texts", return_value=[[0.1]]),
         patch("chat.rag.retriever.search", return_value=[]) as search_points,
     ):
-        await search_faq(MagicMock(), MagicMock(), "anything", revisions)
+        await search_faq(MagicMock(), MagicMock(), "anything", "01SESSION", revisions)
 
-    assert search_points.call_args.args[2] == revisions
+    assert search_points.call_args.args[1] == "01SESSION"
+    assert search_points.call_args.args[3] == revisions

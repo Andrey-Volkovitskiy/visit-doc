@@ -301,6 +301,52 @@ async def test_a_chat_from_another_session_is_reported_as_never_having_existed()
     assert (await _switch(None, chat_id, True)).status_code == 404
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+async def test_a_chat_deleted_while_the_switch_ran_is_reported_the_same_way(
+    enabled: bool,
+) -> None:
+    # The window the resolve cannot close: another tab, or the admin sweep, deletes the
+    # conversation after it resolves and before the write lands, so the write matches no
+    # row and nothing is silenced or resumed. Answering 200 there would tell a staff
+    # member the switch they flipped had been applied to a conversation that is gone.
+    session_id, chat_id = await _chat()
+    lock = chat_repository.lock_chat
+
+    async def delete_after_locking(*args: Any, **kwargs: Any) -> None:
+        await lock(*args, **kwargs)
+        async with session_factory() as session:
+            await chat_repository.delete_chat(session, chat_id, session_id)
+
+    with patch.object(chat_repository, "lock_chat", delete_after_locking):
+        response = await _switch(session_id, chat_id, enabled)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "chat not found"
+
+
+async def test_a_switch_that_silenced_nothing_records_no_pause() -> None:
+    # The same window, read from the log instead of the status line. The write matched
+    # no row, so no deadline was written - and an `assistant.paused` entry there is a
+    # silence an operator would count, and would go looking for behind the patient's
+    # next unanswered message, having never happened.
+    session_id, chat_id = await _chat()
+    lock = chat_repository.lock_chat
+
+    async def delete_after_locking(*args: Any, **kwargs: Any) -> None:
+        await lock(*args, **kwargs)
+        async with session_factory() as session:
+            await chat_repository.delete_chat(session, chat_id, session_id)
+
+    with (
+        patch.object(chat_repository, "lock_chat", delete_after_locking),
+        capture_logs() as logs,
+    ):
+        response = await _switch(session_id, chat_id, False)
+
+    assert response.status_code == 404
+    assert [entry for entry in logs if entry["event"] == "assistant.paused"] == []
+
+
 # --- an escalation has no deadline --------------------------------------------------
 
 
