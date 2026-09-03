@@ -28,7 +28,6 @@ from chat.repositories.qdrant_repository import (
     COLLECTION_NAME,
     ChunkPayload,
     create_client,
-    ensure_collection,
 )
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
@@ -64,12 +63,12 @@ def _no_scheduler() -> Iterator[None]:
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def _qdrant_collection() -> AsyncIterator[None]:
-    qdrant_client = create_client(ChatSettings())
-    try:
-        await ensure_collection(qdrant_client)
-    finally:
-        await qdrant_client.close()
+async def _dispose_chat_engine() -> AsyncIterator[None]:
+    """Drop the chat engine's pool after each test, so the next one's loop is its own.
+
+    The isolated Qdrant collection these tests answer from is created once per session
+    by the conftest, not here - existence doesn't change test to test.
+    """
     yield
     await engine.dispose()
 

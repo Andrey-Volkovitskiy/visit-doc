@@ -59,6 +59,26 @@ def _apply_chat_migrations() -> None:
     command.upgrade(alembic_cfg, "head")
 
 
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def _ensure_qdrant_collection_exists() -> None:
+    """Create the isolated Qdrant collection once per session, if missing.
+
+    The per-test clear below empties the collection's *points*, which is a 404 against
+    a Qdrant that has never seen this collection - a fresh CI container, or a
+    workstation whose test collection was dropped. Creating it is therefore this
+    tier's own job, not something inherited from whichever suite happened to run
+    first. Session-scoped for the same reason chat's unit tier scopes it that way:
+    the collection's existence doesn't change from test to test, only its contents do.
+    """
+    from chat.repositories.qdrant_repository import create_client, ensure_collection
+
+    qdrant_client = create_client(ChatSettings())
+    try:
+        await ensure_collection(qdrant_client)
+    finally:
+        await qdrant_client.close()
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def _clear_chat_stores() -> None:
     """Truncate the chat service's tables and empty its collection before each test.
