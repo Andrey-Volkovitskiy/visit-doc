@@ -1,6 +1,7 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from enum import StrEnum
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,6 +13,7 @@ from chat.agent.escalation import (
     EscalationRequests,
 )
 from chat.agent.tools.staff_tools import ESCALATE_TO_STAFF
+from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import (
@@ -1657,6 +1659,39 @@ def test_an_escalation_write_that_fails_does_not_cost_the_patient_the_reply() ->
     assert [m["sender"] for m in history] == ["patient", "assistant"]
 
 
+def test_a_store_failure_in_the_writes_is_not_recorded_as_a_broken_pipeline() -> None:
+    # The same failure, read from the log rather than from the stream. The writes run
+    # under the pipeline's own catch-all, so a store that dropped the connection during
+    # them was recorded as `pipeline_step="unknown"` - indistinguishable from a graph
+    # node blowing up, and pointing an operator at the pipeline instead of the store.
+    # It is also the only record there is: the reply has already been streamed, so the
+    # turn returns normally and nothing else in the run says a write failed.
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatDoneEvent(grounded=True, citations=[]),
+                reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
+            ),
+        ),
+        patch.object(chat_repository, "set_attention_mark", _write_that_fails),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            turn(client, "when can I visit?")
+
+    errors = [e for e in logs if e["event"] == "turn.error"]
+    assert len(errors) == 1
+    assert errors[0]["pipeline_step"] == "persistence"
+    assert "connection reset by peer" in errors[0]["error_detail"]
+    # And not escalated to an outage: a write the store refused is not the store being
+    # unreachable, and only the steps the turn's answer depends on claim that.
+    assert not any(e["event"] == "critical.dependency_unreachable" for e in logs)
+
+
 def test_a_turn_that_settles_no_reply_still_tells_the_patient_it_ended() -> None:
     # A pipeline that completes without a `done` settles no reply, and used to queue no
     # terminal event either: the stream ended cleanly, no error fired, and the
@@ -1719,13 +1754,13 @@ def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() 
     # in the same locked section can only agree with the first. Asking twice is not
     # merely wasted: it is two answers where the turn's two writes must act on one.
     reads: list[str] = []
-    real_taken_over_since = chat_repository.taken_over_since
+    real_get_takeover_since = chat_repository.get_takeover_since
 
-    async def counting_taken_over_since(
+    async def counting_get_takeover_since(
         session: AsyncSession, chat_id: str, session_id: str, message_id: str
-    ) -> bool:
+    ) -> chat_repository.TakeoverRead:
         reads.append(message_id)
-        return await real_taken_over_since(session, chat_id, session_id, message_id)
+        return await real_get_takeover_since(session, chat_id, session_id, message_id)
 
     with (
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
@@ -1737,7 +1772,9 @@ def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() 
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
-        patch.object(chat_repository, "taken_over_since", counting_taken_over_since),
+        patch.object(
+            chat_repository, "get_takeover_since", counting_get_takeover_since
+        ),
     ):
         mock_anthropic_cls.return_value = fake_anthropic_client()
         with TestClient(app) as client:
@@ -1748,3 +1785,103 @@ def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() 
     assert reads == []
     # And not because the escalation was skipped: it applied, off the insert's answer.
     assert history[0]["attention_mark"] == AttentionMark.CORPUS_COULD_NOT_ANSWER
+
+
+# --- a store one version ahead of the turn that translates it ------------------------
+#
+# `ReplyWrite` is documented as a set that grows, and the turn's translation of it into
+# `ReplyOutcome` sits between the reply's insert committing and the patient being shown
+# it. A lookup there that a later member - or a mapping that had lost one - could miss
+# turns a reply already in the thread into an error banner over the question it answers.
+
+
+class _FutureReplyWrite(StrEnum):
+    """A `ReplyWrite` answer from a store one version ahead of this build."""
+
+    DECLINED_FOR_A_NEW_REASON = "declined_for_a_new_reason"
+
+
+def test_a_reply_write_this_build_cannot_name_still_ends_the_turn() -> None:
+    # The unmapped member raised `KeyError` inside the locked write, which the turn
+    # reported as a broken pipeline: the patient got an error where the truthful ending
+    # was `cancelled`. Whatever a later member names, it is not a stored reply, and
+    # every non-`STORED` outcome ends a turn the same way.
+    async def declining_write(*args: object, **kwargs: object) -> object:
+        return _FutureReplyWrite.DECLINED_FOR_A_NEW_REASON
+
+    asked: list[str] = []
+    real_get_takeover_since = chat_repository.get_takeover_since
+
+    async def counting_get_takeover_since(
+        *args: object, **kwargs: object
+    ) -> chat_repository.TakeoverRead:
+        asked.append("asked")
+        return await real_get_takeover_since(*args, **kwargs)  # type: ignore[arg-type]
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatDoneEvent(grounded=True, citations=[]),
+            ),
+        ),
+        patch.object(
+            chat_repository, "create_assistant_reply_unless_taken_over", declining_write
+        ),
+        patch.object(
+            chat_repository, "get_takeover_since", counting_get_takeover_since
+        ),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    # Exactly one ending, and the true one - nothing was stored to show.
+    assert [line["type"] for line in lines if line["type"] != "token"] == ["cancelled"]
+    assert [m["sender"] for m in history] == ["patient"]
+    # And the drift is not silent: an answer this build has no outcome for means the
+    # translation has fallen behind the store it translates.
+    unknown = [entry for entry in logs if entry["event"] == "turn.unknown_reply_write"]
+    assert len(unknown) == 1
+    assert unknown[0]["log_level"] == "error"
+    # An answer this build cannot read says the reply was not stored and nothing else,
+    # so whether a person took the conversation is asked rather than assumed - assuming
+    # it re-silences a patient against the staff member already handling them.
+    assert asked == ["asked"]
+
+
+def test_a_stored_reply_reaches_the_patient_when_its_outcome_cannot_be_mapped() -> None:
+    # The delivery used to hang off the mapping rather than off the write's own answer,
+    # so a build whose two enums had drifted committed the reply, raised before
+    # `on_stored` could run, and handed the patient an error over a reply that is in
+    # their thread - the exact failure the on-commit delivery exists to prevent. An
+    # emptied mapping is that drift at its worst; the reply must still arrive.
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch(
+            "chat.api.turn.run_turn",
+            _StubGraph(
+                ChatTokenEvent(text=_STUB_REPLY),
+                ChatDoneEvent(grounded=True, citations=[]),
+            ),
+        ),
+        patch.object(turn_api, "_OUTCOME_BY_REPLY_WRITE", {}),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    assert response.status_code == 200
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    # One ending, `done`, and the reply the patient was shown is the one stored.
+    assert [line["type"] for line in lines if line["type"] != "token"] == ["done"]
+    assert [m["sender"] for m in history] == ["patient", "assistant"]

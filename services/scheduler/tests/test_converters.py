@@ -173,3 +173,14 @@ def test_a_stored_weekday_outside_the_closed_set_is_not_a_caller_defect() -> Non
     # doing, so it must not become INVALID_ARGUMENT.
     with pytest.raises(StoredStateError):
         converters.to_proto_working_range(_working_range(cast("Weekday", 9)))
+
+
+def test_the_weekday_renderer_guards_its_own_input() -> None:
+    # `Weekday` is int-valued, so a number no day maps to reaches the renderer as
+    # readily as a real member does - an annotation promising a member catches nothing.
+    # The guard therefore has to live in the function that owns the mapping, not in the
+    # one caller that currently remembers it: a bare `KeyError` escaping here has no
+    # handler anywhere and reaches the caller as an unexplained UNKNOWN, saying nothing
+    # about which row is wrong.
+    with pytest.raises(StoredStateError):
+        converters.to_proto_weekday(9)

@@ -462,6 +462,118 @@ async def test_a_reply_into_another_sessions_chat_is_not_reported_as_a_takeover(
     assert [m.sender for m in messages] == [MessageSender.PATIENT]
 
 
+async def _staff_posted_in(session_id: str, chat_id: str) -> None:
+    """Take `chat_id` over the way the console does, with one staff message."""
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.STAFF,
+            content="I've got this one.",
+        )
+
+
+async def test_a_staff_post_in_another_sessions_chat_does_not_refuse_a_reply() -> None:
+    # The guard resolved its anchor by message id alone, correlated to no chat at all,
+    # so `answering_message_id` naming a message of some other conversation made *that*
+    # conversation's staff messages decide whether a reply may land in this one - across
+    # sessions included. Unique means no collision, not permission to be read from.
+    session_id, chat_id, _ = await _answered_chat()
+    stranger_session, stranger_chat, stranger_message = await _answered_chat()
+    await _staff_posted_in(stranger_session, stranger_chat)
+
+    write = await _reply_answering(session_id, chat_id, stranger_message)
+
+    assert write is chat_repository.ReplyWrite.STORED
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.sender for m in messages] == [
+        MessageSender.PATIENT,
+        MessageSender.ASSISTANT,
+    ]
+
+
+# --- what a read of the same guard answered, and about which conversation -----------
+#
+# The predicate has two consumers - the reply insert's `WHERE` above and the read below
+# - and a correlated subquery compiles differently in each, so both are checked. The
+# read has a third answer the guard does not need: it is asked by a turn that stored no
+# reply, and that turn has to tell "nobody took this over" from "there is no longer a
+# conversation to take".
+
+
+async def test_a_takeover_read_of_an_untouched_conversation_finds_no_takeover() -> None:
+    session_id, chat_id, message_id = await _answered_chat()
+
+    async with session_factory() as session:
+        read = await chat_repository.get_takeover_since(
+            session, chat_id, session_id, message_id
+        )
+
+    assert read is chat_repository.TakeoverRead.NOT_TAKEN_OVER
+
+
+async def test_a_takeover_read_sees_the_staff_post_that_took_the_conversation() -> None:
+    session_id, chat_id, message_id = await _answered_chat()
+    await _staff_posted_in(session_id, chat_id)
+
+    async with session_factory() as session:
+        read = await chat_repository.get_takeover_since(
+            session, chat_id, session_id, message_id
+        )
+
+    assert read is chat_repository.TakeoverRead.TAKEN_OVER
+
+
+async def test_a_staff_post_in_another_sessions_chat_is_no_takeover_here() -> None:
+    # Finding 1's other consumer: the anchor is scoped to the chat being asked about,
+    # so another conversation's staff messages answer nothing about this one.
+    session_id, chat_id, _ = await _answered_chat()
+    stranger_session, stranger_chat, stranger_message = await _answered_chat()
+    await _staff_posted_in(stranger_session, stranger_chat)
+
+    async with session_factory() as session:
+        read = await chat_repository.get_takeover_since(
+            session, chat_id, session_id, stranger_message
+        )
+
+    assert read is chat_repository.TakeoverRead.NOT_TAKEN_OVER
+
+
+async def test_a_takeover_read_of_a_deleted_chat_says_the_chat_is_gone() -> None:
+    # `DELETE /chats/{id}` landing mid-turn again, this time reaching the read rather
+    # than the insert. Answered False, it told a caller "nobody took this conversation
+    # over" about a conversation that no longer exists - which is what let a turn go on
+    # to escalate, and record escalating, a chat nobody can be handed.
+    session_id, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        await chat_repository.delete_chat(session, chat_id, session_id)
+
+    async with session_factory() as session:
+        read = await chat_repository.get_takeover_since(
+            session, chat_id, session_id, message_id
+        )
+
+    assert read is chat_repository.TakeoverRead.CHAT_GONE
+
+
+async def test_a_takeover_read_of_another_sessions_chat_says_the_chat_is_gone() -> None:
+    # The other half of the ownership predicate, and the same answer: a chat id from
+    # another session names no conversation this caller has anything to ask about.
+    _, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        stranger = await chat_repository.create_session(session)
+
+    async with session_factory() as session:
+        read = await chat_repository.get_takeover_since(
+            session, chat_id, stranger.id, message_id
+        )
+
+    assert read is chat_repository.TakeoverRead.CHAT_GONE
+
+
 async def test_lock_chat_blocks_a_second_holder_until_released() -> None:
     """`lock_chat` must genuinely serialize two separate DB connections, not just
     two coroutines sharing one - the whole point is to close a race between two

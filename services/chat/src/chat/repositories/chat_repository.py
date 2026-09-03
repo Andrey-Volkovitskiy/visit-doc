@@ -612,6 +612,16 @@ def _taken_over_since(message_id: str) -> ColumnElement[bool]:
     Built as an expression rather than answered here so the guard can travel into the
     `WHERE` of the write it protects, instead of being read once and trusted afterwards.
 
+    The anchor is resolved *inside* the `Chat` row the enclosing statement is acting on,
+    never by its id alone. This predicate decides a write, and a message id unique
+    across the table still says nothing about which conversation it belongs to - by id
+    alone, an anchor from some other chat made that chat's staff messages decide whether
+    a reply may land here. Correlated rather than given a chat and session of its own,
+    so the conversation it answers about is by construction the one the statement is
+    already scoped to - the same row the pause half beside it reads its deadline from.
+    An anchor naming no message of that chat therefore contributes nothing, exactly as
+    one naming no message at all does.
+
     Read against the database's own clock for the reason `_PAUSE_IS_RUNNING` is read in
     SQL: the deadline is written by one request and read by another, and a Python-side
     comparison would be a second clock that can disagree with it.
@@ -622,6 +632,7 @@ def _taken_over_since(message_id: str) -> ColumnElement[bool]:
         select(later.id)
         .join(anchor, anchor.chat_id == later.chat_id)
         .where(
+            anchor.chat_id == Chat.id,
             anchor.id == message_id,
             later.sender == MessageSender.STAFF.value,
             later.created_at > anchor.created_at,
@@ -630,21 +641,45 @@ def _taken_over_since(message_id: str) -> ColumnElement[bool]:
     return or_(staff_spoke, _PAUSE_IS_RUNNING)
 
 
-async def taken_over_since(
-    session: AsyncSession, chat_id: str, session_id: str, message_id: str
-) -> bool:
-    """Whether a person has taken `chat_id` over since `message_id` arrived.
+class TakeoverRead(StrEnum):
+    """What one read of a conversation's takeover answered.
 
-    A conversation this session does not own answers False. Nothing is inferred from
-    that: every write this answer guards is itself scoped to the session, so such a
-    caller changes nothing either way.
+    Three members because "nobody took this conversation over" and "there is no such
+    conversation here" are facts about two different worlds, and a bool answered both
+    with False - leaving the caller to apply, and record, a decision about a chat that
+    is gone as though it were an ordinary no-op.
+    """
+
+    # Nobody has taken it over since the message asked about.
+    NOT_TAKEN_OVER = "not_taken_over"
+    # A person is leading it now: a staff member posted since, or the assistant is
+    # paused.
+    TAKEN_OVER = "taken_over"
+    # The chat is not this session's - deleted while the turn ran, or never theirs.
+    # Nobody took anything over; there is no conversation left to take.
+    CHAT_GONE = "chat_gone"
+
+
+async def get_takeover_since(
+    session: AsyncSession, chat_id: str, session_id: str, message_id: str
+) -> TakeoverRead:
+    """Say whether a person has taken `chat_id` over since `message_id` arrived.
+
+    Returns: what the read found - see `TakeoverRead`.
+
+    One statement for all three answers rather than a second read to tell the last two
+    apart: the row comes back only when `session_id` owns `chat_id`, so its presence
+    already carries the ownership half and the takeover predicate rides on it.
     """
     result = await session.execute(
         select(_taken_over_since(message_id)).where(
             Chat.id == chat_id, Chat.session_id == session_id
         )
     )
-    return bool(result.scalar_one_or_none())
+    row = result.one_or_none()
+    if row is None:
+        return TakeoverRead.CHAT_GONE
+    return TakeoverRead.TAKEN_OVER if bool(row[0]) else TakeoverRead.NOT_TAKEN_OVER
 
 
 async def set_escalated(

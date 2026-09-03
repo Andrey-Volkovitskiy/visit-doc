@@ -198,6 +198,24 @@ class SchedulingRequestError(SchedulingError):
     """
 
 
+def rejected_before_writing(exc: SchedulingError) -> bool:
+    """Whether the scheduler answered by refusing, having decided before any write.
+
+    True for the two it answers *with* - a request it rejected, an id that did not
+    resolve - which it settles ahead of the write, so a caller may state that nothing
+    happened. False for every other kind, including one added after this was written: a
+    failure this build cannot place is not evidence that nothing happened, and an answer
+    saying so would be a guess wearing a fact's wording.
+
+    Not the whole of "nothing happened", only the half that turns on which class was
+    raised - the half a fourth subclass changes. A `SchedulingUnavailableError` no
+    attempt of which reached the server also wrote nothing, and its `outcome_unknown` is
+    what says so. Lives here, beside the classes, so adding one of them is a single edit
+    rather than a change every caller has to be found and made to agree with.
+    """
+    return isinstance(exc, SchedulingNotFoundError | SchedulingRequestError)
+
+
 def _read_timestamp(value: str, field: str) -> datetime:
     """Read a wire timestamp into its naive `datetime`.
 

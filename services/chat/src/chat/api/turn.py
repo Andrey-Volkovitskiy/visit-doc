@@ -42,7 +42,8 @@ from chat.repositories import chat_repository, faq_repository
 router = APIRouter()
 
 # Pipeline steps backed by an FR-015-scoped dependency (qdrant/anthropic_api) - not
-# "embedding" (Voyage) or "groundedness" (pure computation), per spec.md Assumptions.
+# "embedding" (Voyage), "groundedness" (pure computation) or "persistence" (a write the
+# store refused is not the store being unreachable), per spec.md Assumptions.
 _CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_api"}
 
 # Used in the booking prompt until a chat has a real patient. The scheduler owns
@@ -59,7 +60,7 @@ class ChatVanishedError(RuntimeError):
 class ReplyOutcome(StrEnum):
     """What became of the reply a turn generated.
 
-    Four values because the caller owes the patient a different ending for each, or owes
+    Five values because the caller owes the patient a different ending for each, or owes
     the log a different account of it, and a `bool` would fold them together. A write
     that failed is none of these - it raises, so a turn whose outcome is unknown never
     reports one.
@@ -80,25 +81,87 @@ class ReplyOutcome(StrEnum):
     # Distinct from `TAKEN_OVER` because no person did anything: recording it as a
     # takeover would put a staff member in a conversation nobody ever touched.
     CHAT_GONE = "chat_gone"
+    # The write declined for a reason this build has no name for - a `ReplyWrite` member
+    # added on the other side of the translation below. Its own value rather than one of
+    # the four above, each of which claims something particular happened: a person, a
+    # supersede, a deletion. This one claims only that the reply was not stored, which
+    # is the whole of what is known about it.
+    DECLINED = "declined"
 
 
-# The write's own three answers in this turn's terms. `NOT_GENERATED` has no counterpart
-# here on purpose: it is the outcome of a turn that attempted no write at all.
+# The write's declining answers in this turn's terms. `STORED` is deliberately absent:
+# it is answered by the comparison in `_outcome_of` instead, so the one member the
+# patient's reply hangs on cannot be missing from a mapping. `NOT_GENERATED` has no
+# counterpart here either - it is the outcome of a turn that attempted no write at all.
 _OUTCOME_BY_REPLY_WRITE = {
-    chat_repository.ReplyWrite.STORED: ReplyOutcome.STORED,
     chat_repository.ReplyWrite.TAKEN_OVER: ReplyOutcome.TAKEN_OVER,
     chat_repository.ReplyWrite.CHAT_GONE: ReplyOutcome.CHAT_GONE,
 }
 
 
-def _log_chat_vanished(chat_id: str, message_id: str) -> None:
+def _outcome_of(write: chat_repository.ReplyWrite) -> ReplyOutcome:
+    """Say what a reply's write became, in this turn's terms.
+
+    Returns: the outcome the write names, or `DECLINED` for a `ReplyWrite` member this
+        build carries no outcome for.
+
+    Total by construction, and it has to be: this runs between the insert committing and
+    the patient being shown what it wrote, so a lookup that could miss would turn a
+    stored reply into an error on their screen. `STORED` is decided by comparison rather
+    than by the mapping, and every member the mapping does not carry answers `DECLINED`
+    rather than raising - whatever a later one names, it is not a stored reply, and the
+    turn ends the same way for all of them.
+    """
+    if write is chat_repository.ReplyWrite.STORED:
+        return ReplyOutcome.STORED
+    outcome = _OUTCOME_BY_REPLY_WRITE.get(write)
+    if outcome is None:
+        # A drift in what the store answers rather than a failure of this turn, so it is
+        # recorded and not raised - but recorded, because an outcome nothing here can
+        # name is a translation that has fallen behind the store it translates.
+        get_logger().error("turn.unknown_reply_write", reply_write=write)
+        return ReplyOutcome.DECLINED
+    return outcome
+
+
+class VanishedWindow(StrEnum):
+    """Which half of a turn the deletion of its chat landed in.
+
+    Carried because the two are different events for whoever reads the log - one lost
+    the turn of a message that is committed, the other never wrote the message at all -
+    and nothing else in the entry separates them: a turn's message reuses its turn id,
+    so the only id either window had to offer was the same string.
+    """
+
+    # The patient's message never landed: the insert found no chat to write into, so no
+    # row with this turn's id exists and none ever will.
+    PATIENT_MESSAGE = "patient_message"
+    # The message committed and no answer followed it: the chat went after the turn
+    # deregistered itself and before it could store a reply - whether the reply's own
+    # insert was what found the chat gone, or the turn had no reply to insert.
+    REPLY = "reply"
+
+
+def _log_chat_vanished(
+    chat_id: str, vanished_before: VanishedWindow, message_id: str | None
+) -> None:
     """Record that the chat this turn was answering was deleted while it ran.
+
+    Args:
+        message_id: The patient message this turn committed, or None in the window
+            where none was written - the field names a row that exists or names
+            nothing, never an id nothing was ever stored under.
 
     `info`, not `error`: a conversation deleted mid-turn is a race this turn is built to
     lose safely - nothing was written and nothing is inconsistent - and it must not read
     in the log like the pipeline failures around it.
     """
-    get_logger().info("turn.chat_vanished", chat_id=chat_id, message_id=message_id)
+    get_logger().info(
+        "turn.chat_vanished",
+        chat_id=chat_id,
+        vanished_before=vanished_before,
+        message_id=message_id,
+    )
 
 
 def _silenced_by(state: chat_repository.ConversationState | None) -> str | None:
@@ -165,6 +228,12 @@ async def _persist_outcome(
 
     Raises: the store's own error if a write could not be completed.
 
+    Applies no escalation at all when the chat is gone - whether the reply's own write
+    reported it, or, for a turn that settled no reply, the takeover read did: every
+    write it would make is scoped to a conversation that no longer exists, and a record
+    of the calls raised in such a turn would read as a person having been fetched into
+    one. `turn.chat_vanished` is what that turn leaves in the log, and the whole of it.
+
     Holds the lock a staff post takes, for the whole of both writes: the reply and the
     transition either both precede a staff member taking the conversation over or both
     follow it, never one of each. Without it the transition lands on top of the clears
@@ -203,22 +272,52 @@ async def _persist_outcome(
                     citations=[c.model_dump() for c in done_event.citations],
                     reply_to_message_ids=reply_to_message_ids,
                 )
-                outcome = _OUTCOME_BY_REPLY_WRITE[write]
-                if outcome is ReplyOutcome.STORED:
+                # Read off the write's own answer, ahead of anything derived from it:
+                # the row has committed by now, and what shows the patient their reply
+                # must not be able to fail. A lookup here that a later `ReplyWrite`
+                # member was missing from would raise between the commit and the
+                # delivery, leaving the reply in the thread and an error in its place.
+                if write is chat_repository.ReplyWrite.STORED:
                     on_stored(done_event)
+                outcome = _outcome_of(write)
                 if outcome is ReplyOutcome.CHAT_GONE:
-                    _log_chat_vanished(chat.id, patient_message_id)
+                    _log_chat_vanished(
+                        chat.id, VanishedWindow.REPLY, patient_message_id
+                    )
+                    # Nothing below has anything left to act on: the escalation writes
+                    # are all scoped to a chat that no longer exists, and a record of
+                    # calls to staff would name a conversation nobody can be handed.
+                    # The entry above is the whole account of a turn whose chat went.
+                    return outcome
             # The insert above evaluated the takeover guard in its own `WHERE`, so its
-            # answer is the one to act on here; only a turn that wrote nothing has to
-            # ask, and it asks once. Nothing can change the answer in between - every
-            # gesture that takes a conversation writes under this same lock.
-            taken_over = (
-                outcome is ReplyOutcome.TAKEN_OVER
-                if done_event is not None
-                else await chat_repository.taken_over_since(
+            # answer is the one to act on here; only a turn whose write did not answer
+            # it has to ask, and it asks once. Nothing can change the answer in between
+            # - every gesture that takes a conversation writes under this same lock.
+            #
+            # A `DECLINED` write did not answer it: it says the reply was not stored and
+            # nothing beyond that, so reading it as "and nobody took the conversation"
+            # would be a guess - one that re-silences a patient against the very staff
+            # member handling them when it is wrong.
+            answered_by_the_write = (
+                done_event is not None and outcome is not ReplyOutcome.DECLINED
+            )
+            if answered_by_the_write:
+                taken_over = outcome is ReplyOutcome.TAKEN_OVER
+            else:
+                read = await chat_repository.get_takeover_since(
                     db_session, chat.id, chat.session_id, patient_message_id
                 )
-            )
+                if read is chat_repository.TakeoverRead.CHAT_GONE:
+                    # The same ending the reply's own write earns in this window, and
+                    # for the same reason: a turn that settled no reply is no likelier
+                    # to have a conversation left to escalate. Read off the takeover
+                    # itself rather than paid for with a lookup of its own - a chat
+                    # that is gone returns no row for the predicate to be read from.
+                    _log_chat_vanished(
+                        chat.id, VanishedWindow.REPLY, patient_message_id
+                    )
+                    return ReplyOutcome.CHAT_GONE
+                taken_over = read is chat_repository.TakeoverRead.TAKEN_OVER
             # Last, and after the reply above has been both written and shown: the turn
             # runs to its end and the conversation transitions at the end of it, so a
             # mixed-intent message whose halves both ran delivers both before anything
@@ -317,7 +416,8 @@ async def _event_stream(
             async def run_pipeline() -> None:
                 """Run this turn's graph, queue its events, persist the reply.
 
-                Raises: TurnPipelineError propagated from `answer_faq_node`.
+                Raises: TurnPipelineError propagated from `answer_faq_node`, or
+                    wrapping a write of this turn's that the store could not complete.
 
                 Tokens are queued as they arrive, but the `done` event is queued only
                 once the reply behind it has committed - the patient is never shown a
@@ -379,20 +479,30 @@ async def _event_stream(
                         if done_event is not None and clear_if_current(chat.id, task)
                         else None
                     )
-                    outcome = await _persist_outcome(
-                        chat,
-                        patient_message.id,
-                        reply_to_message_ids,
-                        escalation,
-                        reply,
-                        "".join(answer_parts),
-                        # `done` goes on the wire from inside the write, the instant
-                        # the reply's insert commits: streamed only once it is stored,
-                        # so the reply on screen and the reply in the thread are the
-                        # same one, and no later failure can leave a stored reply
-                        # undelivered.
-                        on_stored=queue.put_nowait,
-                    )
+                    try:
+                        outcome = await _persist_outcome(
+                            chat,
+                            patient_message.id,
+                            reply_to_message_ids,
+                            escalation,
+                            reply,
+                            "".join(answer_parts),
+                            # `done` goes on the wire from inside the write, the
+                            # instant the reply's insert commits: streamed only once it
+                            # is stored, so the reply on screen and the reply in the
+                            # thread are the same one, and no later failure can leave a
+                            # stored reply undelivered.
+                            on_stored=queue.put_nowait,
+                        )
+                    except Exception as exc:
+                        # Tagged with the step that actually failed, by the same
+                        # mechanism every pipeline step uses. Untagged, these reached
+                        # the catch-all below as `pipeline_step="unknown"`, which reads
+                        # as a graph node blowing up and sends an operator to the
+                        # pipeline rather than to the store. And once `done` is on the
+                        # wire the stream returns normally, so this entry is the only
+                        # record the writes failed at all.
+                        raise TurnPipelineError("persistence", exc) from exc
                     if outcome is not ReplyOutcome.STORED:
                         # The other half of the pair, so exactly one terminal event
                         # leaves this turn however it ended: `done` above when the reply
@@ -512,7 +622,7 @@ async def _event_stream(
             # connection and the log as an ASGI crash - indistinguishable from the
             # pipeline genuinely breaking. `cancelled` is the true ending, the same one
             # the reply's own write earns when the chat goes in the later window.
-            _log_chat_vanished(chat.id, turn_id)
+            _log_chat_vanished(chat.id, VanishedWindow.PATIENT_MESSAGE, None)
             yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
             return
 

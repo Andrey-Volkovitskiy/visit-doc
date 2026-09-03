@@ -48,16 +48,54 @@ booking reply both carry `grounded: null`, so reading the outcome off that alone
 handed-off turn in the log as a booking — and the one number SC-010 and the escalation records exist
 to make countable is how often a person was actually fetched.
 
+### `turn.error` — unchanged in name, one new `pipeline_step` value
+
+| Value | When |
+|---|---|
+| `persistence` | **NEW** — the turn's own writes failed: the reply's insert, the takeover read, the escalation writes, or the commit that makes them durable. (Not the lock release — that one is recorded as `chat.lock_release_failed` and never raises, because nothing it reports can undo a write that has committed.) The existing values — `embedding`, `retrieval`, `groundedness`, `generation` — each name a step of the pipeline that produces an answer; this one names the section that stores it, which runs after the pipeline is done. |
+
+**It exists because `unknown` was standing for two different failures.** The writes run under the
+same catch-all as the graph, so a store that dropped its connection during them was recorded as
+`pipeline_step="unknown"` — indistinguishable from a graph node blowing up, and pointing whoever
+reads it at the pipeline instead of the store. `unknown` remains, and now means what it says: a
+failure this build could not attribute to any step.
+
+**It raises no `critical.dependency_unreachable`.** That event is scoped to the dependencies an
+answer is produced from (FR-015), and a write the store refused is not the store being unreachable —
+`persistence` is deliberately absent from the step-to-dependency mapping alongside `embedding` and
+`groundedness`.
+
 ### `turn.chat_vanished` — new
 
 | Event | Level | Fields | When |
 |---|---|---|---|
-| `turn.chat_vanished` | info | `chat_id`, `message_id`, `turn_id` (bound) | `DELETE /chats/{chat_id}` landed while a turn was running, in one of the two windows no cancellation covers: before the turn's message was written, so the registry did not hold it yet, or after it deregistered and before its reply was written. Nothing was stored either way, and the turn ends in `cancelled`. |
+| `turn.chat_vanished` | info | `chat_id`, `vanished_before` (`patient_message` \| `reply`), `message_id` (nullable), `turn_id` (bound) | The conversation a running turn was answering stopped existing under it: `DELETE /chats/{chat_id}` landing in one of the two windows no cancellation covers — before the turn's message was written, so the registry did not hold it yet, or after it deregistered and before its reply was written — or the admin session sweep, which deletes the row and cancels nothing at all, so it reaches a turn in any state. Nothing was stored either way, and the turn ends in `cancelled`. |
 
 **`info`, not `error`, and its own event.** It is a race a turn is built to lose safely — nothing is
 written and nothing is inconsistent — so it must not read like `turn.error`. Its own kind, rather
 than folded into the takeover no-op, because no person did anything: recording it as a takeover
 would put a staff member in a conversation nobody ever touched.
+
+**`vanished_before` names the window, and `message_id` names a row or names nothing.** The two
+windows are different events for whoever reads this: one lost the turn of a message that is
+committed, the other never wrote the message at all. Nothing else in the entry tells them apart — a
+turn's message reuses its `turn_id` as its id, so both windows had the same string to offer and the
+two entries came out identical in every field. `message_id` is therefore **null** in the
+`patient_message` window, where no row with that id exists or ever will, and carries the committed
+patient message — the one the reply would have answered — in the `reply` window. An operator
+correlating on it finds a row or finds a declared absence, never an id nothing was stored under.
+The `reply` window covers a turn that had no reply to store as much as one whose reply's insert
+found the chat gone: both committed the message and stored no answer to it, which is the whole of
+what separates this window from the other.
+
+**It is also the whole account of such a turn: no escalation record accompanies it.** A turn whose
+chat vanished applies none of the calls to staff it collected — there is no conversation left to
+silence and no message left to mark — and records none of them either. An `escalation.unchanged`
+carrying a deleted `chat_id` and a null `existing_reason` is byte-identical to the entry a takeover
+writes, so emitting one would reintroduce exactly the conflation this event was split out to
+remove. That holds however the turn ended: a turn that settled no reply has no insert of its own to
+report the chat gone, so it reads the takeover instead — and that read answers `chat_gone` in its
+own right rather than folding a missing conversation into "nobody took this over".
 
 ### `patient.rename_rejected` / `chat.delete_rejected` - new
 

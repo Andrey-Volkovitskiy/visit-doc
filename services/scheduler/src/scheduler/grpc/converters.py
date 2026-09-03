@@ -200,28 +200,31 @@ def to_proto_working_range(working_range: WorkingRange) -> pb.WorkingRange:
         `CHECK` constraint makes a corrupted row rather than a caller defect.
     """
     return pb.WorkingRange(
-        weekday=to_proto_weekday(_read_stored_weekday(working_range.weekday)),
+        weekday=to_proto_weekday(working_range.weekday),
         start_time=format_local_time(working_range.start_time),
         end_time=format_local_time(working_range.end_time),
     )
 
 
-def to_proto_weekday(weekday: Weekday) -> "pb.Weekday":
-    """Render a weekday onto the wire."""
-    return _PROTO_BY_WEEKDAY[weekday]
+def to_proto_weekday(value: int) -> "pb.Weekday":
+    """Render a stored weekday column onto the wire.
 
-
-def _read_stored_weekday(value: int) -> Weekday:
-    """Read a stored weekday column into its domain member.
+    Takes the column's own `int` rather than a `Weekday`, and reads it here: the enum
+    is int-valued, so an annotation promising a member is enforced by nothing at
+    runtime and by nothing at all at a call site holding the raw column. The check
+    belongs to the function that owns the mapping, so a second call site cannot omit
+    it - a bare `KeyError` escaping this module has no handler and would reach the
+    caller as an unexplained UNKNOWN.
 
     Raises: StoredStateError if the column holds a number outside the closed set, which
         the `CHECK` constraint makes a corrupted row rather than anything the caller
         did.
     """
     try:
-        return Weekday(value)
+        weekday = Weekday(value)
     except ValueError as exc:
         raise StoredStateError(f"unrecognized stored weekday: {value!r}") from exc
+    return _PROTO_BY_WEEKDAY[weekday]
 
 
 def to_proto_practitioner(

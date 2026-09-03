@@ -86,11 +86,16 @@ async def _apply(
     the predicate and not a boolean the test chose.
     """
     async with session_factory() as session:
-        taken_over = await chat_repository.taken_over_since(
+        read = await chat_repository.get_takeover_since(
             session, chat_id, session_id, message_id
         )
         await apply_escalation(
-            session, chat_id, session_id, message_id, requests, taken_over=taken_over
+            session,
+            chat_id,
+            session_id,
+            message_id,
+            requests,
+            taken_over=read is chat_repository.TakeoverRead.TAKEN_OVER,
         )
 
 

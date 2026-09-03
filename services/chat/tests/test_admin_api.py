@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import pytest
 from chat.clients.scheduling import (
+    SchedulingError,
     SchedulingNotFoundError,
     SchedulingRequestError,
     SchedulingUnavailableError,
@@ -360,3 +361,31 @@ async def test_an_incomplete_deletion_says_what_is_known_of_the_scheduler(
     result = response.json()["results"][0]
     assert result["status"] == "incomplete"
     assert expected in result["detail"]
+
+
+async def test_the_sweep_reads_which_failures_prove_nothing_from_one_place() -> None:
+    """Which failures the scheduler decides before writing is decided once, not here.
+
+    Widened to cover a kind this report calls unknown, the report follows without being
+    edited - the same widening the `/chats` routes follow. A copy of that test kept
+    here would have the two disagree about one exception, silently, and each of them
+    look right on its own.
+    """
+    session_id = await _session_id()
+
+    with (
+        patch(
+            "chat.api.admin.scheduling.delete_session",
+            # The base class stands in for a subclass this build has no branch for:
+            # neither is one of the two the classification names today.
+            new=_scheduler_that_fails_one(session_id, SchedulingError("unplaceable")),
+        ),
+        patch("chat.clients.scheduling.rejected_before_writing", return_value=True),
+    ):
+        response = await _call(
+            f"/admin/sessions/{session_id}", headers={"X-Admin-Secret": _SECRET}
+        )
+
+    result = response.json()["results"][0]
+    assert result["status"] == "incomplete"
+    assert "deleted nothing - it rejected the request" in result["detail"]

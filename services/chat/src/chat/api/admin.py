@@ -30,8 +30,6 @@ from pydantic import BaseModel
 from chat.clients import scheduling
 from chat.clients.scheduling import (
     SchedulingError,
-    SchedulingNotFoundError,
-    SchedulingRequestError,
     SchedulingUnavailableError,
 )
 from chat.core.config import get_settings
@@ -122,7 +120,7 @@ def _scheduling_detail(exc: SchedulingError) -> str:
     """
     if isinstance(exc, SchedulingUnavailableError) and not exc.outcome_unknown:
         return f"scheduling deleted nothing - it could not be reached: {exc}"
-    if isinstance(exc, SchedulingNotFoundError | SchedulingRequestError):
+    if scheduling.rejected_before_writing(exc):
         return f"scheduling deleted nothing - it rejected the request: {exc}"
     return f"scheduling may have deleted this session, or may not: {exc}"
 

@@ -131,6 +131,12 @@ service Scheduling {
 // (which is Python's `date.weekday()`, Monday = 0, and is what the scheduler's database
 // stores). Each side maps explicitly at its boundary rather than passing the integer
 // through, so the two numberings can never be confused for one.
+//
+// NOTE: this numbering CHANGED in 007 - Monday moved from 0 to 1 - in place, inside the
+// unchanged `scheduling.v1` package. The wire carries the number, not the name, so `chat` and
+// `scheduler` MUST be built and deployed together: a new scheduler sends Monday as 1, an old
+// chat reads it as Tuesday, and every practitioner's schedule shifts a day with no error
+// anywhere. Any future renumber here carries the same constraint - add a new field instead.
 enum Weekday {
   WEEKDAY_UNSPECIFIED = 0;
   WEEKDAY_MONDAY = 1;

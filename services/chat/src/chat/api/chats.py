@@ -17,8 +17,6 @@ from chat.clients import scheduling
 from chat.clients.scheduling import (
     RenameRefusal,
     SchedulingError,
-    SchedulingNotFoundError,
-    SchedulingRequestError,
     SchedulingUnavailableError,
 )
 from chat.core.config import get_settings
@@ -129,18 +127,9 @@ async def create_chat(request: Request, response: Response) -> ChatSummary:
 
 _NO_PATIENT_YET = "this chat has no patient yet - send a message first, then rename it"
 _NAME_TAKEN = "another chat in this session already uses that name"
-
-
-def _proves_nothing_happened(exc: SchedulingError) -> bool:
-    """Whether this failure is one the scheduler decided before writing anything.
-
-    True for the two it answers *with* - a request it rejected, an id that did not
-    resolve - which it settles ahead of the write, so "nothing happened" is a fact a
-    route may state. False for every other kind, including one added after this was
-    written: a failure this build cannot place is not evidence that nothing happened,
-    and a 502 saying so would be a guess wearing a fact's wording.
-    """
-    return isinstance(exc, SchedulingNotFoundError | SchedulingRequestError)
+_PATIENT_GONE = (
+    "this chat's patient no longer exists in scheduling - it cannot be renamed again"
+)
 
 
 @router.patch("/chats/{chat_id}/patient")
@@ -150,20 +139,27 @@ async def rename_chat_patient(
     """Rename this chat's patient, in the scheduler and in the cached copy here.
 
     Raises:
-        HTTPException 404: no session cookie, the chat belongs to another session, or
-            the scheduler no longer holds the patient it names.
+        HTTPException 404: no session cookie, or the chat belongs to another session -
+            the two are deliberately indistinguishable, and both mean this chat is not
+            reachable from here. Nothing else answers 404: a caller told the chat is
+            gone must be able to act on that, and the only advice it supports (reload
+            the listing) is wrong for every other failure this route has.
         HTTPException 409: the chat has no patient yet, or another patient in this
             session already holds that name.
-        HTTPException 503: the scheduler could not be reached, so nothing was renamed.
-        HTTPException 504: the scheduler may or may not have applied the rename. The
-            request is safe to send again - renaming to a name already held changes
-            nothing - so the caller is told to retry rather than told an outcome.
+        HTTPException 410: the chat is reachable, but the scheduler no longer holds
+            the patient it names - deleted out of band. Separate from the 404 above
+            because the two need opposite things from the caller, and permanent: a
+            chat that already has a `patient_id` is never re-provisioned, so this
+            chat cannot be renamed again at all.
         HTTPException 502: the scheduler answered by rejecting the request, so nothing
             was renamed. A defect on this side rather than anything the caller chose,
             and sending the same request again is rejected again.
-        HTTPException 504: also for a scheduling failure this build cannot place, which
-            says nothing about whether the name was applied - so it is answered the way
-            an expired deadline is, with a retry rather than an outcome.
+        HTTPException 503: the scheduler could not be reached, so nothing was renamed.
+        HTTPException 504: the scheduler may or may not have applied the rename -
+            either it did not answer, or it failed in a way this build cannot place,
+            which says nothing about whether the name was applied. The request is safe
+            to send again - renaming to a name already held changes nothing - so the
+            caller is told to retry rather than told an outcome.
 
     The scheduler is written first and its answer, not the requested name, is what gets
     cached: it owns the value, and a name it normalized or refused must never be the one
@@ -206,7 +202,7 @@ async def rename_chat_patient(
         # a route that knows what happened with an unexplained 500. What the caller is
         # told, though, is only what the failure supports - a rejection is decided
         # before the rename, so "nothing was renamed" is a fact; anything else is not.
-        nothing_happened = _proves_nothing_happened(exc)
+        nothing_happened = scheduling.rejected_before_writing(exc)
         get_logger().error(
             "patient.rename_rejected",
             chat_id=chat.id,
@@ -230,8 +226,11 @@ async def rename_chat_patient(
         if result.reason is RenameFailureReason.NAME_TAKEN:
             raise HTTPException(status_code=409, detail=_NAME_TAKEN)
         # The scheduler no longer has the patient this chat names - deleted out of
-        # band. Reported as the missing thing it is, not as a stale local pointer.
-        raise HTTPException(status_code=404, detail="patient not found")
+        # band. Reported as the missing thing it is, not as a stale local pointer, and
+        # not as the 404 that means "no such chat here": that one tells the caller to
+        # reload the listing, which brings back the same chat under the same name and
+        # says nothing about the patient that is actually missing.
+        raise HTTPException(status_code=410, detail=_PATIENT_GONE)
 
     async with session_factory() as db_session:
         await chat_repository.set_patient_name(
@@ -247,18 +246,17 @@ async def delete_chat(chat_id: str, request: Request) -> None:
 
     Raises:
         HTTPException 404: no session cookie, or the chat belongs to another session.
-        HTTPException 503: the scheduler was unreachable, so nothing was deleted.
-        HTTPException 504: the scheduler may or may not have deleted the patient. The
-            request is safe to send again - deleting an already-absent patient succeeds
-            - so the caller is told to retry rather than told an outcome. Reporting
-            "nothing was deleted" here would be a guess, and the one that leaves a chat
-            bound to a patient that no longer exists.
         HTTPException 502: the scheduler answered by rejecting the request, so nothing
             was deleted - here or there. A defect on this side rather than anything the
             caller chose, and sending the same request again is rejected again.
-        HTTPException 504: also for a scheduling failure this build cannot place, which
-            is not evidence that the patient survived - so it is answered the way an
-            expired deadline is, with a retry rather than an outcome.
+        HTTPException 503: the scheduler was unreachable, so nothing was deleted.
+        HTTPException 504: the scheduler may or may not have deleted the patient -
+            either it did not answer, or it failed in a way this build cannot place,
+            which is not evidence that the patient survived. The request is safe to send
+            again - deleting an already-absent patient succeeds - so the caller is told
+            to retry rather than told an outcome. Reporting "nothing was deleted" here
+            would be a guess, and the one that leaves a chat bound to a patient that no
+            longer exists.
 
     The scheduler goes first deliberately. Of the two orderings only this one has a
     benign failure mode: a crash between the steps leaves a chat pointing at a patient
@@ -305,7 +303,7 @@ async def delete_chat(chat_id: str, request: Request) -> None:
         # deleted - lets the caller be told that nothing was. Either way nothing local
         # is deleted: the chat, its patient and any in-flight turn are left as they
         # were, which is what makes the retry this offers safe.
-        nothing_happened = _proves_nothing_happened(exc)
+        nothing_happened = scheduling.rejected_before_writing(exc)
         get_logger().error(
             "chat.delete_rejected",
             chat_id=chat.id,

@@ -217,8 +217,16 @@ const DELETION: OperationWording = {
  * these operations are idempotent enough to make safe. Stated once per operation, a
  * correction to one would leave the other saying the old, wrong thing.
  *
- * Returns: null for a status this does not speak for - a 409, a 422, a 500 - which
- *     belongs to the operation that knows what it means, not to a guess made here.
+ * The 404 rides along because both routes answer it for one thing only - this chat is
+ * not reachable from this session, whether it was deleted or was never ours - which is
+ * a single meaning both can state in one sentence. It is deliberately not the route's
+ * only "missing" answer: a rename whose *patient* is gone answers 410, because
+ * "reload to see your chats" is exactly the wrong advice for a chat that is still
+ * there.
+ *
+ * Returns: null for a status this does not speak for - a 409, a 410, a 422, a 500 -
+ *     which belongs to the operation that knows what it means, not to a guess made
+ *     here.
  */
 function schedulingFailureMessage(
   status: number,
@@ -308,11 +316,22 @@ export async function detailOf(response: Response, fallback: string): Promise<st
  * the name belongs to scheduling, and restating it here would make the screen disagree
  * with the system it is editing. It is also the only reason this takes the whole
  * `Response`.
+ *
+ * The 410 is worded here instead, and only here - the deletion never answers it, since
+ * deleting a patient that is already absent succeeds. It says what the shared 404
+ * cannot: the chat itself is fine, so reloading the listing would only show it again,
+ * unchanged. Nothing re-provisions a chat that already names a patient, so this is
+ * permanent and the way out is a new chat, not a retry.
  */
 async function renameErrorMessage(response: Response): Promise<string> {
   switch (response.status) {
     case 409:
       return await detailOf(response, "That name cannot be used for this chat.");
+    case 410:
+      return (
+        "This chat's patient no longer exists in scheduling, so it cannot be " +
+        "renamed. Start a new chat."
+      );
     case 422:
       return "Enter a name of 1 to 200 characters.";
     default:

@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+from chat.agent.escalation import EscalationRequests
 from chat.agent.generation_registry import register_and_cancel_previous
 from chat.api import turn as turn_api
 from chat.api.session_cookie import COOKIE_NAME
@@ -19,7 +20,7 @@ from chat.clients.scheduling import (
     SchedulingUnavailableError,
 )
 from chat.db.session import session_factory
-from chat.domain.models import Chat, MessageSender
+from chat.domain.models import Chat, EscalationReason, MessageSender
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent
 from chat.main import app
 from chat.repositories import chat_repository
@@ -606,6 +607,30 @@ async def test_a_deletion_failure_this_build_cannot_place_claims_no_outcome() ->
         )
 
 
+async def test_the_route_reads_which_failures_prove_nothing_from_one_place() -> None:
+    """Which failures the scheduler decides before writing is decided once, not here.
+
+    Widened to cover a kind this route answers 504 for, the route follows without being
+    edited. A copy of that test kept here would keep answering 504 while the admin
+    sweep reported the same failure as a rejection - the disagreement being silent is
+    what makes one classification, in `clients.scheduling`, worth the indirection.
+    """
+    session_id, chat_ids = await _seed_session_with_chats(1)
+
+    with (
+        patch(
+            _DELETE, new=AsyncMock(side_effect=_FourthSchedulingError("unplaceable"))
+        ),
+        patch("chat.clients.scheduling.rejected_before_writing", return_value=True),
+        patch("chat.api.chats.cancel_for_chat", new=AsyncMock(return_value=True)),
+    ):
+        async with _api(session_id) as client:
+            response = await client.delete(f"/chats/{chat_ids[0]}")
+
+    assert response.status_code == 502
+    assert "nothing was deleted" in response.json()["detail"]
+
+
 async def test_a_session_surviving_with_zero_chats_is_a_valid_state() -> None:
     session_id, chat_ids = await _seed_session_with_chats(1)
 
@@ -657,17 +682,43 @@ async def test_deleting_a_chat_mid_turn_cancels_it_and_records_no_reply() -> Non
 
 
 class _FinishedGraph:
-    """A `run_turn` stand-in that produces one complete reply and returns."""
+    """A `run_turn` stand-in that produces one complete reply and returns.
+
+    Args:
+        settles_a_reply: False withholds the `done` event, standing in for a turn that
+            settles no reply at all - a pipeline that ended without one, or one a newer
+            message superseded.
+
+    Records `reason` into the turn's own collector first when given - the same object
+    the specialists fill, so the escalation the turn carries into its writes is real.
+    """
+
+    def __init__(
+        self,
+        reason: EscalationReason | None = None,
+        *,
+        settles_a_reply: bool = True,
+    ) -> None:
+        self._reason = reason
+        self._settles_a_reply = settles_a_reply
 
     async def __call__(
         self, *args: object, **kwargs: object
     ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
+        escalation = kwargs.get("escalation")
+        if self._reason is not None and isinstance(escalation, EscalationRequests):
+            escalation.record(self._reason)
         yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
-        yield ChatDoneEvent(grounded=True, citations=[])
+        if self._settles_a_reply:
+            yield ChatDoneEvent(grounded=True, citations=[])
 
 
 async def _delete_racing_a_turn(
-    session_id: str, chat_id: str, module: ModuleType, stall: str
+    session_id: str,
+    chat_id: str,
+    module: ModuleType,
+    stall: str,
+    reason: EscalationReason | None = None,
 ) -> tuple[Response, Response, list[dict[str, object]]]:
     """Hold a turn at `module.stall`, delete its chat there, then let the turn go on.
 
@@ -676,6 +727,8 @@ async def _delete_racing_a_turn(
             import site so the turn's own lookup finds the wrapper.
         stall: The attribute to wrap - the point the turn is held at while the
             deletion lands.
+        reason: A call to staff the turn raises before it is stalled, for the cases
+            about what a turn whose chat vanished may write and record.
 
     Returns: the turn's streamed response, the deletion's own, and the log entries both
         produced.
@@ -691,7 +744,7 @@ async def _delete_racing_a_turn(
 
     with (
         patch(_DELETE, new=AsyncMock(return_value=_deleted(appointments=0))),
-        patch("chat.api.turn.run_turn", _FinishedGraph()),
+        patch("chat.api.turn.run_turn", _FinishedGraph(reason)),
         patch.object(module, stall, stalling),
         capture_logs(processors=[merge_contextvars]) as logs,
     ):
@@ -768,6 +821,144 @@ async def test_a_chat_deleted_in_the_write_gap_is_not_recorded_as_a_takeover() -
     async with session_factory() as session:
         assert await chat_repository.get_chat(session, chat_id, session_id) is None
         assert await chat_repository.list_messages(session, chat_id) == []
+
+
+async def test_a_turn_whose_chat_vanished_escalates_and_records_nothing() -> None:
+    # Same window, with the turn having asked for a person on its way through. There is
+    # no conversation left to hand anyone, so the calls it collected are applied to
+    # nothing - and, crucially, recorded as nothing either: the escalation writes each
+    # named a chat that was gone, and the `escalation.unchanged` they ended in was
+    # byte-identical to the entry a takeover writes, putting a staff member in a
+    # conversation nobody ever touched.
+    session_id, chat_ids = await _seed_session_with_chats(1)
+    chat_id = chat_ids[0]
+    marks_written: list[str] = []
+    real_set_attention_mark = chat_repository.set_attention_mark
+
+    async def counting_set_attention_mark(*args: object, **kwargs: object) -> None:
+        marks_written.append(chat_id)
+        await real_set_attention_mark(*args, **kwargs)  # type: ignore[arg-type]
+
+    with patch.object(
+        chat_repository, "set_attention_mark", counting_set_attention_mark
+    ):
+        streamed, deletion, logs = await _delete_racing_a_turn(
+            session_id,
+            chat_id,
+            turn_api,
+            "_persist_outcome",
+            reason=EscalationReason.PATIENT_ASKED_FOR_PERSON,
+        )
+
+    assert deletion.status_code == 204
+    lines = [json.loads(line) for line in streamed.text.strip().splitlines()]
+    assert lines[-1] == {"type": "cancelled"}
+    vanished = next(e for e in logs if e["event"] == "turn.chat_vanished")
+    assert vanished["chat_id"] == chat_id
+    # `turn.chat_vanished` is the whole account of such a turn: no escalation record of
+    # any kind accompanies it, raised or unchanged.
+    assert not any(str(e["event"]).startswith("escalation.") for e in logs)
+    # Nor were the writes behind one attempted - four round trips against a chat that
+    # cannot match any of them, inside the locked section.
+    assert marks_written == []
+
+
+async def test_a_turn_that_settled_no_reply_records_its_vanished_chat_too() -> None:
+    # The other way a conversation goes out from under a running turn: the admin
+    # session sweep, which deletes the row and cancels nothing. `DELETE /chats/{id}`
+    # cancels the turn it finds registered, so it never reaches a turn that has no
+    # reply to store - that turn is still in the registry, having nothing to deregister
+    # for. The sweep does reach it, and its writes then run with no insert of their own
+    # to report the chat gone, so the turn asks instead. The answer was False - "nobody
+    # took this over", the same word an ordinary conversation gets - and the escalation
+    # went ahead: four writes against a chat nothing could match, ending in an
+    # `escalation.unchanged` byte-identical to the entry a takeover writes.
+    session_id, chat_ids = await _seed_session_with_chats(1)
+    chat_id = chat_ids[0]
+    reached_the_writes = asyncio.Event()
+    session_deleted = asyncio.Event()
+    persisting = turn_api._persist_outcome
+    marks_written: list[str] = []
+    real_set_attention_mark = chat_repository.set_attention_mark
+
+    async def stalling(*args: object, **kwargs: object) -> object:
+        reached_the_writes.set()
+        await session_deleted.wait()
+        return await persisting(*args, **kwargs)  # type: ignore[arg-type]
+
+    async def counting_set_attention_mark(*args: object, **kwargs: object) -> None:
+        marks_written.append(chat_id)
+        await real_set_attention_mark(*args, **kwargs)  # type: ignore[arg-type]
+
+    with (
+        patch(
+            "chat.api.turn.run_turn",
+            _FinishedGraph(
+                EscalationReason.PATIENT_ASKED_FOR_PERSON, settles_a_reply=False
+            ),
+        ),
+        patch.object(turn_api, "_persist_outcome", stalling),
+        patch.object(
+            chat_repository, "set_attention_mark", counting_set_attention_mark
+        ),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            turn = asyncio.create_task(
+                client.post(
+                    "/chat",
+                    json={
+                        "chat_id": chat_id,
+                        "message": "can I speak to someone?",
+                        "local_now": LOCAL_NOW,
+                    },
+                )
+            )
+            await asyncio.wait_for(reached_the_writes.wait(), timeout=5)
+            async with session_factory() as session:
+                await chat_repository.delete_session(session, session_id)
+            session_deleted.set()
+            streamed = await asyncio.wait_for(turn, timeout=5)
+
+    lines = [json.loads(line) for line in streamed.text.strip().splitlines()]
+    assert not any(line["type"] == "done" for line in lines)
+    assert lines[-1] == {"type": "cancelled"}
+    # The entry a turn whose chat went leaves, whether or not it had a reply to store.
+    vanished = next(e for e in logs if e["event"] == "turn.chat_vanished")
+    assert vanished["chat_id"] == chat_id
+    assert vanished["vanished_before"] == "reply"
+    # And the whole of it on this path too: no escalation record of any kind, and none
+    # of the writes behind one attempted against a chat that cannot match them.
+    assert not any(str(e["event"]).startswith("escalation.") for e in logs)
+    assert marks_written == []
+
+
+async def test_the_two_vanish_windows_are_told_apart_by_what_each_one_wrote() -> None:
+    # Both windows named the turn id as the entry's `message_id`, and a turn's message
+    # reuses its turn id - so the two entries came out identical in every field. In the
+    # earlier one no row with that id exists or ever will, so an operator correlating on
+    # it found nothing and could not tell which of the two races they were looking at.
+    session_id, chat_ids = await _seed_session_with_chats(2)
+
+    _, _, before_the_message = await _delete_racing_a_turn(
+        session_id, chat_ids[0], chat_repository, "create_message"
+    )
+    _, _, in_the_write_gap = await _delete_racing_a_turn(
+        session_id, chat_ids[1], turn_api, "_persist_outcome"
+    )
+
+    early = next(e for e in before_the_message if e["event"] == "turn.chat_vanished")
+    late = next(e for e in in_the_write_gap if e["event"] == "turn.chat_vanished")
+    # The window each one lost, which is what makes them two events rather than one
+    # repeated twice with nothing to separate them.
+    assert early["vanished_before"] == "patient_message"
+    assert late["vanished_before"] == "reply"
+    # Nothing was written in the earlier window, so the field that names a written
+    # message names nothing - never an id no row was ever stored under.
+    assert early["message_id"] is None
+    # In the later one it names the row the turn did commit, the message the reply would
+    # have answered, which is that turn's own id.
+    assert late["message_id"] == late["turn_id"]
 
 
 # --- first arrival vs an emptied session --------------------------------------
@@ -914,7 +1105,13 @@ async def test_a_taken_name_is_a_conflict_and_changes_nothing() -> None:
     assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
 
 
-async def test_a_patient_the_scheduler_no_longer_has_is_not_found() -> None:
+async def test_a_patient_the_scheduler_no_longer_has_is_gone_not_missing() -> None:
+    """A patient deleted out of band answers 410, never the 404 that means "no chat".
+
+    The chat is still here and still listed, so the one action a 404 supports -
+    reload the listing - brings it straight back, unchanged, with nothing said about
+    the patient that is actually missing. Two situations, two answers.
+    """
     session_id, chat_id = await _seed_chat_with_patient()
     refusal = RenameRefusal(
         reason=RenameFailureReason.PATIENT_NOT_FOUND, detail="patient_not_found"
@@ -925,8 +1122,39 @@ async def test_a_patient_the_scheduler_no_longer_has_is_not_found() -> None:
             response = await client.patch(
                 f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
             )
+            listed = (await client.get("/chats")).json()["chats"]
 
-    assert response.status_code == 404
+    assert response.status_code == 410
+    # The reason a 404 would be wrong, asserted rather than described.
+    assert [c["id"] for c in listed] == [chat_id]
+    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
+
+
+async def test_an_unrenameable_chat_is_still_deletable() -> None:
+    """The 410 is not a dead end: deleting the chat still works.
+
+    Deleting a patient the scheduler no longer has succeeds, which is why the deletion
+    route has no 410 of its own - and why telling the caller to start a new chat is
+    advice they can actually follow.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+    refusal = RenameRefusal(
+        reason=RenameFailureReason.PATIENT_NOT_FOUND, detail="patient_not_found"
+    )
+
+    with patch(_RENAME, new=AsyncMock(return_value=refusal)):
+        async with _api(session_id) as client:
+            renamed = await client.patch(
+                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
+            )
+            with patch(
+                _DELETE,
+                new=AsyncMock(return_value=_deleted(existed=False, appointments=0)),
+            ):
+                deleted = await client.delete(f"/chats/{chat_id}")
+
+    assert renamed.status_code == 410
+    assert deleted.status_code == 204
 
 
 async def test_a_chat_without_a_patient_yet_cannot_be_renamed() -> None:

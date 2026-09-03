@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatWindow } from "../src/components/ChatWindow";
 import * as chatStream from "../src/lib/chatStream";
@@ -391,14 +391,22 @@ describe("ChatWindow", () => {
       continueB = resolve;
     });
 
+    // B is held open past its last token because a turn that ends - however it ends -
+    // takes its in-progress bubble with it, and the assertions below are about the
+    // bubble still being B's own while B is still streaming into it. The hold is
+    // released by the test rather than left parked forever: parked, B's `handleSend`
+    // stays suspended for good and its `finally` never runs, which is the one place in
+    // this suite where that guarantee would be quietly bypassed.
+    let endB!: () => void;
+    const bEnds = new Promise<void>((resolve) => {
+      endB = resolve;
+    });
+
     async function* turnB(): AsyncGenerator<ChatEvent> {
       yield { type: "token", text: "the surviving reply" };
       await bContinues;
       yield { type: "token", text: " continues" };
-      // Held open rather than ended here: a turn that ends - however it ends - takes
-      // its in-progress bubble with it, and the assertion below is about the bubble
-      // still being B's own while B is still streaming into it.
-      await new Promise(() => {});
+      await bEnds;
     }
 
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
@@ -436,6 +444,16 @@ describe("ChatWindow", () => {
         screen.getByText("the surviving reply continues"),
       ).toBeInTheDocument();
     });
+
+    // Now let B end the way any stream can end - by simply stopping. Its bubble going
+    // with it is the observable half of `handleSend`'s `finally`, and the only thing
+    // that proves this turn actually settled instead of being left suspended past the
+    // end of the test with its controller still in `activeControllersRef`.
+    endB();
+    await waitFor(() => {
+      expect(screen.queryByText("the surviving reply continues")).toBeNull();
+    });
+    expect(screen.queryByTestId("error")).toBeNull();
   });
 
   it("sends a second message via Enter while the first is still in flight", async () => {
@@ -535,11 +553,17 @@ describe("ChatWindow", () => {
   it("aborts every in-flight send, not just the most recent, when the chat changes", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     const abortSpy = vi.spyOn(AbortController.prototype, "abort");
-    const pendingN = new Promise<AsyncGenerator<ChatEvent>>(() => {
-      // Never resolves - both sends stay in flight through this test.
+    // In flight until the chat switch aborts them, and then rejected the way a real
+    // aborted fetch rejects. Left forever pending instead, the abort would be proved
+    // only as far as the call: the rejection it causes would never reach the component,
+    // so neither its `signal.aborted` branch nor the `finally` behind it would run.
+    let failN!: (reason: unknown) => void;
+    let failM!: (reason: unknown) => void;
+    const pendingN = new Promise<AsyncGenerator<ChatEvent>>((_resolve, reject) => {
+      failN = reject;
     });
-    const pendingM = new Promise<AsyncGenerator<ChatEvent>>(() => {
-      // Never resolves either.
+    const pendingM = new Promise<AsyncGenerator<ChatEvent>>((_resolve, reject) => {
+      failM = reject;
     });
     vi.spyOn(chatStream, "askChat")
       .mockReturnValueOnce(pendingN)
@@ -561,6 +585,16 @@ describe("ChatWindow", () => {
 
     expect(screen.queryByText("n")).toBeNull();
     expect(screen.queryByText("m")).toBeNull();
+
+    // Both requests now fail the way an aborted fetch does. An abort is not a fault the
+    // patient needs telling about - the pane it belonged to is already gone - so both
+    // turns must end quietly, leaving no banner on the chat now on screen.
+    const aborted = new DOMException("The operation was aborted.", "AbortError");
+    await act(async () => {
+      failN(aborted);
+      failM(aborted);
+    });
+    expect(screen.queryByTestId("error")).toBeNull();
     abortSpy.mockRestore();
   });
 

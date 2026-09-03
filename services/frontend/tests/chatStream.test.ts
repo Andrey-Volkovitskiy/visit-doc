@@ -217,6 +217,28 @@ describe("renameChatPatient", () => {
     fetchSpy.mockRestore();
   });
 
+  it("names the missing patient rather than telling the user to reload", async () => {
+    // The chat is still there - it is its *patient* the scheduler no longer holds, so
+    // the shared 404 sentence ("reload to see your chats") would send the user to do
+    // the one thing that cannot help, and hide the only cause there is.
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ detail: "this chat's patient is gone" }), {
+        status: 410,
+      }),
+    );
+
+    const error = (await renameChatPatient("a", "Grace").catch(
+      (err: unknown) => err,
+    )) as Error;
+
+    expect(error.message).toMatch(/patient/i);
+    expect(error.message).not.toMatch(/reload/i);
+    // The sentence is the client's own: the server's `detail` here is written for a
+    // developer, and only the 409 relays server prose.
+    expect(error.message).not.toMatch(/this chat's patient is gone/);
+    fetchSpy.mockRestore();
+  });
+
   it("does not claim the name was saved when the outcome is unknown", async () => {
     // A 504 means the server stopped waiting for scheduling, which does not prove the
     // rename was not applied - so the message must not say it was not.

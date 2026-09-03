@@ -40,6 +40,11 @@ make run-chat-dev      # migrate, then serve the chat service (:8000)
 make run-frontend-dev  # Vite (:5173)
 ```
 
+`chat` and `scheduler` must be built from the same commit. The gRPC contract's `Weekday`
+numbering changed in 007 (Monday `0` → `1`) in place, inside the unchanged `scheduling.v1`
+package, so a mismatched pair does not fail — a new scheduler's Monday reads as an old chat's
+Tuesday and every practitioner's schedule is presented a day out, with no error anywhere.
+
 Each service owns its own database, named for it: `visitdoc_chat` and `visitdoc_scheduler`. Each
 has its own Alembic history, and neither has a foreign key into the other — they reference each
 other by opaque id only. Both live in the one local Postgres container (see the tradeoff below);
