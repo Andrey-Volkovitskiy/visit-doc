@@ -7,7 +7,6 @@ import {
   fetchChats,
   localNow,
   parseNdjsonStream,
-  renameChatPatient,
   type AttentionMark,
   type ChatEvent,
   type Message,
@@ -183,129 +182,10 @@ describe("fetchChatHistory", () => {
   });
 });
 
-describe("renameChatPatient", () => {
-  it("sends the new name and returns what the server stored", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({ chat_id: "a", patient_name: "Grace B. Hopper" }),
-        { status: 200 },
-      ),
-    );
-
-    const result = await renameChatPatient("a", "Grace Hopper");
-
-    const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe("/chats/a/patient");
-    expect(init!.method).toBe("PATCH");
-    expect(JSON.parse(init!.body as string)).toEqual({ full_name: "Grace Hopper" });
-    // The server owns the value: what it echoed is what the caller gets back.
-    expect(result.patient_name).toBe("Grace B. Hopper");
-    fetchSpy.mockRestore();
-  });
-
-  it("surfaces the server's own explanation for a refused name", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({ detail: "another chat in this session already uses that name" }),
-        { status: 409 },
-      ),
-    );
-
-    await expect(renameChatPatient("a", "Ada")).rejects.toThrow(
-      "another chat in this session already uses that name",
-    );
-    fetchSpy.mockRestore();
-  });
-
-  it("names the missing patient rather than telling the user to reload", async () => {
-    // The chat is still there - it is its *patient* the scheduler no longer holds, so
-    // the shared 404 sentence ("reload to see your chats") would send the user to do
-    // the one thing that cannot help, and hide the only cause there is.
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ detail: "this chat's patient is gone" }), {
-        status: 410,
-      }),
-    );
-
-    const error = (await renameChatPatient("a", "Grace").catch(
-      (err: unknown) => err,
-    )) as Error;
-
-    expect(error.message).toMatch(/patient/i);
-    expect(error.message).not.toMatch(/reload/i);
-    // The sentence is the client's own: the server's `detail` here is written for a
-    // developer, and only the 409 relays server prose.
-    expect(error.message).not.toMatch(/this chat's patient is gone/);
-    fetchSpy.mockRestore();
-  });
-
-  it("does not claim the name was saved when the outcome is unknown", async () => {
-    // A 504 means the server stopped waiting for scheduling, which does not prove the
-    // rename was not applied - so the message must not say it was not.
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify({ detail: "..." }), { status: 504 }));
-
-    await expect(renameChatPatient("a", "Grace")).rejects.toThrow(/may not have been saved/);
-    fetchSpy.mockRestore();
-  });
-
-  it("says nothing was renamed when scheduling was never reached", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify({ detail: "..." }), { status: 503 }));
-
-    await expect(renameChatPatient("a", "Grace")).rejects.toThrow(/nothing was renamed/);
-    fetchSpy.mockRestore();
-  });
-
-  it("does not invite a retry of a rename scheduling refused", async () => {
-    // A 502 is scheduling having *answered*, with a rejection: the same request is
-    // refused identically, so "please try again" is advice that cannot work.
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify({ detail: "..." }), { status: 502 }));
-
-    const error = (await renameChatPatient("a", "Grace").catch(
-      (err: unknown) => err,
-    )) as Error;
-
-    expect(error.message).toMatch(/refused/);
-    expect(error.message).toMatch(/nothing was renamed/);
-    expect(error.message).not.toMatch(/try again/i);
-    fetchSpy.mockRestore();
-  });
-
-  it("falls back to a usable message when the error body is not JSON", async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response("<html>proxy error</html>", { status: 409 }));
-
-    await expect(renameChatPatient("a", "Grace")).rejects.toThrow(
-      "That name cannot be used for this chat.",
-    );
-    fetchSpy.mockRestore();
-  });
-
-  it("falls back to its own wording for a status the scheduling branches skip", async () => {
-    // The 502/503/504 wording is shared with the deletion, and says nothing for a 500.
-    // Falling through to a *deletion's* fallback, or to no message at all, is what a
-    // shared helper gets wrong; the operation keeps its own last word.
-    const fetchSpy = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(new Response(JSON.stringify({ detail: "boom" }), { status: 500 }));
-
-    await expect(renameChatPatient("a", "Grace")).rejects.toThrow(
-      "Could not rename this chat. Please try again.",
-    );
-    fetchSpy.mockRestore();
-  });
-});
-
 describe("deleteChat", () => {
   it("does not invite a retry of a deletion scheduling refused", async () => {
-    // Same defect class as the rename above: the deletion route answers 502 when the
-    // scheduler rejects the request, and a rejection is not something a retry fixes.
+    // A 502 is scheduling having *answered*, with a rejection: the same request is
+    // refused identically, so "please try again" is advice that cannot work.
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ detail: "..." }), { status: 502 }));
@@ -338,20 +218,16 @@ describe("deleteChat", () => {
     fetchSpy.mockRestore();
   });
 
-  it("reports a chat that is already gone the way the rename does", async () => {
-    // Both routes 404 for a chat of another session as readily as for a deleted one,
-    // and both say so in the same words - one sentence, shared, not two that can drift.
+  it("tells the user to reload for a chat that is already gone", async () => {
+    // The route 404s for a chat of another session as readily as for a deleted one,
+    // and the sentence covers both: this chat is not reachable from here.
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(JSON.stringify({ detail: "chat not found" }), { status: 404 }));
 
     const deleted = (await deleteChat("a").catch((err: unknown) => err)) as Error;
-    const renamed = (await renameChatPatient("a", "Grace").catch(
-      (err: unknown) => err,
-    )) as Error;
 
     expect(deleted.message).toBe("This chat no longer exists. Reload to see your chats.");
-    expect(renamed.message).toBe(deleted.message);
     fetchSpy.mockRestore();
   });
 

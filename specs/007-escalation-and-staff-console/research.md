@@ -599,7 +599,7 @@ console path needs the human-facing CRUD the REST surface already is.
 **No retry is deliberate.** The gRPC path retries because an agent turn must not fail on a restart;
 a console form must not silently create two practitioners because the first POST's answer was slow.
 A timeout is surfaced to the staff member as the unknown outcome it is, exactly as `chats.py`
-already does for a rename (503 for "nothing happened", 504 for "unknown").
+already does for a deletion (503 for "nothing happened", 504 for "unknown").
 
 **Recorded as a deviation** in the plan's Complexity Tracking: this is a second transport across one
 boundary, and it deserves to be seen rather than buried.

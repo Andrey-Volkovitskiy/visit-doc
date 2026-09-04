@@ -3,7 +3,7 @@ info:
   title: VisitDoc — scheduler service admin API (Phase 1c)
   version: "1.0.0"
   description: >
-    Spec FR-048's programmatic management surface: create/edit/delete practitioners and rename
+    Spec FR-048's programmatic management surface: create/edit/delete practitioners, and list
     patients. No user interface ships for it in this phase.
 
     Authorization is the session id itself, presented in `X-Session-Id`. The chat service mints it
@@ -105,12 +105,6 @@ components:
         chat_id: { type: string }
         full_name: { type: string }
 
-    PatientUpdate:
-      type: object
-      required: [full_name]
-      properties:
-        full_name: { type: string, minLength: 1, maxLength: 200 }
-
     Error:
       type: object
       required: [detail]
@@ -210,6 +204,9 @@ paths:
         "401": { description: Missing X-Session-Id. }
         "404": { description: A practitioner belonging to another session. }
 
+  # There is no /patients/{patient_id} path. A patient is created with its chat, named once at
+  # creation, and deleted with its chat (FR-003, FR-039, FR-048 as amended after 007), so this API
+  # offers no create, no delete, and no edit for one.
   /patients:
     get:
       summary: List the session's patients
@@ -223,34 +220,3 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Patient" }
         "401": { description: Missing X-Session-Id. }
-
-  /patients/{patient_id}:
-    parameters:
-      - $ref: "#/components/parameters/SessionId"
-      - name: patient_id
-        in: path
-        required: true
-        schema: { type: string }
-    patch:
-      summary: Rename a patient
-      description: >
-        The only patient mutation in this API. There is deliberately no create and no delete: a
-        patient is created with its chat and deleted with it (FR-003, FR-039).
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/PatientUpdate" }
-      responses:
-        "200":
-          description: Renamed.
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Patient" }
-        "401": { description: Missing X-Session-Id. }
-        "404": { description: Unknown patient, or one belonging to another session. }
-        "409":
-          description: Another patient in this session already has that name (FR-012, FR-050).
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Error" }

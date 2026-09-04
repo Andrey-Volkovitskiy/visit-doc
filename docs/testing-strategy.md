@@ -90,7 +90,7 @@ on, so a gap in it is not "that path is untested" — it is a live call on the w
 failing with a loop-binding or timeout error attributed to whatever the test was actually about.
 When a new function is added to a faked boundary, add it to the autouse fixture in the same
 change: `_scheduler_is_unreachable_by_default` fakes `ensure_session_provisioned`,
-`delete_patient_for_chat`, `rename_patient` and `delete_session` for exactly this reason.
+`delete_patient_for_chat` and `delete_session` for exactly this reason.
 
 ## Live paid APIs: manual testing and e2e only
 

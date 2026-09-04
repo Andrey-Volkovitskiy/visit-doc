@@ -98,12 +98,6 @@ class PractitionerOut(BaseModel):
     schedule: list[WorkingRangeOut]
 
 
-class PatientUpdate(BaseModel):
-    """`PATCH /patients/{id}` body: the only patient mutation this API offers."""
-
-    full_name: str = Field(min_length=1, max_length=NAME_LENGTH)
-
-
 class PatientOut(BaseModel):
     """A patient and the chat they belong to."""
 

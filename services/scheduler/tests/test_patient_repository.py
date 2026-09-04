@@ -104,14 +104,16 @@ async def test_the_same_creation_sequence_in_a_fresh_session_yields_the_same_nam
     assert first == second
 
 
-async def test_a_renamed_patient_frees_its_name_for_the_next_creation(
+async def test_a_deleted_patient_frees_its_name_for_the_next_creation(
     db_session: AsyncSession,
 ) -> None:
-    """A count-based shortcut would skip the freed name; the walk reuses it."""
+    """A count-based shortcut would collide with a held name; the walk does not."""
     session_id = new_id()
     created = await _create_patients(db_session, session_id, 5)
-    third = await patient_repository.list_for_session(db_session, session_id)
-    await patient_repository.rename(db_session, third[2], "Renamed Entirely")
+    patients = await patient_repository.list_for_session(db_session, session_id)
+    await patient_repository.delete_for_chat(
+        db_session, session_id, patients[2].chat_id
+    )
 
     next_name = (
         await patient_repository.create_if_absent(db_session, session_id, new_id())

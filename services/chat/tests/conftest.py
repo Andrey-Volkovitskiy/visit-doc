@@ -190,7 +190,6 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
             new=_unreachable(),
         ),
         patch("chat.api.chats.scheduling.delete_patient_for_chat", new=_unreachable()),
-        patch("chat.api.chats.scheduling.rename_patient", new=_unreachable()),
         patch("chat.api.admin.scheduling.delete_session", new=_unreachable()),
     ):
         yield

@@ -87,20 +87,6 @@ class NotFoundEntity(StrEnum):
     CHAT = "chat_not_found"
 
 
-class RenameFailureReason(StrEnum):
-    """Why an evaluated rename attempt was refused.
-
-    The whole set - every refusal maps to exactly one member. Mirrors the
-    `RenameFailureReason` enum on the gRPC contract 1:1.
-
-    A refusal is a normal outcome carried as data; it is distinct from the service
-    being unreachable, which is a transport failure and has no member here.
-    """
-
-    NAME_TAKEN = "name_taken"
-    PATIENT_NOT_FOUND = "patient_not_found"
-
-
 class AppointmentStatus(StrEnum):
     """Whether an appointment still counts, or was called off but kept.
 

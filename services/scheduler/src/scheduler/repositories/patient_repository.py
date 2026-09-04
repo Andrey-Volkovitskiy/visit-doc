@@ -2,7 +2,8 @@
 
 A patient is created with its chat and deleted with it - there is deliberately no
 free-standing create or delete, only the create-if-absent that provisioning calls and
-the delete-for-chat that chat deletion calls.
+the delete-for-chat that chat deletion calls. A name is assigned once, at creation, and
+never changes afterwards.
 """
 
 from sqlalchemy import delete as sql_delete
@@ -138,18 +139,6 @@ async def create_if_absent(
         return patient, True
 
     raise IntegrityError("patient name allocation exhausted its retries", None, None)  # type: ignore[arg-type]
-
-
-async def rename(session: AsyncSession, patient: Patient, full_name: str) -> Patient:
-    """Rename `patient`.
-
-    Raises: IntegrityError if another patient in the same session already has that name.
-    """
-    patient.full_name = full_name
-    session.add(patient)
-    await session.commit()
-    await session.refresh(patient)
-    return patient
 
 
 async def delete_for_chat(

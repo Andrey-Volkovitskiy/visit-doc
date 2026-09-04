@@ -397,7 +397,8 @@ the pool in order looking for the first unused entry; once every entry is taken 
 
 **Rationale**: FR-011/FR-013 demand full determinism — the same creation sequence in a fresh session
 must produce the same names (SC-007) — which rules out "pick a random unused name" and any
-count-based shortcut (a session that renamed a patient would skip or collide). Read-then-insert races
+count-based shortcut (a session that deleted a patient would then collide with a name still held).
+Read-then-insert races
 are handled by the constraint rather than by locking the session, keeping concurrent chat creation
 in one session correct without serializing it.
 

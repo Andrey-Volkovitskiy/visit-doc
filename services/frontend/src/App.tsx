@@ -11,7 +11,6 @@ import {
   createChat,
   deleteChat,
   fetchChats,
-  renameChatPatient,
   type ChatListing,
   type ChatSummary,
 } from "./lib/chatStream";
@@ -137,22 +136,6 @@ function App() {
     }
   }
 
-  // The response carries the name the server actually stored, so the row is patched
-  // from it rather than from what was typed — and there is no refetch, which is what
-  // makes the new name appear the moment the request returns. Errors are re-thrown for
-  // ChatList to show beside the input it was typed in.
-  async function handleRename(chatId: string, fullName: string): Promise<void> {
-    setError(null);
-    const renamed = await renameChatPatient(chatId, fullName);
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === renamed.chat_id
-          ? { ...chat, patient_name: renamed.patient_name }
-          : chat,
-      ),
-    );
-  }
-
   // Both sides at once, with no way in and out: this is a single-visitor
   // demonstration, so the staff member and the patient are the same person in two
   // panes. There is no authentication in this phase and no prompt for one.
@@ -173,7 +156,6 @@ function App() {
           })
         }
         onDelete={(chatId) => void handleDelete(chatId)}
-        onRename={handleRename}
       />
       {error && <p data-testid="chat-list-error">{error}</p>}
       <ChatWindow

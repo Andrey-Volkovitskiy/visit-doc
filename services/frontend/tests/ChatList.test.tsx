@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatList, chatLabel } from "../src/components/ChatList";
 import type { ChatSummary } from "../src/lib/chatStream";
@@ -18,7 +18,6 @@ function renderList(chats: ChatSummary[], activeChatId: string | null = null) {
     onSelect: vi.fn(),
     onCreate: vi.fn(),
     onDelete: vi.fn(),
-    onRename: vi.fn().mockResolvedValue(undefined),
   };
   render(<ChatList chats={chats} activeChatId={activeChatId} {...handlers} />);
   return handlers;
@@ -95,81 +94,12 @@ describe("ChatList", () => {
     expect(handlers.onDelete).not.toHaveBeenCalled();
   });
 
-  it("opens the rename field pre-filled with the current name", () => {
+  it("offers no way to rename a chat", () => {
+    // A patient's name is assigned once, when the scheduler creates them, and this
+    // screen is a reader of it - there is no control here that could disagree.
     renderList([chat({ id: "a", patient_name: "Ada" })]);
 
-    fireEvent.click(screen.getByLabelText("Rename Ada"));
-
-    expect(screen.getByLabelText("Patient name")).toHaveValue("Ada");
-  });
-
-  it("leaves the rename field empty for a chat with no patient yet", () => {
-    // The visible label is derived from a timestamp, not a name anyone chose.
-    renderList([chat({ id: "a", patient_name: null })]);
-
-    fireEvent.click(screen.getByLabelText(/^Rename Unnamed/));
-
-    expect(screen.getByLabelText("Patient name")).toHaveValue("");
-  });
-
-  it("reports the trimmed name and closes the field", async () => {
-    const handlers = renderList([chat({ id: "a", patient_name: "Ada" })]);
-
-    fireEvent.click(screen.getByLabelText("Rename Ada"));
-    fireEvent.change(screen.getByLabelText("Patient name"), {
-      target: { value: "  Grace Hopper  " },
-    });
-    fireEvent.click(screen.getByText("Save"));
-
-    await waitFor(() =>
-      expect(handlers.onRename).toHaveBeenCalledWith("a", "Grace Hopper"),
-    );
-    await waitFor(() => expect(screen.queryByLabelText("Patient name")).toBeNull());
-  });
-
-  it("refuses a blank name without asking the server", () => {
-    const handlers = renderList([chat({ id: "a", patient_name: "Ada" })]);
-
-    fireEvent.click(screen.getByLabelText("Rename Ada"));
-    fireEvent.change(screen.getByLabelText("Patient name"), {
-      target: { value: "   " },
-    });
-    fireEvent.click(screen.getByText("Save"));
-
-    expect(handlers.onRename).not.toHaveBeenCalled();
-    expect(screen.getByTestId("rename-error")).toBeInTheDocument();
-  });
-
-  it("keeps the field open and shows why when the rename is refused", async () => {
-    const handlers = renderList([chat({ id: "a", patient_name: "Ada" })]);
-    handlers.onRename.mockRejectedValue(new Error("that name is already used"));
-
-    fireEvent.click(screen.getByLabelText("Rename Ada"));
-    fireEvent.change(screen.getByLabelText("Patient name"), {
-      target: { value: "Bram" },
-    });
-    fireEvent.click(screen.getByText("Save"));
-
-    await waitFor(() =>
-      expect(screen.getByTestId("rename-error")).toHaveTextContent(
-        "that name is already used",
-      ),
-    );
-    // Still open, still holding what was typed, so it can be corrected in place.
-    expect(screen.getByLabelText("Patient name")).toHaveValue("Bram");
-  });
-
-  it("cancels a rename without reporting it", () => {
-    const handlers = renderList([chat({ id: "a", patient_name: "Ada" })]);
-
-    fireEvent.click(screen.getByLabelText("Rename Ada"));
-    fireEvent.change(screen.getByLabelText("Patient name"), {
-      target: { value: "Grace" },
-    });
-    fireEvent.click(screen.getByText("Cancel"));
-
-    expect(handlers.onRename).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/^Rename/)).toBeNull();
     expect(screen.queryByLabelText("Patient name")).toBeNull();
-    expect(screen.getByText("Ada")).toBeInTheDocument();
   });
 });

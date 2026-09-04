@@ -40,7 +40,7 @@ def test_the_same_creation_sequence_yields_the_identical_sequence() -> None:
     assert draw(20) == draw(20)
 
 
-def test_a_gap_left_by_a_rename_is_filled_before_the_pool_advances() -> None:
+def test_a_gap_left_by_a_deletion_is_filled_before_the_pool_advances() -> None:
     """A count-based shortcut would skip past the freed name; the walk reuses it."""
     taken = set(WRITER_POOL[:10]) - {WRITER_POOL[3]}
 

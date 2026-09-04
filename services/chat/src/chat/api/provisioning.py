@@ -29,9 +29,9 @@ async def provision_patient(channel: grpc.aio.Channel, chat: Chat) -> str | None
     the same patient rather than creating a second one.
 
     Creation only - a chat that already has a patient is answered from the cached name
-    without a call. Keeping the cache current is the rename route's job, which writes
-    both stores in one request; re-reading here instead would put a second writer on
-    `patient_name` that could overwrite a rename with the value it read just before it.
+    without a call. The name is assigned once, when the patient is created, and never
+    changes afterwards, so the cached copy cannot go stale and re-reading it would cost
+    a round trip for a value that is already correct.
     """
     if chat.patient_id is not None:
         return chat.patient_name

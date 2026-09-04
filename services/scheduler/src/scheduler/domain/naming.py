@@ -2,8 +2,8 @@
 
 Fully deterministic by requirement - the same creation sequence in a fresh session must
 produce the same names - which rules out picking a random unused name, and rules out any
-count-based shortcut too, since a session that renamed someone would then skip or
-collide.
+count-based shortcut too, since a session that deleted someone would then collide with a
+name still held.
 """
 
 from enum import StrEnum

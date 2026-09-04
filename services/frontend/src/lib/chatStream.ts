@@ -178,115 +178,52 @@ export async function createChat(): Promise<ChatSummary> {
 }
 
 /**
- * How one operation is named in the sentences a scheduling failure produces.
+ * Turn a failed deletion into the message the user sees.
  *
- * Three fields rather than one verb because the 504 sentence names what is left in
- * doubt, and the two operations leave different things in doubt: a rename leaves a
- * *name* unconfirmed, a deletion leaves the *chat* unconfirmed.
+ * The 502/503/504 split is a contract about what each status *proves*, not three shades
+ * of one apology: a 502 is scheduling having answered, with a rejection, so nothing was
+ * written and the identical request is rejected identically — which is why it is the one
+ * branch that does not offer a retry. A 503 is scheduling never having been reached, so
+ * nothing was written and a retry is safe. A 504 leaves the outcome genuinely unknown, so
+ * it states none, and offers the retry that deleting an already-absent patient makes safe.
+ *
+ * The 404 says the one thing this route answers it for — this chat is not reachable from
+ * this session, whether it was deleted or was never ours.
+ *
+ * Takes the bare status, not a `Response`: no branch here quotes the server, so reading a
+ * body would only make this async for nothing. The server's own `detail` is developer
+ * prose either way — it is quoted in the one place a rule the scheduler owns has to be
+ * relayed verbatim, and nowhere else.
  */
-interface OperationWording {
-  /** The request itself, as "this ...": "rename", "deletion". */
-  noun: string;
-  /** What a failure that proves nothing happened says was not done: "renamed". */
-  done: string;
-  /** The whole clause a 504 cannot rule out, its subject included. */
-  unconfirmed: string;
-}
-
-const RENAME: OperationWording = {
-  noun: "rename",
-  done: "renamed",
-  unconfirmed: "the new name may not have been saved",
-};
-
-const DELETION: OperationWording = {
-  noun: "deletion",
-  done: "deleted",
-  unconfirmed: "this chat may not have been deleted",
-};
-
-/**
- * The message for a status that says how a call to scheduling failed.
- *
- * Written once because the 502/503/504 split is a contract about what each status
- * *proves*, not three shades of one apology: a 502 is scheduling having answered, with
- * a rejection, so nothing was written and the identical request is rejected identically
- * - which is why it is the one branch that does not offer a retry. A 503 is scheduling
- * never having been reached, so nothing was written and a retry is safe. A 504 leaves
- * the outcome genuinely unknown, so it states none, and offers the retry that both of
- * these operations are idempotent enough to make safe. Stated once per operation, a
- * correction to one would leave the other saying the old, wrong thing.
- *
- * The 404 rides along because both routes answer it for one thing only - this chat is
- * not reachable from this session, whether it was deleted or was never ours - which is
- * a single meaning both can state in one sentence. It is deliberately not the route's
- * only "missing" answer: a rename whose *patient* is gone answers 410, because
- * "reload to see your chats" is exactly the wrong advice for a chat that is still
- * there.
- *
- * Returns: null for a status this does not speak for - a 409, a 410, a 422, a 500 -
- *     which belongs to the operation that knows what it means, not to a guess made
- *     here.
- */
-function schedulingFailureMessage(
-  status: number,
-  wording: OperationWording,
-): string | null {
+function deleteErrorMessage(status: number): string {
   switch (status) {
     case 404:
       return "This chat no longer exists. Reload to see your chats.";
     case 502:
       return (
-        `Scheduling refused this ${wording.noun}, so nothing was ${wording.done}. ` +
+        "Scheduling refused this deletion, so nothing was deleted. " +
         "Sending it again will not help; please report this."
       );
     case 503:
-      return (
-        `Scheduling is unavailable, so nothing was ${wording.done}. ` +
-        "Try again shortly."
-      );
+      return "Scheduling is unavailable, so nothing was deleted. Try again shortly.";
     case 504:
       return (
-        `Scheduling did not confirm this ${wording.noun}, so ${wording.unconfirmed}. ` +
-        "Try again."
+        "Scheduling did not confirm this deletion, so this chat may not have been " +
+        "deleted. Try again."
       );
     default:
-      return null;
+      return "Could not delete this chat. Please try again.";
   }
-}
-
-/**
- * Turn a failed deletion into the message the user sees.
- *
- * Deleting an already-absent patient succeeds, which is what makes the 504 branch's
- * retry safe advice here rather than an invitation to repeat a side effect.
- *
- * Takes the bare status, not the `Response` the rename takes: no branch here quotes the
- * server, so reading a body would only make this async for nothing. The server's own
- * `detail` is developer prose either way - it is quoted in the one place a rule the
- * scheduler owns has to be relayed verbatim, and nowhere else.
- */
-function deleteErrorMessage(status: number): string {
-  return (
-    schedulingFailureMessage(status, DELETION) ??
-    "Could not delete this chat. Please try again."
-  );
 }
 
 /** DELETE /chats/{id}: remove the chat, its messages, its patient, and its bookings. */
 export async function deleteChat(chatId: string): Promise<void> {
   const response = await fetch(`/chats/${chatId}`, { method: "DELETE" });
-  // Not `ensureOk`, for the same reason the rename is not: only some of these
-  // failures know whether anything was deleted, and only some are worth retrying.
+  // Not `ensureOk`: only some of these failures know whether anything was deleted,
+  // and only some are worth retrying.
   if (!response.ok) {
     throw new Error(deleteErrorMessage(response.status));
   }
-}
-
-/** What a rename changed: the chat, and the name now stored for its patient. */
-export interface ChatPatient {
-  chat_id: string;
-  patient_name: string;
 }
 
 /**
@@ -302,62 +239,6 @@ export async function detailOf(response: Response, fallback: string): Promise<st
   } catch {
     return fallback;
   }
-}
-
-/**
- * Turn a failed rename into the message the user sees.
- *
- * Only the statuses the rename alone has are worded here. What a 502, a 503 and a 504
- * prove is `schedulingFailureMessage`'s to say, so the rename and the deletion cannot
- * drift apart on it; renaming to a name already held changes nothing, which is what
- * makes that 504's retry safe advice here.
- *
- * The 409 is the one branch whose wording is the server's own: the rule that refused
- * the name belongs to scheduling, and restating it here would make the screen disagree
- * with the system it is editing. It is also the only reason this takes the whole
- * `Response`.
- *
- * The 410 is worded here instead, and only here - the deletion never answers it, since
- * deleting a patient that is already absent succeeds. It says what the shared 404
- * cannot: the chat itself is fine, so reloading the listing would only show it again,
- * unchanged. Nothing re-provisions a chat that already names a patient, so this is
- * permanent and the way out is a new chat, not a retry.
- */
-async function renameErrorMessage(response: Response): Promise<string> {
-  switch (response.status) {
-    case 409:
-      return await detailOf(response, "That name cannot be used for this chat.");
-    case 410:
-      return (
-        "This chat's patient no longer exists in scheduling, so it cannot be " +
-        "renamed. Start a new chat."
-      );
-    case 422:
-      return "Enter a name of 1 to 200 characters.";
-    default:
-      return (
-        schedulingFailureMessage(response.status, RENAME) ??
-        "Could not rename this chat. Please try again."
-      );
-  }
-}
-
-/** PATCH /chats/{id}/patient: rename this chat's patient. */
-export async function renameChatPatient(
-  chatId: string,
-  fullName: string,
-): Promise<ChatPatient> {
-  const response = await fetch(`/chats/${chatId}/patient`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ full_name: fullName }),
-  });
-  // Not `ensureOk`: which failure this was is exactly what the user needs to know,
-  // since only some of them say whether the name was saved.
-  if (!response.ok) {
-    throw new Error(await renameErrorMessage(response));
-  }
-  return (await response.json()) as ChatPatient;
 }
 
 /** POST `message` to /chat for one chat, and return its parsed NDJSON event stream. */

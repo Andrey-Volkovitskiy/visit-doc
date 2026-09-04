@@ -103,13 +103,15 @@ means a practitioner who is listed but never bookable (spec Edge Cases).
 | `id` | `VARCHAR(26)` PK | ULID |
 | `session_id` | `VARCHAR(26)` NOT NULL | opaque; indexed |
 | `chat_id` | `VARCHAR(26)` NOT NULL | opaque; **UNIQUE** |
-| `full_name` | `VARCHAR(200)` NOT NULL | from the writer pool unless renamed |
-| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only; `updated_at` moves on a rename (FR-048) |
+| `full_name` | `VARCHAR(200)` NOT NULL | from the writer pool; assigned once, never edited |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only |
 
 - `UNIQUE (chat_id)` — FR-003's permanent one-to-one pairing, and the thing that makes
   `EnsureSessionProvisioned` idempotent on retry (FR-045, research #10).
 - `UNIQUE (session_id, full_name)` — FR-012; may repeat across sessions (FR-014).
-- There is no `DELETE /patients` endpoint: a patient dies only with its chat (FR-039).
+- There is no `DELETE /patients` endpoint: a patient dies only with its chat (FR-039). Nor is there
+  a `PATCH`: the name is written once, at creation (FR-048 as amended after 007), so this row has
+  exactly one writer.
 
 ### `appointments`
 
@@ -163,11 +165,10 @@ EXCLUDE USING gist (practitioner_id WITH =, tsrange(starts_at, ends_at) WITH &&)
 - **Why the name is cached rather than fetched.** `GET /chats` must render a patient name per row
   (FR-036), including after a reload, and the gRPC contract has no "list this session's patients"
   RPC — `EnsureSessionProvisioned` returns one patient, for one chat. Without the cache the chat
-  list would need one round trip per row on every render. The tradeoff is staleness in exactly one
-  direction: renaming a patient through the scheduler's admin surface (FR-048) leaves this copy
-  showing the old name until the next provisioning call refreshes it. Acceptable because that
-  surface ships no UI this phase and is a developer/script caller, and because the scheduler stays
-  the single authority — this side never writes a name of its own.
+  list would need one round trip per row on every render. Since FR-048 was amended after 007 the
+  cache cannot go stale at all: the name is assigned once, when the scheduler creates the patient,
+  and nothing anywhere edits it afterwards — so the copy written by the one provisioning call is
+  the value for the life of the row, and the scheduler remains the single authority.
 - Application-level "one chat per session" is dropped (FR-035). `get_or_create_chat_for_session` and
   `get_chat_for_session` are removed; `list_chats_for_session` (FR-056 ordering, research #13),
   `create_chat`, `get_chat` (session-scoped), `set_patient`, and `delete_chat` replace them.
