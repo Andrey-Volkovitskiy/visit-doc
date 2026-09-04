@@ -335,18 +335,17 @@ delete one and confirm its patient and appointments are gone while the others ar
 
 ---
 
-### User Story 5 - Manage practitioners and patient names directly (Priority: P5)
+### User Story 5 - Manage practitioners directly (Priority: P5)
 
-The app user adds a second practitioner, gives one a different specialty, corrects a schedule, or
-renames a patient — through a programmatic interface, with sensible names proposed automatically.
-There is no screen for this.
+The app user adds a second practitioner, gives one a different specialty, or corrects a schedule —
+through a programmatic interface, with sensible names proposed automatically. There is no screen for
+this.
 
 **Why this priority**: Needed to set up richer scenarios and to demonstrate the full lifecycle, but
 the seeded data plus Story 4's chat list is enough for every other story.
 
-**Independent Test**: Create, edit, and delete a practitioner and rename a patient through the
-interface, then verify the effects — including cascading appointment deletion — without touching the
-chat UI.
+**Independent Test**: Create, edit, and delete a practitioner through the interface, then verify the
+effects — including cascading appointment deletion — without touching the chat UI.
 
 **Acceptance Scenarios**:
 
@@ -358,8 +357,8 @@ chat UI.
    time and length, and new bookings are validated against the new schedule.
 3. **Given** a practitioner with appointments, **When** the practitioner is deleted, **Then** those
    appointments are deleted with them, and the affected patients' other appointments are untouched.
-4. **Given** a session that already has a patient named "Mark Twain", **When** the user renames
-   another patient to "Mark Twain", **Then** the rename is refused.
+4. **Given** a session that already has a practitioner named "William Osler", **When** the user
+   renames another practitioner to "William Osler", **Then** the rename is refused.
 5. **Given** a session belonging to another user, **When** the user tries to read or change anything
    in it, **Then** the attempt is refused.
 
@@ -694,8 +693,20 @@ chat UI.
 #### Direct management
 
 - **FR-048**: The system MUST provide a programmatic interface, scoped to the caller's own session,
-  for creating, editing, and deleting practitioners, and for editing patients. No user interface is
+  for creating, editing, and deleting practitioners, and for listing patients. No user interface is
   delivered for it in this phase.
+  *(Amended after 007: the patient-editing half is **withdrawn**. A patient's name is assigned once,
+  when the scheduler creates them with their chat, and is never edited afterwards — by this
+  interface, by the chat service, or by the patient. The name therefore has exactly one writer and
+  is never updated in place, so the copy the chat service caches on its `chats` row never disagrees
+  with the scheduler's name for that patient, and the whole failure vocabulary a second writer
+  needed — a name-taken refusal, a patient-gone refusal, and a did-my-write-land question a caller
+  could not answer — has nothing left to describe. What immutability does not cover is the patient
+  ceasing to exist: FR-039 deletes the scheduler-side patient before the chat row, so an interrupted
+  delete leaves a chat cached against a patient that is gone, which nothing re-provisions and only a
+  retried delete clears. This withdraws the rename RPC from the gRPC contract, `PATCH
+  /patients/{id}` from this interface, and `PATCH /chats/{id}/patient` with its rename control from
+  the chat surface.)*
 - **FR-049**: Deleting a practitioner MUST delete that practitioner's appointments.
 - **FR-050**: The management interface MUST refuse an edit that would violate FR-012.
 

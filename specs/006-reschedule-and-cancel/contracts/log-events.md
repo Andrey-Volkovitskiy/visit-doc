@@ -57,10 +57,10 @@ no-op are already visible chat-side through `booking.tool_result`, whose `status
 tool result's own value — now including `changed`, `unchanged` and `unknown`
 (contracts/agent-tools.md).
 
-The change path also emits three error-level **defect diagnostics** — `change.unknown_failure_reason`
-and `change.response_without_result` from the client, and `change.response_unreadable` from the
-handler. They are deliberately not enumerated as contract events, following 005's own convention for
-`booking.unknown_failure_reason`, `rename.unknown_failure_reason` and
+The change path also emits three error-level **defect diagnostics** —
+`change.unknown_failure_reason` and `change.response_without_result` from the client, and
+`change.response_unreadable` from the handler. They are deliberately not enumerated as contract
+events, following 005's own convention for `booking.unknown_failure_reason` and
 `scheduling.unknown_not_found_entity`: each records that this build could not read something the
 contract promises, which is a deployment skew or a defect rather than a fact about an appointment.
 Nothing consumes them, and none of them describes a change. A record that *does* describe a change

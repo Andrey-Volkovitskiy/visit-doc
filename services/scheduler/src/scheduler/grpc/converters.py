@@ -27,7 +27,6 @@ from shared_models.scheduling import (
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 
 from scheduler.domain.models import (
-    NAME_LENGTH,
     Appointment,
     Patient,
     Practitioner,
@@ -154,21 +153,6 @@ def read_required_id(value: str, field_name: str) -> str:
     """
     if not value:
         raise ConversionError(f"{field_name} is required")
-    return value
-
-
-def read_patient_name(value: str) -> str:
-    """Return `value`, rejecting a name the patient table could not hold.
-
-    The bounds match `PatientUpdate`'s, so the same name is accepted whichever surface
-    it arrives through.
-
-    Raises: ConversionError if the name is empty or longer than the column allows.
-    """
-    if not value:
-        raise ConversionError("full_name is required")
-    if len(value) > NAME_LENGTH:
-        raise ConversionError(f"full_name must be at most {NAME_LENGTH} characters")
     return value
 
 

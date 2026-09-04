@@ -195,9 +195,15 @@ curl -sX PATCH localhost:8001/practitioners/<id> -H "X-Session-Id: $SID" \
      -d '{"schedule": [{"weekday": 1, "start_time": "08:00", "end_time": "09:00"}]}'
 
 # Name collision must be refused (FR-050)
-curl -isX PATCH localhost:8001/patients/<id> -H "X-Session-Id: $SID" \
-     -H 'Content-Type: application/json' -d '{"full_name": "<an existing patient name>"}' | head -1
+curl -isX PATCH localhost:8001/practitioners/<id> -H "X-Session-Id: $SID" \
+     -H 'Content-Type: application/json' -d '{"full_name": "<an existing practitioner name>"}' \
+     | head -1
 # expect: HTTP/1.1 409
+
+# A patient's name is assigned once and never edited (FR-048 as amended after 007)
+curl -isX PATCH localhost:8001/patients/<id> -H "X-Session-Id: $SID" \
+     -H 'Content-Type: application/json' -d '{"full_name": "Anything"}' | head -1
+# expect: HTTP/1.1 404 — there is no such route
 
 # Another session's data is invisible (US5-5)
 curl -isX GET localhost:8001/practitioners -H "X-Session-Id: 00000000000000000000000000" | head -1

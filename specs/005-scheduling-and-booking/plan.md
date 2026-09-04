@@ -244,7 +244,7 @@ services/scheduler/                          # placeholder today -> real service
 │   ├── api/
 │   │   ├── dependencies.py                  # NEW: X-Session-Id extraction (401 when absent)
 │   │   ├── practitioners.py                 # NEW: FR-048 CRUD
-│   │   ├── patients.py                      # NEW: list + rename only (FR-048)
+│   │   ├── patients.py                      # NEW: list only (FR-048 as amended after 007)
 │   │   ├── specialties.py                   # NEW: GET /specialties — the ten, name-sorted, so a
 │   │   │                                    #   dropdown is populated from the service rather than
 │   │   │                                    #   a copy in the client (FR-060). Not session-scoped

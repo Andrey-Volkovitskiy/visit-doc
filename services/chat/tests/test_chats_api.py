@@ -13,8 +13,6 @@ from chat.agent.generation_registry import register_and_cancel_previous
 from chat.api import turn as turn_api
 from chat.api.session_cookie import COOKIE_NAME
 from chat.clients.scheduling import (
-    PatientInfo,
-    RenameRefusal,
     SchedulingError,
     SchedulingNotFoundError,
     SchedulingRequestError,
@@ -27,7 +25,6 @@ from chat.main import app
 from chat.repositories import chat_repository
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
-from shared_models.scheduling import RenameFailureReason
 from structlog.contextvars import merge_contextvars
 from structlog.testing import capture_logs
 from ulid import ULID
@@ -61,6 +58,20 @@ async def _api(session_id: str | None = None) -> AsyncIterator[AsyncClient]:
                 if session_id is not None:
                     client.cookies.set(COOKIE_NAME, session_id)
                 yield client
+
+
+async def _seed_chat_with_patient(name: str = "Ada Lovelace") -> tuple[str, str]:
+    """Create a session holding one already-provisioned chat.
+
+    Returns: the session id and the chat id.
+    """
+    async with session_factory() as session:
+        created = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, created.id)
+        await chat_repository.set_patient(
+            session, chat.id, created.id, "01PATENT000000000000000000", name
+        )
+    return created.id, chat.id
 
 
 async def _seed_session_with_chats(count: int) -> tuple[str, list[str]]:
@@ -321,9 +332,9 @@ async def test_a_chat_created_while_degraded_acquires_its_patient_on_a_later_tur
 
 
 async def test_a_chat_that_already_has_a_patient_is_not_re_provisioned() -> None:
-    # A turn asks the scheduler for nothing once the chat has a patient. That keeps the
-    # rename route the only writer of the cached name, and keeps a turn's latency clear
-    # of the scheduling budget.
+    # A turn asks the scheduler for nothing once the chat has a patient. Provisioning
+    # is the only writer of the cached name, and this keeps a turn's latency clear of
+    # the scheduling budget.
     provision = AsyncMock(return_value=_provisioned())
     with patch(_PROVISION, new=provision):
         async with _api() as client:
@@ -493,6 +504,90 @@ async def test_a_deletion_of_unknown_outcome_is_not_reported_as_a_failure() -> N
         assert await chat_repository.get_chat(session, chat_ids[0], session_id) is not (
             None
         )
+
+
+async def test_a_delete_interrupted_after_the_scheduler_leaves_an_orphaned_name() -> (
+    None
+):
+    """The one window in which a cached patient name outlives its patient.
+
+    The scheduler goes first, so a failure between the two deletes leaves the chat row
+    holding the id and name of a patient that is already gone. A later turn does not
+    re-provision it - provisioning only ever creates a patient for a chat that has none
+    - so the row goes on reporting that name.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+    provision = AsyncMock(return_value=_provisioned())
+
+    with (
+        patch(_DELETE, new=AsyncMock(return_value=_deleted())),
+        patch.object(
+            chat_repository, "delete_chat", new=AsyncMock(side_effect=RuntimeError)
+        ),
+    ):
+        async with _api(session_id) as client:
+            with pytest.raises(RuntimeError):
+                await client.delete(f"/chats/{chat_id}")
+
+    # A turn is the only path that provisions a chat that already exists, so it is what
+    # would re-create the patient if provisioning were not creation-only. Listing does
+    # not provision at all, and would leave that guard unexercised.
+    with patch(_PROVISION, new=provision):
+        async with _api(session_id) as client:
+            await client.post(
+                "/chat",
+                json={
+                    "chat_id": chat_id,
+                    "message": "when can I visit?",
+                    "local_now": LOCAL_NOW,
+                },
+            )
+            listed = (await client.get("/chats")).json()["chats"]
+
+    provision.assert_not_awaited()
+    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
+    async with session_factory() as session:
+        orphaned = await session.get(Chat, chat_id)
+    assert orphaned is not None
+    assert orphaned.patient_id == "01PATENT000000000000000000"
+
+
+async def test_retrying_an_interrupted_delete_clears_the_orphaned_chat() -> None:
+    """The retry is what removes an orphan, and it finds the patient already gone.
+
+    The first attempt deleted the patient before it failed, so the second one is
+    answered with `patient_existed=False`. That is not a failure and not a 404: the
+    chat and its messages still go, and the log records that the scheduler had no
+    patient left to remove.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+
+    with (
+        patch(_DELETE, new=AsyncMock(return_value=_deleted())),
+        patch.object(
+            chat_repository, "delete_chat", new=AsyncMock(side_effect=RuntimeError)
+        ),
+    ):
+        async with _api(session_id) as client:
+            with pytest.raises(RuntimeError):
+                await client.delete(f"/chats/{chat_id}")
+
+    with (
+        patch(
+            _DELETE,
+            new=AsyncMock(return_value=_deleted(existed=False, appointments=0)),
+        ),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            response = await client.delete(f"/chats/{chat_id}")
+
+    assert response.status_code == 204
+    deleted = next(e for e in logs if e["event"] == "chat.deleted")
+    assert deleted["patient_existed"] is False
+    assert deleted["appointments_deleted"] == 0
+    async with session_factory() as session:
+        assert await chat_repository.get_chat(session, chat_id, session_id) is None
 
 
 async def test_a_refused_deletion_leaves_an_in_flight_turn_running() -> None:
@@ -1017,292 +1112,6 @@ async def test_creating_a_chat_makes_the_next_list_report_a_session() -> None:
 
     assert before["session_exists"] is False
     assert after["session_exists"] is True
-
-
-# --- renaming this chat's patient ----------------------------------------------
-
-_RENAME = "chat.api.chats.scheduling.rename_patient"
-
-
-async def _seed_chat_with_patient(name: str = "Ada Lovelace") -> tuple[str, str]:
-    """Create a session holding one already-provisioned chat.
-
-    Returns: the session id and the chat id.
-    """
-    async with session_factory() as session:
-        created = await chat_repository.create_session(session)
-        chat = await chat_repository.create_chat(session, created.id)
-        await chat_repository.set_patient(
-            session, chat.id, created.id, "01PATENT000000000000000000", name
-        )
-    return created.id, chat.id
-
-
-def _renamed(full_name: str) -> PatientInfo:
-    """A successful `RenamePatient` result."""
-    return PatientInfo(
-        id="01PATENT000000000000000000",
-        chat_id="01CHAT00000000000000000000",
-        full_name=full_name,
-    )
-
-
-async def test_a_rename_answers_with_the_new_name() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-
-    with patch(_RENAME, new=AsyncMock(return_value=_renamed("Grace Hopper"))):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-
-    assert response.status_code == 200
-    assert response.json() == {"chat_id": chat_id, "patient_name": "Grace Hopper"}
-
-
-async def test_a_renamed_chat_keeps_its_new_name_in_the_list() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-
-    with patch(_RENAME, new=AsyncMock(return_value=_renamed("Grace Hopper"))):
-        async with _api(session_id) as client:
-            await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert [c["patient_name"] for c in listed] == ["Grace Hopper"]
-
-
-async def test_the_cached_name_is_the_schedulers_answer_not_the_request() -> None:
-    # The scheduler owns the value: what it echoes back is what gets displayed, even
-    # when that differs from what was asked for.
-    session_id, chat_id = await _seed_chat_with_patient()
-
-    with patch(_RENAME, new=AsyncMock(return_value=_renamed("Grace B. Hopper"))):
-        async with _api(session_id) as client:
-            body = (
-                await client.patch(
-                    f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-                )
-            ).json()
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert body["patient_name"] == "Grace B. Hopper"
-    assert [c["patient_name"] for c in listed] == ["Grace B. Hopper"]
-
-
-async def test_a_taken_name_is_a_conflict_and_changes_nothing() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-    refusal = RenameRefusal(reason=RenameFailureReason.NAME_TAKEN, detail="name_taken")
-
-    with patch(_RENAME, new=AsyncMock(return_value=refusal)):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert response.status_code == 409
-    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
-
-
-async def test_a_patient_the_scheduler_no_longer_has_is_gone_not_missing() -> None:
-    """A patient deleted out of band answers 410, never the 404 that means "no chat".
-
-    The chat is still here and still listed, so the one action a 404 supports -
-    reload the listing - brings it straight back, unchanged, with nothing said about
-    the patient that is actually missing. Two situations, two answers.
-    """
-    session_id, chat_id = await _seed_chat_with_patient()
-    refusal = RenameRefusal(
-        reason=RenameFailureReason.PATIENT_NOT_FOUND, detail="patient_not_found"
-    )
-
-    with patch(_RENAME, new=AsyncMock(return_value=refusal)):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert response.status_code == 410
-    # The reason a 404 would be wrong, asserted rather than described.
-    assert [c["id"] for c in listed] == [chat_id]
-    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
-
-
-async def test_an_unrenameable_chat_is_still_deletable() -> None:
-    """The 410 is not a dead end: deleting the chat still works.
-
-    Deleting a patient the scheduler no longer has succeeds, which is why the deletion
-    route has no 410 of its own - and why telling the caller to start a new chat is
-    advice they can actually follow.
-    """
-    session_id, chat_id = await _seed_chat_with_patient()
-    refusal = RenameRefusal(
-        reason=RenameFailureReason.PATIENT_NOT_FOUND, detail="patient_not_found"
-    )
-
-    with patch(_RENAME, new=AsyncMock(return_value=refusal)):
-        async with _api(session_id) as client:
-            renamed = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            with patch(
-                _DELETE,
-                new=AsyncMock(return_value=_deleted(existed=False, appointments=0)),
-            ):
-                deleted = await client.delete(f"/chats/{chat_id}")
-
-    assert renamed.status_code == 410
-    assert deleted.status_code == 204
-
-
-async def test_a_chat_without_a_patient_yet_cannot_be_renamed() -> None:
-    async with session_factory() as session:
-        created = await chat_repository.create_session(session)
-        chat = await chat_repository.create_chat(session, created.id)
-
-    async with _api(created.id) as client:
-        response = await client.patch(
-            f"/chats/{chat.id}/patient", json={"full_name": "Grace Hopper"}
-        )
-
-    assert response.status_code == 409
-
-
-async def test_another_sessions_chat_cannot_be_renamed() -> None:
-    _, chat_id = await _seed_chat_with_patient()
-    async with session_factory() as session:
-        intruder = await chat_repository.create_session(session)
-
-    async with _api(intruder.id) as client:
-        response = await client.patch(
-            f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-        )
-
-    assert response.status_code == 404
-
-
-async def test_an_unreachable_scheduler_reports_that_nothing_was_renamed() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-    unreachable = SchedulingUnavailableError("down", outcome_unknown=False)
-
-    with patch(_RENAME, new=AsyncMock(side_effect=unreachable)):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert response.status_code == 503
-    assert "nothing was renamed" in response.json()["detail"]
-    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
-
-
-async def test_an_unknown_outcome_is_reported_as_unknown_not_as_a_failure() -> None:
-    # The deadline is ours, not the server's: it expiring does not prove the rename
-    # was not applied, so the caller is told to retry rather than told it did not
-    # happen.
-    session_id, chat_id = await _seed_chat_with_patient()
-    timed_out = SchedulingUnavailableError("deadline", outcome_unknown=True)
-
-    with patch(_RENAME, new=AsyncMock(side_effect=timed_out)):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-
-    assert response.status_code == 504
-    detail = response.json()["detail"]
-    assert "may not have been applied" in detail
-    assert "nothing" not in detail
-
-
-async def test_a_rename_the_scheduler_refuses_is_answered_not_raised() -> None:
-    """The route has to survive every scheduling failure, not only an outage.
-
-    A rejection is refused before the patient is renamed, so this answers what is known
-    - rather than escaping as a 500 that says nothing about whether the name changed.
-    """
-    for failure in (
-        SchedulingRequestError("malformed"),
-        SchedulingNotFoundError("patient_not_found"),
-    ):
-        session_id, chat_id = await _seed_chat_with_patient()
-
-        with patch(_RENAME, new=AsyncMock(side_effect=failure)):
-            async with _api(session_id) as client:
-                response = await client.patch(
-                    f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-                )
-                listed = (await client.get("/chats")).json()["chats"]
-
-        assert response.status_code == 502, failure
-        assert "nothing was renamed" in response.json()["detail"]
-        assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
-
-
-async def test_a_refused_rename_is_logged_as_the_defect_it_is() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-
-    with (
-        patch(_RENAME, new=AsyncMock(side_effect=SchedulingRequestError("malformed"))),
-        capture_logs(processors=[merge_contextvars]) as logs,
-    ):
-        async with _api(session_id) as client:
-            await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-
-    rejected = next(e for e in logs if e["event"] == "patient.rename_rejected")
-    assert rejected["error_type"] == "SchedulingRequestError"
-    assert rejected["chat_id"] == chat_id
-
-
-async def test_a_rename_failure_this_build_cannot_place_claims_no_outcome() -> None:
-    """The rename route owes a later subclass the same caution the deletion does.
-
-    A failure it cannot place says nothing about whether the scheduler applied the
-    name, so the caller is told to try again - which a rename is always safe to do.
-    """
-    session_id, chat_id = await _seed_chat_with_patient()
-
-    with (
-        patch(
-            _RENAME, new=AsyncMock(side_effect=_FourthSchedulingError("unplaceable"))
-        ),
-        capture_logs(processors=[merge_contextvars]) as logs,
-    ):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": "Grace Hopper"}
-            )
-            listed = (await client.get("/chats")).json()["chats"]
-
-    assert response.status_code == 504
-    detail = response.json()["detail"]
-    assert "may or may not have been applied" in detail
-    assert "nothing" not in detail
-    logged = next(e for e in logs if e["event"] == "patient.rename_rejected")
-    assert logged["error_type"] == "_FourthSchedulingError"
-    assert logged["outcome_known"] is False
-    # The cached name is this service's own, so what happened to it *is* known.
-    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
-
-
-async def test_an_empty_name_is_rejected_before_the_scheduler_is_called() -> None:
-    session_id, chat_id = await _seed_chat_with_patient()
-    rename = AsyncMock(return_value=_renamed("unused"))
-
-    with patch(_RENAME, new=rename):
-        async with _api(session_id) as client:
-            response = await client.patch(
-                f"/chats/{chat_id}/patient", json={"full_name": ""}
-            )
-
-    assert response.status_code == 422
-    rename.assert_not_awaited()
 
 
 # --- creating a session never fails on the retrieval path -------------------------

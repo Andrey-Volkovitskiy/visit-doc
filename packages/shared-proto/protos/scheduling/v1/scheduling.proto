@@ -20,6 +20,32 @@
 //     so a caller that gives up on a write must not report that nothing was written.
 //   * `x-turn-id` metadata carries the caller's correlation id (research.md #18).
 
+// ---------------------------------------------------------------------------
+// Removed names - do not reuse
+// ---------------------------------------------------------------------------
+//
+// Patient rename was removed whole, in place, inside the unchanged `scheduling.v1`
+// package: the `RenamePatient` rpc, the `RenameFailureReason` enum, and the
+// `RenameFailure`, `RenamePatientRequest` and `RenamePatientResponse` messages.
+//
+// Like 007's `Weekday` renumbering below, this is a BREAKING change to a package whose
+// name did not change, so `chat` and `scheduler` MUST be built and deployed together. A
+// chat built before the removal, calling a scheduler built after it, is answered
+// UNIMPLEMENTED ("Method not found!"). The client retries only UNAVAILABLE and
+// DEADLINE_EXCEEDED, so that call is not retried: it raises `SchedulingUnavailableError`
+// - a `SchedulingError` - with `outcome_unknown` true, after a single attempt.
+//
+// proto3 offers NO way to reserve any of this. `reserved` exists only inside a message
+// body and an enum body; protoc rejects it at file scope and inside a `service`, and
+// every body these names lived in is gone. Nothing else was freed - no surviving message
+// or enum lost a field - so there is no field number or enum number to reserve either.
+// The five names above are therefore held by this comment alone.
+//
+// Reusing the rpc name in particular would be a wire hazard rather than only a reader's
+// one: gRPC dispatches on the literal path `/scheduling.v1.Scheduling/RenamePatient`, so
+// a future rpc taking that name would be handed an old chat's `RenamePatientRequest`
+// bytes to parse as its own request.
+
 syntax = "proto3";
 
 package scheduling.v1;
@@ -33,10 +59,6 @@ service Scheduling {
   // across the whole store, so a mismatched one is never answered with that patient.
   rpc EnsureSessionProvisioned(EnsureSessionProvisionedRequest)
       returns (EnsureSessionProvisionedResponse);
-
-  // Rename one patient. Idempotent: renaming to the name it already has succeeds and
-  // changes nothing, so a caller whose deadline expired may safely retry.
-  rpc RenamePatient(RenamePatientRequest) returns (RenamePatientResponse);
 
   // Every practitioner in the session, with specialty and schedule. The schedule travels with
   // the practitioner rather than behind a second call, so a listing is enough to say who is
@@ -223,20 +245,6 @@ message BookingFailure {
   string detail = 2;
 }
 
-// Why a rename was refused. Both are outcomes the server evaluated, so both travel as a
-// successful rpc carrying this failure rather than as a gRPC status code.
-enum RenameFailureReason {
-  RENAME_FAILURE_REASON_UNSPECIFIED = 0;
-  RENAME_FAILURE_REASON_NAME_TAKEN = 1;         // another patient in this session holds that name
-  RENAME_FAILURE_REASON_PATIENT_NOT_FOUND = 2;  // incl. another session's id (FR-066)
-}
-
-message RenameFailure {
-  RenameFailureReason reason = 1;
-  // Human-readable detail for logs only, never rendered to the patient.
-  string detail = 2;
-}
-
 // Why an evaluated change was refused. Twelve values: this feature's own four, then booking's
 // eight unchanged in meaning and in `shared_models` string value. Mirrors
 // `shared_models.ChangeFailureReason` 1:1.
@@ -301,19 +309,6 @@ message EnsureSessionProvisionedResponse {
   repeated Practitioner practitioners = 2;  // the session's full set, not only any newly created one
   bool patient_created = 3;                 // false when an earlier attempt had already created it
   bool practitioner_created = 4;
-}
-
-message RenamePatientRequest {
-  string session_id = 1;
-  string patient_id = 2;
-  string full_name = 3;  // 1..200 chars, matching the REST surface's own PatientUpdate bounds
-}
-
-message RenamePatientResponse {
-  oneof result {
-    Patient patient = 1;  // the patient as stored after the rename
-    RenameFailure failure = 2;
-  }
 }
 
 message ListPractitionersRequest {

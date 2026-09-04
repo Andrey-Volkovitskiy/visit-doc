@@ -3,8 +3,9 @@
 **Feature**: `007-escalation-and-staff-console` | **Date**: 2026-09-01
 
 Extends the surfaces 001 and 003 established. Everything not restated here is unchanged —
-`POST /chats`, `GET /chats`, `PATCH /chats/{id}/patient`, `DELETE /chats/{id}`,
-`GET /chats/{id}/messages`, and `POST /chat`'s request body all keep their shapes.
+`POST /chats`, `GET /chats`, `DELETE /chats/{id}`, `GET /chats/{id}/messages`, and `POST /chat`'s
+request body all keep their shapes. (`PATCH /chats/{id}/patient` was listed here too; it is
+withdrawn along with patient renaming — see 005 FR-048 as amended.)
 
 Three things change and two are added:
 

@@ -36,12 +36,6 @@ class BookingFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     BOOKING_FAILURE_REASON_PRACTITIONER_NOT_FOUND: _ClassVar[BookingFailureReason]
     BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND: _ClassVar[BookingFailureReason]
 
-class RenameFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = ()
-    RENAME_FAILURE_REASON_UNSPECIFIED: _ClassVar[RenameFailureReason]
-    RENAME_FAILURE_REASON_NAME_TAKEN: _ClassVar[RenameFailureReason]
-    RENAME_FAILURE_REASON_PATIENT_NOT_FOUND: _ClassVar[RenameFailureReason]
-
 class ChangeFailureReason(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     CHANGE_FAILURE_REASON_UNSPECIFIED: _ClassVar[ChangeFailureReason]
@@ -89,9 +83,6 @@ BOOKING_FAILURE_REASON_IN_PAST: BookingFailureReason
 BOOKING_FAILURE_REASON_BEYOND_HORIZON: BookingFailureReason
 BOOKING_FAILURE_REASON_PRACTITIONER_NOT_FOUND: BookingFailureReason
 BOOKING_FAILURE_REASON_PATIENT_NOT_FOUND: BookingFailureReason
-RENAME_FAILURE_REASON_UNSPECIFIED: RenameFailureReason
-RENAME_FAILURE_REASON_NAME_TAKEN: RenameFailureReason
-RENAME_FAILURE_REASON_PATIENT_NOT_FOUND: RenameFailureReason
 CHANGE_FAILURE_REASON_UNSPECIFIED: ChangeFailureReason
 CHANGE_FAILURE_REASON_APPOINTMENT_NOT_FOUND: ChangeFailureReason
 CHANGE_FAILURE_REASON_ALREADY_CANCELLED: ChangeFailureReason
@@ -176,14 +167,6 @@ class BookingFailure(_message.Message):
     detail: str
     def __init__(self, reason: _Optional[_Union[BookingFailureReason, str]] = ..., detail: _Optional[str] = ...) -> None: ...
 
-class RenameFailure(_message.Message):
-    __slots__ = ("reason", "detail")
-    REASON_FIELD_NUMBER: _ClassVar[int]
-    DETAIL_FIELD_NUMBER: _ClassVar[int]
-    reason: RenameFailureReason
-    detail: str
-    def __init__(self, reason: _Optional[_Union[RenameFailureReason, str]] = ..., detail: _Optional[str] = ...) -> None: ...
-
 class ChangeFailure(_message.Message):
     __slots__ = ("reason", "detail")
     REASON_FIELD_NUMBER: _ClassVar[int]
@@ -217,24 +200,6 @@ class EnsureSessionProvisionedResponse(_message.Message):
     patient_created: bool
     practitioner_created: bool
     def __init__(self, patient: _Optional[_Union[Patient, _Mapping]] = ..., practitioners: _Optional[_Iterable[_Union[Practitioner, _Mapping]]] = ..., patient_created: _Optional[bool] = ..., practitioner_created: _Optional[bool] = ...) -> None: ...
-
-class RenamePatientRequest(_message.Message):
-    __slots__ = ("session_id", "patient_id", "full_name")
-    SESSION_ID_FIELD_NUMBER: _ClassVar[int]
-    PATIENT_ID_FIELD_NUMBER: _ClassVar[int]
-    FULL_NAME_FIELD_NUMBER: _ClassVar[int]
-    session_id: str
-    patient_id: str
-    full_name: str
-    def __init__(self, session_id: _Optional[str] = ..., patient_id: _Optional[str] = ..., full_name: _Optional[str] = ...) -> None: ...
-
-class RenamePatientResponse(_message.Message):
-    __slots__ = ("patient", "failure")
-    PATIENT_FIELD_NUMBER: _ClassVar[int]
-    FAILURE_FIELD_NUMBER: _ClassVar[int]
-    patient: Patient
-    failure: RenameFailure
-    def __init__(self, patient: _Optional[_Union[Patient, _Mapping]] = ..., failure: _Optional[_Union[RenameFailure, _Mapping]] = ...) -> None: ...
 
 class ListPractitionersRequest(_message.Message):
     __slots__ = ("session_id",)

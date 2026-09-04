@@ -7,6 +7,14 @@ description: "Task list for Scheduling Service and End-to-End Booking (Phase 1c)
 
 **Input**: Design documents from `/specs/005-scheduling-and-booking/`
 
+> **Amended after 007 — patient renaming is withdrawn.** The tasks below are the record of what was
+> built for this feature and are left as they were checked off. Since then FR-048's patient-editing
+> half has been withdrawn (see [spec.md](./spec.md) FR-048): a patient's name is assigned once, at
+> creation, and never edited. So the `RenamePatient` RPC, `PATCH /patients/{id}`, and the chat
+> service's `PATCH /chats/{id}/patient` no longer exist, and T105, T110 and T125 describe a surface
+> the code no longer has. The other artifacts in this directory have been amended to match the
+> code; this file has not.
+
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md),
 [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md)
 

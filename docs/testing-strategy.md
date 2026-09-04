@@ -101,8 +101,25 @@ test happened to need when it was written. A boundary fake is a guarantee the wh
 on, so a gap in it is not "that path is untested" — it is a live call on the wrong event loop,
 failing with a loop-binding or timeout error attributed to whatever the test was actually about.
 When a new function is added to a faked boundary, add it to the autouse fixture in the same
-change: `_scheduler_is_unreachable_by_default` fakes `ensure_session_provisioned`,
-`delete_patient_for_chat`, `rename_patient` and `delete_session` for exactly this reason.
+change — for `_scheduler_is_unreachable_by_default` that is one entry in
+`FAKED_SCHEDULING_FUNCTIONS`, the tuple it builds its fake from and the only place those names
+are written down.
+
+That rule is checked, not merely stated. The one module that must *un*-fake this boundary —
+`test_scheduling_client.py`, since the client itself is what it tests — restates no list either:
+at import, before any fixture runs, it captures every public coroutine function the client
+module defines, and restores those for each of its own tests.
+`test_conftest_fakes_exactly_the_public_client_functions` then reads the tuple back through the
+`faked_scheduling_function_names` fixture and asserts the two name sets are **equal**. Equality,
+not inclusion, because each direction is a distinct defect and neither is caught anywhere else:
+a client coroutine missing from the tuple is an unfaked call the rest of the suite can reach,
+and a tuple entry the client no longer defines is a name this module cannot un-fake, so its own
+test of that call would run against conftest's `AsyncMock`. Both fail quietly without the
+assertion — the test either dies of the fixture's own `SchedulingUnavailableError`, or dials a
+real channel on the lifespan's loop — in either case attributed to whatever it was actually
+testing. A hand-written second copy of the list is what went stale before. Should a client call
+ever have to go deliberately unfaked, it belongs in that assertion as a named subtraction, so
+the exception is written down; there is none today.
 
 ## Live paid APIs: manual testing and e2e only
 

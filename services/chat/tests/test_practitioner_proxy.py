@@ -18,17 +18,20 @@ from urllib.parse import unquote
 import aiohttp
 import pytest
 import yarl
+from chat.api import console
 from chat.clients import scheduler_rest
 from chat.db.session import engine, session_factory
 from chat.main import app
 from chat.repositories import chat_repository
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 
 from .conftest import fake_anthropic_client
 
+_PRACTITIONER_ID = "01PRACT0000000000000000000"
 _PRACTITIONER = {
-    "id": "01PRACT0000000000000000000",
+    "id": _PRACTITIONER_ID,
     "full_name": "Dr. Ada Lovelace",
     "specialty": "general_practice",
     "appointment_duration_minutes": 30,
@@ -138,25 +141,64 @@ async def _call(
                 return await http.request(method, path, json=body)
 
 
-_ROUTES = [
-    ("GET", "/console/specialties", "GET", "/specialties", None),
-    ("GET", "/console/practitioners", "GET", "/practitioners", None),
-    ("POST", "/console/practitioners", "POST", "/practitioners", {}),
-    (
+# Each proxy route as the console router declares it, mapped to the method, the
+# scheduler-side path and the body it must forward. The test below asserts the keys are
+# exactly the console routes that forward, so a sixth one fails there rather than
+# leaving every parametrized test below quietly covering five of six.
+_PROXIED = {
+    ("GET", "/console/specialties"): ("GET", "/specialties", None),
+    ("GET", "/console/practitioners"): ("GET", "/practitioners", None),
+    ("POST", "/console/practitioners"): ("POST", "/practitioners", {}),
+    ("PATCH", "/console/practitioners/{practitioner_id}"): (
         "PATCH",
-        "/console/practitioners/01PRACT0000000000000000000",
-        "PATCH",
-        "/practitioners/01PRACT0000000000000000000",
+        "/practitioners/{practitioner_id}",
         {"full_name": "Dr. Grace Hopper"},
     ),
-    (
+    ("DELETE", "/console/practitioners/{practitioner_id}"): (
         "DELETE",
-        "/console/practitioners/01PRACT0000000000000000000",
-        "DELETE",
-        "/practitioners/01PRACT0000000000000000000",
+        "/practitioners/{practitioner_id}",
         None,
     ),
+}
+
+# The same routes as the requests this suite sends, with a real id in place of the path
+# parameter.
+_ROUTES = [
+    (
+        method,
+        path.format(practitioner_id=_PRACTITIONER_ID),
+        expected_method,
+        expected_path.format(practitioner_id=_PRACTITIONER_ID),
+        body,
+    )
+    for (method, path), (expected_method, expected_path, body) in _PROXIED.items()
 ]
+
+
+def _forwards_through_the_proxy(route: APIRoute) -> bool:
+    """Whether `route`'s own handler calls `console._proxy`."""
+    return "_proxy" in route.endpoint.__code__.co_names
+
+
+# --- the routes the tests below are run against ---------------------------------------
+
+
+def test_the_listed_routes_are_every_console_route_that_calls_the_proxy() -> None:
+    """`_PROXIED` is read off the console router, not maintained beside it.
+
+    What is counted is every route whose own handler calls `_proxy`, which is how all
+    five reach the scheduler today; a route that forwarded by some other means would
+    not be seen here. `_proxy` renamed or no longer called empties the set and fails
+    this test rather than passing it.
+    """
+    forwarding = {
+        (method, route.path)
+        for route in console.router.routes
+        if isinstance(route, APIRoute) and _forwards_through_the_proxy(route)
+        for method in route.methods
+    }
+
+    assert forwarding == set(_PROXIED)
 
 
 # --- what crosses the boundary ------------------------------------------------------
@@ -280,7 +322,7 @@ async def test_a_delete_relays_the_schedulers_empty_success() -> None:
     response = await _call(
         transport,
         "DELETE",
-        "/console/practitioners/01PRACT0000000000000000000",
+        f"/console/practitioners/{_PRACTITIONER_ID}",
         session_id=session_id,
     )
 

@@ -43,7 +43,6 @@ from shared_models.scheduling import (
     BookingFailureReason,
     ChangeFailureReason,
     NotFoundEntity,
-    RenameFailureReason,
     StatusFilter,
     TimeFilter,
     Weekday,
@@ -129,11 +128,6 @@ _PROTO_BY_STATUS_FILTER = {
     StatusFilter.STANDING: pb.STATUS_FILTER_STANDING,
     StatusFilter.CANCELLED: pb.STATUS_FILTER_CANCELLED,
     StatusFilter.BOTH: pb.STATUS_FILTER_BOTH,
-}
-
-_RENAME_REASON_BY_PROTO = {
-    pb.RENAME_FAILURE_REASON_NAME_TAKEN: RenameFailureReason.NAME_TAKEN,
-    pb.RENAME_FAILURE_REASON_PATIENT_NOT_FOUND: RenameFailureReason.PATIENT_NOT_FOUND,
 }
 
 
@@ -426,14 +420,6 @@ class ProvisioningResult:
 
 
 @dataclass(frozen=True)
-class RenameRefusal:
-    """A rename the scheduler evaluated and declined, with the single reason why."""
-
-    reason: RenameFailureReason
-    detail: str
-
-
-@dataclass(frozen=True)
 class DeletionResult:
     """What one `delete_patient_for_chat` call removed."""
 
@@ -695,58 +681,6 @@ async def ensure_session_provisioned(
         ),
         patient_created=response.patient_created,
         practitioner_created=response.practitioner_created,
-    )
-
-
-async def rename_patient(
-    channel: grpc.aio.Channel,
-    settings: Settings,
-    *,
-    session_id: str,
-    patient_id: str,
-    full_name: str,
-) -> PatientInfo | RenameRefusal:
-    """Rename one patient, or report the single reason the new name was refused.
-
-    Returns: the patient as the scheduler stored it, or a `RenameRefusal` naming why
-        the name was declined.
-
-    Raises:
-        SchedulingUnavailableError: the scheduler could not answer. Its
-            `outcome_unknown` says whether the rename may nonetheless have landed -
-            but this write is idempotent, so the same request may simply be sent again.
-        SchedulingRequestError: the name was empty or longer than the contract allows,
-            or the refusal carried a reason this build cannot name.
-        SchedulingNotFoundError: propagated from `_call()` - not reachable here, since
-            an unknown patient is a typed `RenameRefusal` instead.
-    """
-    response = await _call(
-        settings,
-        "RenamePatient",
-        _stub(channel).RenamePatient,
-        pb.RenamePatientRequest(
-            session_id=session_id, patient_id=patient_id, full_name=full_name
-        ),
-    )
-    if response.WhichOneof("result") == "failure":
-        reason = _RENAME_REASON_BY_PROTO.get(response.failure.reason)
-        if reason is None:
-            # A reason this build has no name for - an unset field, or a scheduler
-            # deployed ahead of this service. The refusal is still trustworthy (nothing
-            # was renamed), but it cannot be explained, so it is reported as a defect.
-            get_logger().error(
-                "rename.unknown_failure_reason",
-                proto_reason=int(response.failure.reason),
-                error_detail=response.failure.detail,
-            )
-            raise SchedulingRequestError(
-                f"unrecognized rename failure reason: {int(response.failure.reason)}"
-            )
-        return RenameRefusal(reason=reason, detail=response.failure.detail)
-    return PatientInfo(
-        id=response.patient.id,
-        chat_id=response.patient.chat_id,
-        full_name=response.patient.full_name,
     )
 
 
@@ -1239,7 +1173,6 @@ __all__ = [
     "PatientInfo",
     "PractitionerInfo",
     "ProvisioningResult",
-    "RenameRefusal",
     "SchedulingError",
     "SchedulingNotFoundError",
     "SchedulingRequestError",
@@ -1255,6 +1188,5 @@ __all__ = [
     "ensure_session_provisioned",
     "list_appointments",
     "list_practitioners",
-    "rename_patient",
     "reschedule_appointment",
 ]

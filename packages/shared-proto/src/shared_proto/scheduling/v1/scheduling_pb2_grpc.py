@@ -39,11 +39,6 @@ class SchedulingStub:
                 request_serializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.SerializeToString,
                 response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.FromString,
                 _registered_method=True)
-        self.RenamePatient = channel.unary_unary(
-                '/scheduling.v1.Scheduling/RenamePatient',
-                request_serializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.SerializeToString,
-                response_deserializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.FromString,
-                _registered_method=True)
         self.ListPractitioners = channel.unary_unary(
                 '/scheduling.v1.Scheduling/ListPractitioners',
                 request_serializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersRequest.SerializeToString,
@@ -96,14 +91,6 @@ class SchedulingServicer:
         it has called before.
         NOT_FOUND when `chat_id` already belongs to a patient of another session: the chat is unique
         across the whole store, so a mismatched one is never answered with that patient.
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def RenamePatient(self, request, context):
-        """Rename one patient. Idempotent: renaming to the name it already has succeeds and
-        changes nothing, so a caller whose deadline expired may safely retry.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -220,11 +207,6 @@ def add_SchedulingServicer_to_server(servicer, server):
                     request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.FromString,
                     response_serializer=scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.SerializeToString,
             ),
-            'RenamePatient': grpc.unary_unary_rpc_method_handler(
-                    servicer.RenamePatient,
-                    request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.FromString,
-                    response_serializer=scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.SerializeToString,
-            ),
             'ListPractitioners': grpc.unary_unary_rpc_method_handler(
                     servicer.ListPractitioners,
                     request_deserializer=scheduling_dot_v1_dot_scheduling__pb2.ListPractitionersRequest.FromString,
@@ -293,33 +275,6 @@ class Scheduling:
             '/scheduling.v1.Scheduling/EnsureSessionProvisioned',
             scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedRequest.SerializeToString,
             scheduling_dot_v1_dot_scheduling__pb2.EnsureSessionProvisionedResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def RenamePatient(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/scheduling.v1.Scheduling/RenamePatient',
-            scheduling_dot_v1_dot_scheduling__pb2.RenamePatientRequest.SerializeToString,
-            scheduling_dot_v1_dot_scheduling__pb2.RenamePatientResponse.FromString,
             options,
             channel_credentials,
             insecure,

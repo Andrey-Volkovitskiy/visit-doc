@@ -2,7 +2,11 @@
 
 A patient is created with its chat and deleted with it - there is deliberately no
 free-standing create or delete, only the create-if-absent that provisioning calls and
-the delete-for-chat that chat deletion calls.
+the delete-for-chat that chat deletion calls. A name is assigned once, at creation, and
+never changes afterwards - which is what lets the chat service cache it on its own row
+and never re-read it. A name is not reserved forever, though: the pool is walked against
+the names this session's *live* patients hold, so deleting a patient returns their name
+to it.
 """
 
 from sqlalchemy import delete as sql_delete
@@ -77,7 +81,11 @@ async def list_for_session(session: AsyncSession, session_id: str) -> list[Patie
 
 
 async def taken_names(session: AsyncSession, session_id: str) -> set[str]:
-    """Return every patient name already used in `session_id`."""
+    """Return every patient name held by a live patient in `session_id`.
+
+    A deleted patient's name is not held by anyone, so it is available again to the
+    next creation rather than retired.
+    """
     result = await session.execute(
         select(Patient.full_name).where(Patient.session_id == session_id)
     )
@@ -138,18 +146,6 @@ async def create_if_absent(
         return patient, True
 
     raise IntegrityError("patient name allocation exhausted its retries", None, None)  # type: ignore[arg-type]
-
-
-async def rename(session: AsyncSession, patient: Patient, full_name: str) -> Patient:
-    """Rename `patient`.
-
-    Raises: IntegrityError if another patient in the same session already has that name.
-    """
-    patient.full_name = full_name
-    session.add(patient)
-    await session.commit()
-    await session.refresh(patient)
-    return patient
 
 
 async def delete_for_chat(

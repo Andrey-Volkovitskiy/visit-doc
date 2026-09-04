@@ -20,6 +20,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+from chat.api import admin
 from chat.clients.scheduling import (
     SchedulingError,
     SchedulingNotFoundError,
@@ -32,6 +33,7 @@ from chat.db.session import engine, session_factory
 from chat.domain.models import MessageSender
 from chat.main import app
 from chat.repositories import chat_repository, faq_repository
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 from structlog.testing import capture_logs
@@ -63,14 +65,17 @@ async def _session_id() -> str:
     return session_row.id
 
 
-# Every route on the admin surface. The guard is a property of the surface rather than
-# of any one route, so the tests below run against all of them - a route added without
-# it fails here instead of shipping open.
-_ROUTES = [
-    ("DELETE", "/admin/sessions"),
-    ("DELETE", "/admin/sessions/01WHATEVER"),
-    ("GET", "/admin/sessions"),
-]
+# Every route on the admin surface, as the router declares it, mapped to the path a
+# request to it takes. The guard is a property of the surface rather than of any one
+# route, so the tests below run against all of them, and the first test below asserts
+# these keys are exactly the routes the admin router declares - so a route added
+# without an entry here fails there instead of shipping open.
+_PATH_BY_ROUTE = {
+    ("DELETE", "/admin/sessions"): "/admin/sessions",
+    ("DELETE", "/admin/sessions/{session_id}"): "/admin/sessions/01WHATEVER",
+    ("GET", "/admin/sessions"): "/admin/sessions",
+}
+_ROUTES = [(method, path) for (method, _), path in _PATH_BY_ROUTE.items()]
 
 
 async def _seed_one_chat_and_entry(session_id: str) -> None:
@@ -111,6 +116,26 @@ async def _call(
                 return await http.request(
                     method, path, headers=headers or {}, params=params
                 )
+
+
+# --- the surface those properties are asserted over -----------------------------------
+
+
+def test_the_guard_tests_run_against_every_route_the_admin_router_declares() -> None:
+    """`_PATH_BY_ROUTE` is checked against the router, not maintained beside it.
+
+    Read off the router rather than off the app or the published schema: neither can
+    see these routes. `include_router` leaves a wrapper on `app.routes` rather than the
+    `APIRoute`s themselves, and every route here is declared `include_in_schema=False`.
+    """
+    declared = {
+        (method, route.path)
+        for route in admin.router.routes
+        if isinstance(route, APIRoute)
+        for method in route.methods
+    }
+
+    assert declared == set(_PATH_BY_ROUTE)
 
 
 # --- the four properties -------------------------------------------------------------

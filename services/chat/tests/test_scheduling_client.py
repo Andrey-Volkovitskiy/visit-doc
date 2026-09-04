@@ -5,6 +5,7 @@ The stub is faked at this module's own boundary, so the retry rules and the fail
 taxonomy are exercised without a running scheduler.
 """
 
+import inspect
 from collections.abc import Iterator
 from datetime import date, datetime, timezone
 from typing import Any, cast
@@ -16,25 +17,25 @@ import structlog
 from chat.clients import scheduling
 from chat.core.config import Settings
 from shared_models.localtime import format_local_datetime
-from shared_models.scheduling import (
-    BookingFailureReason,
-    RenameFailureReason,
-    Weekday,
-)
+from shared_models.scheduling import BookingFailureReason, Weekday
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from structlog.testing import capture_logs
 
 # Captured at import, before any fixture runs, so these are the real functions.
-# `conftest.py`'s autouse boundary fake replaces them on this very module - which is
-# right for tests that go through the API, and wrong here, where the client itself is
-# what is under test. The fake stub below is the boundary these tests replace instead.
+# `conftest.py`'s autouse boundary fake replaces every one of them on this very module -
+# which is right for tests that go through the API, and wrong here, where the client
+# itself is what is under test. The fake stub below is the boundary these tests replace
+# instead.
+#
+# Read off the module rather than listed by hand: a hand-written list is a copy of
+# conftest's, and the two drift the moment one of them is edited alone. Every public
+# coroutine function the client module defines is captured, and
+# `test_conftest_fakes_exactly_the_public_client_functions` below is what holds that set
+# and conftest's tuple equal.
 _REAL_CLIENT_FUNCTIONS = {
-    name: getattr(scheduling, name)
-    for name in (
-        "ensure_session_provisioned",
-        "delete_patient_for_chat",
-        "rename_patient",
-    )
+    name: function
+    for name, function in inspect.getmembers(scheduling, inspect.iscoroutinefunction)
+    if not name.startswith("_") and function.__module__ == scheduling.__name__
 }
 
 
@@ -127,6 +128,19 @@ def _booked_response() -> pb.BookAppointmentResponse:
         ),
         idempotent_replay=False,
     )
+
+
+def test_conftest_fakes_exactly_the_public_client_functions(
+    faked_scheduling_function_names: tuple[str, ...],
+) -> None:
+    # Equality, because each direction is its own defect. A public client coroutine
+    # missing from conftest's tuple is a real gRPC call on the lifespan's event loop in
+    # every other chat unit test that reaches it; a name in the tuple that this module
+    # does not capture is one this module cannot un-fake, so the client test for it
+    # would run against conftest's `AsyncMock` instead of the client. A call that must
+    # ever go deliberately unfaked belongs here as a named subtraction, not as a gap.
+    assert _REAL_CLIENT_FUNCTIONS
+    assert set(faked_scheduling_function_names) == set(_REAL_CLIENT_FUNCTIONS)
 
 
 async def test_every_call_carries_the_configured_deadline() -> None:
@@ -617,116 +631,6 @@ async def test_each_named_weekday_reads_back_as_its_domain_member(
         )
 
     assert practitioners[0].schedule[0].weekday is expected
-
-
-# --- renaming a patient --------------------------------------------------------
-
-
-def _rename_kwargs(full_name: str = "Grace") -> dict[str, Any]:
-    return {
-        "session_id": _SESSION_ID,
-        "patient_id": _PATIENT_ID,
-        "full_name": full_name,
-    }
-
-
-async def test_a_rename_returns_the_patient_the_scheduler_stored() -> None:
-    ctx, method = _patched(
-        "RenamePatient",
-        [
-            pb.RenamePatientResponse(
-                patient=pb.Patient(
-                    id=_PATIENT_ID,
-                    chat_id="01CHAT00000000000000000000",
-                    full_name="Grace B.",
-                )
-            )
-        ],
-    )
-    with ctx:
-        result = await scheduling.rename_patient(
-            _CHANNEL, _settings(), **_rename_kwargs()
-        )
-
-    assert isinstance(result, scheduling.PatientInfo)
-    # What comes back, not what was asked for - the scheduler owns the value.
-    assert result.full_name == "Grace B."
-    assert method.calls[0]["request"].full_name == "Grace"
-
-
-@pytest.mark.parametrize(
-    ("proto_reason", "expected"),
-    [
-        (pb.RENAME_FAILURE_REASON_NAME_TAKEN, "name_taken"),
-        (pb.RENAME_FAILURE_REASON_PATIENT_NOT_FOUND, "patient_not_found"),
-    ],
-)
-async def test_each_refusal_reason_arrives_as_its_domain_member(
-    proto_reason: int, expected: str
-) -> None:
-    ctx, _ = _patched(
-        "RenamePatient",
-        [
-            pb.RenamePatientResponse(
-                failure=pb.RenameFailure(reason=proto_reason, detail="d")
-            )
-        ],
-    )
-    with ctx:
-        result = await scheduling.rename_patient(
-            _CHANNEL, _settings(), **_rename_kwargs()
-        )
-
-    assert isinstance(result, scheduling.RenameRefusal)
-    assert result.reason == RenameFailureReason(expected)
-
-
-async def test_an_unnamed_refusal_reason_is_reported_as_a_defect() -> None:
-    # A scheduler deployed ahead of this service, or an unset field. The refusal is
-    # trustworthy but cannot be explained, so it is never guessed at.
-    ctx, _ = _patched(
-        "RenamePatient",
-        [pb.RenamePatientResponse(failure=pb.RenameFailure(reason=99, detail="d"))],
-    )
-    with ctx, pytest.raises(scheduling.SchedulingRequestError):
-        await scheduling.rename_patient(_CHANNEL, _settings(), **_rename_kwargs())
-
-
-async def test_a_rename_that_times_out_reports_an_unknown_outcome() -> None:
-    # Our deadline expiring says nothing about whether the server applied the rename.
-    ctx, _ = _patched(
-        "RenamePatient",
-        [
-            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
-            _RpcError(grpc.StatusCode.DEADLINE_EXCEEDED),
-        ],
-    )
-    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as exc_info:
-        await scheduling.rename_patient(
-            _CHANNEL,
-            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
-            **_rename_kwargs(),
-        )
-
-    assert exc_info.value.outcome_unknown is True
-
-
-async def test_a_rename_that_never_reached_the_server_reports_a_known_outcome() -> None:
-    ctx, _ = _patched(
-        "RenamePatient",
-        [
-            _RpcError(grpc.StatusCode.UNAVAILABLE),
-            _RpcError(grpc.StatusCode.UNAVAILABLE),
-        ],
-    )
-    with ctx, pytest.raises(scheduling.SchedulingUnavailableError) as exc_info:
-        await scheduling.rename_patient(
-            _CHANNEL,
-            _settings(SCHEDULING_MAX_ATTEMPTS=2, SCHEDULING_RETRY_BACKOFF_SECONDS=0.0),
-            **_rename_kwargs(),
-        )
-
-    assert exc_info.value.outcome_unknown is False
 
 
 async def test_a_booked_appointment_carries_its_status_off_the_wire() -> None:

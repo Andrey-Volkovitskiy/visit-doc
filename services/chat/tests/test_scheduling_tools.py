@@ -222,6 +222,35 @@ async def test_every_refusal_reason_has_its_own_explanation(
     assert result["explanation"] != "detail for logs"
 
 
+async def _booking_refused(reason: BookingFailureReason) -> dict[str, Any]:
+    """Book against a scheduler that refuses for exactly this reason."""
+    refusal = BookingRefusal(reason=reason, detail="detail for logs")
+    with patch(_CLIENT + ".book_appointment", new=AsyncMock(return_value=refusal)):
+        return await _registry().dispatch(
+            "book_appointment",
+            {"practitioner_id": _PRACTITIONER_ID, "starts_at": "2026-08-18T09:00:00"},
+        )
+
+
+async def test_a_booking_refused_for_a_missing_patient_is_recorded() -> None:
+    """This one refusal is permanent, and the model is told nothing that says so."""
+    with capture_logs() as logs:
+        result = await _booking_refused(BookingFailureReason.PATIENT_NOT_FOUND)
+
+    assert result["reason"] == BookingFailureReason.PATIENT_NOT_FOUND.value
+    recorded = [e for e in logs if e["event"] == "booking.patient_unresolved"]
+    assert [(e["log_level"], e["patient_id"]) for e in recorded] == [
+        ("error", _PATIENT_ID)
+    ]
+
+
+async def test_a_refusal_the_patient_can_act_on_is_not_recorded() -> None:
+    with capture_logs() as logs:
+        await _booking_refused(BookingFailureReason.PRACTITIONER_BUSY)
+
+    assert not [e for e in logs if e["event"] == "booking.patient_unresolved"]
+
+
 def test_the_explanations_are_all_distinct() -> None:
     explanations = list(scheduling_tools._EXPLANATION_BY_REASON.values())
 
@@ -397,6 +426,31 @@ async def test_an_unresolved_patient_is_never_blamed_on_the_practitioner() -> No
     assert "practitioner" not in result["explanation"]
 
 
+@pytest.mark.parametrize("entity", [NotFoundEntity.PATIENT, NotFoundEntity.CHAT])
+async def test_a_patient_the_scheduler_cannot_resolve_is_recorded(
+    entity: NotFoundEntity,
+) -> None:
+    """Nothing re-provisions this chat, so this record is all that reports the state.
+
+    Both entities are the same finding reached through a different key: the chat holds
+    a `patient_id` the scheduler no longer has, and will hold it until it is deleted.
+    """
+    with capture_logs() as logs:
+        await _availability_not_found(entity)
+
+    recorded = [e for e in logs if e["event"] == "availability.patient_unresolved"]
+    assert [(e["log_level"], e["patient_id"]) for e in recorded] == [
+        ("error", _PATIENT_ID)
+    ]
+
+
+async def test_an_unknown_practitioner_is_not_recorded_against_the_patient() -> None:
+    with capture_logs() as logs:
+        await _availability_not_found(NotFoundEntity.PRACTITIONER)
+
+    assert not [e for e in logs if e["event"] == "availability.patient_unresolved"]
+
+
 async def test_an_unnamed_missing_entity_blames_neither() -> None:
     result = await _availability_not_found(None)
 
@@ -562,6 +616,21 @@ async def test_an_unresolved_patient_is_not_reported_as_having_no_appointments()
     assert result["status"] == "unavailable"
     assert "future" not in result
     assert "past" not in result
+
+
+async def test_a_patient_the_listing_cannot_resolve_is_recorded() -> None:
+    """The third of the three tools that meet a chat whose patient is gone."""
+    failure = SchedulingNotFoundError("nope", entity=NotFoundEntity.PATIENT)
+    with (
+        patch(_CLIENT + ".list_appointments", new=AsyncMock(side_effect=failure)),
+        capture_logs() as logs,
+    ):
+        await _registry().dispatch("list_my_appointments", {})
+
+    recorded = [e for e in logs if e["event"] == "appointments.patient_unresolved"]
+    assert [(e["log_level"], e["patient_id"]) for e in recorded] == [
+        ("error", _PATIENT_ID)
+    ]
 
 
 async def test_listing_appointments_when_the_scheduler_is_down_is_unavailable() -> None:

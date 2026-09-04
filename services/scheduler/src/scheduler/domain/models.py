@@ -136,7 +136,16 @@ class WorkingRange(Base):
 
 
 class Patient(Base):
-    """The person one chat books on behalf of, paired with that chat permanently."""
+    """The person one chat books on behalf of, paired with that chat permanently.
+
+    Nothing in this service updates a patient: the row is created with its chat and
+    deleted with it, and the name assigned at creation is the one the chat service
+    caches. `updated_at` still carries the same `onupdate` as every other audit pair
+    here - not a claim that updates happen, but what keeps the column's meaning ("when
+    this row was last written") true if one is ever added. It is a SQLAlchemy-side
+    default applied to the statements SQLAlchemy itself emits, not a trigger, so it
+    compiles into no DDL and a raw-SQL write bypasses it.
+    """
 
     __tablename__ = "patients"
     __table_args__ = (

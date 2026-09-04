@@ -6,7 +6,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from chat.domain.models import PATIENT_NAME_LENGTH
 from chat.domain.validation import is_meaningless
 
 _ULID_LENGTH = 26
@@ -263,28 +262,6 @@ class ChatSummary(BaseModel):
     patient_name: str | None
     created_at: datetime
     last_message_at: datetime | None
-
-
-class ChatPatientUpdate(BaseModel):
-    """`PATCH /chats/{chat_id}/patient` request body.
-
-    The bounds match the scheduler's own, so a name this service accepts is never one
-    the scheduler will then reject for its length.
-    """
-
-    full_name: str = Field(min_length=1, max_length=PATIENT_NAME_LENGTH)
-
-
-class ChatPatientOut(BaseModel):
-    """`PATCH /chats/{chat_id}/patient` response body.
-
-    Carries only what the rename changed. The client patches this into the row it is
-    already showing, so the response does not restate the rest of a `ChatSummary` - and
-    cannot disagree with it.
-    """
-
-    chat_id: str
-    patient_name: str
 
 
 class ChatListResponse(BaseModel):

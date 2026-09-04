@@ -43,8 +43,8 @@ async def _chat(
     async with session_factory() as session:
         chat = await chat_repository.create_chat(session, session_id)
         if patient_name is not None:
-            await chat_repository.set_patient_name(
-                session, chat.id, session_id, patient_name
+            await chat_repository.set_patient(
+                session, chat.id, session_id, str(ULID()), patient_name
             )
         if escalated is not None:
             await chat_repository.set_escalated(session, chat.id, session_id, escalated)

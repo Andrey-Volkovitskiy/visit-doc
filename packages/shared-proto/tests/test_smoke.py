@@ -4,7 +4,6 @@ from shared_proto.scheduling.v1 import scheduling_pb2_grpc as pb_grpc
 
 _EXPECTED_RPCS = {
     "EnsureSessionProvisioned",
-    "RenamePatient",
     "ListPractitioners",
     "CheckAvailability",
     "BookAppointment",
@@ -61,21 +60,6 @@ def test_booking_failure_reason_declares_the_closed_set_of_eight() -> None:
 def test_specialty_travels_as_a_validated_string_not_a_proto_enum() -> None:
     field = pb.Practitioner.DESCRIPTOR.fields_by_name["specialty"]
     assert field.type == field.TYPE_STRING
-
-
-def test_rename_patient_response_is_a_oneof_over_patient_and_failure() -> None:
-    oneofs = pb.RenamePatientResponse.DESCRIPTOR.oneofs_by_name
-    assert set(oneofs) == {"result"}
-    assert {f.name for f in oneofs["result"].fields} == {"patient", "failure"}
-
-
-def test_rename_failure_reason_declares_its_closed_set() -> None:
-    values = {v.name for v in pb.RenameFailureReason.DESCRIPTOR.values}
-    assert values == {
-        "RENAME_FAILURE_REASON_UNSPECIFIED",
-        "RENAME_FAILURE_REASON_NAME_TAKEN",
-        "RENAME_FAILURE_REASON_PATIENT_NOT_FOUND",
-    }
 
 
 def test_change_and_listing_messages_all_import() -> None:

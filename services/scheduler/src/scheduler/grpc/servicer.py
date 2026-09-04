@@ -10,11 +10,7 @@ from typing import Any, NoReturn
 
 import grpc
 from shared_models.localtime import format_local_date, format_local_datetime
-from shared_models.scheduling import (
-    BookingFailureReason,
-    NotFoundEntity,
-    RenameFailureReason,
-)
+from shared_models.scheduling import BookingFailureReason, NotFoundEntity
 from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from shared_proto.scheduling.v1 import scheduling_pb2_grpc
 from sqlalchemy.exc import IntegrityError
@@ -47,11 +43,6 @@ _PROTO_BY_FAILURE_REASON = {
     ),
 }
 
-_PROTO_BY_RENAME_REASON = {
-    RenameFailureReason.NAME_TAKEN: pb.RENAME_FAILURE_REASON_NAME_TAKEN,
-    RenameFailureReason.PATIENT_NOT_FOUND: pb.RENAME_FAILURE_REASON_PATIENT_NOT_FOUND,
-}
-
 
 async def _abort(context: Any, code: grpc.StatusCode, detail: str) -> NoReturn:
     """End the RPC with `code`, never returning.
@@ -71,18 +62,6 @@ def _failure(reason: BookingFailureReason) -> pb.BookingFailure:
     """
     return pb.BookingFailure(
         reason=_PROTO_BY_FAILURE_REASON[reason], detail=reason.value
-    )
-
-
-def _rename_failure(reason: RenameFailureReason) -> pb.RenamePatientResponse:
-    """Render one refused rename onto the wire.
-
-    `detail` is for logs only - the caller's message to the user is built from `reason`.
-    """
-    return pb.RenamePatientResponse(
-        failure=pb.RenameFailure(
-            reason=_PROTO_BY_RENAME_REASON[reason], detail=reason.value
-        )
     )
 
 
@@ -217,37 +196,6 @@ class SchedulingServicer(scheduling_pb2_grpc.SchedulingServicer):
                 ],
                 patient_created=patient_created,
                 practitioner_created=practitioner_created,
-            )
-
-    async def RenamePatient(  # noqa: N802 - name fixed by the gRPC contract
-        self,
-        request: pb.RenamePatientRequest,
-        context: Any,
-    ) -> pb.RenamePatientResponse:
-        """Rename one patient, or explain why the new name was refused.
-
-        Idempotent: renaming to the name the patient already holds succeeds and changes
-        nothing, so a caller whose deadline expired mid-call may retry the same request
-        without having to establish what the first attempt did.
-        """
-        session_id = converters.read_required_id(request.session_id, "session_id")
-        patient_id = converters.read_required_id(request.patient_id, "patient_id")
-        full_name = converters.read_patient_name(request.full_name)
-
-        async with session_factory() as session:
-            patient = await patient_repository.get(session, patient_id, session_id)
-            if patient is None:
-                return _rename_failure(RenameFailureReason.PATIENT_NOT_FOUND)
-            try:
-                renamed = await patient_repository.rename(session, patient, full_name)
-            except IntegrityError:
-                # The (session_id, full_name) unique constraint is the arbiter, so this
-                # is the answer for both a name already held in this session and one
-                # taken concurrently between the read above and the write.
-                await session.rollback()
-                return _rename_failure(RenameFailureReason.NAME_TAKEN)
-            return pb.RenamePatientResponse(
-                patient=converters.to_proto_patient(renamed)
             )
 
     async def ListPractitioners(  # noqa: N802 - name fixed by the gRPC contract

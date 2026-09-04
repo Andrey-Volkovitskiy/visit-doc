@@ -151,27 +151,29 @@ remove. That holds however the turn ended: a turn that settled no reply has no i
 report the chat gone, so it reads the takeover instead — and that read answers `chat_gone` in its
 own right rather than folding a missing conversation into "nobody took this over".
 
-### `patient.rename_rejected` / `chat.delete_rejected` - new
+### `chat.delete_rejected` - new
 
 | Event | Level | Fields | When |
 |---|---|---|---|
-| `patient.rename_rejected` | error | `chat_id`, `patient_id`, `error_type`, `error_detail`, `outcome_known` (bool) | `PATCH /chats/{chat_id}` reached the scheduler and the scheduler answered with a failure rather than an outage. |
-| `chat.delete_rejected` | error | `chat_id`, `error_type`, `error_detail`, `outcome_known` (bool) | `DELETE /chats/{chat_id}`, same shape. |
+| `chat.delete_rejected` | error | `chat_id`, `error_type`, `error_detail`, `outcome_known` (bool) | `DELETE /chats/{chat_id}` reached the scheduler and the scheduler answered with a failure rather than an outage. |
+
+*(This entry was written as a pair with `patient.rename_rejected`. That route is withdrawn along
+with patient renaming - see 005 FR-048 as amended - so only the deletion half remains, unchanged in
+shape and meaning.)*
 
 **`outcome_known` is the field that matters**, and it is why one event covers both answers instead
 of two. It is true only for the subclasses that are decided *before* the write - a rejection, or an
 id the scheduler does not know - and those are the only ones the caller is told "nothing was
-renamed/deleted" about, with a 502. Anything else this build cannot place answers 504 and claims
+deleted" about, with a 502. Anything else this build cannot place answers 504 and claims
 nothing, because a scheduling failure it has never seen is not evidence that nothing happened.
 
 **`error`, not `warning`:** an outage is ordinary and is not logged here at all; reaching this event
 means the scheduler answered something the route did not expect, which is either a contract drift or
-a defect. The names read as "rejected" because that was the only case when they were written; a
+a defect. The name reads as "rejected" because that was the only case when it was written; a
 `false` `outcome_known` is the entry saying it was something else.
 
-**Neither carries a correlation id.** `bind_turn_id` is entered by `POST /chat` and
-`bind_operation_id` by the FAQ routes; a rename or a delete is neither, so these two entries are
-correlated by `chat_id` alone.
+**It carries no correlation id.** `bind_turn_id` is entered by `POST /chat` and `bind_operation_id`
+by the FAQ routes; a delete is neither, so this entry is correlated by `chat_id` alone.
 
 ---
 
