@@ -320,6 +320,27 @@ def _not_found(exc: SchedulingNotFoundError) -> ToolResult:
     }
 
 
+# The entities the scheduler names when it was this chat's patient that did not
+# resolve. `CHAT` is the same finding reached through the other key, so both count.
+_UNRESOLVED_PATIENT_ENTITIES = (NotFoundEntity.PATIENT, NotFoundEntity.CHAT)
+
+
+def _log_patient_unresolved(event: str, patient_id: str) -> None:
+    """Record that the scheduler does not hold the patient this chat names.
+
+    An observation only: the call has already been answered, and what the model is
+    told is decided elsewhere and unchanged by this.
+
+    It is recorded at error level because the state behind it does not clear on its
+    own. Nothing re-provisions a chat that already has a `patient_id`, so every later
+    scheduling call in that chat is sent the same id and fails the same way, and the
+    chat can only be deleted, never repaired. What the record does not say is why the
+    patient is missing - a deletion interrupted between the scheduler and this service
+    leaves exactly this, and so does a patient deleted while the turn was in flight.
+    """
+    get_logger().error(event, patient_id=patient_id)
+
+
 def _refused(refusal: BookingRefusal) -> ToolResult:
     """Render one evaluated refusal for the model."""
     return {
@@ -383,6 +404,10 @@ async def check_availability(
         # Distinct from an empty result, which means this practitioner exists and has
         # nothing free - offering to look further ahead for an id that does not resolve
         # would never return anything.
+        if exc.entity in _UNRESOLVED_PATIENT_ENTITIES:
+            _log_patient_unresolved(
+                "availability.patient_unresolved", context.patient_id
+            )
         return _not_found(exc)
 
     return {
@@ -442,6 +467,8 @@ async def book_appointment(
         return _unavailable()
 
     if isinstance(outcome, BookingRefusal):
+        if outcome.reason is BookingFailureReason.PATIENT_NOT_FOUND:
+            _log_patient_unresolved("booking.patient_unresolved", context.patient_id)
         return _refused(outcome)
 
     appointment = outcome.appointment

@@ -138,13 +138,13 @@ class WorkingRange(Base):
 class Patient(Base):
     """The person one chat books on behalf of, paired with that chat permanently.
 
-    A row is written once and never modified: a patient is created with its chat and
-    deleted with it, and nothing updates one. `updated_at` therefore carries no
-    `onupdate`, unlike `practitioners` and `appointments`, whose rows really are
-    updated in place; here it equals `created_at` for the row's whole life. The
-    column is kept rather than dropped because it is on no wire contract and no admin
-    response, so no reader can be misled by it, and every entity table goes on
-    carrying the same audit pair.
+    Nothing in this service updates a patient: the row is created with its chat and
+    deleted with it, and the name assigned at creation is the one the chat service
+    caches. `updated_at` still carries the same `onupdate` as every other audit pair
+    here - not a claim that updates happen, but what keeps the column's meaning ("when
+    this row was last written") true if one is ever added. It is a SQLAlchemy-side
+    default applied to the statements SQLAlchemy itself emits, not a trigger, so it
+    compiles into no DDL and a raw-SQL write bypasses it.
     """
 
     __tablename__ = "patients"
@@ -162,7 +162,7 @@ class Patient(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 

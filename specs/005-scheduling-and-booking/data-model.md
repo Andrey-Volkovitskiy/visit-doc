@@ -24,8 +24,8 @@ All timestamps are **timezone-naive local wall-clock** (research #5): `TIMESTAMP
 and `TIME WITHOUT TIME ZONE`. `created_at`/`updated_at` are the sole exception — audit metadata
 written by `server_default=func.now()`.
 
-**Every entity table carries both audit columns**, declared as `FaqEntry` already does in
-`services/chat/src/chat/domain/models.py` — with the one `onupdate` exception noted below:
+**Every entity table carries both audit columns**, declared exactly as `FaqEntry` already does in
+`services/chat/src/chat/domain/models.py`:
 
 ```python
 created_at: Mapped[datetime] = mapped_column(
@@ -46,11 +46,13 @@ Three consequences to be aware of rather than surprised by:
   column costs nothing today and a migration on a table with two exclusion constraints costs more
   later. `working_ranges` deliberately has neither column: a schedule edit replaces its rows wholesale
   rather than updating them, so the practitioner's own `updated_at` is the meaningful record.
-- `patients.updated_at` is the one that carries **no** `onupdate`. A patient is created with its
-  chat and deleted with it, and nothing updates the row (FR-048 as amended after 007), so an
-  `onupdate` would advertise a mutation that cannot occur. The column itself stays — it is on no
-  wire contract and no admin response, so nothing reads it — and `onupdate` is a SQLAlchemy-side
-  default that appears in no DDL, so dropping it needed no migration.
+- `patients.updated_at` equals `created_at` on every row today: nothing updates a patient (FR-048
+  as amended after 007), which is a fact about the callers, not about the column. It keeps its
+  `onupdate` all the same — the declaration is a safety property, not an announcement that updates
+  happen, and it is what keeps the column meaning "when this row was last written" if an update
+  path is ever added. It costs nothing to keep: `onupdate` compiles into no DDL (`patients` and
+  `practitioners` have byte-identical `updated_at` DDL in the initial migration), so neither
+  carrying it nor dropping it is a migration.
 
 Neither column is exposed on the gRPC contract or in any admin-API response. They are operational
 metadata for whoever is reading the database directly; no requirement surfaces them, and adding them
@@ -109,7 +111,7 @@ means a practitioner who is listed but never bookable (spec Edge Cases).
 | `session_id` | `VARCHAR(26)` NOT NULL | opaque; indexed |
 | `chat_id` | `VARCHAR(26)` NOT NULL | opaque; **UNIQUE** |
 | `full_name` | `VARCHAR(200)` NOT NULL | from the writer pool; assigned once, never edited |
-| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only; equal on every row — see above |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only; equal on every row while nothing updates one — see above |
 
 - `UNIQUE (chat_id)` — FR-003's permanent one-to-one pairing, and the thing that makes
   `EnsureSessionProvisioned` idempotent on retry (FR-045, research #10).
@@ -182,6 +184,19 @@ EXCLUDE USING gist (practitioner_id WITH =, tsrange(starts_at, ends_at) WITH &&)
   given to a different chat's patient in the same session. This is the deliberate cost of the
   scheduler-first ordering, whose other direction would strand a patient and their appointments with
   no chat left to reach them.
+- **What that costs is the chat, not the name.** `patient_id` is the id every scheduling tool is
+  handed, so once the scheduler no longer holds that patient, `check_availability` and
+  `list_my_appointments` are answered NOT_FOUND and `book_appointment` is refused with
+  `PATIENT_NOT_FOUND` — for every remaining turn of that chat, since nothing re-provisions it. The
+  chat still appears in `GET /chats` under the dead patient's name and still answers FAQ questions;
+  what it can never do again is anything scheduling, and the visitor is told only that "this chat
+  has no patient record". No API reports this state, and no screen surfaces it. The only signal is
+  operator-side: the three tools log
+  `availability.patient_unresolved` / `booking.patient_unresolved` /
+  `appointments.patient_unresolved` at error level, carrying the `patient_id`, when they meet it.
+  **Recovering such a chat is out of scope and unbuilt**: re-provisioning would create a second
+  patient behind a deletion that was half-applied, and that decision belongs to a change that owns
+  the delete path's guarantees, not to this one.
 - Application-level "one chat per session" is dropped (FR-035). `get_or_create_chat_for_session` and
   `get_chat_for_session` are removed; `list_chats_for_session` (FR-056 ordering, research #13),
   `create_chat`, `get_chat` (session-scoped), `set_patient`, and `delete_chat` replace them.

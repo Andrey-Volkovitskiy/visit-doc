@@ -22,16 +22,16 @@ from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from structlog.testing import capture_logs
 
 # Captured at import, before any fixture runs, so these are the real functions.
-# `conftest.py`'s autouse boundary fake replaces some of them on this very module -
+# `conftest.py`'s autouse boundary fake replaces every one of them on this very module -
 # which is right for tests that go through the API, and wrong here, where the client
 # itself is what is under test. The fake stub below is the boundary these tests replace
 # instead.
 #
 # Read off the module rather than listed by hand: a hand-written list is a copy of
 # conftest's, and the two drift the moment one of them is edited alone. Every public
-# coroutine function the client module defines is captured, which is a superset of what
-# conftest fakes today and of whatever it fakes next;
-# `test_no_function_conftest_fakes_is_left_faked_in_this_module` is what checks that.
+# coroutine function the client module defines is captured, and
+# `test_conftest_fakes_exactly_the_public_client_functions` below is what holds that set
+# and conftest's tuple equal.
 _REAL_CLIENT_FUNCTIONS = {
     name: function
     for name, function in inspect.getmembers(scheduling, inspect.iscoroutinefunction)
@@ -130,13 +130,17 @@ def _booked_response() -> pb.BookAppointmentResponse:
     )
 
 
-def test_no_function_conftest_fakes_is_left_faked_in_this_module(
+def test_conftest_fakes_exactly_the_public_client_functions(
     faked_scheduling_function_names: tuple[str, ...],
 ) -> None:
-    assert faked_scheduling_function_names
-    for name in faked_scheduling_function_names:
-        assert name in _REAL_CLIENT_FUNCTIONS
-        assert getattr(scheduling, name) is _REAL_CLIENT_FUNCTIONS[name]
+    # Equality, because each direction is its own defect. A public client coroutine
+    # missing from conftest's tuple is a real gRPC call on the lifespan's event loop in
+    # every other chat unit test that reaches it; a name in the tuple that this module
+    # does not capture is one this module cannot un-fake, so the client test for it
+    # would run against conftest's `AsyncMock` instead of the client. A call that must
+    # ever go deliberately unfaked belongs here as a named subtraction, not as a gap.
+    assert _REAL_CLIENT_FUNCTIONS
+    assert set(faked_scheduling_function_names) == set(_REAL_CLIENT_FUNCTIONS)
 
 
 async def test_every_call_carries_the_configured_deadline() -> None:

@@ -36,6 +36,13 @@ async def provision_patient(channel: grpc.aio.Channel, chat: Chat) -> str | None
     patient was deleted without its own row going with it - an interrupted chat
     deletion - which this call skips like any other chat that already has a
     `patient_id`, so only a retried deletion clears it.
+
+    That skip is what makes the state permanent rather than merely stale, and it costs
+    the chat its scheduling: the dead id is handed to every scheduling tool for the
+    rest of the chat's life, so checking times, listing appointments, and booking are
+    all refused, and the visitor is told this chat has no patient record while the chat
+    goes on listing under that patient's name. The tools log the encounter at error
+    level; nothing else reports it, and nothing in this build repairs it.
     """
     if chat.patient_id is not None:
         return chat.patient_name

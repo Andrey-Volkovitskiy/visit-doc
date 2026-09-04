@@ -6,9 +6,13 @@ session's own patients, so the exhaustion behavior holds end to end and not just
 the abstract.
 """
 
+from datetime import datetime
+
 import pytest
+from scheduler.domain.models import Patient
 from scheduler.domain.name_pools import WRITER_POOL
 from scheduler.repositories import patient_repository
+from sqlalchemy import text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .conftest import new_id
@@ -135,31 +139,59 @@ async def test_two_sessions_each_start_at_the_top_of_the_pool(
     assert first == second == [WRITER_POOL[0]]
 
 
-async def test_a_patients_updated_at_never_moves_off_created_at(
+async def _stored_updated_at(
+    session: AsyncSession, patient_id: str, session_id: str
+) -> datetime:
+    """Return `updated_at` as the database now holds it for `patient_id`.
+
+    Expires the identity map first, so the value is a fresh read rather than whatever
+    the session already had in memory - an `onupdate` is evaluated by the database
+    inside the `UPDATE`, so the in-memory attribute is stale by definition.
+    """
+    session.expire_all()
+    patient = await patient_repository.get(session, patient_id, session_id)
+    assert patient is not None
+    return patient.updated_at
+
+
+async def test_a_patient_written_through_sqlalchemy_carries_updated_at_forward(
     db_session: AsyncSession,
 ) -> None:
-    """Nothing updates a patient, so the audit pair stays equal for the row's life.
+    """`onupdate` is what keeps the audit pair honest if an update path is ever added.
 
-    Every operation the repository offers on an existing patient runs here, and the
-    row is re-read from the database afterwards rather than trusted from the session's
-    identity map. An update path added later without an answer for this fails here.
+    Nothing updates a patient today, so what runs here is the column declaration
+    rather than a caller: an ORM flush and a Core `update()` are the two shapes such a
+    path could take, and both must move `updated_at` off `created_at`. Dropping
+    `onupdate` from `Patient` fails this test. A raw-SQL write is the documented limit
+    of the guarantee - SQLAlchemy emits the timestamp, no trigger does - so that leg
+    asserts the column stays put rather than moves.
     """
     session_id = new_id()
-    chat_id = new_id()
     patient, _ = await patient_repository.create_if_absent(
-        db_session, session_id, chat_id
+        db_session, session_id, new_id()
     )
     patient_id = patient.id
     created_at = patient.created_at
 
-    await patient_repository.create_if_absent(db_session, session_id, chat_id)
-    await patient_repository.get(db_session, patient_id, session_id)
-    await patient_repository.list_for_session(db_session, session_id)
-    await patient_repository.taken_names(db_session, session_id)
+    patient.full_name = "Renamed By An Orm Flush"
     await db_session.commit()
+    after_flush = await _stored_updated_at(db_session, patient_id, session_id)
 
-    db_session.expire_all()
-    reread = await patient_repository.get(db_session, patient_id, session_id)
-    assert reread is not None
-    assert reread.created_at == created_at
-    assert reread.updated_at == created_at
+    await db_session.execute(
+        update(Patient)
+        .where(Patient.id == patient_id)
+        .values(full_name="Renamed By A Core Update")
+    )
+    await db_session.commit()
+    after_core_update = await _stored_updated_at(db_session, patient_id, session_id)
+
+    await db_session.execute(
+        text("UPDATE patients SET full_name = :name WHERE id = :id"),
+        {"name": "Renamed By Raw Sql", "id": patient_id},
+    )
+    await db_session.commit()
+    after_raw_sql = await _stored_updated_at(db_session, patient_id, session_id)
+
+    assert after_flush > created_at
+    assert after_core_update > after_flush
+    assert after_raw_sql == after_core_update

@@ -134,12 +134,18 @@ async def delete_chat(chat_id: str, request: Request) -> None:
             again - deleting an already-absent patient succeeds - so the caller is told
             to retry rather than told an outcome. Reporting "nothing was deleted" here
             would be a guess, and the one that leaves a chat bound to a patient that no
-            longer exists.
+            longer exists - which, per the ordering note below, costs that chat every
+            scheduling capability it has.
 
-    The scheduler goes first deliberately. Of the two orderings only this one has a
-    benign failure mode: a crash between the steps leaves a chat pointing at a patient
-    that is already gone, which a retried delete clears - whereas deleting locally first
-    would strand a patient and their appointments with no chat left to reach them.
+    The scheduler goes first deliberately, and neither ordering fails harmlessly. A
+    crash between the steps leaves a chat pointing at a patient that is already gone:
+    nothing re-provisions it, so that chat can never book, list or check times again -
+    it answers questions and refuses everything scheduling for the rest of its life,
+    saying it has no patient record while still listing under that patient's name. A
+    retried delete is the only thing that clears it, and only by removing the chat.
+    The other ordering was rejected because its failure is worse and unreachable:
+    deleting locally first would strand a patient and their appointments with no chat
+    left to reach them.
 
     A turn still generating for this chat is cancelled only once the scheduler call has
     succeeded. Cancelling first would destroy an in-progress reply - it is never

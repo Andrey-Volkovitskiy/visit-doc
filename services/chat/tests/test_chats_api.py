@@ -512,9 +512,9 @@ async def test_a_delete_interrupted_after_the_scheduler_leaves_an_orphaned_name(
     """The one window in which a cached patient name outlives its patient.
 
     The scheduler goes first, so a failure between the two deletes leaves the chat row
-    holding the id and name of a patient that is already gone. Nothing re-provisions it
-    - provisioning only ever creates a patient for a chat that has none - so the row
-    keeps that name until the delete is retried.
+    holding the id and name of a patient that is already gone. A later turn does not
+    re-provision it - provisioning only ever creates a patient for a chat that has none
+    - so the row goes on reporting that name.
     """
     session_id, chat_id = await _seed_chat_with_patient()
     provision = AsyncMock(return_value=_provisioned())
@@ -529,16 +529,65 @@ async def test_a_delete_interrupted_after_the_scheduler_leaves_an_orphaned_name(
             with pytest.raises(RuntimeError):
                 await client.delete(f"/chats/{chat_id}")
 
+    # A turn is the only path that provisions a chat that already exists, so it is what
+    # would re-create the patient if provisioning were not creation-only. Listing does
+    # not provision at all, and would leave that guard unexercised.
     with patch(_PROVISION, new=provision):
         async with _api(session_id) as client:
+            await client.post(
+                "/chat",
+                json={
+                    "chat_id": chat_id,
+                    "message": "when can I visit?",
+                    "local_now": LOCAL_NOW,
+                },
+            )
             listed = (await client.get("/chats")).json()["chats"]
 
-    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
     provision.assert_not_awaited()
+    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
     async with session_factory() as session:
         orphaned = await session.get(Chat, chat_id)
     assert orphaned is not None
     assert orphaned.patient_id == "01PATENT000000000000000000"
+
+
+async def test_retrying_an_interrupted_delete_clears_the_orphaned_chat() -> None:
+    """The retry is what removes an orphan, and it finds the patient already gone.
+
+    The first attempt deleted the patient before it failed, so the second one is
+    answered with `patient_existed=False`. That is not a failure and not a 404: the
+    chat and its messages still go, and the log records that the scheduler had no
+    patient left to remove.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+
+    with (
+        patch(_DELETE, new=AsyncMock(return_value=_deleted())),
+        patch.object(
+            chat_repository, "delete_chat", new=AsyncMock(side_effect=RuntimeError)
+        ),
+    ):
+        async with _api(session_id) as client:
+            with pytest.raises(RuntimeError):
+                await client.delete(f"/chats/{chat_id}")
+
+    with (
+        patch(
+            _DELETE,
+            new=AsyncMock(return_value=_deleted(existed=False, appointments=0)),
+        ),
+        capture_logs(processors=[merge_contextvars]) as logs,
+    ):
+        async with _api(session_id) as client:
+            response = await client.delete(f"/chats/{chat_id}")
+
+    assert response.status_code == 204
+    deleted = next(e for e in logs if e["event"] == "chat.deleted")
+    assert deleted["patient_existed"] is False
+    assert deleted["appointments_deleted"] == 0
+    async with session_factory() as session:
+        assert await chat_repository.get_chat(session, chat_id, session_id) is None
 
 
 async def test_a_refused_deletion_leaves_an_in_flight_turn_running() -> None:

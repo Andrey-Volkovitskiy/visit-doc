@@ -165,9 +165,17 @@ async def _clear_chat_tables() -> None:
 # once so nothing has to restate them: the fixture below builds its fake from this
 # tuple, and `test_scheduling_client.py` - which un-fakes the boundary because the
 # client itself is what it tests - reads it back through the
-# `faked_scheduling_function_names` fixture to check it left none of them faked.
+# `faked_scheduling_function_names` fixture and asserts it names exactly the public
+# coroutines `chat.clients.scheduling` defines. So a client function added without an
+# entry here fails that test rather than reaching a real channel from some other test.
 FAKED_SCHEDULING_FUNCTIONS = (
     "ensure_session_provisioned",
+    "list_practitioners",
+    "check_availability",
+    "book_appointment",
+    "reschedule_appointment",
+    "cancel_appointment",
+    "list_appointments",
     "delete_patient_for_chat",
     "delete_session",
 )
@@ -188,10 +196,13 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
     loop rather than on the thing a test is actually about. Unreachable is also the
     honest default: it is what a chat service with no scheduler running really sees.
 
-    Every call reachable from an HTTP request is faked, not just the provisioning one:
-    a test exercising a path that reaches an unfaked call would otherwise dial the real
-    channel on the wrong loop, and fail with a loop-binding error attributed to whatever
-    it was actually about. A test that wants a specific outcome patches over this.
+    Every public coroutine the client module defines is faked, not just the provisioning
+    one - `test_scheduling_client.py` asserts that tuple and that set are equal. All
+    nine are reachable from an HTTP request today (three from `/chats`, `/admin` and the
+    provisioning dependency, six from the booking tools a `POST /chat` turn can call),
+    and a test exercising a path that reaches an unfaked one would dial the real channel
+    - the lifespan's, with no scheduler behind it - and fail on that rather than on the
+    thing it was actually about. A test that wants a specific outcome patches over this.
 
     The fake is applied to `chat.clients.scheduling` itself, which is the object every
     caller reaches these functions through (`from chat.clients import scheduling`, then

@@ -1,14 +1,12 @@
 """Tests for the patient admin routes: listing, and the absence of everything else."""
 
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from scheduler.api.patients import router as patients_router
 from scheduler.db.session import session_factory
 from scheduler.main import app
 
 from .conftest import admin_api, new_id, seed_patient
-
-
-def _headers(session_id: str) -> dict[str, str]:
-    return {"X-Session-Id": session_id}
 
 
 def test_a_missing_session_header_is_unauthorized() -> None:
@@ -44,16 +42,27 @@ async def test_a_patient_cannot_be_renamed_through_this_surface() -> None:
     assert [p["full_name"] for p in still_named] == ["Ada"]
 
 
-def test_there_is_no_way_to_create_or_delete_a_patient_here() -> None:
-    """A patient is created with its chat and deleted with it, never on its own."""
-    with TestClient(app) as client:
-        created = client.post(
-            "/patients", json={"full_name": "x"}, headers=_headers(new_id())
-        )
-        deleted = client.delete(f"/patients/{new_id()}", headers=_headers(new_id()))
+def test_the_listing_is_the_only_patient_route() -> None:
+    """A patient is created with its chat and deleted with it, never on its own.
 
-    # The collection path is routed, for the listing, so a write to it is refused as a
-    # method; there is no per-patient path at all, so a write to one is refused as a
-    # path that does not exist.
-    assert created.status_code == 405
-    assert deleted.status_code == 404
+    Asserted against the routes themselves rather than a response status, because no
+    status distinguishes the two: a re-added `DELETE /patients/{patient_id}` answering
+    404 for an id that names no patient is indistinguishable, from the outside, from
+    the unrouted path that answers 404 today. Both halves are needed - the router sees
+    a route kept out of the published schema, the schema sees one declared elsewhere.
+    """
+    declared = {
+        (route.path, method)
+        for route in patients_router.routes
+        if isinstance(route, APIRoute)
+        for method in route.methods
+    }
+    published = {
+        (path, method.upper())
+        for path, operations in app.openapi()["paths"].items()
+        if path == "/patients" or path.startswith("/patients/")
+        for method in operations
+    }
+
+    assert declared == {("/patients", "GET")}
+    assert published == {("/patients", "GET")}

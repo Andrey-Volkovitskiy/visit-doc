@@ -174,6 +174,17 @@ class Chat(Base):
     revisits a chat that already has a `patient_id` - only a retried deletion clears it.
     The scheduler's name pool meanwhile walks the names its *live* patients hold, so the
     freed name can be handed to a different chat's patient in the same session.
+
+    The cost of that is the whole chat, not a wrong name on it. `patient_id` is what
+    every scheduling tool is given, so each is sent an id the scheduler cannot resolve:
+    checking times is refused as "this chat has no patient record", listing
+    appointments reports that they could not be looked up, and booking is refused with
+    `PATIENT_NOT_FOUND`. Nothing here recovers from that, and nothing tells the
+    visitor - the chat still lists, and still answers questions from the corpus, while
+    every scheduling request in it fails until the chat is deleted. The three tools
+    record it at error level (`availability.patient_unresolved`,
+    `booking.patient_unresolved`, `appointments.patient_unresolved`), which is all the
+    report this state has.
     """
 
     __tablename__ = "chats"
