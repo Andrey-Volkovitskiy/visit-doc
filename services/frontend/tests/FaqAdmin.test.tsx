@@ -227,4 +227,41 @@ describe("FaqAdmin: writing", () => {
 
     expect(create).not.toHaveBeenCalled();
   });
+
+  it("does not save or delete an entry twice on a double click", async () => {
+    // The latch was on Add alone. A save is a whole revision write - the entry is
+    // chunked, embedded and indexed again - so a double click did that twice, and the
+    // second publish then failed its own staleness guard against the revision the first
+    // had already published, reporting a conflict over an entry that saved fine.
+    let landSave!: (saved: FaqEntry) => void;
+    const save = vi.spyOn(consoleApi, "updateFaqEntry").mockReturnValue(
+      new Promise<FaqEntry>((resolve) => {
+        landSave = resolve;
+      }),
+    );
+    let landDelete!: () => void;
+    const remove = vi.spyOn(consoleApi, "deleteFaqEntry").mockReturnValue(
+      new Promise<void>((resolve) => {
+        landDelete = resolve;
+      }),
+    );
+
+    render(<FaqAdmin />);
+    await screen.findByTestId("faq-entry");
+
+    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Save"));
+    expect(save).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      landSave(entry());
+    });
+
+    const deleteLabel = `Delete entry ${entry().id}`;
+    fireEvent.click(screen.getByLabelText(deleteLabel));
+    fireEvent.click(screen.getByLabelText(deleteLabel));
+    expect(remove).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      landDelete();
+    });
+  });
 });

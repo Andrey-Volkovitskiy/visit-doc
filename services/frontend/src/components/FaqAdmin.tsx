@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createFaqEntry,
   deleteFaqEntry,
@@ -6,6 +6,7 @@ import {
   updateFaqEntry,
   type FaqEntry,
 } from "../lib/consoleApi";
+import { useBusyLatch } from "../lib/useBusyLatch";
 
 /**
  * Add, edit and delete what the assistant may answer from.
@@ -23,15 +24,9 @@ export function FaqAdmin() {
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  // Whether a create is in flight, for the button to show. `creating` repaints it;
-  // `creatingRef` is what actually stops a second call, and the two are not
-  // alternatives - see `handleCreate`.
-  const [creating, setCreating] = useState(false);
-  // The same latch as the handler can see it. A ref rather than reading `creating`,
-  // because two clicks dispatched in one React batch both run against the render that
-  // preceded them: the state the first set has not committed, so a guard reading it lets
-  // the second through - and the button is still painted enabled for the same reason.
-  const creatingRef = useRef(false);
+  // One latch for every gesture on this pane, keyed by what the gesture is about, so a
+  // second click on any of them is refused rather than only on Add. See `useBusyLatch`.
+  const latch = useBusyLatch();
 
   const report = useCallback((err: unknown, fallback: string): void => {
     setError(err instanceof Error ? err.message : fallback);
@@ -51,45 +46,49 @@ export function FaqAdmin() {
     // before then reads the very same text and passes the very same guard - and each
     // copy is separately chunked, embedded and indexed, and each counts against the
     // session's entry cap.
-    if (creatingRef.current) return;
-    setError(null);
-    creatingRef.current = true;
-    setCreating(true);
-    try {
-      const created = await createFaqEntry(draft);
-      setEntries((prev) => [...prev, created]);
-      setDraft("");
-    } catch (err) {
-      report(err, "Could not add that entry.");
-    } finally {
-      // Released however this ended, including the failure above: the text is still in
-      // the box by design, and a latch left closed would leave a staff member holding an
-      // entry they can no longer add.
-      creatingRef.current = false;
-      setCreating(false);
-    }
+    await latch.run("create", async () => {
+      setError(null);
+      try {
+        const created = await createFaqEntry(draft);
+        setEntries((prev) => [...prev, created]);
+        setDraft("");
+      } catch (err) {
+        report(err, "Could not add that entry.");
+      }
+    });
   }
 
   async function handleSave(entry: FaqEntry): Promise<void> {
-    setError(null);
-    try {
-      // The response *is* the stored entry, so what is shown is what the assistant
-      // will answer from.
-      const saved = await updateFaqEntry(entry.id, entry.content);
-      setEntries((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-    } catch (err) {
-      report(err, "Could not save that entry.");
-    }
+    // Latched for a harder reason than the create's. A save is a whole revision write -
+    // the entry is chunked, embedded and indexed again - so a double click does that
+    // twice, and the second publish then fails its own staleness guard against the
+    // revision the first one had already published, reporting a conflict over an entry
+    // that saved perfectly well.
+    await latch.run(`save:${entry.id}`, async () => {
+      setError(null);
+      try {
+        // The response *is* the stored entry, so what is shown is what the assistant
+        // will answer from.
+        const saved = await updateFaqEntry(entry.id, entry.content);
+        setEntries((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
+      } catch (err) {
+        report(err, "Could not save that entry.");
+      }
+    });
   }
 
   async function handleDelete(entry: FaqEntry): Promise<void> {
-    setError(null);
-    try {
-      await deleteFaqEntry(entry.id);
-      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-    } catch (err) {
-      report(err, "Could not delete that entry.");
-    }
+    // The second delete of an entry the first one removed is a 404, reported as a
+    // failure the staff member cannot act on - for a delete that worked.
+    await latch.run(`delete:${entry.id}`, async () => {
+      setError(null);
+      try {
+        await deleteFaqEntry(entry.id);
+        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+      } catch (err) {
+        report(err, "Could not delete that entry.");
+      }
+    });
   }
 
   return (
@@ -106,7 +105,7 @@ export function FaqAdmin() {
       </label>
       {/* Disabled while the create is out so the wait is visible; the handler's own
           latch is what makes a second click harmless either way. */}
-      <button onClick={() => void handleCreate()} disabled={creating}>
+      <button onClick={() => void handleCreate()} disabled={latch.isBusy("create")}>
         Add entry
       </button>
 
@@ -129,10 +128,16 @@ export function FaqAdmin() {
                   )
                 }
               />
-              <button onClick={() => void handleSave(entry)}>Save</button>
+              <button
+                onClick={() => void handleSave(entry)}
+                disabled={latch.isBusy(`save:${entry.id}`)}
+              >
+                Save
+              </button>
               <button
                 aria-label={`Delete entry ${entry.id}`}
                 onClick={() => void handleDelete(entry)}
+                disabled={latch.isBusy(`delete:${entry.id}`)}
               >
                 Delete
               </button>

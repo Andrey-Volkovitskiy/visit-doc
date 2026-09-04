@@ -178,17 +178,39 @@ def bound_to_last_n_turns(
 # What a model is told about the clinic's own words that open the window it can see.
 # One text in one place, for the same reason `SILENT_WINDOW_NOTE` is.
 #
-# The opposite instruction to that one, and deliberately so: these are the clinic's
-# own earlier words, the patient has already seen them, and whatever the patient says
-# next is very often an answer to them - so the model must read them *and* act on them.
-# The silent window's messages are the ones nobody has answered; these are the ones the
-# patient is answering.
+# Not the opposite instruction to that one, though the two runs are opposites in one
+# respect: the silent window holds messages nobody has answered, while these are the
+# clinic's own words the patient has often already answered. That is the whole reason
+# they are carried - "yes please" is unreadable without the offer it accepts.
+#
+# But the note stops at saying what they are, and does not tell the model to act on
+# them. It cannot know that it should: this burst is also what a window lands on when
+# `bound_to_last_n_turns` cuts mid-turn, leaving a clinic reply whose own question is
+# off the front and which the patient answered turns ago. Told to act on that, the
+# booking loop re-offers a slot already taken. So the note leaves the model to read
+# the patient's reply and judge, and forbids only the one thing that is never right -
+# reading the clinic's words as the patient's.
 OPENING_CLINIC_NOTE = (
-    "Earlier in this conversation the clinic said the following. The message you are "
-    "answering may well be a reply to it, so read it as part of the question and act "
-    "on it. It is the clinic's own words, not the patient's - never attribute it to "
-    "them."
+    "Earlier in this conversation the clinic said the following. It is the clinic's "
+    "own words, not the patient's - never attribute it to them, and do not treat it "
+    "as a request the patient has made. The message you are answering may be a reply "
+    "to it; it may also be something the patient answered earlier, or something no "
+    "longer shown has already dealt with. Read it as context and let the patient's "
+    "own words below decide what this turn is about."
 )
+
+# Marks where the clinic's folded-in words stop and the patient's own begin. Both runs
+# join their messages with a blank line, so without this the seam is the same "\n\n"
+# used *inside* each of them: two patient messages folded behind the note read as one
+# three-paragraph clinic message, under a note saying never to attribute that text to
+# the patient. It is also what keeps `OPENING_CLINIC_NOTE` from being an unfenced trust
+# marker sitting in patient-authored text.
+PATIENT_RESUMES_HEADING = "The patient's own messages, from here on:"
+
+# Labels the half of a rewritten entry that is actually the request, for a specialist
+# that replaces the trailing entry with a prompt of its own. Lives here beside the
+# other two headings so the seams a model is asked to read are one vocabulary.
+ANSWERING_HEADING = "The message you are answering:"
 
 
 def _split_at_first_patient_burst(
@@ -251,9 +273,12 @@ def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
     also requires the first entry to use the `user` role and rejects the whole call
     otherwise, which would fail every model call of the turn, not just this rendering.
     They are not dropped - they are folded into the first `user` entry behind
-    `OPENING_CLINIC_NOTE`, so the clinic's own opening words still reach every
-    specialist, the classifier included. See `_split_at_first_patient_burst` for why
-    neither dropping nor relabelling them is good enough.
+    `OPENING_CLINIC_NOTE`, and `PATIENT_RESUMES_HEADING` marks where they stop. See
+    `_split_at_first_patient_burst` for why neither dropping nor relabelling them is
+    good enough. The fold is all a caller that sends these entries unchanged needs -
+    the classifier is one. A caller that *replaces* the trailing entry must go through
+    `replace_trailing_entry`, because the entry it replaces is the folded one whenever
+    this render produced exactly one.
 
     Both rules belong to the wire format, so they are enforced where the wire format is
     built - the burst structure itself is left as it was, since `trailing_question`,
@@ -276,20 +301,78 @@ def to_claude_messages(bursts: list[list[Message]]) -> list[MessageParam]:
         entries.append(cast(MessageParam, {"role": role, "content": content}))
     if not entries:
         return entries
-    if opening_clinic:
+    rendered = _render_opening_bursts(opening_clinic)
+    if rendered:
         # Prepended to the first entry rather than sent as one of its own: an entry of
         # its own would have to carry a role, and the two roles available are the two
         # wrong answers - `assistant` is what the API refuses first, and `user` is the
         # relabelling that puts the clinic's words in the patient's mouth. Inside the
-        # entry, behind a note naming whose words they are, it is context rather than
-        # attribution.
-        said = "\n\n".join(m.content for burst in opening_clinic for m in burst)
+        # entry, behind a note naming whose words they are and a heading marking where
+        # they stop, it is context rather than attribution.
         first = cast(str, entries[0]["content"])
         entries[0] = cast(
             MessageParam,
-            {"role": "user", "content": f"{OPENING_CLINIC_NOTE}\n{said}\n\n{first}"},
+            {
+                "role": "user",
+                "content": f"{rendered}\n\n{PATIENT_RESUMES_HEADING}\n{first}",
+            },
         )
     return entries
+
+
+def render_opening_clinic(bursts: list[list[Message]]) -> str:
+    """Render the clinic's window-opening words, or "" when the window opens correctly.
+
+    The counterpart of `render_silent_window`, and needed for the same reason: a
+    specialist that replaces the trailing entry with a prompt of its own must carry
+    this run into that prompt itself, because the entry it replaces is the very entry
+    `to_claude_messages` folded the run into whenever the render produced only one.
+    That is precisely the case the fold exists for - staff open with an offer and the
+    patient answers it in the next message - so leaving it to the fold drops the run
+    exactly where it matters most.
+
+    Pair it with `replace_trailing_entry`, which decides whether this belongs in a
+    given prompt; a specialist that prepends it unconditionally would repeat it
+    whenever the fold's own entry survived.
+    """
+    opening_clinic, _ = _split_at_first_patient_burst(bursts)
+    return _render_opening_bursts(opening_clinic)
+
+
+def _render_opening_bursts(opening_clinic: list[list[Message]]) -> str:
+    """Render the note over the clinic bursts, or "" when there are none."""
+    if not opening_clinic:
+        return ""
+    said = "\n\n".join(m.content for burst in opening_clinic for m in burst)
+    return f"{OPENING_CLINIC_NOTE}\n{said}"
+
+
+def replace_trailing_entry(
+    entries: list[MessageParam], body: str, *, opening_clinic: str
+) -> list[MessageParam]:
+    """Return `entries` with the trailing entry's content replaced by `body`.
+
+    Args:
+        entries: what `to_claude_messages` rendered for this turn.
+        body: the prompt the specialist wants the model to answer, headings and all.
+        opening_clinic: `render_opening_clinic` for the same bursts - re-prepended to
+            `body` exactly when the entry being replaced is the one the fold went into,
+            and ignored otherwise.
+
+    A specialist replaces the trailing entry because it has a prompt of its own to put
+    there. Writing that as `[*entries[:-1], new]` is wrong in the one case the fold was
+    written for: `to_claude_messages` folds the clinic's opening words into `entries[0]`
+    and, when the whole window renders as a single entry, `entries[0]` *is* the trailing
+    entry - so the slice throws the fold away and the specialist answers "yes please"
+    with the offer it accepts deleted. Hence the conditional here rather than at each
+    call site, where it was twice forgotten.
+
+    An empty `entries` takes the prepend too: nothing carries the fold, so the prompt
+    must.
+    """
+    folded_here = bool(opening_clinic) and len(entries) <= 1
+    content = f"{opening_clinic}\n\n{body}" if folded_here else body
+    return [*entries[:-1], cast(MessageParam, {"role": "user", "content": content})]
 
 
 # A thinking block's `signature` is the API's own integrity token over that block -

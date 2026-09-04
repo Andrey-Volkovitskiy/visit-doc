@@ -379,9 +379,19 @@ export async function askChat(
   return parseNdjsonStream(response);
 }
 
-/** GET /chats/{id}/messages: one chat's history, chronological. */
-export async function fetchChatHistory(chatId: string): Promise<Message[]> {
-  const response = await fetch(`/chats/${chatId}/messages`);
+/**
+ * GET /chats/{id}/messages: one chat's history, chronological.
+ *
+ * `signal` is how a caller gives the read a deadline and takes it back when the chat
+ * it belongs to is closed. Without one a wedged socket holds a request that neither
+ * resolves nor rejects, which is not a slow read but a permanent one — see
+ * `useThreadReads`'s `READ_TIMEOUT_MS` for what that costs a page.
+ */
+export async function fetchChatHistory(
+  chatId: string,
+  signal?: AbortSignal,
+): Promise<Message[]> {
+  const response = await fetch(`/chats/${chatId}/messages`, { signal });
   ensureOk(response, "Could not load this chat's history.");
   const data = (await response.json()) as { messages: Message[] };
   return data.messages;

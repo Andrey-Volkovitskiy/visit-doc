@@ -45,6 +45,14 @@ _RELATIVE_SEGMENTS = frozenset({".", ".."})
 # they end the path, which is the whole of what this transport is allowed to send.
 _DISALLOWED_IN_PATH = re.compile(r"[^A-Za-z0-9\-._~!$&'()*+,;=:@/%]")
 
+# A `%` that does not begin a well-formed escape. RFC 3986 spells pct-encoded as
+# `"%" HEXDIG HEXDIG` and nothing else, so `a%`, `%z z` and a trailing `%` are not
+# encoded paths at all - and since `forward` sends the string verbatim, what an
+# intermediary or the receiving parser makes of a stray `%` is nobody's decision here.
+# Checked separately from the allow-list above, which has to admit `%` for the escapes
+# `path_segment` produces and so cannot tell the two apart on its own.
+_MALFORMED_ESCAPE = re.compile(r"%(?![0-9A-Fa-f]{2})")
+
 
 class SchedulerUnreachableError(Exception):
     """The request never reached the scheduler, so nothing was changed.
@@ -176,7 +184,22 @@ def _reject_anything_that_is_not_a_path(path: str) -> None:
     the guard misses is anything the guard misses. A space alone malforms the request
     line, a backslash is read as `/` by some intermediaries, and a control character has
     no business in a URL at all. Only what RFC 3986 allows in an already-encoded path is
-    accepted, so the next metacharacter nobody thought of is refused by default.
+    accepted, so a literal metacharacter nobody thought of is refused by default.
+
+    The one character that allow-list cannot decide on its own is `%`, which it must
+    admit because `path_segment`'s escapes are made of it. So a second check requires
+    every `%` to begin a well-formed `%XX`; a stray one is not an encoded path, and
+    what an intermediary makes of it is not this code's decision.
+
+    What the allow-list does **not** promise is anything about what an escape decodes
+    to. `%2F` and `%2E%2E` are well-formed and are passed through, so the receiver sees
+    `/` and `..` in its own decoded path - deliberately, since that is exactly how
+    `path_segment` carries an id containing those characters. What makes that safe is
+    the receiver, not this guard: Starlette routes on the decoded path with a segment
+    pattern that stops at `/`, so a decoded slash matches no route and a decoded `..`
+    arrives as the *value* of the id, which is then looked up and not found. This guard
+    stops a path from being reshaped in transit; it does not claim to stop the receiver
+    from being handed a silly id.
     """
     if not path.startswith("/"):
         raise ValueError(f"scheduler path must be absolute: {path!r}")
@@ -184,6 +207,8 @@ def _reject_anything_that_is_not_a_path(path: str) -> None:
         raise ValueError(
             f"scheduler path has a character that is not legal in one: {path!r}"
         )
+    if _MALFORMED_ESCAPE.search(path) is not None:
+        raise ValueError(f"scheduler path has a malformed percent-escape: {path!r}")
     if any(segment in _RELATIVE_SEGMENTS for segment in path.split("/")):
         raise ValueError(f"scheduler path must have no relative segment: {path!r}")
 

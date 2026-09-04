@@ -24,6 +24,7 @@ from chat.agent.tools.registry import ToolContext
 from chat.api.dependencies import get_voyage_client
 from chat.api.provisioning import provision_patient
 from chat.api.session_cookie import read_session_id
+from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
 from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
@@ -41,10 +42,44 @@ from chat.repositories import chat_repository, faq_repository
 
 router = APIRouter()
 
+
+def _always(_exc: Exception) -> bool:
+    """Every failure of this step is its dependency being unreachable."""
+    return True
+
+
+def _model_api_was_unreachable(exc: Exception) -> bool:
+    """Whether a failed generation call proves the model API never served it."""
+    return classify_failure(exc) is AnthropicFailure.UNREACHABLE
+
+
 # Pipeline steps backed by an FR-015-scoped dependency (qdrant/anthropic_api) - not
 # "embedding" (Voyage), "groundedness" (pure computation) or "persistence" (a write the
 # store refused is not the store being unreachable), per spec.md Assumptions.
-_CRITICAL_DEPENDENCY_BY_STEP = {"retrieval": "qdrant", "generation": "anthropic_api"}
+#
+# Each carries the test a failure of that step must pass before it may be called an
+# outage, because naming the step is not enough on its own. "generation" is wrapped
+# around a bare `except Exception` at three sites, so a rotated key's 401, an exhausted
+# rate limit and a schema 400 all arrive tagged "generation" - each of them the API
+# answering rather than the API being gone, and each of them an alert an operator
+# learns to ignore. It shares that test with the classifier's own failure handler
+# (`chat.clients.anthropic_failure`), so the two sites cannot disagree about what one
+# status means. "retrieval" has no such test: it is left reporting every failure as an
+# outage, which is what it has always done.
+_CRITICAL_DEPENDENCY_BY_STEP: dict[str, tuple[str, Callable[[Exception], bool]]] = {
+    "retrieval": ("qdrant", _always),
+    "generation": ("anthropic_api", _model_api_was_unreachable),
+}
+
+
+def _unreachable_dependency_of(exc: TurnPipelineError) -> str | None:
+    """Name the dependency `exc` proves unreachable, or None if it proves none."""
+    entry = _CRITICAL_DEPENDENCY_BY_STEP.get(exc.pipeline_step)
+    if entry is None:
+        return None
+    dependency, proves_outage = entry
+    return dependency if proves_outage(exc.cause) else None
+
 
 # Used in the booking prompt until a chat has a real patient. The scheduler owns
 # patient names, so this side never invents one that could then disagree with it.
@@ -525,7 +560,7 @@ async def _event_stream(
                         pipeline_step=exc.pipeline_step,
                         error_detail=str(exc.cause),
                     )
-                    dependency = _CRITICAL_DEPENDENCY_BY_STEP.get(exc.pipeline_step)
+                    dependency = _unreachable_dependency_of(exc)
                     if dependency is not None:
                         logger.critical(
                             "critical.dependency_unreachable",

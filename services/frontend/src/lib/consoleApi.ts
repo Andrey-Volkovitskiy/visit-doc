@@ -38,21 +38,30 @@ export interface ConsoleConversation {
  * The one polled answer, serving both panes.
  *
  * `attention_total` counts conversations needing a person, once each however many marks
- * sit inside one. It is read from here rather than counted from `conversations` because
- * the rule for what needs a person belongs to one side: the server already collapses a
- * conversation's marks into `emphasized`, and a client that re-derived the total would
- * be a second place that rule has to be changed, free to disagree with the first.
- * Deriving it is possible — `emphasized` is on every row — which is exactly why the
- * reason to prefer the field has to be a real one.
+ * sit inside one. Today the server computes it as `emphasized` summed over the very
+ * rows it returns, so a client counting them would get the same number — this field is
+ * not carrying a rule the client could not apply. What it carries is *whose* rule it
+ * is: the collapse from a conversation's marks into `emphasized`, and from those into a
+ * total, belongs to the side that owns the marks, and a count derived here would be a
+ * second place to change when the total stops being one row per emphasis — a listing
+ * that pages, or a total taken over conversations this page does not hold.
  */
 export interface ConsoleListing {
   attention_total: number;
   conversations: ConsoleConversation[];
 }
 
-/** GET /console/conversations: every conversation in the session, in display order. */
-export async function fetchConsoleListing(): Promise<ConsoleListing> {
-  const response = await fetch("/console/conversations");
+/**
+ * GET /console/conversations: every conversation in the session, in display order.
+ *
+ * `signal` carries the poll's deadline. This is the one read here that a timer issues
+ * again every couple of seconds, so it is the one where a request that never settles
+ * accumulates rather than merely disappointing whoever clicked.
+ */
+export async function fetchConsoleListing(
+  signal?: AbortSignal,
+): Promise<ConsoleListing> {
+  const response = await fetch("/console/conversations", { signal });
   // Checked before parsing: an error body is JSON too, and casting it here would hand
   // the poll an object with no `conversations` array to render.
   if (!response.ok) {
@@ -61,9 +70,17 @@ export async function fetchConsoleListing(): Promise<ConsoleListing> {
   return (await response.json()) as ConsoleListing;
 }
 
-/** One conversation's whole thread — patient, assistant and staff alike. */
-export async function fetchThread(chatId: string): Promise<Message[]> {
-  return await fetchChatHistory(chatId);
+/**
+ * One conversation's whole thread — patient, assistant and staff alike.
+ *
+ * `signal` carries the caller's deadline and its aborts straight through; see
+ * `fetchChatHistory`.
+ */
+export async function fetchThread(
+  chatId: string,
+  signal?: AbortSignal,
+): Promise<Message[]> {
+  return await fetchChatHistory(chatId, signal);
 }
 
 /**

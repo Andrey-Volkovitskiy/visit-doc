@@ -14,9 +14,14 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 import structlog
-from anthropic import OverloadedError
+from anthropic import APITimeoutError, OverloadedError
 from chat.agent import graph as graph_module
 from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
+from chat.agent.history import (
+    OPENING_CLINIC_NOTE,
+    split_into_bursts,
+    to_claude_messages,
+)
 from chat.agent.tools.registry import ToolContext
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.core.config import Settings
@@ -130,9 +135,11 @@ async def _run_turn(
     patient_id: str | None = "01PATIENT",
     live_revisions: list[str] | None = None,
     escalation: EscalationRequests | None = None,
+    bursts: list[list[Message]] | None = None,
 ) -> list[ChatTokenEvent | ChatDoneEvent]:
     qdrant_client = create_client(Settings())
-    bursts = [[_patient_message(message, id="turn-1")]]
+    if bursts is None:
+        bursts = [[_patient_message(message, id="turn-1")]]
     if live_revisions is None:
         live_revisions = list(_seeded_revisions)
     events = [
@@ -736,3 +743,76 @@ def test_the_faq_node_is_offered_no_tools_at_all(seeded_entry: int) -> None:
         for call in anthropic_client.messages.create.await_args_list
         if call.kwargs.get("tools")
     ]
+
+
+# --- 007: the clinic's opening words survive the specialist's own prompt ------------
+#
+# `to_claude_messages` folds a leading clinic-sided burst into the first `user` entry,
+# and a specialist that builds a prompt of its own replaces the *trailing* entry - the
+# same entry, whenever the whole window renders as one. Asserted here on the specialist
+# rather than on the render, because it was the specialists that dropped it.
+
+
+def test_the_clinics_opening_words_reach_the_faq_specialist(seeded_entry: int) -> None:
+    bursts = split_into_bursts(
+        [
+            Message(
+                sender=MessageSender.STAFF,
+                content="Dr. Chen has a slot Friday at 3 - shall I book it?",
+                id="s1",
+            ),
+            _patient_message("when can I visit?", id="turn-1"),
+        ]
+    )
+    # One entry, so the entry the FAQ prompt replaces is the folded one.
+    assert len(to_claude_messages(bursts)) == 1
+
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?", bursts=bursts))
+
+    sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
+    content = str(sent[-1]["content"])
+    assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in content
+    assert OPENING_CLINIC_NOTE in content
+    # And the turn's own question is still the question it answers.
+    assert content.endswith("Question: when can I visit?")
+
+
+def test_a_classification_timeout_is_not_reported_as_an_outage(
+    seeded_entry: int,
+) -> None:
+    # A deadline expiring is the caller's fact, not the callee's: it says the answer
+    # did not arrive, not that the request went unserved (CLAUDE.md, "a timeout never
+    # proves the server did nothing"). `APITimeoutError` subclasses `APIConnectionError`
+    # and httpx maps a *pool* timeout - this service's own connection limit - onto it
+    # too, so treating it as an outage pages an operator for this side's defect. The
+    # scheduling client already suppresses its own `DEADLINE_EXCEEDED` alert this way.
+    timeout = APITimeoutError(
+        request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    )
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=timeout
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    failure_logged = next(
+        e for e in logs if e["event"] == "intent.classification_failed"
+    )
+    # Recorded under its own name, so it is not silently filed as a parse failure.
+    assert failure_logged["failure"] == "timed_out"
+    assert failure_logged["dependency_unreachable"] is False
+    assert [
+        e
+        for e in logs
+        if e["event"] == "critical.dependency_unreachable"
+        and e["dependency"] == "anthropic_api"
+    ] == []
+    # And the turn is untouched by it, exactly as on the outage path.
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.grounded is True

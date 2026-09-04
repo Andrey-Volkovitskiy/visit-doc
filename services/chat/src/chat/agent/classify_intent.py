@@ -2,9 +2,10 @@
 
 from typing import Any
 
-from anthropic import APIConnectionError, APIStatusError, AsyncAnthropic
+from anthropic import AsyncAnthropic
 
 from chat.agent.history import to_claude_messages
+from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
 from chat.domain.models import Message
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
@@ -36,41 +37,31 @@ _RESPONSE_SCHEMA["$defs"]["IntentLabel"]["enum"] = [
 _RESPONSE_SCHEMA["additionalProperties"] = False
 
 
-def _is_unreachable(exc: BaseException) -> bool:
-    """Say whether `exc` means the API never served the request.
-
-    Two shapes do. A connection error reached no answer at all - `APITimeoutError`
-    subclasses it, so a deadline that expired is one of these. And a 5xx is the API
-    answering that it is not serving, which is an outage however it is worded.
-
-    Every other status is the API reachable and answering: a schema it rejected, a key
-    it refused, a quota it enforced. Those are this side's defect or this side's limit,
-    not an outage, and an alert that fires for them is one an operator learns to ignore.
-
-    Tested by *status code* rather than against a tuple of exception classes, because
-    the SDK gives particular statuses their own classes and adds to that set over time:
-    529 is `OverloadedError`, which is checked before the generic 5xx branch and so
-    subclasses `InternalServerError` not at all - naming classes here missed exactly
-    the status an Anthropic outage most often arrives as.
-    """
-    if isinstance(exc, APIConnectionError):
-        return True
-    return isinstance(exc, APIStatusError) and exc.status_code >= 500
-
-
 class ClassificationFailedError(Exception):
     """Raised when a `classify_intent()` call fails or returns an invalid result.
 
-    `dependency_unreachable` separates the two things that raise this: True when the
-    API never served the request, False when it served one this code could not use.
-    They are one failure to this function's caller, which falls back either way, and
-    two different events to an operator - only the first is an outage.
+    `failure` separates the things that raise this. They are one failure to this
+    function's caller, which falls back either way, and different events to an
+    operator - only `UNREACHABLE` is an outage. A response that came back and would
+    not parse is `ANSWERED`: what failed is the response, not reaching it.
+
+    `failure` is a required positional argument, deliberately. It is not in `args` -
+    `str(exc)` has to stay the message, since that is what the caller logs as
+    `error_detail` - so anything that rebuilds this exception from `args` alone loses
+    it. With a default that loss is silent and downgrades an outage to a parse error;
+    without one, `exc.__class__(*exc.args)` raises `TypeError` where it is written,
+    the same way `TurnPipelineError` does.
     """
 
-    def __init__(self, message: str, *, dependency_unreachable: bool = False) -> None:
-        """Record why classification failed, and whether the API was the reason."""
+    def __init__(self, message: str, failure: AnthropicFailure) -> None:
+        """Record why classification failed, and what it proves about the API."""
         super().__init__(message)
-        self.dependency_unreachable = dependency_unreachable
+        self.failure = failure
+
+    @property
+    def dependency_unreachable(self) -> bool:
+        """Whether this failure proves the API never served the request."""
+        return self.failure is AnthropicFailure.UNREACHABLE
 
 
 async def classify_intent(
@@ -85,7 +76,7 @@ async def classify_intent(
     Raises: ClassificationFailedError on any API error, timeout, a response that
         fails to validate against the schema, or a validated response that still
         contains `CLASSIFICATION_FAILED` - never returns a result containing it. Its
-        `dependency_unreachable` says which of those it was.
+        `failure` says which of those it was.
 
     Uses native JSON Outputs (`output_config.format`), not tool-use.
     """
@@ -101,7 +92,9 @@ async def classify_intent(
         )
         block = response.content[0]
         if block.type != "text":
-            raise ClassificationFailedError(f"unexpected content block: {block.type}")
+            raise ClassificationFailedError(
+                f"unexpected content block: {block.type}", AnthropicFailure.ANSWERED
+            )
         result = IntentClassificationResult.model_validate_json(block.text)
         if IntentLabel.CLASSIFICATION_FAILED in result.intents:
             # Defense in depth: `_RESPONSE_SCHEMA`'s enum exclusion (above) is what's
@@ -110,12 +103,11 @@ async def classify_intent(
             # result itself so a schema-level regression fails loudly here instead of
             # silently violating this function's own contract (FR-007).
             raise ClassificationFailedError(
-                "model returned CLASSIFICATION_FAILED despite schema exclusion"
+                "model returned CLASSIFICATION_FAILED despite schema exclusion",
+                AnthropicFailure.ANSWERED,
             )
         return result
     except ClassificationFailedError:
         raise
     except Exception as exc:
-        raise ClassificationFailedError(
-            str(exc), dependency_unreachable=_is_unreachable(exc)
-        ) from exc
+        raise ClassificationFailedError(str(exc), classify_failure(exc)) from exc

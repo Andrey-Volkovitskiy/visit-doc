@@ -1,7 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as consoleApi from "../src/lib/consoleApi";
-import { useConsolePoll } from "../src/lib/useConsolePoll";
+import { POLL_INTERVAL_MS, useConsolePoll } from "../src/lib/useConsolePoll";
+import { READ_TIMEOUT_MS } from "../src/lib/useThreadReads";
 import type { ConsoleListing } from "../src/lib/consoleApi";
 
 function listing(overrides: Partial<ConsoleListing> = {}): ConsoleListing {
@@ -256,5 +257,34 @@ describe("useConsolePoll", () => {
     });
 
     expect(fetchListing).toHaveBeenCalledTimes(1);
+  });
+
+  it("abandons a tick that never answers instead of holding its socket", async () => {
+    // The poll issues a read on the clock, not on the previous one finishing, so a read
+    // that neither resolves nor rejects is not a slow tick - it is one socket held for
+    // good, and another every interval, until the browser's per-origin cap is full and
+    // the thread panes' own reads queue behind requests that will never answer.
+    vi.useFakeTimers();
+    try {
+      const aborted: boolean[] = [];
+      vi.spyOn(consoleApi, "fetchConsoleListing").mockImplementation(
+        (signal?: AbortSignal) =>
+          new Promise<ConsoleListing>((_resolve, reject) => {
+            signal?.addEventListener("abort", () => {
+              aborted.push(true);
+              reject(new Error("aborted"));
+            });
+          }),
+      );
+
+      renderHook(() => useConsolePoll(POLL_INTERVAL_MS));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(READ_TIMEOUT_MS);
+      });
+
+      expect(aborted.length).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

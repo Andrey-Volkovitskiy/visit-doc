@@ -99,7 +99,10 @@ describe("App: first arrival", () => {
     render(<App />);
 
     await waitFor(() =>
-      expect(chatStream.fetchChatHistory).toHaveBeenCalledWith("01ACTIVE"),
+      expect(chatStream.fetchChatHistory).toHaveBeenCalledWith(
+        "01ACTIVE",
+        expect.any(AbortSignal),
+      ),
     );
   });
 
@@ -294,8 +297,13 @@ describe("App: the console read model reaches both panes", () => {
 
     fireEvent.click(await screen.findByTestId("staff-conversation"));
 
-    await waitFor(() => expect(fetchThread).toHaveBeenCalledWith("01STAFFCHAT"));
-    expect(chatStream.fetchChatHistory).toHaveBeenCalledWith("01PATIENTCHAT");
+    await waitFor(() =>
+      expect(fetchThread).toHaveBeenCalledWith("01STAFFCHAT", expect.any(AbortSignal)),
+    );
+    expect(chatStream.fetchChatHistory).toHaveBeenCalledWith(
+      "01PATIENTCHAT",
+      expect.any(AbortSignal),
+    );
   });
 });
 

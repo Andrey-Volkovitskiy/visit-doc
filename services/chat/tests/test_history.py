@@ -4,13 +4,16 @@ data-model.md), and `to_claude_messages()`'s same-side merge into alternating
 `user`/`assistant` entries (research.md §5).
 """
 
-from anthropic.types import ThinkingBlock, ToolUseBlock
+from anthropic.types import MessageParam, ThinkingBlock, ToolUseBlock
 from chat.agent.history import (
     OPENING_CLINIC_NOTE,
+    PATIENT_RESUMES_HEADING,
     bound_to_last_n_turns,
     derive_reply_to_message_ids,
     exclude_silent_window,
+    render_opening_clinic,
     render_silent_window,
+    replace_trailing_entry,
     silent_window,
     split_into_bursts,
     to_claude_messages,
@@ -692,5 +695,124 @@ def test_carrying_the_opening_reply_leaves_the_bursts_themselves_alone() -> None
     assert [entry["role"] for entry in entries] == ["user"]
     assert entries[0]["content"] == (
         f"{OPENING_CLINIC_NOTE}\nHi - this is the clinic, following up."
-        "\n\nare you there?\n\nwhat are your hours?"
+        f"\n\n{PATIENT_RESUMES_HEADING}\nare you there?\n\nwhat are your hours?"
     )
+
+
+# --- the fold draws the boundary it claims -----------------------------------------
+#
+# Both runs join their own messages with a blank line, so a fold that separated them
+# with the same blank line would leave the model nothing to tell them apart by - two
+# patient messages behind the note read as one three-paragraph clinic message, under a
+# note saying never to attribute that text to the patient.
+
+
+def test_the_clinic_fold_is_separated_from_the_patients_words_by_a_heading() -> None:
+    history = [
+        _row(MessageSender.STAFF, "Dr. Chen has a slot Friday at 3.", id="s1"),
+        _row(MessageSender.PATIENT, "yes please", id="p1"),
+        _row(MessageSender.PATIENT, "and cancel the Tuesday one", id="p2"),
+    ]
+
+    content = str(to_claude_messages(split_into_bursts(history))[0]["content"])
+
+    clinic, _, patient = content.partition(PATIENT_RESUMES_HEADING)
+    # Everything the clinic said is on one side of the heading, and everything the
+    # patient said on the other - which is the whole claim the note above it makes.
+    assert "Dr. Chen has a slot Friday at 3." in clinic
+    assert "yes please" not in clinic
+    assert "yes please" in patient
+    assert "and cancel the Tuesday one" in patient
+    assert "Dr. Chen" not in patient
+
+
+def test_the_clinic_note_does_not_tell_the_model_to_act_on_the_fold() -> None:
+    # The same burst is what a window lands on when `bound_to_last_n_turns` cuts
+    # mid-turn, leaving a clinic reply the patient answered turns ago. Told to act on
+    # it, the booking loop re-offers a slot that is already taken - so the note names
+    # whose words they are and leaves the patient's reply to decide the turn.
+    assert "act on it" not in OPENING_CLINIC_NOTE
+    assert "never attribute it to them" in OPENING_CLINIC_NOTE
+
+
+# --- render_opening_clinic / replace_trailing_entry ---------------------------------
+#
+# A specialist that replaces the trailing entry with a prompt of its own replaces the
+# entry the fold went into, whenever the render produced exactly one. These are the
+# invariants that stop it from doing so.
+
+
+def _staff_then_patient() -> list[list[Message]]:
+    return split_into_bursts(
+        [
+            _row(MessageSender.STAFF, "Dr. Chen has a slot Friday at 3.", id="s1"),
+            _row(MessageSender.PATIENT, "yes please", id="p1"),
+        ]
+    )
+
+
+def test_render_opening_clinic_is_empty_when_the_patient_opens() -> None:
+    bursts = split_into_bursts([_row(MessageSender.PATIENT, "hello", id="p1")])
+
+    assert render_opening_clinic(bursts) == ""
+
+
+def test_render_opening_clinic_carries_the_note_and_the_clinics_words() -> None:
+    rendered = render_opening_clinic(_staff_then_patient())
+
+    assert rendered == f"{OPENING_CLINIC_NOTE}\nDr. Chen has a slot Friday at 3."
+    # The patient's own message belongs to the entries, not to this run.
+    assert "yes please" not in rendered
+
+
+def test_replacing_the_only_entry_keeps_the_clinics_opening_words() -> None:
+    # The case the fold exists for: one entry, and it is both the folded one and the
+    # one being replaced. A plain slice would delete the offer "yes please" accepts.
+    bursts = _staff_then_patient()
+    entries = to_claude_messages(bursts)
+    assert len(entries) == 1
+
+    replaced = replace_trailing_entry(
+        entries, "Question: yes please", opening_clinic=render_opening_clinic(bursts)
+    )
+
+    assert len(replaced) == 1
+    content = str(replaced[0]["content"])
+    assert "Dr. Chen has a slot Friday at 3." in content
+    assert content.endswith("Question: yes please")
+
+
+def test_replacing_a_later_entry_does_not_repeat_the_clinics_words() -> None:
+    # More than one entry means the fold sits on an earlier entry that survives, so
+    # prepending it again would put the clinic's words in front of the model twice.
+    history = [
+        _row(MessageSender.STAFF, "Dr. Chen has a slot Friday at 3.", id="s1"),
+        _row(MessageSender.PATIENT, "yes please", id="p1"),
+        _row(MessageSender.ASSISTANT, "Booked.", id="a1"),
+        _row(MessageSender.PATIENT, "thanks", id="p2"),
+    ]
+    bursts = split_into_bursts(history)
+    entries = to_claude_messages(bursts)
+    assert len(entries) == 3
+
+    replaced = replace_trailing_entry(
+        entries, "Question: thanks", opening_clinic=render_opening_clinic(bursts)
+    )
+
+    assert len(replaced) == 3
+    assert str(replaced[-1]["content"]) == "Question: thanks"
+    # Still there exactly once, on the entry it was folded into.
+    assert sum("Dr. Chen" in str(e["content"]) for e in replaced) == 1
+
+
+def test_replacing_the_trailing_entry_of_an_empty_render_carries_the_fold() -> None:
+    # `to_claude_messages` returns [] for a history holding no patient message, so
+    # nothing carries the fold and the prompt must.
+    entries: list[MessageParam] = []
+
+    replaced = replace_trailing_entry(
+        entries, "Question: hello", opening_clinic=f"{OPENING_CLINIC_NOTE}\nWe called."
+    )
+
+    assert len(replaced) == 1
+    assert "We called." in str(replaced[0]["content"])

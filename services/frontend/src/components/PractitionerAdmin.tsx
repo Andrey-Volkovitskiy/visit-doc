@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createPractitioner,
   deletePractitioner,
@@ -7,6 +7,7 @@ import {
   type Practitioner,
   type WorkingRange,
 } from "../lib/consoleApi";
+import { useBusyLatch } from "../lib/useBusyLatch";
 
 // Monday-based and numeric, matching the scheduler's own enum: the wire carries the
 // number, and these are only the labels this screen puts on it.
@@ -41,26 +42,36 @@ function withRange(
   };
 }
 
+// A whole number of minutes, and nothing that merely reads as one. `Number.isInteger`
+// is not this test: a `type="number"` input accepts exponent form, so `1e3` arrives as
+// a string `Number` reads as 1000 and `Number.isInteger` calls whole — and the row
+// silently became a 1000-minute appointment the assistant then books against. `"1.0"`,
+// `"-5"`, `" 30"`, `"+30"` and `"0x10"` are the same trick in other clothes.
+const WHOLE_MINUTES = /^\d+$/;
+
+function isWholeMinutes(raw: string): boolean {
+  return WHOLE_MINUTES.test(raw);
+}
+
 /**
  * Add, edit and delete the practitioners the assistant books against.
  *
  * Every rule shown here — the defaults a blank create gets, a duplicate name, working
- * ranges that overlap — belongs to the service that owns practitioners, and this screen
- * re-implements none of them. It sends what was typed, and renders back what that
- * service stored or the reason it refused, in that service's own words.
+ * ranges that overlap, how long an appointment may be — belongs to the service that
+ * owns practitioners, and this screen re-implements none of them. It sends what was
+ * typed, and renders back what that service stored or the reason it refused, in that
+ * service's own words.
+ *
+ * The one thing it does decide for itself is whether a field holds a value to send at
+ * all: a `type="number"` input hands over a string, and "" and "1e" are not numbers.
+ * That is not a rule about practitioners, and it deliberately carries no bound.
  */
 export function PractitionerAdmin() {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // Whether a create is in flight, for the button to show. `creating` repaints it;
-  // `creatingRef` is what actually stops a second call, and the two are not
-  // alternatives - see `handleCreate`.
-  const [creating, setCreating] = useState(false);
-  // The same latch as the handler can see it. A ref rather than reading `creating`,
-  // because two clicks dispatched in one React batch both run against the render that
-  // preceded them: the state the first set has not committed, so a guard reading it lets
-  // the second through - and the button is still painted enabled for the same reason.
-  const creatingRef = useRef(false);
+  // One latch for every gesture on this pane, keyed by what the gesture is about, so a
+  // second click on any of them is refused rather than only on Add. See `useBusyLatch`.
+  const latch = useBusyLatch();
   // The raw text of a duration field mid-edit, keyed by practitioner, for the ones that
   // are not currently a number at all.
   //
@@ -101,69 +112,94 @@ export function PractitionerAdmin() {
     // two practitioners. There is no form to read here, so nothing about the second
     // call looks different from the first - it simply creates a second row, with a
     // second pool-assigned name.
-    if (creatingRef.current) return;
-    setError(null);
-    creatingRef.current = true;
-    setCreating(true);
-    try {
-      // Empty on purpose: the name, the specialty, the duration and the schedule are
-      // all defaulted by the service that owns them.
-      const created = await createPractitioner({});
-      setPractitioners((prev) => [...prev, created]);
-    } catch (err) {
-      report(err, "Could not add a practitioner.");
-    } finally {
-      creatingRef.current = false;
-      setCreating(false);
-    }
+    await latch.run("create", async () => {
+      setError(null);
+      try {
+        // Empty on purpose: the name, the specialty, the duration and the schedule are
+        // all defaulted by the service that owns them.
+        const created = await createPractitioner({});
+        setPractitioners((prev) => [...prev, created]);
+      } catch (err) {
+        report(err, "Could not add a practitioner.");
+      }
+    });
+  }
+
+  function dropDraft(id: string): void {
+    setDurationDrafts((prev) => {
+      if (prev[id] === undefined) return prev;
+      const { [id]: _dropped, ...rest } = prev;
+      return rest;
+    });
   }
 
   /** Record what was typed into a duration field, and the number if it is one yet. */
   function editDuration(id: string, raw: string): void {
     setDurationDrafts((prev) => ({ ...prev, [id]: raw }));
+    if (!isWholeMinutes(raw)) return;
     const parsed = Number(raw);
-    if (raw.trim() !== "" && Number.isInteger(parsed) && parsed > 0) {
-      edit(id, (p) => ({ ...p, appointment_duration_minutes: parsed }));
-      setDurationDrafts((prev) => {
-        const { [id]: _settled, ...rest } = prev;
-        return rest;
-      });
-    }
+    edit(id, (p) => ({ ...p, appointment_duration_minutes: parsed }));
+    // The draft is kept while what was typed is not how the row would render the
+    // number, so "05" stays "05" instead of repainting as "5" under the cursor. It is
+    // still a number, so it still saves — the draft records what is on screen, and
+    // only `handleSave` decides whether there is a number to send.
+    if (String(parsed) === raw) dropDraft(id);
   }
 
   async function handleSave(practitioner: Practitioner): Promise<void> {
-    // A draft still held for this row means its duration field is not a number right
-    // now. Refusing beats sending the last one that was: the staff member is mid-edit,
-    // and saving a value they have already typed over is a change they did not ask for.
-    if (durationDrafts[practitioner.id] !== undefined) {
-      setError("Appointment minutes must be a whole number of minutes.");
+    // What the duration field holds *right now*, when that is not a whole number of
+    // minutes - "", "1e", "1e3", "-5", something on the way to a number or something
+    // that only reads as one. Refusing beats sending the last value that was one: the
+    // staff member is mid-edit, and saving a number they have already typed over is a
+    // change they did not ask for. A draft that *is* a number saves: "05" is 5 minutes
+    // written oddly, not a field with nothing in it.
+    //
+    // This is not one of the clinic's rules being re-implemented, which is why it says
+    // nothing about how long an appointment may be. Whether 2 minutes or 600 is allowed
+    // belongs to the service that owns practitioners, and this screen sends whatever
+    // whole number was typed and renders that service's refusal in its own words.
+    const draft = durationDrafts[practitioner.id];
+    if (draft !== undefined && !isWholeMinutes(draft)) {
+      setError("Type the appointment length in whole minutes before saving.");
       return;
     }
-    setError(null);
-    try {
-      replace(
-        await updatePractitioner(practitioner.id, {
-          full_name: practitioner.full_name,
-          specialty: practitioner.specialty,
-          appointment_duration_minutes: practitioner.appointment_duration_minutes,
-          schedule: practitioner.schedule,
-        }),
-      );
-    } catch (err) {
-      // A refused save changed nothing, so the row is left exactly as it is — which is
-      // also what lets the staff member correct what they typed rather than retype it.
-      report(err, "Could not save that practitioner.");
-    }
+    await latch.run(`save:${practitioner.id}`, async () => {
+      setError(null);
+      try {
+        replace(
+          await updatePractitioner(practitioner.id, {
+            full_name: practitioner.full_name,
+            specialty: practitioner.specialty,
+            appointment_duration_minutes: practitioner.appointment_duration_minutes,
+            schedule: practitioner.schedule,
+          }),
+        );
+      } catch (err) {
+        // A refused save changed nothing, so the row is left exactly as it is — which
+        // is also what lets the staff member correct what they typed rather than
+        // retype it.
+        report(err, "Could not save that practitioner.");
+      }
+    });
   }
 
   async function handleDelete(practitioner: Practitioner): Promise<void> {
-    setError(null);
-    try {
-      await deletePractitioner(practitioner.id);
-      setPractitioners((prev) => prev.filter((p) => p.id !== practitioner.id));
-    } catch (err) {
-      report(err, "Could not delete that practitioner.");
-    }
+    // The second delete of a practitioner the first one removed is a 404, reported as a
+    // failure the staff member cannot act on - for a delete that worked.
+    await latch.run(`delete:${practitioner.id}`, async () => {
+      setError(null);
+      try {
+        await deletePractitioner(practitioner.id);
+        setPractitioners((prev) => prev.filter((p) => p.id !== practitioner.id));
+        // The row is gone, so its half-typed duration is too. Left behind, it would be
+        // handed to the next practitioner to be created under the same id - which
+        // cannot happen with ULIDs, but a draft nothing can ever clear is a leak in a
+        // map that grows for the life of the page either way.
+        dropDraft(practitioner.id);
+      } catch (err) {
+        report(err, "Could not delete that practitioner.");
+      }
+    });
   }
 
   return (
@@ -171,7 +207,7 @@ export function PractitionerAdmin() {
       <h3>Practitioners</h3>
       {/* Disabled while the create is out so the wait is visible; the handler's own
           latch is what makes a second click harmless either way. */}
-      <button onClick={() => void handleCreate()} disabled={creating}>
+      <button onClick={() => void handleCreate()} disabled={latch.isBusy("create")}>
         Add practitioner
       </button>
       {practitioners.length === 0 ? (
@@ -277,10 +313,16 @@ export function PractitionerAdmin() {
               >
                 Add hours
               </button>
-              <button onClick={() => void handleSave(practitioner)}>Save</button>
+              <button
+                onClick={() => void handleSave(practitioner)}
+                disabled={latch.isBusy(`save:${practitioner.id}`)}
+              >
+                Save
+              </button>
               <button
                 aria-label={`Delete ${practitioner.full_name}`}
                 onClick={() => void handleDelete(practitioner)}
+                disabled={latch.isBusy(`delete:${practitioner.id}`)}
               >
                 Delete
               </button>

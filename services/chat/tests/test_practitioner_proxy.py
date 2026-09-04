@@ -347,6 +347,12 @@ async def test_url_metacharacters_in_an_id_cannot_reshape_the_scheduler_path(
         "/practitioners/abc\r\nX-Session-Id: other",
         "/practitioners/abc\x00d",
         "/practitioners/caf\u00e9",
+        # A `%` the allow-list has to admit for `path_segment`'s escapes, but which
+        # here begins no escape at all - so the string is not an encoded path, and what
+        # an intermediary makes of the stray `%` is nobody's decision here.
+        "/practitioners/a%",
+        "/practitioners/%zz",
+        "/practitioners/%2",
     ],
 )
 async def test_the_transport_refuses_a_path_that_is_not_one(path: str) -> None:

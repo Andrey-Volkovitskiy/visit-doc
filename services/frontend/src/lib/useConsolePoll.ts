@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchConsoleListing, type ConsoleConversation } from "./consoleApi";
+import { READ_TIMEOUT_MS } from "./useThreadReads";
 
 /** How often the one console endpoint is read, in milliseconds. */
 export const POLL_INTERVAL_MS = 2000;
@@ -70,10 +71,22 @@ export function useConsolePoll(intervalMs: number = POLL_INTERVAL_MS): ConsolePo
     let issued = 0;
     let applied = 0;
 
+    // Every read still out, so unmounting gives its socket back rather than leaving one
+    // per interval held until the browser decides otherwise.
+    const inFlight = new Set<AbortController>();
+
     const read = async (): Promise<void> => {
       const sequence = ++issued;
+      // The same deadline the thread panes give their reads, and for the same reason:
+      // this is a timer-driven read, so one that never settles is not a slow tick but a
+      // socket held for good, and the interval adds another every couple of seconds
+      // until the browser's per-origin cap is full - at which point the panes' own reads
+      // and the next POST queue behind requests that will never answer.
+      const controller = new AbortController();
+      inFlight.add(controller);
+      const deadline = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
       try {
-        const listing = await fetchConsoleListing();
+        const listing = await fetchConsoleListing(controller.signal);
         if (current && sequence > applied) {
           // Recorded outside the updater, which React may run more than once for a
           // single update; the ordering decision must be made exactly as often as an
@@ -87,7 +100,12 @@ export function useConsolePoll(intervalMs: number = POLL_INTERVAL_MS): ConsolePo
         }
       } catch {
         // Deliberately swallowed: see the docstring. The state already on screen stays
-        // exactly as it was until a later tick replaces it.
+        // exactly as it was until a later tick replaces it. An abort - this read's own
+        // deadline, or the poll being torn down - arrives here too, and is the same
+        // thing to this function: a tick that corrected nothing.
+      } finally {
+        clearTimeout(deadline);
+        inFlight.delete(controller);
       }
     };
 
@@ -98,6 +116,8 @@ export function useConsolePoll(intervalMs: number = POLL_INTERVAL_MS): ConsolePo
     return () => {
       current = false;
       clearInterval(timer);
+      for (const controller of inFlight) controller.abort();
+      inFlight.clear();
     };
   }, [intervalMs]);
 

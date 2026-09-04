@@ -26,8 +26,11 @@ from shared_models.localtime import parse_local_datetime
 
 from chat.agent.escalation import EscalationRequests
 from chat.agent.history import (
+    ANSWERING_HEADING,
     bound_to_last_n_turns,
+    render_opening_clinic,
     render_silent_window,
+    replace_trailing_entry,
     silent_window,
     to_claude_messages,
     to_loggable_messages,
@@ -209,10 +212,6 @@ _OPERATION_BY_TOOL = {
 # reported as, and that path records its own call above - reading it here too would
 # record the same failure twice.
 _FAILED_STATUSES = frozenset({"unavailable", "unknown"})
-
-# Labels the half of a rewritten entry that is actually the request, for the turns that
-# follow a silence. Absent from every other turn, whose entries are untouched.
-_ANSWERING_HEADING = "The message you are answering:"
 
 _LOOP_EXHAUSTED_REPLY = (
     "I wasn't able to finish that. Could you tell me again what you'd like to book?"
@@ -542,12 +541,18 @@ async def handle_booking(
         # that last entry is the window and the new message rejoined into one, with
         # nothing to tell them apart by. Restated here so it can: acting on the window
         # would cancel or book something a person had already taken over.
-        messages[-1] = {
-            "role": "user",
-            "content": (
-                f"{silenced}\n\n{_ANSWERING_HEADING}\n{trailing_question(bounded)}"
-            ),
-        }
+        #
+        # Through `replace_trailing_entry` rather than by assigning `messages[-1]`:
+        # that entry is also the one carrying the clinic's opening words whenever the
+        # render produced only one, and overwriting it would leave the loop booking
+        # against an offer it can no longer see.
+        messages = list(
+            replace_trailing_entry(
+                messages,
+                f"{silenced}\n\n{ANSWERING_HEADING}\n{trailing_question(bounded)}",
+                opening_clinic=render_opening_clinic(bounded),
+            )
+        )
     tools = registry.to_anthropic_tools()
     observed: list[dict[str, Any]] = []
     tool_calls = 0

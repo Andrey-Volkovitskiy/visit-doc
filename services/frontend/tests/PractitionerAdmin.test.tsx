@@ -313,4 +313,111 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       ),
     );
   });
+
+  // `" 30"`, `"+30"` and `"0x10"` belong on this list and are absent from it: jsdom's
+  // number input refuses them outright, firing no change at all, so a test here would
+  // pass without the guard ever running. A real browser hands them over, which is why
+  // the guard tests the text rather than what `Number` makes of it.
+  it.each(["1e3", "1.0", "-5"])(
+    "does not read %s as a whole number of minutes",
+    async (typed) => {
+      // `Number("1e3")` is 1000 and `Number.isInteger(1000)` is true, so the check this
+      // replaced let a 1000-minute appointment into the row - one the assistant then
+      // books against - while the field repainted as "1000" under the cursor.
+      const save = vi.spyOn(consoleApi, "updatePractitioner");
+
+      render(<PractitionerAdmin />);
+      const minutes = await screen.findByLabelText("Appointment minutes");
+      fireEvent.change(minutes, { target: { value: typed } });
+
+      // What was typed is still on screen, unrewritten, and there is nothing to send.
+      expect(minutes).toHaveDisplayValue(typed);
+      fireEvent.click(screen.getByText("Save"));
+      expect(save).not.toHaveBeenCalled();
+      expect(screen.getByTestId("practitioner-error")).toBeInTheDocument();
+    },
+  );
+
+  it("saves a leading zero as the number it is, without rewriting the field", async () => {
+    // "05" is 5 minutes written oddly, not a field with nothing in it: repainting it as
+    // "5" moves the text under the cursor, and refusing to save it would make a staff
+    // member retype a number they had already typed.
+    const save = vi
+      .spyOn(consoleApi, "updatePractitioner")
+      .mockResolvedValue(practitioner({ appointment_duration_minutes: 5 }));
+
+    render(<PractitionerAdmin />);
+    const minutes = await screen.findByLabelText("Appointment minutes");
+    fireEvent.change(minutes, { target: { value: "05" } });
+
+    expect(minutes).toHaveDisplayValue("05");
+    fireEvent.click(screen.getByText("Save"));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        "01PRACT0000000000000000000",
+        expect.objectContaining({ appointment_duration_minutes: 5 }),
+      ),
+    );
+  });
+
+  it("leaves how long an appointment may be to the service that owns the rule", async () => {
+    // The screen refuses a field that is not a number; it carries no bound of its own.
+    // A 2-minute appointment is the scheduler's to refuse, in the scheduler's words -
+    // a client-side bound would be a second copy of that rule, free to disagree.
+    const save = vi
+      .spyOn(consoleApi, "updatePractitioner")
+      .mockRejectedValue(new Error("appointment_duration_minutes must be 5 to 480"));
+
+    render(<PractitionerAdmin />);
+    const minutes = await screen.findByLabelText("Appointment minutes");
+    fireEvent.change(minutes, { target: { value: "2" } });
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        "01PRACT0000000000000000000",
+        expect.objectContaining({ appointment_duration_minutes: 2 }),
+      ),
+    );
+    expect(screen.getByTestId("practitioner-error")).toHaveTextContent(
+      "appointment_duration_minutes must be 5 to 480",
+    );
+  });
+
+  it("does not save or delete a practitioner twice on a double click", async () => {
+    // The latch was on Add alone. A double-clicked Save ran the write twice; a
+    // double-clicked Delete made the second call a 404, reported to the staff member as
+    // a failure for a delete that worked.
+    let landSave!: (saved: Practitioner) => void;
+    const save = vi
+      .spyOn(consoleApi, "updatePractitioner")
+      .mockReturnValue(
+        new Promise<Practitioner>((resolve) => {
+          landSave = resolve;
+        }),
+      );
+    let landDelete!: () => void;
+    const remove = vi.spyOn(consoleApi, "deletePractitioner").mockReturnValue(
+      new Promise<void>((resolve) => {
+        landDelete = resolve;
+      }),
+    );
+
+    render(<PractitionerAdmin />);
+    await screen.findByDisplayValue("Dr. Ada Lovelace");
+
+    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Save"));
+    expect(save).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      landSave(practitioner());
+    });
+
+    fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
+    fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
+    expect(remove).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      landDelete();
+    });
+  });
 });

@@ -4,8 +4,10 @@ from collections.abc import AsyncIterator
 from enum import StrEnum
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 import structlog
+from anthropic import AuthenticationError, OverloadedError
 from chat.agent import generation_registry
 from chat.agent.answer_faq import _ABSTENTION_MESSAGE
 from chat.agent.escalation import (
@@ -597,6 +599,31 @@ def test_generation_failure_logs_turn_error_with_step(seeded_entry: int) -> None
     assert "boom" in events["turn.error"]["error_detail"]
 
 
+# A model outage as the SDK actually delivers one. Not a bare `RuntimeError`: the
+# generation step wraps `except Exception`, so every 4xx, every exhausted rate limit
+# and every schema rejection arrives tagged `generation` too, and only the shapes that
+# mean the request went unserved may raise `critical.dependency_unreachable`.
+def _model_outage() -> OverloadedError:
+    return OverloadedError(
+        "overloaded",
+        response=httpx.Response(
+            529, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        ),
+        body=None,
+    )
+
+
+def _model_refused() -> AuthenticationError:
+    """A rotated key. The API answered - this side's defect, not an outage."""
+    return AuthenticationError(
+        "invalid x-api-key",
+        response=httpx.Response(
+            401, request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+        ),
+        body=None,
+    )
+
+
 def test_a_merged_turn_reports_a_model_outage_as_a_generation_failure(
     seeded_entry: int,
 ) -> None:
@@ -611,7 +638,7 @@ def test_a_merged_turn_reports_a_model_outage_as_a_generation_failure(
         mock_anthropic_cls.return_value = fake_anthropic_client(
             ["Visiting ", "hours are 8am to 5pm."],
             intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
-            compose_error=RuntimeError("overloaded"),
+            compose_error=_model_outage(),
         )
         with (
             capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -640,7 +667,7 @@ def test_a_booking_turn_reports_a_model_outage_as_a_generation_failure() -> None
     with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
         mock_anthropic_cls.return_value = fake_anthropic_client(
             intents=[IntentLabel.BOOKING],
-            booking_error=RuntimeError("overloaded"),
+            booking_error=_model_outage(),
         )
         with (
             capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -1979,3 +2006,36 @@ def test_a_stored_reply_reaches_the_patient_when_its_outcome_cannot_be_mapped() 
     # One ending, `done`, and the reply the patient was shown is the one stored.
     assert [line["type"] for line in lines if line["type"] != "token"] == ["done"]
     assert [m["sender"] for m in history] == ["patient", "assistant"]
+
+
+# --- FR-015: a `generation` failure is not an outage on its own --------------------
+#
+# The step name says which call failed, not what failed about it: all three generation
+# sites wrap a bare `except Exception`, so a rotated key, an exhausted rate limit and a
+# schema rejection arrive tagged `generation` alongside a real outage. The alert is
+# gated on the same shape test the classifier's own failure handler uses, so the two
+# sites cannot disagree about what one status means.
+
+
+def test_a_model_api_that_refused_the_key_is_not_reported_as_an_outage() -> None:
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING],
+            booking_error=_model_refused(),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False) as client,
+        ):
+            turn(client, "I'd like an appointment on Friday")
+
+    # Still reported, and still tagged - an operator sees the failed turn.
+    errors = [entry for entry in logs if entry["event"] == "turn.error"]
+    assert [entry["pipeline_step"] for entry in errors] == ["generation"]
+    # But not as Anthropic being down, which it is not.
+    assert [
+        entry
+        for entry in logs
+        if entry["event"] == "critical.dependency_unreachable"
+        and entry["dependency"] == "anthropic_api"
+    ] == []

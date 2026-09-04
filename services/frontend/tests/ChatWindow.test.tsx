@@ -836,6 +836,88 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     );
   });
 
+  it("does not clear a failed send's banner when a later read lands", async () => {
+    // "Has any read landed yet" is not "did the opening read fail". Answering the first
+    // for the second cleared the banner of a message that was never sent, while the
+    // restored text still sat in the box - telling the patient their question went in.
+    vi.spyOn(chatStream, "askChat").mockRejectedValue(new Error("The network dropped."));
+    vi.spyOn(chatStream, "fetchChatHistory")
+      .mockRejectedValueOnce(new Error("Could not load this chat's history."))
+      .mockResolvedValue(history("is anyone there?"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={1} />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("error")).toHaveTextContent(
+        "Could not load this chat's history.",
+      ),
+    );
+
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+    await waitFor(() =>
+      expect(screen.getByTestId("error")).toHaveTextContent("The network dropped."),
+    );
+
+    // The read the failed opening read is owed now succeeds. Asserted on what reached
+    // the screen rather than on a call count: a turn starting and ending re-runs the
+    // refetch effect too, so how many reads it takes to get here is not this test's
+    // business.
+    rerender(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00Z" pollTick={2} />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("messages")).toHaveTextContent("is anyone there?"),
+    );
+
+    // The history loaded; the send still failed, and the restored text is still there.
+    expect(screen.getByTestId("error")).toHaveTextContent("The network dropped.");
+    expect(screen.getByLabelText("question")).toHaveValue("when can I visit?");
+  });
+
+  it("discards a stale read even when the newly opened chat is slower", async () => {
+    // The retire-on-open assignment, which is the whole reason reads are numbered
+    // rather than compared by chat id. Every other test here lets the new chat's
+    // opening read resolve immediately, so it advances the marker past the stale read
+    // on its own and the retirement never does any work - delete the line and they all
+    // still pass. This orders them the other way round, which is the ordering the line
+    // exists for: the stale answer arrives first and would be painted under the new
+    // chat's name.
+    const OTHER = "01CHAT000000000000000099";
+    let answerFirst!: (rows: Message[]) => void;
+    const firstRead = new Promise<Message[]>((resolve) => {
+      answerFirst = resolve;
+    });
+    let answerSecond!: (rows: Message[]) => void;
+    const secondRead = new Promise<Message[]>((resolve) => {
+      answerSecond = resolve;
+    });
+    vi.spyOn(chatStream, "fetchChatHistory")
+      .mockReturnValueOnce(firstRead)
+      .mockReturnValueOnce(secondRead)
+      .mockResolvedValue([]);
+
+    const { rerender } = render(<ChatWindow chatId={CHAT_ID} />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalledTimes(1));
+    rerender(<ChatWindow chatId={OTHER} />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      answerFirst(history("the chat you left"));
+      await firstRead;
+    });
+    expect(screen.getByTestId("messages")).not.toHaveTextContent("the chat you left");
+
+    await act(async () => {
+      answerSecond(history("the chat you opened"));
+      await secondRead;
+    });
+    expect(screen.getByTestId("messages")).toHaveTextContent("the chat you opened");
+  });
+
   it("applies a read that was still outstanding when the next tick arrived", async () => {
     // A read slower than the two-second interval spans a tick, and every tick re-runs
     // the effect. That says nothing about the answer: what makes one stale is the chat
@@ -847,13 +929,22 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     const slowRead = new Promise<Message[]>((resolve) => {
       answerSlowRead = resolve;
     });
+    // What the tick arriving mid-read asks. Deliberately not suppressed (see the
+    // assertion at the end) and deliberately left unanswered here: resolved instead, it
+    // would land *first*, retire the outstanding read, and paint its own answer - so
+    // this test would pass with the outstanding read discarded, which is the regression
+    // it exists to prevent. Its content differs from the outstanding read's for the
+    // same reason.
+    let answerTickRead!: (rows: Message[]) => void;
+    const tickRead = new Promise<Message[]>((resolve) => {
+      answerTickRead = resolve;
+    });
     const fetchChatHistory = vi
       .spyOn(chatStream, "fetchChatHistory")
       .mockResolvedValueOnce(history("is anyone there?"))
       .mockReturnValueOnce(slowRead)
-      // What the tick arriving mid-read asks. It is deliberately not suppressed: see the
-      // assertion at the end.
-      .mockResolvedValue(history("is anyone there?", "I've got this one."));
+      .mockReturnValueOnce(tickRead)
+      .mockResolvedValue(history("is anyone there?", "a later answer entirely."));
 
     const { rerender } = render(
       <ChatWindow
@@ -887,6 +978,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       await slowRead;
     });
 
+    // The outstanding read's own answer, and nothing else's.
     expect(screen.getByTestId("messages")).toHaveTextContent("I've got this one.");
     // A tick that is still owed a read issues one, even with another outstanding, and
     // that is the point rather than an oversight: suppressing it would make this pane's
@@ -896,6 +988,14 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     // same trade for the same reason. The cost is bounded by how far a read runs behind
     // the interval, and an answer is only ever discarded for being the older one.
     expect(fetchChatHistory).toHaveBeenCalledTimes(3);
+
+    // And when the tick's own read finally answers it takes over, because it is the
+    // newer of the two - the rule is which read is newer, never which arrives first.
+    await act(async () => {
+      answerTickRead(history("is anyone there?", "a later answer entirely."));
+      await tickRead;
+    });
+    expect(screen.getByTestId("messages")).toHaveTextContent("a later answer entirely.");
   });
 
   it("discards a read from an earlier visit to the chat now open again", async () => {

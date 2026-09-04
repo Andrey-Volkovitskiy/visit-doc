@@ -48,6 +48,7 @@ from chat.agent.node_logging import node_span
 from chat.agent.tools.registry import ToolContext, ToolRegistry
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.agent.tools.staff_tools import STAFF_TOOLS
+from chat.clients.anthropic_failure import AnthropicFailure
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
@@ -168,15 +169,22 @@ def _record_classification_failure(exc: Exception) -> None:
 
     Only a failure that names the API as unreachable raises it. A response that came
     back and would not parse is the API answering, and an alert that fires for that is
-    one an operator learns to ignore.
+    one an operator learns to ignore. A timeout is neither: it says the answer did not
+    arrive, not that the request went unserved, so it is recorded under its own
+    `failure` and raises nothing - the same suppression the scheduling client already
+    applies to a `DEADLINE_EXCEEDED`.
     """
-    unreachable = (
-        isinstance(exc, ClassificationFailedError) and exc.dependency_unreachable
+    failure = (
+        exc.failure
+        if isinstance(exc, ClassificationFailedError)
+        else AnthropicFailure.ANSWERED
     )
+    unreachable = failure is AnthropicFailure.UNREACHABLE
     logger = get_logger()
     logger.error(
         "intent.classification_failed",
         error_detail=str(exc),
+        failure=failure.value,
         dependency_unreachable=unreachable,
     )
     if unreachable:

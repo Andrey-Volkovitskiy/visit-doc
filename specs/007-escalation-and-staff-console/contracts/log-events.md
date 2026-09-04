@@ -23,9 +23,16 @@ in which the logging path is working.
 | `escalation.unchanged` | info | `chat_id`, `requested_reason`, `existing_reason`, `message_id`, `turn_id` | A call that **transitioned nothing**: the conversation was already escalated, or already emphasized, or a person had taken it over while the turn ran. **Its own event kind**, so one `escalation.raised` still means one handoff (FR-007, SC-010). Both reasons are carried, because the point of the record is that the second did **not** overwrite the first — `existing_reason` is null where there is no escalation to name, which is every no-op that is not one. |
 | `escalation.ended` | info | `chat_id`, `ended_by` (`staff_message` \| `switch`), `escalated_for` (the reason it had), `waited_seconds` | The silencing state was cleared. Exactly two things can do it and the field names which (FR-009a). `waited_seconds` is how long the conversation was escalated, which is the one number this phase records about response time. **Emitted only when the clearing write actually landed** — a conversation deleted while the gesture ran had its escalation ended by nothing, and a phantom entry here is worse than a phantom elsewhere, since its duration inflates every count and response time taken over the event. |
 | `assistant.paused` | info | `chat_id`, `until`, `paused_by` (`staff_message` \| `switch`), `restarted` (bool) | The 2-minute pause started or restarted (FR-013, FR-014, FR-017b). `restarted` is true when a pause was already running, which is what makes a sequence of staff messages legible as one lead rather than several. **`paused_by` is the only place the two triggers differ at all** — the deadline they write is identical, so this field exists to make a silence traceable, not because anything behaves differently (research #24). **Emitted only when the write actually landed** — a conversation deleted between the gesture resolving it and the write reaching it was never silenced, and an entry there would be a silence to count that never happened. |
-| `assistant.resumed` | info | `chat_id`, `resumed_by` (`expiry` \| `switch`) | The assistant may speak again. Exactly two things can do it. Note `expiry` is **not** emitted by a timer — nothing runs when a deadline passes; it is emitted by the first turn that finds the pause elapsed, which is the moment the resumption becomes observable. A **staff message is not a resume**: it ends an escalation and starts a pause, so the assistant stays silent across it (FR-009a, FR-013). **Emitted only when the write actually landed** — a conversation deleted between the switch resolving it and the clears reaching it was never resumed, and an entry there would be a resumption to count that never happened. |
+| `assistant.resumed` | info | `chat_id`, `resumed_by` (`switch`) | The assistant may speak again. A **staff message is not a resume**: it ends an escalation and starts a pause, so the assistant stays silent across it (FR-009a, FR-013). **Emitted only when the write actually landed** — a conversation deleted between the switch resolving it and the clears reaching it was never resumed, and an entry there would be a resumption to count that never happened. |
 | `message.unanswered` | info | `chat_id`, `message_id`, `silenced_by` (`escalation` \| `pause`), `turn_id` | A patient message arrived while the assistant was silent, was kept, and was marked (FR-019). `silenced_by` says which of the two states was in force, which the mark itself does not record. |
 | `staff.message_posted` | info | `chat_id`, `message_id`, `marks_cleared` (int), `ended_escalation` (bool), `cancelled_generation` (bool) | A staff member posted. The three booleans/counts are the three side effects of one act (FR-009a, FR-013a, FR-027c) — a reply that cleared four marks and cancelled a generation is a different event from one that cleared none. **Emitted only when the conversation was still there when the post finished** — a chat deleted mid-post takes the message with it by cascade, and an entry there would name a message id nothing can be found under, counting a reply the patient never saw as one they were sent. |
+
+**`resumed_by` has one value in this build, `switch`, and the switch is its only emitter.** A pause
+elapsing was to have been a second value, `expiry`, emitted by the first turn that found the
+deadline passed — nothing runs when a deadline passes, so that turn is the moment the resumption
+becomes observable. It is not built: no site emits it, and the value is left out of the field's
+domain rather than documented, so an operator filtering for it reads zero rows as "not a thing this
+build records" rather than as "no pause ever expired".
 
 `escalation.raised` and `escalation.unchanged` are mutually exclusive for one request. That is the
 whole point of having both: SC-010 counts escalation records against conversations actually
@@ -85,14 +92,32 @@ turn does for the patient exactly as it was. A turn whose corpus *does* answer r
 once here and once from the generation step — which is two failed calls to one dependency honestly
 reported, not one event counted twice.
 
-**`intent.classification_failed` gains `dependency_unreachable` (bool), and only `true` raises the
+**`intent.classification_failed` gains `failure` (`unreachable` | `timed_out` | `answered`) and
+`dependency_unreachable` (bool, true exactly for `unreachable`), and only `true` raises the
 alert.** Not every classification failure is a dependency failure: a response that came back and
 would not validate against the structured-output schema, or one carrying `classification_failed`
 itself, is the API answering — what failed is the response, not reaching it, and an alert that
-fires for those is one an operator learns to ignore. `true` is set only for the shapes that mean
-the request was never served: a connection error, a timeout, or a 5xx. A 4xx and an exhausted rate
-limit are answers, and are `false` — the same rule the scheduling client already applies to itself,
-where a status the server answered with is a defect rather than an outage.
+fires for those is one an operator learns to ignore. `unreachable` is set only for the shapes that
+mean the request was never served: a connection error, or a 5xx (the API answering that it is not
+serving). A 4xx and an exhausted rate limit are answers, and are `answered`.
+
+**A timeout is its own value, and raises no alert.** A deadline is the caller's, not the callee's:
+it expiring means the answer did not arrive, not that the request went unserved — the project's
+"a timeout never proves the server did nothing" rule. The SDK compounds this by making
+`APITimeoutError` a subclass of `APIConnectionError`, and httpx maps a *pool* timeout onto it too,
+so an alert that fired on it would page an operator for this service's own connection limit. It is
+still recorded, under `failure="timed_out"`, so a run of them is visible without any of them
+claiming an outage — the same suppression the scheduling client already applies to its own
+`DEADLINE_EXCEEDED`, where the outcome is unknown rather than known to be nothing.
+
+**One decider serves both sites.** `chat.clients.anthropic_failure.classify_failure` is what
+answers "was the model API unreachable" for the classifier's failure handler *and* for the
+`generation` pipeline step, so the two cannot drift into calling the same status an outage in one
+place and a defect in the other. It has to be applied at the `generation` site as well as here,
+because the step name says only which call failed: all three generation sites wrap a bare
+`except Exception`, so a rotated key's 401, an exhausted rate limit and a schema 400 arrive tagged
+`generation` alongside a real outage. `retrieval`/`qdrant` carries no such test — every failure of
+it is still reported as an outage, which is what it has always done.
 
 ### `turn.chat_vanished` — new
 
@@ -176,7 +201,9 @@ The same applies to the chunk removal that follows a delete (FR-042f) and to the
 that follows an admin deletion.
 
 `critical.dependency_unreachable` is otherwise unchanged and still fires for the retrieval store,
-Postgres, the embedding service and the model API when an operation actually failed against them.
+Postgres, the embedding service and the model API when an operation actually failed against them —
+with the model API's own qualification above: the failure has to be one that means the request went
+unserved, not merely one tagged with a step that calls the model.
 
 ---
 

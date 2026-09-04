@@ -14,7 +14,6 @@ derived are identical either way.
 from collections.abc import AsyncIterator
 
 from anthropic import AsyncAnthropic
-from anthropic.types import MessageParam
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
 
@@ -22,7 +21,9 @@ from chat.agent.compose_answer import FaqResult
 from chat.agent.escalation import EscalationRequests
 from chat.agent.history import (
     bound_to_last_n_turns,
+    render_opening_clinic,
     render_silent_window,
+    replace_trailing_entry,
     silent_window,
     to_claude_messages,
     to_loggable_messages,
@@ -97,9 +98,11 @@ async def answer_faq(
     # into one. Reading the question off it would retrieve for - and answer - a message
     # a staff member was meant to deal with; and since the prompt below replaces that
     # entry, the window has to be carried into the prompt explicitly or it would be
-    # dropped from the conversation the model reads at all.
+    # dropped from the conversation the model reads at all. The clinic's own opening
+    # words are carried for the same reason - see `replace_trailing_entry`.
     message = trailing_question(bounded)
     silenced = render_silent_window(silent_window(bounded))
+    opening_clinic = render_opening_clinic(bounded)
 
     chunks = await search_faq(
         qdrant_client, voyage_client, message, session_id, live_revisions
@@ -139,8 +142,9 @@ async def answer_faq(
         for part in (f"Context:\n{context}", silenced, f"Question: {message}")
         if part
     )
-    current_turn: MessageParam = {"role": "user", "content": prompt}
-    messages = [*history[:-1], current_turn]
+    # Not `[*history[:-1], current_turn]`: when the whole window renders as one entry,
+    # the entry this prompt replaces is the one carrying the clinic's opening words.
+    messages = replace_trailing_entry(history, prompt, opening_clinic=opening_clinic)
 
     # The retrieved context reaches the model inside this turn's own message, so the
     # logged conversation is also the record of what was retrieved for it.

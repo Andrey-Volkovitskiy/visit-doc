@@ -21,7 +21,14 @@ from chat.agent.handle_booking import (
     BookingResult,
     handle_booking,
 )
-from chat.agent.history import exclude_silent_window, split_into_bursts
+from chat.agent.history import (
+    ANSWERING_HEADING,
+    OPENING_CLINIC_NOTE,
+    PATIENT_RESUMES_HEADING,
+    exclude_silent_window,
+    split_into_bursts,
+    to_claude_messages,
+)
 from chat.agent.tools.registry import (
     Tool,
     ToolArgumentError,
@@ -1353,3 +1360,71 @@ async def test_a_cancelled_booking_loop_is_still_a_cancellation() -> None:
 
     with pytest.raises(asyncio.CancelledError):
         await _run(client, registry, _bursts("book me Friday at 9"))
+
+
+# --- 007: the clinic's opening words survive the loop's own rewrite ----------------
+#
+# `to_claude_messages` folds a leading clinic-sided burst into the first `user` entry.
+# When the window renders as one entry that is also the trailing entry, which is the
+# one the silent-window branch rewrites - so the rewrite has to carry the fold, or the
+# loop books against an offer it can no longer see.
+
+
+def _staff_offer_then_silence(silenced: str, current: str) -> list[list[Message]]:
+    """Staff open with an offer, then a message nobody answered, then the new one."""
+    window = _message(silenced, "p1", MessageSender.PATIENT)
+    window.attention_mark = "unanswered"
+    return exclude_silent_window(
+        split_into_bursts(
+            [
+                _message(
+                    "Dr. Chen has a slot Friday at 3 - shall I book it?",
+                    "s1",
+                    MessageSender.STAFF,
+                ),
+                window,
+                _message(current, "p2", MessageSender.PATIENT),
+            ]
+        )
+    )
+
+
+async def test_the_clinics_offer_survives_the_silent_window_rewrite() -> None:
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Booking that now.")])
+    bursts = _staff_offer_then_silence("are you there?", "yes please")
+    # One entry, so the entry the rewrite replaces is the folded one.
+    assert len(to_claude_messages(bursts)) == 1
+
+    await _run(client, registry, bursts)
+
+    entry = _first_user_entry(client)
+    assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in entry
+    assert OPENING_CLINIC_NOTE in entry
+    # And the rewrite still does its own job: only the new message is the request.
+    answering = entry.split(ANSWERING_HEADING)[-1]
+    assert "yes please" in answering
+    assert "are you there?" not in answering
+
+
+async def test_the_clinics_offer_reaches_a_booking_turn_with_no_silence() -> None:
+    # The same fold on the branch that rewrites nothing - `to_claude_messages`'s own
+    # output goes to the model unchanged, heading and all.
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Booking that now.")])
+    bursts = split_into_bursts(
+        [
+            _message(
+                "Dr. Chen has a slot Friday at 3 - shall I book it?",
+                "s1",
+                MessageSender.STAFF,
+            ),
+            _message("yes please", "p1", MessageSender.PATIENT),
+        ]
+    )
+
+    await _run(client, registry, bursts)
+
+    entry = _first_user_entry(client)
+    assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in entry
+    assert entry.endswith(f"{PATIENT_RESUMES_HEADING}\nyes please")
