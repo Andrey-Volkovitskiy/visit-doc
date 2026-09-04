@@ -161,6 +161,24 @@ async def _clear_chat_tables() -> None:
         await qdrant_client.close()
 
 
+# The scheduling client functions `_scheduler_is_unreachable_by_default` replaces, named
+# once so nothing has to restate them: the fixture below builds its fake from this
+# tuple, and `test_scheduling_client.py` - which un-fakes the boundary because the
+# client itself is what it tests - reads it back through the
+# `faked_scheduling_function_names` fixture to check it left none of them faked.
+FAKED_SCHEDULING_FUNCTIONS = (
+    "ensure_session_provisioned",
+    "delete_patient_for_chat",
+    "delete_session",
+)
+
+
+@pytest.fixture
+def faked_scheduling_function_names() -> tuple[str, ...]:
+    """The client function names `_scheduler_is_unreachable_by_default` replaces."""
+    return FAKED_SCHEDULING_FUNCTIONS
+
+
 @pytest.fixture(autouse=True)
 def _scheduler_is_unreachable_by_default() -> Iterator[None]:
     """Fake the scheduling boundary for every chat unit test that does not override it.
@@ -174,7 +192,12 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
     a test exercising a path that reaches an unfaked call would otherwise dial the real
     channel on the wrong loop, and fail with a loop-binding error attributed to whatever
     it was actually about. A test that wants a specific outcome patches over this.
+
+    The fake is applied to `chat.clients.scheduling` itself, which is the object every
+    caller reaches these functions through (`from chat.clients import scheduling`, then
+    `scheduling.<name>(...)`) - so one patch per name covers every importer.
     """
+    from chat.clients import scheduling
     from chat.clients.scheduling import SchedulingUnavailableError
 
     def _unreachable() -> AsyncMock:
@@ -184,13 +207,8 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
             )
         )
 
-    with (
-        patch(
-            "chat.api.provisioning.scheduling.ensure_session_provisioned",
-            new=_unreachable(),
-        ),
-        patch("chat.api.chats.scheduling.delete_patient_for_chat", new=_unreachable()),
-        patch("chat.api.admin.scheduling.delete_session", new=_unreachable()),
+    with patch.multiple(
+        scheduling, **{name: _unreachable() for name in FAKED_SCHEDULING_FUNCTIONS}
     ):
         yield
 

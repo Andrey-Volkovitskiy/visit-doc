@@ -3,7 +3,9 @@
 There is deliberately no create, no delete and no edit here: a patient is created with
 its chat, named once at creation, and deleted with its chat, so offering any of them
 would let this surface produce a patient with no chat, a chat pointing at nothing, or a
-name that disagrees with the one the chat caches.
+name that disagrees with the one the chat caches. The absent edit is what makes that
+cached copy safe: nothing anywhere changes a patient's name once it is assigned, so the
+chat service can hold the name it was given and never re-read it.
 """
 
 from typing import Annotated

@@ -697,12 +697,16 @@ effects — including cascading appointment deletion — without touching the ch
   delivered for it in this phase.
   *(Amended after 007: the patient-editing half is **withdrawn**. A patient's name is assigned once,
   when the scheduler creates them with their chat, and is never edited afterwards — by this
-  interface, by the chat service, or by the patient. The name therefore has exactly one writer, so
-  the copy the chat service caches on its `chats` row cannot go stale, and the whole failure
-  vocabulary a second writer needed — a name-taken refusal, a patient-gone refusal, and a
-  did-my-write-land question a caller could not answer — has nothing left to describe. This
-  withdraws the rename RPC from the gRPC contract, `PATCH /patients/{id}` from this interface, and
-  `PATCH /chats/{id}/patient` with its rename control from the chat surface.)*
+  interface, by the chat service, or by the patient. The name therefore has exactly one writer and
+  is never updated in place, so the copy the chat service caches on its `chats` row never disagrees
+  with the scheduler's name for that patient, and the whole failure vocabulary a second writer
+  needed — a name-taken refusal, a patient-gone refusal, and a did-my-write-land question a caller
+  could not answer — has nothing left to describe. What immutability does not cover is the patient
+  ceasing to exist: FR-039 deletes the scheduler-side patient before the chat row, so an interrupted
+  delete leaves a chat cached against a patient that is gone, which nothing re-provisions and only a
+  retried delete clears. This withdraws the rename RPC from the gRPC contract, `PATCH
+  /patients/{id}` from this interface, and `PATCH /chats/{id}/patient` with its rename control from
+  the chat surface.)*
 - **FR-049**: Deleting a practitioner MUST delete that practitioner's appointments.
 - **FR-050**: The management interface MUST refuse an edit that would violate FR-012.
 

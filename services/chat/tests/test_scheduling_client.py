@@ -5,6 +5,7 @@ The stub is faked at this module's own boundary, so the retry rules and the fail
 taxonomy are exercised without a running scheduler.
 """
 
+import inspect
 from collections.abc import Iterator
 from datetime import date, datetime, timezone
 from typing import Any, cast
@@ -21,15 +22,20 @@ from shared_proto.scheduling.v1 import scheduling_pb2 as pb
 from structlog.testing import capture_logs
 
 # Captured at import, before any fixture runs, so these are the real functions.
-# `conftest.py`'s autouse boundary fake replaces them on this very module - which is
-# right for tests that go through the API, and wrong here, where the client itself is
-# what is under test. The fake stub below is the boundary these tests replace instead.
+# `conftest.py`'s autouse boundary fake replaces some of them on this very module -
+# which is right for tests that go through the API, and wrong here, where the client
+# itself is what is under test. The fake stub below is the boundary these tests replace
+# instead.
+#
+# Read off the module rather than listed by hand: a hand-written list is a copy of
+# conftest's, and the two drift the moment one of them is edited alone. Every public
+# coroutine function the client module defines is captured, which is a superset of what
+# conftest fakes today and of whatever it fakes next;
+# `test_no_function_conftest_fakes_is_left_faked_in_this_module` is what checks that.
 _REAL_CLIENT_FUNCTIONS = {
-    name: getattr(scheduling, name)
-    for name in (
-        "ensure_session_provisioned",
-        "delete_patient_for_chat",
-    )
+    name: function
+    for name, function in inspect.getmembers(scheduling, inspect.iscoroutinefunction)
+    if not name.startswith("_") and function.__module__ == scheduling.__name__
 }
 
 
@@ -122,6 +128,15 @@ def _booked_response() -> pb.BookAppointmentResponse:
         ),
         idempotent_replay=False,
     )
+
+
+def test_no_function_conftest_fakes_is_left_faked_in_this_module(
+    faked_scheduling_function_names: tuple[str, ...],
+) -> None:
+    assert faked_scheduling_function_names
+    for name in faked_scheduling_function_names:
+        assert name in _REAL_CLIENT_FUNCTIONS
+        assert getattr(scheduling, name) is _REAL_CLIENT_FUNCTIONS[name]
 
 
 async def test_every_call_carries_the_configured_deadline() -> None:

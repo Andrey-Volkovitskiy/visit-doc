@@ -136,7 +136,16 @@ class WorkingRange(Base):
 
 
 class Patient(Base):
-    """The person one chat books on behalf of, paired with that chat permanently."""
+    """The person one chat books on behalf of, paired with that chat permanently.
+
+    A row is written once and never modified: a patient is created with its chat and
+    deleted with it, and nothing updates one. `updated_at` therefore carries no
+    `onupdate`, unlike `practitioners` and `appointments`, whose rows really are
+    updated in place; here it equals `created_at` for the row's whole life. The
+    column is kept rather than dropped because it is on no wire contract and no admin
+    response, so no reader can be misled by it, and every entity table goes on
+    carrying the same audit pair.
+    """
 
     __tablename__ = "patients"
     __table_args__ = (
@@ -153,7 +162,7 @@ class Patient(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now()
     )
 
 

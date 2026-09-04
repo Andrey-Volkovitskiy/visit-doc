@@ -29,9 +29,13 @@ async def provision_patient(channel: grpc.aio.Channel, chat: Chat) -> str | None
     the same patient rather than creating a second one.
 
     Creation only - a chat that already has a patient is answered from the cached name
-    without a call. The name is assigned once, when the patient is created, and never
-    changes afterwards, so the cached copy cannot go stale and re-reading it would cost
-    a round trip for a value that is already correct.
+    without a call. The scheduler assigns the name when it creates the patient and has
+    no path that edits it afterwards, so the cached copy never disagrees with the
+    scheduler's name for that patient, and re-reading it would cost a round trip for a
+    value that is already correct. The one state this leaves permanent is a chat whose
+    patient was deleted without its own row going with it - an interrupted chat
+    deletion - which this call skips like any other chat that already has a
+    `patient_id`, so only a retried deletion clears it.
     """
     if chat.patient_id is not None:
         return chat.patient_name

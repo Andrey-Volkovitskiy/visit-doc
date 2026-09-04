@@ -1,5 +1,4 @@
 import {
-  detailOf,
   fetchChatHistory,
   type AttentionMark,
   type Message,
@@ -182,6 +181,24 @@ export interface PractitionerWrite {
   specialty?: string;
   appointment_duration_minutes?: number;
   schedule?: WorkingRange[];
+}
+
+/**
+ * Read the server's own explanation off an error response.
+ *
+ * Falls back to `fallback` when there is no readable `detail` — an empty body, a
+ * non-JSON one, or a proxy's own error page.
+ *
+ * Module-private: its only callers are the two error helpers below. The patient side
+ * relays no `detail` at all, so this does not belong in `chatStream.ts`.
+ */
+async function detailOf(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    return typeof body.detail === "string" ? body.detail : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 /**

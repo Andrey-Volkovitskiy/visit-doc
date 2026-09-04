@@ -163,10 +163,17 @@ class Chat(Base):
 
     `patient_name` is a cached display value this service never authors - it is written
     from whatever the scheduler reported, so the chat list has something to render
-    without a per-render call. Renaming through this service updates both stores in the
-    one request, which is what keeps the copy true; renaming through the scheduler's own
-    admin API instead writes only its side and leaves this copy stale, since nothing
-    here re-reads a name it already has.
+    without a per-render call. Both columns have exactly one writer, the provisioning
+    call that creates the patient, and neither is ever updated in place: the scheduler
+    names a patient when it creates them and offers no way to edit that name afterwards,
+    so a cached copy never disagrees with the scheduler's name for that patient.
+
+    What the pair can outlive is the patient itself. Deleting a chat removes the
+    scheduler-side patient first and this row second, so an interrupted deletion leaves
+    a row holding the id and name of a patient that is gone, and provisioning never
+    revisits a chat that already has a `patient_id` - only a retried deletion clears it.
+    The scheduler's name pool meanwhile walks the names its *live* patients hold, so the
+    freed name can be handed to a different chat's patient in the same session.
     """
 
     __tablename__ = "chats"

@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+import pytest
 from chat.agent.escalation import EscalationRequests
 from chat.agent.generation_registry import register_and_cancel_previous
 from chat.api import turn as turn_api
@@ -503,6 +504,41 @@ async def test_a_deletion_of_unknown_outcome_is_not_reported_as_a_failure() -> N
         assert await chat_repository.get_chat(session, chat_ids[0], session_id) is not (
             None
         )
+
+
+async def test_a_delete_interrupted_after_the_scheduler_leaves_an_orphaned_name() -> (
+    None
+):
+    """The one window in which a cached patient name outlives its patient.
+
+    The scheduler goes first, so a failure between the two deletes leaves the chat row
+    holding the id and name of a patient that is already gone. Nothing re-provisions it
+    - provisioning only ever creates a patient for a chat that has none - so the row
+    keeps that name until the delete is retried.
+    """
+    session_id, chat_id = await _seed_chat_with_patient()
+    provision = AsyncMock(return_value=_provisioned())
+
+    with (
+        patch(_DELETE, new=AsyncMock(return_value=_deleted())),
+        patch.object(
+            chat_repository, "delete_chat", new=AsyncMock(side_effect=RuntimeError)
+        ),
+    ):
+        async with _api(session_id) as client:
+            with pytest.raises(RuntimeError):
+                await client.delete(f"/chats/{chat_id}")
+
+    with patch(_PROVISION, new=provision):
+        async with _api(session_id) as client:
+            listed = (await client.get("/chats")).json()["chats"]
+
+    assert [c["patient_name"] for c in listed] == ["Ada Lovelace"]
+    provision.assert_not_awaited()
+    async with session_factory() as session:
+        orphaned = await session.get(Chat, chat_id)
+    assert orphaned is not None
+    assert orphaned.patient_id == "01PATENT000000000000000000"
 
 
 async def test_a_refused_deletion_leaves_an_in_flight_turn_running() -> None:

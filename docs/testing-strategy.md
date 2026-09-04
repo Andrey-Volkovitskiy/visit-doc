@@ -89,8 +89,18 @@ test happened to need when it was written. A boundary fake is a guarantee the wh
 on, so a gap in it is not "that path is untested" — it is a live call on the wrong event loop,
 failing with a loop-binding or timeout error attributed to whatever the test was actually about.
 When a new function is added to a faked boundary, add it to the autouse fixture in the same
-change: `_scheduler_is_unreachable_by_default` fakes `ensure_session_provisioned`,
-`delete_patient_for_chat` and `delete_session` for exactly this reason.
+change — for `_scheduler_is_unreachable_by_default` that is one entry in
+`FAKED_SCHEDULING_FUNCTIONS`, the tuple it builds its fake from and the only place those names
+are written down.
+
+The one module that must *un*-fake this boundary — `test_scheduling_client.py`, since the client
+itself is what it tests — does not restate that tuple either: it captures every public coroutine
+function the client module defines, and its
+`test_no_function_conftest_fakes_is_left_faked_in_this_module` reads the tuple back through the
+`faked_scheduling_function_names` fixture to assert none of the faked names is still a mock there. A second hand-written list is what previously went stale, and
+its failure mode is quiet: a direct test of the missed function runs against the `AsyncMock` and
+fails with `SchedulingUnavailableError("no scheduler in tests")` attributed to whatever it was
+actually testing.
 
 ## Live paid APIs: manual testing and e2e only
 

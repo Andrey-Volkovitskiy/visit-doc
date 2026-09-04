@@ -24,8 +24,8 @@ All timestamps are **timezone-naive local wall-clock** (research #5): `TIMESTAMP
 and `TIME WITHOUT TIME ZONE`. `created_at`/`updated_at` are the sole exception — audit metadata
 written by `server_default=func.now()`.
 
-**Every entity table carries both audit columns**, declared exactly as `FaqEntry` already does in
-`services/chat/src/chat/domain/models.py`:
+**Every entity table carries both audit columns**, declared as `FaqEntry` already does in
+`services/chat/src/chat/domain/models.py` — with the one `onupdate` exception noted below:
 
 ```python
 created_at: Mapped[datetime] = mapped_column(
@@ -36,7 +36,7 @@ updated_at: Mapped[datetime] = mapped_column(
 )
 ```
 
-Two consequences to be aware of rather than surprised by:
+Three consequences to be aware of rather than surprised by:
 
 - `onupdate` is applied by SQLAlchemy on flush, not by a database trigger — the repo's existing
   convention, kept here for consistency. A row changed by raw SQL (a `psql` session, a fixture that
@@ -46,6 +46,11 @@ Two consequences to be aware of rather than surprised by:
   column costs nothing today and a migration on a table with two exclusion constraints costs more
   later. `working_ranges` deliberately has neither column: a schedule edit replaces its rows wholesale
   rather than updating them, so the practitioner's own `updated_at` is the meaningful record.
+- `patients.updated_at` is the one that carries **no** `onupdate`. A patient is created with its
+  chat and deleted with it, and nothing updates the row (FR-048 as amended after 007), so an
+  `onupdate` would advertise a mutation that cannot occur. The column itself stays — it is on no
+  wire contract and no admin response, so nothing reads it — and `onupdate` is a SQLAlchemy-side
+  default that appears in no DDL, so dropping it needed no migration.
 
 Neither column is exposed on the gRPC contract or in any admin-API response. They are operational
 metadata for whoever is reading the database directly; no requirement surfaces them, and adding them
@@ -104,14 +109,14 @@ means a practitioner who is listed but never bookable (spec Edge Cases).
 | `session_id` | `VARCHAR(26)` NOT NULL | opaque; indexed |
 | `chat_id` | `VARCHAR(26)` NOT NULL | opaque; **UNIQUE** |
 | `full_name` | `VARCHAR(200)` NOT NULL | from the writer pool; assigned once, never edited |
-| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only |
+| `created_at` / `updated_at` | `TIMESTAMPTZ` | audit only; equal on every row — see above |
 
 - `UNIQUE (chat_id)` — FR-003's permanent one-to-one pairing, and the thing that makes
   `EnsureSessionProvisioned` idempotent on retry (FR-045, research #10).
 - `UNIQUE (session_id, full_name)` — FR-012; may repeat across sessions (FR-014).
 - There is no `DELETE /patients` endpoint: a patient dies only with its chat (FR-039). Nor is there
-  a `PATCH`: the name is written once, at creation (FR-048 as amended after 007), so this row has
-  exactly one writer.
+  a `PATCH`: the name is written once, at creation (FR-048 as amended after 007), so `full_name` has
+  exactly one writer and is never updated in place.
 
 ### `appointments`
 
@@ -165,10 +170,18 @@ EXCLUDE USING gist (practitioner_id WITH =, tsrange(starts_at, ends_at) WITH &&)
 - **Why the name is cached rather than fetched.** `GET /chats` must render a patient name per row
   (FR-036), including after a reload, and the gRPC contract has no "list this session's patients"
   RPC — `EnsureSessionProvisioned` returns one patient, for one chat. Without the cache the chat
-  list would need one round trip per row on every render. Since FR-048 was amended after 007 the
-  cache cannot go stale at all: the name is assigned once, when the scheduler creates the patient,
-  and nothing anywhere edits it afterwards — so the copy written by the one provisioning call is
-  the value for the life of the row, and the scheduler remains the single authority.
+  list would need one round trip per row on every render. Since FR-048 was amended after 007 both
+  columns have exactly one writer — the provisioning call — and neither is ever updated in place:
+  the name is assigned once, when the scheduler creates the patient, and nothing anywhere edits it
+  afterwards, so the cached copy never disagrees with the scheduler's name for that patient.
+- **What the cache can still be is orphaned.** `DELETE /chats/{id}` removes the scheduler-side
+  patient first and the `chats` row second (FR-039), so a failure between the two steps leaves a row
+  holding the id and name of a patient that no longer exists. Provisioning skips any chat that
+  already has a `patient_id`, so nothing re-provisions it and only a retried delete clears it —
+  meanwhile the scheduler's pool walks the names its *live* patients hold, so the freed name can be
+  given to a different chat's patient in the same session. This is the deliberate cost of the
+  scheduler-first ordering, whose other direction would strand a patient and their appointments with
+  no chat left to reach them.
 - Application-level "one chat per session" is dropped (FR-035). `get_or_create_chat_for_session` and
   `get_chat_for_session` are removed; `list_chats_for_session` (FR-056 ordering, research #13),
   `create_chat`, `get_chat` (session-scoped), `set_patient`, and `delete_chat` replace them.

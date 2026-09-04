@@ -1752,11 +1752,12 @@ covers, in that same conversation.
   right shape for it if that sweep ever wants a worker.
 - **Existing behavior is preserved**, with two named exceptions: conversation history, intent
   classification, booking, rescheduling, cancellation, the practitioner and appointment listings,
-  chat creation, renaming, and deletion all continue to work unchanged in an open conversation. The
-  exceptions are deliberate and are the substance of two clarifications above — an abstention now
-  ends in a handoff instead of a dead end, without silencing the conversation it hands over
-  (FR-003, FR-003d), and FAQ answering now reads the session's own corpus instead of a shared one
-  (FR-039).
+  chat creation and deletion all continue to work unchanged in an open conversation. (Chat
+  renaming was listed here too; it is withdrawn along with patient renaming — see 005 FR-048 as
+  amended.) The exceptions are deliberate and are the substance of two clarifications above — an
+  abstention now ends in a handoff instead of a dead end, without silencing the conversation it
+  hands over (FR-003, FR-003d), and FAQ answering now reads the session's own corpus instead of a
+  shared one (FR-039).
 - **There is no staff member to model — only a label.** An earlier draft made it a name derived
   from the session identifier; this one drops the name, and with it the pool, the derivation, and
   the requirement that the derivation stay stable across restarts. What remains is `staff` as a

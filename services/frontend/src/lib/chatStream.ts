@@ -190,10 +190,9 @@ export async function createChat(): Promise<ChatSummary> {
  * The 404 says the one thing this route answers it for — this chat is not reachable from
  * this session, whether it was deleted or was never ours.
  *
- * Takes the bare status, not a `Response`: no branch here quotes the server, so reading a
- * body would only make this async for nothing. The server's own `detail` is developer
- * prose either way — it is quoted in the one place a rule the scheduler owns has to be
- * relayed verbatim, and nowhere else.
+ * Takes the bare status, not a `Response`: none of these messages relay the server's own
+ * `detail`, which is developer prose, so reading a body would only make this async for
+ * nothing.
  */
 function deleteErrorMessage(status: number): string {
   switch (status) {
@@ -223,21 +222,6 @@ export async function deleteChat(chatId: string): Promise<void> {
   // and only some are worth retrying.
   if (!response.ok) {
     throw new Error(deleteErrorMessage(response.status));
-  }
-}
-
-/**
- * Read the server's own explanation off an error response.
- *
- * Falls back to `fallback` when there is no readable `detail` — an empty body, a
- * non-JSON one, or a proxy's own error page.
- */
-export async function detailOf(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await response.json()) as { detail?: unknown };
-    return typeof body.detail === "string" ? body.detail : fallback;
-  } catch {
-    return fallback;
   }
 }
 

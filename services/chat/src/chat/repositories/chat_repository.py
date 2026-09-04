@@ -130,28 +130,15 @@ async def set_patient(
     writes nothing rather than being caught by a check after the fact.
 
     `patient_name` is cached, never authored here - it is whatever the scheduler
-    reported, kept so the chat list can render without a call per row.
+    reported, kept so the chat list can render without a call per row. This is the only
+    writer of either column, and provisioning calls it once, when it creates the
+    patient: there is deliberately no way to update a name in place, because the
+    scheduler has no way to change one.
     """
     await session.execute(
         update(Chat)
         .where(Chat.id == chat_id, Chat.session_id == session_id)
         .values(patient_id=patient_id, patient_name=patient_name)
-    )
-    await session.commit()
-
-
-async def set_patient_name(
-    session: AsyncSession, chat_id: str, session_id: str, patient_name: str
-) -> None:
-    """Update this chat's cached patient name.
-
-    Scoped to `session_id` on the write itself, so a chat id from another session
-    updates nothing rather than being caught by a check after the fact.
-    """
-    await session.execute(
-        update(Chat)
-        .where(Chat.id == chat_id, Chat.session_id == session_id)
-        .values(patient_name=patient_name)
     )
     await session.commit()
 

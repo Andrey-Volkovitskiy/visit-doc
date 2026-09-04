@@ -20,6 +20,32 @@
 //     so a caller that gives up on a write must not report that nothing was written.
 //   * `x-turn-id` metadata carries the caller's correlation id (research.md #18).
 
+// ---------------------------------------------------------------------------
+// Removed names - do not reuse
+// ---------------------------------------------------------------------------
+//
+// Patient rename was removed whole, in place, inside the unchanged `scheduling.v1`
+// package: the `RenamePatient` rpc, the `RenameFailureReason` enum, and the
+// `RenameFailure`, `RenamePatientRequest` and `RenamePatientResponse` messages.
+//
+// Like 007's `Weekday` renumbering below, this is a BREAKING change to a package whose
+// name did not change, so `chat` and `scheduler` MUST be built and deployed together. A
+// chat built before the removal, calling a scheduler built after it, is answered
+// UNIMPLEMENTED ("Method not found!"). The client retries only UNAVAILABLE and
+// DEADLINE_EXCEEDED, so that call is not retried: it raises `SchedulingUnavailableError`
+// - a `SchedulingError` - with `outcome_unknown` true, after a single attempt.
+//
+// proto3 offers NO way to reserve any of this. `reserved` exists only inside a message
+// body and an enum body; protoc rejects it at file scope and inside a `service`, and
+// every body these names lived in is gone. Nothing else was freed - no surviving message
+// or enum lost a field - so there is no field number or enum number to reserve either.
+// The five names above are therefore held by this comment alone.
+//
+// Reusing the rpc name in particular would be a wire hazard rather than only a reader's
+// one: gRPC dispatches on the literal path `/scheduling.v1.Scheduling/RenamePatient`, so
+// a future rpc taking that name would be handed an old chat's `RenamePatientRequest`
+// bytes to parse as its own request.
+
 syntax = "proto3";
 
 package scheduling.v1;

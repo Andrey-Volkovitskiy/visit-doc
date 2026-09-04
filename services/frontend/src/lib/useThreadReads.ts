@@ -22,7 +22,7 @@ export const READ_TIMEOUT_MS = 8000;
  * the cap can only ever defer a tick by that much, and it is what keeps a slow backend
  * from spending this origin's whole socket budget on one pane.
  */
-export const MAX_IN_FLIGHT_READS = 3;
+const MAX_IN_FLIGHT_READS = 3;
 
 /**
  * What a read that ran past its deadline reports.
