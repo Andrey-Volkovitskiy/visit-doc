@@ -34,9 +34,10 @@ have already handled them, and their outputs are below.
 Combine them into a single, natural reply. You must:
 - Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
 - If the question half says there is no confident answer, say plainly that you do not
-  have a confident answer to that part, and that a staff member has been notified and
-  will reply in this conversation. Never fill the gap from your own knowledge, and
-  never promise when they will reply.
+  have that information in the clinic's knowledge base, that the question has been
+  forwarded to staff who will follow up, and that you can still help with anything
+  else in the meantime. Never fill the gap from your own knowledge, and never promise
+  when they will reply.
 - If the appointment half did not result in a booking, never write anything that
   suggests one exists.
 - The appointment half is labelled with the outcome that actually happened. Say only
@@ -246,8 +247,10 @@ def _build_prompt(
         else:
             parts.append(
                 "Answer to the question part:\n"
-                "There is no confident answer to this part. Say so plainly, and say "
-                "that a staff member has been notified and will reply here."
+                "There is no confident answer to this part. Say plainly that the "
+                "clinic's knowledge base does not have that information, that the "
+                "question has been forwarded to staff who will follow up, and that "
+                "you can still help with anything else in the meantime."
             )
     if booking_reply is not None:
         parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")

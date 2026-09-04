@@ -43,11 +43,15 @@ _SYSTEM_PROMPT = (
 )
 # The abstention and the handoff are one outcome, so they are one sentence: an
 # abstention that then attempted a speculative answer, or that left the patient at a
-# dead end, is the failure this wording exists to prevent. It names no timeframe,
-# because nothing in the system commits to one.
+# dead end, is the failure this wording exists to prevent. The closing invitation is
+# not politeness: a corpus gap raises attention without silencing the conversation
+# (spec 007 FR-003d), so the patient really may go on asking while staff follow up, and
+# the sentence has to say so or the silence it implies is a lie about the state.
 _ABSTENTION_MESSAGE = (
-    "I don't have a confident answer to that from the clinic's documents, so I've "
-    "handed the question to a staff member, who will reply in this conversation."
+    "I don't have that information in the clinic's knowledge base, so I've forwarded "
+    "your question to our staff to ensure you get an accurate answer. They'll follow "
+    "up with you shortly. Feel free to ask if you need help with anything else in the "
+    "meantime!"
 )
 
 

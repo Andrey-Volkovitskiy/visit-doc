@@ -29,9 +29,9 @@ axes (FR-027d). The same two axes exist at conversation level and the spec does 
 plainly, so the requirements read inconsistently if emphasis is derived from the escalated state:
 
 - FR-029 defines emphasis as "escalated, or holds an unanswered message".
-- FR-003d says a call raised because the **assistant failed** emphasizes the conversation and
-  explicitly does **not** silence it — so it is emphasized while not escalated, which FR-029's
-  enumeration does not cover.
+- FR-003d says a call raised because the **assistant failed**, or because the **corpus could not
+  answer**, emphasizes the conversation and explicitly does **not** silence it — so it is
+  emphasized while not escalated, which FR-029's enumeration does not cover.
 - SC-009f pins that behaviour twice over: such a conversation "remains emphasized until a staff
   member replies, and its permanent mark survives that reply".
 - FR-027e says a conversation whose only remaining marks are permanent must **not** be emphasized —
@@ -43,7 +43,7 @@ plainly, so the requirements read inconsistently if emphasis is derived from the
 One stored fact cannot satisfy those five at once; two can, and they are the same two the spec
 already separates one level down. `attention_since` is set by **every** call to staff and by every
 patient message that arrives while the assistant is silent; it is cleared by a staff message and by
-nothing else. `escalated_at` is set only by the two silencing reasons and is cleared by a staff
+nothing else. `escalated_at` is set only by the one silencing reason and is cleared by a staff
 message *or* the switch. FR-017b is then true by construction rather than by a rule someone has to
 remember: the switch writes one column and never touches the other.
 
@@ -181,9 +181,10 @@ an *attention mark*: which of FR-027a's four kinds it is"), so a second mark has
 
 The order is the strength of the claim on a person: a patient asking for a human is a person
 wanting a person; a corpus gap is a hole in the clinic's own documents; a failure is a thing to
-retry. Silencing follows the mark, which is the conservative direction — a turn that both abstained
-and failed silences, and the failure's "the patient can just retry" is the weaker of the two claims
-to give up.
+retry. Silencing is a **separate** question from the mark, decided by its own set (FR-003d): only
+`patient_asked_for_person` silences, so a turn that both abstained and failed calls staff twice,
+carries the stronger mark, and leaves the assistant answering. The precedence therefore decides
+what the console shows, never whether the patient keeps an assistant.
 
 **The cost is named**: with two calls on one message, the console shows the stronger and the weaker
 survives only in the log. FR-027b's "no call without a mark on the message that caused it" holds —

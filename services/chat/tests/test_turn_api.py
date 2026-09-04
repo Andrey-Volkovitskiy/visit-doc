@@ -1374,17 +1374,60 @@ async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) 
     # all, so there is nothing for a patient to mistake for an answer (FR-003b).
     assert not [line for line in lines if line["type"] == "token"]
 
+    # The one sentence the patient gets says all three things: the knowledge base does
+    # not have it, staff have the question, and the assistant is still available.
+    assert lines[-1]["message"] == _ABSTENTION_MESSAGE
+
     state = await _conversation_state(chat_id)
-    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
-    assert state.may_assistant_reply is False
     assert state.attention_since is not None
     assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
+    # FR-003d: staff were called, and the conversation was not silenced for it - the
+    # corpus gap is one missing answer, not a reason to stop talking to this patient.
+    assert state.escalated_at is None
+    assert state.escalation_reason is None
+    assert state.may_assistant_reply is True
     # Recorded before any generation call, and here that is provable rather than
     # ordered: an abstaining turn makes no generation call at all.
     assert anthropic_client.messages.stream.call_count == 0
 
 
-async def test_an_empty_corpus_abstention_escalates_with_no_exemption() -> None:
+async def test_the_assistant_goes_on_answering_after_an_abstention(
+    seeded_entry: int,
+) -> None:
+    # FR-003d, the half the patient actually feels: the question the documents do not
+    # cover is with staff, and the very next question - which the documents *do* cover
+    # - is answered rather than stored unanswered behind a silence nobody asked for.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(["8am ", "to 5pm."])
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                await async_turn(http, "what is the weather today?")
+                second = await async_turn(http, "when can I visit?")
+
+    lines = [json.loads(line) for line in second.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["grounded"] is True
+    # Answered from the corpus, not from a silent turn: the citation comes out of the
+    # real Qdrant search rather than from anything this test handed the model.
+    assert [c["chunk_text"] for c in lines[-1]["citations"]] == [_ENTRY_CONTENT]
+    assert [line for line in lines if line["type"] == "token"]
+
+    state = await _conversation_state(chat_id)
+    assert state.may_assistant_reply is True
+    # And the first question is still waiting for the person it called.
+    assert state.attention_since is not None
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
+
+
+async def test_an_empty_corpus_abstention_calls_staff_with_no_exemption() -> None:
     # FR-003c/SC-001a. The most tempting exemption in the feature - "there was nothing
     # to find, so nobody need be called" - and the spec rules it out in terms: a
     # visitor whose question the clinic has no answer for is exactly who needs a person.
@@ -1404,10 +1447,14 @@ async def test_an_empty_corpus_abstention_escalates_with_no_exemption() -> None:
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["grounded"] is False
     state = await _conversation_state(chat_id)
-    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+    assert state.attention_since is not None
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
+    # Called staff, and left the assistant answering (FR-003d) - the empty corpus
+    # changes which questions can be answered, not whether the assistant may speak.
+    assert state.may_assistant_reply is True
 
 
-async def test_a_turn_that_escalates_delivers_its_whole_reply_first(
+async def test_a_turn_that_calls_staff_delivers_its_whole_reply_first(
     seeded_entry: int,
 ) -> None:
     # FR-006: the turn runs to completion and the state takes effect at the end of it.
@@ -1446,8 +1493,11 @@ async def test_a_turn_that_escalates_delivers_its_whole_reply_first(
     assert len(assistant) == 1
     assert assistant[0]["content"] == streamed
 
+    # The call to staff took effect at the end of the turn, not at the moment the FAQ
+    # half decided it: the merged reply above is what proves it did not cut in.
     state = await _conversation_state(chat_id)
-    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+    assert state.attention_since is not None
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
 
 
 async def test_the_handoff_turn_asks_the_patient_for_no_confirmation() -> None:

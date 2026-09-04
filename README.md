@@ -378,9 +378,11 @@ capabilities — full rationale and alternatives considered live in
   that conversation's newest message advances past what it holds.
 - **Two silences, two columns.** `escalated_at` answers *may the assistant speak*; `attention_since`
   answers *has a person acted*. They are cleared by different things and disagree in both
-  directions — a failed tool call emphasizes a conversation without silencing it, and the console's
-  switch ends a silence without clearing the emphasis, because taking a conversation is not
-  answering it. One column carrying both passes almost every test and fails exactly those two.
+  directions — a failed tool call and a question the corpus cannot answer each emphasize a
+  conversation without silencing it, and the console's switch ends a silence without clearing the
+  emphasis, because taking a conversation is not answering it. Exactly one thing silences: the
+  patient asking for a person. One column carrying both axes passes almost every test and fails
+  exactly those cases.
 - **The pause is a stored deadline, compared against the database's clock.** Everywhere else in
   this system a date-time judgement is made against the visitor's `local_now`; this one is not,
   because it is a deadline between two people. A client clock would let a patient end a staff

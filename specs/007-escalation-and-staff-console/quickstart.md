@@ -4,7 +4,7 @@
 
 Validates all five user stories end to end, plus the four failure modes that are easy to get wrong
 and invisible in a happy path: a save that fails at each of its three steps, a superseded revision
-being retrieved, a partial session delete, and an escalation that must **not** silence.
+being retrieved, a partial session delete, and the two calls to staff that must **not** silence.
 
 Everything 006's quickstart set up still applies. This feature adds no service and no database, but
 unlike 006 it does add **two environment variables**, **two migrations**, and a great deal of
@@ -80,8 +80,9 @@ Your browser still holds a ~400-day cookie naming a session that no longer exist
 action: an unrecognized cookie is already treated as a first arrival, so you simply get a new
 session on the next load — which is also Scenario 13 step 5, arrived at early.
 
-**Your first FAQ question will abstain, escalate, and silence that conversation** (FR-003c) — that is
-the designed behaviour on an empty corpus, and Scenario 5 is where you fix it. If you want a corpus
+**Your first FAQ question will abstain and call staff** (FR-003c) — that is the designed behaviour
+on an empty corpus, and Scenario 5 is where you fix it. The conversation is **not** silenced by it
+(FR-003d): the assistant answers whatever you ask next, including booking. If you want a corpus
 before you start, note that `/faq` is session-scoped now and needs the cookie:
 
 ```bash
@@ -225,8 +226,17 @@ In a **different, never-escalated** conversation — the point is that a pause n
 4. As the patient, ask: **"Where do I park?"** **Expected**: a grounded answer citing that entry.
 5. Edit the entry to say *four* hours. Ask again. **Expected**: the answer says four, and the
    citation carries the new text (US5 scenario 2).
-6. Delete it and ask again. **Expected**: the assistant abstains — **and that abstention escalates
-   the conversation and silences it** (US5 scenario 4, FR-003).
+6. Delete it and ask again. **Expected**: the assistant abstains — and the reply says all three
+   things at once: the knowledge base does not have it, staff have been given the question, and it
+   can still help with anything else meanwhile (FR-003b, FR-005a). The message carries a
+   **corpus could not answer** mark and the conversation is emphasized (US5 scenario 4, FR-003).
+7. **Expected, and this is the half most easily lost**: the switch is still **on**. Ask *"Where do
+   I park?"* again after re-adding the entry, or any question another entry covers — it is answered
+   in that same conversation (FR-003d, SC-001b). A hole in the documents costs one answer, not the
+   assistant.
+8. Post one staff message into that conversation. **Expected**: the emphasis clears and the
+   **corpus could not answer** mark is **still there** — permanently, because a staff member
+   answering the patient did not add the missing entry (FR-027c).
 
 ---
 

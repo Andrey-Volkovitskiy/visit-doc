@@ -21,7 +21,7 @@ import pytest
 import pytest_asyncio
 from chat.core.config import Settings as ChatSettings
 from chat.db.session import engine, session_factory
-from chat.domain.models import EscalationReason
+from chat.domain.models import AttentionMark
 from chat.main import app
 from chat.repositories import chat_repository
 from chat.repositories.qdrant_repository import (
@@ -253,5 +253,11 @@ async def test_a_deleted_entrys_question_abstains_and_calls_staff() -> None:
             session, chat_id, session_id
         )
     assert state is not None
-    assert state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
-    assert state.may_assistant_reply is False
+    # A person was called for that question - and the conversation was not silenced for
+    # it, so the patient may keep asking while staff follow up (FR-003d).
+    assert state.attention_since is not None
+    assert state.escalated_at is None
+    assert state.may_assistant_reply is True
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER in [m.attention_mark for m in messages]

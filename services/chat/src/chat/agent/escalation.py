@@ -2,7 +2,10 @@
 
 Four things can decide a conversation needs a person - the classifier labelling the
 message `call_staff`, the model calling `escalate_to_staff`, the FAQ path abstaining,
-and a booking tool failing - and none of them writes the transition. Each *records a
+and a booking tool failing - and none of them writes the transition. Calling staff and
+silencing the assistant are separate consequences of one act: all four call staff, only
+the first two silence, and the abstention and the failure leave the assistant answering
+whatever else the patient asks while staff follow up (FR-003d). Each *records a
 request* into one per-turn `EscalationRequests` collector; `turn.py` applies the
 collected result once, after the graph has completed.
 
@@ -31,22 +34,21 @@ from chat.repositories import chat_repository
 # Strongest claim on a person first. A patient asking for a human *is* a person wanting
 # a person; a corpus gap is a hole in the clinic's own documents; a failure is a thing
 # to retry, and the one whose "they can just try again" is the weaker claim to give up
-# (research #6).
+# (research #6). This orders the *mark*, which every reason sets; whether silence
+# follows is `_SILENCING`'s separate question, and only the first reason answers it yes.
 _PRECEDENCE: tuple[EscalationReason, ...] = (
     EscalationReason.PATIENT_ASKED_FOR_PERSON,
     EscalationReason.CORPUS_COULD_NOT_ANSWER,
     EscalationReason.ASSISTANT_FAILED,
 )
 
-# The reasons that stop the assistant replying. `ASSISTANT_FAILED` is absent by
-# requirement, not by omission: a failure raises attention without silencing, because
-# the thing that broke may already be working again (FR-003d).
-_SILENCING = frozenset(
-    {
-        EscalationReason.PATIENT_ASKED_FOR_PERSON,
-        EscalationReason.CORPUS_COULD_NOT_ANSWER,
-    }
-)
+# The reasons that stop the assistant replying - one of the three. The other two are
+# absent by requirement, not by omission (FR-003d): a failure raises attention without
+# silencing because the thing that broke may already be working again, and a corpus gap
+# raises attention without silencing because it is a hole in *one* answer, not in the
+# assistant. Only a patient who asked for a person is owed silence, because only there
+# is more assistant the thing they said they did not want.
+_SILENCING = frozenset({EscalationReason.PATIENT_ASKED_FOR_PERSON})
 
 # Every `EscalationReason` is also an `AttentionMark` of the same name - the mark
 # records on the message what the reason records on the conversation, so the two cannot
@@ -96,8 +98,9 @@ class EscalationRequests:
     def conversation_reason(self) -> EscalationReason | None:
         """The reason this turn silences the conversation for, or None if it does not.
 
-        None is a real answer rather than an absent one: a turn whose only call was
-        `assistant_failed` needs a person without the assistant going quiet.
+        None is a real answer rather than an absent one: a turn whose only calls were
+        `assistant_failed` or `corpus_could_not_answer` needs a person without the
+        assistant going quiet.
         """
         return next(
             (

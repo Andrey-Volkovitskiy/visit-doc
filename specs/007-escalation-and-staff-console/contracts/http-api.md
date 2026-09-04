@@ -134,7 +134,7 @@ what it holds.
       "last_message_at": "2026-09-01T12:03:11.418Z",
       "emphasized": true,
       "escalated": true,
-      "escalation_reason": "corpus_could_not_answer",
+      "escalation_reason": "patient_asked_for_person",
       "attention_since": "2026-09-01T12:02:58.002Z",
       "assistant_may_reply": false,
       "pause_seconds_remaining": null
@@ -148,7 +148,7 @@ what it holds.
 | `conversations` | **Every** chat in the session, emphasized or not (FR-024, FR-027). Not a queue of escalated ones. |
 | ordering | emphasized first; within each group, `attention_since` ascending — longest wait first (FR-027). Unemphasized chats keep the existing list order (newest activity first). |
 | `emphasized` | derived: escalated, or `attention_since` set (FR-029). Every reason looks identical at this level (FR-029, and the spec's Assumptions). |
-| `escalated` / `escalation_reason` | the silencing state and the reason that raised it. `escalation_reason` is `null` exactly when `escalated` is `false`. |
+| `escalated` / `escalation_reason` | the silencing state and the reason that raised it. `escalation_reason` is `null` exactly when `escalated` is `false`. Only `patient_asked_for_person` silences (FR-003d), so it is the only value this field carries today — a corpus gap or a failure emphasizes the conversation without escalating it, and shows up in `emphasized` and in the message's `attention_mark` instead. |
 | `assistant_may_reply` | derived from escalation **and** pause, never stored (FR-017a) — the switch's position. |
 | `pause_seconds_remaining` | integer while a pause is running, `null` otherwise — including while escalated, where there is no deadline to show (FR-017b). Computed server-side, so two tabs count down together (FR-018). |
 | `attention_total` | the count of emphasized conversations. A conversation counts **once**, however many marks sit inside it (Edge Cases). |

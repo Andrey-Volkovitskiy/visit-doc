@@ -31,7 +31,7 @@ renders from it (FR-022, FR-023, research #10).
 | Column | Type | Change | Notes |
 |---|---|---|---|
 | `escalated_at` | `TIMESTAMPTZ NULL` | **NEW** | Non-NULL means **silenced**: the assistant generates nothing here (FR-009). No deadline — nothing about time passing clears it. |
-| `escalation_reason` | `VARCHAR(32) NULL` | **NEW** | `patient_asked_for_person` \| `corpus_could_not_answer`. Set once with `escalated_at`, never overwritten by a later request (FR-007). |
+| `escalation_reason` | `VARCHAR(32) NULL` | **NEW** | The reason that silenced the conversation. `patient_asked_for_person` is the only one that does (FR-003d), so it is the only value written today; the column stays wide because the *set* of silencing reasons is a policy decision, not a schema one. Set once with `escalated_at`, never overwritten by a later request (FR-007). |
 | `assistant_paused_until` | `TIMESTAMPTZ NULL` | **NEW** | The pause **deadline** (FR-018). Written as `now() + interval '2 minutes'`, evaluated as `> now()`, both in SQL — one clock, the database's (research #2). |
 | `attention_since` | `TIMESTAMPTZ NULL` | **NEW** | Non-NULL means **a person is needed here**: emphasis (FR-029), the attention total (FR-028), and the list's ordering (FR-027). |
 
@@ -47,12 +47,12 @@ session and orders by attention, and it is the one query polled every two second
 #### Why four columns and not two
 
 `escalated_at` answers *may the assistant speak*; `attention_since` answers *has a person acted*.
-They are cleared by different things and they disagree in two of the four cases the spec enumerates:
+They are cleared by different things and they disagree in most of the cases the spec enumerates:
 
 | Situation | `escalated_at` | `attention_since` | Effect |
 |---|---|---|---|
 | patient asked for a person | set | set | silenced + emphasized |
-| corpus could not answer | set | set | silenced + emphasized |
+| corpus could not answer (FR-003d) | **not set** | set | **not** silenced, emphasized |
 | assistant failed (FR-003d) | **not set** | set | **not** silenced, emphasized |
 | patient message while silent | not set | set (if unset) | emphasized |
 | staff posts a message | cleared | cleared | speaks again after the pause, no longer emphasized |
@@ -88,7 +88,7 @@ only marked rows, and marked rows are a small minority of a chat's messages.
 | `attention_mark` | Set when | Silences? | Lifetime |
 |---|---|---|---|
 | `patient_asked_for_person` | the model called `escalate_to_staff` | **yes** | cleared by a staff message |
-| `corpus_could_not_answer` | the FAQ path abstained | **yes** | **permanent** |
+| `corpus_could_not_answer` | the FAQ path abstained | no (FR-003d) | **permanent** |
 | `assistant_failed` | a tool errored, a dependency was unreachable, or a write's outcome is unknown | no (FR-003d) | **permanent** |
 | `unanswered` | the message arrived while the assistant was silent | no — it is a *consequence* of silence | cleared by a staff message |
 
@@ -226,7 +226,7 @@ too.
 ```
                     ┌──────────── staff message ─────────────┐
                     │                                        │
-  OPEN ──escalate(asked│corpus)──> ESCALATED ──switch on──> OPEN
+  OPEN ──── escalate(asked) ────> ESCALATED ──switch on──> OPEN
    │                                    │                     ▲
    │                                    └── (no deadline) ─────┘
    │
@@ -242,8 +242,10 @@ it was (FR-017b, research #24). The switch cannot produce an ESCALATED state at 
 records that the assistant asked for a person, which is a fact about what happened.
 ```
 
-`escalate(assistant_failed)` is deliberately absent from this diagram: it sets `attention_since` and
-marks the message, and moves the conversation between none of these states (FR-003d).
+`escalate(assistant_failed)` and `escalate(corpus_could_not_answer)` are deliberately absent from
+this diagram: each sets `attention_since` and marks the message, and moves the conversation between
+none of these states (FR-003d). `patient_asked_for_person` is the only reason with an arrow, which
+is the whole of what "silencing reason" means here.
 
 A staff message performs all of it in one transaction: cancel any running generation, insert the
 message, clear `escalated_at`/`escalation_reason`, clear `attention_since`, clear every clearable

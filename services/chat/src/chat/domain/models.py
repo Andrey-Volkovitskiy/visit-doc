@@ -39,14 +39,16 @@ class EscalationReason(StrEnum):
     """Why staff were called - a Python-level closed set of exactly three values.
 
     Whether a reason silences the assistant is decided by the code that applies the
-    escalation, not by membership here: `PATIENT_ASKED_FOR_PERSON` and
-    `CORPUS_COULD_NOT_ANSWER` silence the conversation, `ASSISTANT_FAILED` does not.
+    escalation, not by membership here: only `PATIENT_ASKED_FOR_PERSON` silences the
+    conversation; `CORPUS_COULD_NOT_ANSWER` and `ASSISTANT_FAILED` do not.
     """
 
     # The three values are the three triggers, so no separate taxonomy exists and no
     # fourth value is legal. A failure is owed a retry - the thing that broke may
-    # already be working - where a patient asking for a human is owed a person, which
-    # is why the third one raises attention without silencing (spec 007 FR-003d).
+    # already be working - and a corpus gap is owed a person for *that question* while
+    # the assistant goes on answering the rest, where a patient asking for a human is
+    # owed a person and nothing else, which is why only the first one silences (spec
+    # 007 FR-003d).
 
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"

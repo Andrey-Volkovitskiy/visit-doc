@@ -121,14 +121,14 @@ async def test_every_conversation_is_listed_emphasized_or_not() -> None:
 async def test_an_escalated_conversation_is_emphasized_and_says_why() -> None:
     session_id = await _session()
     chat_id = await _chat(
-        session_id, escalated=EscalationReason.CORPUS_COULD_NOT_ANSWER
+        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
     )
 
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert row["emphasized"] is True
     assert row["escalated"] is True
-    assert row["escalation_reason"] == EscalationReason.CORPUS_COULD_NOT_ANSWER
+    assert row["escalation_reason"] == EscalationReason.PATIENT_ASKED_FOR_PERSON
     assert row["attention_since"] is not None
 
 

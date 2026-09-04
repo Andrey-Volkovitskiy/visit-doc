@@ -245,7 +245,8 @@ async def test_an_open_conversation_still_runs_the_whole_turn() -> None:
     assert "intent.classified" in [str(entry["event"]) for entry in logs]
     # Nothing was silenced, so nothing carries the mark that records a silence. The
     # message may still carry `corpus_could_not_answer` - this session has an empty
-    # corpus, and an abstention against one escalates like any other (FR-003c).
+    # corpus, and an abstention against one calls staff like any other (FR-003c),
+    # without silencing the conversation it called them for (FR-003d).
     messages = await _messages(chat_id)
     assert all(m.attention_mark != AttentionMark.UNANSWERED for m in messages)
 

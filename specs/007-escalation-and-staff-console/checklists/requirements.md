@@ -31,19 +31,20 @@
 
 ## Notes
 
-Re-validated after a fifth clarification session on 2026-09-01 (4 questions, on scope and posture
-outside the FAQ path). 16/16 items passing throughout. Cumulative state of the feature, and what a
-reviewer should look at:
+Re-validated after a sixth clarification session on 2026-09-04 (1 question, on what a corpus gap
+costs the conversation it happens in). 16/16 items passing throughout. Cumulative state of the
+feature, and what a reviewer should look at:
 
 1. **Calling staff and silencing the assistant are separate consequences.** Three triggers call
-   staff; only two silence (patient asked for a person, corpus could not answer). An assistant
-   *failure* marks and emphasizes but never silences, so a transient outage cannot cost a
-   conversation its assistant (FR-003, FR-003d). This resolved a live contradiction between SC-001a
-   and SC-009e.
+   staff; exactly **one** silences — the patient asked for a person. An assistant *failure* and a
+   corpus gap each mark and emphasize but never silence, so neither a transient outage nor a hole
+   in the documents costs a conversation its assistant (FR-003, FR-003d). This resolved a live
+   contradiction between SC-001a and SC-009e, and the 2026-09-04 session extended the same
+   reasoning to the trigger the first pass left behind.
 
 2. **Two attention axes, deliberately non-aligned.** Which mark silences and which mark is permanent
-   are different questions whose answers disagree on two of the four kinds. FR-027c states the grid
-   explicitly rather than leaving it to be inferred.
+   are different questions whose answers disagree on three of the four kinds. FR-027c states the
+   grid explicitly rather than leaving it to be inferred.
 
 3. **The staff member is not an entity, and has no name either.** Nothing is stored for it and
    nothing is derived for it: a message labelled *Staff* (beside an assistant's *AI assistant*) is
@@ -56,9 +57,9 @@ reviewer should look at:
 
 4. **The FAQ corpus is session-scoped and starts empty.** No template, no seeding, no corpus step in
    provisioning (FR-039, FR-039b). Combined with FR-003c (no empty-corpus exemption), a new
-   session's **first FAQ question escalates and silences that conversation**. This is specified as
-   expected behavior, but it is an emergent consequence of two separate answers and is the most
-   surprising thing in the feature.
+   session's **first FAQ question calls staff**. This is specified as expected behavior, and it is
+   an emergent consequence of two separate answers. Since 2026-09-04 it no longer silences the
+   conversation as well (FR-003d), which is what made it the most surprising thing in the feature.
 
 5. **Admin session deletion added** (FR-046→FR-052), guarded by one secret in environment
    configuration. It gives FR-039c a trigger. It is explicitly not a user role — FR-031 stands — and
@@ -98,7 +99,7 @@ reviewer should look at:
 
 6f. **Empty and unreachable are separated on the retrieval path** (FR-042j). Retrieval now reads the
    session's live revisions before searching, and an empty result and a failed read both yield no
-   revisions — so an unreachable store could silently become "I don't have a confident answer",
+   revisions — so an unreachable store could silently become "I don't have that information",
    which is the "one value, one meaning" collapse the project's principles forbid. They are
    required to produce different outcomes.
 

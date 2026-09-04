@@ -93,7 +93,7 @@ are applied by the same `apply_escalation()`.
 | Caller | Where | Reason recorded | Silences? |
 |---|---|---|---|
 | the **router** | `classify_intent_node`, on `call_staff` among the classified intents | `patient_asked_for_person` | yes |
-| the abstention gate | `answer_faq`, on `is_grounded(...) == False`, **before** any generation call | `corpus_could_not_answer` | yes |
+| the abstention gate | `answer_faq`, on `is_grounded(...) == False`, **before** any generation call | `corpus_could_not_answer` | **no** (FR-003d) |
 | the failure path | `handle_booking`, on an unreachable dependency, an unknown write outcome, or a tool error | `assistant_failed` | **no** (FR-003d) |
 
 **The router records rather than routing to a specialist that can call the tool.** `call_staff` is
@@ -147,7 +147,9 @@ A mixed-intent turn can raise two — an abstaining FAQ half and a failing booki
 same patient message. The collector resolves them without either branch knowing about the other:
 
 - **the conversation's escalation**: the highest-precedence *silencing* reason, if any, and it is
-  set once and never overwritten by a later request (FR-007);
+  set once and never overwritten by a later request (FR-007). Only `patient_asked_for_person`
+  silences (FR-003d), so the mixed turn above — an abstention beside a failure — resolves to
+  **none**: it calls staff twice, marks and emphasizes, and silences nothing;
 - **the message's mark**: the highest of `patient_asked_for_person` > `corpus_could_not_answer` >
   `assistant_failed` (research #6);
 - **`attention_since`**: set if unset, by any of the three (FR-003d);

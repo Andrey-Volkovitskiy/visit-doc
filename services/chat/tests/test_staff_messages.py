@@ -334,7 +334,7 @@ async def test_a_staff_message_leaves_another_conversation_untouched() -> None:
             session,
             sibling.id,
             session_id,
-            EscalationReason.CORPUS_COULD_NOT_ANSWER,
+            EscalationReason.PATIENT_ASKED_FOR_PERSON,
         )
     await engine.dispose()
 
@@ -342,7 +342,7 @@ async def test_a_staff_message_leaves_another_conversation_untouched() -> None:
 
     sibling_state = await _state(sibling.id, session_id)
     assert sibling_state.escalated_at is not None
-    assert sibling_state.escalation_reason == EscalationReason.CORPUS_COULD_NOT_ANSWER
+    assert sibling_state.escalation_reason == EscalationReason.PATIENT_ASKED_FOR_PERSON
 
 
 # --- 007 (FR-013a): a staff message discards whatever was being generated ----------

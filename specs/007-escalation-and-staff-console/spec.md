@@ -81,7 +81,10 @@ management, and FAQ entry management, on one screen beside the patient chat.
   than one answer cut short.
 
 - Q: Does an escalation carry a reason, and is it shown to staff? → A: **Yes — exactly two, the
-  same two FR-003 already defines**: the patient asked for a person, or retrieval abstained. The
+  same two FR-003 already defines**: the patient asked for a person, or retrieval abstained.
+  *(Superseded twice: Session 2026-09-01 added a third reason, and Session 2026-09-04 made only
+  the first of the three silence. FR-007a's closed set of three is the current answer; everything
+  below about the reason travelling with the call still holds.)* The
   reason travels with the escalation, is shown on the conversation in the console, and is carried in
   the escalation record (FR-007a, FR-027a, FR-033). It adds no new taxonomy — the triggers are the
   reasons — and the two are genuinely different work: one is a person wanting a person, the other is
@@ -90,15 +93,16 @@ management, and FAQ entry management, on one screen beside the patient chat.
   thread is what says what the patient wanted, and a summary that can be wrong would be a second,
   less reliable account of it.
 
-- Q: A new session's corpus is empty, so its first FAQ question abstains — does that escalate and
-  silence the conversation, as FR-003 and FR-009 say? → A: **Yes, with no special case.** An
-  abstention is an abstention however few entries the corpus holds, and carving out "the corpus is
-  empty" would give one value two meanings — an abstention that escalates and an abstention that
-  does not — with nothing but a row count separating them. The consequence is accepted and stated
-  rather than hidden (FR-003c): on a brand-new session, the first FAQ question hands its
-  conversation to staff and the assistant goes quiet in it. That is the honest behavior of an
-  assistant with no clinic documents, and the intended first move is to add entries on the FAQ
-  screen — or to answer as staff, which demonstrates the feature this phase is about.
+- Q: A new session's corpus is empty, so its first FAQ question abstains — does that escalate, as
+  FR-003 says? → A: **Yes, with no special case.** An abstention is an abstention however few
+  entries the corpus holds, and carving out "the corpus is empty" would give one value two meanings
+  — an abstention that escalates and an abstention that does not — with nothing but a row count
+  separating them. The consequence is accepted and stated rather than hidden (FR-003c): on a
+  brand-new session, the first FAQ question hands its conversation to staff. That is the honest
+  behavior of an assistant with no clinic documents, and the intended first move is to add entries
+  on the FAQ screen — or to answer as staff, which demonstrates the feature this phase is about.
+  *(Superseded in part by Session 2026-09-04: the handoff happens exactly as described, and the
+  assistant is no longer silenced by it.)*
 
 - Q: Escalation is a tool the agent calls, but the abstention trigger is a deterministic gate with
   no model turn in it — is escalation one capability or two paths? → A: **One capability, several
@@ -281,7 +285,7 @@ management, and FAQ entry management, on one screen beside the patient chat.
 - Q: Retrieval now reads the session's live revisions from the stored rows before searching. An
   empty result and a failed read look identical downstream — both yield no revisions. How are they
   told apart? → A: **They MUST produce different outcomes (FR-042j).** An empty set is the ordinary
-  starting state of every session and abstains and escalates exactly as an empty corpus does
+  starting state of every session and abstains and calls staff exactly as an empty corpus does
   (FR-039b, FR-003c). A failed read is an unreachable dependency, and MUST be reported as one —
   never as an abstention, because an abstention tells the patient the corpus does not answer their
   question, which is a claim nothing verified. Collapsing the two is the "one value, one meaning"
@@ -413,6 +417,32 @@ management, and FAQ entry management, on one screen beside the patient chat.
   or marks (FR-029a): taking a conversation is not answering it, and handing it back is not
   answering it either.
 
+### Session 2026-09-04
+
+- Q: Trigger 2 (the corpus could not answer) silences the conversation until staff act — so one
+  unanswerable question costs the patient the assistant for everything else they might ask. Is that
+  intended? → A: **No. A corpus gap informs staff, marks the message permanently, and emphasizes
+  the conversation, but never silences it** (FR-003d). The gap is in *one answer*, not in the
+  assistant: booking still works, and the next question — which the documents may well cover — is
+  answered rather than queued behind a staff member who has not read the first one yet. This is the
+  same correction Session 2026-09-01 applied to trigger 3, extended to the trigger it left behind,
+  and it leaves exactly **one** silencing reason: the patient asked for a person, the only case
+  where more assistant is the thing they said they did not want.
+
+  What the patient is told changes with it, and the wording is fixed rather than generated
+  (FR-005a): *"I don't have that information in the clinic's knowledge base, so I've forwarded your
+  question to our staff to ensure you get an accurate answer. They'll follow up with you shortly.
+  Feel free to ask if you need help with anything else in the meantime!"* The closing sentence is
+  load-bearing, not politeness — a handoff that reads like a goodbye would leave the patient
+  believing in a silence that is not there.
+
+  Two things this does **not** change. The escalation is still raised on the same signal that
+  produces the abstention, with no empty-corpus exemption (FR-003c) — what a corpus gap costs is the
+  answer, never the call to staff. And the mark stays **permanent** (FR-027c): a staff member
+  replying does not mean the corpus gained the entry it was missing. The grid in FR-027c now has
+  three of its four kinds answering "no" to silencing, which is the clearest statement yet that its
+  two axes are genuinely independent.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Reach a human when the assistant cannot help (Priority: P1)
@@ -454,9 +484,10 @@ patient's full history, post a reply, and verify it appears in the patient's own
    member opens it, **Then** they see the whole conversation — the patient's messages, the
    assistant's earlier replies, and their own if any — in one ordered thread.
 5. **Given** a question the clinic's documents do not answer, **When** the turn runs, **Then** the
-   FAQ path abstains and that abstention escalates the conversation — the patient is told the
-   assistant cannot answer it from clinic documents and that staff now have it, and no speculative
-   answer is generated alongside.
+   FAQ path abstains and that abstention calls staff — the patient is told the knowledge base does
+   not have it, that staff have been given the question, and that they may keep asking about
+   anything else meanwhile, and no speculative answer is generated alongside. The conversation is
+   marked and emphasized; it is **not** silenced (FR-003d).
 5a. **Given** the scheduling service is unreachable, **When** the patient asks to book, **Then**
     staff are called, the message is marked permanently as *assistant failed*, the conversation is
     emphasized — and the assistant is **not** silenced: the patient's next message is answered, and
@@ -638,7 +669,8 @@ from a corpus loaded any other way; this only makes changing it convenient and i
 
 **Independent Test**: Add an entry, then ask the assistant a question it answers and verify the
 answer cites it. Edit the entry and verify the cited text changes. Delete it and verify the
-assistant abstains on the same question.
+assistant abstains on the same question — and that it still answers a question another entry
+covers, in that same conversation.
 
 **Acceptance Scenarios**:
 
@@ -663,7 +695,7 @@ assistant abstains on the same question.
     edit that already succeeded changes nothing and creates no duplicate.
 4. **Given** an existing entry, **When** it is deleted, **Then** the assistant stops answering from
    it, and where it was that question's only support the assistant abstains — and that abstention
-   hands the conversation to staff (FR-003).
+   hands that question to staff while the conversation stays open (FR-003, FR-003d).
 5. **Given** two sessions that have each added the same entry text, **When** one of them deletes
    its copy, **Then** the other session still answers from its own and cites it, unchanged.
 6. **Given** a session that has just been created, **When** the staff member opens the FAQ screen,
@@ -684,17 +716,20 @@ assistant abstains on the same question.
   falls silent from their *next* message: answering half of what they said and then going quiet
   without explanation is worse than handing over cleanly, and writing an appointment for a patient
   who has just asked to stop talking to a machine is the harder of the two to undo.
-- **An escalation raised *during* a turn rather than by the classifier**: the turn finishes. When the
-  model calls the capability mid-loop, or the FAQ path's abstention raises it, every specialist the
-  turn selected completes and its reply is delivered, and the conversation is escalated at the end of
-  that turn (FR-006). Silence starts with the *next* message, never mid-sentence — truncating an
-  answer already being generated would leave the patient with half a reply and nothing explaining it.
-  The distinction from the case above is that the classifier's label is known *before* any specialist
-  starts, so nothing has to be cut off for it to take the turn.
+- **A call to staff raised *during* a turn rather than by the classifier**: the turn finishes. When
+  the model calls the capability mid-loop, or the FAQ path's abstention raises it, every specialist
+  the turn selected completes and its reply is delivered, and the conversation's state changes at
+  the end of that turn (FR-006) — the mark and the emphasis always, and the silence only where the
+  reason is one that silences. Where it is, silence starts with the *next* message, never
+  mid-sentence: truncating an answer already being generated would leave the patient with half a
+  reply and nothing explaining it. The distinction from the case above is that the classifier's
+  label is known *before* any specialist starts, so nothing has to be cut off for it to take the
+  turn.
 - **The FAQ half abstains in a mixed-intent turn whose booking half succeeded**: both halves are
   delivered — the booking is confirmed and the unanswerable question is reported as handed to staff
-  — and the conversation is escalated at the end of that turn. A successful booking does not
-  suppress the handoff, and the handoff does not discard the booking.
+  — and the message is marked and the conversation emphasized at the end of that turn. A successful
+  booking does not suppress the handoff, the handoff does not discard the booking, and neither
+  silences the assistant.
 - **An escalation raised in a conversation that is already escalated**: nothing transitions and the
   conversation is not marked twice. It is recorded as a request that changed nothing, exactly as 006
   records a change asking for a state the appointment already holds.
@@ -733,6 +768,10 @@ assistant abstains on the same question.
   each marks its own message permanently, but the conversation is never silenced, so an FAQ question
   in between is answered as usual. One staff reply removes the emphasis; the three permanent marks
   stay (FR-003d, FR-027c).
+- **The patient asks three questions the corpus does not answer, then one it does**: the first three
+  each call staff and each mark their own message permanently; the fourth is answered normally, from
+  the documents, in the same conversation. The conversation is emphasized once, not three times, and
+  none of it is silenced (FR-003d, FR-027c).
 - **Escalation with the scheduling service down**: unaffected. Escalation is entirely a
   core-backend concern; a chat with no patient record can still be escalated and answered by staff.
 - **A staff reply to a conversation the assistant has just resumed**: accepted, like any other staff
@@ -757,11 +796,11 @@ assistant abstains on the same question.
   corpus. Their old chats, patients, practitioners and appointments are gone with it, deliberately.
   Nothing new is invented for this case, and no code tolerates a half-migrated one.
 - **A brand-new session, before any FAQ entry has been added**: its corpus is empty, so the first
-  FAQ question abstains, escalates, and silences the assistant in that conversation until staff act
-  — deliberately, with no empty-corpus exemption (FR-003c). Other conversations in the session are
-  unaffected (FR-011), and booking still works, so the session is not stuck. Nothing about session
-  creation touches the retrieval store, so a store unreachable at that moment changes nothing here
-  either (FR-039b, FR-039d).
+  FAQ question abstains and calls staff — deliberately, with no empty-corpus exemption (FR-003c).
+  The assistant stays available in that conversation (FR-003d), booking still works, and other
+  conversations in the session are unaffected (FR-011), so nothing about a fresh session is stuck.
+  Nothing about session creation touches the retrieval store, so a store unreachable at that moment
+  changes nothing here either (FR-039b, FR-039d).
 - **An update whose chunk write succeeds but whose publishing commit then fails**: the new revision
   sits in the index unpublished and unreachable, the entry keeps its previous content and stays
   retrievable on it, and the staff member is told the save failed. A retry publishes a further
@@ -827,50 +866,65 @@ assistant abstains on the same question.
 - **FR-002**: The capability MUST be available in every conversation regardless of whether the
   scheduling service is reachable, and regardless of whether the chat has a patient record yet.
   Escalation is a core-backend concern only.
-- **FR-003**: The assistant MUST call staff on exactly three triggers, and no others. Two of them
-  **silence** the assistant in that conversation (FR-009); the third does not (FR-003d):
+- **FR-003**: The assistant MUST call staff on exactly three triggers, and no others. One of them
+  **silences** the assistant in that conversation (FR-009); the other two do not (FR-003d):
   1. **The patient explicitly asks for a person** — to speak to staff, a human, or the clinic
      itself.
   2. **The FAQ path abstains** — retrieval is judged insufficient to answer from, so the turn
      abstains rather than generating. The escalation is raised on the same signal that produces the
-     abstention today, before any generation call is made.
+     abstention today, before any generation call is made. This trigger raises attention without
+     silencing (FR-003d).
   3. **The assistant fails** — it cannot complete what the patient asked because something broke:
      the scheduling service is unreachable, a write's outcome is unknown, or a tool call errored.
      The patient asked for something and the system cannot say what happened to it, which is a
      person's problem, not a sentence the assistant should compose its way out of. This trigger
      raises attention without silencing (FR-003d).
 
-  Triggers 1 and 2 silence because the patient is owed a *person* — fobbing them off with more
-  assistant is the failure being avoided. Trigger 3 is owed a *retry*: the thing that broke may
-  already be working again, and silencing the conversation would take away the fastest route to
-  what the patient actually wanted.
+  Only trigger 1 silences, because only there is more assistant the thing the patient said they did
+  not want — fobbing them off with it is the failure being avoided. Trigger 2 is owed an *answer to
+  one question*: the documents have a hole in them, the assistant does not, and silencing the whole
+  conversation would take away everything else it could still answer while staff fill that hole.
+  Trigger 3 is owed a *retry*: the thing that broke may already be working again, and silencing the
+  conversation would take away the fastest route to what the patient actually wanted.
 - **FR-003a**: A **refusal MUST NOT escalate**, and this is the line between trigger 3 and ordinary
   operation. A refusal is an *answer*: the slot is taken, the time is outside the practitioner's
   hours, the appointment has already started — each names one reason and 006 already requires an
   alternative to be offered with it. A failure is the absence of an answer. The test is whether the
   system can tell the patient what is so: if it can, that is a refusal and the assistant says it; if
   it cannot, that is a failure and a person is fetched.
-- **FR-003c**: An abstention MUST escalate regardless of how much the corpus holds, **including
+- **FR-003c**: An abstention MUST call staff regardless of how much the corpus holds, **including
   when it holds nothing**. There is no empty-corpus exemption: an abstention against an empty corpus
   and an abstention against a corpus that simply does not cover the question are the same outcome to
   the patient, and separating them by a row count would give one value two meanings. The accepted
   consequence is that a session's first FAQ question, asked before any entry has been added, hands
-  that conversation to staff and silences the assistant in it (FR-009).
+  that question to staff — and, since a corpus gap does not silence (FR-003d), leaves the assistant
+  free to answer whatever the patient asks next.
 - **FR-003b**: When the FAQ path abstains, the assistant MUST NOT both abstain and separately
   attempt a speculative answer to the same question. The abstention and the handoff are one
-  outcome: the assistant says it cannot answer that from the clinic's documents and that it has
-  handed the question to staff.
-- **FR-003d**: A call to staff raised because the assistant **failed** MUST NOT silence the
-  assistant. It marks the message permanently (FR-027a, FR-027c) and emphasizes the conversation
-  (FR-029), and the assistant goes on answering — the patient may retry immediately, and an
-  unrelated question in the same conversation is still answered. A transient outage MUST NOT cost a
-  conversation its assistant until a human intervenes.
+  outcome: the assistant says it does not have that information in the clinic's knowledge base,
+  that it has forwarded the question to staff, and that it can still help with anything else in the
+  meantime (FR-005a).
+- **FR-003d**: A call to staff raised because the assistant **failed**, or because the **corpus
+  could not answer**, MUST NOT silence the assistant. Each marks its message permanently (FR-027a,
+  FR-027c) and emphasizes the conversation (FR-029), and the assistant goes on answering — the
+  patient may retry a failure immediately, and a question the documents *do* cover is still
+  answered in the same conversation while staff deal with the one they do not. Neither a transient
+  outage nor a hole in the documents MUST cost a conversation its assistant until a human
+  intervenes. Exactly one reason silences, and it is the patient asking for a person (FR-009).
 - **FR-004**: Escalation MUST NOT require the patient's confirmation. Unlike a change to an
   appointment it alters no record the patient holds, and it is reversible — a staff reply or the
   switch of FR-017 ends it (FR-009a).
 - **FR-005**: In the same turn it escalates, the assistant MUST tell the patient that a staff member
   has been notified and will reply in this conversation. It MUST NOT promise a response time,
   because nothing in the system commits to one.
+- **FR-005a**: Where the call to staff does **not** silence the conversation (FR-003d), the same
+  sentence MUST also say that the assistant remains available for anything else. A patient told
+  only that their question has gone to a person will wait for that person, which is precisely the
+  silence FR-003d exists to avoid — so the state and what the patient believes about it are kept in
+  step by the wording, not left to be inferred. For the abstention this is fixed text, not a
+  generated sentence: *"I don't have that information in the clinic's knowledge base, so I've
+  forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with
+  you shortly. Feel free to ask if you need help with anything else in the meantime!"*
 - **FR-006**: A turn that escalates MUST run to completion first: every specialist the turn selected
   finishes and its reply is delivered, and the conversation's escalated state takes effect at the
   end of that turn (see Edge Cases).
@@ -890,8 +944,8 @@ assistant abstains on the same question.
   message. It means the assistant asked for a person here and no person has dealt with it yet, and
   it does two things at once: it marks the conversation for attention, and it stops the assistant
   replying in it.
-- **FR-009**: A conversation is **escalated** — silenced — when staff were called for one of the two
-  reasons that silence: the patient asked for a person, or the corpus could not answer (FR-003).
+- **FR-009**: A conversation is **escalated** — silenced — when staff were called for the one reason
+  that silences: the patient asked for a person (FR-003).
   While a conversation is escalated the system MUST generate no reply in it — no intent
   classification, no retrieval, no tool call, and no generation call of any kind — and MUST stay
   that way **indefinitely**, until a person deals with it. Unlike the pause (FR-013), an escalation
@@ -1056,7 +1110,7 @@ assistant abstains on the same question.
   | Mark kind | Silences the assistant? | Lifetime |
   |---|---|---|
   | patient asked for a person | yes | cleared by a staff message |
-  | corpus could not answer | yes | permanent |
+  | corpus could not answer | no (FR-003d) | permanent |
   | assistant failed | no (FR-003d) | permanent |
   | unanswered | no — it is a *consequence* of silence | cleared by a staff message |
 
@@ -1067,7 +1121,7 @@ assistant abstains on the same question.
   failure did not happen.
 - **FR-027d**: Neither axis of FR-027c's grid MUST be collapsed into the other. Silencing answers
   "may the assistant speak here"; lifetime answers "has this been dealt with"; and the two disagree
-  on two of the four kinds, which is precisely why one flag cannot carry both. Collapsing them would
+  on three of the four kinds, which is precisely why one flag cannot carry both. Collapsing them would
   either erase a diagnostic record or leave an answered request outstanding forever.
 - **FR-027e**: A conversation whose only remaining marks are permanent MUST NOT be emphasized. The
   permanent marks are a record, not a queue: they stay visible on their messages without asking
@@ -1237,7 +1291,7 @@ assistant abstains on the same question.
   an accepted outcome; no failure in this path MUST take a working entry out of service or require a
   person to repair it before the assistant can answer from it again.
 - **FR-042j**: Retrieval MUST distinguish a session whose corpus is **empty** from one whose live
-  revisions could not be **read**. An empty set MUST abstain and escalate as an empty corpus does
+  revisions could not be **read**. An empty set MUST abstain and call staff as an empty corpus does
   (FR-039b); a failed read MUST be reported as the unreachable dependency it is, and MUST NOT be
   presented to the patient as an abstention, cited as evidence the corpus lacks an answer, or
   counted as a groundedness decision — nothing verified the corpus, so nothing may be claimed about
@@ -1367,11 +1421,15 @@ assistant abstains on the same question.
   conversation — in 100% of attempts across the test suite, including turns where the request is
   mixed with an ordinary question.
 - **SC-001a**: Every abstention ends with a person. Across a suite of questions the corpus does not
-  answer — including a suite run against an **empty** corpus — 100% of abstentions escalate the
-  conversation and say so, and zero produce a generated answer alongside the abstention. Zero
+  answer — including a suite run against an **empty** corpus — 100% of abstentions call staff, mark
+  their message and say so, and zero produce a generated answer alongside the abstention. Zero
   abstentions are exempted for corpus size. Across a suite of booking refusals, zero conversations
-  are marked or emphasized at all; across a suite of unreachable-service runs, zero conversations
-  are *silenced* (FR-003d).
+  are marked or emphasized at all; across a suite of unreachable-service runs and a suite of
+  abstentions alike, zero conversations are *silenced* (FR-003d).
+- **SC-001b**: An abstention never costs a conversation its assistant. Across a suite that abstains
+  and then asks a question the corpus *does* answer in the same conversation, 100% of those second
+  questions are answered and cited, zero are stored unanswered, and 100% of the abstaining messages
+  keep their permanent mark and their emphasis until a staff member replies (FR-003d).
 - **SC-002**: Zero assistant replies are generated while a conversation is silent. Across a suite in
   which patients send further messages into escalated conversations and into paused ones, no
   generation, classification, retrieval, or tool call is issued for any of them.
@@ -1437,7 +1495,9 @@ assistant abstains on the same question.
 - **SC-009f**: A failure never costs a conversation its assistant. Across that same failure suite,
   100% of those conversations answer the patient's very next message — including a retry of the
   thing that failed and an unrelated FAQ question — and zero are silenced (FR-003d). Each remains
-  emphasized until a staff member replies, and its permanent mark survives that reply.
+  emphasized until a staff member replies, and its permanent mark survives that reply. The same
+  measurement over the abstention suite gives the same answer (SC-001b): across both,
+  **one** reason silences a conversation and it is the patient asking for a person.
 - **SC-010**: Every escalation, every resumption, and every pause is recoverable from the logs
   alone: for 100% of transitions, the conversation, which transition it was, and the turn identifier
   are present. Across a suite that escalates conversations already escalated, the number of
@@ -1490,9 +1550,10 @@ assistant abstains on the same question.
   including runs whose sweep is forced to fail, zero superseded chunks are ever retrievable, and
   after each entry's next successful save — or its session's deletion — zero of them remain stored.
 - **SC-015f**: An unreachable corpus is never reported as an empty one. Across a suite that makes
-  the stored rows unreadable mid-turn, zero turns produce an abstention, zero escalate on
+  the stored rows unreadable mid-turn, zero turns produce an abstention, zero call staff on
   groundedness grounds, and 100% report the unreachable dependency; across the same suite run
-  against a genuinely empty corpus, 100% abstain and escalate and zero report a dependency failure.
+  against a genuinely empty corpus, 100% abstain and call staff and zero report a dependency
+  failure.
 - **SC-015e**: The corpus cap holds, costs nothing below it, and binds nothing else. Across a suite
   that fills a session's corpus to the cap, 100% of creates beyond it are refused with a message
   naming the reason, zero of them change either store, and 100% of edits and deletes on the full
@@ -1500,7 +1561,8 @@ assistant abstains on the same question.
   chats, and messages well past any comparable figure, zero are refused for count.
 - **SC-016**: An FAQ change is visible in what the assistant says: after adding an entry, 100% of
   matching questions cite it; after deleting it, 100% of the questions it alone supported end in
-  abstention rather than an unsupported answer.
+  abstention rather than an unsupported answer — and in 100% of those conversations the assistant
+  is still able to answer the next question (FR-003d).
 - **SC-018**: A deleted session leaves nothing behind. Across a suite deleting sessions holding
   chats, messages, marks, a staff member, FAQ entries, patients, practitioners, and appointments,
   100% of those records are gone from both stores afterwards, zero retrievable chunks survive their
@@ -1551,8 +1613,9 @@ assistant abstains on the same question.
   sufficient — two gates, measured thresholds, a typed verdict — not a different consequence of
   deciding it was not. Building the consequence now means 1e re-points an existing caller instead of
   inventing one, which is why this does not violate phase order. **What changes today**: an
-  abstention stops being a dead end. The existing abstention message gains a handoff, so the reply a
-  patient gets on an unanswerable question is different from the one they get now (FR-003, FR-003b).
+  abstention stops being a dead end. The existing abstention message gains a handoff and an explicit
+  offer to keep helping, so the reply a patient gets on an unanswerable question is different from
+  the one they get now (FR-003, FR-003b, FR-005a).
 - **The abstention trigger is whatever the current sufficiency check decides.** This spec does not
   pin the threshold, the number of chunks, or the scoring scale — those are 1e's to measure. It pins
   only that whatever signal makes the assistant abstain is the same signal that escalates, so the
@@ -1567,9 +1630,9 @@ assistant abstains on the same question.
   message, where the mark is. Treating them differently in the list is a later refinement, not a
   requirement this phase carries.
 - **Calling staff and silencing the assistant are separate consequences of one act.** All three
-  reasons call staff; only two of them silence. Treating "staff were called" and "the assistant is
-  quiet" as the same fact was the conflation this session removed, and the grid in FR-027c is what
-  keeps them apart.
+  reasons call staff; only one of them silences. Treating "staff were called" and "the assistant is
+  quiet" as the same fact was the conflation the 2026-09-01 and 2026-09-04 sessions removed, and the
+  grid in FR-027c is what keeps them apart.
 - **The permanent marks are the phase's one piece of retained diagnostics.** They are the only thing
   in this feature that survives being dealt with, and they exist because a corpus gap and a system
   failure are worth counting after the patient has been looked after — which is exactly what Phase
@@ -1691,8 +1754,9 @@ assistant abstains on the same question.
   classification, booking, rescheduling, cancellation, the practitioner and appointment listings,
   chat creation, renaming, and deletion all continue to work unchanged in an open conversation. The
   exceptions are deliberate and are the substance of two clarifications above — an abstention now
-  ends in a handoff instead of a dead end (FR-003), and FAQ answering now reads the session's own
-  corpus instead of a shared one (FR-039).
+  ends in a handoff instead of a dead end, without silencing the conversation it hands over
+  (FR-003, FR-003d), and FAQ answering now reads the session's own corpus instead of a shared one
+  (FR-039).
 - **There is no staff member to model — only a label.** An earlier draft made it a name derived
   from the session identifier; this one drops the name, and with it the pool, the derivation, and
   the requirement that the derivation stay stable across restarts. What remains is `staff` as a

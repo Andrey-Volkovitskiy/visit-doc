@@ -756,6 +756,9 @@ async def test_an_escalation_silences_and_emphasizes_with_no_deadline() -> None:
 async def test_a_second_escalation_transitions_nothing_and_keeps_the_first_reason() -> (
     None
 ):
+    # The guard lives in the write's own `WHERE`, and this layer knows nothing about
+    # which reasons silence - so the two reasons here are simply two distinct values,
+    # and this is the one place that proves a second one cannot overwrite the first.
     session_id, chat_id = await _fresh_chat()
 
     async with session_factory() as session:
@@ -802,7 +805,7 @@ async def test_clearing_the_escalation_leaves_the_attention_alone() -> None:
 
     async with session_factory() as session:
         await chat_repository.set_escalated(
-            session, chat_id, session_id, EscalationReason.CORPUS_COULD_NOT_ANSWER
+            session, chat_id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
         )
         await chat_repository.mark_attention(session, chat_id, session_id)
         await chat_repository.clear_escalation(session, chat_id, session_id)
