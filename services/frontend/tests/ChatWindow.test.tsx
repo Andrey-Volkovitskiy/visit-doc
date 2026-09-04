@@ -209,6 +209,26 @@ describe("ChatWindow", () => {
     );
   });
 
+  it("sends the message when Ctrl+Enter is pressed", async () => {
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(
+      fakeEvents([{ type: "done", grounded: true, citations: [], answer_source: "faq" }]),
+    );
+
+    await renderReady();
+    const textbox = screen.getByLabelText("question");
+    fireEvent.change(textbox, { target: { value: "when can I visit?" } });
+    fireEvent.keyDown(textbox, { key: "Enter", ctrlKey: true });
+
+    await waitFor(() => {
+      expect(chatStream.askChat).toHaveBeenCalledWith(
+        CHAT_ID,
+        "when can I visit?",
+        expect.anything(),
+      );
+    });
+  });
+
   it("does not send when Shift+Enter is pressed, leaving the draft for a newline", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     const askChatSpy = vi.spyOn(chatStream, "askChat");

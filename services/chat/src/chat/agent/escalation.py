@@ -63,8 +63,8 @@ _MARK_BY_REASON = {reason: AttentionMark(reason.value) for reason in _PRECEDENCE
 # Deliberately not the same string as `escalate_to_staff`'s tool result, which is
 # written for the model reading it back rather than for the person reading it.
 HANDOFF_MESSAGE = (
-    "I've passed this to a member of the clinic's staff. They'll reply to you here, "
-    "in this conversation."
+    "Sure. I've passed this to a member of the clinic's staff. "
+    "They'll follow up with you shortly. "
 )
 
 

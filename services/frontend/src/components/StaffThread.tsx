@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
+import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
@@ -250,6 +251,12 @@ export function StaffThread({
         aria-label="reply as staff"
         value={reply}
         onChange={(e) => setReply(e.target.value)}
+        onKeyDown={(e) => {
+          if (isSendKey(e)) {
+            e.preventDefault();
+            void handleSend();
+          }
+        }}
         placeholder="Reply to this patient..."
       />
       {/* Disabled while the post is out so the send visibly *is* happening. That is

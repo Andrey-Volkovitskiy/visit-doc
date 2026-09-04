@@ -131,6 +131,38 @@ describe("StaffThread: writing into it", () => {
     await waitFor(() => expect(post).toHaveBeenCalledWith(CHAT_ID, "On it."));
   });
 
+  it("posts the reply when Enter is pressed, and when Ctrl+Enter is", async () => {
+    const post = vi
+      .spyOn(consoleApi, "postStaffMessage")
+      .mockResolvedValue(message({ id: "s1", sender: "staff", content: "On it." }));
+
+    renderThread();
+    const box = await screen.findByLabelText("reply as staff");
+    fireEvent.change(box, { target: { value: "On it." } });
+    fireEvent.keyDown(box, { key: "Enter", shiftKey: false });
+
+    await waitFor(() => expect(post).toHaveBeenCalledWith(CHAT_ID, "On it."));
+
+    fireEvent.change(box, { target: { value: "And again." } });
+    fireEvent.keyDown(box, { key: "Enter", ctrlKey: true });
+
+    await waitFor(() => expect(post).toHaveBeenCalledWith(CHAT_ID, "And again."));
+  });
+
+  it("does not post on Shift+Enter, leaving the draft for a newline", async () => {
+    const post = vi.spyOn(consoleApi, "postStaffMessage");
+
+    renderThread();
+    const box = (await screen.findByLabelText(
+      "reply as staff",
+    )) as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: "line one" } });
+    fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
+
+    expect(post).not.toHaveBeenCalled();
+    expect(box.value).toBe("line one");
+  });
+
   it("shows the posted reply in the thread without a reload", async () => {
     vi.spyOn(consoleApi, "postStaffMessage").mockResolvedValue(
       message({ id: "s1", sender: "staff", content: "On it." }),

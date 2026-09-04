@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
+import { isSendKey } from "../lib/sendKey";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
 
@@ -295,7 +296,7 @@ export function ChatWindow({
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
+          if (isSendKey(e)) {
             e.preventDefault();
             void handleSend();
           }
