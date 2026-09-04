@@ -194,10 +194,11 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 - **Core backend** — FastAPI, hosting the agent, RAG, chat, and auth. Single deployable for
   everything except Scheduling. Beyond `/chat`, `/chats` and `/faq` it publishes `/console/*` (the
   staff side: the polled conversation listing, posting as staff, the assistant switch, and a proxy
-  of the scheduler's practitioner API) and `/admin/*` (session deletion — guarded by one header
-  secret, and declared `include_in_schema=False` so it appears in no published schema). Those two
-  live in separate modules on purpose: a maintenance surface sharing a module with a published one
-  is one refactor away from sharing its router.
+  of the scheduler's practitioner API) and `/admin/*` (the session listing and session
+  deletion — guarded by one header secret, and declared `include_in_schema=False` so they
+  appear in no published schema). Those two live in separate modules on purpose: a
+  maintenance surface sharing a module with a published one is one refactor away from
+  sharing its router.
 - **Scheduling service** — a separate FastAPI service with its own PostgreSQL, the one deliberate
   service boundary in this phase. Owns doctor calendars, availability, booking, and changes to a
   booking. Talks to the core backend over gRPC (`CheckAvailability`, `BookAppointment`,

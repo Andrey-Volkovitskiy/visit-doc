@@ -29,11 +29,13 @@ from chat.clients.scheduling import (
 )
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
+from chat.domain.models import MessageSender
 from chat.main import app
-from chat.repositories import chat_repository
+from chat.repositories import chat_repository, faq_repository
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 from structlog.testing import capture_logs
+from ulid import ULID
 
 from .conftest import fake_anthropic_client
 
@@ -61,9 +63,36 @@ async def _session_id() -> str:
     return session_row.id
 
 
+# Every route on the admin surface. The guard is a property of the surface rather than
+# of any one route, so the tests below run against all of them - a route added without
+# it fails here instead of shipping open.
+_ROUTES = [
+    ("DELETE", "/admin/sessions"),
+    ("DELETE", "/admin/sessions/01WHATEVER"),
+    ("GET", "/admin/sessions"),
+]
+
+
+async def _seed_one_chat_and_entry(session_id: str) -> None:
+    """Give `session_id` one chat holding one message, and one FAQ entry."""
+    async with session_factory() as session:
+        chat = await chat_repository.create_chat(session, session_id)
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content="hi",
+        )
+        await faq_repository.create(session, session_id, "policy", str(ULID()))
+    await engine.dispose()
+
+
 async def _call(
     path: str,
     *,
+    method: str = "DELETE",
     configured: str = _SECRET,
     headers: dict[str, str | bytes] | None = None,
     params: dict[str, str] | None = None,
@@ -79,24 +108,30 @@ async def _call(
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://t"
             ) as http:
-                return await http.delete(path, headers=headers or {}, params=params)
+                return await http.request(
+                    method, path, headers=headers or {}, params=params
+                )
 
 
 # --- the four properties -------------------------------------------------------------
 
 
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
-async def test_the_secret_is_read_from_the_header(path: str) -> None:
-    response = await _call(path, headers={"X-Admin-Secret": _SECRET})
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
+async def test_the_secret_is_read_from_the_header(method: str, path: str) -> None:
+    response = await _call(path, method=method, headers={"X-Admin-Secret": _SECRET})
 
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
-async def test_the_secret_is_never_accepted_from_a_query_string(path: str) -> None:
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
+async def test_the_secret_is_never_accepted_from_a_query_string(
+    method: str, path: str
+) -> None:
     # A query string reaches access logs and browser history, where the redaction that
     # covers a log event does not follow.
-    response = await _call(path, params={"secret": _SECRET, "admin_secret": _SECRET})
+    response = await _call(
+        path, method=method, params={"secret": _SECRET, "admin_secret": _SECRET}
+    )
 
     assert response.status_code == 403
 
@@ -107,17 +142,17 @@ async def test_the_secret_is_never_accepted_from_a_path_segment() -> None:
     assert response.status_code == 403
 
 
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
-async def test_the_comparison_is_constant_time(path: str) -> None:
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
+async def test_the_comparison_is_constant_time(method: str, path: str) -> None:
     # A refusal that returned faster for a wrong first character would say how much of
     # the secret was right, one request at a time.
     with patch("chat.api.admin.hmac.compare_digest", return_value=True) as compare:
-        await _call(path, headers={"X-Admin-Secret": "wrong"})
+        await _call(path, method=method, headers={"X-Admin-Secret": "wrong"})
 
     compare.assert_called_once()
 
 
-async def test_neither_route_appears_in_the_published_schema() -> None:
+async def test_no_admin_route_appears_in_the_published_schema() -> None:
     # Declared on the decorators: a router cannot retroactively hide its routes from
     # `/openapi.json`.
     await engine.dispose()
@@ -130,17 +165,23 @@ async def test_neither_route_appears_in_the_published_schema() -> None:
 
 
 @pytest.mark.parametrize("configured", ["", "   "])
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
 async def test_an_unconfigured_secret_refuses_every_request(
-    path: str, configured: str
+    method: str, path: str, configured: str
 ) -> None:
     # A deployment that has not configured one has no admin, not an open door.
-    empty_header = await _call(path, configured=configured, headers={})
+    empty_header = await _call(path, method=method, configured=configured, headers={})
     matching_header = await _call(
-        path, configured=configured, headers={"X-Admin-Secret": configured}
+        path,
+        method=method,
+        configured=configured,
+        headers={"X-Admin-Secret": configured},
     )
     anything = await _call(
-        path, configured=configured, headers={"X-Admin-Secret": "anything"}
+        path,
+        method=method,
+        configured=configured,
+        headers={"X-Admin-Secret": "anything"},
     )
 
     assert empty_header.status_code == 403
@@ -181,13 +222,14 @@ async def test_every_refusal_is_the_identical_answer(
     assert response.json() == {"detail": "refused"}
 
 
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
-async def test_a_non_ascii_secret_is_accepted(path: str) -> None:
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
+async def test_a_non_ascii_secret_is_accepted(method: str, path: str) -> None:
     # `compare_digest` refuses a non-ASCII `str` outright, so a comparison made over
     # text would fail every request an operator with an accented passphrase makes -
     # the correct ones included.
     response = await _call(
         path,
+        method=method,
         configured=_NON_ASCII_SECRET,
         headers=_sent_as_utf8(_NON_ASCII_SECRET),
     )
@@ -195,12 +237,16 @@ async def test_a_non_ascii_secret_is_accepted(path: str) -> None:
     assert response.status_code == 200
 
 
-@pytest.mark.parametrize("path", ["/admin/sessions", "/admin/sessions/01WHATEVER"])
-async def test_a_non_ascii_wrong_secret_is_refused_like_any_other(path: str) -> None:
+@pytest.mark.parametrize(("method", "path"), _ROUTES)
+async def test_a_non_ascii_wrong_secret_is_refused_like_any_other(
+    method: str, path: str
+) -> None:
     # And refused, not crashed into: an answer that differs from every other refusal
     # tells a prober their header was read.
     with capture_logs() as logs:
-        response = await _call(path, headers=_sent_as_utf8("café-but-wrong"))
+        response = await _call(
+            path, method=method, headers=_sent_as_utf8("café-but-wrong")
+        )
 
     assert response.status_code == 403
     assert response.json() == {"detail": "refused"}
@@ -231,6 +277,93 @@ async def test_the_secret_never_appears_in_a_response_or_a_log() -> None:
 
 
 # --- what an accepted request does ----------------------------------------------------
+
+
+async def test_the_listing_reports_every_session_oldest_first() -> None:
+    first = await _session_id()
+    second = await _session_id()
+
+    response = await _call(
+        "/admin/sessions", method="GET", headers={"X-Admin-Secret": _SECRET}
+    )
+
+    listed = response.json()["sessions"]
+    assert [s["session_id"] for s in listed] == [first, second]
+
+
+async def test_the_listing_carries_what_deleting_a_session_would_take() -> None:
+    # What the cascade would remove, counted before the deletion is asked for, so an
+    # admin can see the size of what they are about to delete.
+    session_id = await _session_id()
+    await _seed_one_chat_and_entry(session_id)
+
+    response = await _call(
+        "/admin/sessions", method="GET", headers={"X-Admin-Secret": _SECRET}
+    )
+
+    listed = next(
+        s for s in response.json()["sessions"] if s["session_id"] == session_id
+    )
+    assert (listed["chats"], listed["faq_entries"]) == (1, 1)
+    assert listed["last_message_at"] is not None
+    assert listed["created_at"] is not None
+
+
+async def test_the_listing_answers_an_empty_deployment_with_no_sessions() -> None:
+    # An empty list, not a 404: "this service holds none" is an answer, and the route
+    # names no resource that could be missing.
+    response = await _call(
+        "/admin/sessions", method="GET", headers={"X-Admin-Secret": _SECRET}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"sessions": []}
+
+
+async def test_the_listing_never_calls_the_scheduler() -> None:
+    # It reads this service's own stores only, so it stays answerable during an outage
+    # - which is exactly when an admin is looking for what to re-run.
+    session_id = await _session_id()
+
+    with patch(
+        "chat.api.admin.scheduling.delete_session",
+        side_effect=AssertionError("the listing must not reach the scheduler"),
+    ):
+        response = await _call(
+            "/admin/sessions", method="GET", headers={"X-Admin-Secret": _SECRET}
+        )
+
+    assert [s["session_id"] for s in response.json()["sessions"]] == [session_id]
+
+
+async def _scheduler_that_clears_everything(
+    channel: object, settings: object, *, session_id: str
+) -> SessionPurge:
+    """A reachable `delete_session` that had nothing of its own to remove."""
+    return SessionPurge(
+        patients_deleted=0, practitioners_deleted=0, appointments_deleted=0
+    )
+
+
+async def test_a_deleted_session_is_gone_from_the_listing() -> None:
+    # The two routes read the same store, so what a sweep reports as deleted must be
+    # what the next listing no longer offers.
+    kept = await _session_id()
+    removed = await _session_id()
+
+    with patch(
+        "chat.api.admin.scheduling.delete_session",
+        new=_scheduler_that_clears_everything,
+    ):
+        deletion = await _call(
+            f"/admin/sessions/{removed}", headers={"X-Admin-Secret": _SECRET}
+        )
+    response = await _call(
+        "/admin/sessions", method="GET", headers={"X-Admin-Secret": _SECRET}
+    )
+
+    assert deletion.json()["results"][0]["status"] == "deleted"
+    assert [s["session_id"] for s in response.json()["sessions"]] == [kept]
 
 
 async def test_deleting_one_session_reports_it_per_session() -> None:

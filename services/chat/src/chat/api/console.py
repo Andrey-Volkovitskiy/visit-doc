@@ -339,7 +339,7 @@ async def _resume(
 
 # --- the practitioner proxy ---------------------------------------------------------
 #
-# Four routes that re-implement nothing. Every rule, default and refusal belongs to the
+# Five routes that re-implement nothing. Every rule, default and refusal belongs to the
 # scheduler, which owns practitioners; this side carries the session the browser is not
 # allowed to read and relays the answer exactly as it came back (FR-035, FR-036).
 
@@ -392,6 +392,18 @@ async def _proxy(
     if proxied.body is None:
         return Response(status_code=proxied.status_code)
     return JSONResponse(status_code=proxied.status_code, content=proxied.body)
+
+
+@router.get("/console/specialties")
+async def list_specialties(request: Request) -> Response:
+    """Return the closed list of specialties a practitioner may be given.
+
+    The scheduler owns the set, so a chooser is populated from it rather than from a
+    list written out again here - a second copy is one the enum can be extended without,
+    and a value it does not recognise is refused at the write with nothing on screen to
+    explain why.
+    """
+    return await _proxy(request, "GET", "/specialties")
 
 
 @router.get("/console/practitioners")

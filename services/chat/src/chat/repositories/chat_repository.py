@@ -975,11 +975,73 @@ class SessionDeletion:
 async def list_session_ids(session: AsyncSession) -> list[str]:
     """Return every session this service holds, oldest first.
 
-    The one query in this module with no session predicate, because the session *is*
-    what it enumerates - and it is reachable only from the admin surface.
+    One of the two queries in this module with no session predicate, because the
+    session *is* what it enumerates - and both are reachable only from the admin
+    surface. Ordered by id within a timestamp, since `created_at` defaults to the
+    transaction's clock and two sessions can share it exactly.
     """
-    result = await session.execute(select(Session.id).order_by(Session.created_at))
+    result = await session.execute(
+        select(Session.id).order_by(Session.created_at, Session.id)
+    )
     return list(result.scalars().all())
+
+
+@dataclass(frozen=True)
+class SessionSummary:
+    """One session as the admin surface lists it, with what deleting it would take.
+
+    `chats` and `faq_entries` are the two counts a deletion reports, read here before
+    the fact, so a listing and a deletion report describe a session in the same terms.
+    `last_message_at` is the newest message in any of its chats, and None for a session
+    that holds none - a session created by a visit that never said anything.
+    """
+
+    session_id: str
+    created_at: datetime
+    chats: int
+    faq_entries: int
+    last_message_at: datetime | None
+
+
+async def list_sessions(session: AsyncSession) -> list[SessionSummary]:
+    """Return every session this service holds, oldest first, with its counts.
+
+    The order is `list_session_ids`', so a listing read beforehand lines up row for row
+    with the report a sweep of every session returns.
+
+    The counts are correlated subqueries rather than joins: a session joined to both
+    its chats and its FAQ entries multiplies one against the other, and a count taken
+    over that product is wrong for every session holding more than one of either.
+    """
+    chats = (
+        select(func.count())
+        .select_from(Chat)
+        .where(Chat.session_id == Session.id)
+        .scalar_subquery()
+    )
+    faq_entries = (
+        select(func.count())
+        .select_from(FaqEntry)
+        .where(FaqEntry.session_id == Session.id)
+        .scalar_subquery()
+    )
+    last_message_at = (
+        select(func.max(Message.created_at))
+        .select_from(Message)
+        .join(Chat, Chat.id == Message.chat_id)
+        .where(Chat.session_id == Session.id)
+        .scalar_subquery()
+    )
+    result = await session.execute(
+        select(
+            Session.id,
+            Session.created_at,
+            chats,
+            faq_entries,
+            last_message_at,
+        ).order_by(Session.created_at, Session.id)
+    )
+    return [SessionSummary(*row) for row in result.all()]
 
 
 async def delete_session(session: AsyncSession, session_id: str) -> SessionDeletion:

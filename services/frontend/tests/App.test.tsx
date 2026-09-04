@@ -28,6 +28,9 @@ beforeEach(() => {
   });
   vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
   vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([]);
+  vi.spyOn(consoleApi, "fetchSpecialties").mockResolvedValue([
+    "General Practice",
+  ]);
   vi.spyOn(consoleApi, "fetchFaqEntries").mockResolvedValue([]);
 });
 
@@ -39,12 +42,16 @@ describe("App: first arrival", () => {
       .spyOn(chatStream, "fetchChats")
       .mockResolvedValueOnce(listing({ session_exists: false }))
       .mockResolvedValue(listing({ chats: [chat()] }));
-    const createChat = vi.spyOn(chatStream, "createChat").mockResolvedValue(chat());
+    const createChat = vi
+      .spyOn(chatStream, "createChat")
+      .mockResolvedValue(chat());
 
     render(<App />);
 
     await waitFor(() => expect(createChat).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Ada Lovelace")).toBeInTheDocument(),
+    );
     expect(fetchChats).toHaveBeenCalled();
   });
 
@@ -56,7 +63,9 @@ describe("App: first arrival", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByLabelText("question")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText("question")).toBeInTheDocument(),
+    );
     expect(screen.queryByTestId("no-chat")).toBeNull();
   });
 
@@ -70,7 +79,9 @@ describe("App: first arrival", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByTestId("no-chat")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("no-chat")).toBeInTheDocument(),
+    );
     expect(createChat).not.toHaveBeenCalled();
   });
 
@@ -82,7 +93,9 @@ describe("App: first arrival", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Ada Lovelace")).toBeInTheDocument(),
+    );
     expect(createChat).not.toHaveBeenCalled();
   });
 
@@ -110,7 +123,9 @@ describe("App: first arrival", () => {
     vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
       listing({ session_exists: false }),
     );
-    vi.spyOn(chatStream, "createChat").mockRejectedValue(new Error("network error"));
+    vi.spyOn(chatStream, "createChat").mockRejectedValue(
+      new Error("network error"),
+    );
 
     render(<App />);
 
@@ -126,7 +141,9 @@ describe("App: renaming a chat's patient", () => {
     // worked.
     const fetchChats = vi
       .spyOn(chatStream, "fetchChats")
-      .mockResolvedValue(listing({ chats: [chat({ id: "a", patient_name: "Ada" })] }));
+      .mockResolvedValue(
+        listing({ chats: [chat({ id: "a", patient_name: "Ada" })] }),
+      );
     vi.spyOn(chatStream, "renameChatPatient").mockResolvedValue({
       chat_id: "a",
       patient_name: "Grace Hopper",
@@ -210,7 +227,9 @@ describe("App: the patient side and the staff side together", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByTestId("patient-pane")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("patient-pane")).toBeInTheDocument(),
+    );
     expect(screen.getByTestId("staff-pane")).toBeInTheDocument();
   });
 
@@ -223,7 +242,9 @@ describe("App: the patient side and the staff side together", () => {
 
     const { container } = render(<App />);
 
-    await waitFor(() => expect(screen.getByTestId("staff-pane")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-pane")).toBeInTheDocument(),
+    );
     expect(
       screen.queryByText(/sign in|log in|password|username|authenticate/i),
     ).toBeNull();
@@ -237,7 +258,9 @@ describe("App: the patient side and the staff side together", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByTestId("staff-pane")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-pane")).toBeInTheDocument(),
+    );
     expect(screen.getByTestId("no-chat")).toBeInTheDocument();
   });
 });
@@ -275,7 +298,9 @@ describe("App: the console read model reaches both panes", () => {
     vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
       listing({ chats: [chat({ id: "01PATIENTCHAT" })] }),
     );
-    const fetchThread = vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValue([]);
     vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
       attention_total: 1,
       conversations: [
@@ -298,7 +323,10 @@ describe("App: the console read model reaches both panes", () => {
     fireEvent.click(await screen.findByTestId("staff-conversation"));
 
     await waitFor(() =>
-      expect(fetchThread).toHaveBeenCalledWith("01STAFFCHAT", expect.any(AbortSignal)),
+      expect(fetchThread).toHaveBeenCalledWith(
+        "01STAFFCHAT",
+        expect.any(AbortSignal),
+      ),
     );
     expect(chatStream.fetchChatHistory).toHaveBeenCalledWith(
       "01PATIENTCHAT",
@@ -315,7 +343,7 @@ function practitioner(
   return {
     id: "01PRACT0000000000000000000",
     full_name: "Dr. Ada Lovelace",
-    specialty: "general_practice",
+    specialty: "General Practice",
     appointment_duration_minutes: 30,
     schedule: [{ weekday: 0, start_time: "09:00", end_time: "17:00" }],
     ...overrides,
@@ -353,7 +381,9 @@ describe("App: the panels that can only read a session", () => {
 
     mintSession();
 
-    await waitFor(() => expect(consoleApi.fetchPractitioners).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(consoleApi.fetchPractitioners).toHaveBeenCalled(),
+    );
     expect(consoleApi.fetchFaqEntries).toHaveBeenCalled();
   });
 
@@ -374,12 +404,20 @@ describe("App: the panels that can only read a session", () => {
       if (!sessionMinted) throw new Error("no session");
       return [practitioner()];
     });
+    // The chooser's set is read on the same mount and is refused the same way, so a
+    // panel let in too early would hold *its* refusal for good just as surely.
+    vi.spyOn(consoleApi, "fetchSpecialties").mockImplementation(async () => {
+      if (!sessionMinted) throw new Error("no session");
+      return ["General Practice"];
+    });
 
     render(<App />);
 
     // Nothing here reloads the page or remounts anything by hand: the roster arrives
     // because the panel was withheld until the session it reads existed.
-    await waitFor(() => expect(screen.getByTestId("practitioner")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner")).toBeInTheDocument(),
+    );
     expect(screen.queryByTestId("no-practitioners")).toBeNull();
     expect(screen.queryByTestId("practitioner-error")).toBeNull();
   });
@@ -394,7 +432,9 @@ describe("App: the panels that can only read a session", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(consoleApi.fetchPractitioners).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(consoleApi.fetchPractitioners).toHaveBeenCalled(),
+    );
     expect(consoleApi.fetchFaqEntries).toHaveBeenCalled();
     expect(createChat).not.toHaveBeenCalled();
   });
@@ -406,11 +446,15 @@ describe("App: the panels that can only read a session", () => {
     vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
       listing({ session_exists: false }),
     );
-    vi.spyOn(chatStream, "createChat").mockRejectedValue(new Error("network error"));
+    vi.spyOn(chatStream, "createChat").mockRejectedValue(
+      new Error("network error"),
+    );
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByTestId("chat-list-error")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("chat-list-error")).toBeInTheDocument(),
+    );
     expect(screen.queryByTestId("practitioner-admin")).toBeNull();
     expect(screen.queryByTestId("no-practitioners")).toBeNull();
     expect(screen.queryByTestId("faq-admin")).toBeNull();

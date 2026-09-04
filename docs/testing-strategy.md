@@ -270,17 +270,39 @@ make test-e2e           # uv run pytest tests/e2e
 
 The tiers are not the same size, and treating them as if they were is what makes a change feel
 slow. Rough shape on a developer machine: `test-frontend` ~15s, `test-integration` ~45s, the
-scheduler and package suites ~2m together, and **`services/chat/tests` alone is 5-9 minutes** — it
-holds most of the coverage and every test in it talks to real Postgres and real Qdrant.
+scheduler and package suites ~2m together, and **`services/chat/tests` alone is about 6 minutes** —
+it holds most of the coverage and every test in it talks to real Postgres and real Qdrant.
 
-- **Iterate with a scoped run**, not the whole tier: `uv run pytest services/chat/tests/test_turn_api.py`,
-  or `-k` a name. Seconds instead of minutes, and the failure you are chasing is the only thing on
-  screen.
+**So: iterate with scoped runs, and run the full chat suite exactly once, at the end.** While you
+are chasing a particular problem, run only the tests that cover it — a file
+(`uv run pytest services/chat/tests/test_turn_api.py`) or `-k` a name. Seconds instead of minutes,
+and the failure you are chasing is the only thing on screen. Then, once you have finished changing
+code and are about to hand the work back, run the full suite a single time to confirm nothing else
+broke. Both halves matter and neither substitutes for the other: a run in the middle spends six
+minutes re-proving what the scoped run already showed, and skipping the one at the end leaves the
+thing you broke underneath something you were not looking at for somebody else to find. A scoped
+run proves the thing you changed; only the full one speaks for the rest.
+
 - **Run the full tier in the background and collect it once**, rather than watching it — start it,
-  do something else, read the result when it lands. Polling a nine-minute suite costs the nine
+  do something else, read the result when it lands. Polling a six-minute suite costs the six
   minutes *and* your attention.
-- **Run it once more before you call the work done.** A scoped run proves the thing you changed; it
-  says nothing about what you changed underneath something else.
+- **Never run two database-backed tiers at once locally.** The chat suite, the scheduler suite and
+  the integration tier are not independent jobs here. `tests/integration/conftest.py` isolates
+  `DATABASE_URL`, `QDRANT_COLLECTION_NAME` and `SCHEDULER_DATABASE_URL` through the same
+  `shared_db.testing` helpers the per-package suites use — which is the point, and it also means it
+  lands on the *same* `visitdoc_chat_test`, `faq_chunks_test` and `visitdoc_scheduler_test`, in the
+  same local containers. All of them truncate every table before each test, so `make test-unit`
+  alongside `make test-integration` has each tier deleting the other's rows mid-test. The failures
+  then land wherever the timing put them rather than on anything either tier is testing, and read as
+  a broad regression in code neither run touched. Backgrounding a tier is still right (previous
+  bullet); starting a second database-backed one while it runs is not.
+
+  Three things are *not* this hazard. **`make test-frontend` may run alongside anything** — vitest
+  is jsdom with the network faked at the `chatStream`/`consoleApi` seam, so it touches no database,
+  no Qdrant and no running service, and starting it next to a Python tier costs nothing. Neither is
+  running within one tier, since `make test-unit` is a single sequential pytest process over the
+  four package suites. Nor is CI, where `test` and `integration` are separate jobs that each get
+  their own `postgres`/`qdrant` service containers and so share no database at all.
 - **`pytest-xdist` is not the shortcut here.** The chat suite shares one module-level async engine
   bound to a session-scoped event loop, and the scheduler suite truncates every table between
   tests — parallel workers would collide on both. Speed has to come from scoping, not from workers.

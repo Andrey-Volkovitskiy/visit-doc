@@ -241,7 +241,10 @@ landed, and the cascade took it away again.
 ## `/console/practitioners` — NEW (a proxy, not a second implementation)
 
 Four routes — `GET`, `POST`, `PATCH /{id}`, `DELETE /{id}` — forwarding to the scheduler's existing
-`/practitioners` REST API with `X-Session-Id` taken from the cookie session (FR-036, SC-012).
+`/practitioners` REST API with `X-Session-Id` taken from the cookie session (FR-036, SC-012). A fifth,
+`GET /console/specialties`, forwards the same way to the scheduler's `/specialties`, so the console's
+specialty chooser is populated from the set that owns it rather than from a copy that can disagree
+with it.
 
 **Request and response bodies are the scheduler's own, relayed unchanged.** So are its status codes
 and its refusal messages: `409` for a duplicate name, `422` for overlapping working ranges, `404`

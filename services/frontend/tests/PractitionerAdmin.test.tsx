@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PractitionerAdmin } from "../src/components/PractitionerAdmin";
 import * as consoleApi from "../src/lib/consoleApi";
@@ -8,23 +14,42 @@ function practitioner(overrides: Partial<Practitioner> = {}): Practitioner {
   return {
     id: "01PRACT0000000000000000000",
     full_name: "Dr. Ada Lovelace",
-    specialty: "general_practice",
+    specialty: "General Practice",
     appointment_duration_minutes: 30,
     schedule: [{ weekday: 0, start_time: "09:00", end_time: "17:00" }],
     ...overrides,
   };
 }
 
+// The closed set the scheduler publishes, as `GET /console/specialties` renders it.
+const SPECIALTIES = [
+  "Cardiology",
+  "Dentistry",
+  "Dermatology",
+  "General Practice",
+  "Gynecology",
+  "Neurology",
+  "Ophthalmology",
+  "Orthopedics",
+  "Pediatrics",
+  "Psychiatry",
+];
+
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([practitioner()]);
+  vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([
+    practitioner(),
+  ]);
+  vi.spyOn(consoleApi, "fetchSpecialties").mockResolvedValue(SPECIALTIES);
 });
 
 describe("PractitionerAdmin: the roster", () => {
   it("lists the clinic's practitioners with what the assistant books from", async () => {
     render(<PractitionerAdmin />);
 
-    expect(await screen.findByDisplayValue("Dr. Ada Lovelace")).toBeInTheDocument();
+    expect(
+      await screen.findByDisplayValue("Dr. Ada Lovelace"),
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue("30")).toBeInTheDocument();
     expect(screen.getByDisplayValue("09:00")).toBeInTheDocument();
   });
@@ -54,6 +79,84 @@ describe("PractitionerAdmin: the roster", () => {
   });
 });
 
+describe("PractitionerAdmin: the specialty chooser", () => {
+  it("offers the set the scheduler publishes, rather than a list of its own", async () => {
+    // A list written out on this side is one the enum can be extended without, and a
+    // value it does not recognise is refused at the write with nothing on screen to
+    // explain why.
+    render(<PractitionerAdmin />);
+
+    const chooser = await screen.findByLabelText("Specialty");
+    await waitFor(() =>
+      expect(
+        [...chooser.querySelectorAll("option")].map((o) => o.value),
+      ).toEqual(SPECIALTIES),
+    );
+  });
+
+  it("shows a practitioner as what they are, not as the first option", async () => {
+    // A `<select>` whose value matches no option renders the first one instead, so a
+    // chooser missing a stored specialty states, confidently, that a dentist is a
+    // general practitioner.
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([
+      practitioner({ specialty: "Dentistry" }),
+    ]);
+    vi.spyOn(consoleApi, "fetchSpecialties").mockResolvedValue([
+      "Cardiology",
+      "General Practice",
+    ]);
+
+    render(<PractitionerAdmin />);
+
+    const chooser = await screen.findByLabelText("Specialty");
+    await waitFor(() =>
+      expect((chooser as HTMLSelectElement).value).toBe("Dentistry"),
+    );
+  });
+
+  it("still shows the stored specialty when the set could not be read", async () => {
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([
+      practitioner({ specialty: "Dentistry" }),
+    ]);
+    vi.spyOn(consoleApi, "fetchSpecialties").mockRejectedValue(
+      new Error("scheduling is unavailable; nothing was changed"),
+    );
+
+    render(<PractitionerAdmin />);
+
+    const chooser = await screen.findByLabelText("Specialty");
+    await waitFor(() =>
+      expect((chooser as HTMLSelectElement).value).toBe("Dentistry"),
+    );
+    expect(screen.getByTestId("practitioner-error")).toHaveTextContent(
+      "scheduling is unavailable",
+    );
+  });
+
+  it("sends the chosen specialty exactly as the scheduler named it", async () => {
+    const update = vi
+      .spyOn(consoleApi, "updatePractitioner")
+      .mockResolvedValue(practitioner({ specialty: "Dentistry" }));
+
+    render(<PractitionerAdmin />);
+    const chooser = await screen.findByLabelText("Specialty");
+    await waitFor(() =>
+      expect(chooser.querySelectorAll("option")).toHaveLength(
+        SPECIALTIES.length,
+      ),
+    );
+    fireEvent.change(chooser, { target: { value: "Dentistry" } });
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith(
+        "01PRACT0000000000000000000",
+        expect.objectContaining({ specialty: "Dentistry" }),
+      ),
+    );
+  });
+});
+
 describe("PractitionerAdmin: creating", () => {
   it("creates with every field blank and shows back the name it was given", async () => {
     // The defaults, including the pool-assigned name, belong to the service that owns
@@ -61,7 +164,9 @@ describe("PractitionerAdmin: creating", () => {
     // and the name that comes back is the answer rather than an echo.
     const create = vi
       .spyOn(consoleApi, "createPractitioner")
-      .mockResolvedValue(practitioner({ id: "01NEW", full_name: "Dr. Grace Hopper" }));
+      .mockResolvedValue(
+        practitioner({ id: "01NEW", full_name: "Dr. Grace Hopper" }),
+      );
 
     render(<PractitionerAdmin />);
     fireEvent.click(await screen.findByText("Add practitioner"));
@@ -94,16 +199,12 @@ describe("PractitionerAdmin: creating", () => {
 
 describe("PractitionerAdmin: editing", () => {
   it("saves the fields and the working hours together", async () => {
-    const update = vi
-      .spyOn(consoleApi, "updatePractitioner")
-      .mockResolvedValue(
-        practitioner({
-          full_name: "Dr. Grace Hopper",
-          schedule: [
-            { weekday: 0, start_time: "10:00", end_time: "17:00" },
-          ],
-        }),
-      );
+    const update = vi.spyOn(consoleApi, "updatePractitioner").mockResolvedValue(
+      practitioner({
+        full_name: "Dr. Grace Hopper",
+        schedule: [{ weekday: 0, start_time: "10:00", end_time: "17:00" }],
+      }),
+    );
 
     render(<PractitionerAdmin />);
     fireEvent.change(await screen.findByDisplayValue("Dr. Ada Lovelace"), {
@@ -117,7 +218,7 @@ describe("PractitionerAdmin: editing", () => {
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith("01PRACT0000000000000000000", {
         full_name: "Dr. Grace Hopper",
-        specialty: "general_practice",
+        specialty: "General Practice",
         appointment_duration_minutes: 30,
         schedule: [{ weekday: 0, start_time: "10:00", end_time: "17:00" }],
       }),
@@ -136,7 +237,9 @@ describe("PractitionerAdmin: editing", () => {
     fireEvent.click(screen.getByText("Save"));
 
     await waitFor(() =>
-      expect(screen.getByDisplayValue("Dr. Grace B. Hopper")).toBeInTheDocument(),
+      expect(
+        screen.getByDisplayValue("Dr. Grace B. Hopper"),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -189,7 +292,9 @@ describe("PractitionerAdmin: deleting", () => {
 
   it("leaves the practitioner in place when the delete is refused", async () => {
     vi.spyOn(consoleApi, "deletePractitioner").mockRejectedValue(
-      new Error("scheduling did not answer; the change may not have been applied"),
+      new Error(
+        "scheduling did not answer; the change may not have been applied",
+      ),
     );
 
     render(<PractitionerAdmin />);
@@ -211,7 +316,10 @@ describe("PractitionerAdmin: the credential the page never holds", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response("[]", { status: 200, headers: { "content-type": "application/json" } }),
+      new Response("[]", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
     );
   });
 
@@ -366,7 +474,9 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     // a client-side bound would be a second copy of that rule, free to disagree.
     const save = vi
       .spyOn(consoleApi, "updatePractitioner")
-      .mockRejectedValue(new Error("appointment_duration_minutes must be 5 to 480"));
+      .mockRejectedValue(
+        new Error("appointment_duration_minutes must be 5 to 480"),
+      );
 
     render(<PractitionerAdmin />);
     const minutes = await screen.findByLabelText("Appointment minutes");
@@ -389,13 +499,11 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     // double-clicked Delete made the second call a 404, reported to the staff member as
     // a failure for a delete that worked.
     let landSave!: (saved: Practitioner) => void;
-    const save = vi
-      .spyOn(consoleApi, "updatePractitioner")
-      .mockReturnValue(
-        new Promise<Practitioner>((resolve) => {
-          landSave = resolve;
-        }),
-      );
+    const save = vi.spyOn(consoleApi, "updatePractitioner").mockReturnValue(
+      new Promise<Practitioner>((resolve) => {
+        landSave = resolve;
+      }),
+    );
     let landDelete!: () => void;
     const remove = vi.spyOn(consoleApi, "deletePractitioner").mockReturnValue(
       new Promise<void>((resolve) => {

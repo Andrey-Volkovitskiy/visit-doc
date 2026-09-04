@@ -3,6 +3,7 @@ import {
   createPractitioner,
   deletePractitioner,
   fetchPractitioners,
+  fetchSpecialties,
   updatePractitioner,
   type Practitioner,
   type WorkingRange,
@@ -21,13 +22,19 @@ const WEEKDAYS = [
   "Sunday",
 ];
 
-const SPECIALTIES = [
-  "general_practice",
-  "cardiology",
-  "dermatology",
-  "paediatrics",
-  "physiotherapy",
-];
+/**
+ * The options to offer for a practitioner who is currently `specialty`.
+ *
+ * Their own specialty is always among them, even when the fetched list does not hold
+ * it - a list that arrived short, or not at all, must not make the chooser render a
+ * practitioner as somebody else. A `<select>` whose value matches no option falls back
+ * to displaying the first one, so the screen would read as a confident statement about
+ * a specialty nobody chose.
+ */
+function optionsFor(specialties: string[], specialty: string): string[] {
+  if (specialties.includes(specialty)) return specialties;
+  return [specialty, ...specialties];
+}
 
 function withRange(
   practitioner: Practitioner,
@@ -68,6 +75,9 @@ function isWholeMinutes(raw: string): boolean {
  */
 export function PractitionerAdmin() {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  // Fetched, never written out here: see `fetchSpecialties`. Empty until it arrives,
+  // which `optionsFor` covers - a row still offers the specialty it already has.
+  const [specialties, setSpecialties] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   // One latch for every gesture on this pane, keyed by what the gesture is about, so a
   // second click on any of them is refused rather than only on Add. See `useBusyLatch`.
@@ -82,7 +92,9 @@ export function PractitionerAdmin() {
   // sent a duration nobody chose, or a `NaN` that `JSON.stringify` writes as an explicit
   // `null` on a PATCH whose contract is that omitted fields are left untouched. So the
   // row keeps the last real number and this keeps what is on screen, until it is one.
-  const [durationDrafts, setDurationDrafts] = useState<Record<string, string>>({});
+  const [durationDrafts, setDurationDrafts] = useState<Record<string, string>>(
+    {},
+  );
 
   const report = useCallback((err: unknown, fallback: string): void => {
     setError(err instanceof Error ? err.message : fallback);
@@ -92,7 +104,15 @@ export function PractitionerAdmin() {
     void fetchPractitioners()
       .then(setPractitioners)
       // Without this the screen sits empty with nothing explaining why.
-      .catch((err: unknown) => report(err, "Could not load the practitioners."));
+      .catch((err: unknown) =>
+        report(err, "Could not load the practitioners."),
+      );
+    // Its own request and its own failure: the roster is still editable without the
+    // chooser's other options, so one arriving late or not at all must not empty the
+    // screen or take the roster's error message away.
+    void fetchSpecialties()
+      .then(setSpecialties)
+      .catch((err: unknown) => report(err, "Could not load the specialties."));
   }, [report]);
 
   function replace(saved: Practitioner): void {
@@ -170,7 +190,8 @@ export function PractitionerAdmin() {
           await updatePractitioner(practitioner.id, {
             full_name: practitioner.full_name,
             specialty: practitioner.specialty,
-            appointment_duration_minutes: practitioner.appointment_duration_minutes,
+            appointment_duration_minutes:
+              practitioner.appointment_duration_minutes,
             schedule: practitioner.schedule,
           }),
         );
@@ -190,7 +211,9 @@ export function PractitionerAdmin() {
       setError(null);
       try {
         await deletePractitioner(practitioner.id);
-        setPractitioners((prev) => prev.filter((p) => p.id !== practitioner.id));
+        setPractitioners((prev) =>
+          prev.filter((p) => p.id !== practitioner.id),
+        );
         // The row is gone, so its half-typed duration is too. Left behind, it would be
         // handed to the next practitioner to be created under the same id - which
         // cannot happen with ULIDs, but a draft nothing can ever clear is a leak in a
@@ -207,7 +230,10 @@ export function PractitionerAdmin() {
       <h3>Practitioners</h3>
       {/* Disabled while the create is out so the wait is visible; the handler's own
           latch is what makes a second click harmless either way. */}
-      <button onClick={() => void handleCreate()} disabled={latch.isBusy("create")}>
+      <button
+        onClick={() => void handleCreate()}
+        disabled={latch.isBusy("create")}
+      >
         Add practitioner
       </button>
       {practitioners.length === 0 ? (
@@ -236,11 +262,13 @@ export function PractitionerAdmin() {
                   }))
                 }
               >
-                {SPECIALTIES.map((specialty) => (
-                  <option key={specialty} value={specialty}>
-                    {specialty.replace(/_/g, " ")}
-                  </option>
-                ))}
+                {optionsFor(specialties, practitioner.specialty).map(
+                  (specialty) => (
+                    <option key={specialty} value={specialty}>
+                      {specialty}
+                    </option>
+                  ),
+                )}
               </select>
               <input
                 aria-label="Appointment minutes"
@@ -259,7 +287,9 @@ export function PractitionerAdmin() {
                       value={range.weekday}
                       onChange={(e) =>
                         edit(practitioner.id, (p) =>
-                          withRange(p, index, { weekday: Number(e.target.value) }),
+                          withRange(p, index, {
+                            weekday: Number(e.target.value),
+                          }),
                         )
                       }
                     >

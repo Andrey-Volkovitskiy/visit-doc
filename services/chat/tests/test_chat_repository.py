@@ -6,7 +6,7 @@ from itertools import pairwise
 import pytest
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import EscalationReason, MessageSender
-from chat.repositories import chat_repository
+from chat.repositories import chat_repository, faq_repository
 from chat.repositories.chat_repository import ConversationState
 from sqlalchemy import text as sql_text
 from ulid import ULID
@@ -852,3 +852,118 @@ async def test_another_sessions_conversation_has_no_state_here() -> None:
             )
             is None
         )
+
+
+# --- the admin surface's listing ------------------------------------------------------
+
+
+async def test_list_sessions_returns_every_session_in_list_session_ids_order() -> None:
+    # The two are read by different queries, and a sweep's report is matched against a
+    # listing row by row - so they must not be able to disagree about the order.
+    first, _ = await _fresh_chat()
+    second, _ = await _fresh_chat()
+
+    async with session_factory() as session:
+        summaries = await chat_repository.list_sessions(session)
+        ids = await chat_repository.list_session_ids(session)
+
+    assert [s.session_id for s in summaries] == ids == [first, second]
+
+
+async def test_list_sessions_counts_chats_and_entries_independently() -> None:
+    """Two chats and two entries is 2 and 2, never 4 and 4.
+
+    A session joined to both multiplies one against the other, and every count taken
+    over that product is wrong - which is invisible at one of each, the shape any
+    smaller fixture would have.
+    """
+    session_id, _ = await _fresh_chat()
+    async with session_factory() as session:
+        await chat_repository.create_chat(session, session_id)
+        await faq_repository.create(session, session_id, "a", str(ULID()))
+        await faq_repository.create(session, session_id, "b", str(ULID()))
+
+    async with session_factory() as session:
+        summary = next(
+            s
+            for s in await chat_repository.list_sessions(session)
+            if s.session_id == session_id
+        )
+
+    assert (summary.chats, summary.faq_entries) == (2, 2)
+
+
+async def test_list_sessions_reports_no_last_message_for_a_silent_session() -> None:
+    # None means "nobody ever said anything here", and nothing else - a session that
+    # holds a chat but no message is still silent.
+    session_id, _ = await _fresh_chat()
+
+    async with session_factory() as session:
+        summary = next(
+            s
+            for s in await chat_repository.list_sessions(session)
+            if s.session_id == session_id
+        )
+
+    assert summary.last_message_at is None
+    assert summary.chats == 1
+
+
+async def test_list_sessions_reports_the_newest_message_across_every_chat() -> None:
+    session_id, first_chat = await _fresh_chat()
+    async with session_factory() as session:
+        second_chat = await chat_repository.create_chat(session, session_id)
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=second_chat.id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content="first",
+        )
+        await asyncio.sleep(0.01)
+        newest = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=first_chat,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content="second",
+        )
+    assert newest is not None
+
+    async with session_factory() as session:
+        summary = next(
+            s
+            for s in await chat_repository.list_sessions(session)
+            if s.session_id == session_id
+        )
+
+    assert summary.last_message_at == newest.created_at
+
+
+async def test_list_sessions_counts_only_the_session_it_is_describing() -> None:
+    # Every count here is its own subquery, and a missing predicate on any one of them
+    # would report the whole table's total against every row alike.
+    quiet, _ = await _fresh_chat()
+    busy, busy_chat = await _fresh_chat()
+    async with session_factory() as session:
+        await faq_repository.create(session, busy, "a", str(ULID()))
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=busy_chat,
+            session_id=busy,
+            sender=MessageSender.PATIENT,
+            content="hi",
+        )
+
+    async with session_factory() as session:
+        summaries = {
+            s.session_id: s for s in await chat_repository.list_sessions(session)
+        }
+
+    assert (summaries[quiet].chats, summaries[quiet].faq_entries) == (1, 0)
+    assert summaries[quiet].last_message_at is None
+    assert (summaries[busy].chats, summaries[busy].faq_entries) == (1, 1)
+    assert summaries[busy].last_message_at is not None

@@ -148,7 +148,6 @@ export async function setAssistant(
   return (await response.json()) as AssistantState;
 }
 
-
 // --- practitioners, proxied through this app's own backend --------------------------
 //
 // The scheduler owns practitioners, and the browser cannot address it: the session that
@@ -199,6 +198,21 @@ async function practitionerError(response: Response): Promise<Error> {
   );
 }
 
+/**
+ * GET /console/specialties: the closed list a practitioner's specialty is chosen from.
+ *
+ * Fetched rather than written out here. The scheduler owns the set, and a copy kept on
+ * this side is one that can disagree with it - which is not a cosmetic difference: a
+ * value it does not recognise is refused at the write, and a stored specialty missing
+ * from the list has no option to render, so the chooser silently shows the first one
+ * instead of what the practitioner actually is.
+ */
+export async function fetchSpecialties(): Promise<string[]> {
+  const response = await fetch("/console/specialties");
+  if (!response.ok) throw await practitionerError(response);
+  return (await response.json()) as string[];
+}
+
 /** GET /console/practitioners: the clinic's roster, as the scheduler renders it. */
 export async function fetchPractitioners(): Promise<Practitioner[]> {
   const response = await fetch("/console/practitioners");
@@ -234,13 +248,14 @@ export async function updatePractitioner(
 }
 
 /** DELETE /console/practitioners/{id}: remove one, and their appointments with them. */
-export async function deletePractitioner(practitionerId: string): Promise<void> {
+export async function deletePractitioner(
+  practitionerId: string,
+): Promise<void> {
   const response = await fetch(`/console/practitioners/${practitionerId}`, {
     method: "DELETE",
   });
   if (!response.ok) throw await practitionerError(response);
 }
-
 
 // --- the corpus the assistant answers from ------------------------------------------
 //

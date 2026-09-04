@@ -14,14 +14,15 @@ The guard has four properties, each of which has a wrong default:
 2. the comparison is **constant-time**, and made over bytes rather than text, so a
    refusal says nothing about how much of the secret was right - and a secret written
    in any alphabet is compared rather than raising out of the guard;
-3. both routes declare `include_in_schema=False` **on the decorator** — a router cannot
-   retroactively hide its routes from the published schema;
+3. every route declares `include_in_schema=False` **on the decorator** — a router
+   cannot retroactively hide its routes from the published schema;
 4. an **unset or empty configured secret refuses every request**, checked before the
    comparison — an empty one would otherwise `compare_digest`-match an empty header and
    admit everybody.
 """
 
 import hmac
+from datetime import datetime
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Header, HTTPException, Request
@@ -44,6 +45,31 @@ ADMIN_SECRET_HEADER = "X-Admin-Secret"
 # One body for every refusal: absent, wrong, and not configured are reported
 # identically, so a caller learns nothing from which of them they hit.
 _REFUSED = "refused"
+
+
+class SessionSummaryOut(BaseModel):
+    """One session in the listing, and what deleting it would take with it.
+
+    `chats` and `faq_entries` are what the deletion's cascade would remove, counted
+    before it is asked for, so an admin can see the size of what they are about to
+    delete. `last_message_at` is null for a session nobody ever said anything in.
+    """
+
+    session_id: str
+    created_at: datetime
+    chats: int
+    faq_entries: int
+    last_message_at: datetime | None = None
+
+
+class SessionListingResponse(BaseModel):
+    """Every session this service holds, oldest first.
+
+    The same order the sweep attempts them in, so a listing read beforehand and the
+    report it returns line up row for row.
+    """
+
+    sessions: list[SessionSummaryOut]
 
 
 class SessionDeletionResult(BaseModel):
@@ -78,7 +104,7 @@ def require_admin_secret(
     Raises: HTTPException 403, identically for every refusal.
 
     The configured value is checked for emptiness *before* the comparison: an empty
-    configured secret would match an empty header and open both routes to everybody,
+    configured secret would match an empty header and open every route to everybody,
     which is the one failure mode this guard exists to prevent. Blank counts as empty -
     a secret of spaces is a deployment that meant to set one and did not.
 
@@ -198,6 +224,41 @@ async def _remove_chunks(request: Request, session_id: str) -> None:
         await delete_by_session(request.app.state.qdrant_client, session_id)
     except Exception:  # noqa: BLE001, S110 - see `_delete_one`: a leak is not a failure
         pass
+
+
+@router.get("/admin/sessions", include_in_schema=False)
+async def list_sessions(
+    x_admin_secret: Annotated[str | None, Header()] = None,
+) -> SessionListingResponse:
+    """List every session this service holds, with what deleting one would remove.
+
+    Raises: HTTPException 403 if the request is not carrying the configured secret.
+
+    Read-only, and this service's stores only - nothing here calls the scheduler, so a
+    listing is answerable while scheduling is unreachable, which is exactly when an
+    admin is looking for what to re-run. The scheduler's own counts are therefore not
+    part of it: they are known only once a deletion has asked for them.
+    """
+    try:
+        require_admin_secret(x_admin_secret)
+    except HTTPException:
+        _refuse("list_sessions")
+        raise
+
+    async with session_factory() as db_session:
+        summaries = await chat_repository.list_sessions(db_session)
+    return SessionListingResponse(
+        sessions=[
+            SessionSummaryOut(
+                session_id=summary.session_id,
+                created_at=summary.created_at,
+                chats=summary.chats,
+                faq_entries=summary.faq_entries,
+                last_message_at=summary.last_message_at,
+            )
+            for summary in summaries
+        ]
+    )
 
 
 @router.delete(

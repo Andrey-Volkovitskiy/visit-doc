@@ -202,13 +202,13 @@ async def test_seeding_creates_the_whole_default_roster(
     assert [p.appointment_duration_minutes for p in seeded] == [60, 60]
 
 
-async def test_the_seeded_roster_works_monday_to_saturday_on_differing_hours(
+async def test_the_seeded_roster_works_differing_days_and_hours(
     db_session: AsyncSession,
 ) -> None:
-    """The two differ in hours as well as specialty, which is the point of seeding two.
+    """They differ in when they work as well as in specialty - the point of seeding two.
 
-    Both work Saturdays; only the general practitioner works the early morning and the
-    late afternoon.
+    Only the dentist works Saturdays; only the general practitioner works the late
+    afternoon.
     """
     session_id = new_id()
 
@@ -216,14 +216,14 @@ async def test_the_seeded_roster_works_monday_to_saturday_on_differing_hours(
         db_session, session_id
     )
 
-    for practitioner, hours in (
-        (general, (time(8, 0), time(17, 0))),
-        (dentist, (time(9, 0), time(14, 0))),
+    for practitioner, weekdays, hours in (
+        (general, [0, 1, 2, 3, 4], (time(9, 0), time(17, 0))),
+        (dentist, [0, 1, 2, 3, 4, 5], (time(9, 0), time(14, 0))),
     ):
         schedule = await practitioner_repository.get_schedule(
             db_session, practitioner.id
         )
-        assert [r.weekday for r in schedule] == [0, 1, 2, 3, 4, 5]
+        assert [r.weekday for r in schedule] == weekdays
         assert {(r.start_time, r.end_time) for r in schedule} == {hours}
 
 

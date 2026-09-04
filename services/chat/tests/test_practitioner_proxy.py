@@ -139,6 +139,7 @@ async def _call(
 
 
 _ROUTES = [
+    ("GET", "/console/specialties", "GET", "/specialties", None),
     ("GET", "/console/practitioners", "GET", "/practitioners", None),
     ("POST", "/console/practitioners", "POST", "/practitioners", {}),
     (

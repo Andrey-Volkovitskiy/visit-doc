@@ -75,8 +75,8 @@ class PractitionerSeed:
 # asking. Order is part of the contract: it fixes which pool name each one gets.
 SESSION_SEED: tuple[PractitionerSeed, ...] = (
     PractitionerSeed(
-        specialty=Specialty.GENERAL_PRACTICE,
-        schedule=_weekly(_MONDAY_TO_SATURDAY, time(8, 0), time(17, 0)),
+        specialty=DEFAULT_SPECIALTY,
+        schedule=DEFAULT_SCHEDULE,
     ),
     PractitionerSeed(
         specialty=Specialty.DENTISTRY,

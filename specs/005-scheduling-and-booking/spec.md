@@ -671,7 +671,7 @@ chat UI.
 #### Provisioning and degraded operation
 
 - **FR-042**: On a visitor's first arrival, the system MUST create a session, one chat, one patient,
-  and two practitioners — a general practitioner working Monday to Saturday 08:00–17:00 and a
+  and two practitioners — a general practitioner working Monday to Friday 09:00–17:00 and a
   dentist working Monday to Saturday 09:00–14:00. Two, differing in both specialty and hours, so a
   first booking request has a practitioner to choose rather than a single possible answer.
 - **FR-043**: The system MUST NOT store a timezone for a session, a patient, or a practitioner.

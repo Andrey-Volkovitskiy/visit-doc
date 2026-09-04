@@ -64,8 +64,9 @@ async def test_a_first_visit_creates_a_patient_and_the_default_roster(
         Specialty.GENERAL_PRACTICE,
         Specialty.DENTISTRY,
     ]
-    # Immediately bookable: both came with their Monday-to-Saturday schedules.
-    assert [len(p.schedule) for p in response.practitioners] == [6, 6]
+    # Immediately bookable: both came with a week of working ranges, the general
+    # practitioner Monday to Friday and the dentist Monday to Saturday.
+    assert [len(p.schedule) for p in response.practitioners] == [5, 6]
 
 
 async def test_a_second_call_for_one_chat_creates_nothing(
