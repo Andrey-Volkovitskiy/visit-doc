@@ -64,7 +64,7 @@ _MARK_BY_REASON = {reason: AttentionMark(reason.value) for reason in _PRECEDENCE
 # written for the model reading it back rather than for the person reading it.
 HANDOFF_MESSAGE = (
     "Sure. I've passed this to a member of the clinic's staff. "
-    "They'll follow up with you shortly. "
+    "They'll follow up with you shortly."
 )
 
 
