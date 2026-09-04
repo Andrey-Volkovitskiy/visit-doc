@@ -29,6 +29,7 @@ from chat.core.logging import get_logger
 from chat.db.session import session_factory
 from chat.domain.schemas import FaqEntry, FaqEntryWrite
 from chat.rag.indexing import (
+    DEPENDENCY_BY_STEP,
     FaqOperationError,
     publish_revision,
     remove_entry_chunks,
@@ -40,9 +41,6 @@ router = APIRouter()
 
 _NOT_FOUND = "No entry with this ID."
 _CONFLICT = "That entry was changed by another save. Please try again."
-# Which external system a failed step was against, for the critical event. "chunking"
-# is absent on purpose: it is pure computation, and nothing was unreachable.
-_DEPENDENCY_BY_STEP = {"embedding": "voyage", "persist": "qdrant"}
 _UNAVAILABLE = "the clinic's documents could not be saved; nothing was changed"
 
 
@@ -143,7 +141,7 @@ async def _write_chunks(
             operation,
             entry_id,
             exc,
-            dependency=_DEPENDENCY_BY_STEP.get(exc.failed_step),
+            dependency=DEPENDENCY_BY_STEP.get(exc.failed_step),
         )
         raise HTTPException(status_code=503, detail=_UNAVAILABLE) from exc
 

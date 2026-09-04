@@ -1181,6 +1181,13 @@ covers, in that same conversation.
 - **FR-039b**: A new session's corpus MUST start **empty**. Nothing is seeded, copied, or embedded
   at session creation, and session provisioning MUST NOT gain a corpus step. A starting template is
   deliberately deferred to later work and is not part of this feature.
+  > **Superseded** by the later work it defers. Session creation now plants a starter corpus
+  > (`chat.rag.default_corpus.DEFAULT_FAQ_ENTRIES`, seeded by `chat.api.provisioning`), so
+  > provisioning does have a corpus step and a new session is not empty. Nothing else in FR-039
+  > changes: the corpus is still per-session, still edited and deleted by that session alone, and a
+  > seeding that fails still leaves the session empty rather than failing the request — so every
+  > requirement here that reads "an empty corpus" still describes a state a session can be in, just
+  > no longer the state it necessarily starts in.
 - **FR-039c**: A session's FAQ entries and their retrievable chunks MUST be removed when the session
   is deleted (FR-046): its rows first, which un-publishes every revision they named, then its chunks
   (FR-042f). No session's chunks may remain reachable once its rows are gone, and none may remain
@@ -1520,6 +1527,10 @@ covers, in that same conversation.
   in the test suite, zero embedding calls and zero retrieval-store writes are issued at
   provisioning, and a session created while the retrieval store is unreachable still yields a
   working chat in 100% of attempts.
+  > **Partly superseded**, with FR-039b: provisioning now plants the starter corpus, so it issues
+  > one embedding call and one retrieval-store write per entry. The second half stands unchanged and
+  > is the half that mattered — a session created while the retrieval store is unreachable still
+  > yields a working chat in 100% of attempts, now with an empty corpus rather than none attempted.
 - **SC-012**: The session credential is never readable by frontend code — zero occurrences across
   the suite, including every console capability added by this feature.
 - **SC-013**: Every practitioner rule the scheduling service enforces is enforced through the

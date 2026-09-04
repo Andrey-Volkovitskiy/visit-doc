@@ -11,7 +11,8 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from shared_models.scheduling import RenameFailureReason
 
 from chat.agent.generation_registry import cancel_for_chat
-from chat.api.provisioning import provision_patient
+from chat.api.dependencies import get_voyage_client
+from chat.api.provisioning import provision_patient, seed_default_corpus
 from chat.api.session_cookie import read_session_id, set_session_cookie
 from chat.clients import scheduling
 from chat.clients.scheduling import (
@@ -105,7 +106,9 @@ async def create_chat(request: Request, response: Response) -> ChatSummary:
 
     The `Chat` row is committed *before* the scheduler is called, so an unreachable
     scheduler cannot fail chat creation: the chat comes back unnamed, still answers FAQ
-    questions, and its patient is created on a later interaction.
+    questions, and its patient is created on a later interaction. A first visit also
+    plants the session's starter corpus, on the same terms - a corpus that could not be
+    planted leaves the session empty rather than failing the request.
     """
     session_id, is_new_session = await _resolve_session_id(request)
 
@@ -340,6 +343,10 @@ async def _resolve_session_id(request: Request) -> tuple[str, bool]:
 
     Returns: `(session_id, is_new)` - `is_new` tells the caller whether to mint the
         `Set-Cookie` header.
+
+    A session created here is given the starter corpus before it is returned, and a
+    corpus that could not be planted is logged rather than raised - the session and the
+    chat about to be built on it are real either way.
     """
     cookie_session_id = read_session_id(request)
     async with session_factory() as db_session:
@@ -348,4 +355,12 @@ async def _resolve_session_id(request: Request) -> tuple[str, bool]:
             if existing is not None:
                 return existing.id, False
         new_session = await chat_repository.create_session(db_session)
-        return new_session.id, True
+
+    # Seeded here rather than by the route, so every future path that mints a session
+    # gets the starter corpus with it - and only a session that was just created is
+    # seeded, so a returning visitor never has a second copy planted over the corpus
+    # they have been editing.
+    await seed_default_corpus(
+        request.app.state.qdrant_client, get_voyage_client(request), new_session.id
+    )
+    return new_session.id, True

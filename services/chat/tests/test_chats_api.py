@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+import pytest
 from chat.agent.escalation import EscalationRequests
 from chat.agent.generation_registry import register_and_cancel_previous
 from chat.api import turn as turn_api
@@ -1304,36 +1305,29 @@ async def test_an_empty_name_is_rejected_before_the_scheduler_is_called() -> Non
     rename.assert_not_awaited()
 
 
-# --- 007: creating a session costs nothing in the retrieval path -------------------
+# --- creating a session never fails on the retrieval path -------------------------
+
+# What the starter corpus itself is, and that a new session gets it, lives in
+# `test_default_corpus.py`. What matters here is the other half: planting it is the one
+# thing session creation does that can reach Qdrant and Voyage, and neither of them
+# being reachable may cost the visitor the chat.
 
 
-def test_creating_a_session_touches_neither_the_embedder_nor_the_retrieval_store() -> (
-    None
-):
-    # A new session's corpus is empty because nothing seeded it, not because a seeding
-    # step failed - so provisioning must not gain a corpus step at all. Asserted as an
-    # absence, which is the only way to state "no step was added".
+@pytest.mark.seeds_default_corpus
+def test_a_chat_is_created_even_when_the_retrieval_store_refuses_every_call() -> None:
+    # The starter corpus cannot be planted without Qdrant, and the session is left with
+    # an empty one - which the console shows as empty and a question abstains against.
+    # Failing the request instead would deny the visitor the conversation as well.
     with (
-        patch("chat.rag.indexing.embed_texts") as embed,
-        patch("chat.repositories.qdrant_repository.upsert_chunks") as upsert,
+        patch("chat.rag.indexing.embed_texts", fake_embed_texts),
         TestClient(app) as client,
     ):
-        response = client.post("/chats")
-
-    assert response.status_code == 201
-    embed.assert_not_called()
-    upsert.assert_not_called()
-
-
-def test_a_chat_is_created_even_when_the_retrieval_store_refuses_every_call() -> None:
-    # Nothing about session creation reaches Qdrant, so a store that answers nothing
-    # cannot stop a visitor getting a chat. If this ever fails, provisioning acquired a
-    # dependency it is not supposed to have.
-    with TestClient(app) as client:
         client.app.state.qdrant_client = MagicMock(  # type: ignore[attr-defined]
             side_effect=RuntimeError("qdrant down")
         )
         response = client.post("/chats")
+        listed = client.get("/faq")
 
     assert response.status_code == 201
     assert response.json()["id"]
+    assert listed.json() == []

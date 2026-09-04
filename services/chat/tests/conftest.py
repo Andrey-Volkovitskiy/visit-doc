@@ -196,6 +196,28 @@ def _scheduler_is_unreachable_by_default() -> Iterator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def _new_sessions_start_empty(request: pytest.FixtureRequest) -> Iterator[None]:
+    """Keep the starter corpus out of every test that has not asked for it.
+
+    `POST /chats` plants `DEFAULT_FAQ_ENTRIES` in a session it creates, so without this
+    every test that mints a session through it would answer from nine entries it never
+    mentioned - and a test written to check an abstention against an empty corpus would
+    quietly become a grounded one. The corpus a test retrieves against has to be the
+    corpus that test built.
+
+    A test that is about the seeding itself carries `@pytest.mark.seeds_default_corpus`
+    and gets the real thing, embeddings included - which is why the fake here replaces
+    the seeding step rather than the embedding call underneath it: the marked tests
+    still need `chat.rag.indexing.embed_texts` free to fake as they please.
+    """
+    if "seeds_default_corpus" in request.keywords:
+        yield
+        return
+    with patch("chat.api.chats.seed_default_corpus", new=AsyncMock()):
+        yield
+
+
 class PaidAPICallInTestError(RuntimeError):
     """Raised when a test reaches a real paid API instead of that API's fake."""
 

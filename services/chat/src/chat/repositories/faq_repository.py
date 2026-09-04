@@ -6,6 +6,8 @@ result afterwards, so an id belonging to another session resolves to nothing rat
 than being caught after the row has already been handed back.
 """
 
+from collections.abc import Sequence
+
 from sqlalchemy import delete as sql_delete
 from sqlalchemy import func, select, text
 from sqlalchemy import update as sql_update
@@ -27,8 +29,23 @@ async def reserve_id(session: AsyncSession) -> int:
     attempt can be carrying it. A create therefore has no older revision of its own to
     sweep, and adding a sweep to that path would only ever scroll and find nothing.
     """
-    result = await session.execute(text("SELECT nextval('faq_entries_id_seq')"))
-    return int(result.scalar_one())
+    (entry_id,) = await reserve_ids(session, 1)
+    return entry_id
+
+
+async def reserve_ids(session: AsyncSession, count: int) -> list[int]:
+    """Return `count` fresh `faq_entries` ids without inserting any rows.
+
+    Taken in one statement rather than one round trip per id: the caller planting a
+    whole starter corpus needs every id before it writes a single chunk, and each id
+    carries the same guarantee the single-id case does - fresh, never handed out twice,
+    and costing nothing if the entry it was reserved for is never published.
+    """
+    result = await session.execute(
+        text("SELECT nextval('faq_entries_id_seq') FROM generate_series(1, :count)"),
+        {"count": count},
+    )
+    return [int(entry_id) for entry_id in result.scalars().all()]
 
 
 async def create(
@@ -57,6 +74,43 @@ async def create(
     await session.commit()
     await session.refresh(entry)
     return entry
+
+
+async def create_many(
+    session: AsyncSession,
+    session_id: str,
+    entries: Sequence[tuple[int, str, str]],
+) -> list[FaqEntry]:
+    """Insert several entries owned by `session_id`, in one transaction.
+
+    Args:
+        entries: One `(entry_id, content, live_revision)` triple per entry, each id
+            already taken from the sequence by `reserve_ids` and each revision already
+            written to the retrieval store.
+
+    Returns: the inserted entries, in the order they were given.
+
+    One commit publishes all of them, so the corpus this creates is all there or not
+    there at all - a caller cannot end up with half a starter corpus and no way to name
+    which half. There is no cap check and no row lock here, unlike `create_within_cap`:
+    the only caller plants a session's corpus before that session's id has left the
+    process, so no other create can be racing it, and how many entries it may plant is
+    decided by the caller from the same cap.
+    """
+    rows = [
+        FaqEntry(
+            id=entry_id,
+            session_id=session_id,
+            content=content,
+            live_revision=live_revision,
+        )
+        for entry_id, content, live_revision in entries
+    ]
+    session.add_all(rows)
+    await session.commit()
+    for row in rows:
+        await session.refresh(row)
+    return rows
 
 
 async def get(session: AsyncSession, session_id: str, entry_id: int) -> FaqEntry | None:

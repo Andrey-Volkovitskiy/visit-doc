@@ -395,3 +395,27 @@ capabilities — full rationale and alternatives considered live in
   contract across the boundary, where every future rule change would land in two places or diverge
   in one. The proxy makes **one attempt and never retries**: a retried `POST` would create two
   practitioners, so an unknown outcome is reported as unknown.
+
+## The Starter FAQ Corpus: technology choices
+
+- **Planted at session creation, not answered from a shared corpus.** Every session owns its corpus
+  and now starts with the clinic's own nine question-and-answer entries, written into that session
+  exactly as if it had typed them into the console. This supersedes spec 007's FR-039b ("a new
+  session's corpus MUST start empty… a starting template is deliberately deferred to later work") —
+  the corpus is still per-session, so the reason that requirement existed is untouched: a visitor
+  editing or deleting a seeded entry changes only what *they* are answered from. A single shared
+  corpus behind a console with a delete button and no login is the design that stayed rejected.
+- **All of it or none of it, and never at the cost of the chat.** The seeding follows the same shape
+  a save does: every entry is chunked and embedded first, its chunks are written under a revision
+  nothing yet names live, and one commit publishes all nine at once. So a failure at any step leaves
+  the session with no corpus rather than part of one, and the cost is leaked chunks. It is also
+  never fatal — `POST /chats` still returns a working chat when Voyage or Qdrant is unreachable,
+  and the empty corpus that results is the state the rest of the system already handles: the console
+  shows it as empty, and a question it cannot answer abstains and calls staff. The failure is
+  logged as an operation that failed plus a critical dependency event, because nothing about an
+  empty corpus read later says whether a session emptied it or a dependency was down.
+- **One embedding call for the whole corpus.** `publish_revisions` chunks every entry, embeds all
+  their chunks in a single Voyage request, then writes each entry's points. A first-time visitor
+  pays one round trip on `POST /chats` instead of nine, and the single-entry save path is the same
+  function called with a list of one — so there is one implementation of "chunk, embed, write", not
+  two that can drift.

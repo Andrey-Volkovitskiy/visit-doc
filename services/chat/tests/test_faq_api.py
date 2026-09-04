@@ -351,9 +351,10 @@ def test_list_faq_entries_failure_logs_critical_event_uncorrelated() -> None:
 # --- 007: the corpus belongs to a session, and it has a ceiling -------------------
 
 
-def test_a_new_sessions_corpus_is_plainly_empty() -> None:
-    # FR-039d: the ordinary starting state of every session. Not an error, and not
-    # somebody else's entries.
+def test_a_corpus_with_no_entries_lists_as_empty() -> None:
+    # FR-039d: an empty corpus is shown plainly - not an error, and not somebody
+    # else's entries. A session reaches that state by deleting what it had, or by
+    # being created while its starter corpus could not be planted.
     with TestClient(app) as client:
         _ensure_session(client)
         response = client.get("/faq")

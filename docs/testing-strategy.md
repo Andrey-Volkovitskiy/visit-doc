@@ -84,6 +84,18 @@ than the test's. `services/chat/tests/conftest.py`'s autouse
 unless it patches the boundary itself — which is also the honest default, since that is exactly
 what a chat service with no scheduler running really sees.
 
+The **starter FAQ corpus** is kept out of the suite the same way, by
+`services/chat/tests/conftest.py`'s autouse `_new_sessions_start_empty`. `POST /chats` plants
+`DEFAULT_FAQ_ENTRIES` in a session it creates, and a test that mints a session through it would
+otherwise retrieve against nine entries it never mentioned — quietly turning a test written about
+an abstention into a test about a grounded answer. The corpus a test retrieves against has to be
+the corpus that test built, so a test which is about the seeding itself opts back in with
+`@pytest.mark.seeds_default_corpus` and gets the real thing, embeddings included
+(`services/chat/tests/test_default_corpus.py`). Unlike the two fakes above, this one is not the
+honest production default — it is an opt-out — which is exactly why the marked tests exist: they
+are the only place the planting is really exercised, so a change that breaks it fails there rather
+than passing everywhere.
+
 An autouse fake at a boundary MUST cover **every** call reachable across it, not just the one a
 test happened to need when it was written. A boundary fake is a guarantee the whole suite leans
 on, so a gap in it is not "that path is untested" — it is a live call on the wrong event loop,

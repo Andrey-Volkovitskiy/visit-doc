@@ -237,6 +237,13 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   moment ago, and there is no compensating write to half-succeed. The delete-then-upsert ordering
   this bullet used to prescribe is superseded by that, and a delete now removes the **row first**,
   which is what makes the entry unanswerable at that instant.
+- **A new session is created holding the starter corpus.** `chat.rag.default_corpus` declares it and
+  `chat.api.provisioning.seed_default_corpus` plants it as part of session creation, superseding
+  spec 007's FR-039b ("a new session's corpus MUST start empty"). It is planted the way a save is —
+  chunks written first under revisions nothing names live, one commit publishing all of them — so a
+  failure plants none of it, and it never fails chat creation: the session simply starts empty, and
+  that is logged rather than raised. Every other property of a session's corpus is unchanged, and
+  a seeded entry is an ordinary entry the session may edit or delete.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across
