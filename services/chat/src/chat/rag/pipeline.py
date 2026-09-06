@@ -9,7 +9,8 @@ deliberately apart, so "no scores were obtained" and "scores were obtained and n
 cleared the floor" can stay two different answers.
 """
 
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass, field, replace
 
 from chat.domain.schemas import FaqVerdict
 
@@ -31,13 +32,7 @@ class ScoredChunk:
 
     def with_rerank_score(self, score: float) -> "ScoredChunk":
         """Return a copy carrying `score`, leaving this instance untouched."""
-        return ScoredChunk(
-            faq_entry_id=self.faq_entry_id,
-            chunk_index=self.chunk_index,
-            chunk_text=self.chunk_text,
-            similarity_score=self.similarity_score,
-            rerank_score=score,
-        )
+        return replace(self, rerank_score=score)
 
 
 @dataclass(frozen=True)
@@ -68,6 +63,25 @@ class PipelineOutcome:
     observed: list[ScoredChunk] = field(default_factory=list)
 
 
+def _split(
+    ordered: list[ScoredChunk], clears_floor: Callable[[ScoredChunk], bool], cap: int
+) -> GateResult:
+    """Split chunks already in the gate's own score order into the three lists.
+
+    Args:
+        ordered: the gate's candidates, best first by whichever score that gate reads.
+        clears_floor: whether one chunk is at or above that gate's floor.
+
+    Both gates share this so the floor-then-cap ordering, and which rejection list each
+    loser lands in, are decided once rather than in two places free to drift.
+    """
+    above = [c for c in ordered if clears_floor(c)]
+    below = [c for c in ordered if not clears_floor(c)]
+    return GateResult(
+        kept=above[:cap], dropped_by_floor=below, dropped_by_cap=above[cap:]
+    )
+
+
 def apply_similarity_gate(
     pool: list[ScoredChunk], *, floor: float, cap: int
 ) -> GateResult:
@@ -80,11 +94,7 @@ def apply_similarity_gate(
         lists - those the floor dropped and those the cap dropped.
     """
     ordered = sorted(pool, key=lambda c: c.similarity_score, reverse=True)
-    above = [c for c in ordered if c.similarity_score >= floor]
-    below = [c for c in ordered if c.similarity_score < floor]
-    return GateResult(
-        kept=above[:cap], dropped_by_floor=below, dropped_by_cap=above[cap:]
-    )
+    return _split(ordered, lambda c: c.similarity_score >= floor, cap)
 
 
 def apply_rerank_gate(
@@ -105,12 +115,8 @@ def apply_rerank_gate(
         key=lambda c: c.rerank_score if c.rerank_score is not None else -1.0,
         reverse=True,
     )
-    above = [
-        c for c in ordered if c.rerank_score is not None and c.rerank_score >= floor
-    ]
-    below = [c for c in ordered if c.rerank_score is None or c.rerank_score < floor]
-    return GateResult(
-        kept=above[:cap], dropped_by_floor=below, dropped_by_cap=above[cap:]
+    return _split(
+        ordered, lambda c: c.rerank_score is not None and c.rerank_score >= floor, cap
     )
 
 

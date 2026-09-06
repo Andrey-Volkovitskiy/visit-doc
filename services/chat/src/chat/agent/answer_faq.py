@@ -239,7 +239,10 @@ async def _run_pipeline(
             "faq.similarity_gate",
             floor=settings.SIMILARITY_FLOOR,
             cap=settings.SIMILARITY_CAP,
-            pool_size=len(pool),
+            # `pool_returned`, not `pool_size`: the gate saw what the search actually
+            # returned, and `pool_size` already names the configured ceiling on the
+            # retrieval event beside this one.
+            pool_returned=len(pool),
             kept=_identify(similarity.kept),
             dropped_by_floor=_identify(similarity.dropped_by_floor),
             dropped_by_cap=_identify(similarity.dropped_by_cap),

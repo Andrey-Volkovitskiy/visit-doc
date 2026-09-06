@@ -292,32 +292,32 @@ scores the gates read, and produces citations for chunks that answer nothing the
   its own. Same cheap model, same single call, one schema change: no second model round trip.
 - **Each specialist receives its own sub-query**, so retrieval embeds the question alone and its
   score reflects the question alone.
-- **An extracted sub-query has to be self-contained.** "and what is the cost for viziting him
-  if I pay out-of-pocket?" means nothing  without its referent, and retrieval sees the sub-query 
+- **An extracted sub-query has to be self-contained.** "and what is the cost for visiting him
+  if I pay out-of-pocket?" means nothing without its referent, and retrieval sees the sub-query
   with no conversation around it — so extraction is also decontextualization, resolving pronouns
   and elisions against the turn's history.
 - **The booking specialist still gets the whole conversation.** Only retrieval needs an isolated
   question; dialogue policy needs history, and stripping it would break exactly the multi-turn
-  confirmation flow 1c built. So the booking node receives the booking part extracted buy the
-  intent classifier (the part the node should answer to) and the original patient message + history as a context. So patient request "What is the cost 
-  of Dantist vizit if I pay out-of-pocket? What slots a available on Mon?". The booking part is "What 
-  slots a available on Mon?", but as the booking node have the ogiginal patient message as context
-  it won't miss the idea that the patient is asking for dantist's slots.
+  confirmation flow 1c built. So the booking node receives the booking part extracted by the
+  intent classifier (the part the node should answer to) and the original patient message + history as a context. So patient request "What is the cost
+  of dentist visit if I pay out-of-pocket? What slots are available on Mon?". The booking part is "What
+  slots are available on Mon?", but as the booking node has the original patient message as context
+  it won't miss the idea that the patient is asking for dentist's slots.
 - **Single-intent turns are unaffected** — the sub-query is the message, and the FAQ path behaves
   as it does today.
-- **Chitchat** - another intent/node should be added to hanndle patient phrases like: "Thanks",
-  "See you soon", "Let me think a bit"... ("Thanks!" -> "You're welcome! Let us know if you need anything else.", "See you soon" -> "We look forward to seeing you! Have a great day.", 
+- **Chitchat** - another intent/node should be added to handle patient phrases like: "Thanks",
+  "See you soon", "Let me think a bit"... ("Thanks!" -> "You're welcome! Let us know if you need anything else.", "See you soon" -> "We look forward to seeing you! Have a great day.",
   "Let me think a bit" -> "Sure, take your time. I'll be there."). But the classifier should be
-  carefull and interpret patient messages considering conversation context. E.g. two similar cases:
-  Case #1 -  assistant: "Please arrive in 15 minutes before the appointment time." -> patient: "OK" ->
+  careful and interpret patient messages considering conversation context. E.g. two similar cases:
+  Case #1 - assistant: "Please arrive in 15 minutes before the appointment time." -> patient: "OK" ->
   classified as chitchat -> assistant (via chitchat node): "See you soon.".
-  Case #2 -  assistant: "9am September 7 is available with Dr. Andreas Vesalius. Should I book it for you?" -> patient: "OK" -> classified as booking -> assistant (via booking node): "Your appointment is booked".
-- An examlpe conversation: patient: "Thanks! Do you have any slots with a dantist this Monday and 
-  what is the out-of-pocket cost for the visit"; assistant (chitchat part) "Thanks!" -> "You're welcome!", 
-  (booking part) "Do you have any slots with a dantist this Monday" -> "We have open dentist slots on Monday at 10:00 AM and 2:30 PM.", (faq part) "what is the out-of-pocket cost for a dantist visit?" -> "An out-of-pocket routine dental consultation costs $120". The composer merges specialist answers in a 
-  singl rely message. Despite booking and chitchat nodes have a conversation history and an original
-  patient message as a context they shouldn't try to answer message parts that doesn't bolong to them.
-- A patient request containing several faq questions conserning different FAQ entries hould be answered
+  Case #2 - assistant: "9am September 7 is available with Dr. Andreas Vesalius. Should I book it for you?" -> patient: "OK" -> classified as booking -> assistant (via booking node): "Your appointment is booked".
+- An example conversation: patient: "Thanks! Do you have any slots with a dentist this Monday and
+  what is the out-of-pocket cost for the visit"; assistant (chitchat part) "Thanks!" -> "You're welcome!",
+  (booking part) "Do you have any slots with a dentist this Monday" -> "We have open dentist slots on Monday at 10:00 AM and 2:30 PM.", (faq part) "what is the out-of-pocket cost for a dentist visit?" -> "An out-of-pocket routine dental consultation costs $120". The composer merges specialist answers in a
+  single reply message. Despite booking and chitchat nodes have a conversation history and an original
+  patient message as a context they shouldn't try to answer message parts that don't belong to them.
+- A patient request containing several faq questions concerning different FAQ entries should be answered
   reliably. E.g. "What is the clinic location and do I need a referral from a primary care doctor to book with a specialist?"
 
 

@@ -36,10 +36,15 @@ out, and prints their full text as though it had reached the prompt.
 
 | Field | Type |
 |---|---|
-| `floor`, `cap`, `pool_size` | float, int, int |
+| `floor`, `cap`, `pool_returned` | float, int, int |
 | `kept` | list of `{entry_id, chunk_index, similarity_score}` |
 | `dropped_by_floor` | same shape |
 | `dropped_by_cap` | same shape |
+
+`pool_returned` is what the gate actually saw, and carries the same name and meaning it has on
+`faq.retrieval_completed` above. It is deliberately not called `pool_size`, which on that event
+names the *configured* ceiling: one field name reading as two different quantities across sibling
+events is exactly what a metrics consumer cannot see.
 
 Two separate drop lists, never one with a reason field: one says the bar is too high and the other
 says it is too low, and a reader tuning the floor is only ever looking at one of them.
@@ -69,8 +74,9 @@ dependency from a corpus problem (spec Edge Cases).
 
 ## `faq.rerank_gate` — INFO (FR-030)
 
-Same shape as `faq.similarity_gate`, with `rerank_score` in place of `similarity_score`. Not emitted
-when reranking did not run.
+`floor`, `cap`, and the same three lists as `faq.similarity_gate`, with `rerank_score` in place of
+`similarity_score`. No pool field: this gate is fed the previous gate's survivors, not a search
+result. Not emitted when reranking did not run.
 
 ## `faq.verdict` — INFO (FR-032)
 

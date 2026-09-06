@@ -193,8 +193,39 @@ async def test_an_empty_shortlist_is_never_sent_to_the_provider() -> None:
 
     scored = await _rerank(client, [])
 
-    assert scored == []
+    assert scored is None
     client.rerank.assert_not_awaited()
+
+
+async def test_no_input_at_all_ever_makes_this_return_an_empty_list() -> None:
+    # `[]` is the gate's answer - "scored and rejected", which abstains - so this
+    # function returning it for any reason would collapse the fallback into an
+    # abstention. Every path here is a populated list or None.
+    client = AsyncMock()
+    client.rerank.return_value = SimpleNamespace(results=[])
+
+    assert await _rerank(client, []) is None
+    assert await _rerank(client, [_chunk(0)]) is None
+
+
+@pytest.mark.parametrize(
+    "results",
+    [
+        42,  # not a sequence at all
+        [SimpleNamespace(index="0", relevance_score=0.5)],  # index is not a number
+        [SimpleNamespace(index=0, relevance_score="high")],  # score is not a number
+    ],
+)
+async def test_a_response_this_cannot_read_returns_none_rather_than_raising(
+    results: object,
+) -> None:
+    # Unusable in exactly the sense a short response is unusable. Letting the
+    # conversion raise would turn a degraded answer into a failed turn, which is the
+    # one thing this port promises never to do.
+    client = AsyncMock()
+    client.rerank.return_value = SimpleNamespace(results=results)
+
+    assert await _rerank(client, [_chunk(0)]) is None
 
 
 # --- the failure reason is a metric, so it is classified on type, not on words -------

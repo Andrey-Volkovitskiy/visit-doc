@@ -38,8 +38,8 @@ async def rerank_chunks(
 
     Returns: the same chunks, each carrying its `rerank_score`, or None when no scores
         were obtained - a transport error, a refusal, a rate limit, an unusable or
-        partial response, or the deadline. None is reserved for exactly that: an empty
-        list here would mean the provider was asked to score nothing.
+        partial response, or the deadline. Never an empty list: that is the *gate's*
+        answer ("scored and rejected"), and one value may not mean both.
 
     Raises: nothing. A reranking failure costs the turn its precision stage, never the
         turn itself, so every failure is converted to None and logged here.
@@ -49,7 +49,17 @@ async def rerank_chunks(
     """
     logger = get_logger()
     if not chunks:
-        return []
+        # Unreachable from the pipeline, which only calls this with a non-empty
+        # shortlist. Reported rather than returned as an empty list, which the gate
+        # already owns, and never sent to the provider as a zero-document request.
+        logger.error(
+            "faq.reranking_unavailable",
+            reason="unexpected",
+            error="rerank_chunks was called with an empty shortlist",
+            timeout_seconds=timeout_seconds,
+            candidate_count=0,
+        )
+        return None
 
     started = time.perf_counter()
     try:
@@ -82,7 +92,7 @@ async def rerank_chunks(
         logger.error(
             "faq.reranking_unavailable",
             reason="unusable_response",
-            error="response did not score every candidate exactly once",
+            error="response was unreadable or did not score every candidate once",
             timeout_seconds=timeout_seconds,
             candidate_count=len(chunks),
         )
@@ -157,6 +167,11 @@ def _apply_scores(
         sent, or leaving any candidate unscored. A chunk with no score would have to be
         read as either zero or as passing, and both are inventions, so a partial
         response is refused whole rather than half-used.
+
+    A response this cannot even read - results that are not a sequence, an index or a
+    score that is not a number - is unusable in that same sense and returns None too,
+    rather than letting the conversion raise: `rerank_chunks` promises its caller that
+    a reranking failure costs the answer its precision stage, never the turn.
     """
     results = getattr(response, "results", None)
     if results is None:
@@ -164,15 +179,18 @@ def _apply_scores(
 
     scored: list[ScoredChunk] = []
     seen: set[int] = set()
-    for result in results:
-        index = getattr(result, "index", None)
-        score = getattr(result, "relevance_score", None)
-        if index is None or score is None or not 0 <= index < len(chunks):
-            return None
-        if index in seen:
-            return None
-        seen.add(index)
-        scored.append(chunks[index].with_rerank_score(float(score)))
+    try:
+        for result in results:
+            index = getattr(result, "index", None)
+            score = getattr(result, "relevance_score", None)
+            if index is None or score is None or not 0 <= index < len(chunks):
+                return None
+            if index in seen:
+                return None
+            seen.add(index)
+            scored.append(chunks[index].with_rerank_score(float(score)))
+    except (TypeError, ValueError):
+        return None
 
     if len(seen) != len(chunks):
         return None

@@ -18,7 +18,11 @@ from chat.api.turn import router as turn_router
 from chat.clients.scheduling import create_channel
 from chat.core.config import get_settings
 from chat.core.logging import configure_logging, get_logger
-from chat.repositories.qdrant_repository import create_client, ensure_collection
+from chat.repositories.qdrant_repository import (
+    CollectionVectorSizeMismatchError,
+    create_client,
+    ensure_collection,
+)
 
 
 @asynccontextmanager
@@ -28,19 +32,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     instead of paying fresh HTTP client setup cost per request.
 
     Raises:
+        CollectionVectorSizeMismatchError: if Qdrant already holds a collection whose
+            vectors are a different width than this build embeds.
         Exception: propagated from `ensure_collection` if the Qdrant collection can't be
             created or verified during startup.
 
     Qdrant and Anthropic get pooling for free by reusing the client instance. Voyage's
-    `AsyncClient` doesn't - it opens a fresh `aiohttp.ClientSession` per `embed()` call
-    unless handed a shared session via the `voyageai.aiosession` contextvar - so a plain
-    shared `aiohttp.ClientSession` is also created and stored on state here, bound into
-    that contextvar per-request elsewhere and reused by the console's practitioner
-    proxy, which is the other thing this service speaks HTTP to. Each client's and
-    session's cleanup is
-    registered on an `AsyncExitStack` right after construction, so a later step failing
-    during startup, or one close() raising during shutdown, can never leave an earlier
-    one's connections unclosed.
+    `AsyncClient` doesn't - it opens a fresh `aiohttp.ClientSession` per call unless
+    handed a shared session via the `voyageai.aiosession` contextvar - so a plain shared
+    `aiohttp.ClientSession` is also created and stored on state here, bound into that
+    contextvar per-request elsewhere and reused by the console's practitioner proxy,
+    which is the other thing this service speaks HTTP to. Every object that owns
+    connections - the Qdrant client, the Anthropic client, that session, the scheduling
+    channel - has its cleanup registered on an `AsyncExitStack` right after
+    construction, so a later step failing during startup, or one close() raising during
+    shutdown, can never leave an earlier one's connections unclosed. The two Voyage
+    clients are not among them: they own nothing to close, borrowing that shared session
+    for the duration of each call.
     """
     settings = get_settings()
     async with AsyncExitStack() as stack:
@@ -48,6 +56,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         stack.push_async_callback(qdrant_client.close)
         try:
             await ensure_collection(qdrant_client)
+        except CollectionVectorSizeMismatchError as exc:
+            # Not an outage, and filing it as one sends an operator to a datastore that
+            # is up and answering. Qdrant replied; what it said is that the collection
+            # it already holds cannot store this build's vectors, which is fixed by
+            # recreating it and re-indexing, not by restarting anything.
+            get_logger().critical(
+                "critical.qdrant_collection_mismatch",
+                dependency="qdrant",
+                error_detail=str(exc),
+            )
+            raise
         except Exception as exc:
             get_logger().critical(
                 "critical.dependency_unreachable",

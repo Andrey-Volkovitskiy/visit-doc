@@ -42,7 +42,9 @@ function localId(): string {
 function reconcile(shown: Message[], history: Message[]): Message[] {
   // Local messages are only ever appended, and a fetch only ever puts server rows
   // ahead of them, so they are always a suffix of what is on screen.
-  const local = shown.filter((message) => message.id.startsWith(LOCAL_ID_PREFIX));
+  const local = shown.filter((message) =>
+    message.id.startsWith(LOCAL_ID_PREFIX),
+  );
   if (local.length === 0) return history;
 
   const grown = history.slice(Math.max(shown.length - local.length, 0));
@@ -158,7 +160,10 @@ export function ChatWindow({
       // silently empty, and leaves `messages` a real array either way.
       setBanner({
         kind: "read",
-        text: err instanceof Error ? err.message : "Could not load this chat's history.",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Could not load this chat's history.",
       });
     },
   });
@@ -251,7 +256,9 @@ export function ChatWindow({
       setBanner({
         kind: "send",
         text:
-          err instanceof Error ? err.message : "Something went wrong. Please try again.",
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again.",
       });
       clearStreaming(turnKey);
       setInput(messageText);
@@ -279,11 +286,13 @@ export function ChatWindow({
     <div>
       <div data-testid="messages">
         {messages.map((message) => (
+          // No `citations`/`faqVerdict`: this pane draws neither, so passing them
+          // would read as a rendering decision made somewhere else. The staff
+          // console is the surface that shows how an answer was produced.
           <MessageView
             key={message.id}
             sender={message.sender}
             content={message.content}
-            citations={message.citations}
           />
         ))}
         {Object.entries(streaming).map(([turnKey, text]) => (

@@ -26,7 +26,9 @@ async def rerank_chunks(
   taxonomy: transport error, auth refusal, rate limit, malformed or short response, or the deadline.
 
 `None` and `[]` must never both be reachable from this function. `[]` is reserved for the gate's
-"scored and rejected"; conflating them collapses the fallback into an abstention.
+"scored and rejected"; conflating them collapses the fallback into an abstention. That includes the
+degenerate input: an empty shortlist is never sent to the provider, and returns `None` with an
+error event, not `[]`.
 
 ## Behavior
 
@@ -45,7 +47,9 @@ The provider returns results referencing input positions, already sorted and tru
 result whose index does not correspond to an input chunk, or a response short enough that a survivor
 went unscored, is an **unusable response** → `None`. Partial scoring is not silently accepted: a
 chunk with no score would otherwise have to be treated as either zero or as passing, and both are
-inventions.
+inventions. A response that cannot be read at all — results that are not a sequence, an index or a
+score that is not a number — is unusable in the same sense and returns `None`; the mapping raises
+nothing, since a malformed body must cost the answer its precision stage, not the turn.
 
 ## What the tests must pin
 

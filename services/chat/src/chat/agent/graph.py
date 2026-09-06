@@ -203,7 +203,7 @@ def _build_graph(
     rerank_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
 ) -> "CompiledStateGraph[_GraphState, None, _GraphState, _GraphState]":
-    """Build and compile the graph, closing over its three shared clients.
+    """Build and compile the graph, closing over its four shared clients.
 
     Memoized on the four clients: each is constructed once at app startup and passed
     in unchanged on every turn, so the graph's structure never varies call to call and

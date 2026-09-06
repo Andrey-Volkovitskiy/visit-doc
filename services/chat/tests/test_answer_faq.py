@@ -408,7 +408,7 @@ async def test_the_similarity_gate_separates_floor_drops_from_cap_drops() -> Non
     gate = events["faq.similarity_gate"]
     assert gate["floor"] == get_settings().SIMILARITY_FLOOR
     assert gate["cap"] == get_settings().SIMILARITY_CAP
-    assert gate["pool_size"] == 9
+    assert gate["pool_returned"] == 9
     assert len(gate["kept"]) == 5
     assert [c["chunk_index"] for c in gate["dropped_by_floor"]] == [99]
     assert [c["chunk_index"] for c in gate["dropped_by_cap"]] == [5, 6, 7]
