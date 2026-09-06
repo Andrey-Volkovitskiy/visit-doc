@@ -26,8 +26,7 @@ def bind_turn_id() -> Generator[str]:
 
     Turn means a single patient message and the assistant reply it produces, including
     any intermediate steps (embedding, retrieval, the two gates, reranking, generation).
-    A
-    turn's `turn_id` is logged on every log line for that turn, so a log reader can
+    A turn's `turn_id` is logged on every log line for that turn, so a log reader can
     tell which lines belong to the same turn.
 
     A chat turn's `turn_id` and a FAQ operation's `operation_id` are mutually

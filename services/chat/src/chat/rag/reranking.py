@@ -118,17 +118,27 @@ def _reason_for(exc: Exception) -> str:
         return "rate_limited"
     if isinstance(exc, voyage_error.AuthenticationError | PermissionError):
         return "refused"
+    # `voyage_error.Timeout` is the provider client's own read/connect timeout and is
+    # not a `TimeoutError` - it descends from `VoyageError`, so listing the builtin
+    # alone leaves the single likeliest vendor failure filed under `unexpected`.
     if isinstance(
         exc,
         voyage_error.APIConnectionError
         | voyage_error.ServiceUnavailableError
         | voyage_error.ServerError
+        | voyage_error.Timeout
         | ConnectionError
         | TimeoutError,
     ):
         return "transport"
+    # `APIError` is what this client raises for a body it could not parse and for a
+    # status it has no name for - an answer it cannot use, which is what this reason
+    # says.
     if isinstance(
-        exc, voyage_error.InvalidRequestError | voyage_error.MalformedRequestError
+        exc,
+        voyage_error.InvalidRequestError
+        | voyage_error.MalformedRequestError
+        | voyage_error.APIError,
     ):
         return "unusable_response"
     # Anything the provider does not raise as one of its own: a bug here, a test guard,

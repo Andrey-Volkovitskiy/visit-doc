@@ -262,8 +262,16 @@ def _new_sessions_start_empty(request: pytest.FixtureRequest) -> Iterator[None]:
         yield
 
 
-class PaidAPICallInTestError(RuntimeError):
-    """Raised when a test reaches a real paid API instead of that API's fake."""
+class PaidAPICallInTestError(BaseException):
+    """Raised when a test reaches a real paid API instead of that API's fake.
+
+    Deliberately not an `Exception`. Production code is entitled to absorb failures of
+    a degradable dependency - `rag/reranking.py` converts every `Exception` to `None`
+    by requirement - and a guard an `except Exception` can swallow stops being a guard
+    exactly where the omission is hardest to notice: the test still passes, having
+    quietly taken the degraded path. Inheriting from `BaseException` puts it outside
+    every such handler, so reaching a paid call fails the test wherever it happens.
+    """
 
 
 # Every call this codebase makes that costs money, keyed by the SDK attribute it goes
@@ -325,13 +333,12 @@ def _paid_apis_are_blocked() -> Iterator[None]:
 def _reranking_keeps_what_it_is_given() -> Iterator[None]:
     """Fake the reranking boundary for every test, scoring each chunk above the floor.
 
-    Required, not convenient. `rerank_chunks` converts *every* failure to None so a
-    reranker outage costs the answer its precision stage rather than the turn - which
-    means it also swallows `PaidAPICallInTestError`. Without this fake, a test that
-    reaches reranking does not fail: it quietly answers `answered_unreranked` from the
-    similarity survivors, and the paid-API guard's whole point - a live call being
-    impossible by omission - is defeated by production code doing exactly what it is
-    required to do.
+    Required, not convenient. `rerank_chunks` converts *every* `Exception` to None so a
+    reranker outage costs the answer its precision stage rather than the turn, which is
+    why `PaidAPICallInTestError` is not one - the guard would otherwise be swallowed and
+    a test reaching reranking would quietly answer `answered_unreranked` instead of
+    failing. The guard makes the omission loud; this fake is what makes an ordinary FAQ
+    test not need one.
 
     The default is a *working* reranker that keeps the shortlist in the order it was
     given, so an ordinary FAQ test still sees `answered`. A test about degradation

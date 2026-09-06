@@ -62,3 +62,26 @@ async def test_the_block_names_what_to_patch_instead() -> None:
         )
 
     assert "fake_anthropic_client" in str(blocked.value)
+
+
+async def test_the_block_survives_production_code_that_swallows_every_exception() -> (
+    None
+):
+    """`rerank_chunks` absorbs every `Exception` by requirement - including this guard.
+
+    So the guard is not one: it is a `BaseException`, and this is what holds it there.
+    Were it an `Exception`, the call below would return `None` and the test would pass
+    while a live, billed request had been attempted.
+    """
+    from chat.rag.pipeline import ScoredChunk
+    from chat.rag.reranking import rerank_chunks
+
+    client = VoyageAsyncClient(api_key=_NOT_A_REAL_KEY)
+    chunk = ScoredChunk(
+        faq_entry_id=1, chunk_index=0, chunk_text="a chunk", similarity_score=0.9
+    )
+
+    with pytest.raises(PaidAPICallInTestError, match="Voyage rerank"):
+        await rerank_chunks(
+            client, "a question", [chunk], model="rerank-3", top_k=1, timeout_seconds=5
+        )

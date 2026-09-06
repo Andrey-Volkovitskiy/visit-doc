@@ -9,8 +9,9 @@ def get_rerank_client(request: Request) -> AsyncClient:
     """Return the shared reranking client, binding its pooled session for this request.
 
     A different client from `get_voyage_client`'s, not a different accessor for the same
-    one: reranking runs with the SDK's own retries disabled so its deadline covers the
-    whole call. Both are bound to the same pooled session for the same reason - the
+    one: reranking pins the SDK's retries off so its deadline covers the whole call
+    rather than one attempt of it, and the embedding client is free to retry without
+    that. Both are bound to the same pooled session for the same reason - the
     contextvar has to be set inside the task that will make the call.
     """
     voyageai.aiosession.set(request.app.state.http_session)

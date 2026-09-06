@@ -277,10 +277,15 @@ def test_survivors_are_non_empty_exactly_when_the_verdict_answered(
 def test_survivors_are_a_subset_of_considered_which_is_a_subset_of_observed(
     outcome: PipelineOutcome,
 ) -> None:
+    # Both halves, and no escape hatch for an empty `considered`: survivors with
+    # nothing considered behind them is exactly the corruption this clause forbids,
+    # and a disjunct excusing it would let that case through unnoticed.
+    observed = {(c.faq_entry_id, c.chunk_index) for c in outcome.observed}
     considered = {(c.faq_entry_id, c.chunk_index) for c in outcome.considered}
     survivors = {(c.faq_entry_id, c.chunk_index) for c in outcome.survivors}
 
-    assert survivors <= considered or not considered
+    assert survivors <= considered
+    assert considered <= observed
 
 
 def test_an_answered_verdict_respects_the_rerank_cap() -> None:

@@ -226,7 +226,13 @@ async def test_the_reason_is_not_decided_by_words_in_the_message() -> None:
         (voyage_error.AuthenticationError("bad key"), "refused"),
         (voyage_error.APIConnectionError("no route"), "transport"),
         (voyage_error.ServiceUnavailableError("503"), "transport"),
+        (voyage_error.ServerError("500"), "transport"),
+        # Not a builtin `TimeoutError`: the provider's own timeout is a `VoyageError`,
+        # so classifying on the builtin alone files a vendor timeout as `unexpected`.
+        (voyage_error.Timeout("request timed out"), "transport"),
         (voyage_error.InvalidRequestError("bad body"), "unusable_response"),
+        (voyage_error.MalformedRequestError("422"), "unusable_response"),
+        (voyage_error.APIError("unparseable body"), "unusable_response"),
     ],
 )
 async def test_each_provider_failure_reports_its_own_reason(

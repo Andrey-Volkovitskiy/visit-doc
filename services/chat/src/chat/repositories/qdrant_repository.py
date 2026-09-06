@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.http.models import (
+    CollectionInfo,
     Distance,
     FieldCondition,
     Filter,
@@ -108,8 +109,40 @@ async def _create_collection(qdrant_client: AsyncQdrantClient) -> None:
         )
 
 
+class CollectionVectorSizeMismatchError(RuntimeError):
+    """The collection's vectors are a different width than this build embeds."""
+
+
+def _check_vector_size(info: CollectionInfo) -> None:
+    """Fail the start when the existing collection cannot hold this build's vectors.
+
+    Raises: CollectionVectorSizeMismatchError if the collection reports a single
+        unnamed vector of a size other than `VECTOR_SIZE`.
+
+    A collection's vector width is fixed at creation, so an embedding model of a
+    different dimension cannot be adopted by editing a constant: every upsert and every
+    search against the old collection is rejected for the whole life of the process.
+    Creation is skipped for a collection that already exists, so without this check the
+    service starts clean and then fails one FAQ turn at a time, with the cause several
+    layers below where it surfaces. A collection whose shape cannot be read - named
+    vectors, or none reported - is left alone rather than guessed at.
+    """
+    configured = info.config.params.vectors
+    if not isinstance(configured, VectorParams) or configured.size == VECTOR_SIZE:
+        return
+    raise CollectionVectorSizeMismatchError(
+        f"collection {COLLECTION_NAME!r} stores {configured.size}-dimensional vectors, "
+        f"but this build embeds {VECTOR_SIZE}-dimensional ones. A collection's vector "
+        "size is fixed at creation: delete the collection and re-index every FAQ entry "
+        "(the Postgres rows are the source of truth) before starting again."
+    )
+
+
 async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
     """Create the configured chunks collection and its payload indexes. Idempotent.
+
+    Raises: CollectionVectorSizeMismatchError if a collection already exists whose
+        vectors are a different width than this build embeds.
 
     The indexes are reconciled against the schema the collection already reports, so a
     collection created before a field joined `_INDEXED_PAYLOAD_FIELDS` gains that index
@@ -125,7 +158,9 @@ async def ensure_collection(qdrant_client: AsyncQdrantClient) -> None:
     """
     if not await qdrant_client.collection_exists(COLLECTION_NAME):
         await _create_collection(qdrant_client)
-    indexed = (await qdrant_client.get_collection(COLLECTION_NAME)).payload_schema
+    info = await qdrant_client.get_collection(COLLECTION_NAME)
+    _check_vector_size(info)
+    indexed = info.payload_schema
     missing: dict[str, PayloadSchemaType] = {}
     for field_name, schema in _INDEXED_PAYLOAD_FIELDS.items():
         existing = indexed.get(field_name)

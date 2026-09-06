@@ -85,8 +85,8 @@ def test_voyage_client_is_reused_across_create_and_update() -> None:
     assert update_response.status_code == 200
     assert delete_response.status_code == 204
     # Twice, not once: embedding and reranking hold separate clients so the rerank
-    # deadline is not multiplied by the embedding client's retries. What this pins is
-    # still that each is built once per lifespan, not once per request.
+    # deadline is bounded however the embedding client is configured to retry. What this
+    # pins is still that each is built once per lifespan, not once per request.
     assert mock_voyage_cls.call_count == 2
 
 

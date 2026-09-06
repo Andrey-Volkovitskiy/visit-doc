@@ -406,7 +406,7 @@ def _build_graph(
                 span.set(
                     answer_source=str(AnswerSource.MERGED),
                     merged=True,
-                    faq_verdict=faq_result.verdict if faq_result else None,
+                    faq_verdict=faq_result.verdict.value if faq_result else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(faq_result.citations) if faq_result else 0,
                 )

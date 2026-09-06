@@ -299,7 +299,8 @@ def test_a_message_asking_for_a_person_gets_the_handoff_and_nothing_else() -> No
     assert lines[-1]["message"] != _ABSTENTION_MESSAGE
 
     events = [entry["event"] for entry in logs]
-    assert "turn.retrieval_completed" not in events
+    assert "faq.retrieval_completed" not in events
+    assert "faq.similarity_gate" not in events
     assert "faq.verdict" not in events
     assert anthropic_client.messages.stream.call_count == 0
 
@@ -843,8 +844,8 @@ def test_anthropic_and_voyage_clients_are_reused_across_chat_requests(
     assert second_response.status_code == 200
     mock_anthropic_cls.assert_called_once()
     # Twice, not once: embedding and reranking hold separate clients so the rerank
-    # deadline is not multiplied by the embedding client's retries. Both are still
-    # built once per lifespan and reused across requests, which is what this pins.
+    # deadline is bounded however the embedding client is configured to retry. Both are
+    # still built once per lifespan and reused across requests, which is what this pins.
     assert mock_voyage_cls.call_count == 2
 
 

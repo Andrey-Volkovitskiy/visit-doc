@@ -11,6 +11,7 @@ from chat.repositories import qdrant_repository
 from chat.repositories.qdrant_repository import (
     VECTOR_SIZE,
     ChunkPayload,
+    CollectionVectorSizeMismatchError,
     delete_by_entry,
     ensure_collection,
     search,
@@ -20,6 +21,7 @@ from chat.repositories.qdrant_repository import (
 from httpx import AsyncClient, Headers
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.http.models import Distance, VectorParams
 from ulid import ULID
 
 _TEST_ENTRY_ID = 999999
@@ -466,5 +468,48 @@ async def test_the_loser_of_the_create_race_finishes_the_winners_indexes(
         await ensure_collection(client)
 
         assert written == ["revision"]
+
+    await client.close()
+
+
+async def test_ensure_collection_refuses_a_collection_of_the_wrong_vector_width(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A collection's vector size is fixed at creation and `ensure_collection` skips
+    # creating one that already exists - so a change of embedding model would otherwise
+    # start cleanly and then fail every upsert and every search, one turn at a time.
+    client = _client()
+    async with _own_collection(monkeypatch) as name:
+        await client.create_collection(
+            collection_name=name,
+            vectors_config=VectorParams(
+                size=VECTOR_SIZE // 2, distance=Distance.COSINE
+            ),
+        )
+
+        with pytest.raises(CollectionVectorSizeMismatchError) as mismatch:
+            await ensure_collection(client)
+
+    assert str(VECTOR_SIZE // 2) in str(mismatch.value)
+    assert str(VECTOR_SIZE) in str(mismatch.value)
+
+    await client.close()
+
+
+async def test_ensure_collection_accepts_a_collection_of_the_right_vector_width(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client()
+    async with _own_collection(monkeypatch) as name:
+        await client.create_collection(
+            collection_name=name,
+            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+        )
+
+        await ensure_collection(client)
+
+        assert (await client.get_collection(name)).payload_schema.keys() == (
+            qdrant_repository._INDEXED_PAYLOAD_FIELDS.keys()
+        )
 
     await client.close()

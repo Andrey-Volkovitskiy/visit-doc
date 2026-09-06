@@ -86,7 +86,8 @@ async def answer_faq(
 
     Args:
         rerank_client: The reranking client, separate from `voyage_client` so its
-            deadline is not multiplied by the embedding client's retries.
+            deadline bounds the whole call however the embedding client is configured
+            to retry.
         bursts: The chat's full conversation history, partitioned into contiguous
             same-side runs, with the current (possibly burst-merged) patient message
             always the trailing burst - the query this turn retrieves for and answers.
@@ -251,7 +252,11 @@ async def _run_pipeline(
             message,
             similarity.kept,
             model=settings.RERANK_MODEL,
-            top_k=settings.SIMILARITY_CAP,
+            # Every candidate, not the cap that produced them: a `top_k` below the
+            # shortlist's length leaves a survivor unscored, which the port refuses as
+            # an unusable response - so the turn would silently answer unreranked for
+            # as long as the two numbers disagreed.
+            top_k=len(similarity.kept),
             timeout_seconds=settings.RERANK_TIMEOUT_SECONDS,
         )
         if scored is not None:

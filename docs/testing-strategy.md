@@ -44,31 +44,34 @@ this test isn't actually the right place to verify that behavior.
 
 Every test that exercises a code path capable of calling a paid, remote AI API — Anthropic
 (`AsyncAnthropic`, both `answer_faq`'s generation call and `classify_intent`'s classification call)
-or Voyage (`embed_texts`) — MUST mock that call, even if the test's own assertions never touch its
-output. A test only caring about an *earlier* pipeline stage still runs later stages that call these
-APIs unconditionally — e.g. `classify_intent_node` (`agent/graph.py`) runs ahead of every FAQ answer
-regardless of whether the test is exercising the grounded, abstained, or failure path — so leaving
-any of them unmocked doesn't just burn real API tokens on every test run, it makes the test
-genuinely non-deterministic (network latency and model output both vary run to run) and dependent on
-network access and a valid API key. This happened in practice: three tests written before intent
-classification was wired into every turn (`test_abstention_on_unrelated_question`,
+or Voyage (`embed_texts`, and `rerank_chunks` since spec 008) — MUST mock that call, even if the
+test's own assertions never touch its output. A test only caring about an *earlier* pipeline stage
+still runs later stages that call these APIs unconditionally — e.g. `classify_intent_node`
+(`agent/graph.py`) runs ahead of every FAQ answer regardless of whether the test is exercising the
+grounded, abstained, or failure path — so leaving any of them unmocked doesn't just burn real API
+tokens on every test run, it makes the test genuinely non-deterministic (network latency and model
+output both vary run to run) and dependent on network access and a valid API key. This happened in
+practice: three tests written before intent classification was wired into every turn
+(`test_abstention_on_unrelated_question`,
 `test_followup_still_abstains_when_neither_message_is_grounded`,
-`test_get_chat_history_preserves_abstention`) never needed to mock `AsyncAnthropic` at the time, but
-silently started making live calls once `classify_intent_node` began running unconditionally ahead
-of every FAQ answer — caught only when one of them failed non-deterministically on a live run.
-Use `conftest.py`'s `fake_anthropic_client(...)` (covers the generation stream, the classification
-call, *and* the booking loop's tool-use call with one mock — the last two share
+`test_get_chat_history_preserves_abstention`) never needed to mock `AsyncAnthropic` at the time,
+but silently started making live calls once `classify_intent_node` began running unconditionally
+ahead of every FAQ answer — caught only when one of them failed non-deterministically on a live
+run. Use `conftest.py`'s `fake_anthropic_client(...)` (covers the generation stream, the
+classification call, *and* the booking loop's tool-use call with one mock — the last two share
 `.messages.create` and are told apart by the parameter each sends) even when a test's own
 assertions never touch any of them. A test that needs the booking loop to actually call tools
 passes `booking_tool_calls=[...]`.
 
 **This rule is enforced, not just documented.** `services/chat/tests/conftest.py`'s autouse
 `_paid_apis_are_blocked` patches the paid SDK calls themselves — Anthropic's
-`AsyncMessages.create`/`.stream` and Voyage's `AsyncClient.embed` — so a test that reaches one
-fails immediately with `PaidAPICallInTestError`, naming the call it made and the fake it should
-have used, instead of quietly billing a live request. The block sits on the SDK class, not on this
-codebase's wrappers, so it also catches a client the app's own lifespan builds in a test that
-forgot to patch `chat.main.AsyncAnthropic`. Two consequences worth knowing:
+`AsyncMessages.create`/`.stream` and Voyage's `AsyncClient.embed`/`.rerank` — so a test that reaches
+one fails immediately with `PaidAPICallInTestError`, naming the call it made and the fake it should
+have used, instead of quietly billing a live request. The error is a `BaseException`, deliberately
+outside every `except Exception` production code may wrap a degradable dependency in. The block
+sits on the SDK class, not on this codebase's wrappers, so it also catches a client the app's own
+lifespan builds in a test that forgot to patch `chat.main.AsyncAnthropic`. Two consequences worth
+knowing:
 
 - **A new paid call belongs in `_PAID_API_CALLS` in the same change that introduces it** — a new
   SDK method, or a new provider entirely. A guard with a gap is worse than no guard, because the

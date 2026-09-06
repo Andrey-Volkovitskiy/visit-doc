@@ -59,10 +59,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
         stack.push_async_callback(anthropic_client.close)
         voyage_client = AsyncClient(api_key=settings.VOYAGE_API_KEY)
-        # Reranking gets its own client with retries off, so its deadline bounds the
-        # whole call rather than one attempt of it - `timeout x attempts` is exactly
-        # the wall-clock the deadline exists to cap. Kept off the embedding client
-        # above, whose failures are fatal to the turn and should keep retrying.
+        # Reranking gets its own client, pinning retries off rather than inheriting
+        # them: its deadline has to bound the whole call, and `timeout x attempts` is
+        # exactly the wall-clock that cap exists to prevent. The SDK happens to default
+        # to no retries today, so this pins a property rather than changing one - which
+        # is the point of a second object, since the embedding client above is free to
+        # start retrying (its failures fail the turn) without dragging this deadline
+        # along with it.
         rerank_client = AsyncClient(api_key=settings.VOYAGE_API_KEY, max_retries=0)
         # One pool, two callers: Voyage's client is handed it through its contextvar,
         # and the console's practitioner proxy sends its own requests over it. A second
