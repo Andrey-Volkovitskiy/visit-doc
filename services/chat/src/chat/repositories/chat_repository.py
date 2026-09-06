@@ -316,7 +316,7 @@ def _insert_into_owned_chat(
         Chat.id,
         literal(sender.value, String),
         literal(content, Text),
-        literal(faq_verdict.value if faq_verdict else None, String),
+        literal(faq_verdict.value if faq_verdict is not None else None, String),
         literal(citations, JSONB),
         literal(reply_to_message_ids, JSONB),
     ).where(Chat.id == chat_id, Chat.session_id == session_id)

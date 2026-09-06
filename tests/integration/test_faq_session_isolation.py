@@ -2,7 +2,7 @@
 
 Two claims are checked here, against a real Postgres and a real Qdrant. The first is
 that a session's corpus is *its own*: another session's answers, its citations and its
-groundedness verdicts are untouched by anything done here, because retrieval filters on
+FAQ verdicts are untouched by anything done here, because retrieval filters on
 the session's own live revisions as a term on the search rather than discarding foreign
 results afterwards.
 

@@ -8,13 +8,12 @@ indistinguishable.
 """
 
 import asyncio
-import re
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
 from chat.rag.pipeline import ScoredChunk
-from chat.rag.reranking import rerank_chunks
+from chat.rag.reranking import RerankFailureReason, rerank_chunks
 from voyageai import error as voyage_error
 
 _MODEL = "rerank-3"
@@ -302,17 +301,10 @@ def test_every_reason_the_code_can_emit_is_in_the_documented_set() -> None:
     Equality, not inclusion, because each direction is its own defect: a reason the code
     emits but the contract omits is an undocumented value in a field Phase 2 reads as a
     metric, and a documented reason nothing emits is a category an operator waits for
-    that never arrives. The two drifted apart once already - `unexpected` was added to
-    the code when the classifier stopped matching substrings, and the contract kept
-    listing five.
+    that never arrives.
+
+    Read off the enum, which is what every emitting site now passes, rather than off
+    the source text of two named functions - a scan for a literal cannot see a reason
+    emitted from a third place, and would go on passing while the contract drifted.
     """
-    import inspect
-
-    from chat.rag import reranking
-
-    classifier = inspect.getsource(reranking._reason_for)
-    caller = inspect.getsource(reranking.rerank_chunks)
-    emitted = set(re.findall(r'return "([a-z_]+)"', classifier))
-    emitted |= set(re.findall(r'reason="([a-z_]+)"', caller))
-
-    assert emitted == DOCUMENTED_REASONS
+    assert {reason.value for reason in RerankFailureReason} == DOCUMENTED_REASONS

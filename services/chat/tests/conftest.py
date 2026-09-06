@@ -29,9 +29,9 @@ _CHAT_ROOT = Path(__file__).resolve().parents[1]
 def _vector_size() -> int:
     """Return production's embedding dimension, read lazily.
 
-    Derived from production rather than restated - a hand-typed copy is what let this
-    tier keep building 512-dim vectors after the embedding model moved to 1024, and
-    every Qdrant write failed on a dimension mismatch until someone ran it.
+    Derived from production rather than restated: a hand-typed copy goes on building
+    vectors of the old width after the embedding model moves, and every Qdrant write
+    then fails on a dimension mismatch.
 
     Imported inside the function, not at module scope: `qdrant_repository` reads
     `get_settings()` at import time, so touching it before the `_test`-suffix overrides

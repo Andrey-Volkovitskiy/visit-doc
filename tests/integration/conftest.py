@@ -10,7 +10,7 @@ import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Self
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import grpc
 import pytest
@@ -161,8 +161,6 @@ def _reranking_keeps_what_it_is_given() -> "Iterator[None]":
     The default is a working reranker that keeps the shortlist in the order it was
     given, matching `services/chat/tests/conftest.py`.
     """
-    from unittest.mock import patch
-
     from chat.rag.pipeline import ScoredChunk
 
     async def keep_all(
@@ -223,9 +221,9 @@ LOCAL_NOW = "2026-08-14T09:00:00"
 def _vector_size() -> int:
     """Return production's embedding dimension, read lazily.
 
-    Derived from production rather than restated - a hand-typed copy is what let this
-    tier keep building 512-dim vectors after the embedding model moved to 1024, and
-    every Qdrant write failed on a dimension mismatch until someone ran it.
+    Derived from production rather than restated: a hand-typed copy goes on building
+    vectors of the old width after the embedding model moves, and every Qdrant write
+    then fails on a dimension mismatch.
 
     Imported inside the function, not at module scope: `qdrant_repository` reads
     `get_settings()` at import time, so touching it before the `_test`-suffix overrides
@@ -244,7 +242,7 @@ async def fake_embed_texts(
     """Deterministic stand-in for Voyage embeddings, with no key and no network.
 
     Text mentioning "visit" or "hours" embeds near one axis and everything else near
-    another - enough to exercise the real groundedness threshold against a real Qdrant.
+    another - enough to exercise the real similarity floor against a real Qdrant.
     """
 
     def vector(text: str) -> list[float]:

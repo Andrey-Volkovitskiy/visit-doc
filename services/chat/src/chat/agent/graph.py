@@ -385,7 +385,7 @@ def _build_graph(
                 span.set(
                     answer_source=str(source),
                     merged=False,
-                    faq_verdict=verdict.value if verdict else None,
+                    faq_verdict=verdict.value if verdict is not None else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(citations),
                 )

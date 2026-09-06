@@ -11,12 +11,31 @@ floor" two different answers - the first falls back and answers, the second abst
 
 import asyncio
 import time
+from enum import StrEnum
 
 from voyageai import error as voyage_error
 from voyageai.client_async import AsyncClient
 
 from chat.core.logging import get_logger
 from chat.rag.pipeline import ScoredChunk
+
+
+class RerankFailureReason(StrEnum):
+    """Why no rerank scores were obtained - `faq.reranking_unavailable`'s `reason`.
+
+    A closed set, and the whole of it: the field is read as a metric, so a value that
+    is not one of these is a category nobody is counting. `UNEXPECTED` is what anything
+    the provider did not raise as one of its own is filed under - a bug here, a test
+    guard, something in the event loop - rather than being attributed to a cause it was
+    not.
+    """
+
+    TIMEOUT = "timeout"
+    TRANSPORT = "transport"
+    REFUSED = "refused"
+    RATE_LIMITED = "rate_limited"
+    UNUSABLE_RESPONSE = "unusable_response"
+    UNEXPECTED = "unexpected"
 
 
 async def rerank_chunks(
@@ -54,7 +73,7 @@ async def rerank_chunks(
         # already owns, and never sent to the provider as a zero-document request.
         logger.error(
             "faq.reranking_unavailable",
-            reason="unexpected",
+            reason=RerankFailureReason.UNEXPECTED,
             error="rerank_chunks was called with an empty shortlist",
             timeout_seconds=timeout_seconds,
             candidate_count=0,
@@ -72,7 +91,7 @@ async def rerank_chunks(
     except TimeoutError:
         logger.error(
             "faq.reranking_unavailable",
-            reason="timeout",
+            reason=RerankFailureReason.TIMEOUT,
             timeout_seconds=timeout_seconds,
             candidate_count=len(chunks),
         )
@@ -91,7 +110,7 @@ async def rerank_chunks(
     if scored is None:
         logger.error(
             "faq.reranking_unavailable",
-            reason="unusable_response",
+            reason=RerankFailureReason.UNUSABLE_RESPONSE,
             error="response was unreadable or did not score every candidate once",
             timeout_seconds=timeout_seconds,
             candidate_count=len(chunks),
@@ -116,7 +135,7 @@ async def rerank_chunks(
     return scored
 
 
-def _reason_for(exc: Exception) -> str:
+def _reason_for(exc: Exception) -> RerankFailureReason:
     """Classify `exc` into the closed set of reasons the failure event reports.
 
     On the exception's type, never on words in its message. A substring test is not a
@@ -125,9 +144,9 @@ def _reason_for(exc: Exception) -> str:
     so a wrong one is worse than a coarse one.
     """
     if isinstance(exc, voyage_error.RateLimitError):
-        return "rate_limited"
+        return RerankFailureReason.RATE_LIMITED
     if isinstance(exc, voyage_error.AuthenticationError | PermissionError):
-        return "refused"
+        return RerankFailureReason.REFUSED
     # `voyage_error.Timeout` is the provider client's own read/connect timeout and is
     # not a `TimeoutError` - it descends from `VoyageError`, so listing the builtin
     # alone leaves the single likeliest vendor failure filed under `unexpected`.
@@ -140,7 +159,7 @@ def _reason_for(exc: Exception) -> str:
         | ConnectionError
         | TimeoutError,
     ):
-        return "transport"
+        return RerankFailureReason.TRANSPORT
     # `APIError` is what this client raises for a body it could not parse and for a
     # status it has no name for - an answer it cannot use, which is what this reason
     # says.
@@ -150,11 +169,11 @@ def _reason_for(exc: Exception) -> str:
         | voyage_error.MalformedRequestError
         | voyage_error.APIError,
     ):
-        return "unusable_response"
+        return RerankFailureReason.UNUSABLE_RESPONSE
     # Anything the provider does not raise as one of its own: a bug here, a test guard,
     # something in the event loop. Named as itself rather than filed under a cause it
     # was not, so a run of these reads as "look at this", not "the vendor is down".
-    return "unexpected"
+    return RerankFailureReason.UNEXPECTED
 
 
 def _apply_scores(

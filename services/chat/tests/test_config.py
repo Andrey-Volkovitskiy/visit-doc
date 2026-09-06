@@ -8,6 +8,7 @@ is declared once instead of repeated.
 
 import pytest
 from chat.core.config import Settings
+from pydantic import ValidationError
 
 # Every field 007 adds, so an unconfigured build can be constructed deliberately.
 _NEW_FIELDS = (
@@ -139,3 +140,25 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
     assert overridden.RERANK_CAP == 2
     assert overridden.RERANK_TIMEOUT_SECONDS == 1.5
     assert overridden.RERANK_MODEL == "rerank-other"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("RETRIEVAL_POOL_SIZE", 0),
+        ("SIMILARITY_CAP", 0),
+        ("RERANK_CAP", -1),
+        ("RERANK_FLOOR", 1.5),
+        ("SIMILARITY_FLOOR", -2.0),
+        ("RERANK_TIMEOUT_SECONDS", 0.0),
+    ],
+)
+def test_a_gate_number_outside_its_range_fails_at_startup(
+    field: str, value: object
+) -> None:
+    # None of these fails loudly on its own: a cap of zero empties a gate, a floor above
+    # every score abstains on every turn, and a deadline of zero abandons the call
+    # before it is made. Each reads in the log as a corpus problem, so the range is
+    # enforced where the value enters rather than inferred from a week of abstentions.
+    with pytest.raises(ValidationError):
+        _settings(**{field: value})

@@ -15,6 +15,7 @@ is built from, and what the turn records.
 """
 
 from collections.abc import AsyncIterator
+from enum import StrEnum
 
 from anthropic import AsyncAnthropic
 from qdrant_client import AsyncQdrantClient
@@ -82,7 +83,7 @@ async def answer_faq(
     escalation: EscalationRequests,
     stream: bool = True,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent | FaqResult]:
-    """Retrieve context for the current turn, then stream a grounded answer or abstain.
+    """Retrieve context for the current turn, then answer from it or abstain.
 
     Args:
         rerank_client: The reranking client, separate from `voyage_client` so its
@@ -341,10 +342,18 @@ def _identify(
     ]
 
 
-def _gate_of(verdict: FaqVerdict) -> str | None:
+class AbstentionGate(StrEnum):
+    """Where a turn stopped - `faq.verdict`'s `gate` field, one value per abstention."""
+
+    EMPTY_CORPUS = "empty_corpus"
+    SIMILARITY_FLOOR = "similarity_floor"
+    RERANK_FLOOR = "rerank_floor"
+
+
+def _gate_of(verdict: FaqVerdict) -> AbstentionGate | None:
     """Name the gate an abstention stopped at, or None when the turn answered."""
     return {
-        FaqVerdict.ABSTAINED_EMPTY_CORPUS: "empty_corpus",
-        FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: "similarity_floor",
-        FaqVerdict.ABSTAINED_RERANK_FLOOR: "rerank_floor",
+        FaqVerdict.ABSTAINED_EMPTY_CORPUS: AbstentionGate.EMPTY_CORPUS,
+        FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: AbstentionGate.SIMILARITY_FLOOR,
+        FaqVerdict.ABSTAINED_RERANK_FLOOR: AbstentionGate.RERANK_FLOOR,
     }.get(verdict)

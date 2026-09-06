@@ -499,6 +499,18 @@ async def test_the_observation_pool_size_changes_no_answer(pool_size: int) -> No
     assert len(rerank.await_args.args[2]) == get_settings().SIMILARITY_CAP
 
 
+async def test_the_reranker_is_asked_to_score_every_chunk_on_the_shortlist() -> None:
+    # `top_k` below the shortlist's length leaves a survivor unscored, and the port
+    # refuses a partial response - so the turn would answer unreranked on every FAQ
+    # question, silently, for as long as the two numbers disagreed.
+    pool = [_chunk(i, similarity=0.9 - i / 100) for i in range(8)]
+
+    _, _, rerank, _ = await _run(pool=pool, reranked=[_chunk(0, rerank=0.9)])
+
+    shortlist = rerank.await_args.args[2]
+    assert rerank.await_args.kwargs["top_k"] == len(shortlist)
+
+
 async def test_a_wider_pool_costs_log_lines_not_log_volume() -> None:
     """The 200-char preview is what keeps a 5x wider pool off the log's size (SC-004a).
 

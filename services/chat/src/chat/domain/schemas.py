@@ -63,11 +63,9 @@ class IntentClassificationResult(BaseModel):
 class FaqVerdict(StrEnum):
     """What the FAQ half of a turn did, and for an abstention, where it stopped.
 
-    Five values, each one situation. It replaces a `grounded` boolean whose two values
-    stopped partitioning the outcomes: an answered turn is always grounded, so `true`
-    carried no information, while `false` covered three situations calling for three
-    different fixes - add entries, rewrite the entry or lower the similarity floor, or
-    lower the rerank floor.
+    Five values, each one situation. An abstention names the gate that stopped it,
+    because the three call for three different fixes - add entries, rewrite the entry
+    or lower the similarity floor, or lower the rerank floor.
 
     `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
     because the answer rests on different evidence: up to five chunks no cross-encoder
@@ -90,7 +88,7 @@ class FaqVerdict(StrEnum):
 
 
 class Citation(BaseModel):
-    """A retrieved chunk cited in a grounded answer, verbatim."""
+    """A retrieved chunk the answer was generated from, verbatim."""
 
     entry_id: int
     chunk_index: int

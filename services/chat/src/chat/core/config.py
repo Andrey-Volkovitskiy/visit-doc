@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from shared_logging import LogLevel
 
@@ -60,13 +61,18 @@ class Settings(BaseSettings):
     # that discards only what it never fetched cannot be argued up or down. The extra
     # candidates are logged and otherwise ignored - they reach no gate, no prompt and
     # no reranker, so widening this changes what a turn records and never what it says.
-    RETRIEVAL_POOL_SIZE: int = 25
+    #
+    # Bounded, as are the four gate numbers below it. An out-of-range value here does
+    # not fail loudly - a cap of zero or less silently empties a gate, and a floor above
+    # every score silently abstains on every turn - so the range is enforced at startup
+    # rather than discovered from a week of abstentions.
+    RETRIEVAL_POOL_SIZE: int = Field(default=25, gt=0)
     # Per-chunk, not per-turn: a chunk below this is not admitted because a better one
     # cleared it. Lower than the 0.5 whole-turn gate it replaces, and stricter in
     # effect, because a chunk admitted here is still only a candidate - the reranker
     # decides whether it survives.
-    SIMILARITY_FLOOR: float = 0.3
-    SIMILARITY_CAP: int = 5
+    SIMILARITY_FLOOR: float = Field(default=0.3, ge=-1.0, le=1.0)
+    SIMILARITY_CAP: int = Field(default=5, gt=0)
     # The midpoint of the band that scores best on the calibration set. Every floor
     # from 0.520 to 0.636 scores identically there (10/10 answerable, 9/10 not), so
     # there is no optimum to find - only a widest gap from the nearest mistake on
@@ -77,14 +83,14 @@ class Settings(BaseSettings):
     # scores 0.6953, *above* the weakest correct answer, so no floor separates the two
     # classes and every value here is a choice of which mistake to make.
     # See specs/008-*/calibration/questions.md.
-    RERANK_FLOOR: float = 0.58
-    RERANK_CAP: int = 3
+    RERANK_FLOOR: float = Field(default=0.58, ge=0.0, le=1.0)
+    RERANK_CAP: int = Field(default=3, gt=0)
     # The reranker sits between retrieval and the first generated token, so every
     # second it hangs is silence the patient watches. Exceeding this is handled as a
     # failure: the turn answers from the retrieval survivors instead. Tolerant rather
     # than tight because falling back costs the turn its precision stage, so a call
     # that would have returned at 3s is worth waiting for.
-    RERANK_TIMEOUT_SECONDS: float = 5.0
+    RERANK_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0.0)
     RERANK_MODEL: str = "rerank-3"
     # DEBUG additionally logs what each specialist actually sent the model. Off by
     # default: that is the whole conversation, so it belongs in a dev terminal rather

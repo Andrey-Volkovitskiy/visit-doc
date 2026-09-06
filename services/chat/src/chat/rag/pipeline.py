@@ -75,8 +75,13 @@ def _split(
     Both gates share this so the floor-then-cap ordering, and which rejection list each
     loser lands in, are decided once rather than in two places free to drift.
     """
-    above = [c for c in ordered if clears_floor(c)]
-    below = [c for c in ordered if not clears_floor(c)]
+    above: list[ScoredChunk] = []
+    below: list[ScoredChunk] = []
+    for chunk in ordered:
+        if clears_floor(chunk):
+            above.append(chunk)
+        else:
+            below.append(chunk)
     return GateResult(
         kept=above[:cap], dropped_by_floor=below, dropped_by_cap=above[cap:]
     )
