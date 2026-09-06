@@ -16,14 +16,15 @@ passes between its stages. Qdrant's schema does not change at all.
 
 The column is a plain string, matching `messages.sender` and `messages.attention_mark`. The closed
 set is enforced by mypy at every call site; the database stores the value. This is what
-`docs/python-style-guide.md` prescribes, and it means a sixth verdict costs no migration.
+`docs/python-style-guide.md` prescribes, and it means a further verdict costs no migration.
 
 | Value | Meaning | Reached when |
 |---|---|---|
 | `answered` | Answered from a reranked shortlist | Both gates passed |
 | `answered_unreranked` | Answered from the similarity survivors, reranking unavailable | Similarity gate passed, reranking failed (FR-010) |
 | `abstained_empty_corpus` | No corpus to search | Session publishes no live revisions |
-| `abstained_similarity_floor` | Corpus searched, nothing scored ≥ the similarity floor | Pool non-empty or empty, no survivor |
+| `abstained_empty_pool` | Corpus searched, nothing matched at all | Live revisions exist, the search returned no chunk of them |
+| `abstained_similarity_floor` | Corpus searched, nothing scored ≥ the similarity floor | Pool non-empty, no survivor |
 | `abstained_rerank_floor` | Candidates existed, none scored ≥ the rerank floor | Reranker answered "none of these" |
 
 **Nullability carries meaning**: NULL means no FAQ specialist ran (a booking-only reply, a patient
@@ -113,7 +114,7 @@ clears the floor.
 
 ### `FaqVerdict.answered` (property)
 
-`True` for `answered` and `answered_unreranked`, `False` for the three abstentions. The single
+`True` for `answered` and `answered_unreranked`, `False` for the four abstentions. The single
 predicate every caller branches on, so "did this turn answer?" is asked in one place rather than
 re-derived from a set membership test at each call site.
 
@@ -172,4 +173,4 @@ in `rag/groundedness.py` is deleted along with the module.
 - **FAQ entries and revisions**: `FaqEntry`, `FaqChunk`, the additive-revision save, the publish
   commit, deletes. Untouched.
 - **Escalation**: `EscalationReason.CORPUS_COULD_NOT_ANSWER` and the `corpus_could_not_answer`
-  attention mark carry all three abstentions (FR-019, FR-021a). No new reason, no new mark.
+  attention mark carry all four abstentions (FR-019, FR-021a). No new reason, no new mark.

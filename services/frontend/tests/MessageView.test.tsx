@@ -111,7 +111,13 @@ describe("MessageView booking replies", () => {
     expect(mark).toHaveAttribute("title", expect.stringContaining("reranking"));
   });
 
-  it.each(["answered", "abstained_empty_corpus", "abstained_similarity_floor", "abstained_rerank_floor"] as const)(
+  it.each([
+    "answered",
+    "abstained_empty_corpus",
+    "abstained_empty_pool",
+    "abstained_similarity_floor",
+    "abstained_rerank_floor",
+  ] as const)(
     "leaves %s unmarked - a marker on every message marks nothing",
     (verdict) => {
       render(

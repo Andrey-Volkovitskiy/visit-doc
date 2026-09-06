@@ -53,7 +53,7 @@ neither substitutes for the other.
 make services-up && make services-status    # stop with `make services-down`, never pkill
 ```
 
-## 3. Walk the five verdicts
+## 3. Walk the six verdicts
 
 `scripts/dev-chat.sh` mints a session, posts turns, and reads the thread and the staff console. Each
 scenario below names what to look for in the turn's log (`.run/chat.log`) — filter by the turn's
@@ -66,8 +66,9 @@ correlation id.
 | 3 | Fresh session | Something entirely off-topic | `abstained_similarity_floor`; `faq.retrieval_completed` present, no reranking call |
 | 4 | Raise `RERANK_FLOOR` to `0.99`, restart chat | A question the corpus answers | `abstained_rerank_floor` — reranking ran and rejected everything. This is the row that proves the two abstentions are distinguishable. |
 | 5 | Point `RERANK_MODEL` at a nonexistent model, restart | A question the corpus answers | `answered_unreranked`; **ERROR** `faq.reranking_unavailable`; the patient still gets a cited answer |
+| 6 | Point `QDRANT_COLLECTION_NAME` at a name that does not exist, restart (the session's entries stay in Postgres) | A question the corpus answers | `abstained_empty_pool`; `faq.retrieval_completed` with `pool_returned` = 0, `faq.similarity_gate` with `kept` = `[]`, no reranking call; staff called. The row that proves an index behind the rows is not read as a floor set too high. |
 
-Scenarios 2–4 spend no generation call at all — the abstention is reached before it. That is
+Scenarios 2–4 and 6 spend no generation call at all — the abstention is reached before it. That is
 [SC-002](./spec.md), and it is visible as the absence of a generation event.
 
 ## 4. Observation pool and log volume
@@ -136,7 +137,9 @@ against.
 
 - [X] `make test` and `make precommit` pass
 - [X] Paid-API guard blocks `rerank`; no `groundedness` test collects
-- [X] All five verdicts reproduced against the live stack (§3), and as automated cases in `test_answer_faq.py`
+- [X] Five of the six verdicts reproduced against the live stack (§3 rows 1–5), and all six as
+  automated cases in `test_answer_faq.py`/`test_pipeline.py`
+- [ ] `abstained_empty_pool` (§3 row 6) walked against the live stack
 - [X] Pool size provably does not change answers (§4)
 - [X] Citations staff-only, marker on the unreranked turn only (§5)
 - [X] Migration verified up and down (§6) — `test_migrations.py`

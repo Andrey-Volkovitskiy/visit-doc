@@ -274,11 +274,11 @@ job: chunking, retrieval, reranking.
   contract is `specs/008-reranked-retrieval-pipeline/contracts/log-events.md`.
 - The turn attribute "Grounded" has no sense any more. If the FAQ node provides an answer then it's
   always grounded. If it can't then it should explicitly run the abstention path and call staff.
-  *(Shipped as a five-value `FaqVerdict` rather than a removal: `answered`, `answered_unreranked`,
-  and one value per gate for the three abstentions — an empty corpus, nothing clearing the
-  similarity floor, nothing clearing the rerank floor. All three abstentions are identical to the
-  patient and to staff; they differ only in the record, which is what says whether to add entries or
-  to move a floor.)*
+  *(Shipped as a six-value `FaqVerdict` rather than a removal: `answered`, `answered_unreranked`,
+  and one value per stopping point for the four abstentions — an empty corpus, a search that matched
+  nothing at all, nothing clearing the similarity floor, nothing clearing the rerank floor. All four
+  abstentions are identical to the patient and to staff; they differ only in the record, which is
+  what says whether to add entries, re-index, or move a floor.)*
 
 #### Phase 1f — Sub-query extraction
 1c routes a mixed-intent message to two specialists at once, but hands each of them the *whole*

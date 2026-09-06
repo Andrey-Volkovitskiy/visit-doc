@@ -80,16 +80,16 @@ result. Not emitted when reranking did not run.
 
 ## `faq.verdict` — INFO (FR-032)
 
-`verdict`, `survivor_count`, and — for an abstention — `gate` (`empty_corpus`, `similarity_floor`,
-`rerank_floor`) and `best_score_seen` (`None` when nothing was retrieved at all). `best_score_seen`
-is what separates "nothing was close" from "something was close and the floor was too high", which
-FR-028's two drop lists answer for a gate and this answers for the turn.
+`verdict`, `survivor_count`, and — for an abstention — `gate` (`empty_corpus`, `empty_pool`,
+`similarity_floor`, `rerank_floor`) and `best_score_seen` (`None` when nothing was retrieved at
+all). `best_score_seen` is what separates "nothing was close" from "something was close and the
+floor was too high", which FR-028's two drop lists answer for a gate and this answers for the turn.
 
 ## `turn.completed` — INFO, existing event, changed (FR-025, FR-025a)
 
 - `grounded` → **removed**
 - `faq_verdict` → added
-- `abstention_message` → still set on any abstention (unchanged behavior, three triggers now)
+- `abstention_message` → still set on any abstention (unchanged behavior, four triggers now)
 - `citations` → each entry now carries **both** `similarity_score` and `rerank_score`;
   `rerank_score` is **absent/null** on an `answered_unreranked` turn — never `0.0`, never a copy of
   the similarity score (FR-025a).

@@ -135,6 +135,10 @@ def decide(
     """Assign the turn's verdict from what each stage produced.
 
     Args:
+        observed: every candidate the search returned, before any gate. Empty while
+            the corpus is not empty means the search matched no chunk of the live
+            revisions at all - the index is behind the rows - which is a different
+            situation, and a different fix, from a pool the floor rejected.
         reranked: the rerank gate's survivors, or None when no rerank score was
             obtained at all. The distinction is load-bearing: None means the reranker
             did not answer, so the turn falls back and answers unreranked; an empty
@@ -149,6 +153,10 @@ def decide(
     if corpus_empty:
         return PipelineOutcome(
             verdict=FaqVerdict.ABSTAINED_EMPTY_CORPUS, observed=observed
+        )
+    if not observed:
+        return PipelineOutcome(
+            verdict=FaqVerdict.ABSTAINED_EMPTY_POOL, observed=observed
         )
     if not considered:
         return PipelineOutcome(

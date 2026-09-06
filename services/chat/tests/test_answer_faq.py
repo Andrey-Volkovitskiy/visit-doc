@@ -197,7 +197,7 @@ async def test_retrieval_is_given_the_trailing_patient_message_unchanged() -> No
     assert search.await_args.args[2] == question
 
 
-# --- US2: the three abstentions ----------------------------------------------------
+# --- US2: the four abstentions -----------------------------------------------------
 
 
 async def test_an_empty_corpus_abstains_without_embedding_or_searching() -> None:
@@ -207,6 +207,17 @@ async def test_an_empty_corpus_abstains_without_embedding_or_searching() -> None
 
     assert result.verdict is FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert result.citations == []
+    assert recorder.get("calls") is None
+    rerank.assert_not_awaited()
+    assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
+
+
+async def test_a_search_matching_nothing_abstains_at_the_pool_not_the_floor() -> None:
+    # Live revisions the search returned no chunk of: the index is behind the rows, so
+    # no floor rejected anything and lowering one would not help.
+    result, recorder, rerank, escalation = await _run(pool=[], reranked=None)
+
+    assert result.verdict is FaqVerdict.ABSTAINED_EMPTY_POOL
     assert recorder.get("calls") is None
     rerank.assert_not_awaited()
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
@@ -234,11 +245,12 @@ async def test_an_all_rejected_rerank_abstains_with_no_generation() -> None:
     ("pool", "reranked", "revisions"),
     [
         ([], None, []),
+        ([], None, None),
         ([_chunk(0, similarity=0.05)], None, None),
         ([_chunk(0)], [], None),
     ],
 )
-async def test_all_three_abstentions_are_identical_to_the_patient(
+async def test_all_four_abstentions_are_identical_to_the_patient(
     pool: list[ScoredChunk],
     reranked: list[ScoredChunk] | None,
     revisions: list[str] | None,
@@ -451,10 +463,12 @@ async def test_the_rerank_gate_reports_its_own_floor_cap_and_drops() -> None:
 
 async def test_the_verdict_event_names_the_gate_for_each_abstention() -> None:
     empty = await _logged(pool=[], reranked=None, live_revisions=[])
+    unmatched = await _logged(pool=[], reranked=None)
     similarity = await _logged(pool=[_chunk(0, similarity=0.01)], reranked=None)
     rerank = await _logged(pool=[_chunk(0)], reranked=[])
 
     assert empty["faq.verdict"]["gate"] == "empty_corpus"
+    assert unmatched["faq.verdict"]["gate"] == "empty_pool"
     assert similarity["faq.verdict"]["gate"] == "similarity_floor"
     assert rerank["faq.verdict"]["gate"] == "rerank_floor"
 
@@ -598,7 +612,7 @@ async def test_an_empty_corpus_raises_no_retrieval_or_gate_event() -> None:
     assert events["faq.verdict"]["gate"] == "empty_corpus"
 
 
-async def test_a_searched_corpus_matching_nothing_still_raises_both_events() -> None:
+async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
     # The other side of the same rule: a search that ran and found nothing usable is a
     # decision the gate made, and it has to be visible as one.
     events = await _logged(pool=[_chunk(0, similarity=0.01)], reranked=None)

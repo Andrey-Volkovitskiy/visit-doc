@@ -18,16 +18,17 @@ export interface ChatTokenEvent {
 }
 
 /**
- * What the FAQ half of a turn did, and for an abstention, which gate stopped it.
+ * What the FAQ half of a turn did, and for an abstention, where it stopped.
  *
- * The three abstentions are identical to the patient - same message, same handoff -
+ * The four abstentions are identical to the patient - same message, same handoff -
  * and differ only in the record, which is what says whether the corpus is empty, the
- * similarity floor is too high, or the rerank floor is.
+ * index is behind it, the similarity floor is too high, or the rerank floor is.
  */
 export type FaqVerdict =
   | "answered"
   | "answered_unreranked"
   | "abstained_empty_corpus"
+  | "abstained_empty_pool"
   | "abstained_similarity_floor"
   | "abstained_rerank_floor";
 

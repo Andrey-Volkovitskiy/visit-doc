@@ -265,10 +265,10 @@ class Message(Base):
     sender: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     # Only ever set on an assistant message whose turn ran the FAQ specialist: which of
-    # `FaqVerdict`'s five outcomes that turn had, or NULL when no FAQ half ran - a
+    # `FaqVerdict`'s six outcomes that turn had, or NULL when no FAQ half ran - a
     # booking-only reply, a patient message, a staff message. Plain string, like
-    # `sender` and `attention_mark`, so a sixth verdict needs no migration; callers pass
-    # a `FaqVerdict` member, never a bare literal.
+    # `sender` and `attention_mark`, so a further verdict needs no migration; callers
+    # pass a `FaqVerdict` member, never a bare literal.
     faq_verdict: Mapped[str | None] = mapped_column(String(32), nullable=True)
     citations: Mapped[list[dict[str, object]] | None] = mapped_column(
         JSONB, nullable=True

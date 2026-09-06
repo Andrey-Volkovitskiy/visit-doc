@@ -44,22 +44,27 @@ candidate inside the cap also clears the floor.
 
 The single place a verdict is assigned. `reranked` is `None` when reranking did not run or failed.
 
-| # | corpus_empty | considered | reranked | Verdict | survivors |
-|---|---|---|---|---|---|
-| 1 | `True` | `[]` | `None` | `abstained_empty_corpus` | `[]` |
-| 2 | `False` | `[]` | `None` | `abstained_similarity_floor` | `[]` |
-| 3 | `False` | non-empty | `None` (failed/timed out) | `answered_unreranked` | `considered` |
-| 4 | `False` | non-empty | `[]` | `abstained_rerank_floor` | `[]` |
-| 5 | `False` | non-empty | non-empty | `answered` | `reranked` |
+| # | corpus_empty | observed | considered | reranked | Verdict | survivors |
+|---|---|---|---|---|---|---|
+| 1 | `True` | `[]` | `[]` | `None` | `abstained_empty_corpus` | `[]` |
+| 2 | `False` | `[]` | `[]` | `None` | `abstained_empty_pool` | `[]` |
+| 3 | `False` | non-empty | `[]` | `None` | `abstained_similarity_floor` | `[]` |
+| 4 | `False` | non-empty | non-empty | `None` (failed/timed out) | `answered_unreranked` | `considered` |
+| 5 | `False` | non-empty | non-empty | `[]` | `abstained_rerank_floor` | `[]` |
+| 6 | `False` | non-empty | non-empty | non-empty | `answered` | `reranked` |
 
-Row 3 versus row 4 is the distinction the fallback turns on, and it is why `reranked` is
+Row 4 versus row 5 is the distinction the fallback turns on, and it is why `reranked` is
 `None`-vs-`[]` rather than a list that might be empty for either reason: `None` means *no scores were
 obtained*, `[]` means *scores were obtained and none cleared the floor*. One value, one meaning — a
 single empty list standing for both would make FR-010 and FR-008 indistinguishable, and the
 difference between them is whether the patient gets an answer.
 
-Row 1 versus row 2: both abstain identically and are identical to the patient (FR-021a). Only the
-record differs.
+Rows 1, 2 and 3 are the same reasoning applied to the retrieval half: all three abstain identically
+and are identical to the patient (FR-021a), and only the record differs — but the record is what
+names the fix. An empty corpus wants entries; an empty pool means the session publishes live
+revisions the search matched no chunk of, so the index is behind the rows and a re-index is the fix;
+only row 3 is a floor rejecting something, and only row 3 is evidence about where the floor sits
+(FR-021b). Reading row 2 as row 3 would have an operator lowering a floor that never ran.
 
 **Invariant** (asserted in tests, one test per clause):
 - `survivors` non-empty **iff** verdict ∈ {`answered`, `answered_unreranked`}

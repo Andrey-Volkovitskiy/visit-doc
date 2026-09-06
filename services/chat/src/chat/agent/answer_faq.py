@@ -59,7 +59,7 @@ _SYSTEM_PROMPT = (
 # the patient really may go on asking while staff follow up, and the sentence has to
 # say so or the silence it implies is a lie about the state.
 #
-# One message for all three abstentions. Which gate stopped the turn is a fact about
+# One message for all four abstentions. Which gate stopped the turn is a fact about
 # the clinic's corpus, not about the patient's question, and telling them apart here
 # would be describing the system's internals to someone who asked about a visit.
 _ABSTENTION_MESSAGE = (
@@ -346,6 +346,7 @@ class AbstentionGate(StrEnum):
     """Where a turn stopped - `faq.verdict`'s `gate` field, one value per abstention."""
 
     EMPTY_CORPUS = "empty_corpus"
+    EMPTY_POOL = "empty_pool"
     SIMILARITY_FLOOR = "similarity_floor"
     RERANK_FLOOR = "rerank_floor"
 
@@ -354,6 +355,7 @@ def _gate_of(verdict: FaqVerdict) -> AbstentionGate | None:
     """Name the gate an abstention stopped at, or None when the turn answered."""
     return {
         FaqVerdict.ABSTAINED_EMPTY_CORPUS: AbstentionGate.EMPTY_CORPUS,
+        FaqVerdict.ABSTAINED_EMPTY_POOL: AbstentionGate.EMPTY_POOL,
         FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: AbstentionGate.SIMILARITY_FLOOR,
         FaqVerdict.ABSTAINED_RERANK_FLOOR: AbstentionGate.RERANK_FLOOR,
     }.get(verdict)

@@ -98,7 +98,7 @@ what survived, and retire the turn's `grounded` boolean.
   from the retrieval survivors because the reranker was unavailable; or it abstained, at one of the
   gates. A boolean cannot say the abstentions apart, and which gate rejected a question is exactly
   the signal that says *which floor is mistuned* — the reason 1d built the FAQ screen by hand in the
-  first place. *(The abstention half was split once more below, giving five values in all.)*
+  first place. *(The abstention half was split twice more below, giving six values in all.)*
 
 - Q: A retrieval-gate abstention covered two different situations — the session's corpus is empty and
   no search was issued at all, or the corpus had content and nothing cleared the floor. Should they
@@ -478,16 +478,21 @@ booking-only turn and confirm all three report no verdict.
 - **FR-019**: Any abstention MUST call staff with the existing corpus-gap reason and MUST leave the
   existing corpus-gap attention mark on the patient's message, unchanged from spec 007 — including
   that the assistant is not silenced by it.
-- **FR-020**: The three abstentions MUST be distinguishable in the turn's record and logs. What makes
+- **FR-020**: The four abstentions MUST be distinguishable in the turn's record and logs. What makes
   them indistinguishable to the patient is FR-018 and FR-019, which apply to *any* abstention; this
   requirement adds only the record.
 
 **The verdict**
 
-- **FR-021**: Each turn with an FAQ half MUST carry a **typed verdict** with exactly these five
-  values: *answered*, *answered without reranking*, *abstained: empty corpus*, *abstained: nothing
-  cleared the similarity floor*, *abstained: nothing cleared the rerank floor*.
-- **FR-021a**: Assigning one of the three abstention verdicts MUST NOT branch behavior. The verdict
+- **FR-021**: Each turn with an FAQ half MUST carry a **typed verdict** with exactly these six
+  values: *answered*, *answered without reranking*, *abstained: empty corpus*, *abstained: the search
+  matched nothing*, *abstained: nothing cleared the similarity floor*, *abstained: nothing cleared
+  the rerank floor*.
+- **FR-021b**: *Abstained: the search matched nothing* MUST be distinct from *abstained: nothing
+  cleared the similarity floor*. A session that publishes live revisions whose chunks the search does
+  not return has an index behind its rows; no floor rejected anything, and lowering the floor cannot
+  fix it.
+- **FR-021a**: Assigning one of the four abstention verdicts MUST NOT branch behavior. The verdict
   is a label on the outcome FR-018 and FR-019 already define; no code may read it to decide what the
   patient sees, whether staff are called, or whether generation runs.
 - **FR-022**: A turn with no FAQ half MUST carry **no verdict** — absent, not defaulted.
@@ -496,7 +501,7 @@ booking-only turn and confirm all three report no verdict.
   history read by the patient pane and the staff console. No surface may keep the boolean.
 - **FR-023a**: The staff console MUST mark an assistant message whose verdict is *answered without
   reranking*, with a hover explaining that the answer was produced without the reranking stage. It
-  MUST NOT mark the other four verdicts: an answer with citations and an abstention message already
+  MUST NOT mark the other five verdicts: an answer with citations and an abstention message already
   say what they are, and a marker on every message marks nothing.
 - **FR-023b**: The patient pane MUST show nothing about the verdict. How an answer was produced is
   not the patient's to reason about, and the abstention message already says the one thing that
@@ -586,8 +591,8 @@ booking-only turn and confirm all three report no verdict.
 - **Gate**: a floor plus a cap applied to a scored candidate list, producing survivors and two kinds
   of rejection — below the floor, and beyond the cap.
 - **FAQ verdict**: the typed outcome of a turn's FAQ half (FR-021), naming what happened and, for
-  an abstention, why — an empty corpus, the similarity floor, or the rerank floor. Five values, each
-  one situation, none of them needing the word "or" to describe.
+  an abstention, why — an empty corpus, a search that matched nothing, the similarity floor, or the
+  rerank floor. Six values, each one situation, none of them needing the word "or" to describe.
 - **Calibration set**: 20 committed question records — the question, whether the default corpus
   answers it, and for the answerable ones the entry that should be cited. It is evidence for the
   shipped thresholds, run by a person, never by CI.
@@ -623,9 +628,9 @@ booking-only turn and confirm all three report no verdict.
 - **SC-006a**: Changing the observation pool size alone changes no answer and no citation on any
   turn — only what that turn logged. Two runs of the same question at different pool sizes produce
   the same context, the same citations, and the same verdict.
-- **SC-007**: Given any turn's stored record, a reader can tell which of the five outcomes it had,
-  and for an abstention, whether the corpus was empty, the similarity floor rejected it, or the
-  rerank floor did.
+- **SC-007**: Given any turn's stored record, a reader can tell which of the six outcomes it had,
+  and for an abstention, whether the corpus was empty, the search matched nothing, the similarity
+  floor rejected it, or the rerank floor did.
 - **SC-007a**: A staff member reading a conversation in the console can tell, without opening a log,
   which assistant answers in it were produced without reranking — and sees no marker at all on a
   conversation where every answer was reranked.

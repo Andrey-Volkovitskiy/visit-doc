@@ -6,8 +6,8 @@
   {"type": "done",
 -  "grounded": true | false | null,
 +  "faq_verdict": "answered" | "answered_unreranked"
-+                 | "abstained_empty_corpus" | "abstained_similarity_floor"
-+                 | "abstained_rerank_floor" | null,
++                 | "abstained_empty_corpus" | "abstained_empty_pool"
++                 | "abstained_similarity_floor" | "abstained_rerank_floor" | null,
    "citations": [{entry_id, chunk_index, chunk_text}],
    "message": "...", "answer_source": "faq" | "booking" | "merged" | "hand_off"}
 ```

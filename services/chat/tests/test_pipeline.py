@@ -186,7 +186,15 @@ def test_row_1_empty_corpus_abstains_at_the_corpus() -> None:
     assert outcome.survivors == []
 
 
-def test_row_2_nothing_cleared_the_similarity_floor() -> None:
+def test_row_2_a_searched_corpus_that_matched_nothing_abstains_at_the_pool() -> None:
+    outcome = decide([], [], None, corpus_empty=False)
+
+    assert outcome.verdict is FaqVerdict.ABSTAINED_EMPTY_POOL
+    assert outcome.survivors == []
+    assert outcome.observed == []
+
+
+def test_row_3_nothing_cleared_the_similarity_floor() -> None:
     observed = [_chunk(0.1)]
 
     outcome = decide(observed, [], None, corpus_empty=False)
@@ -196,7 +204,7 @@ def test_row_2_nothing_cleared_the_similarity_floor() -> None:
     assert outcome.observed == observed
 
 
-def test_row_3_no_rerank_scores_obtained_answers_unreranked() -> None:
+def test_row_4_no_rerank_scores_obtained_answers_unreranked() -> None:
     considered = [_chunk(0.9, index=0), _chunk(0.5, index=1)]
 
     outcome = decide(considered, considered, None, corpus_empty=False)
@@ -205,7 +213,7 @@ def test_row_3_no_rerank_scores_obtained_answers_unreranked() -> None:
     assert outcome.survivors == considered
 
 
-def test_row_4_scored_but_none_cleared_the_rerank_floor() -> None:
+def test_row_5_scored_but_none_cleared_the_rerank_floor() -> None:
     considered = [_chunk(0.9)]
 
     outcome = decide(considered, considered, [], corpus_empty=False)
@@ -214,7 +222,7 @@ def test_row_4_scored_but_none_cleared_the_rerank_floor() -> None:
     assert outcome.survivors == []
 
 
-def test_row_5_reranked_survivors_answer() -> None:
+def test_row_6_reranked_survivors_answer() -> None:
     considered = [_chunk(0.9, index=0), _chunk(0.5, index=1)]
     reranked = [_chunk(0.5, index=1, rerank=0.8)]
 
@@ -249,6 +257,17 @@ def test_empty_corpus_and_similarity_miss_are_different_verdicts() -> None:
     assert not miss.verdict.answered
 
 
+def test_an_unmatched_search_and_a_similarity_miss_are_different_verdicts() -> None:
+    # A corpus with live revisions the search returned no chunk of is an index behind
+    # the rows, not a floor set too high - and no floor rejected anything to lower.
+    unmatched = decide([], [], None, corpus_empty=False)
+    miss = decide([_chunk(0.1)], [], None, corpus_empty=False)
+
+    assert unmatched.verdict is not miss.verdict
+    assert unmatched.verdict is not FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    assert not unmatched.verdict.answered
+
+
 # --------------------------------------------------------------------------
 # Invariants - one test per clause of the contract
 # --------------------------------------------------------------------------
@@ -259,6 +278,7 @@ def _outcomes() -> list[PipelineOutcome]:
     reranked = [_chunk(0.9, index=0, rerank=0.8)]
     return [
         decide([], [], None, corpus_empty=True),
+        decide([], [], None, corpus_empty=False),
         decide([_chunk(0.1)], [], None, corpus_empty=False),
         decide(considered, considered, None, corpus_empty=False),
         decide(considered, considered, [], corpus_empty=False),

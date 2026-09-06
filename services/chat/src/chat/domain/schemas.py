@@ -63,21 +63,26 @@ class IntentClassificationResult(BaseModel):
 class FaqVerdict(StrEnum):
     """What the FAQ half of a turn did, and for an abstention, where it stopped.
 
-    Five values, each one situation. An abstention names the gate that stopped it,
-    because the three call for three different fixes - add entries, rewrite the entry
-    or lower the similarity floor, or lower the rerank floor.
+    Six values, each one situation. An abstention names where it stopped, because the
+    four call for four different fixes - add entries, re-index the corpus, rewrite the
+    entry or lower the similarity floor, or lower the rerank floor.
+
+    `ABSTAINED_EMPTY_POOL` is not the similarity floor's doing: the session publishes
+    live revisions and the search still matched no chunk of them, which says the index
+    is behind the rows, not that the bar is too high. Lowering the floor cannot fix it.
 
     `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
     because the answer rests on different evidence: up to five chunks no cross-encoder
     approved, rather than at most three it did.
 
-    The three abstentions are identical in behaviour - same message, same call to
+    The four abstentions are identical in behaviour - same message, same call to
     staff, same absence of a generation call. Nothing may branch on which one it is.
     """
 
     ANSWERED = "answered"
     ANSWERED_UNRERANKED = "answered_unreranked"
     ABSTAINED_EMPTY_CORPUS = "abstained_empty_corpus"
+    ABSTAINED_EMPTY_POOL = "abstained_empty_pool"
     ABSTAINED_SIMILARITY_FLOOR = "abstained_similarity_floor"
     ABSTAINED_RERANK_FLOOR = "abstained_rerank_floor"
 
