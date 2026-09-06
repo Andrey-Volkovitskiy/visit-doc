@@ -5,7 +5,6 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
-    Boolean,
     ColumnElement,
     Connection,
     Insert,
@@ -43,6 +42,7 @@ from chat.domain.models import (
     MessageSender,
     Session,
 )
+from chat.domain.schemas import FaqVerdict
 
 # Shared ULID generator for both `Session.id` and `Chat.id`. `Session.id` is a bearer
 # credential (the session cookie value) and MUST be non-guessable (FR-017); bare
@@ -294,7 +294,7 @@ def _insert_into_owned_chat(
     session_id: str,
     sender: MessageSender,
     content: str,
-    grounded: bool | None,
+    faq_verdict: FaqVerdict | None,
     citations: list[dict[str, object]] | None,
     reply_to_message_ids: list[str] | None,
     unless: ColumnElement[bool] | None = None,
@@ -316,7 +316,7 @@ def _insert_into_owned_chat(
         Chat.id,
         literal(sender.value, String),
         literal(content, Text),
-        literal(grounded, Boolean),
+        literal(faq_verdict.value if faq_verdict else None, String),
         literal(citations, JSONB),
         literal(reply_to_message_ids, JSONB),
     ).where(Chat.id == chat_id, Chat.session_id == session_id)
@@ -328,7 +328,7 @@ def _insert_into_owned_chat(
             "chat_id",
             "sender",
             "content",
-            "grounded",
+            "faq_verdict",
             "citations",
             "reply_to_message_ids",
         ],
@@ -344,7 +344,7 @@ async def create_message(
     session_id: str,
     sender: MessageSender,
     content: str,
-    grounded: bool | None = None,
+    faq_verdict: FaqVerdict | None = None,
     citations: list[dict[str, object]] | None = None,
     reply_to_message_ids: list[str] | None = None,
 ) -> Message | None:
@@ -375,7 +375,7 @@ async def create_message(
             session_id=session_id,
             sender=sender,
             content=content,
-            grounded=grounded,
+            faq_verdict=faq_verdict,
             citations=citations,
             reply_to_message_ids=reply_to_message_ids,
         ).returning(Message)
@@ -420,7 +420,7 @@ async def create_assistant_reply_unless_taken_over(
     session_id: str,
     answering_message_id: str,
     content: str,
-    grounded: bool | None,
+    faq_verdict: FaqVerdict | None,
     citations: list[dict[str, object]] | None,
     reply_to_message_ids: list[str] | None,
 ) -> ReplyWrite:
@@ -453,7 +453,7 @@ async def create_assistant_reply_unless_taken_over(
             session_id=session_id,
             sender=MessageSender.ASSISTANT,
             content=content,
-            grounded=grounded,
+            faq_verdict=faq_verdict,
             citations=citations,
             reply_to_message_ids=reply_to_message_ids,
             unless=_taken_over_since(answering_message_id),

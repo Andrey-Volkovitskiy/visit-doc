@@ -28,6 +28,7 @@ from chat.domain.schemas import (
     ChatDoneEvent,
     ChatSilentEvent,
     ChatTokenEvent,
+    FaqVerdict,
     IntentLabel,
 )
 from chat.main import app
@@ -125,7 +126,7 @@ def test_grounded_answer_streams_tokens_and_citations(seeded_entry: int) -> None
 
     assert "".join(t["text"] for t in token_lines) == "Visiting hours are 8am to 5pm."
     assert done_line["type"] == "done"
-    assert done_line["grounded"] is True
+    assert done_line["faq_verdict"] == FaqVerdict.ANSWERED
     assert any(c["entry_id"] == seeded_entry for c in done_line["citations"])
 
 
@@ -144,7 +145,7 @@ def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
 
     assert len(lines) == 1
     assert lines[0]["type"] == "done"
-    assert lines[0]["grounded"] is False
+    assert lines[0]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert lines[0]["citations"] == []
 
 
@@ -179,19 +180,22 @@ def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> N
     assert len(turn_ids) == 1  # every line of the turn shares one turn id
     assert events["turn.message_received"]["message"] == "when can I visit?"
     assert "turn.message_embedded" in events
-    chunks = events["turn.retrieval_completed"]["retrieved_chunks"]
+    chunks = events["faq.retrieval_completed"]["candidates"]
     assert any(c["entry_id"] == seeded_entry for c in chunks)
-    scores = [c["score"] for c in chunks]
+    scores = [c["similarity_score"] for c in chunks]
     assert scores == sorted(scores, reverse=True)
-    assert events["turn.groundedness_verdict"]["grounded"] is True
+    assert events["faq.verdict"]["verdict"] == FaqVerdict.ANSWERED.value
     done = events["turn.completed"]
-    assert done["outcome"] == "grounded"
+    assert done["outcome"] == "answered"
     assert done["answer_text"] == "Visiting hours are 8am to 5pm."
     # The whole turn, not one node: no shorter than the slowest node within it.
     node_durations = [e["duration_ms"] for e in logs if e["event"] == "node.completed"]
     assert done["duration_ms"] >= max(node_durations)
     assert any(c["entry_id"] == seeded_entry for c in done["citations"])
-    assert all("score" in c for c in done["citations"])
+    # Both scores per citation: the pair is what makes a disagreement between the
+    # two stages visible, and the rerank one is absent (not zero) when none was got.
+    assert all("similarity_score" in c for c in done["citations"])
+    assert all("rerank_score" in c for c in done["citations"])
     # intent.classified sits between turn.message_received and turn.completed
     # (contracts/log-events.md §3, research.md #1/#8).
     assert "intent.classified" in events
@@ -223,10 +227,12 @@ def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> 
     assert len(turn_ids) == 1
     assert "turn.message_received" in events
     assert "turn.message_embedded" in events
-    assert "turn.retrieval_completed" in events
-    assert events["turn.groundedness_verdict"]["grounded"] is False
+    assert "faq.retrieval_completed" in events
+    assert (
+        events["faq.verdict"]["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
+    )
     done = events["turn.completed"]
-    assert done["outcome"] == "abstained"
+    assert done["outcome"] == "abstained_similarity_floor"
     assert "abstention_message" in done
     assert "intent.classified" in events
     assert (
@@ -260,7 +266,7 @@ def test_a_message_reaching_no_specialist_still_gets_the_faq_path() -> None:
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert len(lines) == 1
     assert lines[0]["type"] == "done"
-    assert lines[0]["grounded"] is False
+    assert lines[0]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert lines[0]["answer_source"] == "faq"
     assert lines[0]["message"] == _ABSTENTION_MESSAGE
 
@@ -294,7 +300,7 @@ def test_a_message_asking_for_a_person_gets_the_handoff_and_nothing_else() -> No
 
     events = [entry["event"] for entry in logs]
     assert "turn.retrieval_completed" not in events
-    assert "turn.groundedness_verdict" not in events
+    assert "faq.verdict" not in events
     assert anthropic_client.messages.stream.call_count == 0
 
 
@@ -317,7 +323,7 @@ def test_classification_failure_does_not_block_the_faq_reply(seeded_entry: int) 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     done_line = lines[-1]
     assert done_line["type"] == "done"
-    assert done_line["grounded"] is True
+    assert done_line["faq_verdict"] == FaqVerdict.ANSWERED
     assert any(c["entry_id"] == seeded_entry for c in done_line["citations"])
 
     classified = next(e for e in logs if e["event"] == "intent.classified")
@@ -836,7 +842,10 @@ def test_anthropic_and_voyage_clients_are_reused_across_chat_requests(
     assert first_response.status_code == 200
     assert second_response.status_code == 200
     mock_anthropic_cls.assert_called_once()
-    mock_voyage_cls.assert_called_once()
+    # Twice, not once: embedding and reranking hold separate clients so the rerank
+    # deadline is not multiplied by the embedding client's retries. Both are still
+    # built once per lifespan and reused across requests, which is what this pins.
+    assert mock_voyage_cls.call_count == 2
 
 
 def test_session_cookie_issued_on_first_chat_and_reused_by_every_turn(
@@ -925,7 +934,7 @@ async def test_followup_still_abstains_when_neither_message_is_grounded(
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["grounded"] is False
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
 
 
 async def test_burst_cancels_earlier_generation_and_yields_one_reply(
@@ -987,7 +996,7 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
 
     assert first_lines[-1] == {"type": "cancelled"}
     assert second_lines[-1]["type"] == "done"
-    assert second_lines[-1]["grounded"] is True
+    assert second_lines[-1]["faq_verdict"] == FaqVerdict.ANSWERED
 
     async with session_factory() as db_session:
         messages = await chat_repository.list_messages(db_session, chat_id)
@@ -1089,7 +1098,7 @@ def test_get_chat_history_returns_messages_in_chronological_order(
     assert [m["sender"] for m in messages] == ["patient", "assistant"]
     assert messages[0]["content"] == "when can I visit?"
     assert messages[1]["content"] == "Visiting hours are 8am to 5pm."
-    assert messages[1]["grounded"] is True
+    assert messages[1]["faq_verdict"] == FaqVerdict.ANSWERED
     assert len(messages[1]["citations"]) > 0
     assert "created_at" in messages[0]
 
@@ -1105,7 +1114,7 @@ def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
             history_response = client.get(f"/chats/{chat_id_for(client)}/messages")
 
     messages = history_response.json()["messages"]
-    assert messages[1]["grounded"] is False
+    assert messages[1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert messages[1]["citations"] == []
     assert messages[1]["content"] == _ABSTENTION_MESSAGE
 
@@ -1153,7 +1162,7 @@ async def test_get_chat_history_shows_burst_without_forced_alternation() -> None
             session_id=session_row.id,
             sender=MessageSender.ASSISTANT,
             content="Dr. Josh is available Tuesdays.",
-            grounded=True,
+            faq_verdict=FaqVerdict.ANSWERED,
             citations=[],
         )
 
@@ -1236,7 +1245,7 @@ def test_a_booking_only_turn_persists_its_reply_and_reports_no_grounding(
     assert done_line["type"] == "done"
     assert done_line["answer_source"] == "booking"
     # Never retrieved against, so neither grounded nor abstaining.
-    assert done_line["grounded"] is None
+    assert done_line["faq_verdict"] is None
 
     assistant = [m for m in history if m["sender"] == "assistant"]
     assert len(assistant) == 1
@@ -1244,7 +1253,7 @@ def test_a_booking_only_turn_persists_its_reply_and_reports_no_grounding(
     # what is under test is that the persisted row is the reply the patient saw.
     assert assistant[0]["content"] == streamed
     assert assistant[0]["content"] != ""
-    assert assistant[0]["grounded"] is None
+    assert assistant[0]["faq_verdict"] is None
 
 
 def test_a_mixed_intent_turn_persists_the_merged_reply(seeded_entry: int) -> None:
@@ -1298,7 +1307,7 @@ def test_an_empty_corpus_abstains_rather_than_failing() -> None:
     assert response.status_code == 200
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["grounded"] is False
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
 
 
 def test_an_unreadable_corpus_fails_the_turn_and_never_abstains() -> None:
@@ -1369,7 +1378,7 @@ async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) 
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["grounded"] is False
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     # No speculative answer alongside the abstention: the turn produced no tokens at
     # all, so there is nothing for a patient to mistake for an answer (FR-003b).
     assert not [line for line in lines if line["type"] == "token"]
@@ -1414,7 +1423,7 @@ async def test_the_assistant_goes_on_answering_after_an_abstention(
 
     lines = [json.loads(line) for line in second.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["grounded"] is True
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ANSWERED
     # Answered from the corpus, not from a silent turn: the citation comes out of the
     # real Qdrant search rather than from anything this test handed the model.
     assert [c["chunk_text"] for c in lines[-1]["citations"]] == [_ENTRY_CONTENT]
@@ -1445,7 +1454,7 @@ async def test_an_empty_corpus_abstention_calls_staff_with_no_exemption() -> Non
                 response = await async_turn(http, "when can I visit?")
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
-    assert lines[-1]["grounded"] is False
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
     state = await _conversation_state(chat_id)
     assert state.attention_since is not None
     assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
@@ -1782,7 +1791,7 @@ def test_an_escalation_write_that_fails_does_not_cost_the_patient_the_reply() ->
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(grounded=True, citations=[]),
+                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -1814,7 +1823,7 @@ def test_a_store_failure_in_the_writes_is_not_recorded_as_a_broken_pipeline() ->
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(grounded=True, citations=[]),
+                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -1895,7 +1904,7 @@ def test_an_event_shape_the_turn_cannot_name_is_dropped_rather_than_fatal() -> N
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
                 ChatSilentEvent(),
-                ChatDoneEvent(grounded=True, citations=[]),
+                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
             ),
         ),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -1939,7 +1948,9 @@ def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() 
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(grounded=False, citations=[]),
+                ChatDoneEvent(
+                    faq_verdict=FaqVerdict.ABSTAINED_EMPTY_CORPUS, citations=[]
+                ),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -1995,7 +2006,7 @@ def test_a_reply_write_this_build_cannot_name_still_ends_the_turn() -> None:
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(grounded=True, citations=[]),
+                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
             ),
         ),
         patch.object(
@@ -2040,7 +2051,7 @@ def test_a_stored_reply_reaches_the_patient_when_its_outcome_cannot_be_mapped() 
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(grounded=True, citations=[]),
+                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
             ),
         ),
         patch.object(turn_api, "_OUTCOME_BY_REPLY_WRITE", {}),

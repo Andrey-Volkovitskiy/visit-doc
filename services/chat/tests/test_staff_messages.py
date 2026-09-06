@@ -17,7 +17,7 @@ from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, FaqVerdict, IntentLabel
 from chat.main import app
 from chat.rag.indexing import publish_revision
 from chat.repositories import chat_repository, faq_repository
@@ -692,7 +692,7 @@ class _StalledGraph:
         self, *args: object, **kwargs: object
     ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
         yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
-        yield ChatDoneEvent(grounded=True, citations=[])
+        yield ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[])
         self._generated.set()
         await self._release.wait()
 
@@ -775,7 +775,7 @@ class _FinishedGraph:
         self, *args: object, **kwargs: object
     ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
         yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
-        yield ChatDoneEvent(grounded=True, citations=[])
+        yield ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[])
 
 
 async def _turn_racing_a_gesture(

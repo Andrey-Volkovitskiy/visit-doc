@@ -55,6 +55,37 @@ class Settings(BaseSettings):
     # How many trailing turns of history every model call is given. One number, so the
     # specialists cannot disagree about what "recent" means within a single turn.
     CONTEXT_TURNS: int = 5
+    # How many candidates the vector search fetches. Deliberately wider than the cap
+    # below: the cap can only be tuned against candidates something recorded, and one
+    # that discards only what it never fetched cannot be argued up or down. The extra
+    # candidates are logged and otherwise ignored - they reach no gate, no prompt and
+    # no reranker, so widening this changes what a turn records and never what it says.
+    RETRIEVAL_POOL_SIZE: int = 25
+    # Per-chunk, not per-turn: a chunk below this is not admitted because a better one
+    # cleared it. Lower than the 0.5 whole-turn gate it replaces, and stricter in
+    # effect, because a chunk admitted here is still only a candidate - the reranker
+    # decides whether it survives.
+    SIMILARITY_FLOOR: float = 0.3
+    SIMILARITY_CAP: int = 5
+    # The midpoint of the band that scores best on the calibration set. Every floor
+    # from 0.520 to 0.636 scores identically there (10/10 answerable, 9/10 not), so
+    # there is no optimum to find - only a widest gap from the nearest mistake on
+    # either side, which is what the midpoint is. Below it sits an unanswerable
+    # question at 0.5195, above it the weakest correct answer at 0.6367.
+    #
+    # Those two numbers overlap in the other direction as well: the worst unanswerable
+    # scores 0.6953, *above* the weakest correct answer, so no floor separates the two
+    # classes and every value here is a choice of which mistake to make.
+    # See specs/008-*/calibration/questions.md.
+    RERANK_FLOOR: float = 0.58
+    RERANK_CAP: int = 3
+    # The reranker sits between retrieval and the first generated token, so every
+    # second it hangs is silence the patient watches. Exceeding this is handled as a
+    # failure: the turn answers from the retrieval survivors instead. Tolerant rather
+    # than tight because falling back costs the turn its precision stage, so a call
+    # that would have returned at 3s is worth waiting for.
+    RERANK_TIMEOUT_SECONDS: float = 5.0
+    RERANK_MODEL: str = "rerank-3"
     # DEBUG additionally logs what each specialist actually sent the model. Off by
     # default: that is the whole conversation, so it belongs in a dev terminal rather
     # than in a deployment's log stream.

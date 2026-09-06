@@ -24,7 +24,23 @@ from sqlalchemy import text as sql_text
 from voyageai.client_async import AsyncClient
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
-_VECTOR_SIZE = 512
+
+
+def _vector_size() -> int:
+    """Return production's embedding dimension, read lazily.
+
+    Derived from production rather than restated - a hand-typed copy is what let this
+    tier keep building 512-dim vectors after the embedding model moved to 1024, and
+    every Qdrant write failed on a dimension mismatch until someone ran it.
+
+    Imported inside the function, not at module scope: `qdrant_repository` reads
+    `get_settings()` at import time, so touching it before the `_test`-suffix overrides
+    below would freeze this suite on the *dev* collection.
+    """
+    from chat.repositories.qdrant_repository import VECTOR_SIZE
+
+    return VECTOR_SIZE
+
 
 # What the mocked booking loop says when a test hasn't asked for anything specific.
 # The loop ends on the first response carrying no tool_use block, so this is a
@@ -262,6 +278,7 @@ _PAID_API_CALLS = {
         "Anthropic messages.stream (answer generation)"
     ),
     "voyageai.client_async.AsyncClient.embed": "Voyage embed (embeddings)",
+    "voyageai.client_async.AsyncClient.rerank": "Voyage rerank (reranking)",
 }
 
 _PAID_API_REMEDY = (
@@ -304,6 +321,36 @@ def _paid_apis_are_blocked() -> Iterator[None]:
         yield
 
 
+@pytest.fixture(autouse=True)
+def _reranking_keeps_what_it_is_given() -> Iterator[None]:
+    """Fake the reranking boundary for every test, scoring each chunk above the floor.
+
+    Required, not convenient. `rerank_chunks` converts *every* failure to None so a
+    reranker outage costs the answer its precision stage rather than the turn - which
+    means it also swallows `PaidAPICallInTestError`. Without this fake, a test that
+    reaches reranking does not fail: it quietly answers `answered_unreranked` from the
+    similarity survivors, and the paid-API guard's whole point - a live call being
+    impossible by omission - is defeated by production code doing exactly what it is
+    required to do.
+
+    The default is a *working* reranker that keeps the shortlist in the order it was
+    given, so an ordinary FAQ test still sees `answered`. A test about degradation
+    patches over this with None; a test about ordering patches its own scores in.
+    """
+    from chat.rag.pipeline import ScoredChunk
+
+    async def keep_all(
+        _client: object,
+        _query: str,
+        chunks: list[ScoredChunk],
+        **_kwargs: object,
+    ) -> list[ScoredChunk]:
+        return [chunk.with_rerank_score(0.9) for chunk in chunks]
+
+    with patch("chat.agent.answer_faq.rerank_chunks", new=keep_all):
+        yield
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
     """Dispose the shared async engine's connection pool after each test.
@@ -337,7 +384,7 @@ async def fake_embed_texts(
     def vector(text: str) -> list[float]:
         keywords = ("visit", "hours")
         base = [1.0, 0.0] if any(k in text.lower() for k in keywords) else [0.0, 1.0]
-        return base + [0.0] * (_VECTOR_SIZE - len(base))
+        return base + [0.0] * (_vector_size() - len(base))
 
     return [vector(text) for text in texts]
 

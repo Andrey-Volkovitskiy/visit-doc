@@ -242,7 +242,8 @@ export function StaffThread({
             sender={message.sender}
             content={message.content}
             citations={message.citations}
-            grounded={message.grounded}
+            showCitations
+            faqVerdict={message.faq_verdict}
             mark={message.attention_mark}
           />
         ))}

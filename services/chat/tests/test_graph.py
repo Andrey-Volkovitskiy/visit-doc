@@ -31,7 +31,7 @@ from chat.domain.models import (
     Message,
     MessageSender,
 )
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, FaqVerdict, IntentLabel
 from chat.rag.indexing import publish_revision, remove_entry_chunks
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
@@ -147,6 +147,7 @@ async def _run_turn(
         async for event in graph_module.run_turn(
             qdrant_client,
             MagicMock(),
+            MagicMock(),  # reranking client; the boundary is faked in conftest
             anthropic_client,
             bursts,
             ["turn-1"],
@@ -171,7 +172,7 @@ def test_grounded_answer_matches_answer_faq_byte_for_byte(seeded_entry: int) -> 
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert "".join(e.text for e in token_events) == "Visiting hours are 8am to 5pm."
-    assert done_event.grounded is True
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
     assert any(c.entry_id == seeded_entry for c in done_event.citations)
 
 
@@ -183,7 +184,7 @@ def test_abstention_matches_answer_faq_byte_for_byte(seeded_entry: int) -> None:
     assert len(events) == 1
     done_event = events[0]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.grounded is False
+    assert done_event.faq_verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert done_event.citations == []
 
 
@@ -200,7 +201,9 @@ def test_intent_classified_is_logged_before_any_answer_faq_event(
     event_names = [entry["event"] for entry in logs]
     assert "intent.classified" in event_names
     # The routing decision is made and recorded before any specialist starts.
-    assert event_names.index("intent.classified") < event_names.index("faq.retrieved")
+    assert event_names.index("intent.classified") < event_names.index(
+        "faq.retrieval_completed"
+    )
 
 
 def test_multi_label_result_is_passed_through_unchanged(seeded_entry: int) -> None:
@@ -257,7 +260,7 @@ def test_classification_failure_is_recorded_and_does_not_block_the_faq_reply(
     assert failure_logged["error_detail"] == "boom"
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.grounded is True
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
 
 
 def test_a_model_outage_during_classification_raises_the_dependency_alert(
@@ -306,7 +309,7 @@ def test_a_model_outage_during_classification_raises_the_dependency_alert(
     assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.grounded is True
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
 
 
 def test_a_classification_answer_that_would_not_parse_raises_no_alert(
@@ -335,7 +338,7 @@ def test_a_classification_answer_that_would_not_parse_raises_no_alert(
     assert failure_logged["log_level"] == "error"
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.grounded is True
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
 
 
 async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_reply(
@@ -358,6 +361,7 @@ async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_repl
             async for _ in graph_module.run_turn(
                 qdrant_client,
                 MagicMock(),
+                MagicMock(),  # reranking client; the boundary is faked in conftest
                 anthropic_client,
                 bursts,
                 ["turn-1"],
@@ -419,7 +423,7 @@ def test_a_booking_only_intent_launches_the_booking_specialist_alone(
     assert done_event.answer_source == "booking"
     # A booking reply was never retrieved against, so it is neither grounded nor
     # abstaining - and it carries no citations.
-    assert done_event.grounded is None
+    assert done_event.faq_verdict is None
     assert done_event.citations == []
 
 
@@ -579,7 +583,7 @@ def test_faq_events_carry_their_own_node_name_under_the_fan_out(
         )
         asyncio.run(_run_turn(anthropic_client, "when can I visit and book Friday?"))
 
-    retrieved = next(e for e in logs if e["event"] == "faq.retrieved")
+    retrieved = next(e for e in logs if e["event"] == "faq.retrieval_completed")
     assert retrieved["node"] == "answer_faq"
 
 
@@ -613,13 +617,13 @@ def test_call_staff_takes_the_whole_turn(seeded_entry: int) -> None:
     assert "".join(e.text for e in token_events) == HANDOFF_MESSAGE
     assert done_event.answer_source == "hand_off"
     # Never retrieved against, so neither grounded nor abstaining - and nothing to cite.
-    assert done_event.grounded is None
+    assert done_event.faq_verdict is None
     assert done_event.citations == []
 
 
 @pytest.mark.parametrize(
     "forbidden",
-    ["turn.retrieval_completed", "faq.retrieved", "turn.groundedness_verdict"],
+    ["faq.retrieval_completed", "faq.similarity_gate", "faq.verdict"],
 )
 def test_a_handed_off_turn_retrieves_nothing(seeded_entry: int, forbidden: str) -> None:
     with (
@@ -815,4 +819,4 @@ def test_a_classification_timeout_is_not_reported_as_an_outage(
     # And the turn is untouched by it, exactly as on the outage path.
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.grounded is True
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED

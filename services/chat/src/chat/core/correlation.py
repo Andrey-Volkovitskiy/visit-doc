@@ -25,7 +25,8 @@ def bind_turn_id() -> Generator[str]:
     """Bind a fresh `turn_id` for the duration of the context.
 
     Turn means a single patient message and the assistant reply it produces, including
-    any intermediate steps (embedding, retrieval, groundedness check, generation). A
+    any intermediate steps (embedding, retrieval, the two gates, reranking, generation).
+    A
     turn's `turn_id` is logged on every log line for that turn, so a log reader can
     tell which lines belong to the same turn.
 

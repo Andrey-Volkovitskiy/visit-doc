@@ -21,7 +21,7 @@ from chat.agent.generation_registry import (
 )
 from chat.agent.graph import run_turn
 from chat.agent.tools.registry import ToolContext
-from chat.api.dependencies import get_voyage_client
+from chat.api.dependencies import get_rerank_client, get_voyage_client
 from chat.api.provisioning import provision_patient
 from chat.api.session_cookie import read_session_id
 from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
@@ -54,8 +54,14 @@ def _model_api_was_unreachable(exc: Exception) -> bool:
 
 
 # Pipeline steps backed by an FR-015-scoped dependency (qdrant/anthropic_api) - not
-# "embedding" (Voyage), "groundedness" (pure computation) or "persistence" (a write the
-# store refused is not the store being unreachable), per spec.md Assumptions.
+# "embedding" (Voyage) or "persistence" (a write the store refused is not the store
+# being unreachable), per spec.md Assumptions.
+#
+# Reranking is absent for a different reason: it raises no pipeline step at all. Its
+# failures are absorbed where they happen - the turn answers from the similarity
+# survivors and records `answered_unreranked` - so nothing about a reranker outage ever
+# reaches this classification. Its own `faq.reranking_unavailable` event is where an
+# operator sees it.
 #
 # Each carries the test a failure of that step must pass before it may be called an
 # outage, because naming the step is not enough on its own. "generation" is wrapped
@@ -293,9 +299,9 @@ async def _persist_outcome(
             outcome = ReplyOutcome.NOT_GENERATED
             if done_event is not None:
                 # `message` is set only when there is no streamed text to show, which
-                # today is the FAQ abstention case. `grounded` stays NULL for a
-                # booking-only reply: it was never retrieved against, so it is neither
-                # grounded nor abstaining.
+                # today is the FAQ abstention case. `faq_verdict` stays NULL for a
+                # booking-only reply: it was never retrieved against, so it had no gate
+                # to stop at.
                 write = await chat_repository.create_assistant_reply_unless_taken_over(
                     db_session,
                     id=str(ULID()),
@@ -303,7 +309,7 @@ async def _persist_outcome(
                     session_id=chat.session_id,
                     answering_message_id=patient_message_id,
                     content=done_event.message or answer,
-                    grounded=done_event.grounded,
+                    faq_verdict=done_event.faq_verdict,
                     citations=[c.model_dump() for c in done_event.citations],
                     reply_to_message_ids=reply_to_message_ids,
                 )
@@ -373,6 +379,7 @@ async def _persist_outcome(
 async def _event_stream(
     qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
+    rerank_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
     scheduling_channel: grpc.aio.Channel,
     message: str,
@@ -467,6 +474,7 @@ async def _event_stream(
                     async for event in run_turn(
                         qdrant_client,
                         voyage_client,
+                        rerank_client,
                         anthropic_client,
                         bursts,
                         reply_to_message_ids,
@@ -717,6 +725,7 @@ async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingRes
     """
     qdrant_client = request.app.state.qdrant_client
     voyage_client = get_voyage_client(request)
+    rerank_client = get_rerank_client(request)
     anthropic_client = request.app.state.anthropic_client
     scheduling_channel = request.app.state.scheduling_channel
 
@@ -750,6 +759,7 @@ async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingRes
         _event_stream(
             qdrant_client,
             voyage_client,
+            rerank_client,
             anthropic_client,
             scheduling_channel,
             chat_request.message,

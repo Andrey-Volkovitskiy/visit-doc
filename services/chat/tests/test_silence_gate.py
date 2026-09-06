@@ -29,9 +29,9 @@ from .conftest import LOCAL_NOW, fake_anthropic_client
 # appear for a message the assistant is not allowed to answer.
 _FORBIDDEN_EVENTS = (
     "intent.classified",
-    "turn.retrieval_completed",
-    "turn.groundedness_verdict",
-    "faq.retrieved",
+    "faq.retrieval_completed",
+    "faq.verdict",
+    "faq.similarity_gate",
     "booking.tool_called",
     "booking.model_call",
     "turn.completed",

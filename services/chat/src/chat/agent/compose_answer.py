@@ -24,7 +24,9 @@ from chat.domain.schemas import (
     ChatDoneEvent,
     ChatTokenEvent,
     Citation,
+    FaqVerdict,
 )
+from chat.rag.pipeline import ScoredChunk
 
 _MAX_TOKENS = 1024
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
@@ -97,21 +99,34 @@ class TurnCompletion:
 class FaqResult:
     """What `answer_faq` produces for the turn.
 
-    `chunk_scores` holds each citation's retrieval score, positionally. The scores are
-    part of the turn's observable record but not of the reply, so they ride here rather
-    than on `Citation`, which is a wire type the client reads.
+    `scored_chunks` are the same chunks as `citations`, carrying the two scores that
+    selected them. They are part of the turn's observable record but not of the reply,
+    so they ride here rather than on `Citation`, which is a wire type the console
+    renders - and which deliberately carries no number at all.
+
+    Empty for an abstention, which cited nothing.
     """
 
     answer_text: str
     citations: list[Citation]
-    grounded: bool
-    chunk_scores: list[float] = field(default_factory=list)
+    verdict: FaqVerdict
+    scored_chunks: list[ScoredChunk] = field(default_factory=list)
 
     def scored_citations(self) -> list[dict[str, object]]:
-        """Return each citation with the score it was retrieved at, for the log line."""
+        """Return each surviving chunk with both scores, for the completion record.
+
+        `rerank_score` is absent on a turn answered without reranking - not zero, and
+        not a copy of the similarity score, because no rerank score was ever obtained.
+        """
         return [
-            {**citation.model_dump(), "score": score}
-            for citation, score in zip(self.citations, self.chunk_scores, strict=True)
+            {
+                "entry_id": chunk.faq_entry_id,
+                "chunk_index": chunk.chunk_index,
+                "chunk_text": chunk.chunk_text,
+                "similarity_score": chunk.similarity_score,
+                "rerank_score": chunk.rerank_score,
+            }
+            for chunk in self.scored_chunks
         ]
 
 
@@ -163,50 +178,53 @@ async def compose_answer(
 
     answer_text = "".join(answer_parts)
     citations = faq_result.citations if faq_result is not None else []
-    grounded = faq_result.grounded if faq_result is not None else None
+    verdict = faq_result.verdict if faq_result is not None else None
     fields: dict[str, object] = {
         "outcome": "merged",
         "answer_source": AnswerSource.MERGED,
         "answer_text": answer_text,
-        "grounded": grounded,
+        "faq_verdict": verdict,
         "booking_outcome": booking_outcome,
         "message_ids_unified": reply_to_message_ids,
         "citations": (faq_result.scored_citations() if faq_result is not None else []),
     }
-    if grounded is False:
+    if verdict is not None and not verdict.answered:
         # Carried on a merged turn too, so a log query or eval harness counting
         # abstentions does not silently miss exactly the mixed-intent traffic this
         # node exists to serve.
         fields["abstention_message"] = answer_text
     completion.set(**fields)
     yield ChatDoneEvent(
-        grounded=grounded,
+        faq_verdict=verdict,
         citations=citations,
         answer_source=AnswerSource.MERGED,
     )
 
 
 def _single_specialist_outcome(
-    answer_source: AnswerSource, grounded: bool | None
+    answer_source: AnswerSource, verdict: FaqVerdict | None
 ) -> str:
     """Describe a single-specialist turn's outcome for its `turn.completed` line.
 
-    `answer_source` decides before `grounded` does: a handoff and a booking reply both
-    carry no groundedness verdict, and reading one off the other would file every
-    handed-off turn in the log as a booking.
+    `answer_source` decides before `verdict` does: a handoff and a booking reply both
+    carry no FAQ verdict, and reading one off the other would file every handed-off
+    turn in the log as a booking.
+
+    An abstention reports which gate stopped it, so a log reader counting abstentions
+    can tell an empty corpus from a floor that is set too high.
     """
     if answer_source is AnswerSource.HAND_OFF:
         return "handed_off"
-    if grounded is None:
+    if verdict is None:
         return "booking"
-    return "grounded" if grounded else "abstained"
+    return verdict.value
 
 
 def record_single_specialist_completion(
     completion: TurnCompletion,
     *,
     answer_source: AnswerSource,
-    grounded: bool | None,
+    verdict: FaqVerdict | None,
     booking_outcome: BookingOutcome | None,
     answer_text: str,
     citations: list[dict[str, object]],
@@ -219,15 +237,15 @@ def record_single_specialist_completion(
     than a property each specialist has to remember.
     """
     fields: dict[str, object] = {
-        "outcome": _single_specialist_outcome(answer_source, grounded),
+        "outcome": _single_specialist_outcome(answer_source, verdict),
         "answer_source": answer_source,
         "answer_text": answer_text,
-        "grounded": grounded,
+        "faq_verdict": verdict,
         "booking_outcome": booking_outcome,
         "message_ids_unified": reply_to_message_ids,
         "citations": citations,
     }
-    if grounded is False:
+    if verdict is not None and not verdict.answered:
         # The abstained turn's own long-standing field, kept so a log reader (and the
         # eval harness) can still pick out what the patient was actually told.
         fields["abstention_message"] = answer_text
@@ -242,7 +260,7 @@ def _build_prompt(
     """Build the composing call's single user message from both halves' outputs."""
     parts: list[str] = []
     if faq_result is not None:
-        if faq_result.grounded:
+        if faq_result.verdict.answered:
             parts.append(f"Answer to the question part:\n{faq_result.answer_text}")
         else:
             parts.append(

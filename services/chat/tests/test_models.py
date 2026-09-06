@@ -97,7 +97,7 @@ def test_message_content_is_required() -> None:
 
 
 def test_message_grounded_and_citations_are_nullable() -> None:
-    assert Message.__table__.c.grounded.nullable is True
+    assert Message.__table__.c.faq_verdict.nullable is True
     assert Message.__table__.c.citations.nullable is True
 
 

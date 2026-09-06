@@ -24,7 +24,7 @@ describe("ChatWindow", () => {
         id: "1",
         sender: "patient",
         content: "I'm going to come on Tuesday",
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
@@ -33,7 +33,7 @@ describe("ChatWindow", () => {
         id: "2",
         sender: "assistant",
         content: "Noted.",
-        grounded: true,
+        faq_verdict: "answered",
         citations: [],
         attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
@@ -56,7 +56,7 @@ describe("ChatWindow", () => {
         id: "1",
         sender: "patient",
         content: "When can I see",
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
@@ -65,7 +65,7 @@ describe("ChatWindow", () => {
         id: "2",
         sender: "patient",
         content: "Dr. Josh?",
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
@@ -74,7 +74,7 @@ describe("ChatWindow", () => {
         id: "3",
         sender: "assistant",
         content: "Dr. Josh is available Tuesdays.",
-        grounded: true,
+        faq_verdict: "answered",
         citations: [],
         attention_mark: null,
         created_at: "2026-08-06T00:00:02Z",
@@ -95,7 +95,7 @@ describe("ChatWindow", () => {
     ]);
   });
 
-  it("renders streamed tokens and citations for a grounded answer", async () => {
+  it("renders streamed tokens but never citations, for an answered turn", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
       fakeEvents([
@@ -103,7 +103,7 @@ describe("ChatWindow", () => {
         { type: "token", text: "hours are 8am to 5pm." },
         {
           type: "done",
-          grounded: true,
+          faq_verdict: "answered",
           answer_source: "faq",
           citations: [
             { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
@@ -118,24 +118,54 @@ describe("ChatWindow", () => {
     });
     fireEvent.click(screen.getByText("Send"));
 
-    // The fake citation's chunk_text happens to equal the answer text, so both the
-    // message body and the citation list legitimately match - assert count, not a
-    // single unique match.
+    // Once, not twice: the answer is in the bubble, and the citation list that used
+    // to repeat it underneath is now the staff console's alone. A citation is evidence
+    // about how the answer was produced, which is not the patient's to reason about.
     await waitFor(() => {
-      expect(screen.getAllByText("Visiting hours are 8am to 5pm.").length).toBe(2);
+      expect(screen.getAllByText("Visiting hours are 8am to 5pm.").length).toBe(1);
     });
-    expect(screen.getByTestId("citations")).toHaveTextContent(
-      "Visiting hours are 8am to 5pm.",
-    );
+    expect(screen.queryByTestId("citations")).toBeNull();
   });
 
-  it("renders the abstention message when not grounded", async () => {
+  it.each([
+    "answered",
+    "answered_unreranked",
+    "abstained_similarity_floor",
+  ] as const)("draws no citation list on a %s turn", async (verdict) => {
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(
+      fakeEvents([
+        { type: "token", text: "an answer" },
+        {
+          type: "done",
+          faq_verdict: verdict,
+          answer_source: "faq",
+          citations: [{ entry_id: 1, chunk_index: 0, chunk_text: "source text" }],
+        },
+      ]),
+    );
+
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() => {
+      expect(screen.getByText("an answer")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("citations")).toBeNull();
+    expect(screen.queryByText("source text")).toBeNull();
+    expect(screen.queryByTestId("verdict-mark")).toBeNull();
+  });
+
+  it("renders the abstention message when the turn abstains", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
       fakeEvents([
         {
           type: "done",
-          grounded: false,
+          faq_verdict: "abstained_similarity_floor",
           citations: [],
           answer_source: "faq",
           message: "I don't have a confident answer to that.",
@@ -167,7 +197,7 @@ describe("ChatWindow", () => {
         { type: "token", text: "Visiting hours are 8am to 5pm." },
         {
           type: "done",
-          grounded: true,
+          faq_verdict: "answered",
           citations: [],
           answer_source: "faq",
           message: "",
@@ -191,7 +221,7 @@ describe("ChatWindow", () => {
   it("sends the message when Enter is pressed without Shift", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
-      fakeEvents([{ type: "done", grounded: true, citations: [], answer_source: "faq" }]),
+      fakeEvents([{ type: "done", faq_verdict: "answered", citations: [], answer_source: "faq" }]),
     );
 
     await renderReady();
@@ -212,7 +242,7 @@ describe("ChatWindow", () => {
   it("sends the message when Ctrl+Enter is pressed", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
-      fakeEvents([{ type: "done", grounded: true, citations: [], answer_source: "faq" }]),
+      fakeEvents([{ type: "done", faq_verdict: "answered", citations: [], answer_source: "faq" }]),
     );
 
     await renderReady();
@@ -531,7 +561,7 @@ describe("ChatWindow", () => {
         fakeEvents([
           {
             type: "done",
-            grounded: false,
+            faq_verdict: "abstained_similarity_floor",
             citations: [],
             answer_source: "faq",
             message: "abstained for m",
@@ -559,7 +589,7 @@ describe("ChatWindow", () => {
       fakeEvents([
         {
           type: "done",
-          grounded: false,
+          faq_verdict: "abstained_similarity_floor",
           citations: [],
           answer_source: "faq",
           message: "abstained for n",
@@ -632,7 +662,7 @@ describe("ChatWindow", () => {
           id: "1",
           sender: "patient",
           content: "in the first chat",
-          grounded: null,
+          faq_verdict: null,
           citations: null,
           attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
@@ -643,7 +673,7 @@ describe("ChatWindow", () => {
           id: "2",
           sender: "patient",
           content: "in the other chat",
-          grounded: null,
+          faq_verdict: null,
           citations: null,
           attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
@@ -677,7 +707,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       id: `m${index}`,
       sender: index % 2 === 0 ? ("patient" as const) : ("staff" as const),
       content,
-      grounded: null,
+      faq_verdict: null,
       citations: null,
       attention_mark: null,
       created_at: `2026-09-01T12:0${index}:00Z`,
@@ -1185,7 +1215,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       // Held open so the poll tick below lands mid-stream, which is what defers it to
       // the moment the turn ends.
       await turnFinishes;
-      yield { type: "done", grounded: true, answer_source: "faq", citations: [] };
+      yield { type: "done", faq_verdict: "answered", answer_source: "faq", citations: [] };
     }
 
     function serverRow(
@@ -1197,7 +1227,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         id: `m${index}`,
         sender,
         content,
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
@@ -1272,7 +1302,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         id: `m${index}`,
         sender,
         content,
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
@@ -1291,7 +1321,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         { type: "token", text: "Visiting hours are 8am to 5pm." },
         {
           type: "done",
-          grounded: true,
+          faq_verdict: "answered",
           citations: [],
           answer_source: "faq",
           message: "",

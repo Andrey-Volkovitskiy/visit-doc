@@ -222,8 +222,14 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
 - RAG must include defensible chunking, a reranking step, citations to source documents — derived
   structurally from what was actually retrieved and placed in context, never self-reported by the
-  LLM (avoids hallucinated citations) — and an explicit **abstention path** plus a **groundedness
-  check** before any FAQ answer is returned.
+  LLM (avoids hallucinated citations) — and an explicit **abstention path**. Since 008 the
+  "groundedness check" is **two gates before generation**, not a boolean after it: a per-chunk
+  similarity floor, then a cross-encoder rerank floor, either of which abstains without spending a
+  generation call. `rag/groundedness.py` and the `grounded` flag are gone; a turn now carries a
+  five-value `FaqVerdict` naming which gate stopped it, because "an answered turn is grounded" made
+  `true` uninformative while `false` covered three situations needing three different fixes.
+  Per-turn *post-generation* groundedness verification is deliberately not done — `docs/ROADMAP.md`
+  assigns answer groundedness to Phase 2's offline eval harness.
 - **Postgres decides what Qdrant may answer from.** For any entity with both a Postgres row and a
   derived Qdrant index (e.g. `FaqEntry`/`FaqChunk`), the row is the sole authority on which indexed
   content is live, and retrieval carries that as a predicate on the search itself. Points the row

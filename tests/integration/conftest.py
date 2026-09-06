@@ -7,7 +7,7 @@ package's own `conftest.py`.
 """
 
 import os
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Self
 from unittest.mock import AsyncMock, MagicMock
@@ -146,6 +146,34 @@ async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
     await engine.dispose()
 
 
+@pytest.fixture(autouse=True)
+def _reranking_keeps_what_it_is_given() -> "Iterator[None]":
+    """Fake the reranking boundary for every test in this tier.
+
+    Required, not convenient, for two separate reasons. It is a **paid** call, and this
+    tier may never reach one - unlike the chat unit tier there is no `_paid_apis_are_
+    blocked` guard here to catch the omission, so an unfaked reranker bills a live
+    request on every FAQ turn. And `rerank_chunks` converts every failure to None by
+    requirement, so reaching a real client does not fail the test: it quietly answers
+    `answered_unreranked`, and a test asserting a reranked answer fails somewhere else
+    entirely, for a reason that reads as a retrieval bug.
+
+    The default is a working reranker that keeps the shortlist in the order it was
+    given, matching `services/chat/tests/conftest.py`.
+    """
+    from unittest.mock import patch
+
+    from chat.rag.pipeline import ScoredChunk
+
+    async def keep_all(
+        _client: object, _query: str, chunks: "list[ScoredChunk]", **_kwargs: object
+    ) -> "list[ScoredChunk]":
+        return [chunk.with_rerank_score(0.9) for chunk in chunks]
+
+    with patch("chat.agent.answer_faq.rerank_chunks", new=keep_all):
+        yield
+
+
 @pytest_asyncio.fixture
 async def scheduling_channel() -> AsyncIterator[grpc.aio.Channel]:
     """Serve the real scheduling servicer and yield a channel to it.
@@ -190,7 +218,22 @@ DEFAULT_SCHEDULE = list(practitioner_repository.DEFAULT_SCHEDULE)
 # A turn's clock, required on every `POST /chat`. Fixed so a test that does not care
 # about time is unaffected by when it runs.
 LOCAL_NOW = "2026-08-14T09:00:00"
-_VECTOR_SIZE = 512
+
+
+def _vector_size() -> int:
+    """Return production's embedding dimension, read lazily.
+
+    Derived from production rather than restated - a hand-typed copy is what let this
+    tier keep building 512-dim vectors after the embedding model moved to 1024, and
+    every Qdrant write failed on a dimension mismatch until someone ran it.
+
+    Imported inside the function, not at module scope: `qdrant_repository` reads
+    `get_settings()` at import time, so touching it before the `_test`-suffix overrides
+    below would freeze this suite on the *dev* collection.
+    """
+    from chat.repositories.qdrant_repository import VECTOR_SIZE
+
+    return VECTOR_SIZE
 
 
 async def fake_embed_texts(
@@ -207,7 +250,7 @@ async def fake_embed_texts(
     def vector(text: str) -> list[float]:
         keywords = ("visit", "hours")
         base = [1.0, 0.0] if any(k in text.lower() for k in keywords) else [0.0, 1.0]
-        return base + [0.0] * (_VECTOR_SIZE - len(base))
+        return base + [0.0] * (_vector_size() - len(base))
 
     return [vector(text) for text in texts]
 

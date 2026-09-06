@@ -9,6 +9,7 @@ from chat.core.config import Settings
 from chat.rag.chunking import ChunkedText
 from chat.repositories import qdrant_repository
 from chat.repositories.qdrant_repository import (
+    VECTOR_SIZE,
     ChunkPayload,
     delete_by_entry,
     ensure_collection,
@@ -22,7 +23,7 @@ from qdrant_client.http.exceptions import UnexpectedResponse
 from ulid import ULID
 
 _TEST_ENTRY_ID = 999999
-_TEST_VECTOR = [0.1] * 512
+_TEST_VECTOR = [0.1] * VECTOR_SIZE
 
 
 def _client() -> AsyncQdrantClient:
@@ -176,6 +177,56 @@ async def test_the_sweep_cannot_reach_another_sessions_chunks() -> None:
     assert [chunk.chunk_text for chunk in survived] == ["theirs"]
 
     await delete_by_entry(client, owner, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_search_returns_more_than_five_when_asked_for_more() -> None:
+    # The observation pool: retrieval fetches wider than the similarity cap so the cap
+    # has something to discard and the discarded candidates are on the record. A search
+    # that silently stopped at its old default would make the cap untunable.
+    client = _client()
+    await ensure_collection(client)
+    session_id, revision = str(ULID()), str(ULID())
+    chunks = [ChunkedText(chunk_index=i, chunk_text=f"chunk {i}") for i in range(12)]
+    await upsert_chunks(
+        client, session_id, _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR] * 12
+    )
+
+    found = await search(client, session_id, _TEST_VECTOR, [revision], limit=12)
+
+    assert len(found) == 12
+
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_search_returns_candidates_in_descending_score_order() -> None:
+    client = _client()
+    await ensure_collection(client)
+    session_id, revision = str(ULID()), str(ULID())
+    # Three vectors at increasing angles from the query, so their cosine scores differ
+    # and their order is a fact about the search rather than about insertion order.
+    near = [1.0] + [0.0] * (VECTOR_SIZE - 1)
+    mid = [0.6, 0.8] + [0.0] * (VECTOR_SIZE - 2)
+    far = [0.0, 1.0] + [0.0] * (VECTOR_SIZE - 2)
+    await upsert_chunks(
+        client,
+        session_id,
+        _TEST_ENTRY_ID,
+        revision,
+        [
+            ChunkedText(chunk_index=i, chunk_text=t)
+            for i, t in enumerate(("far", "near", "mid"))
+        ],
+        [far, near, mid],
+    )
+
+    found = await search(client, session_id, near, [revision], limit=10)
+
+    assert [c.chunk_text for c in found] == ["near", "mid", "far"]
+    assert [c.score for c in found] == sorted((c.score for c in found), reverse=True)
+
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
 
 

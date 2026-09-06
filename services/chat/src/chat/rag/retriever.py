@@ -1,12 +1,14 @@
-"""FAQ retrieval: embed a query and search Qdrant for the nearest chunks."""
+"""FAQ retrieval: embed a query and fetch the turn's observation pool from Qdrant."""
 
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
 
+from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.rag.embeddings import embed_texts
-from chat.repositories.qdrant_repository import RetrievedChunk, search
+from chat.rag.pipeline import ScoredChunk
+from chat.repositories.qdrant_repository import search
 
 
 async def search_faq(
@@ -15,9 +17,8 @@ async def search_faq(
     query: str,
     session_id: str,
     live_revisions: list[str],
-    limit: int = 5,
-) -> list[RetrievedChunk]:
-    """Embed `query` and return the nearest FAQ chunks, with their similarity scores.
+) -> list[ScoredChunk]:
+    """Embed `query` and return the turn's whole observation pool, in score order.
 
     Args:
         session_id: The session whose corpus this search may reach. Passed beside the
@@ -26,6 +27,11 @@ async def search_faq(
         live_revisions: Every revision that session currently publishes. An empty list
             means the session has no corpus, which is the ordinary starting state of
             every session - not a failed read, which raises instead.
+
+    Returns: every candidate the search returned, unfiltered, each carrying its
+        similarity score and no rerank score yet. Nothing is dropped here: the
+        similarity gate drops what it drops, after recording it, so a threshold can be
+        argued about against candidates that were actually seen.
 
     Raises: TurnPipelineError wrapping any failure in embedding or retrieval.
 
@@ -46,21 +52,21 @@ async def search_faq(
 
     try:
         chunks = await search(
-            qdrant_client, session_id, vectors[0], live_revisions, limit=limit
+            qdrant_client,
+            session_id,
+            vectors[0],
+            live_revisions,
+            limit=get_settings().RETRIEVAL_POOL_SIZE,
         )
     except Exception as exc:
         raise TurnPipelineError("retrieval", exc) from exc
 
-    logger.info(
-        "turn.retrieval_completed",
-        retrieved_chunks=[
-            {
-                "entry_id": chunk.faq_entry_id,
-                "chunk_index": chunk.chunk_index,
-                "score": chunk.score,
-                "chunk_text": chunk.chunk_text,
-            }
-            for chunk in chunks
-        ],
-    )
-    return chunks
+    return [
+        ScoredChunk(
+            faq_entry_id=chunk.faq_entry_id,
+            chunk_index=chunk.chunk_index,
+            chunk_text=chunk.chunk_text,
+            similarity_score=chunk.score,
+        )
+        for chunk in chunks
+    ]

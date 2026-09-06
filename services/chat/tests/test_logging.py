@@ -70,3 +70,17 @@ def test_the_admin_secret_is_redacted_by_key_name_regardless_of_value() -> None:
     result = _redact({"event": "admin.refused", "admin_secret": "anything-at-all"})
 
     assert "anything-at-all" not in str(result["admin_secret"])
+
+
+def test_retrieved_chunk_text_passes_through_the_same_redaction_chain() -> None:
+    # 008 puts clinic FAQ text in the retrieval and gate events. No new exemption: it
+    # goes through the processors every other event does, so a secret that ever landed
+    # in an entry is redacted there as it would be anywhere else.
+    result = _redact(
+        {
+            "event": "faq.retrieval_completed",
+            "candidates": [{"chunk_text": "auth: s3cr3t-pass", "considered": True}],
+        }
+    )
+
+    assert "s3cr3t-pass" not in str(result["candidates"])

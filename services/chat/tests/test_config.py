@@ -15,6 +15,13 @@ _NEW_FIELDS = (
     "FAQ_MAX_ENTRIES_PER_SESSION",
     "ASSISTANT_PAUSE_SECONDS",
     "SCHEDULING_HTTP_BASE_URL",
+    "RETRIEVAL_POOL_SIZE",
+    "SIMILARITY_FLOOR",
+    "SIMILARITY_CAP",
+    "RERANK_FLOOR",
+    "RERANK_CAP",
+    "RERANK_TIMEOUT_SECONDS",
+    "RERANK_MODEL",
 )
 
 
@@ -83,3 +90,52 @@ def test_every_new_setting_is_overridable_from_the_environment() -> None:
     assert overridden.FAQ_MAX_ENTRIES_PER_SESSION == 2
     assert overridden.ASSISTANT_PAUSE_SECONDS == 5
     assert overridden.SCHEDULING_HTTP_BASE_URL == "http://scheduler:9001"
+
+
+def test_retrieval_pool_is_wider_than_the_similarity_cap(
+    unconfigured: Settings,
+) -> None:
+    # The whole point of the pool: a cap that discards only candidates it never
+    # fetched cannot be calibrated, so the pool has to exceed it.
+    assert unconfigured.RETRIEVAL_POOL_SIZE == 25
+    assert unconfigured.SIMILARITY_CAP == 5
+    assert unconfigured.RETRIEVAL_POOL_SIZE > unconfigured.SIMILARITY_CAP
+
+
+def test_pipeline_gate_defaults(unconfigured: Settings) -> None:
+    assert unconfigured.SIMILARITY_FLOOR == 0.3
+    assert unconfigured.RERANK_FLOOR == 0.58
+    assert unconfigured.RERANK_CAP == 3
+
+
+def test_rerank_gate_is_narrower_than_the_similarity_gate(
+    unconfigured: Settings,
+) -> None:
+    # Retrieval widens for recall, reranking narrows for precision. A rerank cap at or
+    # above the similarity cap would make the second gate incapable of pruning.
+    assert unconfigured.RERANK_CAP < unconfigured.SIMILARITY_CAP
+
+
+def test_reranking_call_defaults(unconfigured: Settings) -> None:
+    assert unconfigured.RERANK_TIMEOUT_SECONDS == 5.0
+    assert unconfigured.RERANK_MODEL == "rerank-3"
+
+
+def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
+    overridden = _settings(
+        RETRIEVAL_POOL_SIZE=40,
+        SIMILARITY_FLOOR=0.25,
+        SIMILARITY_CAP=8,
+        RERANK_FLOOR=0.55,
+        RERANK_CAP=2,
+        RERANK_TIMEOUT_SECONDS=1.5,
+        RERANK_MODEL="rerank-other",
+    )
+
+    assert overridden.RETRIEVAL_POOL_SIZE == 40
+    assert overridden.SIMILARITY_FLOOR == 0.25
+    assert overridden.SIMILARITY_CAP == 8
+    assert overridden.RERANK_FLOOR == 0.55
+    assert overridden.RERANK_CAP == 2
+    assert overridden.RERANK_TIMEOUT_SECONDS == 1.5
+    assert overridden.RERANK_MODEL == "rerank-other"

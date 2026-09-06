@@ -88,3 +88,38 @@ def test_only_an_unreachable_api_reads_as_a_dependency_outage() -> None:
     for failure in (AnthropicFailure.TIMED_OUT, AnthropicFailure.ANSWERED):
         exc = ClassificationFailedError("boom", failure)
         assert exc.dependency_unreachable is False
+
+
+# --- 008: a reranker failure is not a turn failure ---------------------------------
+
+
+async def test_a_reranking_failure_is_not_a_turn_pipeline_error() -> None:
+    """The reranker is the one external call on the FAQ path whose failure is absorbed.
+
+    Embedding and search failures raise `TurnPipelineError`, which marks the patient's
+    message assistant-failed and calls staff. Reranking must not: the answer it would
+    have refined is still a correct, cited answer, so an outage costs precision rather
+    than the turn.
+    """
+    from unittest.mock import AsyncMock
+
+    from chat.rag.pipeline import ScoredChunk
+    from chat.rag.reranking import rerank_chunks
+
+    client = AsyncMock()
+    client.rerank.side_effect = APIConnectionError(request=_REQUEST)
+
+    scored = await rerank_chunks(
+        client,
+        "a question",
+        [
+            ScoredChunk(
+                faq_entry_id=1, chunk_index=0, chunk_text="text", similarity_score=0.9
+            )
+        ],
+        model="rerank-3",
+        top_k=5,
+        timeout_seconds=5.0,
+    )
+
+    assert scored is None

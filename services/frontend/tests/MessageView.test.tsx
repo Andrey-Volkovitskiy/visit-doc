@@ -10,11 +10,12 @@ describe("MessageView", () => {
     expect(message).toHaveTextContent("When can I see Dr. Josh?");
   });
 
-  it("renders an assistant message with citations", () => {
+  it("renders an assistant message with citations when asked to show them", () => {
     render(
       <MessageView
         sender="assistant"
         content="Visiting hours are 8am to 5pm."
+        showCitations
         citations={[
           { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
         ]}
@@ -55,27 +56,87 @@ describe("MessageView booking replies", () => {
         sender="assistant"
         content="You're booked for Tuesday at 9."
         citations={[]}
-        grounded={null}
+        faqVerdict={null}
       />,
     );
 
     expect(screen.getByText("You're booked for Tuesday at 9.")).toBeInTheDocument();
     expect(screen.queryByTestId("citations")).toBeNull();
-    expect(screen.getByTestId("message")).not.toHaveAttribute("data-grounded");
+    expect(screen.getByTestId("message")).not.toHaveAttribute("data-faq-verdict");
   });
 
-  it("marks a grounded FAQ reply distinctly from a booking one", () => {
+  it("marks an answered FAQ reply distinctly from a booking one", () => {
     render(
       <MessageView
         sender="assistant"
         content="Visiting hours are 8am to 5pm."
         citations={[{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }]}
-        grounded={true}
+        showCitations
+        faqVerdict="answered"
       />,
     );
 
-    expect(screen.getByTestId("message")).toHaveAttribute("data-grounded", "true");
+    expect(screen.getByTestId("message")).toHaveAttribute("data-faq-verdict", "answered");
     expect(screen.getByTestId("citations")).toBeInTheDocument();
+  });
+
+  it("draws no citations unless it is told to", () => {
+    // The patient pane passes nothing; the staff console passes showCitations. The
+    // citations are in the payload either way - this is what is drawn, not what is sent.
+    render(
+      <MessageView
+        sender="assistant"
+        content="Visiting hours are 8am to 5pm."
+        citations={[{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }]}
+        faqVerdict="answered"
+      />,
+    );
+
+    expect(screen.queryByTestId("citations")).toBeNull();
+  });
+
+  it("marks an answer produced without reranking", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="Visiting hours are 8am to 5pm."
+        citations={[]}
+        showCitations
+        faqVerdict="answered_unreranked"
+      />,
+    );
+
+    const mark = screen.getByTestId("verdict-mark");
+    expect(mark).toBeInTheDocument();
+    expect(mark).toHaveAttribute("title", expect.stringContaining("reranking"));
+  });
+
+  it.each(["answered", "abstained_empty_corpus", "abstained_similarity_floor", "abstained_rerank_floor"] as const)(
+    "leaves %s unmarked - a marker on every message marks nothing",
+    (verdict) => {
+      render(
+        <MessageView sender="assistant" content="..." citations={[]} showCitations faqVerdict={verdict} />,
+      );
+
+      expect(screen.queryByTestId("verdict-mark")).toBeNull();
+    },
+  );
+
+  it("keeps the verdict mark distinguishable from an attention mark", () => {
+    // One sits on an assistant message and means the answer above it is second-best;
+    // the other sits on a patient message and means a person is needed.
+    render(
+      <MessageView
+        sender="assistant"
+        content="..."
+        citations={[]}
+        showCitations
+        faqVerdict="answered_unreranked"
+      />,
+    );
+
+    expect(screen.getByTestId("verdict-mark")).toBeInTheDocument();
+    expect(screen.queryByTestId("attention-mark")).toBeNull();
   });
 });
 

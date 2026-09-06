@@ -23,7 +23,7 @@ from chat.core.logging import get_logger
 from chat.rag.chunking import ChunkedText
 
 COLLECTION_NAME = get_settings().QDRANT_COLLECTION_NAME
-_VECTOR_SIZE = 512  # voyage-3-lite embedding dimension (research.md #1)
+VECTOR_SIZE = 1024  # voyage-4-lite embedding dimension (research.md #1)
 # How many of one entry's points a sweep reads to learn which revisions it holds.
 # An entry past this is swept partially, which costs storage and nothing else.
 _SWEEP_PAGE_LIMIT = 1000
@@ -98,7 +98,7 @@ async def _create_collection(qdrant_client: AsyncQdrantClient) -> None:
     try:
         await qdrant_client.create_collection(
             collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=_VECTOR_SIZE, distance=Distance.COSINE),
+            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
         )
     except UnexpectedResponse as exc:
         if exc.status_code != HTTPStatus.CONFLICT:

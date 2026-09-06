@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from chat.agent.handle_booking import BookingOutcome
+from chat.domain.schemas import FaqVerdict
 from structlog.testing import capture_logs
 
 from .test_handle_booking import (
@@ -581,11 +582,10 @@ async def test_a_failed_change_turn_still_leaves_the_faq_half_untouched() -> Non
         citations=[
             Citation(entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5.")
         ],
-        grounded=True,
-        chunk_scores=[0.9],
+        verdict=FaqVerdict.ANSWERED,
     )
 
-    assert faq.grounded is True
+    assert faq.verdict is FaqVerdict.ANSWERED
     assert faq.citations[0].chunk_text == "Visiting hours are 8-5."
 
 

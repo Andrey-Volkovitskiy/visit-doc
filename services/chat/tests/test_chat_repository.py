@@ -6,6 +6,7 @@ from itertools import pairwise
 import pytest
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import EscalationReason, MessageSender
+from chat.domain.schemas import FaqVerdict
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.chat_repository import ConversationState
 from sqlalchemy import text as sql_text
@@ -390,7 +391,7 @@ async def _reply_answering(
             session_id=session_id,
             answering_message_id=message_id,
             content="Visiting hours are 8am to 5pm.",
-            grounded=True,
+            faq_verdict=FaqVerdict.ANSWERED,
             citations=None,
             reply_to_message_ids=[message_id],
         )

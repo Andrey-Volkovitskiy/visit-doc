@@ -13,7 +13,7 @@ function message(overrides: Partial<Message> = {}): Message {
     id: "01M",
     sender: "patient",
     content: "is anyone there?",
-    grounded: null,
+    faq_verdict: null,
     citations: null,
     attention_mark: null,
     created_at: "2026-09-01T12:00:00",
@@ -22,6 +22,12 @@ function message(overrides: Partial<Message> = {}): Message {
 }
 
 const CHAT_ID = "01CHAT000000000000000000";
+
+/** The staff side is where an answer can be audited against what it stood on. */
+const CITED = [
+  { entry_id: 7, chunk_index: 0, chunk_text: "Bring your referral letter." },
+];
+
 
 /** Render the thread as it appears for a conversation the assistant is still on. */
 function renderThread(chatId: string | null = CHAT_ID) {
@@ -1284,5 +1290,67 @@ describe("StaffThread: following the poll", () => {
     await waitFor(() =>
       expect(screen.getByTestId("staff-thread")).toHaveTextContent("arrived anyway"),
     );
+  });
+
+  it("renders citations on an assistant message, unlike the patient pane", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01A",
+        sender: "assistant",
+        content: "Bring your referral letter.",
+        faq_verdict: "answered",
+        citations: CITED,
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("citations")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("citations")).toHaveTextContent(
+      "Bring your referral letter.",
+    );
+  });
+
+  it("marks an answer produced without reranking, and only that one", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({ id: "01A", sender: "assistant", content: "one", faq_verdict: "answered" }),
+      message({
+        id: "01B",
+        sender: "assistant",
+        content: "two",
+        faq_verdict: "answered_unreranked",
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("message").length).toBe(2);
+    });
+    expect(screen.getAllByTestId("verdict-mark").length).toBe(1);
+  });
+
+  it("shows no score anywhere - every number lives in the log", async () => {
+    // A score rendered here and logged there is a second copy that can disagree with
+    // the first, and a citation list cannot show what a gate *rejected* anyway, which
+    // is the half a floor is actually tuned against.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01A",
+        sender: "assistant",
+        content: "Bring your referral letter.",
+        faq_verdict: "answered",
+        citations: CITED,
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("citations")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("staff-thread").textContent).not.toMatch(/0\.\d/);
   });
 });

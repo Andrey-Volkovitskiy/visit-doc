@@ -60,6 +60,35 @@ class IntentClassificationResult(BaseModel):
     intents: list[IntentLabel] = Field(min_length=1)
 
 
+class FaqVerdict(StrEnum):
+    """What the FAQ half of a turn did, and for an abstention, where it stopped.
+
+    Five values, each one situation. It replaces a `grounded` boolean whose two values
+    stopped partitioning the outcomes: an answered turn is always grounded, so `true`
+    carried no information, while `false` covered three situations calling for three
+    different fixes - add entries, rewrite the entry or lower the similarity floor, or
+    lower the rerank floor.
+
+    `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
+    because the answer rests on different evidence: up to five chunks no cross-encoder
+    approved, rather than at most three it did.
+
+    The three abstentions are identical in behaviour - same message, same call to
+    staff, same absence of a generation call. Nothing may branch on which one it is.
+    """
+
+    ANSWERED = "answered"
+    ANSWERED_UNRERANKED = "answered_unreranked"
+    ABSTAINED_EMPTY_CORPUS = "abstained_empty_corpus"
+    ABSTAINED_SIMILARITY_FLOOR = "abstained_similarity_floor"
+    ABSTAINED_RERANK_FLOOR = "abstained_rerank_floor"
+
+    @property
+    def answered(self) -> bool:
+        """Return True if this verdict means the patient received a generated answer."""
+        return self in (FaqVerdict.ANSWERED, FaqVerdict.ANSWERED_UNRERANKED)
+
+
 class Citation(BaseModel):
     """A retrieved chunk cited in a grounded answer, verbatim."""
 
@@ -90,17 +119,23 @@ class AnswerSource(StrEnum):
 
 
 class ChatDoneEvent(BaseModel):
-    """Terminal NDJSON event: provenance, groundedness flag, citations, and message.
+    """Terminal NDJSON event: provenance, the FAQ verdict, citations, and message.
 
-    `grounded` is None when no FAQ specialist ran, since a booking reply is streamed
-    text that was never retrieved against and so is neither grounded nor abstaining.
+    `faq_verdict` is None when no FAQ specialist ran, since a booking reply is streamed
+    text that was never retrieved against and so had no gate to stop at.
     `message` keeps its meaning: set only when there is no streamed text to show, which
     today is the FAQ abstention case. A client renders `message` if present, otherwise
     the tokens it accumulated. `citations` are always empty for a booking-only reply.
+
+    `citations` is carried on the patient's path as well as the console's, and the
+    patient pane simply does not draw it. That is presentation, not access: one session
+    owns both panes and can read and edit every entry of the corpus on the FAQ screen,
+    so a payload that omitted them would protect nothing while splitting one message
+    record into two shapes free to drift apart.
     """
 
     type: Literal["done"] = "done"
-    grounded: bool | None
+    faq_verdict: FaqVerdict | None
     citations: list[Citation]
     message: str | None = None
     answer_source: AnswerSource = AnswerSource.FAQ
@@ -138,8 +173,8 @@ class ChatSilentEvent(BaseModel):
 class MessageOut(BaseModel):
     """A single message in a chat's history.
 
-    `grounded`/`citations` are only meaningful for `sender="assistant"`; always None for
-    a patient message and for a staff one, which was never retrieved against.
+    `faq_verdict`/`citations` are only meaningful for `sender="assistant"`; always None
+    for a patient message and for a staff one, which was never retrieved against.
 
     `attention_mark` is only ever set on a patient message: which of the four kinds it
     is, or None for no mark. There is deliberately no field naming the person who wrote
@@ -152,7 +187,7 @@ class MessageOut(BaseModel):
     id: str
     sender: Literal["patient", "assistant", "staff"]
     content: str
-    grounded: bool | None = None
+    faq_verdict: FaqVerdict | None = None
     citations: list[Citation] | None = None
     attention_mark: (
         Literal[

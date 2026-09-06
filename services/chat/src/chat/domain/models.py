@@ -264,7 +264,12 @@ class Message(Base):
     )
     sender: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    grounded: Mapped[bool | None] = mapped_column(nullable=True)
+    # Only ever set on an assistant message whose turn ran the FAQ specialist: which of
+    # `FaqVerdict`'s five outcomes that turn had, or NULL when no FAQ half ran - a
+    # booking-only reply, a patient message, a staff message. Plain string, like
+    # `sender` and `attention_mark`, so a sixth verdict needs no migration; callers pass
+    # a `FaqVerdict` member, never a bare literal.
+    faq_verdict: Mapped[str | None] = mapped_column(String(32), nullable=True)
     citations: Mapped[list[dict[str, object]] | None] = mapped_column(
         JSONB, nullable=True
     )

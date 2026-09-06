@@ -1,14 +1,17 @@
-"""`answer_faq`: retrieve -> groundedness gate -> generate/stream.
+"""`answer_faq`: retrieve -> similarity gate -> rerank -> rerank gate -> generate.
 
 Plain async function, no agent-framework dependency of its own - `agent/graph.py`'s
 `answer_faq_node` wraps it as a LangGraph node, forwarding its yielded events via the
 stream writer.
 
-Two modes, one pipeline. Streaming mode is the FAQ path exactly as it has always been:
-tokens go straight to the patient and the terminal event is this function's own. Collect
-mode runs when another specialist also ran, and produces a result for the composing step
-instead of emitting anything - retrieval, the groundedness gate, and how citations are
-derived are identical either way.
+Two modes, one pipeline. Streaming mode sends tokens straight to the patient and the
+terminal event is this function's own. Collect mode runs when another specialist also
+ran, and produces a result for the composing step instead of emitting anything -
+retrieval, both gates, and how citations are derived are identical either way.
+
+The gates are pure and live in `rag/pipeline.py`; the reranking call and its deadline
+live in `rag/reranking.py`. What is left here is the order they run in, what the prompt
+is built from, and what the turn records.
 """
 
 from collections.abc import AsyncIterator
@@ -33,8 +36,15 @@ from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, Citation
-from chat.rag.groundedness import is_grounded
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, Citation, FaqVerdict
+from chat.rag.pipeline import (
+    PipelineOutcome,
+    ScoredChunk,
+    apply_rerank_gate,
+    apply_similarity_gate,
+    decide,
+)
+from chat.rag.reranking import rerank_chunks
 from chat.rag.retriever import search_faq
 
 _SYSTEM_PROMPT = (
@@ -44,9 +54,13 @@ _SYSTEM_PROMPT = (
 # The abstention and the handoff are one outcome, so they are one sentence: an
 # abstention that then attempted a speculative answer, or that left the patient at a
 # dead end, is the failure this wording exists to prevent. The closing invitation is
-# not politeness: a corpus gap raises attention without silencing the conversation
-# (spec 007 FR-003d), so the patient really may go on asking while staff follow up, and
-# the sentence has to say so or the silence it implies is a lie about the state.
+# not politeness: a corpus gap raises attention without silencing the conversation, so
+# the patient really may go on asking while staff follow up, and the sentence has to
+# say so or the silence it implies is a lie about the state.
+#
+# One message for all three abstentions. Which gate stopped the turn is a fact about
+# the clinic's corpus, not about the patient's question, and telling them apart here
+# would be describing the system's internals to someone who asked about a visit.
 _ABSTENTION_MESSAGE = (
     "I don't have that information in the clinic's knowledge base, so I've forwarded "
     "your question to our staff to ensure you get an accurate answer. They'll follow "
@@ -58,6 +72,7 @@ _ABSTENTION_MESSAGE = (
 async def answer_faq(
     qdrant_client: AsyncQdrantClient,
     voyage_client: AsyncClient,
+    rerank_client: AsyncClient,
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
@@ -70,6 +85,8 @@ async def answer_faq(
     """Retrieve context for the current turn, then stream a grounded answer or abstain.
 
     Args:
+        rerank_client: The reranking client, separate from `voyage_client` so its
+            deadline is not multiplied by the embedding client's retries.
         bursts: The chat's full conversation history, partitioned into contiguous
             same-side runs, with the current (possibly burst-merged) patient message
             always the trailing burst - the query this turn retrieves for and answers.
@@ -90,8 +107,9 @@ async def answer_faq(
     Yields: in streaming mode, `ChatTokenEvent`s then one `ChatDoneEvent`; in collect
         mode, exactly one `FaqResult`.
 
-    Raises: TurnPipelineError wrapping any failure in embedding, retrieval,
-        groundedness, or generation.
+    Raises: TurnPipelineError wrapping any failure in embedding, retrieval or
+        generation. A reranking failure is deliberately not among them: it degrades the
+        answer rather than failing the turn.
     """
     logger = get_logger()
     settings = get_settings()
@@ -108,37 +126,34 @@ async def answer_faq(
     silenced = render_silent_window(silent_window(bounded))
     opening_clinic = render_opening_clinic(bounded)
 
-    chunks = await search_faq(
-        qdrant_client, voyage_client, message, session_id, live_revisions
-    )
-    logger.info(
-        "faq.retrieved",
-        chunk_count=len(chunks),
-        top_score=chunks[0].score if chunks else None,
-        entry_ids=[c.faq_entry_id for c in chunks],
+    outcome = await _run_pipeline(
+        qdrant_client,
+        voyage_client,
+        rerank_client,
+        message,
+        session_id,
+        live_revisions,
     )
 
-    try:
-        grounded = is_grounded(chunks)
-    except Exception as exc:
-        raise TurnPipelineError("groundedness", exc) from exc
-    logger.info("turn.groundedness_verdict", grounded=grounded)
-
-    if not grounded:
+    if not outcome.verdict.answered:
         # Recorded on the same signal that produced the abstention, at the same moment,
         # so the two can never disagree - and before any generation call, which on this
         # branch means before there is one at all. A visitor whose question the clinic
         # has no answer for is exactly who needs a person, so there is no exemption for
-        # an empty corpus.
+        # an empty corpus, and no distinction between the three gates: all three mean
+        # the corpus could not answer.
         escalation.record(EscalationReason.CORPUS_COULD_NOT_ANSWER)
         if stream:
             yield ChatDoneEvent(
-                grounded=False, citations=[], message=_ABSTENTION_MESSAGE
+                faq_verdict=outcome.verdict, citations=[], message=_ABSTENTION_MESSAGE
             )
-        yield FaqResult(answer_text=_ABSTENTION_MESSAGE, citations=[], grounded=False)
+        yield FaqResult(
+            answer_text=_ABSTENTION_MESSAGE, citations=[], verdict=outcome.verdict
+        )
         return
 
-    context = "\n\n".join(chunk.chunk_text for chunk in chunks)
+    survivors = outcome.survivors
+    context = "\n\n".join(chunk.chunk_text for chunk in survivors)
     # Identical to what it has always been when nothing was silenced, so an ordinary
     # turn's prompt does not change at all.
     prompt = "\n\n".join(
@@ -174,21 +189,154 @@ async def answer_faq(
         Citation(
             entry_id=c.faq_entry_id, chunk_index=c.chunk_index, chunk_text=c.chunk_text
         )
-        for c in chunks
+        for c in survivors
     ]
-    scores = [c.score for c in chunks]
     if stream:
-        yield ChatDoneEvent(grounded=True, citations=citations)
-        yield FaqResult(
-            answer_text="".join(answer_parts),
-            citations=citations,
-            grounded=True,
-            chunk_scores=scores,
-        )
-        return
+        yield ChatDoneEvent(faq_verdict=outcome.verdict, citations=citations)
     yield FaqResult(
         answer_text="".join(answer_parts),
         citations=citations,
-        grounded=True,
-        chunk_scores=scores,
+        verdict=outcome.verdict,
+        scored_chunks=survivors,
     )
+
+
+async def _run_pipeline(
+    qdrant_client: AsyncQdrantClient,
+    voyage_client: AsyncClient,
+    rerank_client: AsyncClient,
+    message: str,
+    session_id: str,
+    live_revisions: list[str],
+) -> PipelineOutcome:
+    """Retrieve, gate, rerank, gate again, and return the turn's outcome.
+
+    Each stage logs what it saw and what it decided, so a threshold can be argued about
+    afterwards from the log alone - including the candidates a gate rejected, which is
+    the half a floor is actually tuned against.
+
+    Raises: TurnPipelineError from retrieval or embedding. Never from reranking.
+    """
+    logger = get_logger()
+    settings = get_settings()
+
+    pool = await search_faq(
+        qdrant_client, voyage_client, message, session_id, live_revisions
+    )
+    corpus_empty = not live_revisions
+
+    similarity = apply_similarity_gate(
+        pool, floor=settings.SIMILARITY_FLOOR, cap=settings.SIMILARITY_CAP
+    )
+    # Neither event is raised when the corpus is empty: no search was issued and no gate
+    # decided anything, so "retrieval completed" and "the gate ran" would both be false.
+    # `turn.retrieval_skipped_empty_corpus` is what records that case, and conflating it
+    # with a search that found nothing is what the empty-corpus verdict exists to undo.
+    if not corpus_empty:
+        _log_retrieval(pool, kept=similarity.kept)
+        logger.info(
+            "faq.similarity_gate",
+            floor=settings.SIMILARITY_FLOOR,
+            cap=settings.SIMILARITY_CAP,
+            pool_size=len(pool),
+            kept=_identify(similarity.kept),
+            dropped_by_floor=_identify(similarity.dropped_by_floor),
+            dropped_by_cap=_identify(similarity.dropped_by_cap),
+        )
+
+    reranked: list[ScoredChunk] | None = None
+    if similarity.kept:
+        scored = await rerank_chunks(
+            rerank_client,
+            message,
+            similarity.kept,
+            model=settings.RERANK_MODEL,
+            top_k=settings.SIMILARITY_CAP,
+            timeout_seconds=settings.RERANK_TIMEOUT_SECONDS,
+        )
+        if scored is not None:
+            gate = apply_rerank_gate(
+                scored, floor=settings.RERANK_FLOOR, cap=settings.RERANK_CAP
+            )
+            logger.info(
+                "faq.rerank_gate",
+                floor=settings.RERANK_FLOOR,
+                cap=settings.RERANK_CAP,
+                kept=_identify(gate.kept, rerank=True),
+                dropped_by_floor=_identify(gate.dropped_by_floor, rerank=True),
+                dropped_by_cap=_identify(gate.dropped_by_cap, rerank=True),
+            )
+            reranked = gate.kept
+
+    outcome = decide(pool, similarity.kept, reranked, corpus_empty=corpus_empty)
+    logger.info(
+        "faq.verdict",
+        verdict=outcome.verdict.value,
+        survivor_count=len(outcome.survivors),
+        gate=_gate_of(outcome.verdict),
+        best_score_seen=max((c.similarity_score for c in pool), default=None),
+    )
+    return outcome
+
+
+# How much of a chunk the log carries when the chunk was observed but not considered.
+# Enough to recognise it, not enough to multiply a turn's log by the size of the pool.
+_PREVIEW_CHARS = 200
+
+
+def _log_retrieval(pool: list[ScoredChunk], *, kept: list[ScoredChunk]) -> None:
+    """Record the whole observation pool, marking what the gate actually kept.
+
+    Args:
+        kept: the similarity gate's survivors. `considered` is read from this rather
+            than from a candidate's position, because the two only agree while every
+            candidate inside the cap also clears the floor. When fewer do, a positional
+            flag would report chunks as considered that the floor threw out, and print
+            their full text as though it had reached the prompt.
+    """
+    survivors = {(c.faq_entry_id, c.chunk_index) for c in kept}
+    candidates = []
+    for chunk in pool:
+        considered = (chunk.faq_entry_id, chunk.chunk_index) in survivors
+        text = chunk.chunk_text if considered else chunk.chunk_text[:_PREVIEW_CHARS]
+        candidates.append(
+            {
+                "entry_id": chunk.faq_entry_id,
+                "chunk_index": chunk.chunk_index,
+                "similarity_score": chunk.similarity_score,
+                "considered": considered,
+                "chunk_text": text,
+                "text_truncated": not considered
+                and len(chunk.chunk_text) > _PREVIEW_CHARS,
+            }
+        )
+    get_logger().info(
+        "faq.retrieval_completed",
+        pool_size=get_settings().RETRIEVAL_POOL_SIZE,
+        pool_returned=len(pool),
+        candidates=candidates,
+    )
+
+
+def _identify(
+    chunks: list[ScoredChunk], *, rerank: bool = False
+) -> list[dict[str, object]]:
+    """Describe `chunks` for a gate's log line: identity and the score that decided."""
+    key = "rerank_score" if rerank else "similarity_score"
+    return [
+        {
+            "entry_id": c.faq_entry_id,
+            "chunk_index": c.chunk_index,
+            key: c.rerank_score if rerank else c.similarity_score,
+        }
+        for c in chunks
+    ]
+
+
+def _gate_of(verdict: FaqVerdict) -> str | None:
+    """Name the gate an abstention stopped at, or None when the turn answered."""
+    return {
+        FaqVerdict.ABSTAINED_EMPTY_CORPUS: "empty_corpus",
+        FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: "similarity_floor",
+        FaqVerdict.ABSTAINED_RERANK_FLOOR: "rerank_floor",
+    }.get(verdict)

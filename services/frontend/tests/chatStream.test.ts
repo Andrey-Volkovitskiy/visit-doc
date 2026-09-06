@@ -32,7 +32,7 @@ describe("parseNdjsonStream", () => {
       JSON.stringify({ type: "token", text: "hours are 8am to 5pm." }),
       JSON.stringify({
         type: "done",
-        grounded: true,
+        faq_verdict: "answered",
         answer_source: "faq",
         citations: [
           { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
@@ -54,17 +54,17 @@ describe("parseNdjsonStream", () => {
     expect(text).toBe("Visiting hours are 8am to 5pm.");
     expect(done).toEqual({
       type: "done",
-      grounded: true,
+      faq_verdict: "answered",
       answer_source: "faq",
       citations: [{ entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." }],
     });
   });
 
-  it("carries an abstention message when not grounded", async () => {
+  it("carries an abstention message when it abstains", async () => {
     const response = fakeResponse([
       JSON.stringify({
         type: "done",
-        grounded: false,
+        faq_verdict: "abstained_similarity_floor",
         citations: [],
         answer_source: "faq",
         message: "I don't have a confident answer to that.",
@@ -77,15 +77,15 @@ describe("parseNdjsonStream", () => {
     }
 
     expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ type: "done", grounded: false });
+    expect(events[0]).toMatchObject({ type: "done", faq_verdict: "abstained_similarity_floor" });
   });
 
-  it("carries a booking reply with no groundedness verdict and no citations", async () => {
+  it("carries a booking reply with no FAQ verdict and no citations", async () => {
     const response = fakeResponse([
       JSON.stringify({ type: "token", text: "You're booked for Tuesday at 9." }),
       JSON.stringify({
         type: "done",
-        grounded: null,
+        faq_verdict: null,
         citations: [],
         answer_source: "booking",
       }),
@@ -97,7 +97,7 @@ describe("parseNdjsonStream", () => {
     }
 
     expect(events[events.length - 1]).toMatchObject({
-      grounded: null,
+      faq_verdict: null,
       answer_source: "booking",
       citations: [],
     });
@@ -262,7 +262,7 @@ describe("the silent terminal event", () => {
     expect(events[0]!.type).not.toBe("cancelled");
   });
 
-  it("carries no reply, no citations and no groundedness verdict", async () => {
+  it("carries no reply, no citations and no FAQ verdict", async () => {
     const response = fakeResponse([JSON.stringify({ type: "silent" })]);
 
     const [event] = await collect(parseNdjsonStream(response));
@@ -283,7 +283,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "staff",
       content: "I've got this one.",
-      grounded: null,
+      faq_verdict: null,
       citations: null,
       attention_mark: null,
       created_at: "2026-09-01T12:00:00",
@@ -304,7 +304,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "patient" as const,
       content: "is anyone there?",
-      grounded: null,
+      faq_verdict: null,
       citations: null,
       attention_mark,
       created_at: "2026-09-01T12:00:00",
@@ -322,7 +322,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "staff",
       content: "I've got this one.",
-      grounded: null,
+      faq_verdict: null,
       citations: null,
       attention_mark: null,
       created_at: "2026-09-01T12:00:00",

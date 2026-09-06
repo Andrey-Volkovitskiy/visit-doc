@@ -28,6 +28,7 @@ from chat.rag.chunking import ChunkedText
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import (
     COLLECTION_NAME,
+    VECTOR_SIZE,
     ChunkPayload,
     create_client,
     ensure_collection,
@@ -44,7 +45,7 @@ from .conftest import fake_anthropic_client, fake_embed_texts
 
 _FIRST = "Visiting hours are 8am to 5pm on weekdays."
 _SECOND = "Visiting hours are 9am to 6pm on weekdays."
-_VECTOR = [0.1] * 512
+_VECTOR = [0.1] * VECTOR_SIZE
 
 
 async def _session_id() -> str:

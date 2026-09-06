@@ -44,6 +44,13 @@ async def test_a_real_voyage_embedding_call_is_blocked() -> None:
         await client.embed(["hello"], model="voyage-3.5-lite")
 
 
+async def test_a_real_voyage_reranking_call_is_blocked() -> None:
+    client = VoyageAsyncClient(api_key=_NOT_A_REAL_KEY)
+
+    with pytest.raises(PaidAPICallInTestError, match="Voyage rerank"):
+        await client.rerank("a question", ["a chunk"], model="rerank-3")
+
+
 async def test_the_block_names_what_to_patch_instead() -> None:
     client = AsyncAnthropic(api_key=_NOT_A_REAL_KEY)
 

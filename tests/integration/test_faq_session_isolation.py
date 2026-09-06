@@ -22,6 +22,7 @@ import pytest_asyncio
 from chat.core.config import Settings as ChatSettings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark
+from chat.domain.schemas import FaqVerdict
 from chat.main import app
 from chat.repositories import chat_repository
 from chat.repositories.qdrant_repository import (
@@ -154,7 +155,7 @@ async def test_one_sessions_edits_change_nothing_the_other_answers() -> None:
     their_chat = await _chat_for(theirs)
 
     before = await _ask(theirs, their_chat)
-    assert before["grounded"] is True
+    assert before["faq_verdict"] == FaqVerdict.ANSWERED
     cited_before = _cited_texts(before)
 
     # Everything one session can do to a corpus, done to the other's.
@@ -165,7 +166,7 @@ async def test_one_sessions_edits_change_nothing_the_other_answers() -> None:
     their_second_chat = await _chat_for(theirs)
     after = await _ask(theirs, their_second_chat)
 
-    assert after["grounded"] is True
+    assert after["faq_verdict"] == FaqVerdict.ANSWERED
     assert _cited_texts(after) == cited_before
     assert all(_VISITING in text for text in _cited_texts(after))
 
@@ -192,7 +193,7 @@ async def test_a_session_with_an_empty_corpus_answers_from_nobody_elses() -> Non
 
     done = await _ask(mine, await _chat_for(mine))
 
-    assert done["grounded"] is False
+    assert done["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert done["citations"] == []
 
 
@@ -217,7 +218,7 @@ async def test_an_added_entry_is_what_the_next_answer_cites() -> None:
 
     done = await _ask(session_id, await _chat_for(session_id))
 
-    assert done["grounded"] is True
+    assert done["faq_verdict"] == FaqVerdict.ANSWERED
     assert [c["entry_id"] for c in done["citations"]] == [entry_id]
     assert _cited_texts(done) == [_VISITING]
 
@@ -246,7 +247,7 @@ async def test_a_deleted_entrys_question_abstains_and_calls_staff() -> None:
     await _call(session_id, "DELETE", f"/faq/{entry_id}")
     done = await _ask(session_id, chat_id)
 
-    assert done["grounded"] is False
+    assert done["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert done["citations"] == []
     async with session_factory() as session:
         state = await chat_repository.get_conversation_state(

@@ -15,7 +15,14 @@ from chat.agent.compose_answer import (
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
-from chat.domain.schemas import AnswerSource, ChatDoneEvent, ChatTokenEvent, Citation
+from chat.domain.schemas import (
+    AnswerSource,
+    ChatDoneEvent,
+    ChatTokenEvent,
+    Citation,
+    FaqVerdict,
+)
+from chat.rag.pipeline import ScoredChunk
 from structlog.testing import capture_logs
 
 from .conftest import FakeAnthropicStream, FakeTextEvent
@@ -30,12 +37,20 @@ def _client(tokens: list[str]) -> MagicMock:
     return client
 
 
-def _grounded_faq() -> FaqResult:
+def _answered_faq() -> FaqResult:
     return FaqResult(
         answer_text="Visiting hours are 8am to 5pm.",
         citations=[_CITATION],
-        grounded=True,
-        chunk_scores=[0.9],
+        verdict=FaqVerdict.ANSWERED,
+        scored_chunks=[
+            ScoredChunk(
+                faq_entry_id=_CITATION.entry_id,
+                chunk_index=_CITATION.chunk_index,
+                chunk_text=_CITATION.chunk_text,
+                similarity_score=0.9,
+                rerank_score=0.8,
+            )
+        ],
     )
 
 
@@ -43,7 +58,7 @@ def _abstaining_faq() -> FaqResult:
     return FaqResult(
         answer_text="I don't have a confident answer to that.",
         citations=[],
-        grounded=False,
+        verdict=FaqVerdict.ABSTAINED_RERANK_FLOOR,
     )
 
 
@@ -81,7 +96,7 @@ async def test_a_merged_turn_streams_one_reply_and_one_terminal_event() -> None:
 
     tokens, done = await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="You're booked for Friday.",
         booking_outcome=str(BookingOutcome.BOOKED),
     )
@@ -100,13 +115,13 @@ async def test_the_faq_halfs_citations_are_carried_through_structurally() -> Non
 
     _, done = await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="Booked.",
         booking_outcome=str(BookingOutcome.BOOKED),
     )
 
     assert done.citations == [_CITATION]
-    assert done.grounded is True
+    assert done.faq_verdict is FaqVerdict.ANSWERED
 
 
 async def test_an_abstaining_faq_half_is_reported_as_an_abstention() -> None:
@@ -119,7 +134,7 @@ async def test_an_abstaining_faq_half_is_reported_as_an_abstention() -> None:
         booking_outcome=str(BookingOutcome.BOOKED),
     )
 
-    assert done.grounded is False
+    assert done.faq_verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
     assert done.citations == []
     prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
     assert "no confident answer" in prompt
@@ -146,7 +161,7 @@ async def test_a_booking_that_did_not_happen_is_never_composed_into_a_success(
 
     await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="That time was taken.",
         booking_outcome=str(outcome),
     )
@@ -162,7 +177,7 @@ async def test_the_composing_prompt_carries_both_halves() -> None:
 
     await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="You're booked for Friday.",
         booking_outcome=str(BookingOutcome.BOOKED),
     )
@@ -178,7 +193,7 @@ async def test_a_merged_turn_logs_completion_once_with_scored_citations() -> Non
     with capture_logs() as logs:
         await _compose(
             client,
-            faq_result=_grounded_faq(),
+            faq_result=_answered_faq(),
             booking_reply="Booked.",
             booking_outcome=str(BookingOutcome.BOOKED),
         )
@@ -187,7 +202,10 @@ async def test_a_merged_turn_logs_completion_once_with_scored_citations() -> Non
     assert len(completions) == 1
     assert completions[0]["answer_source"] == AnswerSource.MERGED
     assert completions[0]["booking_outcome"] == "booked"
-    assert completions[0]["citations"][0]["score"] == 0.9
+    # Both scores per citation now: a disagreement between the two stages is the
+    # phase's whole thesis, so the completion record carries the pair.
+    assert completions[0]["citations"][0]["similarity_score"] == 0.9
+    assert completions[0]["citations"][0]["rerank_score"] == 0.8
 
 
 # --- the single-specialist no-op path ----------------------------------------
@@ -199,7 +217,7 @@ def test_a_single_specialist_turn_emits_only_its_completion() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            grounded=True,
+            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[{**_CITATION.model_dump(), "score": 0.9}],
@@ -208,7 +226,7 @@ def test_a_single_specialist_turn_emits_only_its_completion() -> None:
         completion.emit()
 
     assert [e["event"] for e in logs] == ["turn.completed"]
-    assert logs[0]["outcome"] == "grounded"
+    assert logs[0]["outcome"] == "answered"
     assert logs[0]["answer_source"] == AnswerSource.FAQ
 
 
@@ -218,7 +236,7 @@ def test_a_completion_emitted_within_a_turn_reports_the_turn_duration() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            grounded=True,
+            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[],
@@ -235,7 +253,7 @@ def test_a_completion_emitted_outside_a_turn_reports_no_duration() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            grounded=True,
+            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[],
@@ -253,7 +271,7 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            grounded=False,
+            verdict=FaqVerdict.ABSTAINED_SIMILARITY_FLOOR,
             booking_outcome=None,
             answer_text="I don't have a confident answer to that.",
             citations=[],
@@ -261,17 +279,17 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
         )
         completion.emit()
 
-    assert logs[0]["outcome"] == "abstained"
+    assert logs[0]["outcome"] == "abstained_similarity_floor"
     assert logs[0]["abstention_message"] == "I don't have a confident answer to that."
 
 
-def test_a_booking_only_turn_reports_no_groundedness_verdict() -> None:
+def test_a_booking_only_turn_reports_no_faq_verdict() -> None:
     with capture_logs() as logs:
         completion = TurnCompletion()
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.BOOKING,
-            grounded=None,
+            verdict=None,
             booking_outcome=str(BookingOutcome.BOOKED),
             answer_text="You're booked for Friday.",
             citations=[],
@@ -279,7 +297,7 @@ def test_a_booking_only_turn_reports_no_groundedness_verdict() -> None:
         )
         completion.emit()
 
-    assert logs[0]["grounded"] is None
+    assert logs[0]["faq_verdict"] is None
     assert logs[0]["booking_outcome"] == "booked"
     assert "abstention_message" not in logs[0]
 
@@ -305,7 +323,7 @@ async def test_the_merged_prompt_states_which_change_actually_completed(
 
     await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="Something about an appointment.",
         booking_outcome=str(outcome),
     )
@@ -319,7 +337,7 @@ async def test_the_system_prompt_forbids_claiming_an_unrecorded_change() -> None
 
     await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="Something about an appointment.",
         booking_outcome=str(BookingOutcome.OUTCOME_UNKNOWN),
     )
@@ -339,7 +357,7 @@ async def test_an_unknown_outcome_may_not_be_composed_as_nothing_having_happened
 
     await _compose(
         client,
-        faq_result=_grounded_faq(),
+        faq_result=_answered_faq(),
         booking_reply="I could not confirm that.",
         booking_outcome=str(BookingOutcome.OUTCOME_UNKNOWN),
     )
@@ -359,7 +377,7 @@ async def test_a_failing_composing_call_is_tagged_as_a_generation_failure() -> N
     with pytest.raises(TurnPipelineError) as raised:
         await _compose(
             client,
-            faq_result=_grounded_faq(),
+            faq_result=_answered_faq(),
             booking_reply="Friday at 9 it is.",
             booking_outcome=str(BookingOutcome.BOOKED),
         )
@@ -401,7 +419,7 @@ async def test_cancelling_a_merged_turn_is_still_a_cancellation() -> None:
     async def consume() -> None:
         await _compose(
             client,
-            faq_result=_grounded_faq(),
+            faq_result=_answered_faq(),
             booking_reply="Friday at 9 it is.",
             booking_outcome=str(BookingOutcome.BOOKED),
         )

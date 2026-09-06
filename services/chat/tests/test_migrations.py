@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 from chat.core.config import Settings
+from chat.domain.schemas import FaqVerdict
 from sqlalchemy.exc import IntegrityError
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
@@ -149,6 +150,52 @@ def test_messages_gains_a_partially_indexed_attention_mark() -> None:
     index = indexes["ix_messages_chat_attention_mark"]
     assert index["column_names"] == ["chat_id", "attention_mark"]
     assert index.get("dialect_options", {}).get("postgresql_where") is not None
+
+
+# --- 008: the grounded boolean becomes a typed verdict ----------------------------
+
+
+def test_messages_carries_a_faq_verdict_instead_of_grounded() -> None:
+    engine, inspector = _inspector()
+    columns = {col["name"]: col for col in inspector.get_columns("messages")}
+    engine.dispose()
+
+    # The boolean stopped partitioning the outcomes: an answered turn is always
+    # grounded, so `true` carried nothing, while `false` covered three situations
+    # needing three different fixes. Both must not coexist - FR-023 forbids one fact
+    # with two sources.
+    assert "grounded" not in columns
+    assert columns["faq_verdict"]["nullable"] is True
+
+
+def test_faq_verdict_is_a_plain_string_column() -> None:
+    # A Python-level closed set, not a database type, matching `sender` and
+    # `attention_mark`: a sixth verdict must not cost an ALTER TYPE. See
+    # docs/python-style-guide.md.
+    engine, inspector = _inspector()
+    columns = {col["name"]: col for col in inspector.get_columns("messages")}
+    engine.dispose()
+
+    assert isinstance(columns["faq_verdict"]["type"], sa.String)
+
+
+def test_no_message_carries_a_verdict_this_phase_did_not_produce() -> None:
+    # The migration translates nothing (FR-024): there was no stored message to
+    # translate. Any value here that is not one this phase's gates assign would mean a
+    # backfill was written after all, against rows nobody can check.
+
+    engine, _ = _inspector()
+    with engine.connect() as conn:
+        found = {
+            row[0]
+            for row in conn.execute(
+                sa.text("select distinct faq_verdict from messages")
+            )
+            if row[0] is not None
+        }
+    engine.dispose()
+
+    assert found <= {v.value for v in FaqVerdict}
 
 
 # --- 007: an FAQ entry has an owner and names a live revision ----------------------

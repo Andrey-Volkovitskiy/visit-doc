@@ -17,10 +17,24 @@ export interface ChatTokenEvent {
   text: string;
 }
 
+/**
+ * What the FAQ half of a turn did, and for an abstention, which gate stopped it.
+ *
+ * The three abstentions are identical to the patient - same message, same handoff -
+ * and differ only in the record, which is what says whether the corpus is empty, the
+ * similarity floor is too high, or the rerank floor is.
+ */
+export type FaqVerdict =
+  | "answered"
+  | "answered_unreranked"
+  | "abstained_empty_corpus"
+  | "abstained_similarity_floor"
+  | "abstained_rerank_floor";
+
 export interface ChatDoneEvent {
   type: "done";
   /** Null when no FAQ specialist ran, i.e. a booking-only reply. */
-  grounded: boolean | null;
+  faq_verdict: FaqVerdict | null;
   citations: Citation[];
   /**
    * A reply to render *instead of* the accumulated tokens - today, the FAQ
@@ -75,7 +89,7 @@ export interface Message {
   id: string;
   sender: "patient" | "assistant" | "staff";
   content: string;
-  grounded: boolean | null;
+  faq_verdict: FaqVerdict | null;
   citations: Citation[] | null;
   attention_mark: AttentionMark | null;
   created_at: string;

@@ -4,7 +4,7 @@ from typing import Literal
 
 from voyageai.client_async import AsyncClient
 
-_MODEL = "voyage-3-lite"
+_MODEL = "voyage-4-lite"
 
 
 async def embed_texts(

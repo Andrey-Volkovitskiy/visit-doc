@@ -59,6 +59,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         anthropic_client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
         stack.push_async_callback(anthropic_client.close)
         voyage_client = AsyncClient(api_key=settings.VOYAGE_API_KEY)
+        # Reranking gets its own client with retries off, so its deadline bounds the
+        # whole call rather than one attempt of it - `timeout x attempts` is exactly
+        # the wall-clock the deadline exists to cap. Kept off the embedding client
+        # above, whose failures are fatal to the turn and should keep retrying.
+        rerank_client = AsyncClient(api_key=settings.VOYAGE_API_KEY, max_retries=0)
         # One pool, two callers: Voyage's client is handed it through its contextvar,
         # and the console's practitioner proxy sends its own requests over it. A second
         # session would be a second set of connections for no reason.
@@ -74,6 +79,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         app.state.qdrant_client = qdrant_client
         app.state.anthropic_client = anthropic_client
         app.state.voyage_client = voyage_client
+        app.state.rerank_client = rerank_client
         app.state.http_session = http_session
         app.state.scheduling_channel = scheduling_channel
         # Registered before the yield so it runs on the way out whatever happens: the

@@ -1,4 +1,4 @@
-import type { AttentionMark, Citation } from "../lib/chatStream";
+import type { AttentionMark, Citation, FaqVerdict } from "../lib/chatStream";
 import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
 
 interface MessageViewProps {
@@ -6,13 +6,24 @@ interface MessageViewProps {
   content: string;
   citations?: Citation[] | null;
   /**
-   * Whether this reply was checked against retrieved clinic documents.
+   * Whether to draw the citation list at all.
    *
-   * Null means it never was — a booking reply is a real action's outcome, not a
-   * claim about clinic policy, so it is neither grounded nor abstaining and shows
-   * no citation block at all. A staff message was never retrieved against either.
+   * The staff console draws it; the patient pane does not. A citation is evidence
+   * about how an answer was produced — useful to a staff member auditing it, and the
+   * clinic's working notes to a patient who asked a question and wants the answer.
+   *
+   * This is presentation, not access: the citations are in the payload either way,
+   * and the session reading the patient pane owns the corpus and can read every entry
+   * of it on the FAQ screen.
    */
-  grounded?: boolean | null;
+  showCitations?: boolean;
+  /**
+   * What the FAQ half of this turn did.
+   *
+   * Null means no FAQ specialist ran — a booking reply is a real action's outcome,
+   * not a claim about clinic policy, and a staff message was never retrieved against.
+   */
+  faqVerdict?: FaqVerdict | null;
   /**
    * Why this message needs a person, when something decided one is needed.
    *
@@ -45,16 +56,21 @@ export function MessageView({
   sender,
   content,
   citations,
-  grounded,
+  showCitations = false,
+  faqVerdict,
   mark,
 }: MessageViewProps) {
-  const showCitations = citations !== null && citations !== undefined && citations.length > 0;
+  const citationsVisible =
+    showCitations && citations !== null && citations !== undefined && citations.length > 0;
+  // Only one verdict is worth a marker. An answer with citations and an abstention
+  // message already say what they are, and a marker on every message marks nothing.
+  const degraded = faqVerdict === "answered_unreranked";
   const label = ROLE_LABEL[sender];
   return (
     <div
       data-testid="message"
       data-sender={sender}
-      data-grounded={grounded === null || grounded === undefined ? undefined : String(grounded)}
+      data-faq-verdict={faqVerdict ?? undefined}
     >
       {label !== undefined && (
         <p data-testid="role-label" style={{ opacity: 0.7, fontSize: "0.85em" }}>
@@ -67,7 +83,19 @@ export function MessageView({
           {ATTENTION_MARK_LABEL[mark]}
         </p>
       )}
-      {showCitations && (
+      {degraded && (
+        <p
+          data-testid="verdict-mark"
+          title={
+            "Produced without the reranking stage, so this answer rests on more, " +
+            "less precisely selected clinic documents than usual."
+          }
+          style={{ fontSize: "0.85em", opacity: 0.7 }}
+        >
+          Answered without reranking
+        </p>
+      )}
+      {citationsVisible && (
         <ul data-testid="citations">
           {citations.map((citation) => (
             <li key={`${citation.entry_id}-${citation.chunk_index}`}>{citation.chunk_text}</li>

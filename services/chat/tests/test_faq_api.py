@@ -6,6 +6,7 @@ import pytest
 import structlog
 from chat.api.session_cookie import COOKIE_NAME
 from chat.core.config import Settings
+from chat.domain.schemas import FaqVerdict
 from chat.main import app
 from chat.repositories import faq_repository
 from fastapi.testclient import TestClient
@@ -83,7 +84,10 @@ def test_voyage_client_is_reused_across_create_and_update() -> None:
 
     assert update_response.status_code == 200
     assert delete_response.status_code == 204
-    mock_voyage_cls.assert_called_once()
+    # Twice, not once: embedding and reranking hold separate clients so the rerank
+    # deadline is not multiplied by the embedding client's retries. What this pins is
+    # still that each is built once per lifespan, not once per request.
+    assert mock_voyage_cls.call_count == 2
 
 
 def test_update_is_reflected_in_chat_retrieval() -> None:
@@ -161,7 +165,7 @@ def test_delete_stops_grounding_and_then_404s() -> None:
             lines = [
                 json.loads(line) for line in chat_response.text.strip().splitlines()
             ]
-            assert lines[-1]["grounded"] is False
+            assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
 
 
 @pytest.mark.parametrize(
@@ -512,5 +516,5 @@ def test_a_deleted_entry_is_never_citable_again() -> None:
             )
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
-    assert lines[-1]["grounded"] is False
+    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert lines[-1]["citations"] == []

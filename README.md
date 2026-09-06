@@ -75,8 +75,21 @@ Phase 0's walking skeleton (`specs/001-grounded-faq-chat/`) made several notable
 choices, each with a tradeoff — full rationale and alternatives considered live in
 [`research.md`](specs/001-grounded-faq-chat/research.md):
 
-- **Embeddings**: Voyage AI (`voyage-3-lite`), since Claude has no embeddings endpoint. Chosen
-  over a local model (avoids a heavy ML runtime) and over OpenAI (keeps the stack Claude-centric).
+- **Embeddings**: Voyage AI (`voyage-4-lite`, 1024-dimensional), since Claude has no embeddings
+  endpoint. Chosen over a local model (avoids a heavy ML runtime) and over OpenAI (keeps the stack
+  Claude-centric). Moved up from `voyage-3-lite` (512-dimensional), which the original Phase 0
+  research chose; the dimension is part of the choice, since it is baked into the Qdrant
+  collection at creation and a change to it requires recreating the collection and re-indexing.
+- **Reranking**: Voyage AI (`rerank-3`), a cross-encoder scoring the question and a chunk
+  *together*, re-ordering the shortlist the embedding search produced. Chosen over a second vendor
+  (Cohere) because Voyage was already the embedding provider, so it adds no package, no credential
+  and no new client lifecycle; over a local cross-encoder because that drags a heavy ML runtime into
+  a pure-Python service and would make the fallback path effectively untested; and over asking Claude
+  to score, which is a generation call wearing a scoring hat — slower, dearer, and a free-text
+  judgement where a threshold needs a number. The tradeoff accepted: one more external call on the
+  FAQ path, and therefore one more thing that can be down. That is bounded by a 5-second deadline and
+  absorbed rather than propagated — a failed or slow reranker costs the answer its precision stage,
+  never the turn (`specs/008-reranked-retrieval-pipeline/`).
 - **Postgres drivers**: `asyncpg` for the app, `psycopg` v3 (sync) for Alembic migrations —
   the conventional SQLAlchemy 2.0 pairing, rather than forcing Alembic's sync runner through
   `asyncpg` via `run_sync`.

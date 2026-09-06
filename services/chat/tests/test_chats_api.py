@@ -20,7 +20,7 @@ from chat.clients.scheduling import (
 )
 from chat.db.session import session_factory
 from chat.domain.models import Chat, EscalationReason, MessageSender
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent
+from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, FaqVerdict
 from chat.main import app
 from chat.repositories import chat_repository
 from fastapi.testclient import TestClient
@@ -806,7 +806,7 @@ class _FinishedGraph:
             escalation.record(self._reason)
         yield ChatTokenEvent(text="Visiting hours are 8am to 5pm.")
         if self._settles_a_reply:
-            yield ChatDoneEvent(grounded=True, citations=[])
+            yield ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[])
 
 
 async def _delete_racing_a_turn(

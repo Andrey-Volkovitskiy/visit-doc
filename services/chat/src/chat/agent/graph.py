@@ -56,6 +56,7 @@ from chat.domain.schemas import (
     AnswerSource,
     ChatDoneEvent,
     ChatTokenEvent,
+    FaqVerdict,
     IntentLabel,
 )
 
@@ -199,11 +200,12 @@ def _record_classification_failure(exc: Exception) -> None:
 def _build_graph(
     qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
+    rerank_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
 ) -> "CompiledStateGraph[_GraphState, None, _GraphState, _GraphState]":
     """Build and compile the graph, closing over its three shared clients.
 
-    Memoized on the three clients: each is constructed once at app startup and passed
+    Memoized on the four clients: each is constructed once at app startup and passed
     in unchanged on every turn, so the graph's structure never varies call to call and
     recompiling it per turn would be pure waste. Safe to invoke concurrently across
     overlapping requests - a compiled graph carries no per-invocation state.
@@ -263,6 +265,7 @@ def _build_graph(
             async for event in answer_faq(
                 qdrant_client,
                 voyage_client,
+                rerank_client,
                 anthropic_client,
                 state["bursts"],
                 state["reply_to_message_ids"],
@@ -279,8 +282,8 @@ def _build_graph(
                 else:
                     writer(event)
             span.set(
-                grounded=result.grounded if result else None,
-                abstained=result is not None and not result.grounded,
+                faq_verdict=result.verdict.value if result else None,
+                abstained=result is not None and not result.verdict.answered,
                 citation_count=len(result.citations) if result else 0,
                 answer_chars=len(result.answer_text) if result else 0,
                 mode="streamed" if streaming else "collected",
@@ -317,10 +320,10 @@ def _build_graph(
             if streaming:
                 # The sole specialist ends its own turn, exactly as the FAQ path does.
                 # A booking reply was never retrieved against, so it carries no
-                # groundedness verdict and no citations.
+                # FAQ verdict and no citations.
                 writer(
                     ChatDoneEvent(
-                        grounded=None,
+                        faq_verdict=None,
                         citations=[],
                         answer_source=AnswerSource.BOOKING,
                     )
@@ -347,7 +350,7 @@ def _build_graph(
             writer(ChatTokenEvent(text=HANDOFF_MESSAGE))
             writer(
                 ChatDoneEvent(
-                    grounded=None,
+                    faq_verdict=None,
                     citations=[],
                     answer_source=AnswerSource.HAND_OFF,
                 )
@@ -367,13 +370,13 @@ def _build_graph(
         completion = TurnCompletion()
         async with node_span(_COMPOSE_ANSWER) as span:
             if not state["merge_required"]:
-                answer_text, citations, grounded, source = _single_specialist_reply(
+                answer_text, citations, verdict, source = _single_specialist_reply(
                     faq_result, booking_result, handed_off=state["handed_off"]
                 )
                 record_single_specialist_completion(
                     completion,
                     answer_source=source,
-                    grounded=grounded,
+                    verdict=verdict,
                     booking_outcome=booking_outcome,
                     answer_text=answer_text,
                     citations=citations,
@@ -382,7 +385,7 @@ def _build_graph(
                 span.set(
                     answer_source=str(source),
                     merged=False,
-                    grounded=grounded,
+                    faq_verdict=verdict.value if verdict else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(citations),
                 )
@@ -403,7 +406,7 @@ def _build_graph(
                 span.set(
                     answer_source=str(AnswerSource.MERGED),
                     merged=True,
-                    grounded=faq_result.grounded if faq_result else None,
+                    faq_verdict=faq_result.verdict if faq_result else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(faq_result.citations) if faq_result else 0,
                 )
@@ -437,12 +440,12 @@ def _single_specialist_reply(
     booking_result: BookingResult | None,
     *,
     handed_off: bool = False,
-) -> tuple[str, list[dict[str, object]], bool | None, AnswerSource]:
+) -> tuple[str, list[dict[str, object]], FaqVerdict | None, AnswerSource]:
     """Describe the reply a single node already streamed.
 
-    Returns: its text, its citations as logged, its groundedness verdict (None for a
-        booking reply or a handoff, neither of which was retrieved against), and which
-        node produced it.
+    Returns: its text, its citations as logged, its FAQ verdict (None for a booking
+        reply or a handoff, neither of which was retrieved against), and which node
+        produced it.
     """
     if handed_off:
         return HANDOFF_MESSAGE, [], None, AnswerSource.HAND_OFF
@@ -452,7 +455,7 @@ def _single_specialist_reply(
         return (
             faq_result.answer_text,
             faq_result.scored_citations(),
-            faq_result.grounded,
+            faq_result.verdict,
             AnswerSource.FAQ,
         )
     return "", [], None, AnswerSource.FAQ
@@ -461,6 +464,7 @@ def _single_specialist_reply(
 async def run_turn(
     qdrant_client: AsyncQdrantClient,
     voyage_client: VoyageAsyncClient,
+    rerank_client: VoyageAsyncClient,
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
     reply_to_message_ids: list[str],
@@ -495,7 +499,7 @@ async def run_turn(
         RuntimeError from `handle_booking_node` without a tool context. A
         classification failure never raises here, only logs.
     """
-    graph = _build_graph(qdrant_client, voyage_client, anthropic_client)
+    graph = _build_graph(qdrant_client, voyage_client, rerank_client, anthropic_client)
     state: _GraphState = {
         "bursts": bursts,
         "reply_to_message_ids": reply_to_message_ids,

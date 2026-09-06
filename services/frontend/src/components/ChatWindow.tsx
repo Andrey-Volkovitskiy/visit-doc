@@ -190,7 +190,7 @@ export function ChatWindow({
         id: localId(),
         sender: "patient",
         content: messageText,
-        grounded: null,
+        faq_verdict: null,
         citations: null,
         attention_mark: null,
         created_at: new Date().toISOString(),
@@ -233,7 +233,7 @@ export function ChatWindow({
               // never be accounted for by a history read, and would sit on screen
               // until the chat is switched away from.
               content: event.message || accumulated,
-              grounded: event.grounded,
+              faq_verdict: event.faq_verdict,
               citations: event.citations,
               attention_mark: null,
               created_at: new Date().toISOString(),
@@ -284,7 +284,6 @@ export function ChatWindow({
             sender={message.sender}
             content={message.content}
             citations={message.citations}
-            grounded={message.grounded}
           />
         ))}
         {Object.entries(streaming).map(([turnKey, text]) => (
