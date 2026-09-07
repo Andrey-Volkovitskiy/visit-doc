@@ -10,6 +10,7 @@ dev = [
     "types-grpcio>=1.82.1.20260724",
     "pre-commit>=4.6.1",
     "pytest-asyncio>=1.4.0",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.ruff]
@@ -64,6 +65,7 @@ markers = [
 testpaths = [
     "services/chat/tests",
     "services/scheduler/tests",
+    "packages/shared-db/tests",
     "packages/shared-logging/tests",
     "packages/shared-models/tests",
     "packages/shared-proto/tests",

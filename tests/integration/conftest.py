@@ -21,7 +21,7 @@ from chat.core.config import Settings as ChatSettings
 from chat.domain.schemas import IntentClassificationResult, IntentLabel
 from scheduler.core.config import Settings as SchedulerSettings
 from scheduler.repositories import practitioner_repository
-from shared_db import isolated_database_url, with_test_suffix
+from shared_db import ensure_database_exists, isolated_database_url, isolated_name
 from sqlalchemy import text as sql_text
 from ulid import ULID
 
@@ -38,14 +38,16 @@ os.environ["SCHEDULER_DATABASE_URL"] = isolated_database_url(
 # at the same isolated database rather than each declaring their own rule.
 _chat_settings = ChatSettings()
 os.environ["DATABASE_URL"] = isolated_database_url(_chat_settings.DATABASE_URL)
-os.environ["QDRANT_COLLECTION_NAME"] = with_test_suffix(
+os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
     _chat_settings.QDRANT_COLLECTION_NAME
 )
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _apply_scheduler_migrations() -> None:
-    """Bring the isolated scheduler test database's schema to head."""
+    """Create this process's isolated scheduler database if needed, then bring it to
+    head - the same order this tier's per-service counterparts use."""
+    ensure_database_exists(os.environ["SCHEDULER_DATABASE_URL"])
     alembic_cfg = Config(str(_SCHEDULER_ROOT / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_SCHEDULER_ROOT / "alembic"))
     command.upgrade(alembic_cfg, "head")
@@ -53,7 +55,8 @@ def _apply_scheduler_migrations() -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def _apply_chat_migrations() -> None:
-    """Bring the isolated chat test database's schema to head."""
+    """Create this process's isolated chat database if needed, then bring it to head."""
+    ensure_database_exists(os.environ["DATABASE_URL"])
     alembic_cfg = Config(str(_CHAT_ROOT / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_CHAT_ROOT / "alembic"))
     command.upgrade(alembic_cfg, "head")

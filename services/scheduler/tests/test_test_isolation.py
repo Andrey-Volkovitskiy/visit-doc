@@ -14,11 +14,16 @@ chat's engine and Qdrant collection.
 
 from scheduler.db.session import engine, session_factory
 from scheduler.domain.models import all_table_names
+from shared_db import isolated_name
 from sqlalchemy import func, select, text
 
 
 def test_database_engine_is_bound_to_the_isolated_test_database() -> None:
-    assert engine.url.database == "visitdoc_scheduler_test"
+    # Compared against the rule applied to the *dev* name rather than a literal, so
+    # the assertion holds under a namespaced run (a pytest-xdist worker, or a second
+    # concurrent one) without going slack: what it rules out is the singleton still
+    # carrying the dev name, which no namespace can turn into this one.
+    assert engine.url.database == isolated_name("visitdoc_scheduler")
 
 
 async def test_scheduling_tables_are_empty_at_test_start() -> None:

@@ -3,7 +3,8 @@
 ## Layout
 
 - **Unit tests are colocated per workspace member**: `services/chat/tests/`,
-  `services/scheduler/tests/`, `packages/shared-models/tests/`, `packages/shared-proto/tests/`.
+  `services/scheduler/tests/`, `packages/shared-db/tests/`, `packages/shared-models/tests/`,
+  `packages/shared-proto/tests/`.
   Each member already owns its own `pyproject.toml`/`src/` — its `tests/` dir is part of that same
   self-contained unit, not a separate tree. A package's `tests/` dir *is* the unit tier; there's no
   extra `tests/unit/` nesting.
@@ -218,7 +219,12 @@ containers, each suite runs against an **isolated, `_test`-suffixed database**, 
   `Settings()`, then (via `shared_db.testing.isolated_database_url`) overrides the `DATABASE_URL`
   env var to a `<db>_test`-suffixed database
   (`visitdoc_chat` → `visitdoc_chat_test`) *before* any `chat.*` module is imported by a test
-  file. Because env vars take priority over `.env` file
+  file. Under pytest-xdist that name carries the worker's id too (`visitdoc_chat_test_gw0`), and
+  the same suffix reaches `QDRANT_COLLECTION_NAME` (`faq_chunks_test_gw0`) — one derivation,
+  `shared_db.testing.isolated_name`, so a suite can never end up split per worker on Postgres and
+  shared on Qdrant. A namespaced database cannot be provisioned ahead of time, since its name is
+  not known until the worker starts, so each suite calls `shared_db.ensure_database_exists` on the
+  way in and migrates whatever it gets. Because env vars take priority over `.env` file
   values in `pydantic-settings`, every later `Settings()` call — including Alembic's `env.py`,
   which reads `DATABASE_URL` directly — consistently resolves to the isolated database. A
   session-scoped, autouse fixture (`_apply_migrations_to_test_database`) runs `alembic upgrade
@@ -232,9 +238,10 @@ containers, each suite runs against an **isolated, `_test`-suffixed database**, 
 - **Postgres (scheduler)**: `services/scheduler/tests/conftest.py` does exactly the same for
   `SCHEDULER_DATABASE_URL` (`visitdoc_scheduler` → `visitdoc_scheduler_test`), with its own
   session-scoped `alembic upgrade head` against the scheduler's own migration tree. It has no
-  Qdrant side. It additionally truncates every scheduling table before each test — the list read
-  from `Base.metadata` via `all_table_names()`, not hand-written — since the repositories under
-  test issue real commits and nothing else cleans them up.
+  Qdrant side. It additionally clears every scheduling table before each test — child-first
+  `DELETE`s on one session-scoped engine, over the list read from `Base.metadata` via
+  `all_table_names()` rather than hand-written — since the repositories under test issue real
+  commits and nothing else cleans them up. Chat's `_clear_chat_tables` is the same shape.
 
 Locally, `docker-compose.yml` creates all four databases automatically via
 `/docker-entrypoint-initdb.d` init scripts (`docker/postgres-init/01-create-test-db.sql`,
@@ -296,14 +303,17 @@ make test-unit          # uv run pytest (scoped to the four per-package tests/ d
 make test-frontend      # vitest, in services/frontend
 make test-integration   # uv run pytest tests/integration
 make test-e2e           # uv run pytest tests/e2e
+make test-db-prune      # drop the per-session test databases/collections (see below)
 ```
 
 ### Running them while you work
 
 The tiers are not the same size, and treating them as if they were is what makes a change feel
 slow. Rough shape on a developer machine: `test-frontend` ~15s, `test-integration` ~45s, the
-scheduler and package suites ~2m together, and **`services/chat/tests` alone is about 3.5 minutes** —
-it holds most of the coverage and every test in it talks to real Postgres and real Qdrant.
+scheduler and package suites ~2m together, and **`services/chat/tests` alone is about 2 minutes
+across two workers** (roughly 3.5 sequential, and both figures move with whatever else the machine
+is doing) — it holds most of the coverage and every test in it talks to real Postgres and real
+Qdrant.
 
 **So: iterate with scoped runs, and run the full chat suite exactly once, at the end.** While you
 are chasing a particular problem, run only the tests that cover it — a file
@@ -327,17 +337,38 @@ run proves the thing you changed; only the full one speaks for the rest.
   alongside `make test-integration` has each tier deleting the other's rows mid-test. The failures
   then land wherever the timing put them rather than on anything either tier is testing, and read as
   a broad regression in code neither run touched. Backgrounding a tier is still right (previous
-  bullet); starting a second database-backed one while it runs is not.
+  bullet); starting a second database-backed one while it runs is not — **unless the two runs have
+  different namespaces**, which they usually do without anyone arranging it. A Claude Code session
+  exports `CLAUDE_CODE_SESSION_ID`, and `shared_db.testing` turns that into a `_cc<session>` suffix
+  on every database and collection the run touches, so an agent's run and your own terminal's are
+  already independent — your shell has no such id and keeps the plain `visitdoc_chat_test`. Two
+  runs that would still collide (two plain shells, or one session running a suite twice at once)
+  are separated by exporting `VISITDOC_TEST_NAMESPACE` to something unique, which wins over the
+  automatic one. What none of it separates is the CPU: two runs at `-n 2` is four workers plus the
+  containers.
+
+  Those stores are created on demand and never reaped, so they accumulate one set per namespace
+  ever used. `make test-db-prune` drops the automatic ones and leaves the plain `_test` databases
+  and every dev database alone.
 
   Three things are *not* this hazard. **`make test-frontend` may run alongside anything** — vitest
   is jsdom with the network faked at the `chatStream`/`consoleApi` seam, so it touches no database,
   no Qdrant and no running service, and starting it next to a Python tier costs nothing. Neither is
-  running within one tier, since `make test-unit` is a single sequential pytest process over the
-  four package suites. Nor is CI, where `test` and `integration` are separate jobs that each get
+  running within one tier: `make test-unit` distributes across workers, but each gets its own
+  database and Qdrant collection, so they cannot clear each other's rows. Nor is CI, where `test` and `integration` are separate jobs that each get
   their own `postgres`/`qdrant` service containers and so share no database at all.
-- **`pytest-xdist` is not the shortcut here.** The chat suite shares one module-level async engine
-  bound to a session-scoped event loop, and the scheduler suite truncates every table between
-  tests — parallel workers would collide on both. Speed has to come from scoping, not from workers.
+- **`pytest-xdist` carries the tier, and needs a store per worker to do it.** An earlier version
+  of this note ruled it out because the chat suite shares one module-level async engine bound to a
+  session-scoped event loop. That objection does not survive contact with how xdist actually runs:
+  workers are separate *processes*, each with its own engine and its own loop, so nothing about
+  that binding crosses between them. What genuinely does collide is the datastores — every suite
+  here clears every table before each test, so on one shared database each worker deletes the
+  others' rows mid-test. `shared_db.testing` therefore gives each worker its own database and its
+  own Qdrant collection, and `make test-unit` runs `-n 2 --dist loadfile`. `loadfile` keeps a
+  file's tests on one worker, so within-file ordering and the shared-lifespan assumptions above
+  survive. Two rather than one-per-core: the speedup plateaus early, Postgres and Qdrant need
+  cores of their own, and a second run alongside this one has to fit on the same machine. Scoping is still the right move while you are chasing one
+  problem; workers are what make the full run at the end affordable.
 
 `test-unit`, `test-frontend`, and `test-integration` all run in CI (`.github/workflows/ci.yml`).
 `test-e2e` stays manual until that tier has real tests.

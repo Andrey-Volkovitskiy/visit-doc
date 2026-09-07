@@ -13,12 +13,19 @@ Postgres, which nothing would surface until one of them started dropping connect
 
 from shared_db.engine import create_engine, create_session_factory
 from shared_db.migrations import sync_database_url
-from shared_db.testing import isolated_database_url, with_test_suffix
+from shared_db.testing import (
+    ensure_database_exists,
+    isolated_database_url,
+    isolated_name,
+    with_test_suffix,
+)
 
 __all__ = [
     "create_engine",
     "create_session_factory",
+    "ensure_database_exists",
     "isolated_database_url",
+    "isolated_name",
     "sync_database_url",
     "with_test_suffix",
 ]

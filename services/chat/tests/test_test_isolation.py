@@ -5,8 +5,9 @@ module-level singleton built from a *cached* `get_settings()` call - `chat.db.se
 `engine` or `chat.repositories.qdrant_repository`'s `COLLECTION_NAME` - evaluated before
 `conftest.py`'s `DATABASE_URL`/`QDRANT_COLLECTION_NAME` env overrides took effect, which
 silently pointed the whole test run at the dev database/collection instead of the
-isolated `_test`-suffixed ones. A fresh `Settings()` call always reflects the current
-(already-overridden) env var regardless of that bug, so it wouldn't have caught it -
+isolated ones (`_test`-suffixed, plus this process's namespace when it has one). A
+fresh `Settings()` call always reflects the current (already-overridden) env var
+regardless of that bug, so it wouldn't have caught it -
 these tests inspect the live singletons themselves, the things that actually broke.
 """
 
@@ -18,19 +19,24 @@ from chat.repositories.qdrant_repository import (
     create_client,
     ensure_collection,
 )
+from shared_db import isolated_name
 from sqlalchemy import func, select
 
 
 def test_database_engine_is_bound_to_the_isolated_test_database() -> None:
-    assert engine.url.database == "visitdoc_chat_test"
+    # Compared against the rule applied to the *dev* name rather than a literal, so the
+    # assertion holds under a namespaced run (a pytest-xdist worker, or a second
+    # concurrent one) without going slack: what it rules out is the singleton still
+    # carrying the dev name, which no namespace can turn into this one.
+    assert engine.url.database == isolated_name("visitdoc_chat")
 
 
 def test_qdrant_collection_name_is_the_isolated_test_collection() -> None:
-    assert COLLECTION_NAME == "faq_chunks_test"
+    assert COLLECTION_NAME == isolated_name("faq_chunks")
 
 
 async def test_database_tables_are_empty_at_test_start() -> None:
-    # `_clear_chat_tables` (conftest.py) truncates before every test - verify it held.
+    # `_clear_chat_tables` (conftest.py) clears them before every test - verify it held.
     async with session_factory() as session:
         session_count = await session.scalar(select(func.count()).select_from(Session))
         chat_count = await session.scalar(select(func.count()).select_from(Chat))

@@ -140,7 +140,7 @@ using `google.protobuf`/`grpc` directly still gets real type checking.
 Testing conventions (folder layout, naming, why `--import-mode=importlib` is required, why `tests/`
 is excluded from mypy) are documented in `docs/testing-strategy.md`. In short: unit tests are
 colocated per workspace member (`services/chat/tests/`, `services/scheduler/tests/`,
-`packages/shared-models/tests/`, `packages/shared-proto/tests/`); integration/e2e tests are
+`packages/shared-db/tests/`, `packages/shared-models/tests/`, `packages/shared-proto/tests/`); integration/e2e tests are
 centralized at `tests/integration/`/`tests/e2e/` (placeholders for now). Run via `make test` /
 `make test-unit`, `make test-integration`, `make test-e2e`; only the unit tier runs in CI so far
 (`test` job in `.github/workflows/ci.yml`, alongside `pre-commit`).

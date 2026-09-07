@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 from httpx import AsyncClient as HttpxAsyncClient
 from httpx import Response
 from qdrant_client import AsyncQdrantClient
-from shared_db import isolated_database_url, with_test_suffix
+from shared_db import ensure_database_exists, isolated_database_url, isolated_name
 from sqlalchemy import text as sql_text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from voyageai.client_async import AsyncClient
@@ -85,14 +85,20 @@ def _mock_text_response(text: str) -> MagicMock:
 # and caching it here would freeze the singleton on the dev URL for the whole session.
 _base_settings = Settings()
 os.environ["DATABASE_URL"] = isolated_database_url(_base_settings.DATABASE_URL)
-os.environ["QDRANT_COLLECTION_NAME"] = with_test_suffix(
+os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
     _base_settings.QDRANT_COLLECTION_NAME
 )
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _apply_migrations_to_test_database() -> None:
-    """Bring the isolated test database's schema to head before any test runs."""
+    """Create this process's isolated database if needed, then bring it to head.
+
+    The shared `visitdoc_chat_test` is provisioned before any suite runs, but a
+    namespaced one - a pytest-xdist worker's, or a second concurrent run's - is named
+    after a process that does not exist until now, so it asks for its own.
+    """
+    ensure_database_exists(os.environ["DATABASE_URL"])
     alembic_cfg = Config(str(_CHAT_ROOT / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_CHAT_ROOT / "alembic"))
     command.upgrade(alembic_cfg, "head")

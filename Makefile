@@ -1,5 +1,5 @@
 .PHONY: sync lint format typecheck typecheck-python typecheck-frontend \
-        test test-unit test-frontend test-integration test-e2e \
+        test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history
@@ -25,14 +25,27 @@ typecheck-frontend:
 
 test: test-unit test-frontend
 
+# Distributed across processes, since every test in these suites talks to real Postgres
+# and real Qdrant and spends most of its time waiting on one of them. Each worker gets
+# its own database and its own Qdrant collection (shared_db.testing), so they cannot
+# clear each other's rows mid-test. Two rather than one-per-core: the speedup plateaus
+# early, the Postgres and Qdrant containers need cores of their own, and a second run
+# alongside this one (another terminal, another Claude Code session) has to fit on the
+# same machine. `--dist loadfile` keeps a file's tests together, so a suite's
+# within-file ordering survives.
 test-unit:
-	uv run pytest
+	uv run pytest -n 2 --dist loadfile
 
 test-frontend:
 	cd services/frontend && npm test
 
 test-integration:
 	uv run pytest tests/integration
+
+# Drop the per-session test databases/collections the suites create automatically
+# (one set per Claude Code session, never reaped). Leaves the plain `_test` ones alone.
+test-db-prune:
+	@./scripts/prune-test-stores.sh
 
 test-e2e:
 	uv run pytest tests/e2e

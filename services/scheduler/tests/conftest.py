@@ -20,10 +20,10 @@ from scheduler.domain.models import (
     WorkingRange,
 )
 from scheduler.repositories import practitioner_repository
-from shared_db import isolated_database_url
+from shared_db import ensure_database_exists, isolated_database_url
 from shared_models.scheduling import AppointmentStatus, Specialty, Weekday
 from sqlalchemy import text as sql_text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from ulid import ULID
 
 _SCHEDULER_ROOT = Path(__file__).resolve().parents[1]
@@ -39,44 +39,75 @@ os.environ["SCHEDULER_DATABASE_URL"] = isolated_database_url(
 
 @pytest.fixture(scope="session", autouse=True)
 def _apply_migrations_to_test_database() -> None:
-    """Bring the isolated test database's schema to head before any test runs."""
+    """Create this process's isolated database if needed, then bring it to head.
+
+    The shared `visitdoc_scheduler_test` is provisioned before any suite runs, but a
+    namespaced one - a pytest-xdist worker's, or a second concurrent run's - is named
+    after a process that does not exist until now, so it asks for its own.
+    """
+    ensure_database_exists(os.environ["SCHEDULER_DATABASE_URL"])
     alembic_cfg = Config(str(_SCHEDULER_ROOT / "alembic.ini"))
     alembic_cfg.set_main_option("script_location", str(_SCHEDULER_ROOT / "alembic"))
     command.upgrade(alembic_cfg, "head")
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def _clear_scheduling_tables() -> None:
-    """Truncate every scheduling table before each test.
+@pytest_asyncio.fixture(scope="session")
+async def _cleaning_engine() -> AsyncIterator[AsyncEngine]:
+    """The engine `_clear_scheduling_tables` runs its per-test wipe on, built once.
 
-    The repositories under test issue real commits against the isolated test database,
-    and nothing else in this suite reliably cleans them up. One combined `TRUNCATE`
-    sharing a single throwaway connection, rather than one per table. The table list
-    comes from the schema itself, so a table added later is truncated without anyone
-    remembering to add it here.
+    Built once rather than per test because connecting is what the wipe costs, not the
+    statement: establishing and tearing down a connection to run one `DELETE` measures
+    ~80ms against ~20ms for the statement itself, and this suite pays it before every
+    one of its tests.
 
-    Both the engine and the settings are built lazily and thrown away rather than
-    touching `scheduler.db.session`'s module-level singleton: that engine's pool is
-    deliberately disposed per test by `_reset_engine_pool_between_tests` below, and
-    binding it to this fixture's own loop first would break that. `scheduler.db.session`
-    is also imported lazily for the same reason chat's conftest does - it builds its
-    engine from `get_settings()` at import time, so a module-level import here would
-    run before the `SCHEDULER_DATABASE_URL` override above.
+    Deliberately not `scheduler.db.session.engine`, for the reason
+    `_clear_scheduling_tables` gives below - and that is exactly what makes holding it
+    open for the session safe: `asyncio_default_fixture_loop_scope` is `session`, so
+    this fixture and the per-test one that uses it stay on one loop for the whole run,
+    and nothing else ever borrows a connection from it.
     """
-    from scheduler.domain.models import all_table_names
     from shared_db import create_engine
 
     engine = create_engine(Settings().SCHEDULER_DATABASE_URL)
     try:
-        async with engine.begin() as connection:
-            await connection.execute(
-                sql_text(
-                    f"TRUNCATE TABLE {', '.join(all_table_names())} "
-                    "RESTART IDENTITY CASCADE"
-                )
-            )
+        yield engine
     finally:
         await engine.dispose()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _clear_scheduling_tables(_cleaning_engine: AsyncEngine) -> None:
+    """Empty every scheduling table before each test.
+
+    The repositories under test issue real commits against the isolated test database,
+    and nothing else in this suite reliably cleans them up. The table list comes from
+    the schema itself, so a table added later is cleared without anyone remembering to
+    add it here.
+
+    `DELETE` rather than `TRUNCATE`, on an engine this fixture borrows rather than
+    builds. The tables hold a handful of rows at this point, so `TRUNCATE`'s table
+    rewrite and its `ACCESS EXCLUSIVE` lock buy nothing and measure several times the
+    deletes; the connection setup a per-test engine paid for measures more than either.
+    `RESTART IDENTITY` goes with it and costs nothing: every id in this schema is a
+    ULID string, so there is no sequence to restart.
+
+    The deletes go child-first, the reverse of `all_table_names()`, so each runs with
+    its referencing rows already gone. It is the ordering, not `CASCADE`, that keeps the
+    foreign keys satisfied - a delete that silently took rows from a table not named
+    here would be exactly the kind of reach `TRUNCATE ... CASCADE` allowed.
+
+    The engine is not `scheduler.db.session`'s module-level singleton: that engine's
+    pool is deliberately disposed per test by `_reset_engine_pool_between_tests` below,
+    and binding it to this fixture's own loop first would break that.
+    `scheduler.db.session` is also imported lazily for the same reason chat's conftest
+    does - it builds its engine from `get_settings()` at import time, so a module-level
+    import here would run before the `SCHEDULER_DATABASE_URL` override above.
+    """
+    from scheduler.domain.models import all_table_names
+
+    async with _cleaning_engine.begin() as connection:
+        for table in reversed(all_table_names()):
+            await connection.execute(sql_text(f"DELETE FROM {table}"))
 
 
 @pytest_asyncio.fixture(autouse=True)
