@@ -250,6 +250,10 @@ async def _run_pipeline(
         )
 
     reranked: list[ScoredChunk] | None = None
+    # Every candidate the reranker scored, not just the survivors: the verdict's
+    # `best_rerank_score` reports what the whole stage saw, which is the number a floor
+    # that dropped everything has to be read against.
+    scored: list[ScoredChunk] | None = None
     if similarity.kept:
         scored = await rerank_chunks(
             rerank_client,
@@ -282,8 +286,20 @@ async def _run_pipeline(
         "faq.verdict",
         verdict=outcome.verdict.value,
         survivor_count=len(outcome.survivors),
-        gate=_gate_of(outcome.verdict),
-        best_score_seen=max((c.similarity_score for c in pool), default=None),
+        blocked_gate=_gate_of(outcome.verdict),
+        # One best score per floor, because the two floors are tuned separately and a
+        # single number could not say which bar was too high. Each is the best its whole
+        # stage saw - the pool before the similarity floor, every scored candidate
+        # before the rerank floor - which is what separates "nothing was close" from
+        # "something was close and the floor was too high".
+        best_similarity_score=max((c.similarity_score for c in pool), default=None),
+        # None means no chunk carries a rerank score at all: the reranker did not run,
+        # or it failed. Never 0.0, which is the cross-encoder judging a chunk
+        # irrelevant - a judgement it did make.
+        best_rerank_score=max(
+            (c.rerank_score for c in scored or () if c.rerank_score is not None),
+            default=None,
+        ),
     )
     return outcome
 
@@ -343,7 +359,7 @@ def _identify(
 
 
 class AbstentionGate(StrEnum):
-    """Where a turn stopped - `faq.verdict`'s `gate` field, one value per abstention."""
+    """Where a turn stopped: `faq.verdict`'s `blocked_gate`, one per abstention."""
 
     EMPTY_CORPUS = "empty_corpus"
     EMPTY_POOL = "empty_pool"

@@ -467,27 +467,54 @@ async def test_the_verdict_event_names_the_gate_for_each_abstention() -> None:
     similarity = await _logged(pool=[_chunk(0, similarity=0.01)], reranked=None)
     rerank = await _logged(pool=[_chunk(0)], reranked=[])
 
-    assert empty["faq.verdict"]["gate"] == "empty_corpus"
-    assert unmatched["faq.verdict"]["gate"] == "empty_pool"
-    assert similarity["faq.verdict"]["gate"] == "similarity_floor"
-    assert rerank["faq.verdict"]["gate"] == "rerank_floor"
+    assert empty["faq.verdict"]["blocked_gate"] == "empty_corpus"
+    assert unmatched["faq.verdict"]["blocked_gate"] == "empty_pool"
+    assert similarity["faq.verdict"]["blocked_gate"] == "similarity_floor"
+    assert rerank["faq.verdict"]["blocked_gate"] == "rerank_floor"
 
 
-async def test_the_verdict_event_reports_the_best_score_seen() -> None:
+async def test_the_verdict_event_reports_the_best_similarity_score_seen() -> None:
     # "Nothing was close" and "something was close and the floor was too high" are
     # different problems with different fixes.
     events = await _logged(pool=[_chunk(0, similarity=0.29)], reranked=None)
 
     verdict = events["faq.verdict"]
     assert verdict["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
-    assert verdict["best_score_seen"] == 0.29
+    assert verdict["best_similarity_score"] == 0.29
     assert verdict["survivor_count"] == 0
 
 
-async def test_an_empty_corpus_reports_no_best_score_rather_than_zero() -> None:
+async def test_the_verdict_event_reports_the_best_rerank_score_seen() -> None:
+    # The best of everything the reranker scored, not of what its floor kept: an
+    # abstention at the rerank floor keeps nothing, and this is the number that says
+    # how far under the floor the best candidate landed.
+    events = await _logged(
+        pool=[_chunk(0), _chunk(1)],
+        reranked=[_chunk(0, rerank=0.02), _chunk(1, rerank=0.11)],
+    )
+
+    verdict = events["faq.verdict"]
+    assert verdict["verdict"] == FaqVerdict.ABSTAINED_RERANK_FLOOR.value
+    assert verdict["best_rerank_score"] == 0.11
+    assert verdict["survivor_count"] == 0
+
+
+async def test_an_unreranked_turn_reports_no_best_rerank_score() -> None:
+    # The reranker failed, so no chunk was judged. Reporting 0.0 here would read as a
+    # cross-encoder that scored everything irrelevant.
+    events = await _logged(pool=[_chunk(0)], reranked=None)
+
+    verdict = events["faq.verdict"]
+    assert verdict["verdict"] == FaqVerdict.ANSWERED_UNRERANKED.value
+    assert verdict["best_rerank_score"] is None
+    assert verdict["best_similarity_score"] == 0.9
+
+
+async def test_an_empty_corpus_reports_no_best_scores_rather_than_zero() -> None:
     events = await _logged(pool=[], reranked=None, live_revisions=[])
 
-    assert events["faq.verdict"]["best_score_seen"] is None
+    assert events["faq.verdict"]["best_similarity_score"] is None
+    assert events["faq.verdict"]["best_rerank_score"] is None
 
 
 # --- SC-006a / SC-004a: the pool changes the record, never the answer ---------------
@@ -609,7 +636,7 @@ async def test_an_empty_corpus_raises_no_retrieval_or_gate_event() -> None:
     assert "faq.retrieval_completed" not in events
     assert "faq.similarity_gate" not in events
     # The verdict still records the turn, and names the gate it stopped at.
-    assert events["faq.verdict"]["gate"] == "empty_corpus"
+    assert events["faq.verdict"]["blocked_gate"] == "empty_corpus"
 
 
 async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
@@ -619,4 +646,4 @@ async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
 
     assert events["faq.retrieval_completed"]["pool_returned"] == 1
     assert events["faq.similarity_gate"]["kept"] == []
-    assert events["faq.verdict"]["gate"] == "similarity_floor"
+    assert events["faq.verdict"]["blocked_gate"] == "similarity_floor"

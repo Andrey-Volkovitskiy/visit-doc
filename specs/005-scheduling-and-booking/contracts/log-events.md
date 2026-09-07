@@ -37,9 +37,16 @@ duration, so **every** event emitted inside a node carries its name without any 
 | Node | `result` fields |
 |---|---|
 | `classify_intent` | `intents`, `specialists` (the node names launched), `merge_required` |
-| `answer_faq` | `grounded`, `abstained`, `citation_count`, `answer_chars`, `mode` (`streamed` / `collected`) |
-| `handle_booking` | `outcome` (`BookingOutcome`), `appointment_id` (when booked), `iterations`, `tool_calls`, `mode` |
-| `compose_answer` | `answer_source`, `merged` (false on the single-specialist no-op path), `grounded`, `booking_outcome`, `citation_count` |
+| `answer_faq` | `faq_verdict` (spec 008; was `grounded`), `abstained`, `citation_count`, `answer_chars`, `answer_text`, `mode` (`streamed` / `collected`) |
+| `handle_booking` | `outcome` (`BookingOutcome`), `appointment_id` (when booked), `iterations`, `tool_calls`, `answer_chars`, `answer_text`, `mode` |
+| `compose_answer` | `answer_source`, `merged` (false on the single-specialist no-op path), `faq_verdict` (spec 008; was `grounded`), `booking_outcome`, `citation_count`, `answer_chars`, `answer_text` |
+
+Every node that returns text reports it as `answer_text`, under that one name whatever the node calls
+it internally, so one query reads the words out of any node. On a merged turn it is the only record
+of what each half actually said: `turn.completed`'s `answer_text` is the composed reply, and a merge
+that dropped or garbled a half is otherwise indistinguishable from a half that produced nothing
+worth keeping. On a single-specialist turn the composing node passes the text through, so the same
+string appears on both node lines and on `turn.completed` — the pass-through *is* what that path does.
 
 `classify_intent`'s `result` deliberately does not repeat the labels beyond `intents` — the
 classification itself is already reported by spec 004's `intent.classified`, unchanged. What is new
@@ -121,5 +128,13 @@ secret-constant lists, with `DATABASE_URL` in the URL-secret list from day one).
 
 Spec 004's rule stands: `intent.classified` carries labels only, never message text. The new events
 follow it — `booking.tool_called` logs tool arguments (practitioner ids and times, chosen by the
-model), never the patient's raw message, and no `node.completed` result carries reply text, only its
-length. `turn.message_received`'s existing raw-text content is untouched by this feature.
+model), never the patient's raw message. `turn.message_received`'s existing raw-text content is
+untouched by this feature.
+
+**Superseded**: this spec also said that no `node.completed` result carries reply text, only its
+length. It now carries `answer_text` (see the table above). The rule was about the *assistant's*
+words, not the patient's, and `turn.completed` has carried the full reply in `answer_text` since
+this spec's own implementation — so the length-only limit protected nothing the log did not already
+hold, while leaving the two halves of a merged turn unrecorded anywhere. The patient's own text remains confined to
+`turn.message_received`, and redaction (`shared-logging`) applies to these fields exactly as it does
+to every other.

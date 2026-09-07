@@ -39,6 +39,7 @@ from structlog.testing import capture_logs
 from ulid import ULID
 
 from .conftest import (
+    DEFAULT_BOOKING_REPLY,
     fake_anthropic_client,
     fake_classify_intent_client,
     fake_embed_texts,
@@ -476,6 +477,50 @@ def test_both_intents_fan_out_concurrently_and_merge(seeded_entry: int) -> None:
     assert done_event.answer_source == "merged"
 
 
+def test_each_node_completion_carries_the_text_that_node_returned(
+    seeded_entry: int,
+) -> None:
+    """A merged turn is the case that needs this: `turn.completed` carries only the
+    composed reply, so the two halves being merged appear in no other record."""
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+        )
+        events = asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and can I book Friday?")
+        )
+
+    assert _node_result(logs, "answer_faq")["answer_text"] == _ENTRY_CONTENT
+    assert _node_result(logs, "handle_booking")["answer_text"] == DEFAULT_BOOKING_REPLY
+    # The composing node's text is what it actually put on the wire, not a second copy
+    # of it assembled elsewhere - which is the whole point of logging it here.
+    composed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert composed != ""
+    assert _node_result(logs, "compose_answer")["answer_text"] == composed
+
+
+def test_a_single_specialist_turn_logs_its_text_on_the_node_that_produced_it(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client([_ENTRY_CONTENT])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    faq = _node_result(logs, "answer_faq")
+    assert faq["answer_text"] == _ENTRY_CONTENT
+    assert faq["answer_chars"] == len(_ENTRY_CONTENT)
+    # The composing node passes a lone specialist's reply through untouched, so it
+    # reports the same string rather than nothing at all.
+    assert _node_result(logs, "compose_answer")["answer_text"] == _ENTRY_CONTENT
+
+
 @pytest.mark.parametrize(
     "intents",
     [
@@ -692,6 +737,9 @@ def test_a_handed_off_turn_is_reported_as_its_own_outcome(
     assert completed["outcome"] == "handed_off"
     assert completed["answer_source"] == "hand_off"
     assert completed["answer_text"] == HANDOFF_MESSAGE
+    # The node that wrote the sentence reports it too, like every other node that
+    # returns text - a handoff is not the one path a log reader has to infer.
+    assert _node_result(logs, "hand_off")["answer_text"] == HANDOFF_MESSAGE
 
 
 @pytest.mark.parametrize("intents", [[IntentLabel.FAQ_QUESTION], [IntentLabel.UNKNOWN]])

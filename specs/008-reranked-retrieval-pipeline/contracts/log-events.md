@@ -80,10 +80,16 @@ result. Not emitted when reranking did not run.
 
 ## `faq.verdict` — INFO (FR-032)
 
-`verdict`, `survivor_count`, and — for an abstention — `gate` (`empty_corpus`, `empty_pool`,
-`similarity_floor`, `rerank_floor`) and `best_score_seen` (`None` when nothing was retrieved at
-all). `best_score_seen` is what separates "nothing was close" from "something was close and the
-floor was too high", which FR-028's two drop lists answer for a gate and this answers for the turn.
+`verdict`, `survivor_count`, and — for an abstention — `blocked_gate` (`empty_corpus`, `empty_pool`,
+`similarity_floor`, `rerank_floor`), plus `best_similarity_score` and `best_rerank_score`. One per
+floor, not one score for the turn: the two floors are tuned separately, so a single number could not
+say which bar was too high. Each is the best its whole stage saw — the pool before the similarity
+floor, every scored candidate before the rerank floor — which is what separates "nothing was close"
+from "something was close and the floor was too high", the question FR-028's two drop lists answer
+for a gate and this answers for the turn. `best_similarity_score` is `None` when nothing was
+retrieved at all; `best_rerank_score` is `None` whenever no chunk carries a rerank score — the
+reranker did not run, or it failed — never `0.0`, which is the cross-encoder judging a chunk
+irrelevant.
 
 ## `turn.completed` — INFO, existing event, changed (FR-025, FR-025a)
 

@@ -286,6 +286,11 @@ def _build_graph(
                 abstained=result is not None and not result.verdict.answered,
                 citation_count=len(result.citations) if result else 0,
                 answer_chars=len(result.answer_text) if result else 0,
+                # The half's own text, not the turn's. On a merged turn `turn.completed`
+                # carries only what the composing model wrote, so without this the two
+                # specialists' actual words - the ones being merged - appear in no
+                # record at all, and a bad merge cannot be told from a bad half.
+                answer_text=result.answer_text if result else None,
                 mode="streamed" if streaming else "collected",
             )
         return {"faq_result": result}
@@ -333,6 +338,8 @@ def _build_graph(
                 appointment_id=result.appointment_id if result else None,
                 iterations=result.iterations if result else 0,
                 tool_calls=result.tool_calls if result else 0,
+                answer_chars=len(result.reply_text) if result else 0,
+                answer_text=result.reply_text if result else None,
                 mode="streamed" if streaming else "collected",
             )
         return {"booking_result": result}
@@ -355,7 +362,7 @@ def _build_graph(
                     answer_source=AnswerSource.HAND_OFF,
                 )
             )
-            span.set(answer_chars=len(HANDOFF_MESSAGE))
+            span.set(answer_chars=len(HANDOFF_MESSAGE), answer_text=HANDOFF_MESSAGE)
         return {"handed_off": True}
 
     async def compose_answer_node(state: _GraphState) -> None:
@@ -388,8 +395,16 @@ def _build_graph(
                     faq_verdict=verdict.value if verdict is not None else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(citations),
+                    answer_chars=len(answer_text),
+                    # The same text the specialist node above already logged: this node
+                    # passed it through unchanged, and that is what the field says.
+                    answer_text=answer_text,
                 )
             else:
+                # Accumulated from the tokens on their way to the patient rather than
+                # read back off `completion`: what this node returned is what it wrote
+                # to the stream, and the two are then the same string by construction.
+                composed_parts: list[str] = []
                 async for event in compose_answer(
                     anthropic_client,
                     faq_result=faq_result,
@@ -402,13 +417,18 @@ def _build_graph(
                     reply_to_message_ids=state["reply_to_message_ids"],
                     completion=completion,
                 ):
+                    if isinstance(event, ChatTokenEvent):
+                        composed_parts.append(event.text)
                     writer(event)
+                composed_text = "".join(composed_parts)
                 span.set(
                     answer_source=str(AnswerSource.MERGED),
                     merged=True,
                     faq_verdict=faq_result.verdict.value if faq_result else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(faq_result.citations) if faq_result else 0,
+                    answer_chars=len(composed_text),
+                    answer_text=composed_text,
                 )
         # Emitted outside the span so the turn's terminal line follows the last
         # `node.completed` rather than sitting inside it: `turn.completed` describes
