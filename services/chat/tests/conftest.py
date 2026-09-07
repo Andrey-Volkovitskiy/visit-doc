@@ -19,8 +19,10 @@ from chat.domain.schemas import IntentClassificationResult, IntentLabel
 from fastapi.testclient import TestClient
 from httpx import AsyncClient as HttpxAsyncClient
 from httpx import Response
+from qdrant_client import AsyncQdrantClient
 from shared_db import isolated_database_url, with_test_suffix
 from sqlalchemy import text as sql_text
+from sqlalchemy.ext.asyncio import AsyncEngine
 from voyageai.client_async import AsyncClient
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
@@ -114,10 +116,66 @@ async def _ensure_qdrant_collection_exists() -> None:
         await qdrant_client.close()
 
 
+@pytest_asyncio.fixture(scope="session")
+async def _cleaning_engine() -> AsyncIterator[AsyncEngine]:
+    """The engine `_clear_chat_tables` runs its per-test wipe on, built once.
+
+    Built once rather than per test because connecting is what the wipe costs, not the
+    statement: establishing and tearing down a connection to run one `DELETE` measures
+    ~80ms, against ~20ms for the statement itself, and this suite pays it before every
+    one of its 1200+ tests.
+
+    Deliberately *not* `chat.db.session.engine`, for the reason `_clear_chat_tables`
+    gives below: that singleton's pool is bound and disposed per test by
+    `_reset_engine_pool_between_tests` to track whichever loop a sync test's own
+    `TestClient` spins up, and touching it here would rebind it to this fixture's loop
+    first. A dedicated engine has no such problem, and that is exactly what makes
+    holding it open for the session safe: `asyncio_default_fixture_loop_scope` is
+    `session`, so this fixture and the per-test one that uses it stay on one loop for
+    the whole run, and nothing else ever borrows a connection from it.
+
+    Imported inside the function, like everything else here that reaches `chat.*`:
+    `shared_db.create_engine` is harmless at module scope, but `Settings()` must not be
+    read until this file's `DATABASE_URL` override above has run.
+    """
+    from shared_db import create_engine
+
+    engine = create_engine(Settings().DATABASE_URL)
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="session")
+async def _cleaning_qdrant_client() -> AsyncIterator[AsyncQdrantClient]:
+    """The Qdrant client `_clear_chat_tables` empties the collection through.
+
+    Built once per session, not per test.
+
+    Same reason as `_cleaning_engine` above, and a starker ratio: building the client
+    and closing it again measures ~118ms of the ~128ms a per-test clear used to cost,
+    for a delete that is ~10ms on a client already connected.
+
+    `create_client` is imported lazily rather than at module scope because importing
+    `chat.repositories.qdrant_repository` reads `get_settings()` for `COLLECTION_NAME`
+    at import time - the hazard `_clear_chat_tables` documents below.
+    """
+    from chat.repositories.qdrant_repository import create_client
+
+    client = create_client(Settings())
+    try:
+        yield client
+    finally:
+        await client.close()
+
+
 @pytest_asyncio.fixture(autouse=True)
-async def _clear_chat_tables() -> None:
-    """Truncate `sessions`/`chats`/`messages`/`faq_entries` and empty the isolated
-    Qdrant collection before each test.
+async def _clear_chat_tables(
+    _cleaning_engine: AsyncEngine, _cleaning_qdrant_client: AsyncQdrantClient
+) -> None:
+    """Empty `sessions`/`chats`/`messages`/`faq_entries` and the isolated Qdrant
+    collection before each test.
 
     Nothing else in this suite reliably cleans up `Session`/`Chat`/`Message` rows -
     `chat_repository`'s writes are real commits against the isolated test database
@@ -129,52 +187,51 @@ async def _clear_chat_tables() -> None:
     behind - a real incident: one survived a killed process and both broke
     `test_test_isolation.py`'s own "empty at test start" invariant on a later run and
     fed an unrelated test's groundedness check a false-positive retrieval match,
-    since it happened to share `seeded_entry`'s own placeholder content. Clearing
-    all four unconditionally before every test - one combined `TRUNCATE`, sharing one
-    throwaway connection, rather than a separate one per table - means a run starts
-    clean regardless of what an earlier, possibly-crashed run left behind, without
-    paying for a second engine/connection round trip on top of the first.
+    since it happened to share `seeded_entry`'s own placeholder content. Clearing all
+    four unconditionally before every test means a run starts clean regardless of what
+    an earlier, possibly-crashed run left behind.
 
-    Both clients are built lazily and thrown away, not the shared
-    `chat.db.session.engine`/`chat.repositories.qdrant_repository` singletons.
-    `chat.db.session`: that shared engine's pool is deliberately bound/disposed per
-    test by `_reset_engine_pool_between_tests` below to track whichever loop a sync
-    test's own `TestClient` spins up; touching it here, before the test body runs,
-    would rebind it to this fixture's own loop first and break that. Also imported
-    lazily, not at module level: `chat.db.session` builds its own module-level engine
-    from `get_settings()` (cached) as soon as it's imported, so importing it at
-    module level here would trigger that *before* this file's own `DATABASE_URL`
-    override above runs, freezing the cached settings on the dev database for the
-    whole session (same hazard the override comment above already warns about).
-    `qdrant_repository.COLLECTION_NAME` has the identical `get_settings()`-at-import
-    hazard for `QDRANT_COLLECTION_NAME`, hence the same lazy-import treatment.
+    `DELETE` rather than `TRUNCATE`, and both stores reached through a client this
+    fixture borrows rather than builds. The tables hold a handful of rows at this
+    point, so `TRUNCATE`'s table-rewrite and `ACCESS EXCLUSIVE` lock buy nothing and
+    measure ~3x the four `DELETE`s; the connection setup a per-test engine and Qdrant
+    client paid for measures more than either. What that costs is `RESTART IDENTITY`:
+    `faq_entries.id` no longer restarts at 1 each test. Nothing depends on it - every
+    test reads the id back from the response or row that created it - and a test that
+    hardcoded one would be asserting on the order its neighbours ran in.
+
+    The deletes go child-first, the reverse of `all_table_names()`, so each runs with
+    its referencing rows already gone. It is the ordering, not `CASCADE`, that keeps
+    the foreign keys satisfied - a delete that silently took rows from a table not
+    named here would be exactly the kind of reach `TRUNCATE ... CASCADE` allowed.
+
+    Neither client is the shared `chat.db.session.engine`/`qdrant_repository`
+    singleton. `chat.db.session`: that shared engine's pool is deliberately
+    bound/disposed per test by `_reset_engine_pool_between_tests` below to track
+    whichever loop a sync test's own `TestClient` spins up; touching it here, before
+    the test body runs, would rebind it to this fixture's own loop first and break
+    that. Also imported lazily, not at module level: `chat.db.session` builds its own
+    module-level engine from `get_settings()` (cached) as soon as it's imported, so
+    importing it at module level here would trigger that *before* this file's own
+    `DATABASE_URL` override above runs, freezing the cached settings on the dev
+    database for the whole session (same hazard the override comment above already
+    warns about). `qdrant_repository.COLLECTION_NAME` has the identical
+    `get_settings()`-at-import hazard for `QDRANT_COLLECTION_NAME`, hence the same
+    lazy-import treatment.
     """
     from chat.domain.models import all_table_names
-    from chat.repositories.qdrant_repository import COLLECTION_NAME, create_client
+    from chat.repositories.qdrant_repository import COLLECTION_NAME
     from qdrant_client.http.models import Filter
-    from shared_db import create_engine
 
-    engine = create_engine(Settings().DATABASE_URL)
-    try:
-        async with engine.begin() as connection:
-            await connection.execute(
-                sql_text(
-                    f"TRUNCATE TABLE {', '.join(all_table_names())} "
-                    "RESTART IDENTITY CASCADE"
-                )
-            )
-    finally:
-        await engine.dispose()
+    async with _cleaning_engine.begin() as connection:
+        for table in reversed(all_table_names()):
+            await connection.execute(sql_text(f"DELETE FROM {table}"))
 
-    qdrant_client = create_client(Settings())
-    try:
-        # An empty `Filter()` (no conditions) matches every point - the collection
-        # itself already exists, ensured once per session above.
-        await qdrant_client.delete(
-            collection_name=COLLECTION_NAME, points_selector=Filter()
-        )
-    finally:
-        await qdrant_client.close()
+    # An empty `Filter()` (no conditions) matches every point - the collection
+    # itself already exists, ensured once per session above.
+    await _cleaning_qdrant_client.delete(
+        collection_name=COLLECTION_NAME, points_selector=Filter()
+    )
 
 
 # The scheduling client functions `_scheduler_is_unreachable_by_default` replaces, named
