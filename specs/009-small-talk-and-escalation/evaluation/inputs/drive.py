@@ -9,7 +9,9 @@ from pathlib import Path
 import urllib.request
 
 BASE = "http://localhost:8000"
-LOG = Path("/home/andrey/visit-doc/.run/chat.log")
+# The running chat service's log, relative to this file rather than to whoever ran it:
+# specs/<feature>/evaluation/inputs/drive.py -> <repo root>/.run/chat.log
+LOG = Path(__file__).resolve().parents[4] / ".run" / "chat.log"
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 COOKIE = {}
 

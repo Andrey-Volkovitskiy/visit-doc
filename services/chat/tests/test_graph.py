@@ -111,7 +111,10 @@ async def seeded_entry() -> AsyncIterator[int]:
 _LOCAL_NOW = datetime(2026, 8, 14, 9, 0)
 
 
-def _tool_context(patient_id: str | None = "01PATENT000000000000000000") -> ToolContext:
+def _tool_context(
+    patient_id: str | None = "01PATENT000000000000000000",
+    channel: MagicMock | None = None,
+) -> ToolContext:
     """Build the turn's ambient facts over a channel no test ever dials.
 
     The mocked booking loop returns plain text unless a test asks for tool calls, so
@@ -120,9 +123,14 @@ def _tool_context(patient_id: str | None = "01PATENT000000000000000000") -> Tool
 
     This is also where the turn's patient lives, so a test exercising a chat with no
     patient record varies it here rather than in the graph's own state.
+
+    Args:
+        channel: the scheduling channel to hand the turn. Passed in by a test that
+            asserts nothing dialled it - a mock the test made and did not give the turn
+            is untouched whatever the turn does.
     """
     return ToolContext(
-        channel=MagicMock(),
+        channel=channel if channel is not None else MagicMock(),
         settings=Settings(),
         session_id="01SESS00000000000000000000",
         patient_id=patient_id,
@@ -138,6 +146,7 @@ async def _run_turn(
     live_revisions: list[str] | None = None,
     escalation: EscalationRequests | None = None,
     bursts: list[list[Message]] | None = None,
+    channel: MagicMock | None = None,
 ) -> list[ChatTokenEvent | ChatDoneEvent]:
     qdrant_client = create_client(Settings())
     if bursts is None:
@@ -158,7 +167,7 @@ async def _run_turn(
             escalation=escalation if escalation is not None else EscalationRequests(),
             patient_name="Ada Lovelace",
             local_now=_LOCAL_NOW,
-            tool_context=_tool_context(patient_id),
+            tool_context=_tool_context(patient_id, channel),
         )
     ]
     await qdrant_client.close()
@@ -1129,13 +1138,15 @@ async def test_distress_outranks_a_request_for_a_person() -> None:
 
 async def test_a_third_party_booking_issues_no_scheduling_call() -> None:
     # The refusal precedes the service boundary: the scheduler never hears about it.
+    # The channel is handed to the turn, not merely made beside it: a mock the turn was
+    # never given stays untouched however the turn behaves, and asserts nothing.
     channel = MagicMock()
     client = fake_anthropic_client(
         ["never generated"], intents=[IntentLabel.BOOKING_FOR_ANOTHER]
     )
 
     with patch.object(graph_module, "ToolRegistry") as registry_cls:
-        await _run_turn(client, "Can I book Monday for my mother?")
+        await _run_turn(client, "Can I book Monday for my mother?", channel=channel)
 
     assert registry_cls.call_count == 0
     assert channel.method_calls == []
@@ -1312,7 +1323,7 @@ async def test_the_routing_record_names_the_stopping_cause(seeded_entry: int) ->
 
 
 async def test_the_hand_off_record_names_which_constant_it_wrote() -> None:
-    # Four causes end a turn the same way; without this they leave four
+    # Five causes end a turn the same way; without this they leave five
     # indistinguishable node records.
     for label, cause in _STOPPING:
         client = fake_anthropic_client(["never generated"], intents=[label])

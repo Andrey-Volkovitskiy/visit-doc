@@ -10,6 +10,7 @@ generation failure rather than becoming a silent empty reply.
 from unittest.mock import MagicMock
 
 import pytest
+from chat.agent.history import ANSWERING_HEADING, SILENT_WINDOW_NOTE
 from chat.agent.small_talk import SmallTalkResult, answer_small_talk
 from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
@@ -22,14 +23,16 @@ _TOKENS = ["You're ", "welcome!"]
 
 
 def _bursts(*contents: str) -> list[list[Message]]:
-    """One patient-sided burst per content, alternating sides, trailing patient."""
+    """One burst per content, strictly alternating, with the trailing one the patient's.
+
+    Sides are assigned from the *end*: a turn's history always ends with the message
+    being answered, and any burst count then alternates back from it - which is the
+    only shape `split_into_bursts` can produce.
+    """
     bursts: list[list[Message]] = []
     for index, content in enumerate(contents):
-        sender = (
-            MessageSender.PATIENT
-            if index % 2 == len(contents) % 2 - 1 or index == len(contents) - 1
-            else MessageSender.ASSISTANT
-        )
+        from_end = len(contents) - 1 - index
+        sender = MessageSender.PATIENT if from_end % 2 == 0 else MessageSender.ASSISTANT
         bursts.append([Message(sender=sender, content=content, id=f"m{index}")])
     return bursts
 
@@ -87,13 +90,16 @@ async def test_it_sees_the_conversation_bounded_to_the_context_window() -> None:
     assert 0 < len(messages) <= 2 * Settings().CONTEXT_TURNS + 1
 
 
-async def test_it_records_nothing_against_the_turns_calls_to_staff() -> None:
-    from chat.agent.escalation import EscalationRequests
+async def test_it_is_given_no_way_to_call_staff_at_all() -> None:
+    # Asserted on the signature rather than on a collector: this node is never handed
+    # one, so a test that made its own and checked it stayed empty would pass with the
+    # call to staff written straight back in.
+    import inspect
 
-    escalation = EscalationRequests()
-    await _run(fake_anthropic_client(_TOKENS), "Thanks!")
+    parameters = inspect.signature(answer_small_talk).parameters
 
-    assert escalation.recorded == ()
+    assert "escalation" not in parameters
+    assert set(parameters) == {"anthropic_client", "bursts"}
 
 
 async def test_the_prompt_states_what_the_reply_may_never_contain() -> None:
@@ -127,3 +133,39 @@ async def test_a_failing_call_raises_the_same_pipeline_error_generation_does() -
     # counted, logged and reported exactly as one on the FAQ path is - no new
     # semantics, and no silent empty reply.
     assert raised.value.pipeline_step == "generation"
+
+
+async def test_it_separates_messages_a_person_is_still_owed() -> None:
+    """A silent window is context, never part of the message this node answers.
+
+    `to_claude_messages` rejoins two consecutive patient-sided bursts into one entry,
+    which is exactly the shape `exclude_silent_window` leaves behind - so without the
+    note the messages held back for a staff member arrive inside the entry being
+    replied to, and a warm "of course, that's all sorted" is what this node would
+    write over them.
+    """
+    client = fake_anthropic_client(_TOKENS)
+    held_back = [
+        Message(sender=MessageSender.PATIENT, content="my bill is wrong", id="p0")
+    ]
+    answering = [
+        Message(sender=MessageSender.PATIENT, content="thanks anyway!", id="p1")
+    ]
+
+    [event async for event in answer_small_talk(client, [held_back, answering])]
+
+    entry = client.messages.stream.call_args.kwargs["messages"][-1]["content"]
+    assert SILENT_WINDOW_NOTE in entry
+    assert "my bill is wrong" in entry
+    assert entry.endswith(f"{ANSWERING_HEADING}\nthanks anyway!")
+
+
+async def test_an_ordinary_turn_carries_no_silent_window_note() -> None:
+    # The note is a seam a model has to read, so it is absent when there is nothing to
+    # separate: an ordinary pleasantry's prompt is the conversation and nothing else.
+    client = fake_anthropic_client(_TOKENS)
+
+    await _run(client, "Thanks!")
+
+    entries = client.messages.stream.call_args.kwargs["messages"]
+    assert SILENT_WINDOW_NOTE not in " ".join(str(e["content"]) for e in entries)

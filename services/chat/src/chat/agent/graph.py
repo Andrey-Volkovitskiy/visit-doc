@@ -50,7 +50,11 @@ from chat.agent.compose_answer import (
     compose_answer,
     record_single_specialist_completion,
 )
-from chat.agent.escalation import HANDOFF_TEXT, EscalationRequests
+from chat.agent.escalation import (
+    HANDOFF_TEXT,
+    EscalationRequests,
+    in_precedence_order,
+)
 from chat.agent.handle_booking import BookingResult, handle_booking
 from chat.agent.history import bound_to_last_n_turns
 from chat.agent.node_logging import node_span
@@ -118,7 +122,7 @@ class _GraphState(TypedDict):
     tools builds its own over these, from its own declared set.
 
     `handoff_reason` is the cause the hand-off node writes its constant for, rather than
-    a bool: four causes now end a turn that way, and "it happened" cannot say which
+    a bool: five causes now end a turn that way, and "it happened" cannot say which
     sentence the patient is owed.
 
     `notice_required` says the turn also carried a request the assistant may not serve,
@@ -154,21 +158,19 @@ def clear_graph_cache() -> None:
     _build_graph.cache_clear()
 
 
-# Which cause a label hands the turn over for. Ordered by `_PRECEDENCE`'s logic at the
-# routing layer too: the first match takes the whole turn, so a message carrying both an
-# urgent condition and a booking is never partly answered before it falls silent.
-_HANDOFF_REASON_BY_INTENT: tuple[tuple[IntentLabel, EscalationReason], ...] = (
-    (IntentLabel.URGENT_CONDITION, EscalationReason.URGENT_CONDITION),
-    (IntentLabel.DISTRESS, EscalationReason.DISTRESS),
-    (IntentLabel.CALL_STAFF, EscalationReason.PATIENT_ASKED_FOR_PERSON),
-    (
-        IntentLabel.BOOKING_FOR_ANOTHER,
-        EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
-    ),
-    # Last: a request the assistant may not serve hands over only when it is the whole
-    # message. Beside something servable it becomes a notice instead (FR-022d).
-    (IntentLabel.UNKNOWN, EscalationReason.NOT_AUTHORIZED),
-)
+# Which cause a label hands the turn over for. A mapping, not a ranking: the one
+# ranking is `escalation`'s precedence, and `in_precedence_order` is what orders these -
+# so the cause the router hands off for and the mark the message ends up carrying cannot
+# be two different answers. Its weakest member is `not_authorized`, which is what lets
+# "the strongest cause is this one" mean "it is the only cause": alone it hands over,
+# beside something servable it becomes a notice instead (FR-022d).
+_HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
+    IntentLabel.URGENT_CONDITION: EscalationReason.URGENT_CONDITION,
+    IntentLabel.DISTRESS: EscalationReason.DISTRESS,
+    IntentLabel.CALL_STAFF: EscalationReason.PATIENT_ASKED_FOR_PERSON,
+    IntentLabel.BOOKING_FOR_ANOTHER: EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    IntentLabel.UNKNOWN: EscalationReason.NOT_AUTHORIZED,
+}
 
 
 def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
@@ -180,24 +182,16 @@ def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
     an emergency and a plea for a human was both, and a record naming only
     `urgent_condition` has thrown away something a person reviewing it would want.
     """
-    return [reason for intent, reason in _HANDOFF_REASON_BY_INTENT if intent in intents]
+    return in_precedence_order(
+        _HANDOFF_REASON_BY_INTENT[intent]
+        for intent in intents
+        if intent in _HANDOFF_REASON_BY_INTENT
+    )
 
 
-def _first(reasons: list[EscalationReason]) -> EscalationReason | None:
-    """Return the strongest cause, or None when the turn hands over for nothing."""
-    return reasons[0] if reasons else None
-
-
-def _handoff_reason(intents: list[IntentLabel]) -> EscalationReason | None:
-    """Return the cause this turn hands over for, or None if it answers normally.
-
-    The strongest of `_handoff_reasons()`, which is what routing needs: one node, one
-    sentence. The rest are recorded, never routed to.
-    """
-    return _first(_handoff_reasons(intents))
-
-
-def _select_specialists(intents: list[IntentLabel]) -> list[str]:
+def _select_specialists(
+    intents: list[IntentLabel], reasons: list[EscalationReason]
+) -> list[str]:
     """Return the node(s) `intents` implies, in a stable order.
 
     A cause that hands the turn to a person takes the whole turn and suppresses every
@@ -218,8 +212,13 @@ def _select_specialists(intents: list[IntentLabel]) -> list[str]:
 
     Never empty: a message that matches nothing still gets the FAQ path rather than no
     answer at all.
+
+    Args:
+        reasons: `_handoff_reasons(intents)`, computed once by the caller - which also
+            records every one of them, so deriving it here again would be the same
+            decision made twice from the same input.
     """
-    stopping = _handoff_reason(intents)
+    stopping = reasons[0] if reasons else None
     if stopping is not None and stopping is not EscalationReason.NOT_AUTHORIZED:
         return [_HAND_OFF]
     selected = {
@@ -331,20 +330,21 @@ def _build_graph(
             # model call, and no dependence on whether the corpus happens to ground the
             # sentence the patient used. Recorded like every other call to staff, and
             # applied once the turn completes.
-            specialists = _select_specialists(intents)
-            # `unknown` alongside something servable is a notice owed, not a hand-off:
-            # the servable half still runs, and the composer says the rest went to
-            # staff (FR-022d). Alone, it is the whole turn.
-            notice_required = IntentLabel.UNKNOWN in intents and specialists != [
-                _HAND_OFF
-            ]
             reasons = _handoff_reasons(intents)
             for reason in reasons:
                 state["escalation"].record(reason)
+            specialists = _select_specialists(intents, reasons)
+            # `unknown` alongside something servable is a notice owed, not a hand-off:
+            # the servable half still runs, and the composer says the rest went to
+            # staff (FR-022d). Alone, it is the whole turn.
+            notice_required = (
+                EscalationReason.NOT_AUTHORIZED in reasons
+                and specialists != [_HAND_OFF]
+            )
             # The turn hands over for the strongest of them - unless the only cause is
             # a request the assistant may not serve *and* something servable ran, in
             # which case the notice is the composer's to render (FR-022d).
-            handoff_reason = None if notice_required else _first(reasons)
+            handoff_reason = None if notice_required or not reasons else reasons[0]
 
             merge_required = len(specialists) > 1 or notice_required
             span.set(
@@ -460,8 +460,14 @@ def _build_graph(
         Always streaming: small talk is dropped whenever another intent applies, so
         this node only ever runs alone and is never merged.
 
-        Raises: TurnPipelineError propagated from `answer_small_talk()`.
+        Raises: RuntimeError if the turn reached this node owing a merge, which would
+            mean the router selected it beside something else - this node has no collect
+            mode, so it would stream a reply the composer then streamed a second one
+            over, and the patient would be answered twice.
+            TurnPipelineError propagated from `answer_small_talk()`.
         """
+        if state["merge_required"]:
+            raise RuntimeError("small talk is never merged")
         writer = get_stream_writer()
         result: SmallTalkResult | None = None
         async with node_span(_SMALL_TALK) as span:
@@ -492,7 +498,7 @@ def _build_graph(
         already recorded the call to staff that `turn.py` applies once this completes.
 
         One node for every cause that ends a turn this way, keyed by the cause the
-        router put in the state: the four texts differ, and nothing else about the turn
+        router put in the state: the five texts differ, and nothing else about the turn
         does (spec 009 FR-043).
 
         Raises: RuntimeError if the turn reached this node with no cause, which would

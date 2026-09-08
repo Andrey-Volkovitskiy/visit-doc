@@ -7,10 +7,19 @@ export interface Citation {
 /**
  * Which step produced the reply.
  *
- * `hand_off` is the one that produced no answer: the visitor asked for a person, so the
- * turn fetched one and said so, and nothing was retrieved or booked.
+ * `hand_off` is the one that produced no answer: a person now has this, so the turn
+ * said so in fixed text and nothing was retrieved, booked or generated. *Why* a person
+ * was fetched is the message's attention mark, not this field.
+ *
+ * `small_talk` is a reply to a message that asked for nothing - generated, but with
+ * nothing retrieved behind it, so it carries no verdict and no citations.
  */
-export type AnswerSource = "faq" | "booking" | "merged" | "hand_off";
+export type AnswerSource =
+  | "faq"
+  | "booking"
+  | "small_talk"
+  | "merged"
+  | "hand_off";
 
 export interface ChatTokenEvent {
   type: "token";

@@ -232,7 +232,7 @@ def test_every_cause_fits_the_columns_that_store_it() -> None:
     # deliberately not database enums, so a new value is a code change alone.
     reason_length = Chat.__table__.c.escalation_reason.type.length
     mark_length = Message.__table__.c.attention_mark.type.length
-    longest = max(len(value) for value in EscalationReason) + 0
+    longest = max(len(value) for value in EscalationReason)
     assert longest <= reason_length
     assert max(len(mark.value) for mark in AttentionMark) <= mark_length
 

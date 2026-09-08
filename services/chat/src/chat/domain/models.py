@@ -43,10 +43,12 @@ class EscalationReason(StrEnum):
     That separation is deliberate and is what let this set grow from three values to
     seven without a second mechanism (spec 009 FR-023).
 
-    A person is called in four situations, and the middle one is recorded as three:
-    the patient asked for a human; the patient asked for something the assistant cannot
-    provide (the corpus has no answer, or the assistant is not authorized at all); the
-    message needs a person on safety or authority grounds; something failed.
+    A person is called in four situations, and the middle two are recorded by what
+    would fix them - two values and three: the patient asked for a human; the patient
+    asked for something the assistant cannot provide (the corpus has no answer, or the
+    assistant is not authorized at all); the message needs a person on safety or
+    authority grounds (an urgent condition, evident distress, or a booking for someone
+    else); something failed.
     """
 
     # Every value is a trigger, and each names a different fix. A failure is owed a

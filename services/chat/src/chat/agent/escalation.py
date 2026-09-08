@@ -31,6 +31,8 @@ the resolution below is a precedence over a *set*, so the order two branches hap
 record in cannot change what the patient's conversation ends up in.
 """
 
+from collections.abc import Iterable
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from chat.core.logging import get_logger
@@ -72,6 +74,19 @@ _SILENCING = frozenset(
     }
 )
 
+
+def in_precedence_order(reasons: Iterable[EscalationReason]) -> list[EscalationReason]:
+    """Return `reasons` strongest claim first, with each cause appearing once.
+
+    The one place any caller may order causes. A second ordering written down
+    elsewhere is a second answer to "which cause is this turn's": the router would
+    hand off for one cause while `message_mark` recorded another, and nothing would
+    say the two had disagreed.
+    """
+    raised = set(reasons)
+    return [reason for reason in _PRECEDENCE if reason in raised]
+
+
 # Every `EscalationReason` is also an `AttentionMark` of the same name - the mark
 # records on the message what the reason records on the conversation, so the two cannot
 # disagree about why a person was called.
@@ -92,7 +107,7 @@ HANDOFF_MESSAGE = (
 # One constant per cause that ends a turn by fetching a person, in one table beside the
 # precedence and the silencing set (spec 009 FR-043, contracts/replies.md). One table
 # rather than one node each: every row has to have a text, a mark and a silencing
-# answer, and four near-identical nodes would drift until one of them forgot one.
+# answer, and five near-identical nodes would drift until one of them forgot one.
 #
 # What each must convey is the contract; the wording is a copy decision. None of them
 # promises a time, and none claims the assistant will handle the thing after all.
@@ -127,9 +142,9 @@ HANDOFF_TEXT: dict[EscalationReason, str] = {
 class EscalationRequests:
     """Every call to staff raised during one turn, and what they resolve to.
 
-    Mutable and shared: the tool handler reaches it through `ToolContext`, and the two
-    specialists through the graph's state. Nothing here writes to a store - resolving is
-    pure, and `apply_escalation()` is the only writer.
+    Mutable and shared: the tool handler reaches it through `ToolContext`, and the
+    router and the specialists through the graph's state. Nothing here writes to a
+    store - resolving is pure, and `apply_escalation()` is the only writer.
     """
 
     def __init__(self) -> None:
