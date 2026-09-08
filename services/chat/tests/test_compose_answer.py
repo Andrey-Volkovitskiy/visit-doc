@@ -430,3 +430,57 @@ async def test_cancelling_a_merged_turn_is_still_a_cancellation() -> None:
 
     with pytest.raises(asyncio.CancelledError):
         await task
+
+
+# --- Phase 1f: the notice owed alongside an answer -----------------------------------
+
+
+def test_the_composer_is_told_when_a_notice_is_owed() -> None:
+    from chat.agent.compose_answer import _build_prompt
+
+    prompt = _build_prompt(None, "Monday at 9am is booked.", None, notice_required=True)
+
+    lowered = prompt.lower()
+    assert "not authorized" in lowered
+    assert "staff" in lowered
+
+
+def test_no_notice_is_mentioned_when_none_is_owed() -> None:
+    from chat.agent.compose_answer import _build_prompt
+
+    prompt = _build_prompt(
+        None, "Monday at 9am is booked.", None, notice_required=False
+    )
+
+    assert "not authorized" not in prompt.lower()
+
+
+def test_the_composing_prompt_forbids_claiming_the_request_was_served() -> None:
+    from chat.agent.compose_answer import _SYSTEM_PROMPT
+
+    lowered = _SYSTEM_PROMPT.lower()
+    assert "not authorized" in lowered
+    # The three obligations, and the two things it must never do (FR-022c1).
+    assert "never promise" in lowered or "never say when" in lowered
+    assert "never claim" in lowered or "never suggest" in lowered
+
+
+def test_the_prompt_describes_the_parts_it_is_actually_given() -> None:
+    """FR-022d's path supplies one specialist plus a notice, not two halves.
+
+    The prompt used to open by telling the model its input "had two parts: a question,
+    and something about an appointment" and that "two specialists have already handled
+    them". On a not-authorized merge neither is true, and a model told something false
+    about its own input is free to invent the half it was promised.
+    """
+    from chat.agent.compose_answer import _SYSTEM_PROMPT
+
+    # Whitespace-normalized: the prompt wraps at the line length the linter enforces,
+    # and where it happens to break is not part of the contract.
+    lowered = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "two parts" not in lowered
+    assert "two specialists" not in lowered
+    # It must still say the parts are labelled and that only the labelled ones were in
+    # the message - otherwise "more than one part" invites the same invention.
+    assert "labelled" in lowered
+    assert "only the parts labelled below were in the message" in lowered

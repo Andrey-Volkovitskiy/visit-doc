@@ -36,7 +36,7 @@ class ChatRequest(BaseModel):
 class IntentLabel(StrEnum):
     """Legal values for a classified patient-message intent.
 
-    The first four members are the classifier's own closed output set;
+    Every member but the last is the classifier's own closed output set;
     `CLASSIFICATION_FAILED` is assigned only by orchestration code on a failed/invalid
     classification call, never returned by the classifier itself - excluded from its
     request schema's `enum`, so it's structurally unreachable from a model response,
@@ -45,6 +45,10 @@ class IntentLabel(StrEnum):
 
     FAQ_QUESTION = "faq_question"
     BOOKING = "booking"
+    SMALL_TALK = "small_talk"
+    URGENT_CONDITION = "urgent_condition"
+    DISTRESS = "distress"
+    BOOKING_FOR_ANOTHER = "booking_for_another"
     CALL_STAFF = "call_staff"
     UNKNOWN = "unknown"
     CLASSIFICATION_FAILED = "classification_failed"
@@ -110,13 +114,15 @@ class ChatTokenEvent(BaseModel):
 class AnswerSource(StrEnum):
     """Which specialist(s) produced the reply a turn ended with.
 
-    `HAND_OFF` is the one that produced no answer at all: the visitor asked for a
-    person, so the turn fetched one and told them so, and nothing was retrieved,
-    booked or generated.
+    `HAND_OFF` is the one that produced no answer at all: a person now has this, and
+    the turn told the visitor so in fixed text, having retrieved, booked and generated
+    nothing. *Why* a person was fetched is the escalation reason's to say, not this
+    field's - one fact, one field (spec 009 FR-049).
     """
 
     FAQ = "faq"
     BOOKING = "booking"
+    SMALL_TALK = "small_talk"
     MERGED = "merged"
     HAND_OFF = "hand_off"
 
@@ -179,7 +185,7 @@ class MessageOut(BaseModel):
     `faq_verdict`/`citations` are only meaningful for `sender="assistant"`; always None
     for a patient message and for a staff one, which was never retrieved against.
 
-    `attention_mark` is only ever set on a patient message: which of the four kinds it
+    `attention_mark` is only ever set on a patient message: which of the eight kinds it
     is, or None for no mark. There is deliberately no field naming the person who wrote
     a staff message - `sender` carries everything a client's label states, and this
     system has no such person to name.
@@ -194,7 +200,11 @@ class MessageOut(BaseModel):
     citations: list[Citation] | None = None
     attention_mark: (
         Literal[
+            "urgent_condition",
+            "distress",
             "patient_asked_for_person",
+            "booking_for_another_person",
+            "not_authorized",
             "corpus_could_not_answer",
             "assistant_failed",
             "unanswered",

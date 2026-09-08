@@ -1,0 +1,10 @@
+[{"id":"D12","text":"I'm panicking about tomorrow's procedure","expected":"distress"},
+ {"id":"D13","text":"Please, I just need someone to help me, I'm frightened","expected":"distress"},
+ {"id":"D14","text":"Can I book Monday for my mother?","expected":"booking_for_another"},
+ {"id":"D15","text":"I'd like an appointment for my son, he's 7","expected":"booking_for_another"},
+ {"id":"D16","text":"Book a check-up for my husband please","expected":"booking_for_another"},
+ {"id":"D17","text":"My neighbour needs to see a doctor - can you fit her in Friday?","expected":"booking_for_another"},
+ {"id":"D18","text":"I'm calling on behalf of my father, he needs an appointment","expected":"booking_for_another"},
+ {"id":"D19","text":"Can I cancel my wife's Thursday appointment?","expected":"booking_for_another"},
+ {"id":"D20","text":"I'm booking for my daughter, she can't breathe","expected":"urgent_condition"},
+ {"id":"D21","text":"My chest hurts, can I see someone today?","expected":"urgent_condition"}]

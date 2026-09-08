@@ -30,8 +30,10 @@ from chat.rag.pipeline import ScoredChunk
 
 _MAX_TOKENS = 1024
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
-message had two parts: a question, and something about an appointment. Two specialists
-have already handled them, and their outputs are below.
+message had more than one part. Every part that was in it is labelled below, with what
+was done about it - a question answered from the clinic's knowledge base, something
+about an appointment, or a request this assistant is not authorized to handle. Only the
+parts labelled below were in the message: never write about one that is not there.
 
 Combine them into a single, natural reply. You must:
 - Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
@@ -54,7 +56,12 @@ Combine them into a single, natural reply. You must:
       never say it did not happen or that nothing happened.
     * "refused", "unavailable", "awaiting_confirmation", "informational" - nothing was
       created, moved, or cancelled.
-- Do not mention that two specialists, tools, or internal steps were involved.
+- If the input says a request was NOT AUTHORIZED, the reply must also say three
+  things about it: that you are not authorized to handle that request, that it has
+  been forwarded to the clinic's staff who will follow up, and that they can ask you
+  about anything else in the meantime. Never claim that request was served, and never
+  promise when staff will respond.
+- Do not mention specialists, tools, or internal steps.
 Be concise."""
 
 
@@ -138,6 +145,7 @@ async def compose_answer(
     booking_outcome: BookingOutcome | None,
     reply_to_message_ids: list[str],
     completion: TurnCompletion,
+    notice_required: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Compose and stream the merged reply, recording the turn's completion fields.
 
@@ -150,6 +158,12 @@ async def compose_answer(
             rather than by how the booking half phrased it.
         completion: Filled in with the turn's `turn.completed` fields, for the caller
             to emit once the composing node's span has closed.
+        notice_required: True when the message also carried a request the assistant is
+            not authorized to serve. The notice is rendered *by this call* rather than
+            appended verbatim: a merged turn is already paying for the composing call,
+            and a reply stitched from a paraphrase and a fixed sentence reads as two
+            voices (spec 009 FR-022c1). What is required of the composer is the three
+            things the notice must convey, not its wording.
 
     Yields: the composed reply's tokens, then exactly one `ChatDoneEvent`.
 
@@ -159,7 +173,9 @@ async def compose_answer(
     are never re-reported by the composing model, so a merged answer cites exactly what
     a single-specialist answer would have.
     """
-    prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
+    prompt = _build_prompt(
+        faq_result, booking_reply, booking_outcome, notice_required=notice_required
+    )
 
     answer_parts: list[str] = []
     try:
@@ -206,15 +222,17 @@ def _single_specialist_outcome(
 ) -> str:
     """Describe a single-specialist turn's outcome for its `turn.completed` line.
 
-    `answer_source` decides before `verdict` does: a handoff and a booking reply both
-    carry no FAQ verdict, and reading one off the other would file every handed-off
-    turn in the log as a booking.
+    `answer_source` decides before `verdict` does: a handoff, a small-talk reply and a
+    booking reply all carry no FAQ verdict, and reading one off the other would file
+    every handed-off and every courteous turn in the log as a booking.
 
     An abstention reports which gate stopped it, so a log reader counting abstentions
     can tell an empty corpus from a floor that is set too high.
     """
     if answer_source is AnswerSource.HAND_OFF:
         return "handed_off"
+    if answer_source is AnswerSource.SMALL_TALK:
+        return "small_talk"
     if verdict is None:
         return "booking"
     return verdict.value
@@ -256,8 +274,10 @@ def _build_prompt(
     faq_result: FaqResult | None,
     booking_reply: str | None,
     booking_outcome: BookingOutcome | None,
+    *,
+    notice_required: bool = False,
 ) -> str:
-    """Build the composing call's single user message from both halves' outputs."""
+    """Build the composing call's single user message from the halves' outputs."""
     parts: list[str] = []
     if faq_result is not None:
         if faq_result.verdict.answered:
@@ -272,4 +292,10 @@ def _build_prompt(
             )
     if booking_reply is not None:
         parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")
+    if notice_required:
+        parts.append(
+            "NOT AUTHORIZED: the message also asked for something this assistant is "
+            "not authorized to do. It has been forwarded to the clinic's staff. Say so "
+            "in your reply, alongside the rest."
+        )
     return "\n\n".join(parts)

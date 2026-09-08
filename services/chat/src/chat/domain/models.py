@@ -36,21 +36,32 @@ class MessageSender(StrEnum):
 
 
 class EscalationReason(StrEnum):
-    """Why staff were called - a Python-level closed set of exactly three values.
+    """Why staff were called - a Python-level closed set of exactly seven values.
 
     Whether a reason silences the assistant is decided by the code that applies the
-    escalation, not by membership here: only `PATIENT_ASKED_FOR_PERSON` silences the
-    conversation; `CORPUS_COULD_NOT_ANSWER` and `ASSISTANT_FAILED` do not.
+    escalation, not by membership here: `escalation._SILENCING` names the four that do.
+    That separation is deliberate and is what let this set grow from three values to
+    seven without a second mechanism (spec 009 FR-023).
+
+    A person is called in four situations, and the middle one is recorded as three:
+    the patient asked for a human; the patient asked for something the assistant cannot
+    provide (the corpus has no answer, or the assistant is not authorized at all); the
+    message needs a person on safety or authority grounds; something failed.
     """
 
-    # The three values are the three triggers, so no separate taxonomy exists and no
-    # fourth value is legal. A failure is owed a retry - the thing that broke may
-    # already be working - and a corpus gap is owed a person for *that question* while
-    # the assistant goes on answering the rest, where a patient asking for a human is
-    # owed a person and nothing else, which is why only the first one silences (spec
-    # 007 FR-003d).
+    # Every value is a trigger, and each names a different fix. A failure is owed a
+    # retry - the thing that broke may already be working. A corpus gap is owed a
+    # person for *that question* while the assistant answers the rest, and is fixed by
+    # writing an entry. `NOT_AUTHORIZED` is fixed by nothing: no entry will ever make
+    # the assistant able to write a sick note, which is why it is not a corpus gap
+    # (spec 009 FR-022a). The first four are owed a person *instead of* more
+    # assistant, which is what `_SILENCING` records.
 
+    URGENT_CONDITION = "urgent_condition"
+    DISTRESS = "distress"
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
+    BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
+    NOT_AUTHORIZED = "not_authorized"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
     ASSISTANT_FAILED = "assistant_failed"
 
@@ -62,29 +73,46 @@ class AttentionMark(StrEnum):
     `CLEARABLE_MARKS` below rather than stored beside it, so the two cannot disagree.
     """
 
-    # The first three carry the same values as `EscalationReason` and are set by the
-    # same act that calls staff, so there is no call without a mark on the message that
-    # caused it, and no mark of those kinds without a call behind it. `UNANSWERED` is
-    # not a call: it records a consequence of silence - a message that arrived while
-    # the assistant could not reply, which nothing has answered (spec 007 FR-027a/b).
+    # Every member but `UNANSWERED` carries the same value as an `EscalationReason` and
+    # is set by the same act that calls staff, so there is no call without a mark on the
+    # message that caused it, and no mark of those kinds without a call behind it.
+    # `UNANSWERED` is not a call: it records a consequence of silence - a message that
+    # arrived while the assistant could not reply, which nothing has answered (spec 007
+    # FR-027a/b). A message arriving in a silenced conversation is never classified, so
+    # it can carry no other kind (spec 009 FR-025a).
 
+    URGENT_CONDITION = "urgent_condition"
+    DISTRESS = "distress"
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
+    BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
+    NOT_AUTHORIZED = "not_authorized"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
     ASSISTANT_FAILED = "assistant_failed"
     UNANSWERED = "unanswered"
 
 
 # The marks a staff message clears, and therefore the `IN` list of the one statement
-# that clears them. The other two are permanent: a staff member answering the patient
-# does not mean the corpus gained the entry it was missing, or that the failure did not
-# happen (spec 007 FR-027c).
+# that clears them. Membership is decided by one question: is a staff member reading
+# the message and answering it *the whole* of what the mark asked for? For a patient
+# who asked for a person, for an urgent or distressed message, for a booking the
+# assistant may not make and for a request it is not authorized to serve, it is. The
+# other two are permanent: a staff member answering the patient does not mean the
+# corpus gained the entry it was missing, or that the failure did not happen (spec 007
+# FR-027c, spec 009 FR-023a/FR-048).
 #
 # This is deliberately a constant rather than a method on the enum or a column on the
 # row. Lifetime is a property of the *kind*, and a stored "cleared by" field would be a
 # second source for a fact the kind already determines - the duplication the spec's
 # withdrawn readiness flag was rejected for.
 CLEARABLE_MARKS = frozenset(
-    {AttentionMark.PATIENT_ASKED_FOR_PERSON, AttentionMark.UNANSWERED}
+    {
+        AttentionMark.PATIENT_ASKED_FOR_PERSON,
+        AttentionMark.UNANSWERED,
+        AttentionMark.URGENT_CONDITION,
+        AttentionMark.DISTRESS,
+        AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        AttentionMark.NOT_AUTHORIZED,
+    }
 )
 
 
@@ -283,8 +311,8 @@ class Message(Base):
     # is diagnostic-only data (never joined on in SQL) and a chat's messages are
     # always deleted together anyway (chat_id's own CASCADE).
     reply_to_message_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
-    # Only ever set on a patient message: which of `AttentionMark`'s four kinds this one
-    # is, or NULL for no mark. Plain string, like `sender`, so a future kind needs no
+    # Only ever set on a patient message: which of `AttentionMark`'s eight kinds it is,
+    # or NULL for no mark. Plain string, like `sender`, so a future kind needs no
     # migration - and callers pass an `AttentionMark` member, never a bare literal.
     # Whether a mark ever clears is read from `CLEARABLE_MARKS`, so there is no second
     # field here that could disagree with the kind.

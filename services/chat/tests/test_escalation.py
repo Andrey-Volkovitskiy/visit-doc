@@ -398,6 +398,29 @@ def test_escalate_to_staff_takes_no_arguments_at_all() -> None:
     }
 
 
+def test_escalate_to_staff_refuses_the_cases_that_are_not_asking_for_a_person() -> None:
+    """The description is load-bearing, because the reason is bound to the caller.
+
+    This tool records `patient_asked_for_person`, which *silences* the conversation. A
+    model calling it for something the assistant merely may not do would record that the
+    patient asked for a human when they did not, and stop a conversation the router had
+    decided to keep open (FR-022b). That is not hypothetical: it happened in the first
+    live run, where "can I book Monday, and also get a receipt reissued?" ended silenced
+    (`evaluation/procedure.md`, 2026-09-08, C16). The schema below cannot prevent it -
+    only this text can.
+    """
+    description = ESCALATE_TO_STAFF.description.lower()
+
+    assert "explicitly asks to speak to a person" in description
+    # The consequence, stated where the model chooses: calling this stops the assistant.
+    assert "stops the assistant replying" in description
+    # And the four neighbouring cases it must not fire for.
+    for refused in ("unsure of an answer", "booking was refused", "tool failed"):
+        assert refused in description
+    for out_of_remit in ("receipt", "letter", "prescription", "billing correction"):
+        assert out_of_remit in description
+
+
 def test_escalate_to_staff_is_registered_and_needs_no_patient_record() -> None:
     # FR-002: a visitor who has never booked anything can still ask for a person.
     registry = ToolRegistry(STAFF_TOOLS, _tool_context(EscalationRequests()))
@@ -759,3 +782,87 @@ async def test_a_classified_call_for_a_person_escalates_the_conversation() -> No
         messages = await chat_repository.list_messages(session, chat_id)
     assert messages[-1].sender == MessageSender.ASSISTANT
     assert messages[-1].content == HANDOFF_MESSAGE
+
+
+# --- Phase 1f: the widened cause set -----------------------------------------
+
+_URGENT = EscalationReason.URGENT_CONDITION
+_DISTRESS = EscalationReason.DISTRESS
+_THIRD_PARTY = EscalationReason.BOOKING_FOR_ANOTHER_PERSON
+_NOT_AUTHORIZED = EscalationReason.NOT_AUTHORIZED
+
+
+def test_precedence_is_the_full_order_strongest_claim_first() -> None:
+    from chat.agent.escalation import _PRECEDENCE
+
+    assert _PRECEDENCE == (
+        _URGENT,
+        _DISTRESS,
+        _ASKED,
+        _THIRD_PARTY,
+        _NOT_AUTHORIZED,
+        _CORPUS,
+        _FAILED,
+    )
+
+
+def test_precedence_covers_every_reason() -> None:
+    from chat.agent.escalation import _PRECEDENCE
+
+    assert set(_PRECEDENCE) == set(EscalationReason)
+
+
+def test_four_causes_silence_and_the_rest_do_not() -> None:
+    from chat.agent.escalation import _SILENCING
+
+    assert _SILENCING == frozenset({_URGENT, _DISTRESS, _ASKED, _THIRD_PARTY})
+
+
+def test_every_cause_has_a_row_in_the_table() -> None:
+    # A cause added later without its text, its mark or its silencing answer fails
+    # here rather than at runtime, which is the point of one table.
+    from chat.agent.escalation import _MARK_BY_REASON, HANDOFF_TEXT
+
+    for reason in EscalationReason:
+        assert reason in _MARK_BY_REASON
+        assert _MARK_BY_REASON[reason].value == reason.value
+    for reason in (_ASKED, _NOT_AUTHORIZED, _URGENT, _DISTRESS, _THIRD_PARTY):
+        assert HANDOFF_TEXT[reason].strip()
+
+
+def test_urgent_outranks_distress_on_one_message() -> None:
+    requests = EscalationRequests()
+    requests.record(_DISTRESS)
+    requests.record(_URGENT)
+    assert requests.message_mark is AttentionMark.URGENT_CONDITION
+    assert requests.conversation_reason is _URGENT
+
+
+def test_urgent_outranks_a_request_for_a_person() -> None:
+    requests = EscalationRequests()
+    requests.record(_ASKED)
+    requests.record(_URGENT)
+    assert requests.message_mark is AttentionMark.URGENT_CONDITION
+
+
+def test_not_authorized_outranks_a_corpus_gap_and_does_not_silence() -> None:
+    requests = EscalationRequests()
+    requests.record(_CORPUS)
+    requests.record(_NOT_AUTHORIZED)
+    assert requests.message_mark is AttentionMark.NOT_AUTHORIZED
+    assert requests.conversation_reason is None
+
+
+def test_a_third_party_booking_silences() -> None:
+    requests = EscalationRequests()
+    requests.record(_THIRD_PARTY)
+    assert requests.conversation_reason is _THIRD_PARTY
+    assert requests.message_mark is AttentionMark.BOOKING_FOR_ANOTHER_PERSON
+
+
+def test_every_recorded_cause_survives_in_the_log_even_when_discarded() -> None:
+    requests = EscalationRequests()
+    requests.record(_DISTRESS)
+    requests.record(_URGENT)
+    requests.record(_CORPUS)
+    assert requests.recorded == (_DISTRESS, _URGENT, _CORPUS)

@@ -123,20 +123,33 @@ def test_message_sender_has_exactly_three_members() -> None:
     }
 
 
-def test_attention_mark_has_exactly_the_four_kinds() -> None:
-    """FR-027a's four kinds, and nothing else."""
+def test_attention_mark_has_exactly_the_eight_kinds() -> None:
+    """007's FR-027a four, plus 009's four causes - and nothing else."""
     assert {member.value for member in AttentionMark} == {
+        "urgent_condition",
+        "distress",
         "patient_asked_for_person",
+        "booking_for_another_person",
+        "not_authorized",
         "corpus_could_not_answer",
         "assistant_failed",
         "unanswered",
     }
 
 
-def test_escalation_reason_has_exactly_the_three_triggers() -> None:
-    """FR-007a: the reasons are the triggers, and there is no fourth value."""
+def test_escalation_reason_has_exactly_the_seven_triggers() -> None:
+    """FR-007a as spec 009 FR-020 restates it: the reasons are the triggers.
+
+    Seven values for four situations - asked for a person, asked for something the
+    assistant cannot provide, needs a person on safety or authority grounds, something
+    failed - because the middle two are recorded by what would fix them.
+    """
     assert {member.value for member in EscalationReason} == {
+        "urgent_condition",
+        "distress",
         "patient_asked_for_person",
+        "booking_for_another_person",
+        "not_authorized",
         "corpus_could_not_answer",
         "assistant_failed",
     }
@@ -153,8 +166,8 @@ def test_escalation_reasons_are_a_subset_of_mark_kinds() -> None:
         assert reason.value in {member.value for member in AttentionMark}
 
 
-def test_clearable_marks_are_exactly_the_two_a_staff_message_clears() -> None:
-    """FR-027c's lifetime column, as one constant.
+def test_clearable_marks_are_exactly_the_six_a_staff_message_clears() -> None:
+    """FR-027c's lifetime column, as one constant, widened by spec 009 FR-048.
 
     This is the `IN` list of the clearing statement. A permanent mark appearing here
     would erase a diagnostic record; a clearable one missing would leave an answered
@@ -162,7 +175,14 @@ def test_clearable_marks_are_exactly_the_two_a_staff_message_clears() -> None:
     that *something* was cleared.
     """
     assert CLEARABLE_MARKS == frozenset(
-        {AttentionMark.PATIENT_ASKED_FOR_PERSON, AttentionMark.UNANSWERED}
+        {
+            AttentionMark.PATIENT_ASKED_FOR_PERSON,
+            AttentionMark.UNANSWERED,
+            AttentionMark.URGENT_CONDITION,
+            AttentionMark.DISTRESS,
+            AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+            AttentionMark.NOT_AUTHORIZED,
+        }
     )
 
 
@@ -176,3 +196,62 @@ def test_permanent_marks_are_the_complement_and_record_a_system_gap() -> None:
         AttentionMark.CORPUS_COULD_NOT_ANSWER,
         AttentionMark.ASSISTANT_FAILED,
     }
+
+
+# --- Phase 1f: the escalation vocabulary -------------------------------------
+
+
+def test_escalation_reason_carries_the_four_added_causes() -> None:
+    assert {
+        EscalationReason.URGENT_CONDITION,
+        EscalationReason.DISTRESS,
+        EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+        EscalationReason.NOT_AUTHORIZED,
+    } <= set(EscalationReason)
+
+
+def test_attention_mark_carries_the_four_added_kinds() -> None:
+    assert {
+        AttentionMark.URGENT_CONDITION,
+        AttentionMark.DISTRESS,
+        AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        AttentionMark.NOT_AUTHORIZED,
+    } <= set(AttentionMark)
+
+
+def test_every_reason_has_a_mark_of_the_same_name() -> None:
+    # The pair is what makes a call to staff and the mark on the message that caused it
+    # impossible to disagree about why.
+    assert {reason.value for reason in EscalationReason} <= {
+        mark.value for mark in AttentionMark
+    }
+
+
+def test_every_cause_fits_the_columns_that_store_it() -> None:
+    # This is why Phase 1f needs no migration: both columns are String(32) and
+    # deliberately not database enums, so a new value is a code change alone.
+    reason_length = Chat.__table__.c.escalation_reason.type.length
+    mark_length = Message.__table__.c.attention_mark.type.length
+    longest = max(len(value) for value in EscalationReason) + 0
+    assert longest <= reason_length
+    assert max(len(mark.value) for mark in AttentionMark) <= mark_length
+
+
+def test_clearable_marks_are_exactly_the_ones_a_staff_reply_answers() -> None:
+    # A staff reply *is* the whole of what these six asked for. A corpus gap survives
+    # its answer because the document is still missing; a failure because it happened.
+    assert CLEARABLE_MARKS == frozenset(
+        {
+            AttentionMark.PATIENT_ASKED_FOR_PERSON,
+            AttentionMark.UNANSWERED,
+            AttentionMark.URGENT_CONDITION,
+            AttentionMark.DISTRESS,
+            AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+            AttentionMark.NOT_AUTHORIZED,
+        }
+    )
+
+
+def test_the_permanent_marks_stay_permanent() -> None:
+    assert AttentionMark.CORPUS_COULD_NOT_ANSWER not in CLEARABLE_MARKS
+    assert AttentionMark.ASSISTANT_FAILED not in CLEARABLE_MARKS

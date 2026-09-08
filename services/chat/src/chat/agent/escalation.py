@@ -1,13 +1,19 @@
-"""Calling a person: one implementation, three callers, one application point.
+"""Calling a person: one implementation, four callers, one application point.
 
 Four things can decide a conversation needs a person - the classifier labelling the
-message `call_staff`, the model calling `escalate_to_staff`, the FAQ path abstaining,
-and a booking tool failing - and none of them writes the transition. Calling staff and
-silencing the assistant are separate consequences of one act: all four call staff, only
-the first two silence, and the abstention and the failure leave the assistant answering
-whatever else the patient asks while staff follow up (FR-003d). Each *records a
-request* into one per-turn `EscalationRequests` collector; `turn.py` applies the
-collected result once, after the graph has completed.
+message as one of five causes that call one (an urgent condition, evident distress, a
+request for a human, a booking for someone else, or a request the assistant is not
+authorized to serve), the model calling `escalate_to_staff`, the FAQ path abstaining,
+and a booking tool failing - and none of them writes the transition.
+
+Seven causes exist in all, and calling staff and silencing the assistant are separate
+consequences of one act: every cause calls staff, and `_SILENCING`'s four also stop the
+assistant replying. A corpus gap, a failure and a not-authorized request leave it
+answering whatever else the patient asks while staff follow up (FR-003d, spec 009
+FR-022b). Each caller *records a request* into one per-turn `EscalationRequests`
+collector - every applicable cause, not only the strongest, so the log keeps what
+precedence discards (spec 009 FR-047) - and `turn.py` applies the collected result once,
+after the graph has completed.
 
 Only that shape satisfies both of the requirements that govern this (research #5):
 
@@ -19,7 +25,7 @@ Only that shape satisfies both of the requirements that govern this (research #5
   that escalates, the assistant still speaks; silence begins with the *next* message.
 
 The collector is a plain mutable object rather than a LangGraph state key, deliberately:
-the two specialists can run concurrently, and concurrent writes to one state key are
+the specialists can run concurrently, and concurrent writes to one state key are
 exactly what LangGraph rejects. Appending to a shared object is not a state write, and
 the resolution below is a precedence over a *set*, so the order two branches happened to
 record in cannot change what the patient's conversation ends up in.
@@ -31,24 +37,40 @@ from chat.core.logging import get_logger
 from chat.domain.models import AttentionMark, EscalationReason
 from chat.repositories import chat_repository
 
-# Strongest claim on a person first. A patient asking for a human *is* a person wanting
-# a person; a corpus gap is a hole in the clinic's own documents; a failure is a thing
-# to retry, and the one whose "they can just try again" is the weaker claim to give up
-# (research #6). This orders the *mark*, which every reason sets; whether silence
-# follows is `_SILENCING`'s separate question, and only the first reason answers it yes.
+# Strongest claim on a person first. Safety outranks everything: a patient describing
+# an urgent condition, then one in evident distress. A patient asking for a human *is* a
+# person wanting a person; a booking the assistant may not make and a request it is not
+# authorized to serve both need a person to do the thing; a corpus gap is a hole in the
+# clinic's own documents; a failure is a thing to retry, and the one whose "they can
+# just try again" is the weaker claim to give up (research #6, spec 009 FR-047). This
+# orders the *mark*, which every reason sets; whether silence follows is `_SILENCING`'s
+# separate question.
 _PRECEDENCE: tuple[EscalationReason, ...] = (
+    EscalationReason.URGENT_CONDITION,
+    EscalationReason.DISTRESS,
     EscalationReason.PATIENT_ASKED_FOR_PERSON,
+    EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    EscalationReason.NOT_AUTHORIZED,
     EscalationReason.CORPUS_COULD_NOT_ANSWER,
     EscalationReason.ASSISTANT_FAILED,
 )
 
-# The reasons that stop the assistant replying - one of the three. The other two are
-# absent by requirement, not by omission (FR-003d): a failure raises attention without
-# silencing because the thing that broke may already be working again, and a corpus gap
-# raises attention without silencing because it is a hole in *one* answer, not in the
-# assistant. Only a patient who asked for a person is owed silence, because only there
-# is more assistant the thing they said they did not want.
-_SILENCING = frozenset({EscalationReason.PATIENT_ASKED_FOR_PERSON})
+# The reasons that stop the assistant replying - four of the seven. The other three are
+# absent by requirement, not by omission (FR-003d, spec 009 FR-022b): a failure raises
+# attention without silencing because the thing that broke may already be working again;
+# a corpus gap because it is a hole in *one* answer, not in the assistant; and a
+# not-authorized request because its own sentence invites the next question. The four
+# that silence are the ones where more assistant is the thing the patient must not get
+# next - a patient who asked for a human, and the three a person has to handle before
+# anything else is said.
+_SILENCING = frozenset(
+    {
+        EscalationReason.URGENT_CONDITION,
+        EscalationReason.DISTRESS,
+        EscalationReason.PATIENT_ASKED_FOR_PERSON,
+        EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    }
+)
 
 # Every `EscalationReason` is also an `AttentionMark` of the same name - the mark
 # records on the message what the reason records on the conversation, so the two cannot
@@ -66,6 +88,40 @@ HANDOFF_MESSAGE = (
     "Sure. I've passed this to a member of the clinic's staff. "
     "They'll follow up with you shortly."
 )
+
+# One constant per cause that ends a turn by fetching a person, in one table beside the
+# precedence and the silencing set (spec 009 FR-043, contracts/replies.md). One table
+# rather than one node each: every row has to have a text, a mark and a silencing
+# answer, and four near-identical nodes would drift until one of them forgot one.
+#
+# What each must convey is the contract; the wording is a copy decision. None of them
+# promises a time, and none claims the assistant will handle the thing after all.
+#
+# The urgent one points at emergency services rather than judging whether this is an
+# emergency: the assistant does not triage (FR-044), so the only safe sentence is the
+# one that is right under every reading of the message.
+HANDOFF_TEXT: dict[EscalationReason, str] = {
+    EscalationReason.PATIENT_ASKED_FOR_PERSON: HANDOFF_MESSAGE,
+    EscalationReason.NOT_AUTHORIZED: (
+        "I'm not authorized to handle that request, so I've forwarded it to our staff. "
+        "They'll follow up with you shortly. Feel free to ask if you need help with "
+        "anything else in the meantime!"
+    ),
+    EscalationReason.URGENT_CONDITION: (
+        "If this is a medical emergency, please call your local emergency number or go "
+        "to the nearest emergency department now. I've notified the clinic's staff, "
+        "and a member of the team will follow up with you here."
+    ),
+    EscalationReason.DISTRESS: (
+        "I'm sorry you're going through this. I've passed your message to a member of "
+        "the clinic's staff, and a person will follow up with you here."
+    ),
+    EscalationReason.BOOKING_FOR_ANOTHER_PERSON: (
+        "Appointments in this chat are booked for you, so I can't arrange one for "
+        "someone else. I've passed this to the clinic's staff and a member of the "
+        "team will arrange it with you."
+    ),
+}
 
 
 class EscalationRequests:

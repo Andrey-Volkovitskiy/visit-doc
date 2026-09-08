@@ -18,8 +18,47 @@ _SYSTEM_PROMPT = (
     "rescheduling, cancelling, or listing appointments, and equally asking which "
     "practitioners this clinic has, what a named practitioner specializes in, or when "
     "one of them next has a free appointment), "
-    "call_staff (an urgent or staff-handled issue, e.g. a billing problem), unknown "
-    "(fits none of the above). A message may carry more than one intent at once."
+    "small_talk (the message asks for nothing the clinic could act on - a greeting, an "
+    "acknowledgement, a thank-you, a farewell, a reaction, a note that they are "
+    "thinking it over, a message that is unintelligible, or a question about something "
+    "the clinic has nothing to do with, such as the weather. A message that asks "
+    "anything about the clinic, an appointment, a practitioner or the patient's own "
+    'care is NEVER small_talk, however short or polite it is: "what time should I '
+    'arrive?" is faq_question, not a pleasantry. A bare "ok", "yes", "sure" or '
+    '"perfect" that answers a question you just asked is never small_talk either - '
+    "it belongs to whatever you asked about), "
+    "urgent_condition (the message describes a condition needing immediate attention "
+    "right now - severe, sudden, or dangerous, the kind of thing an emergency "
+    "department exists for. Chest pain, difficulty breathing, heavy bleeding, a "
+    "suspected overdose, fainting, a child who cannot be roused properly, stroke signs "
+    "or sudden severe pain are this however calmly they are put, and remain this when "
+    "the patient also asks for an appointment. Everyday hyperbole about an ordinary "
+    "complaint is not this "
+    '("my tooth is killing me", "this headache is brutal"), and neither is '
+    "anything described in the past tense, as having happened last week or last "
+    "month, or as "
+    "since resolved - those are ordinary requests, however they are worded), "
+    "distress (the message expresses real fear, panic or acute upset about their "
+    "health, their care, or something happening to them - whether or not it asks for "
+    "anything. A brief exclamation or a mild reaction on its own is not this: "
+    '"oh no", "ugh", "yikes" are small_talk, and so is dismay about something '
+    "ordinary like a wait or a full calendar), "
+    "booking_for_another (the message explicitly says the appointment is for someone "
+    "other than the person in this chat. The other person must be the one the "
+    'appointment is FOR: "book me in with whoever my daughter saw" books for the '
+    "patient and is booking. Merely mentioning another person is not this, and neither "
+    "is an unclear case - both of those are booking), "
+    "call_staff (the patient explicitly asks to speak to a human), unknown "
+    "(a request the assistant is not authorized to serve, such as a sick note, a "
+    "prescription, a records transfer or a billing correction). "
+    "A message may carry more than one intent at once. "
+    "If a message could be read either as asking for something or as asking for "
+    "nothing, it is not small_talk: answering a real request with a pleasantry is the "
+    "worse mistake, and the other paths know how to say they cannot help. "
+    "The same words mean different things at different points in a conversation, so "
+    'read the message against what was said before it. "OK" after arrival '
+    'instructions is small_talk; the same "OK" after you offered a specific '
+    "appointment slot is the patient confirming that booking."
 )
 
 # The classifier's own request schema, built from `IntentClassificationResult`'s

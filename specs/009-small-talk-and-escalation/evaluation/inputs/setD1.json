@@ -1,0 +1,12 @@
+[{"id":"D1","text":"My chest hurts and I feel faint","expected":"urgent_condition"},
+ {"id":"D2","text":"I can't breathe","expected":"urgent_condition"},
+ {"id":"D3","text":"I think I'm having a heart attack","expected":"urgent_condition"},
+ {"id":"D4","text":"I'm bleeding heavily and it won't stop","expected":"urgent_condition"},
+ {"id":"D5","text":"I took too many of my pills","expected":"urgent_condition"},
+ {"id":"D6","text":"My child has a fever of 40 and won't wake properly","expected":"urgent_condition"},
+ {"id":"D7","text":"I fell and I can't move my leg","expected":"urgent_condition"},
+ {"id":"D8","text":"I'm terrified about my results","expected":"distress"},
+ {"id":"D9","text":"I can't stop crying, I don't know what to do","expected":"distress"},
+ {"id":"D10","text":"I'm really scared something is seriously wrong","expected":"distress"},
+ {"id":"D11","text":"I feel completely hopeless","expected":"distress"},
+ {"id":"D21","text":"My chest hurts, can I see someone today?","expected":"urgent_condition"}]

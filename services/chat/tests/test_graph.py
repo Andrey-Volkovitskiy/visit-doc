@@ -27,6 +27,7 @@ from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.core.config import Settings
 from chat.db.session import session_factory
 from chat.domain.models import (
+    AttentionMark,
     EscalationReason,
     Message,
     MessageSender,
@@ -524,13 +525,15 @@ def test_a_single_specialist_turn_logs_its_text_on_the_node_that_produced_it(
 @pytest.mark.parametrize(
     "intents",
     [
-        [IntentLabel.UNKNOWN],
         [IntentLabel.CLASSIFICATION_FAILED],
     ],
 )
 def test_an_intent_with_no_specialist_falls_back_to_the_faq_path(
     seeded_entry: int, intents: list[IntentLabel]
 ) -> None:
+    """A failure is not evidence about what the message was, so the corpus is still
+    the cheapest guess that can produce the right answer. `unknown` no longer belongs
+    here: spec 009 gives it a route of its own (FR-022)."""
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -742,7 +745,9 @@ def test_a_handed_off_turn_is_reported_as_its_own_outcome(
     assert _node_result(logs, "hand_off")["answer_text"] == HANDOFF_MESSAGE
 
 
-@pytest.mark.parametrize("intents", [[IntentLabel.FAQ_QUESTION], [IntentLabel.UNKNOWN]])
+@pytest.mark.parametrize(
+    "intents", [[IntentLabel.FAQ_QUESTION], [IntentLabel.SMALL_TALK]]
+)
 def test_a_turn_nobody_asked_for_a_person_in_records_nothing(
     seeded_entry: int, intents: list[IntentLabel]
 ) -> None:
@@ -868,3 +873,605 @@ def test_a_classification_timeout_is_not_reported_as_an_outage(
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.faq_verdict is FaqVerdict.ANSWERED
+
+
+# --- Phase 1f, US1: a message that asks for nothing ----------------------------------
+
+
+async def test_small_talk_alone_runs_only_the_small_talk_node() -> None:
+    client = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(client, "Thanks!")
+
+    assert _started_nodes(logs) == ["classify_intent", "small_talk", "compose_answer"]
+    assert (
+        "".join(event.text for event in events if isinstance(event, ChatTokenEvent))
+        == "You're welcome!"
+    )
+
+
+async def test_a_small_talk_turn_retrieves_nothing() -> None:
+    client = fake_anthropic_client(["Hello!"], intents=[IntentLabel.SMALL_TALK])
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "Hi")
+
+    events = [entry["event"] for entry in logs]
+    assert "faq.retrieval_completed" not in events
+    assert "faq.similarity_gate" not in events
+    assert "faq.verdict" not in events
+
+
+async def test_a_small_talk_turn_calls_nobody() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["Sure, take your time."], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    await _run_turn(client, "Let me think a bit", escalation=escalation)
+
+    assert escalation.recorded == ()
+    assert escalation.message_mark is None
+    assert escalation.conversation_reason is None
+
+
+async def test_a_small_talk_reply_carries_no_verdict_and_no_citations() -> None:
+    client = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    events = await _run_turn(client, "Thanks!")
+
+    done = events[-1]
+    assert isinstance(done, ChatDoneEvent)
+    assert done.answer_source == "small_talk"
+    assert done.faq_verdict is None
+    assert done.citations == []
+
+
+async def test_small_talk_is_answered_even_with_no_corpus_to_answer_from() -> None:
+    # An empty corpus is irrelevant to a message that asked nothing of it.
+    client = fake_anthropic_client(["Good morning!"], intents=[IntentLabel.SMALL_TALK])
+
+    events = await _run_turn(client, "Good morning", live_revisions=[])
+
+    assert (
+        "".join(event.text for event in events if isinstance(event, ChatTokenEvent))
+        == "Good morning!"
+    )
+
+
+# --- Phase 1f, US2: a pleasantry wrapped around a request ----------------------------
+
+
+async def test_small_talk_beside_a_question_runs_the_faq_node_alone(
+    seeded_entry: int,
+) -> None:
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.FAQ_QUESTION],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "Hi, when can I visit?")
+
+    assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
+    assert _node_result(logs, "classify_intent")["specialists"] == ["answer_faq"]
+    assert _node_result(logs, "classify_intent")["merge_required"] is False
+
+
+async def test_small_talk_beside_a_booking_runs_the_booking_node_alone() -> None:
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.BOOKING],
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "Thanks! Any slots on Monday?")
+
+    assert _started_nodes(logs) == [
+        "classify_intent",
+        "handle_booking",
+        "compose_answer",
+    ]
+
+
+async def test_small_talk_beside_both_specialists_is_still_dropped(
+    seeded_entry: int,
+) -> None:
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        intents=[
+            IntentLabel.SMALL_TALK,
+            IntentLabel.FAQ_QUESTION,
+            IntentLabel.BOOKING,
+        ],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "Hi! When can I visit, and can I book Friday?")
+
+    assert _node_result(logs, "classify_intent")["specialists"] == [
+        "answer_faq",
+        "handle_booking",
+    ]
+    # Merged because two specialists ran - never because a pleasantry was in the
+    # message.
+    assert _node_result(logs, "classify_intent")["merge_required"] is True
+
+
+async def test_a_dropped_pleasantry_leaves_no_trace_in_the_reply(
+    seeded_entry: int,
+) -> None:
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.FAQ_QUESTION],
+    )
+
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        events = await _run_turn(client, "Hi, when can I visit?")
+
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == "Visiting hours are 8am to 5pm."
+    done = events[-1]
+    assert isinstance(done, ChatDoneEvent)
+    # The servable path's own source, not `merged` and not `small_talk`.
+    assert done.answer_source == "faq"
+
+
+# --- Phase 1f, US5: the three situations that stop the conversation ------------------
+
+_STOPPING = (
+    (IntentLabel.URGENT_CONDITION, EscalationReason.URGENT_CONDITION),
+    (IntentLabel.DISTRESS, EscalationReason.DISTRESS),
+    (IntentLabel.BOOKING_FOR_ANOTHER, EscalationReason.BOOKING_FOR_ANOTHER_PERSON),
+)
+
+
+@pytest.mark.parametrize(("label", "reason"), _STOPPING)
+async def test_a_stopping_label_takes_the_whole_turn(
+    label: IntentLabel, reason: EscalationReason
+) -> None:
+    # Alongside a booking, which must not run: answering half a message and then
+    # falling silent is worse than handing over cleanly (FR-046).
+    client = fake_anthropic_client(
+        ["never generated"], intents=[label, IntentLabel.BOOKING]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "my chest hurts, can I see someone today?")
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    events = [entry["event"] for entry in logs]
+    assert "faq.retrieval_completed" not in events
+    assert "faq.verdict" not in events
+
+
+@pytest.mark.parametrize(("label", "reason"), _STOPPING)
+async def test_a_stopping_label_records_its_own_cause_and_its_own_sentence(
+    label: IntentLabel, reason: EscalationReason
+) -> None:
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(["never generated"], intents=[label])
+
+    events = await _run_turn(client, "anything", escalation=escalation)
+
+    assert escalation.recorded == (reason,)
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == HANDOFF_TEXT[reason]
+    assert events[-1].answer_source == "hand_off"
+
+
+@pytest.mark.parametrize(("label", "reason"), _STOPPING)
+async def test_a_stopping_turn_makes_no_generation_call(
+    label: IntentLabel, reason: EscalationReason
+) -> None:
+    client = fake_anthropic_client(["never generated"], intents=[label])
+
+    await _run_turn(client, "anything")
+
+    assert client.messages.stream.call_count == 0
+
+
+async def test_urgency_outranks_distress_and_a_request_for_a_person() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[
+            IntentLabel.DISTRESS,
+            IntentLabel.CALL_STAFF,
+            IntentLabel.URGENT_CONDITION,
+        ],
+    )
+
+    await _run_turn(client, "I can't breathe and I'm terrified", escalation=escalation)
+
+    assert escalation.message_mark is AttentionMark.URGENT_CONDITION
+    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
+
+
+async def test_urgency_outranks_a_third_party_booking() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.BOOKING_FOR_ANOTHER, IntentLabel.URGENT_CONDITION],
+    )
+
+    await _run_turn(
+        client, "I'm booking for my daughter, she can't breathe", escalation=escalation
+    )
+
+    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
+
+
+async def test_distress_outranks_a_request_for_a_person() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.CALL_STAFF, IntentLabel.DISTRESS],
+    )
+
+    await _run_turn(client, "please, I'm frightened", escalation=escalation)
+
+    assert escalation.message_mark is AttentionMark.DISTRESS
+
+
+async def test_a_third_party_booking_issues_no_scheduling_call() -> None:
+    # The refusal precedes the service boundary: the scheduler never hears about it.
+    channel = MagicMock()
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.BOOKING_FOR_ANOTHER]
+    )
+
+    with patch.object(graph_module, "ToolRegistry") as registry_cls:
+        await _run_turn(client, "Can I book Monday for my mother?")
+
+    assert registry_cls.call_count == 0
+    assert channel.method_calls == []
+
+
+async def test_the_urgent_reply_points_at_emergency_care_only() -> None:
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    text = HANDOFF_TEXT[EscalationReason.URGENT_CONDITION].lower()
+    assert "emergency" in text
+    # It must not judge the condition it cannot see: no reassurance, no severity, no
+    # advice on what to do medically beyond seeking emergency care.
+    for forbidden in (
+        "probably",
+        "likely",
+        "don't worry",
+        "it sounds like",
+        "you have",
+    ):
+        assert forbidden not in text
+
+
+# --- Phase 1f, US3: both readings of one word are reachable --------------------------
+
+
+async def test_an_acknowledgement_after_instructions_books_nothing() -> None:
+    client = fake_anthropic_client(["See you soon!"], intents=[IntentLabel.SMALL_TALK])
+    bursts = [
+        [
+            Message(
+                sender=MessageSender.ASSISTANT,
+                content="Please arrive 15 minutes early.",
+                id="a1",
+            )
+        ],
+        [_patient_message("ok", id="turn-1")],
+    ]
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "ok", bursts=bursts)
+
+    assert _started_nodes(logs) == ["classify_intent", "small_talk", "compose_answer"]
+
+
+async def test_the_same_word_after_a_slot_offer_reaches_the_booking_path() -> None:
+    client = fake_anthropic_client(["never generated"], intents=[IntentLabel.BOOKING])
+    bursts = [
+        [
+            Message(
+                sender=MessageSender.ASSISTANT,
+                content="9am Monday with Dr. Vesalius - shall I book it?",
+                id="a1",
+            )
+        ],
+        [_patient_message("ok", id="turn-1")],
+    ]
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "ok", bursts=bursts)
+
+    assert _started_nodes(logs) == [
+        "classify_intent",
+        "handle_booking",
+        "compose_answer",
+    ]
+
+
+# --- Phase 1f, US4: a request the assistant may not serve ---------------------------
+
+
+async def test_an_unauthorized_request_retrieves_nothing_and_says_so() -> None:
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(["never generated"], intents=[IntentLabel.UNKNOWN])
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(
+            client,
+            "I would like you to prepare a sick leave paper for my employer",
+            escalation=escalation,
+        )
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    assert "faq.retrieval_completed" not in [e["event"] for e in logs]
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]
+    assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
+
+
+async def test_an_unauthorized_request_does_not_silence_the_conversation() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(["never generated"], intents=[IntentLabel.UNKNOWN])
+
+    await _run_turn(client, "please renew my prescription", escalation=escalation)
+
+    # A person is needed for this request; the next one may be perfectly ordinary.
+    assert escalation.conversation_reason is None
+    assert escalation.message_mark is AttentionMark.NOT_AUTHORIZED
+
+
+async def test_an_unauthorized_request_beside_a_question_answers_and_forwards(
+    seeded_entry: int,
+) -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        intents=[IntentLabel.UNKNOWN, IntentLabel.FAQ_QUESTION],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        events = await _run_turn(
+            client,
+            "When can I visit, and can you write me a sick note?",
+            escalation=escalation,
+        )
+
+    routing = _node_result(logs, "classify_intent")
+    assert routing["specialists"] == ["answer_faq"]
+    assert routing["notice_required"] is True
+    # Merged, because the notice is owed alongside an answer - and no fixed sentence
+    # was stapled on: the composer wrote one reply (FR-022c1).
+    assert routing["merge_required"] is True
+    assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    assert HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED] not in streamed
+
+
+async def test_a_classification_failure_reaches_none_of_the_new_routes(
+    seeded_entry: int,
+) -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."], classify_error=RuntimeError("down")
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "when can I visit?", escalation=escalation)
+
+    assert _node_result(logs, "classify_intent")["specialists"] == ["answer_faq"]
+    assert escalation.recorded == ()
+
+
+# --- Phase 1f, US6: what the turn leaves on the record -------------------------------
+
+
+async def test_the_routing_record_names_the_stopping_cause(seeded_entry: int) -> None:
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        ordinary = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."], intents=[IntentLabel.FAQ_QUESTION]
+        )
+        with capture_logs(
+            processors=[structlog.contextvars.merge_contextvars]
+        ) as ordinary_logs:
+            await _run_turn(ordinary, "when can I visit?")
+
+    stopping = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.URGENT_CONDITION]
+    )
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(stopping, "I can't breathe")
+
+    assert _node_result(ordinary_logs, "classify_intent")["stopping_cause"] is None
+    assert _node_result(ordinary_logs, "classify_intent")["notice_required"] is False
+    assert _node_result(logs, "classify_intent")["stopping_cause"] == "urgent_condition"
+
+
+async def test_the_hand_off_record_names_which_constant_it_wrote() -> None:
+    # Four causes end a turn the same way; without this they leave four
+    # indistinguishable node records.
+    for label, cause in _STOPPING:
+        client = fake_anthropic_client(["never generated"], intents=[label])
+        with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+            await _run_turn(client, "anything")
+        assert _node_result(logs, "hand_off")["cause"] == cause.value
+
+
+async def test_a_small_talk_turn_records_its_own_text_and_no_retrieval_fields() -> None:
+    client = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "Thanks!")
+
+    node = _node_result(logs, "small_talk")
+    assert node["answer_text"] == "You're welcome!"
+    assert node["answer_chars"] == len("You're welcome!")
+    assert "faq_verdict" not in node
+    assert "citation_count" not in node
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["answer_source"] == "small_talk"
+    assert completed["outcome"] == "small_talk"
+
+
+async def test_the_phase_two_join_is_computable_from_one_turns_lines() -> None:
+    # "escalations raised by turns that contained no request" is this join: the labels
+    # on `intent.classified`, against the presence of `escalation.raised`. Distress is
+    # the deliberate exception, excluded by cause rather than by label.
+    courteous = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(courteous, "Thanks!")
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert [str(i) for i in classified["intents"]] == ["small_talk"]
+    assert _node_result(logs, "classify_intent")["stopping_cause"] is None
+
+    distressed = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.DISTRESS]
+    )
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(distressed, "I'm terrified")
+
+    assert _node_result(logs, "classify_intent")["stopping_cause"] == "distress"
+
+
+async def test_small_talk_beside_an_unauthorized_request_is_dropped() -> None:
+    """FR-008 holds for `unknown` too: it is another intent, so the pleasantry goes.
+
+    The combination no earlier test paired. Routed to the small-talk node with a notice
+    owed, the turn replied twice - the node streams unconditionally, having no collect
+    mode, and the composer then streamed a second reply the small-talk text never
+    reached. One message, one reply.
+    """
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.UNKNOWN],
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(
+            client, "Thanks! Can you write me a sick note?", escalation=escalation
+        )
+
+    routing = _node_result(logs, "classify_intent")
+    assert routing["specialists"] == ["hand_off"]
+    assert routing["notice_required"] is False
+    assert routing["merge_required"] is False
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]
+    assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
+    # No generation at all: not the courteous reply, not a composed one.
+    assert client.messages.stream.call_count == 0
+
+
+async def test_exactly_one_terminal_event_reaches_the_patient_on_that_turn() -> None:
+    # Two replies is the symptom a reader would actually see, so it is asserted
+    # directly rather than only through the routing record.
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.UNKNOWN],
+    )
+
+    events = await _run_turn(client, "Thanks! Please renew my prescription")
+
+    assert len([e for e in events if isinstance(e, ChatDoneEvent)]) == 1
+
+
+async def test_every_applicable_stopping_cause_reaches_the_record() -> None:
+    """FR-047: precedence decides the mark; the log keeps every call.
+
+    The existing precedence tests pass whether or not the discarded cause was ever
+    recorded, because they assert `message_mark`, which resolves to the same value
+    either way. This asserts the collector itself - which is what `apply_escalation`
+    writes one log line per, and therefore the only place a second cause survives.
+    """
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.DISTRESS, IntentLabel.URGENT_CONDITION],
+    )
+
+    await _run_turn(client, "I can't breathe and I'm terrified", escalation=escalation)
+
+    assert escalation.recorded == (
+        EscalationReason.URGENT_CONDITION,
+        EscalationReason.DISTRESS,
+    )
+    # Unchanged: one mark, one silence, chosen by precedence.
+    assert escalation.message_mark is AttentionMark.URGENT_CONDITION
+    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
+
+
+async def test_a_request_for_a_person_inside_an_emergency_is_not_lost() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[
+            IntentLabel.CALL_STAFF,
+            IntentLabel.URGENT_CONDITION,
+            IntentLabel.BOOKING_FOR_ANOTHER,
+        ],
+    )
+
+    await _run_turn(
+        client, "my father can't breathe, get me a person", escalation=escalation
+    )
+
+    assert escalation.recorded == (
+        EscalationReason.URGENT_CONDITION,
+        EscalationReason.PATIENT_ASKED_FOR_PERSON,
+        EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    )
+    assert escalation.message_mark is AttentionMark.URGENT_CONDITION
+
+
+async def test_an_unauthorized_request_inside_a_stopping_turn_is_recorded_too() -> None:
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"],
+        intents=[IntentLabel.UNKNOWN, IntentLabel.DISTRESS],
+    )
+
+    await _run_turn(
+        client, "I'm frightened, and please write me a sick note", escalation=escalation
+    )
+
+    assert escalation.recorded == (
+        EscalationReason.DISTRESS,
+        EscalationReason.NOT_AUTHORIZED,
+    )
+    # Distress still takes the turn, silences it, and writes its own sentence.
+    assert escalation.conversation_reason is EscalationReason.DISTRESS

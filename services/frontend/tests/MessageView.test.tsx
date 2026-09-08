@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { AttentionMark } from "../src/lib/chatStream";
 import { MessageView } from "../src/components/MessageView";
 
 describe("MessageView", () => {
@@ -191,5 +192,23 @@ describe("MessageView role labels", () => {
     const assistant = render(<MessageView sender="assistant" content="Same words." />);
 
     expect(assistant.getByTestId("role-label").textContent).not.toBe(staffLabel);
+  });
+});
+
+describe("marks the assistant's new causes leave", () => {
+  it("names which of them it is, never a generic 'needs attention'", () => {
+    const causes: Array<[AttentionMark, string]> = [
+      ["urgent_condition", "Urgent condition"],
+      ["distress", "Patient in distress"],
+      ["booking_for_another_person", "Booking for someone else"],
+      ["not_authorized", "Not something the assistant may do"],
+    ];
+    for (const [mark, label] of causes) {
+      const { unmount } = render(
+        <MessageView sender="patient" content="anything" mark={mark} />,
+      );
+      expect(screen.getByTestId("attention-mark")).toHaveTextContent(label);
+      unmount();
+    }
   });
 });

@@ -3,12 +3,19 @@
 `escalate_to_staff` takes no arguments at all, and that is the contract rather than an
 omission (contracts/agent-tools.md):
 
-- **No reason.** A reason exists and is a closed set of three, but the model can only
-  ever raise one of them - the other two are decided by a gate and by a failure, neither
-  of which runs inside a model turn. A `reason` parameter would be a field with one
-  legal value that a model could nonetheless get wrong, and getting it wrong would
-  mis-set the conversation's silencing state. The caller identity *is* the reason, so it
-  is bound here and never supplied.
+- **No reason.** Seven reasons exist, but this caller can only ever raise one of them -
+  the others are decided by the router, by a gate and by a failure, none of which runs
+  inside a model turn. A `reason` parameter would be a field with one legal value that a
+  model could nonetheless get wrong, and getting it wrong would mis-set the
+  conversation's silencing state. The caller identity *is* the reason, so it is bound
+  here and never supplied.
+
+  That binding is exactly why the description below refuses the neighbouring cases. This
+  tool means "the patient asked for a person", which silences the conversation; a
+  request the assistant may not serve means something else and deliberately does not
+  silence (spec 009 FR-022b). A model calling this for a receipt or a letter would
+  record that the patient asked for a human when they did not, and stop a conversation
+  the router had decided to keep open.
 - **No summary.** The thread is what says what the patient wanted; a generated summary
   that can be wrong would be a second, less reliable account of it sitting beside the
   real one.
@@ -34,10 +41,13 @@ _NO_ARGUMENTS: dict[str, Any] = {
 
 _DESCRIPTION = (
     "Hands this conversation to the clinic's staff, who will reply in this same "
-    "conversation. Call this when the visitor asks to speak to a person, a human, "
-    "staff, or the clinic itself. Do NOT call it because you are unsure of an answer, "
-    "because a booking was refused, or because a tool failed - those are handled "
-    "elsewhere. After calling it, tell the visitor that a staff member has been "
+    "conversation, AND stops the assistant replying until a person does. Call this "
+    "only when the visitor explicitly asks to speak to a person, a human, staff, or "
+    "the clinic itself. Do NOT call it because you are unsure of an answer, because a "
+    "booking was refused, because a tool failed, or because the visitor asked for "
+    "something outside what you can do (a receipt, a letter, a prescription, a billing "
+    "correction) - every one of those is handled elsewhere, without silencing the "
+    "conversation. After calling it, tell the visitor that a staff member has been "
     "notified and will reply here, and do not promise a response time."
 )
 

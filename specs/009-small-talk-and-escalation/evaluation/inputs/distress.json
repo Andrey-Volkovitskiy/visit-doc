@@ -1,0 +1,12 @@
+[{"id":"A13","text":"OMG","expected":"small_talk"},
+ {"id":"A15","text":"Oh no","expected":"small_talk"},
+ {"id":"A16","text":"Ugh","expected":"small_talk"},
+ {"id":"A31","text":"That was quick!","expected":"small_talk"},
+ {"id":"D8","text":"I'm terrified about my results","expected":"distress"},
+ {"id":"D9","text":"I can't stop crying, I don't know what to do","expected":"distress"},
+ {"id":"D10","text":"I'm really scared something is seriously wrong","expected":"distress"},
+ {"id":"D11","text":"I feel completely hopeless","expected":"distress"},
+ {"id":"D12","text":"I'm panicking about tomorrow's procedure","expected":"distress"},
+ {"id":"D13","text":"Please, I just need someone to help me, I'm frightened","expected":"distress"},
+ {"id":"D1","text":"My chest hurts and I feel faint","expected":"urgent_condition"},
+ {"id":"D4","text":"I'm bleeding heavily and it won't stop","expected":"urgent_condition"}]

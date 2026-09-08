@@ -1,0 +1,10 @@
+[{"id":"A1","text":"Hi","expected":"small_talk"},
+ {"id":"A2","text":"Hello there","expected":"small_talk"},
+ {"id":"A3","text":"Good morning!","expected":"small_talk"},
+ {"id":"A4","text":"Thanks!","expected":"small_talk","prior":"Can I book Monday at 9am?"},
+ {"id":"A5","text":"Thank you so much","expected":"small_talk"},
+ {"id":"A6","text":"Thanks a lot, that's helpful","expected":"small_talk"},
+ {"id":"A7","text":"I see","expected":"small_talk"},
+ {"id":"A8","text":"Got it","expected":"small_talk"},
+ {"id":"A9","text":"ok","expected":"small_talk","prior":"What should I do before my visit?"},
+ {"id":"A10","text":"OK, understood","expected":"small_talk"}]

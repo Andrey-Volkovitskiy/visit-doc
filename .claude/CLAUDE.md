@@ -128,6 +128,15 @@ established examples are gRPC stubs (`**/*_pb2.py`, `**/*_pb2_grpc.py`) and Alem
 (`**/alembic/versions/*.py`); follow the same pattern for the next generated-code case instead of
 fixing lint violations by hand in generated files.
 
+`specs/**/*.py` is excluded from **both** ruff and mypy for the same reason, though it is not
+generated: a spec directory holds documentation plus the data and one-off harnesses a manual
+procedure is run from (spec 009's `evaluation/inputs/` is the first). None of it is application
+code, nothing imports it, and it ships with a spec rather than with a service — so the rules written
+for the app do not apply to it, and annotating a throwaway driver to satisfy `strict` would buy
+nothing. Note that `make typecheck` runs `mypy .`, which overrides the `files` list in
+`[tool.mypy]`, so mypy needs its own `exclude` entry rather than relying on `files` alone. **Do not
+put application code under `specs/`** — it is unchecked by both gates.
+
 Mypy is configured once, in the root `pyproject.toml`'s `[tool.mypy]` table, in `strict` mode
 (aligns with the style guide's "annotate every function" rule). Unlike ruff, mypy doesn't do
 per-file hierarchical discovery — it's pointed explicitly at each workspace member's `src/` via
@@ -216,8 +225,12 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 
 ### Key design decisions to preserve
 
-- Intent classification (FAQ / booking / escalation) uses **structured output**, not free-text
-  parsing, and a cheap/fast model — reserve the stronger model for generation.
+- Intent classification uses **structured output**, not free-text parsing, and a cheap/fast model —
+  reserve the stronger model for generation. Since 009 the label set says what a message *is*
+  before anything decides who handles it: `faq_question`, `booking`, `small_talk` (asks for nothing
+  that can be acted on), `urgent_condition`, `distress`, `booking_for_another`, `call_staff` (an
+  explicit request for a human, and nothing else), `unknown` (a request the assistant is not
+  authorized to serve). `unknown` no longer falls through to the FAQ path.
 - Capabilities are exposed to the agent as **MCP tools** (`search_faq`, `check_availability`,
   `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
 - RAG must include defensible chunking, a reranking step, citations to source documents — derived
@@ -255,6 +268,17 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across
   callers, and lets the API layer own the transaction boundary (one session per request via
   `Depends`). New repositories, including `scheduler`'s, should follow this shape.
+- **A person is called in four situations and no others** (009): the patient asked for one; the
+  patient asked for something the assistant cannot provide; the message needs a person on safety or
+  authority grounds; something failed. A message that requests nothing calls nobody — before 009,
+  "Thanks" took the FAQ path, abstained, and paged a human. The middle two are recorded as two
+  causes each (`corpus_could_not_answer` vs `not_authorized`; `urgent_condition` vs `distress` vs
+  `booking_for_another_person`) because they call for different fixes, and one table in
+  `agent/escalation.py` gives every cause its text, its mark, and whether it silences. Four causes
+  silence the conversation; `not_authorized`, a corpus gap and a failure do not. The four texts are
+  constants, not generated: a stopping reply makes no claim about the clinic, which is the only
+  thing retrieval could have grounded. The assistant does not triage — `urgent_condition` is a
+  routing decision whose reply points at emergency services rather than judging anything.
 - Scheduling failure handling (timeouts, retries, agent behavior when Scheduling is unreachable) is
   part of the design, not an afterthought.
 - Each significant technology choice should be documented with its tradeoff in the README, so later

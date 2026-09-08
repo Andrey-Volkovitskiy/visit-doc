@@ -280,46 +280,110 @@ job: chunking, retrieval, reranking.
   abstentions are identical to the patient and to staff; they differ only in the record, which is
   what says whether to add entries, re-index, or move a floor.)*
 
-#### Phase 1f — Sub-query extraction
-1c routes a mixed-intent message to two specialists at once, but hands each of them the *whole*
-message — so the FAQ node retrieves against "what should I bring, and can I book Friday?" rather
-than against the question inside it. The scheduling half of that sentence is dense with vocabulary
-the FAQ corpus also contains, so it pulls booking-flavored chunks into the top-k, dilutes the
-scores the gates read, and produces citations for chunks that answer nothing the patient asked.
+#### Phase 1f — Small talk, and what escalation is actually for
+Not every message is a request. A greeting, an acknowledgement, a thank-you or a reaction asks for
+nothing, and today each one takes the FAQ path, abstains, and calls a human — so staff are paged by
+"Thanks". Escalation loses its meaning if it fires for messages that had nothing to escalate.
 
-- **The classifier returns sub-queries, not just labels.** Its structured output becomes one entry
-  per detected intent — the label, plus the part of the message carrying it, rewritten to stand on
-  its own. Same cheap model, same single call, one schema change: no second model round trip.
-- **Each specialist receives its own sub-query**, so retrieval embeds the question alone and its
-  score reflects the question alone.
-- **An extracted sub-query has to be self-contained.** "and what is the cost for visiting him
-  if I pay out-of-pocket?" means nothing without its referent, and retrieval sees the sub-query
-  with no conversation around it — so extraction is also decontextualization, resolving pronouns
-  and elisions against the turn's history.
-- **The booking specialist still gets the whole conversation.** Only retrieval needs an isolated
-  question; dialogue policy needs history, and stripping it would break exactly the multi-turn
-  confirmation flow 1c built. So the booking node receives the booking part extracted by the
-  intent classifier (the part the node should answer to) and the original patient message + history as a context. So patient request "What is the cost
-  of dentist visit if I pay out-of-pocket? What slots are available on Mon?". The booking part is "What
-  slots are available on Mon?", but as the booking node has the original patient message as context
-  it won't miss the idea that the patient is asking for dentist's slots.
-- **Single-intent turns are unaffected** — the sub-query is the message, and the FAQ path behaves
-  as it does today.
-- **Chitchat** - another intent/node should be added to handle patient phrases like: "Thanks",
-  "See you soon", "Let me think a bit"... ("Thanks!" -> "You're welcome! Let us know if you need anything else.", "See you soon" -> "We look forward to seeing you! Have a great day.",
-  "Let me think a bit" -> "Sure, take your time. I'll be there."). But the classifier should be
-  careful and interpret patient messages considering conversation context. E.g. two similar cases:
-  Case #1 - assistant: "Please arrive in 15 minutes before the appointment time." -> patient: "OK" ->
-  classified as chitchat -> assistant (via chitchat node): "See you soon.".
-  Case #2 - assistant: "9am September 7 is available with Dr. Andreas Vesalius. Should I book it for you?" -> patient: "OK" -> classified as booking -> assistant (via booking node): "Your appointment is booked".
-- An example conversation: patient: "Thanks! Do you have any slots with a dentist this Monday and
-  what is the out-of-pocket cost for the visit"; assistant (chitchat part) "Thanks!" -> "You're welcome!",
-  (booking part) "Do you have any slots with a dentist this Monday" -> "We have open dentist slots on Monday at 10:00 AM and 2:30 PM.", (faq part) "what is the out-of-pocket cost for a dentist visit?" -> "An out-of-pocket routine dental consultation costs $120". The composer merges specialist answers in a
-  single reply message. Despite booking and chitchat nodes have a conversation history and an original
-  patient message as a context they shouldn't try to answer message parts that don't belong to them.
-- A patient request containing several faq questions concerning different FAQ entries should be answered
-  reliably. E.g. "What is the clinic location and do I need a referral from a primary care doctor to book with a specialist?"
+- **A `small_talk` intent and a node to answer it.** One more label in 1b's structured-output enum —
+  same cheap model, same single call — routing to a specialist that does no retrieval, calls no
+  tool, cites nothing, and returns one short reply in the voice of a polite clinic receptionist.
+- **The discriminator is whether the message asks for anything**, not whether it is short or
+  friendly. "Hi", "I see", "OMG", "Let me think" ask for nothing; "Hi, I need to cancel tomorrow" is
+  a booking message wearing a greeting. When the two readings are both plausible, the message is
+  *not* small talk — answering a real request with "You're welcome!" is the worse failure, and the
+  FAQ path already knows how to abstain.
+- **The same word means different things at different points in a conversation**, so the label is
+  read against history, which the classifier already receives. After "Please arrive 15 minutes
+  early", "OK" is small talk. After "9am Monday with Dr. Vesalius — shall I book it?", "OK" is a
+  booking confirmation.
+- **Small talk is dropped whenever any other intent is present.** A specialist answering the real
+  request absorbs the pleasantry; a merge step that stitches "You're welcome!" onto a booking
+  confirmation buys nothing and adds a path to test. Small talk is the label for a turn that carries
+  *only* small talk.
+- **The reply is generated, but constrained**: it may not promise a callback, quote a policy, state a
+  time, or imply an appointment exists. It has no retrieval behind it, so anything factual in it
+  would be confabulated by construction.
+- **Escalation is narrowed to its three real causes** — the patient asked for a person, the patient
+  asked for something the assistant cannot provide (an out-of-scope request, or a corpus that cannot
+  answer), or something failed. A message that requests nothing is none of those and calls nobody.
+  `unknown` stops meaning "try the FAQ path and see": a request the assistant has no path for is
+  escalated deliberately — told in fixed text that a person now has it, without silencing the
+  assistant — and a non-request is answered. The middle cause is recorded as two, a corpus gap and a
+  request the assistant is not authorized to serve, because one is fixed by writing an FAQ entry and
+  the other by nothing.
+- **Three situations stop the conversation instead of answering it** — an urgent condition, evident
+  distress, and a request to book on another person's behalf. Each calls staff under its own cause,
+  shows that cause beside the message in the console, silences the assistant until a person acts,
+  and answers the patient with one fixed sentence. Distress is the deliberate exception to the rule
+  above: a frightened patient often asks for nothing, and that is exactly when a person is needed.
+  The assistant does not triage — recognizing these is a routing decision, and the urgent reply
+  points at emergency services rather than assessing anything.
+- **Phase 2 gets the cases to measure it with** — small-talk turns in the golden set, and one metric
+  that reads directly on this phase: the share of escalations raised by turns containing no request,
+  which should be zero.
 
+#### Phase 1g — One message, several requests
+A patient's sentence is a container, not a unit of work. "What's your address and what should I
+bring?" is two questions; "What's your address and what dentist slots are free tomorrow?" is two
+requests for two different specialists. Today the whole message is the retrieval query *and* the
+whole message is what each specialist is told to answer, and three separate failures fall out of
+that one fact: a compound question embeds to a point between both answers' chunks and clears
+neither gate, the FAQ node abstains on a booking clause no corpus could ever answer and pages a
+human for it, and the booking node — asked to answer the last message — writes the policy half out
+of nothing.
+
+- **The classifier returns requests, not labels.** Same single call, same cheap model, same
+  structured output: its schema becomes a list of `{intent, text}` segments, and 1b's list of
+  intents becomes the set of their labels — so the router's existing selection keeps working
+  unchanged.
+- **A segment is a standalone restatement, not a substring.** "Do you have parking, and is it
+  free?" splits into a second half that retrieves nothing on its own. The segmenter resolves
+  pronouns and ellipsis against the message and the history it already reads, so every segment
+  stands as a question by itself.
+- **Split conservatively — under-splitting is today's behavior, over-splitting is a new failure.**
+  One request stays one segment; a message splits only where the parts are independently
+  answerable, and the count is capped (3 to start, revisited against Phase 2's golden set) so a
+  rambling message cannot fan out without bound.
+- **Each specialist reads only its own segments.** This is the whole of the fix for the
+  mixed-intent failures: the FAQ node never sees the booking clause, so it cannot abstain on it,
+  and the booking node never sees the policy question, so it cannot answer it. The booking prompt
+  says so explicitly as well — it holds no clinic knowledge and answers nothing outside its
+  segments — because the input slice and the instruction fail independently.
+- **The retrieval pipeline runs once per FAQ segment, concurrently — never pooled.** Both 1e gates
+  and both caps apply per segment: a single shortlist shared by two questions re-creates the
+  original defect, with the stronger question's chunks crowding the other out under the 3-chunk
+  cap. Citations are derived per segment and deduplicated at the merge.
+- **The routing rules of 1c and 1f survive as they are**, now read per segment: `call_staff` still
+  takes the whole turn, small talk is still dropped whenever any segment is a real request, and an
+  `unknown` segment is still escalated deliberately.
+- **A single-request message pays nothing.** One segment means one specialist, no merge and no
+  composing call — the existing path, byte for byte.
+- **Every step is logged per segment.** 1e's six FAQ events gain the segment they belong to, so
+  eight events from one turn are attributable to the question that produced them, and the
+  classifier logs the segmentation it chose.
+
+#### Phase 1h — Answer what you can
+Once a turn carries several requests, one verdict for the turn is a value with two meanings: "the
+address question was answered" and "the what-to-bring question was not" cannot both be `answered`.
+This phase makes the turn report each request's outcome and serve the ones it can.
+
+- **The verdict moves to the segment.** 1e's `FaqVerdict` becomes per-request, and the turn's own
+  record is a summary of them rather than a value in its own right.
+- **A turn answers what it can and abstains only where it must** — the answerable half is delivered
+  with its citations, and the gap is named as a gap in the same reply.
+- **Escalation carries the unanswered question, not the message.** Staff receive the specific
+  request the corpus could not serve, verbatim; one escalation per turn however many segments
+  failed.
+- **The composer must not let the halves bleed.** An abstention may not be softened by an answered
+  segment beside it, and an answered segment may not be extended to cover the gap — the same
+  "preserve every claim exactly" constraint the merge already carries, now with abstention as a
+  claim.
+- **Phase 2 gets the cases to measure both phases** — golden-set messages carrying two and three
+  requests with a labeled expected segmentation, segmentation accuracy as a metric, and two that
+  read directly on this work: the share of escalations raised by a message that also contained an
+  answerable question, and the share of abstentions on questions the corpus demonstrably answers.
+  Both should be zero.
 
 ### Phase 2 — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does:

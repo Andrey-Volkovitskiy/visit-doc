@@ -1,0 +1,10 @@
+[{"id":"B1","text":"Hi, I need to cancel tomorrow","expected":"booking"},
+ {"id":"B2","text":"Hi, do I need a referral?","expected":"faq_question"},
+ {"id":"B3","text":"Thanks! Any slots on Monday?","expected":"booking"},
+ {"id":"B4","text":"Morning - what should I bring to a first visit?","expected":"faq_question"},
+ {"id":"B5","text":"Thanks, but I'd rather speak to someone","expected":"call_staff"},
+ {"id":"B6","text":"Hello! What are your opening hours?","expected":"faq_question"},
+ {"id":"B7","text":"Hey, can I move my Thursday appointment?","expected":"booking"},
+ {"id":"B8","text":"Good afternoon, which cardiologists do you have?","expected":"booking"},
+ {"id":"B9","text":"Thanks for that - and do you take walk-ins?","expected":"faq_question"},
+ {"id":"B10","text":"Great, book me in for Friday morning then","expected":"booking"}]

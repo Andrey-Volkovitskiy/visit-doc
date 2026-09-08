@@ -108,13 +108,18 @@ async def test_clearing_one_chats_marks_leaves_another_chats_alone() -> None:
     assert await _mark_of(other) == AttentionMark.UNANSWERED
 
 
-async def test_the_clearable_set_is_exactly_the_two_the_grid_names() -> None:
+async def test_the_clearable_set_is_exactly_the_six_the_grid_names() -> None:
     # The predicate of the clearing statement, as a value. If a permanent kind ever
     # joined it, the two tests above would still pass for the kinds they name while a
-    # diagnostic record was being erased.
+    # diagnostic record was being erased. Spec 009 added four, each one a request a
+    # staff reply completes.
     assert {mark.value for mark in CLEARABLE_MARKS} == {
         "patient_asked_for_person",
         "unanswered",
+        "urgent_condition",
+        "distress",
+        "booking_for_another_person",
+        "not_authorized",
     }
 
 
@@ -323,3 +328,28 @@ async def _switch(session_id: str, chat_id: str, *, enabled: bool) -> None:
                 await http.post(
                     f"/console/chats/{chat_id}/assistant", json={"enabled": enabled}
                 )
+
+
+# --- Phase 1f: a permanent mark beside a clearable one -------------------------------
+
+
+async def test_a_staff_reply_clears_not_authorized_and_keeps_a_corpus_gap() -> None:
+    # SC-014: the two live on the same conversation and answer differently, because a
+    # staff member writing the sick note ends that request while the missing document
+    # is still missing.
+    session_id, chat_id = await _chat()
+    await _message(session_id, chat_id, AttentionMark.NOT_AUTHORIZED)
+    await _message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+
+    async with session_factory() as session:
+        cleared = await chat_repository.clear_clearable_marks(
+            session, chat_id, session_id
+        )
+
+    assert cleared == 1
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    assert [m.attention_mark for m in messages] == [
+        None,
+        AttentionMark.CORPUS_COULD_NOT_ANSWER,
+    ]

@@ -19,6 +19,11 @@ extend-exclude = [
     "**/*_pb2.pyi",
     "**/*_pb2_grpc.py",
     "**/alembic/versions/*.py",
+    # `specs/` holds documentation, plus the data and one-off harnesses that manual
+    # procedures are run from (e.g. 009's evaluation inputs). None of it is application
+    # code, nothing imports it, and it ships with a spec rather than with the services -
+    # so it is excluded here rather than reshaped to satisfy rules written for the app.
+    "specs/**/*.py",
 ]
 
 [tool.ruff.lint]
@@ -85,7 +90,7 @@ files = [
 ]
 explicit_package_bases = true
 strict = true
-exclude = ["(^|/)tests/"]
+exclude = ["(^|/)tests/", "^specs/"]  # see the ruff note above on `specs/`
 
 [[tool.mypy.overrides]]
 module = "shared_proto.scheduling.v1.*"

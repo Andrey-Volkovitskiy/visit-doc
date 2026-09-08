@@ -913,3 +913,45 @@ async def test_a_superseding_patient_message_in_the_write_gap_keeps_the_reply() 
     async with session_factory() as session:
         messages = await chat_repository.list_messages(session, chat_id)
     assert sum(m.sender == MessageSender.ASSISTANT for m in messages) == 2
+
+
+# --- Phase 1f: the marks a staff reply clears ---------------------------------------
+
+
+@pytest.mark.parametrize(
+    "mark",
+    [
+        AttentionMark.URGENT_CONDITION,
+        AttentionMark.DISTRESS,
+        AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        AttentionMark.NOT_AUTHORIZED,
+    ],
+)
+async def test_a_staff_reply_clears_each_new_mark(mark: AttentionMark) -> None:
+    # A person reading the message and answering it is the whole of what each of these
+    # asked for, so nothing is left for the record to keep (FR-023a, FR-048).
+    session_id, chat_id = await _chat()
+    message_id = await _marked_message(session_id, chat_id, mark)
+
+    response = await _post(session_id, chat_id)
+
+    assert response.status_code == 201
+    assert await _marks(chat_id) == [None, None]
+    assert message_id
+
+
+async def test_a_staff_reply_leaves_a_corpus_gap_marked_on_the_same_conversation() -> (
+    None
+):
+    session_id, chat_id = await _chat()
+    await _marked_message(session_id, chat_id, AttentionMark.URGENT_CONDITION)
+    await _marked_message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
+
+    await _post(session_id, chat_id)
+
+    # The document is still missing, so the record of that survives the reply.
+    assert await _marks(chat_id) == [
+        None,
+        AttentionMark.CORPUS_COULD_NOT_ANSWER,
+        None,
+    ]

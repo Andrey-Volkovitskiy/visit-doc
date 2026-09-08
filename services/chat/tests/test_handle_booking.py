@@ -1428,3 +1428,21 @@ async def test_the_clinics_offer_reaches_a_booking_turn_with_no_silence() -> Non
     entry = _first_user_entry(client)
     assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in entry
     assert entry.endswith(f"{PATIENT_RESUMES_HEADING}\nyes please")
+
+
+# --- Phase 1f: who the appointment is for -------------------------------------------
+
+
+def test_the_prompt_establishes_the_beneficiary_before_booking() -> None:
+    """FR-045b: ambiguity is resolved by a question, never by stopping the chat.
+
+    An explicit third-party request is classified `booking_for_another` upstream and
+    never reaches this loop. What does reach it is the unclear case - a name, a "for
+    her" - and the safe move there is to ask, because a stop can only be lifted by a
+    staff member while a question can be answered in the next message.
+    """
+    from chat.agent.handle_booking import _SYSTEM_PROMPT
+
+    prompt = _SYSTEM_PROMPT.lower()
+    assert "who the appointment is for" in prompt
+    assert "someone else" in prompt

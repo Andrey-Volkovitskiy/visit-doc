@@ -10,16 +10,18 @@ that reads them, so the switch a staff member sees and the gate a turn obeys can
 disagree.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, MessageSender
 from chat.main import app
 from chat.repositories import chat_repository
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
+from pydantic import ValidationError
 from ulid import ULID
 
 from .conftest import fake_anthropic_client
@@ -386,3 +388,34 @@ async def test_a_conversation_with_no_messages_reports_no_message_time() -> None
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert row["last_message_at"] is None
+
+
+# --- Phase 1f: the four added marks on the wire --------------------------------------
+
+
+def test_message_out_accepts_every_attention_mark_kind() -> None:
+    from chat.domain.models import AttentionMark
+    from chat.domain.schemas import MessageOut
+
+    for mark in AttentionMark:
+        message = MessageOut(
+            id=str(ULID()),
+            sender="patient",
+            content="anything",
+            attention_mark=mark.value,
+            created_at=datetime.now(UTC),
+        )
+        assert message.attention_mark == mark.value
+
+
+def test_message_out_still_rejects_a_mark_it_does_not_know() -> None:
+    from chat.domain.schemas import MessageOut
+
+    with pytest.raises(ValidationError):
+        MessageOut(
+            id=str(ULID()),
+            sender="patient",
+            content="anything",
+            attention_mark="something_else",
+            created_at=datetime.now(UTC),
+        )

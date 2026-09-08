@@ -1,0 +1,9 @@
+[{"id":"E1","text":"My wife recommended you, can I book Tuesday?","expected":"booking"},
+ {"id":"E2","text":"Last year I had a heart attack, do I need a referral?","expected":"faq_question"},
+ {"id":"E4","text":"Ugh, my tooth is killing me","expected":"not_small_talk"},
+ {"id":"E5","text":"My mother told me you're open on Saturdays - is that right?","expected":"faq_question"},
+ {"id":"E6","text":"I was in a panic last week but I'm fine now - can I book a check-up?","expected":"booking"},
+ {"id":"E7","text":"Book me in with whoever my daughter saw last time","expected":"booking"},
+ {"id":"E8","text":"I'm a bit nervous about needles, do you do blood tests here?","expected":"faq_question"},
+ {"id":"E9","text":"My chest felt tight during exercise last month; should I get it checked?","expected":"booking"},
+ {"id":"E10","text":"Thanks - my husband says hello","expected":"small_talk"}]

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AttentionMark } from "../src/lib/chatStream";
 import {
+  ATTENTION_MARK_LABEL,
   createFaqEntry,
   createPractitioner,
   deleteFaqEntry,
@@ -138,5 +140,35 @@ describe("FAQ writes", () => {
     await expect(createFaqEntry("anything")).rejects.toThrow(
       "Could not save that entry. Please try again.",
     );
+  });
+});
+
+describe("attention mark labels", () => {
+  it("labels every kind of mark a message can carry", () => {
+    // Exhaustive by type: a mark with no label would render an empty badge, which
+    // teaches a staff member that "no label" means "nothing important".
+    const marks: AttentionMark[] = [
+      "patient_asked_for_person",
+      "corpus_could_not_answer",
+      "assistant_failed",
+      "unanswered",
+      "urgent_condition",
+      "distress",
+      "booking_for_another_person",
+      "not_authorized",
+    ];
+    for (const mark of marks) {
+      expect(ATTENTION_MARK_LABEL[mark]).toBeTruthy();
+    }
+  });
+
+  it("gives each of the new causes a label of its own", () => {
+    const labels = [
+      ATTENTION_MARK_LABEL.urgent_condition,
+      ATTENTION_MARK_LABEL.distress,
+      ATTENTION_MARK_LABEL.booking_for_another_person,
+      ATTENTION_MARK_LABEL.not_authorized,
+    ];
+    expect(new Set(labels).size).toBe(labels.length);
   });
 });

@@ -75,7 +75,11 @@ export type ChatEvent =
 
 /** Why one patient message needs a person. Never set on any other sender's message. */
 export type AttentionMark =
+  | "urgent_condition"
+  | "distress"
   | "patient_asked_for_person"
+  | "booking_for_another_person"
+  | "not_authorized"
   | "corpus_could_not_answer"
   | "assistant_failed"
   | "unanswered";

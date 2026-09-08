@@ -119,7 +119,11 @@ export async function postStaffMessage(
 
 /** What each kind of mark says, for a staff member reading one on a message. */
 export const ATTENTION_MARK_LABEL: Record<AttentionMark, string> = {
+  urgent_condition: "Urgent condition",
+  distress: "Patient in distress",
   patient_asked_for_person: "Asked for a person",
+  booking_for_another_person: "Booking for someone else",
+  not_authorized: "Not something the assistant may do",
   corpus_could_not_answer: "No answer in the clinic's documents",
   assistant_failed: "The assistant could not complete this",
   unanswered: "Arrived while the assistant was silent",
