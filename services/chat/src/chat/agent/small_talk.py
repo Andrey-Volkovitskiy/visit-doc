@@ -18,17 +18,13 @@ from dataclasses import dataclass
 from anthropic import AsyncAnthropic
 
 from chat.agent.history import (
-    ANSWERING_HEADING,
     bound_to_last_n_turns,
-    render_opening_clinic,
-    render_silent_window,
-    replace_trailing_entry,
-    silent_window,
-    to_claude_messages,
-    trailing_question,
+    to_claude_messages_separating_silence,
+    to_loggable_messages,
 )
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
+from chat.core.logging import get_logger
 from chat.domain.models import Message
 from chat.domain.schemas import ChatTokenEvent
 
@@ -81,9 +77,9 @@ async def answer_small_talk(
             Bounded here, before the call, exactly as every other node bounds it - "ok"
             means one thing after arrival instructions and another after a slot offer,
             so the reply needs the exchange around it. Messages held back from this
-            turn's answer are separated from it here too, exactly as `answer_faq` and
-            `handle_booking` separate them: nothing this node is told may fold a message
-            still waiting for a person into the one it is replying to.
+            turn's answer are separated from it here too, exactly as every other model
+            call in the turn separates them: nothing this node is told may fold a
+            message still waiting for a person into the one it is replying to.
 
     Yields: `ChatTokenEvent`s as they stream, then exactly one `SmallTalkResult`.
 
@@ -96,23 +92,13 @@ async def answer_small_talk(
     """
     settings = get_settings()
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
-    messages = to_claude_messages(bounded)
-    silenced = render_silent_window(silent_window(bounded))
-    if silenced:
-        # A turn that follows a silent window has two consecutive patient-sided bursts,
-        # and `to_claude_messages` rejoins them into one entry - so without this the
-        # messages a staff member was meant to answer arrive as part of the message this
-        # node is answering, with nothing to tell them apart by. The prompt below can
-        # forbid claiming staff were notified; it cannot forbid answering a question
-        # this node cannot see is not the one it was given. Restated through
-        # `replace_trailing_entry` for the reason both other specialists use it: that
-        # entry is also the one carrying the clinic's opening words whenever the render
-        # produced only one.
-        messages = replace_trailing_entry(
-            messages,
-            f"{silenced}\n\n{ANSWERING_HEADING}\n{trailing_question(bounded)}",
-            opening_clinic=render_opening_clinic(bounded),
-        )
+    # Separated rather than rendered flat: the prompt below can forbid claiming staff
+    # were notified, but it cannot forbid answering a question this node cannot see is
+    # not the one it was given. See `to_claude_messages_separating_silence`.
+    messages = to_claude_messages_separating_silence(bounded)
+    get_logger().debug(
+        "small_talk.model_request", messages=to_loggable_messages(messages)
+    )
 
     parts: list[str] = []
     try:

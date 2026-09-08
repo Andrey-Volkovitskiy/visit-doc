@@ -4,7 +4,7 @@ from typing import Any
 
 from anthropic import AsyncAnthropic
 
-from chat.agent.history import to_claude_messages
+from chat.agent.history import to_claude_messages_separating_silence
 from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
 from chat.domain.models import Message
@@ -110,7 +110,12 @@ async def classify_intent(
 
     Args:
         bursts: A `bound_to_last_n_turns()`-bounded window over the turn's
-            conversation history - never the full chat history.
+            conversation history - never the full chat history. Messages held back
+            from this turn are separated from it here, exactly as every specialist
+            separates them: the labels this call returns decide which cause the turn
+            hands over for, which sentence the patient is owed, which mark the message
+            carries and whether the conversation falls silent, so a message still
+            waiting for a person must not be able to drive any of the four.
 
     Raises: ClassificationFailedError on any API error, timeout, a response that
         fails to validate against the schema, or a validated response that still
@@ -124,7 +129,7 @@ async def classify_intent(
             model=get_settings().CLASSIFICATION_MODEL,
             max_tokens=_MAX_TOKENS,
             system=_SYSTEM_PROMPT,
-            messages=to_claude_messages(bursts),
+            messages=to_claude_messages_separating_silence(bursts),
             output_config={
                 "format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}
             },

@@ -26,15 +26,9 @@ from shared_models.localtime import parse_local_datetime
 
 from chat.agent.escalation import EscalationRequests
 from chat.agent.history import (
-    ANSWERING_HEADING,
     bound_to_last_n_turns,
-    render_opening_clinic,
-    render_silent_window,
-    replace_trailing_entry,
-    silent_window,
-    to_claude_messages,
+    to_claude_messages_separating_silence,
     to_loggable_messages,
-    trailing_question,
 )
 from chat.agent.tools.registry import ToolArgumentError, ToolRegistry
 from chat.core.config import get_settings
@@ -538,26 +532,12 @@ async def handle_booking(
         practitioners=_practitioners_section(await _read_roster(registry)),
     )
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
-    messages: list[MessageParam] = list(to_claude_messages(bounded))
-    silenced = render_silent_window(silent_window(bounded))
-    if silenced:
-        # This loop has no question field of its own - the prompt above tells the model
-        # to answer the last message in the conversation - and after a silent window
-        # that last entry is the window and the new message rejoined into one, with
-        # nothing to tell them apart by. Restated here so it can: acting on the window
-        # would cancel or book something a person had already taken over.
-        #
-        # Through `replace_trailing_entry` rather than by assigning `messages[-1]`:
-        # that entry is also the one carrying the clinic's opening words whenever the
-        # render produced only one, and overwriting it would leave the loop booking
-        # against an offer it can no longer see.
-        messages = list(
-            replace_trailing_entry(
-                messages,
-                f"{silenced}\n\n{ANSWERING_HEADING}\n{trailing_question(bounded)}",
-                opening_clinic=render_opening_clinic(bounded),
-            )
-        )
+    # This loop has no question field of its own - the prompt above tells the model to
+    # answer the last message in the conversation - so after a silent window it needs
+    # that last entry restated, or it would cancel or book against something a person
+    # had already taken over. See `to_claude_messages_separating_silence`. Copied into
+    # a list because the tool loop below appends this turn's exchanges to it.
+    messages: list[MessageParam] = list(to_claude_messages_separating_silence(bounded))
     tools = registry.to_anthropic_tools()
     observed: list[dict[str, Any]] = []
     tool_calls = 0

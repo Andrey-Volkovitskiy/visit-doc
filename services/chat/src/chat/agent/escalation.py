@@ -176,8 +176,8 @@ class EscalationRequests:
         return next(
             (
                 reason
-                for reason in _PRECEDENCE
-                if reason in _SILENCING and reason in self._recorded
+                for reason in in_precedence_order(self._recorded)
+                if reason in _SILENCING
             ),
             None,
         )
@@ -190,10 +190,8 @@ class EscalationRequests:
         the stronger of the two is what the message carries, and the weaker survives in
         the log rather than being lost.
         """
-        reason = next(
-            (reason for reason in _PRECEDENCE if reason in self._recorded), None
-        )
-        return None if reason is None else _MARK_BY_REASON[reason]
+        ordered = in_precedence_order(self._recorded)
+        return _MARK_BY_REASON[ordered[0]] if ordered else None
 
 
 async def apply_escalation(

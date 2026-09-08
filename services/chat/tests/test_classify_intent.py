@@ -228,3 +228,49 @@ def test_the_prompt_excludes_hyperbole_and_the_past_tense_from_urgency() -> None
     # And the recall that tightening cost once, restored by naming the red flags.
     for red_flag in ("chest pain", "difficulty breathing", "heavy bleeding"):
         assert red_flag in prompt
+
+
+# --- The silent window: context to read against, never the message being classified ---
+
+
+async def test_a_silent_window_is_separated_from_the_message_being_classified() -> None:
+    """The labels this call returns drive the hand-off, the mark and the silence.
+
+    `to_claude_messages` rejoins the two consecutive patient-sided bursts that
+    `exclude_silent_window` leaves behind, so without the separation the classifier
+    reads a message a staff member was meant to answer as part of the one it is
+    labelling - and a turn saying "thanks anyway" hands over, and re-silences the
+    conversation, for a request the patient made before a person took it.
+    """
+    from chat.agent.history import ANSWERING_HEADING, SILENT_WINDOW_NOTE
+
+    client = fake_classify_intent_client([IntentLabel.SMALL_TALK])
+    held_back = [
+        Message(
+            sender=MessageSender.PATIENT,
+            content="I need you to write me a sick note",
+            id="p0",
+        )
+    ]
+    answering = [
+        Message(sender=MessageSender.PATIENT, content="thanks anyway!", id="p1")
+    ]
+
+    await classify_intent(client, [held_back, answering])
+
+    entry = client.messages.create.call_args.kwargs["messages"][-1]["content"]
+    assert SILENT_WINDOW_NOTE in entry
+    assert "write me a sick note" in entry
+    assert entry.endswith(f"{ANSWERING_HEADING}\nthanks anyway!")
+
+
+async def test_an_ordinary_turn_is_classified_with_no_silent_window_note() -> None:
+    # The note is a seam a model has to read, absent when there is nothing to separate.
+    from chat.agent.history import SILENT_WINDOW_NOTE
+
+    client = fake_classify_intent_client([IntentLabel.FAQ_QUESTION])
+
+    await classify_intent(client, _CONTEXT)
+
+    entries = client.messages.create.call_args.kwargs["messages"]
+    assert SILENT_WINDOW_NOTE not in " ".join(str(e["content"]) for e in entries)

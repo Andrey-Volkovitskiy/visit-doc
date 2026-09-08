@@ -375,6 +375,48 @@ def replace_trailing_entry(
     return [*entries[:-1], cast(MessageParam, {"role": "user", "content": content})]
 
 
+def to_claude_messages_separating_silence(
+    bounded: list[list[Message]],
+) -> list[MessageParam]:
+    """Render `bounded` with the silent window held apart from the trailing message.
+
+    Args:
+        bounded: this turn's history, already cut to the context window.
+
+    Returns: what `to_claude_messages` renders, except that a turn following a silent
+        window gets its trailing entry restated - the held-back messages behind
+        `SILENT_WINDOW_NOTE`, then `ANSWERING_HEADING`, then the message this turn is
+        actually answering.
+
+    For every caller that sends the rendered window as it stands and answers its last
+    entry. `to_claude_messages` rejoins two consecutive patient-sided bursts into one,
+    because the Messages API forbids consecutive same-role entries - and that pair is
+    exactly what `exclude_silent_window` leaves behind. So the entry a model would read
+    as "the message" is the window and the new message with nothing to tell them apart
+    by, and a prompt can forbid claiming staff were notified but cannot forbid answering
+    a question the model cannot see is not the one it was given.
+
+    One function rather than the same six lines in each caller: it was written three
+    times, shipped missing from a fourth, and is still the difference between reading
+    a held-back message as context and acting on it. `answer_faq` is the one caller
+    that does not use this - it replaces the trailing entry with a prompt carrying its
+    retrieved context, so it renders the window into that prompt itself.
+    """
+    entries = to_claude_messages(bounded)
+    silenced = render_silent_window(silent_window(bounded))
+    if not silenced:
+        return entries
+    # Through `replace_trailing_entry` rather than by assigning `entries[-1]`: that
+    # entry is also the one carrying the clinic's opening words whenever the render
+    # produced only one, and overwriting it would delete the offer the patient's own
+    # message is answering.
+    return replace_trailing_entry(
+        entries,
+        f"{silenced}\n\n{ANSWERING_HEADING}\n{trailing_question(bounded)}",
+        opening_clinic=render_opening_clinic(bounded),
+    )
+
+
 # A thinking block's `signature` is the API's own integrity token over that block -
 # a few hundred opaque characters that say nothing about what the model saw or
 # decided. Dropped from the *rendering* only; the block itself still goes back to the

@@ -80,10 +80,10 @@ _SMALL_TALK = "small_talk"
 _HAND_OFF = "hand_off"
 _COMPOSE_ANSWER = "compose_answer"
 
-# Which specialist each classified intent implies. Anything not listed - unknown, a
-# failed classification - falls back to the FAQ path, which is today's default.
-# `call_staff` is absent because it is not a specialist's job at all: see
-# `_select_specialists`.
+# Which specialist each classified intent implies. A label with no specialist either
+# calls a person - every key of `_HANDOFF_REASON_BY_INTENT`, `unknown` included, which
+# is not a specialist's job at all - or is `classification_failed`, the one label left
+# that falls back to the FAQ path. See `_select_specialists`.
 _SPECIALIST_BY_INTENT = {
     IntentLabel.FAQ_QUESTION: _ANSWER_FAQ,
     IntentLabel.BOOKING: _HANDLE_BOOKING,
@@ -190,7 +190,7 @@ def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
 
 
 def _select_specialists(
-    intents: list[IntentLabel], reasons: list[EscalationReason]
+    intents: list[IntentLabel], stopping: EscalationReason | None
 ) -> list[str]:
     """Return the node(s) `intents` implies, in a stable order.
 
@@ -214,11 +214,12 @@ def _select_specialists(
     answer at all.
 
     Args:
-        reasons: `_handoff_reasons(intents)`, computed once by the caller - which also
-            records every one of them, so deriving it here again would be the same
-            decision made twice from the same input.
+        stopping: the strongest of `_handoff_reasons(intents)`, or None when the turn
+            calls nobody. Passed in rather than derived here, because the caller has
+            already taken it - to record every cause and to name the one the hand-off
+            node writes for - and "which cause stops this turn" answered twice from one
+            input is two answers waiting to differ.
     """
-    stopping = reasons[0] if reasons else None
     if stopping is not None and stopping is not EscalationReason.NOT_AUTHORIZED:
         return [_HAND_OFF]
     selected = {
@@ -333,18 +334,28 @@ def _build_graph(
             reasons = _handoff_reasons(intents)
             for reason in reasons:
                 state["escalation"].record(reason)
-            specialists = _select_specialists(intents, reasons)
+            # Taken once, here: the strongest cause is what the hand-off node writes
+            # for, what the router routes on, and what decides whether a notice is
+            # owed, and those three must be the same answer.
+            stopping = reasons[0] if reasons else None
+            specialists = _select_specialists(intents, stopping)
             # `unknown` alongside something servable is a notice owed, not a hand-off:
             # the servable half still runs, and the composer says the rest went to
-            # staff (FR-022d). Alone, it is the whole turn.
+            # staff (FR-022d). Alone - which is what "the strongest cause is this one"
+            # means for the weakest cause there is - it is the whole turn.
+            #
+            # `_HAND_OFF not in`, not `!= [_HAND_OFF]`: a route that ever carried the
+            # hand-off node beside something else must not read here as a notice owed,
+            # or the turn would write its constant and then stream a composed reply
+            # over it.
             notice_required = (
-                EscalationReason.NOT_AUTHORIZED in reasons
-                and specialists != [_HAND_OFF]
+                stopping is EscalationReason.NOT_AUTHORIZED
+                and _HAND_OFF not in specialists
             )
             # The turn hands over for the strongest of them - unless the only cause is
             # a request the assistant may not serve *and* something servable ran, in
             # which case the notice is the composer's to render (FR-022d).
-            handoff_reason = None if notice_required or not reasons else reasons[0]
+            handoff_reason = None if notice_required else stopping
 
             merge_required = len(specialists) > 1 or notice_required
             span.set(

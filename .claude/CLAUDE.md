@@ -273,8 +273,11 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   authority grounds; something failed. A message that requests nothing calls nobody — before 009,
   "Thanks" took the FAQ path, abstained, and paged a human. The middle two are recorded as two
   causes each (`corpus_could_not_answer` vs `not_authorized`; `urgent_condition` vs `distress` vs
-  `booking_for_another_person`) because they call for different fixes, and one table in
-  `agent/escalation.py` gives every cause its text, its mark, and whether it silences. Four causes
+  `booking_for_another_person`) because they call for different fixes. `agent/escalation.py` holds
+  the structures that decide what each cause does: `_PRECEDENCE` orders them, `_SILENCING` says
+  which stop the assistant, `_MARK_BY_REASON` derives the message mark, and `HANDOFF_TEXT` gives a
+  constant to each of the five that *end* a turn — a corpus gap and a failure have none, because
+  neither ends one. Four causes
   silence the conversation; `not_authorized`, a corpus gap and a failure do not. The four texts are
   constants, not generated: a stopping reply makes no claim about the clinic, which is the only
   thing retrieval could have grounded. The assistant does not triage — `urgent_condition` is a

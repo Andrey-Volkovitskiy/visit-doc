@@ -830,6 +830,17 @@ def test_every_cause_has_a_row_in_the_table() -> None:
         assert HANDOFF_TEXT[reason].strip()
 
 
+def test_the_texts_are_exactly_the_causes_the_router_hands_off_for() -> None:
+    # Derived from the router's own mapping, not from a list beside it: `hand_off_node`
+    # indexes `HANDOFF_TEXT` with whatever cause the router put in the state, so a
+    # sixth cause added there without a text is a KeyError in a patient's turn - and
+    # against a hand-written tuple every test still passes.
+    from chat.agent.escalation import HANDOFF_TEXT
+    from chat.agent.graph import _HANDOFF_REASON_BY_INTENT
+
+    assert set(HANDOFF_TEXT) == set(_HANDOFF_REASON_BY_INTENT.values())
+
+
 def test_urgent_outranks_distress_on_one_message() -> None:
     requests = EscalationRequests()
     requests.record(_DISTRESS)
