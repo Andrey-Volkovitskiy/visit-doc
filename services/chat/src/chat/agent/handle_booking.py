@@ -533,6 +533,11 @@ async def handle_booking(
     The clinic's roster is read before the first model call and put in the prompt, so
     the model has the ids it would otherwise guess at. A roster that cannot be read
     leaves the turn running without it, told that it does not know who works here.
+
+    An iteration whose response ran into `_MAX_TOKENS` is recorded as
+    `booking.truncated` and otherwise handled as it stands: whatever the call did
+    before it ran out of room may already have been a tool call this turn has to
+    answer for.
     """
     logger = get_logger()
     settings = get_settings()
@@ -598,6 +603,19 @@ async def handle_booking(
             tool_names=[block.name for block in tool_uses],
             text=reply_text,
         )
+        if response.stop_reason == "max_tokens":
+            # Logged, not raised: whatever the call did before it ran out of room may
+            # already have been a tool call this turn has to answer for. A reply cut
+            # off here otherwise reads as a short complete one, and a `tool_use` block
+            # cut off mid-arguments reaches the handler as an argument error attributed
+            # to the model rather than to the cap.
+            logger.warning(
+                "booking.truncated",
+                iteration=iteration,
+                max_tokens=_MAX_TOKENS,
+                text_chars=len(reply_text),
+                tool_names=[block.name for block in tool_uses],
+            )
 
         if not tool_uses:
             if stream:

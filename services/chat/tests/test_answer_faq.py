@@ -33,6 +33,8 @@ from chat.rag.pipeline import ScoredChunk
 from chat.rag.reranking import rerank_chunks as real_rerank_chunks
 from structlog.testing import capture_logs
 
+from .conftest import FakeFinalMessage
+
 _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
 
@@ -56,9 +58,12 @@ def _chunk(
 class _Stream:
     """Minimal stand-in for `anthropic.messages.stream(...)`."""
 
-    def __init__(self, text: str, recorder: dict[str, object]) -> None:
+    def __init__(
+        self, text: str, recorder: dict[str, object], stop_reason: str = "end_turn"
+    ) -> None:
         self._text = text
         self._recorder = recorder
+        self._stop_reason = stop_reason
 
     async def __aenter__(self) -> Self:
         return self
@@ -71,15 +76,19 @@ class _Stream:
 
         yield SimpleNamespace(type="text", text=self._text)
 
+    async def get_final_message(self) -> FakeFinalMessage:
+        return FakeFinalMessage(self._stop_reason)
 
-def _anthropic(recorder: dict[str, object]) -> AsyncMock:
+
+def _anthropic(recorder: dict[str, object], stop_reason: str = "end_turn") -> AsyncMock:
     client = AsyncMock()
 
     def stream(**kwargs: object) -> _Stream:
         recorder["calls"] = int(recorder.get("calls", 0)) + 1
         recorder["messages"] = kwargs.get("messages")
         recorder.setdefault("prompts", []).append(str(kwargs.get("messages")))
-        return _Stream("an answer", recorder)
+        recorder["max_tokens"] = kwargs.get("max_tokens")
+        return _Stream("an answer", recorder, stop_reason=stop_reason)
 
     client.messages.stream = stream
     return client
@@ -91,6 +100,7 @@ async def _run(
     reranked: list[ScoredChunk] | None,
     live_revisions: list[str] | None = None,
     question: str = "what should I bring?",
+    stop_reason: str = "end_turn",
 ) -> tuple[FaqResult, dict[str, object], AsyncMock, EscalationRequests]:
     """Drive one FAQ turn. Returns its result, a call recorder, the rerank mock, and
     the turn's escalation collector."""
@@ -107,7 +117,7 @@ async def _run(
             AsyncMock(),
             AsyncMock(),
             AsyncMock(),
-            _anthropic(recorder),
+            _anthropic(recorder, stop_reason=stop_reason),
             _bursts(question),
             ["p1"],
             _SESSION,
@@ -862,8 +872,11 @@ async def test_one_requests_search_failure_fails_the_whole_turn() -> None:
 async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
     # `asyncio.gather` alone leaves the siblings running: the turn is already over, and
     # they would keep spending generation calls on an answer nobody reads, then raise
-    # into nothing. Neither reaches its generation call here.
-    generated: list[str] = []
+    # into nothing. Both assertions below are needed - `retrieved` says the siblings
+    # were stopped where they stood, `recorder` says neither went on to generate, which
+    # is the call that costs.
+    retrieved: list[str] = []
+    recorder: dict[str, object] = {}
 
     async def _search(
         _q: object, _v: object, query: str, _s: str, _r: list[str]
@@ -872,7 +885,7 @@ async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
             await asyncio.sleep(0)
             raise TurnPipelineError("retrieval", RuntimeError("qdrant is down"))
         await asyncio.sleep(0.05)
-        generated.append(query)
+        retrieved.append(query)
         return [_chunk(0)]
 
     with (
@@ -884,7 +897,7 @@ async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
             AsyncMock(),
             AsyncMock(),
             AsyncMock(),
-            _anthropic({}),
+            _anthropic(recorder),
             _bursts("fails? slow? also slow?"),
             ["p1"],
             _SESSION,
@@ -896,7 +909,44 @@ async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
             pass
 
     await asyncio.sleep(0.1)
-    assert generated == []
+    assert retrieved == []
+    assert recorder.get("calls", 0) == 0
+
+
+async def test_an_answer_cut_off_at_the_cap_is_still_delivered() -> None:
+    # It rests on evidence that cleared both gates, so abstaining over it would be a
+    # lie about the corpus. The turn answers, and the cut is recorded instead.
+    result, _, _, escalation = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        stop_reason="max_tokens",
+    )
+
+    assert result.verdict is FaqVerdict.ANSWERED
+    assert result.answer_text == "an answer"
+    # Nobody is called: the answer was grounded, it just stopped early.
+    assert escalation.recorded == ()
+
+
+async def test_an_answer_cut_off_at_the_cap_says_so_in_the_log() -> None:
+    # A clipped answer otherwise looks exactly like a short complete one.
+    with capture_logs() as logs:
+        await _run(
+            pool=[_chunk(0)],
+            reranked=[_chunk(0, rerank=0.9)],
+            stop_reason="max_tokens",
+        )
+
+    truncated = _events(logs)["faq.truncated"]
+    assert truncated["answer_chars"] == len("an answer")
+    assert truncated["max_tokens"] > 0
+
+
+async def test_an_answer_that_finished_on_its_own_records_no_truncation() -> None:
+    with capture_logs() as logs:
+        await _run(pool=[_chunk(0)], reranked=[_chunk(0, rerank=0.9)])
+
+    assert "faq.truncated" not in _events(logs)
 
 
 async def test_the_faq_half_abstains_whole_when_one_request_cannot_be_answered() -> (

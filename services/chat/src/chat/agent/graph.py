@@ -687,11 +687,19 @@ def _build_graph(
         completion = TurnCompletion()
         parts = _actual_parts(state)
         if parts > 1 and not state["specialists_collect"]:
-            # The route expected one part, so a specialist streamed its own reply and
-            # its own terminal event - composing a second one now would answer the
-            # patient twice. `_expected_parts` is what has to bound `_actual_parts`,
-            # and this is where a route that stopped doing so is caught.
-            raise RuntimeError("a streamed turn produced more than one part")
+            # The route expected one part, so a specialist has already streamed its own
+            # reply and its own terminal event. `_expected_parts` is what has to bound
+            # `_actual_parts`, and this is where a route that stopped doing so is
+            # caught - but not by raising: merging would answer the patient twice, and
+            # failing the turn would throw away a reply they have already been shown
+            # and been told is final. The turn is recorded as the one part that
+            # actually reached them, and the route's mismatch is the log's to report.
+            get_logger().error(
+                "compose.unexpected_parts",
+                parts=parts,
+                specialists=state["specialists"],
+            )
+            parts = 1
         async with node_span(_COMPOSE_ANSWER) as span:
             if parts <= 1:
                 answer_text, citations, verdict, source = _single_specialist_reply(

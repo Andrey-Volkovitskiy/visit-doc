@@ -64,6 +64,9 @@ from chat.rag.pipeline import (
 from chat.rag.reranking import rerank_chunks
 from chat.rag.retriever import search_faq
 
+# One question's answer, not the turn's: a turn carrying several questions spends this
+# per question, and the merge step's own budget is built from this number.
+_MAX_TOKENS = 1024
 _SYSTEM_PROMPT = (
     "You are a clinic assistant. Answer the visitor's question using ONLY the provided "
     "context. Do not use outside knowledge. Be concise."
@@ -274,6 +277,11 @@ async def _answer_one(
 
     Raises: TurnPipelineError wrapping any failure in embedding, retrieval or
         generation.
+
+    An answer that ran into `_MAX_TOKENS` is delivered as it stands and recorded as
+    `faq.truncated`: it rests on evidence that cleared both gates, so abstaining over
+    it would be a lie about the corpus, and a clipped answer otherwise reads as a short
+    complete one.
     """
     with bound_contextvars(segment=position):
         async for event in _answer_one_bound(position, segment, context, stream=stream):
@@ -344,7 +352,7 @@ async def _answer_one_bound(
     try:
         async with context.anthropic_client.messages.stream(
             model=get_settings().GENERATION_MODEL,
-            max_tokens=1024,
+            max_tokens=_MAX_TOKENS,
             system=_SYSTEM_PROMPT,
             messages=messages,
         ) as stream_response:
@@ -353,8 +361,25 @@ async def _answer_one_bound(
                     answer_parts.append(event.text)
                     if stream:
                         yield ChatTokenEvent(text=event.text)
+            # Read after the loop, the same way `answer_small_talk` reads it: the SDK
+            # accumulates the final message, and this is the documented way to ask why
+            # it stopped. Inside the `try` because a failure to obtain it is a failure
+            # of the same call.
+            final = await stream_response.get_final_message()
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
+
+    if final.stop_reason == "max_tokens":
+        # Logged, not raised, and staff are not called: in streaming mode the tokens
+        # have already reached the patient, and an abstention would be a lie about
+        # evidence that did clear both gates. What is owed is a record - an answer cut
+        # off at the cap otherwise looks exactly like a short complete one, and this is
+        # the event that says which it was, per request.
+        logger.warning(
+            "faq.truncated",
+            max_tokens=_MAX_TOKENS,
+            answer_chars=sum(len(part) for part in answer_parts),
+        )
 
     yield FaqSegmentAnswer(
         position=position,

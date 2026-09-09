@@ -20,6 +20,7 @@ from chat.core.correlation import turn_elapsed_ms
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.schemas import (
+    MAX_SEGMENTS,
     AnswerSource,
     ChatDoneEvent,
     ChatTokenEvent,
@@ -29,11 +30,15 @@ from chat.domain.schemas import (
 )
 from chat.rag.pipeline import ScoredChunk
 
-# Larger than either half's own budget, because what this call writes has to hold both
-# of them: up to `MAX_SEGMENTS` question answers, each generated under a 1024 cap, plus
-# a booking reply. At the halves' own cap the merge is the one step that can silently
-# cut the reply off - nothing downstream records that it was truncated.
-_MAX_TOKENS = 2048
+# What one half's part of the merge was itself written under - the FAQ path's and the
+# booking loop's own cap, which are the same number. Restated rather than imported:
+# `answer_faq` imports this module, so the dependency cannot run the other way.
+_PART_MAX_TOKENS = 1024
+# Derived, not chosen: this call has to hold every part at once - up to `MAX_SEGMENTS`
+# question answers plus a booking reply - so a budget smaller than their sum is one the
+# worst legal merge runs past. A run that still hits it is logged, because the merge is
+# the one step that can cut the reply off with nothing downstream to notice.
+_MAX_TOKENS = (MAX_SEGMENTS + 1) * _PART_MAX_TOKENS
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
 message had more than one part. Every part that was in it is labelled below, with what
 was done about it - a question answered from the clinic's knowledge base, something
@@ -297,6 +302,10 @@ async def compose_answer(
     Citations are carried through from the chunks the FAQ half actually retrieved and
     are never re-reported by the composing model, so a merged answer cites exactly what
     a single-specialist answer would have.
+
+    A reply that ran into `_MAX_TOKENS` is streamed as it stands and recorded as
+    `compose.truncated`: the tokens have already reached the patient, and the halves
+    this call merged cannot report a cut that happened here.
     """
     prompt = _build_prompt(
         faq_result, booking_reply, booking_outcome, notice_required=notice_required
@@ -314,10 +323,25 @@ async def compose_answer(
                 if event.type == "text":
                     answer_parts.append(event.text)
                     yield ChatTokenEvent(text=event.text)
+            # Read after the loop, the same way `answer_small_talk` reads it: the SDK
+            # accumulates the final message, and this is the documented way to ask why
+            # it stopped. Inside the `try` because a failure to obtain it is a failure
+            # of the same call.
+            final = await stream.get_final_message()
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 
     answer_text = "".join(answer_parts)
+    if final.stop_reason == "max_tokens":
+        # Logged, not raised: the tokens have already reached the patient, so there is
+        # nothing left to fail cleanly. What is owed is a record - a merged reply that
+        # ends mid-sentence otherwise looks exactly like a short complete one, and this
+        # is the only step of the turn whose own halves cannot report it.
+        get_logger().warning(
+            "compose.truncated",
+            max_tokens=_MAX_TOKENS,
+            answer_chars=len(answer_text),
+        )
     citations = faq_result.citations if faq_result is not None else []
     verdict = faq_result.verdict if faq_result is not None else None
     fields: dict[str, object] = {
@@ -436,16 +460,15 @@ def _build_prompt(
         if faq_result.verdict.answered:
             # One block per request, each naming the question it answers: an answer
             # attached to the wrong question is a wrong answer, not a formatting slip.
-            # `answer_text` is the fallback for a result carrying no per-request
-            # answers at all, so a half that answered can never reach the composer as
-            # no block - which would drop the answered question from the reply
-            # silently, the one failure this prompt cannot be inspected for.
+            # Always at least one block - `FaqResult.from_segments` refuses to build a
+            # result out of no answers at all - so an answered half cannot reach the
+            # composer as no block, and there is no empty block to fall back on. An
+            # empty one would be worse than none: the prompt above requires every
+            # labelled claim to be preserved exactly, and a label with nothing under it
+            # is an invitation to write one.
             parts.extend(
-                [
-                    f'Answer to the question "{answer.question}":\n{answer.answer_text}'
-                    for answer in faq_result.segment_answers
-                ]
-                or [f"Answer to the question part:\n{faq_result.answer_text or ''}"]
+                f'Answer to the question "{answer.question}":\n{answer.answer_text}'
+                for answer in faq_result.segment_answers
             )
         else:
             parts.append(

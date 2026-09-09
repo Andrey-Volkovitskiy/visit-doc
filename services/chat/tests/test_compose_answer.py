@@ -17,6 +17,7 @@ from chat.agent.handle_booking import BookingOutcome
 from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
 from chat.domain.schemas import (
+    MAX_SEGMENTS,
     AnswerSource,
     ChatDoneEvent,
     ChatTokenEvent,
@@ -38,9 +39,11 @@ _SEGMENTS = [
 _REPLY_IDS = ["01TURN"]
 
 
-def _client(tokens: list[str]) -> MagicMock:
+def _client(tokens: list[str], stop_reason: str = "end_turn") -> MagicMock:
     client = MagicMock()
-    client.messages.stream.return_value = FakeAnthropicStream(tokens)
+    client.messages.stream.return_value = FakeAnthropicStream(
+        tokens, stop_reason=stop_reason
+    )
     return client
 
 
@@ -708,3 +711,56 @@ async def test_an_abstaining_half_still_renders_as_one_gap() -> None:
     prompt = str(client.messages.stream.call_args.kwargs["messages"])
     assert prompt.count("no confident answer") == 1
     assert done.faq_verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
+
+
+async def test_a_merged_reply_cut_off_at_the_cap_says_so_in_the_log() -> None:
+    # The merge is the one step whose halves cannot report a cut that happened here:
+    # each of them finished inside its own budget, and only this call ran past one.
+    client = _client(["Visiting hours are 8-5, and you're booked for"], "max_tokens")
+
+    with capture_logs() as logs:
+        await _compose(
+            client,
+            faq_result=_answered_faq(),
+            booking_reply="Friday at 9 it is.",
+            booking_outcome=str(BookingOutcome.BOOKED),
+        )
+
+    truncated = next(entry for entry in logs if entry["event"] == "compose.truncated")
+    assert (
+        truncated["max_tokens"] == client.messages.stream.call_args.kwargs["max_tokens"]
+    )
+
+
+async def test_a_merged_reply_that_finished_on_its_own_records_no_truncation() -> None:
+    client = _client(["Visiting hours are 8-5."])
+
+    with capture_logs() as logs:
+        await _compose(
+            client,
+            faq_result=_answered_faq(),
+            booking_reply="Friday at 9 it is.",
+            booking_outcome=str(BookingOutcome.BOOKED),
+        )
+
+    assert not [e for e in logs if e["event"] == "compose.truncated"]
+
+
+async def test_the_merge_budget_holds_every_part_it_can_be_handed() -> None:
+    # A cap below the sum of the parts is one the worst legal merge runs past. Read off
+    # the halves' own caps rather than restated, so raising one of theirs without
+    # raising this one fails here instead of clipping a reply in production.
+    from chat.agent.answer_faq import _MAX_TOKENS as FAQ_MAX_TOKENS
+    from chat.agent.handle_booking import _MAX_TOKENS as BOOKING_MAX_TOKENS
+
+    client = _client(["Merged."])
+
+    await _compose(
+        client,
+        faq_result=_answered_faq(),
+        booking_reply="Friday at 9 it is.",
+        booking_outcome=str(BookingOutcome.BOOKED),
+    )
+
+    sent = client.messages.stream.call_args.kwargs["max_tokens"]
+    assert sent >= MAX_SEGMENTS * FAQ_MAX_TOKENS + BOOKING_MAX_TOKENS

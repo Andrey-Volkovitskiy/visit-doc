@@ -51,6 +51,21 @@ async def test_classify_intent_raises_on_unparseable_response() -> None:
         await classify_intent(client, _CONTEXT)
 
 
+async def test_classify_intent_names_a_response_that_ran_out_of_room() -> None:
+    # A truncated response and a malformed one both fall back, but need opposite fixes
+    # - raise the cap, or look at what the model wrote - so the message says which.
+    # The body here is valid JSON precisely so that only `stop_reason` can tell them
+    # apart: a cap check that never ran would let this call succeed.
+    client = fake_classify_intent_client(
+        [IntentLabel.FAQ_QUESTION], stop_reason="max_tokens"
+    )
+
+    with pytest.raises(ClassificationFailedError) as raised:
+        await classify_intent(client, _CONTEXT)
+
+    assert "output tokens" in str(raised.value)
+
+
 async def test_classify_intent_raises_when_model_returns_classification_failed() -> (
     None
 ):

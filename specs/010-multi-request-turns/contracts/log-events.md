@@ -69,6 +69,34 @@ only what the composing model wrote, and a bad merge cannot be told from a bad h
 The node's span stays one span for the whole FAQ half: the fan-out is inside it, and a span per
 segment would claim a graph node per segment that does not exist.
 
+## Where a reply ran out of room
+
+Three warnings, each raised where a generation call stopped because it hit its own cap rather than
+because it was finished. `small_talk.truncated` (spec 009) already covered the fourth such call;
+together they complete the set, so no path can clip a reply the log does not name.
+
+| Event | Level | Fields | Raised when |
+|---|---|---|---|
+| `faq.truncated` | warning | `max_tokens`, `answer_chars` | **New.** One request's answer hit the FAQ cap. Carries `segment` from the bound context, so it names which request |
+| `compose.truncated` | warning | `max_tokens`, `answer_chars` | **New.** The merged reply hit the merge's cap |
+| `booking.truncated` | warning | `iteration`, `max_tokens`, `text_chars`, `tool_names` | **New.** One iteration of the booking loop hit its cap — the iteration is named because a truncated `tool_use` block reaches the handler as an argument error |
+
+None of the three fails the turn and none calls a person: the tokens have already reached the
+patient, so there is nothing left to fail cleanly, and an answer that ran long is not one the
+corpus could not answer. The record is what is owed — a clipped reply otherwise reads as a short
+complete one.
+
+`compose.truncated` matters most of the three: the merge is the only step whose input is other
+steps' output, so its cap has to hold every part at once (`MAX_SEGMENTS` question answers plus a
+booking reply, each written under its own cap), and the halves it merged cannot report a cut that
+happened after they finished.
+
+The **classifier** is the one call that raises no event of its own for this, because it does not
+reach the patient: a response that ran out of room fails classification, and the turn falls back to
+the unsplit message exactly as it does for any other invalid one. What the cap buys there is the
+`error_detail` on `intent.classification_failed`, which now names the cap rather than reporting the
+truncated body as malformed JSON — the two need opposite fixes and were previously indistinguishable.
+
 ## What Phase 2 gets from this
 
 - Segmentation accuracy, computed from `intent.classified.segments` against the labelled sets.

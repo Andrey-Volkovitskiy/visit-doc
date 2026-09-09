@@ -30,6 +30,7 @@ from ulid import ULID
 
 from .conftest import (
     LOCAL_NOW,
+    FakeFinalMessage,
     FakeTextEvent,
     fake_anthropic_client,
     fake_embed_texts,
@@ -386,6 +387,9 @@ class _PartialStream:
         await self._gate.wait()
         for token in self._after:
             yield FakeTextEvent(token)
+
+    async def get_final_message(self) -> FakeFinalMessage:
+        return FakeFinalMessage("end_turn")
 
 
 _TOKENS = ["Visiting ", "hours ", "are 8am to 5pm."]

@@ -151,12 +151,13 @@ def _tool_use_response(calls: list[tuple[str, dict[str, Any]]]) -> MagicMock:
     return response
 
 
-def _text_response(text: str) -> MagicMock:
+def _text_response(text: str, stop_reason: str = "end_turn") -> MagicMock:
     block = MagicMock()
     block.type = "text"
     block.text = text
     response = MagicMock()
     response.content = [block]
+    response.stop_reason = stop_reason
     return response
 
 
@@ -433,6 +434,31 @@ async def test_the_loop_stops_at_its_iteration_bound() -> None:
     assert result.iterations == 6
     assert len(_model_dispatched(registry)) == 6
     assert result.reply_text
+
+
+async def test_a_booking_reply_cut_off_at_the_cap_says_so_in_the_log() -> None:
+    # The reply is still delivered - it may already have booked something - but a
+    # clipped one otherwise reads as a short complete one.
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Tuesday at 9 is free - shall I", "max_tokens")])
+
+    with capture_logs() as logs:
+        _, result = await _run(client, registry, _bursts("book me something"))
+
+    truncated = next(e for e in logs if e["event"] == "booking.truncated")
+    assert truncated["log_level"] == "warning"
+    assert truncated["iteration"] == 1
+    assert result.reply_text == "Tuesday at 9 is free - shall I"
+
+
+async def test_a_booking_reply_that_finished_on_its_own_records_no_truncation() -> None:
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("What day suits you?")])
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("book me something"))
+
+    assert not [e for e in logs if e["event"] == "booking.truncated"]
 
 
 async def test_the_conversation_context_is_bounded_to_the_last_five_turns() -> None:

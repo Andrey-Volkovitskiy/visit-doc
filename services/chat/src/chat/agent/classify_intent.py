@@ -179,10 +179,11 @@ async def classify_intent(
             carries and whether the conversation falls silent, so a message still
             waiting for a person must not be able to drive any of the four.
 
-    Raises: ClassificationFailedError on any API error, timeout, a response that
-        fails to validate against the schema, or a validated response that still
-        contains `CLASSIFICATION_FAILED` - never returns a result containing it. Its
-        `failure` says which of those it was.
+    Raises: ClassificationFailedError on any API error, timeout, a response that ran
+        into `_MAX_TOKENS`, a response that fails to validate against the schema, or a
+        validated response that still contains `CLASSIFICATION_FAILED` - never returns
+        a result containing it. Its `failure` says which of those it was, and its
+        message says which of the last three.
 
     Uses native JSON Outputs (`output_config.format`), not tool-use.
     """
@@ -196,6 +197,14 @@ async def classify_intent(
                 "format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}
             },
         )
+        if response.stop_reason == "max_tokens":
+            # Named rather than left to the parse below, which would report it as
+            # malformed JSON. Both fall back the same way, but they need opposite
+            # fixes - raise the cap, or look at what the model returned - and the two
+            # are indistinguishable once a truncated response is a `ValidationError`.
+            raise ClassificationFailedError(
+                "the classification ran out of output tokens", AnthropicFailure.ANSWERED
+            )
         block = response.content[0]
         if block.type != "text":
             raise ClassificationFailedError(

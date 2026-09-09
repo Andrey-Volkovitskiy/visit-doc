@@ -69,17 +69,22 @@ def _mock_tool_use_response(calls: list[tuple[str, dict[str, object]]]) -> Magic
     return response
 
 
-def _mock_text_response(text: str) -> MagicMock:
+def _mock_text_response(text: str, stop_reason: str = "end_turn") -> MagicMock:
     """Build a mocked Anthropic `.messages.create(...)` response whose sole content
     block is a `text`-type block carrying `text` - the shape both
     `fake_classify_intent_client`'s and `fake_anthropic_client_sequence`'s mocked
     classification responses share.
+
+    `stop_reason` defaults to `end_turn` - a response that finished on its own - so the
+    many callers that do not care about it are unaffected. A test exercising the
+    truncation path passes `max_tokens`.
     """
     text_block = MagicMock()
     text_block.type = "text"
     text_block.text = text
     response = MagicMock()
     response.content = [text_block]
+    response.stop_reason = stop_reason
     return response
 
 
@@ -554,6 +559,9 @@ class GatedAnthropicStream:
         for token in self._tokens:
             yield FakeTextEvent(token)
 
+    async def get_final_message(self) -> FakeFinalMessage:
+        return FakeFinalMessage("end_turn")
+
 
 def fake_anthropic_client_gated(
     tokens: list[str], gate: asyncio.Event, *, started: asyncio.Event | None = None
@@ -727,6 +735,7 @@ def fake_classify_intent_client(
     segments: list[tuple[IntentLabel, str]] | None = None,
     cap_bound: bool = False,
     raw_text: str | None = None,
+    stop_reason: str = "end_turn",
     call_error: Exception | None = None,
     gate: asyncio.Event | None = None,
     started: asyncio.Event | None = None,
@@ -744,7 +753,9 @@ def fake_classify_intent_client(
     behaves exactly as it did before segments existed. `segments` gives each request
     its own text, and `raw_text` bypasses both to return a response body verbatim -
     for the invalid results only a hand-written body can express (too many segments,
-    a blank one). `intents=None` (with no `call_error`) simulates a
+    a blank one). `stop_reason` is what the mocked response says about why the model
+    stopped - `max_tokens` is the truncated-classification case. `intents=None` (with
+    no `call_error`) simulates a
     response whose content doesn't validate against the schema (malformed text) -
     `classify_intent()` must raise for that case too, not just an outright API error.
     `gate` (if given) is awaited before the call resolves/raises, letting a test
@@ -786,16 +797,17 @@ def fake_classify_intent_client(
         if call_error is not None:
             raise call_error
         if raw_text is not None:
-            return _mock_text_response(raw_text)
+            return _mock_text_response(raw_text, stop_reason)
         if intents is None and segments is None:
-            return _mock_text_response("not valid json")
+            return _mock_text_response("not valid json", stop_reason)
         return _mock_text_response(
             classification_json(
                 intents,
                 segments=segments,
                 cap_bound=cap_bound,
                 message=trailing_user_text(kwargs.get("messages")),
-            )
+            ),
+            stop_reason,
         )
 
     # Wrapped in AsyncMock (side_effect=_create) rather than assigned directly, so
