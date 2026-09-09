@@ -6,6 +6,7 @@ data-model.md), and `to_claude_messages()`'s same-side merge into alternating
 
 from anthropic.types import MessageParam, ThinkingBlock, ToolUseBlock
 from chat.agent.history import (
+    ANSWERING_HEADING,
     OPENING_CLINIC_NOTE,
     PATIENT_RESUMES_HEADING,
     bound_to_last_n_turns,
@@ -17,6 +18,7 @@ from chat.agent.history import (
     silent_window,
     split_into_bursts,
     to_claude_messages,
+    to_claude_messages_separating_silence,
     to_loggable_messages,
 )
 from chat.domain.models import Message, MessageSender
@@ -803,6 +805,61 @@ def test_replacing_a_later_entry_does_not_repeat_the_clinics_words() -> None:
     assert str(replaced[-1]["content"]) == "Question: thanks"
     # Still there exactly once, on the entry it was folded into.
     assert sum("Dr. Chen" in str(e["content"]) for e in replaced) == 1
+
+
+def test_the_heading_marks_the_seam_the_fold_creates() -> None:
+    # The fold puts the clinic's words and the request in one entry, and the heading
+    # `to_claude_messages` had put between them is inside the entry being replaced -
+    # so the replacement carries its own.
+    bursts = _staff_then_patient()
+
+    replaced = replace_trailing_entry(
+        to_claude_messages(bursts),
+        "yes please",
+        opening_clinic=render_opening_clinic(bursts),
+        heading=ANSWERING_HEADING,
+    )
+
+    content = str(replaced[-1]["content"])
+    assert OPENING_CLINIC_NOTE in content
+    assert content.endswith(f"{ANSWERING_HEADING}\nyes please")
+
+
+def test_the_heading_is_left_out_when_there_is_no_fold_to_mark_off() -> None:
+    # Nothing else shares this entry: it is preceded by an `assistant` entry, so there
+    # is no seam for the heading to mark, and the request stands alone - the shape
+    # `to_claude_messages` gives a trailing entry for every other caller.
+    bursts = split_into_bursts(
+        [
+            _row(MessageSender.PATIENT, "hi", id="p1"),
+            _row(MessageSender.ASSISTANT, "Hello.", id="a1"),
+            _row(MessageSender.PATIENT, "book me in", id="p2"),
+        ]
+    )
+
+    replaced = replace_trailing_entry(
+        to_claude_messages(bursts),
+        "book me in with Dr. Chen",
+        opening_clinic=render_opening_clinic(bursts),
+        heading=ANSWERING_HEADING,
+    )
+
+    assert str(replaced[-1]["content"]) == "book me in with Dr. Chen"
+
+
+def test_substituted_requests_stand_alone_when_nothing_shares_their_entry() -> None:
+    # The booking loop's own shape: substituted requests, no silent window, no fold.
+    bursts = split_into_bursts(
+        [
+            _row(MessageSender.PATIENT, "hi", id="p1"),
+            _row(MessageSender.ASSISTANT, "Hello.", id="a1"),
+            _row(MessageSender.PATIENT, "book me in, and when do you open?", id="p2"),
+        ]
+    )
+
+    entries = to_claude_messages_separating_silence(bursts, answering="book me in")
+
+    assert entries[-1] == {"role": "user", "content": "book me in"}
 
 
 def test_replacing_the_trailing_entry_of_an_empty_render_carries_the_fold() -> None:

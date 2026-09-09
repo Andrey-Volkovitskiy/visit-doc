@@ -24,6 +24,14 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=2000)
     local_now: datetime
 
+    @field_validator("message")
+    @classmethod
+    def _reject_meaningless_message(cls, value: str) -> str:
+        """Raises: ValueError if `value` has no meaningful text."""
+        if is_meaningless(value):
+            raise ValueError("message must contain meaningful text")
+        return value
+
     @field_validator("local_now")
     @classmethod
     def _reject_timezone_aware(cls, value: datetime) -> datetime:
@@ -88,10 +96,12 @@ class RequestSegment(BaseModel):
 
 
 class IntentClassificationResult(BaseModel):
-    """The parsed, validated result of one `classify_intent()` call.
+    """What one classification attempt yielded: the requests a message carries.
 
-    Never contains `CLASSIFICATION_FAILED` - that value is assigned by the caller when
-    `classify_intent()` raises, not returned in a result.
+    `classify_intent()` never *returns* one containing `CLASSIFICATION_FAILED` - it
+    raises instead. That label reaches a result only when orchestration builds one
+    itself after the call raised, which it does so that a failed attempt and a
+    classified one leave behind the same type, read the same way.
 
     `cap_bound` is the segmenter's own report that it had to combine requests to fit
     `MAX_SEGMENTS`, never inferred from the segment count: a message carrying exactly
@@ -200,9 +210,13 @@ class ChatDoneEvent(BaseModel):
 
     `faq_verdict` is None when no FAQ specialist ran, since a booking reply is streamed
     text that was never retrieved against and so had no gate to stop at.
-    `message` keeps its meaning: set only when there is no streamed text to show, which
-    today is the FAQ abstention case. A client renders `message` if present, otherwise
-    the tokens it accumulated. `citations` are always empty for a booking-only reply.
+    `message` keeps its meaning: set only when there is no streamed text to show. Two
+    paths do that - the FAQ half abstaining, and a turn routed as several parts that
+    collapsed to one, where nothing streamed because the route expected a merge. The
+    second carries an answer rather than an abstention, so `message` being set says
+    nothing about the verdict; read `faq_verdict` for that. A client renders `message`
+    if present, otherwise the tokens it accumulated. `citations` are always empty for a
+    booking-only reply.
 
     `citations` is carried on the patient's path as well as the console's, and the
     patient pane simply does not draw it. That is presentation, not access: one session

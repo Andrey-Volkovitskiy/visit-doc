@@ -149,8 +149,13 @@ def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
     assert lines[0]["citations"] == []
 
 
-@pytest.mark.parametrize("message", ["", "a" * 2001])
-def test_message_validation_rejects_empty_and_oversized(message: str) -> None:
+@pytest.mark.parametrize(
+    "message",
+    ["", "   ", "---\n   \n---", "Question:\nAnswer:", "a" * 2001],
+)
+def test_message_validation_rejects_meaningless_and_oversized(message: str) -> None:
+    # The same meaningless-content rule `FaqEntryWrite` and `StaffMessageWrite` apply:
+    # a message that survives `min_length=1` on whitespace alone still says nothing.
     with TestClient(app) as client:
         response = turn(client, message)
 

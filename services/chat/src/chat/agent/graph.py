@@ -71,6 +71,7 @@ from chat.domain.schemas import (
     ChatDoneEvent,
     ChatTokenEvent,
     FaqVerdict,
+    IntentClassificationResult,
     IntentLabel,
     RequestSegment,
 )
@@ -397,11 +398,8 @@ def _build_graph(
             bounded_bursts = bound_to_last_n_turns(
                 state["bursts"], n=get_settings().CONTEXT_TURNS
             )
-            cap_bound = False
             try:
                 result = await classify_intent(anthropic_client, bounded_bursts)
-                segments = result.segments
-                cap_bound = result.cap_bound
             except Exception as exc:  # noqa: BLE001 - a classification failure must
                 # never fail the request; it's recorded as CLASSIFICATION_FAILED
                 # instead, after logging the cause for visibility.
@@ -410,19 +408,31 @@ def _build_graph(
                 # answering what was actually said, which is what it answered before
                 # a message was ever split. A turn with no segment at all would be a
                 # second shape for everything downstream to branch on.
-                segments = [
-                    RequestSegment(
-                        intent=IntentLabel.CLASSIFICATION_FAILED,
-                        # Stripped before the fallback: `message` is only bounded by
-                        # `min_length=1`, so a message of nothing but whitespace
-                        # reaches here as a truthy string a segment refuses to carry -
-                        # and the raise would come from inside the handler whose whole
-                        # job is that this turn does not fail.
-                        text=trailing_question(bounded_bursts).strip()
-                        or _EMPTY_MESSAGE,
-                    )
-                ]
-            intents = [segment.intent for segment in segments]
+                #
+                # Built as a result rather than a bare segment list so that both paths
+                # leave the same type behind, and the reads below have one source -
+                # in particular `intents`, which is the result's own derivation on a
+                # failed turn exactly as it is on a classified one. `cap_bound` keeps
+                # its default: the fallback combined nothing, because it segmented
+                # nothing.
+                result = IntentClassificationResult(
+                    segments=[
+                        RequestSegment(
+                            intent=IntentLabel.CLASSIFICATION_FAILED,
+                            # Stripped before the fallback. `ChatRequest` rejects a
+                            # meaningless message at the API boundary, but this text
+                            # comes from stored history, not from that request - and a
+                            # segment refuses to carry blank text, so the raise would
+                            # come from inside the handler whose whole job is that this
+                            # turn does not fail.
+                            text=trailing_question(bounded_bursts).strip()
+                            or _EMPTY_MESSAGE,
+                        )
+                    ]
+                )
+            segments = result.segments
+            cap_bound = result.cap_bound
+            intents = result.intents
             # The one event carrying a request's text, and the one every per-request
             # retrieval event is read against - they carry its position, not its words.
             logger.info(
@@ -713,9 +723,13 @@ def _build_graph(
                     # more than one part - so this node owes the patient the single
                     # part that survived, in the shape its specialist would have sent.
                     # Its citations are the surviving half's own, read off the result
-                    # rather than left empty: today only an abstaining FAQ half
-                    # collapses here and cites nothing, and a constant that happens to
-                    # be right is not the same as one the reply decides.
+                    # rather than left empty. No route reaches this with an answered
+                    # FAQ half today - the one turn that collapses is one whose half
+                    # abstained, and an abstention cites nothing - but a half that
+                    # answers fewer parts than the route counted would, and a constant
+                    # that happens to be right is not the same as one the reply
+                    # decides. test_graph.py stubs the half into exactly that shape, so
+                    # this arm is not first exercised in front of a patient.
                     writer(
                         ChatDoneEvent(
                             faq_verdict=verdict,

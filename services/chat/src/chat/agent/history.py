@@ -366,8 +366,10 @@ def replace_trailing_entry(
             fold does happen, for a `body` that carries no label of its own. The
             heading `to_claude_messages` puts there is inside the entry being replaced,
             so without this the clinic's words run straight into the patient's request
-            with nothing to tell them apart by. Ignored when there is no fold, and
-            unnecessary for a `body` that already opens with a label of its own.
+            with nothing to tell them apart by. Rendered only on that branch - an
+            unfolded entry holds `body` alone, so there is nothing to mark it off
+            from - and unnecessary for a `body` that already opens with a label of
+            its own.
 
     A specialist replaces the trailing entry because it has a prompt of its own to put
     there. Writing that as `[*entries[:-1], new]` is wrong in the one case the fold was
@@ -380,10 +382,14 @@ def replace_trailing_entry(
     An empty `entries` takes the prepend too: nothing carries the fold, so the prompt
     must.
     """
-    folded_here = bool(opening_clinic) and len(entries) <= 1
+    if not opening_clinic or len(entries) > 1:
+        # Not the entry the fold went into: `body` has it to itself, so `heading` -
+        # which exists only to mark where the clinic's opening words stop - has no
+        # seam to sit on and is not rendered.
+        return [*entries[:-1], cast(MessageParam, {"role": "user", "content": body})]
     labelled = f"{heading}\n{body}" if heading else body
-    content = f"{opening_clinic}\n\n{labelled}" if folded_here else body
-    return [*entries[:-1], cast(MessageParam, {"role": "user", "content": content})]
+    folded = f"{opening_clinic}\n\n{labelled}"
+    return [*entries[:-1], cast(MessageParam, {"role": "user", "content": folded})]
 
 
 def to_claude_messages_separating_silence(
@@ -404,7 +410,9 @@ def to_claude_messages_separating_silence(
         window gets its trailing entry restated - the held-back messages behind
         `SILENT_WINDOW_NOTE`, then `ANSWERING_HEADING`, then what this turn is
         actually answering - and a turn given `answering` gets its trailing entry
-        replaced by that behind `ANSWERING_HEADING`, silent window or not.
+        replaced by that, behind `ANSWERING_HEADING` whenever something else shares
+        the entry with it (the held-back messages, or the clinic's folded-in opening
+        words) and alone otherwise.
 
     For every caller that sends the rendered window as it stands and answers its last
     entry. `to_claude_messages` rejoins two consecutive patient-sided bursts into one,

@@ -16,6 +16,7 @@ import pytest
 import structlog
 from anthropic import APITimeoutError, OverloadedError
 from chat.agent import graph as graph_module
+from chat.agent.compose_answer import FaqResult, FaqSegmentAnswer
 from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
 from chat.agent.history import (
     OPENING_CLINIC_NOTE,
@@ -37,10 +38,12 @@ from chat.domain.schemas import (
     AnswerSource,
     ChatDoneEvent,
     ChatTokenEvent,
+    Citation,
     FaqVerdict,
     IntentLabel,
 )
 from chat.rag.indexing import publish_revision, remove_entry_chunks
+from chat.rag.pipeline import ScoredChunk
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 from structlog.testing import capture_logs
@@ -281,6 +284,35 @@ def test_classification_failure_is_recorded_and_does_not_block_the_faq_reply(
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.faq_verdict is FaqVerdict.ANSWERED
+
+
+def test_a_failed_classification_logs_the_whole_event_it_always_logged(
+    seeded_entry: int,
+) -> None:
+    # The whole `intent.classified` payload on the fallback path, not just its
+    # `intents`: one segment at position 0 carrying the message verbatim, and
+    # `cap_bound` false because the fallback segmented nothing and so combined nothing.
+    # The fallback builds an `IntentClassificationResult` of its own, and this is what
+    # says that building one changed none of what the turn reports.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=RuntimeError("boom")
+        )
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+    assert classified["segments"] == [
+        {
+            "position": 0,
+            "intent": IntentLabel.CLASSIFICATION_FAILED.value,
+            "text": "when can I visit?",
+        }
+    ]
+    assert classified["cap_bound"] is False
 
 
 def test_a_model_outage_during_classification_raises_the_dependency_alert(
@@ -1640,8 +1672,9 @@ def test_an_invalid_segmentation_falls_back_to_the_faq_path(
 def test_a_blank_message_still_falls_back_rather_than_failing_the_turn(
     seeded_entry: int,
 ) -> None:
-    # `message` only has to be one character, so whitespace alone reaches the fallback,
-    # where a segment refuses to carry it. The handler exists so that a classification
+    # `ChatRequest` rejects a whitespace-only message, but this calls the graph
+    # directly, as anything reading a turn out of stored history does - and there a
+    # segment refuses to carry blank text. The handler exists so that a classification
     # failure never fails the request - it must not be the thing that raises.
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
@@ -1727,6 +1760,89 @@ def test_one_unanswerable_request_abstains_for_the_whole_faq_half(
     assert done_event.citations == []
     assert done_event.message is not None
     assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
+
+
+def test_a_collapsed_answered_half_cites_what_it_retrieved() -> None:
+    """The collapse path reads its citations off the half that survived.
+
+    No route produces this state today: the only turn that collapses to one part is
+    one whose FAQ half abstained, and an abstention cites nothing - so the composer's
+    citation arm has never run. It becomes reachable the moment a half contributes
+    fewer parts than the route counted (Phase 1h serving the answerable half, a third
+    specialist, a booking half that returns no result), and it would then first run in
+    front of a patient. The half is stubbed to that shape here instead: two questions
+    routed - so the specialists collect and the composer owes the terminal event - and
+    one answered part coming back.
+    """
+    chunk = ScoredChunk(
+        faq_entry_id=7,
+        chunk_index=0,
+        chunk_text=_ENTRY_CONTENT,
+        similarity_score=0.9,
+        rerank_score=0.8,
+    )
+    answered = FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="when can I visit?",
+                answer_text=_ENTRY_CONTENT,
+                verdict=FaqVerdict.ANSWERED,
+                citations=[],
+                scored_chunks=[chunk],
+            )
+        ],
+        abstention_message="unused: this half answered",
+    )
+
+    async def _answer_faq(
+        *_args: object, **_kwargs: object
+    ) -> AsyncIterator[FaqResult]:
+        yield answered
+
+    anthropic_client = fake_anthropic_client(
+        ["never generated"],
+        segments=[
+            (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+            (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+        ],
+    )
+    with (
+        patch("chat.agent.graph.answer_faq", _answer_faq),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client, "when can I visit, and what is your refund policy?"
+            )
+        )
+
+    compose = _node_result(logs, "compose_answer")
+    assert compose["collapsed_to_one_part"] is True
+    assert _composing_calls(anthropic_client) == 0
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.FAQ
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert done_event.message == _ENTRY_CONTENT
+    # The patient is told what the answer rested on, written out rather than compared
+    # against the result the stub returned: an assertion derived from it would pass on
+    # an empty list too.
+    assert done_event.citations == [
+        Citation(entry_id=7, chunk_index=0, chunk_text=_ENTRY_CONTENT)
+    ]
+    # And the turn's record names the same chunk, with the scores the wire type does
+    # not carry - the two are one selection in two shapes, not two answers.
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["citations"] == [
+        {
+            "entry_id": 7,
+            "chunk_index": 0,
+            "chunk_text": _ENTRY_CONTENT,
+            "similarity_score": 0.9,
+            "rerank_score": 0.8,
+        }
+    ]
 
 
 def test_one_requests_retrieval_failure_fails_the_whole_turn(

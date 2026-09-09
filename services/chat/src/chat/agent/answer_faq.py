@@ -23,6 +23,7 @@ is built from, and what the turn records.
 
 import asyncio
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -220,8 +221,9 @@ async def _answer_all(
 ) -> list[FaqSegmentAnswer]:
     """Run every question of one turn concurrently, in message order.
 
-    Raises: whatever the first question to fail raised - the turn fails whole rather
-        than serving what survived.
+    Raises: whatever ended the run first - the first question's failure, or this
+        turn's own cancellation. Either way the turn fails whole rather than serving
+        what survived.
 
     Not a bare `asyncio.gather`: that propagates the first exception and leaves the
     other questions *running*, so a turn that has already failed would keep spending
@@ -229,6 +231,23 @@ async def _answer_all(
     surface later as an unretrieved task exception attributed to nothing. The siblings
     are cancelled here, and waited for, before the failure leaves this function.
     """
+    # Four invariants hold over the block below:
+    #
+    # 1. Whatever ended the run first is what leaves. A question's failure is the
+    #    turn's only account of itself - which question, and at which step - so a
+    #    cancellation landing while the siblings are being drained does not displace
+    #    it. It would read as a supersede and name nothing.
+    # 2. No question outlives this call. Every sibling is cancelled before anything
+    #    leaves, and, unless the wait is itself interrupted, awaited to completion.
+    # 3. A cancellation with nothing else to report leaves as itself. When no question
+    #    has failed it is the exception in flight and is re-raised unchanged, so a
+    #    superseded turn still reads as cancelled rather than as broken.
+    # 4. The drain cannot outlive a cancellation, because it is not shielded: a
+    #    sibling that refuses to unwind holds this call only until the next cancel,
+    #    which ends the wait at once. That is also why it carries no deadline - a
+    #    deadline could only abandon the siblings, which is invariant 2, to guard
+    #    against a sibling that would have to catch `CancelledError` to hang, and
+    #    nothing on this path does.
     tasks = [
         asyncio.ensure_future(
             _collect(_answer_one(position, segment, context, stream=False))
@@ -240,7 +259,8 @@ async def _answer_all(
     except BaseException:
         for task in tasks:
             task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
+        with suppress(asyncio.CancelledError):
+            await asyncio.gather(*tasks, return_exceptions=True)
         raise
 
 

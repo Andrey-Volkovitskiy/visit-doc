@@ -913,6 +913,115 @@ async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
     assert recorder.get("calls", 0) == 0
 
 
+async def _drive(
+    segments: tuple[str, ...],
+    search: object,
+) -> None:
+    """Run one FAQ turn over `segments` to exhaustion, discarding its events."""
+    with (
+        patch("chat.agent.answer_faq.search_faq", search),
+        patch("chat.agent.answer_faq.rerank_chunks", AsyncMock(return_value=None)),
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts(" ".join(segments)),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments(*segments),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+
+async def test_a_cancellation_mid_drain_does_not_replace_the_failure() -> None:
+    # The turn already has an account of itself - which question failed, and why. A
+    # cancellation landing while the siblings are being drained must not overwrite it
+    # with a bare `CancelledError`, which names nothing and reads as a supersede.
+    unwinding = asyncio.Event()
+
+    async def _search(
+        _q: object, _v: object, query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        if query == "fails?":
+            await asyncio.sleep(0)
+            raise TurnPipelineError("retrieval", RuntimeError("qdrant is down"))
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            # Slow to unwind, so the drain is still waiting when the cancel lands.
+            unwinding.set()
+            await asyncio.sleep(0.05)
+            raise
+        return [_chunk(0)]
+
+    turn = asyncio.create_task(_drive(("fails?", "slow?"), _search))
+    await asyncio.wait_for(unwinding.wait(), timeout=5)
+    turn.cancel()
+    await asyncio.wait([turn])
+
+    assert not turn.cancelled()
+    assert isinstance(turn.exception(), TurnPipelineError)
+
+
+async def test_a_turn_cancelled_with_nothing_else_to_report_ends_cancelled() -> None:
+    # Nothing failed, so the cancellation is the whole account of the turn: it leaves
+    # as itself, and a superseded turn keeps reading as cancelled rather than broken.
+    started = asyncio.Event()
+
+    async def _search(
+        _q: object, _v: object, _query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        started.set()
+        await asyncio.sleep(10)
+        return [_chunk(0)]
+
+    turn = asyncio.create_task(_drive(("a?", "b?"), _search))
+    await asyncio.wait_for(started.wait(), timeout=5)
+    turn.cancel()
+    await asyncio.wait([turn])
+
+    assert turn.cancelled()
+
+
+async def test_a_sibling_that_refuses_to_unwind_cannot_hold_the_turn_open() -> None:
+    # The drain is not shielded, so it cannot outlive a cancellation: this sibling
+    # never finishes unwinding, and the turn still leaves at once, carrying its
+    # failure. A shielded drain would wait here instead, which is the worse defect.
+    stuck = asyncio.Event()
+    released = asyncio.Event()
+
+    async def _search(
+        _q: object, _v: object, query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        if query == "fails?":
+            await asyncio.sleep(0)
+            raise TurnPipelineError("retrieval", RuntimeError("qdrant is down"))
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            stuck.set()
+            await released.wait()
+            raise
+        return [_chunk(0)]
+
+    turn = asyncio.create_task(_drive(("fails?", "stuck?"), _search))
+    try:
+        await asyncio.wait_for(stuck.wait(), timeout=5)
+        turn.cancel()
+        await asyncio.wait_for(asyncio.wait([turn]), timeout=1)
+
+        assert not turn.cancelled()
+        assert isinstance(turn.exception(), TurnPipelineError)
+    finally:
+        released.set()
+        await asyncio.sleep(0)
+
+
 async def test_an_answer_cut_off_at_the_cap_is_still_delivered() -> None:
     # It rests on evidence that cleared both gates, so abstaining over it would be a
     # lie about the corpus. The turn answers, and the cut is recorded instead.
