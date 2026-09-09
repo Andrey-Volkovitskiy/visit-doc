@@ -123,9 +123,8 @@ HANDOFF_TEXT: dict[EscalationReason, str] = {
         "anything else in the meantime!"
     ),
     EscalationReason.URGENT_CONDITION: (
-        "If this is a medical emergency, please call your local emergency number or go "
-        "to the nearest emergency department now. I've notified the clinic's staff, "
-        "and a member of the team will follow up with you here."
+        "This appears to be an emergency, I've immediately notified the clinic staff. "
+        "A member of our team will follow up with you here as soon as possible."
     ),
     EscalationReason.DISTRESS: (
         "I'm sorry you're going through this. I've passed your message to a member of "
