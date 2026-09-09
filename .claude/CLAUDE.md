@@ -263,6 +263,21 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   failure plants none of it, and it never fails chat creation: the session simply starts empty, and
   that is logged rather than raised. Every other property of a session's corpus is unchanged, and
   a seeded entry is an ordinary entry the session may edit or delete.
+- **The request, not the message, is the unit of work** (010). The classifier returns an ordered list
+  of `{intent, text}` segments rather than a list of labels — `IntentClassificationResult.intents`
+  survives as a *derived* property, which is what let every routing rule keep reading the value it
+  read before. Each specialist is handed only its own segments and substitutes them into the trailing
+  conversation entry via `history.replace_trailing_entry`, so isolation is structural: the other
+  half's clause is not in the prompt to be answered. The retrieval pipeline runs once per FAQ
+  segment, concurrently, **never pooled** — a shared shortlist under the 3-chunk cap lets the
+  stronger question crowd the other out, which is the defect splitting exists to remove — and each
+  segment's answer is generated from its own shortlist alone. The fan-out lives *inside*
+  `answer_faq`, not in the graph: one node still writes one state key, so LangGraph needs no channel
+  reducer. Two rules bound it: the cap of 3 cannot be expressed in the request schema (the API
+  rejects array bounds in a constrained-output schema), so it is stated in the prompt and an
+  over-long result is *rejected*, never trimmed; and the turn still carries **one** verdict, its FAQ
+  half abstaining as a whole if any request could not be answered. Serving the answerable half is
+  Phase 1h's, and doing it early is how a merged reply comes to soften an abstention.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across

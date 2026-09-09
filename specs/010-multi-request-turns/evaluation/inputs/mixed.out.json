@@ -1,0 +1,406 @@
+[
+ {
+  "id": "B1",
+  "text": "What are your clinic hours, and what dentist slots are free tomorrow?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your clinic hours?"
+   },
+   {
+    "intent": "booking",
+    "text": "What dentist slots are free tomorrow?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B2",
+  "text": "Where are you located, and can I book with a GP on Friday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Where are you located?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book with a GP on Friday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B3",
+  "text": "Do I need a referral, and can I see a specialist next week?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I see a specialist next week?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B4",
+  "text": "What should I bring, and can you book me Monday at 9?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What should I bring?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can you book me Monday at 9?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B5",
+  "text": "How early should I arrive for the appointment you booked me, and do you take Cigna?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive for my appointment?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Do you take Cigna insurance?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B6",
+  "text": "Which insurers do you accept, and which practitioners do you have?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Which insurers do you accept?"
+   },
+   {
+    "intent": "booking",
+    "text": "Which practitioners do you have?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B7",
+  "text": "How much is a dentist visit, and when is your dentist next free?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How much does a dentist visit cost?"
+   },
+   {
+    "intent": "booking",
+    "text": "When is your dentist next free?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B8",
+  "text": "Do you do telehealth, and can I move my appointment to Thursday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you offer telehealth appointments?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I reschedule my appointment to Thursday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B9",
+  "text": "What are your hours, and please cancel my Friday appointment.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your hours?"
+   },
+   {
+    "intent": "booking",
+    "text": "Please cancel my Friday appointment."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B10",
+  "text": "Where do I park, and what appointments do I have booked?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Where do I park?"
+   },
+   {
+    "intent": "booking",
+    "text": "What appointments do I have booked?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B11",
+  "text": "When is payment due, and can I book something next Tuesday afternoon?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "When is payment due?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book an appointment next Tuesday afternoon?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B12",
+  "text": "Do you take Blue Cross, and who is available this week?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you take Blue Cross?"
+   },
+   {
+    "intent": "booking",
+    "text": "Who is available this week?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B13",
+  "text": "What should I bring, and what does Dr. Vesalius specialize in?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "what should I bring?"
+   },
+   {
+    "intent": "booking",
+    "text": "what does Dr. Vesalius specialize in?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B14",
+  "text": "Are you open Sundays, and can I book the earliest slot you have?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Are you open on Sundays?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book the earliest appointment slot you have?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B15",
+  "text": "How much is a specialist visit, and can I book one for Wednesday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How much does a specialist visit cost?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book a specialist visit for Wednesday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B16",
+  "text": "Do I need a referral for a dentist, and is one free on Friday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral for a dentist?"
+   },
+   {
+    "intent": "booking",
+    "text": "Is a dentist free on Friday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B17",
+  "text": "What is your address, and can I reschedule to the same time next week?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What is your address?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I reschedule my appointment to the same time next week?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B18",
+  "text": "Do you accept FSA cards, and can I book a GP tomorrow morning?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you accept FSA cards?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book a GP appointment tomorrow morning?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B19",
+  "text": "What are your opening hours, and what have I got booked already?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your opening hours?"
+   },
+   {
+    "intent": "booking",
+    "text": "What appointments do I have booked?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B20",
+  "text": "How early should I arrive, and can you cancel Monday for me?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can you cancel my Monday appointment?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "B21",
+  "text": "Where are you, how much is a GP visit, and can I book one Friday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Where are you located?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "How much is a GP visit?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book a GP visit on Friday?"
+   }
+  ],
+  "count": 3,
+  "cap_bound": false,
+  "expected": 3,
+  "count_matches": true
+ },
+ {
+  "id": "B22",
+  "text": "Do you take Medicare, what should I bring, and can I book Thursday?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you take Medicare?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "What should I bring?"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book an appointment on Thursday?"
+   }
+  ],
+  "count": 3,
+  "cap_bound": false,
+  "expected": 3,
+  "count_matches": true
+ }
+]

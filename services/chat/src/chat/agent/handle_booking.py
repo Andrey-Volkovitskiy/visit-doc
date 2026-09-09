@@ -35,7 +35,7 @@ from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
-from chat.domain.schemas import ChatTokenEvent
+from chat.domain.schemas import ChatTokenEvent, RequestSegment
 
 _MAX_TOKENS = 1024
 # The capability the node reads for itself, before the model gets a turn.
@@ -56,6 +56,10 @@ sense of the date.
 {practitioners}
 
 Rules you must follow:
+- You hold no clinic knowledge and answer nothing outside the requests above. Anything
+  about policies, directions, prices or what to bring is another part of this system's
+  job, and it is being handled separately - say nothing about it, not even that you
+  cannot help with it.
 - Establish who the appointment is for before booking anything. Every appointment in
   this conversation is for {patient_name}. If anything suggests it might be for
   someone else - a different name, "for her", "for him" - ask plainly who the
@@ -491,6 +495,7 @@ async def handle_booking(
     patient_name: str,
     local_now: str,
     stream: bool,
+    segments: list[RequestSegment],
     escalation: EscalationRequests,
 ) -> AsyncIterator[ChatTokenEvent | BookingResult]:
     """Run one booking turn, emitting its reply when streaming and always a result.
@@ -500,15 +505,20 @@ async def handle_booking(
         stream: True when this is the turn's only specialist, so its reply goes straight
             to the patient. False when another specialist also ran and a later step
             composes one reply from both results.
+        segments: The scheduling requests this loop is answering, in message order.
+            They replace the trailing message in what it is asked to act on, so a
+            corpus question in the same message is not there to be answered from
+            nothing. All of them enter one loop: two scheduling requests are one piece
+            of work against one set of records, and the loop already sequences them.
         escalation: This turn's collector of calls to staff. A tool call that *failed* -
             as distinct from one that was refused - records one into it.
 
     Yields: in streaming mode, one `ChatTokenEvent` carrying the whole reply, then
         exactly one `BookingResult` as the final item.
 
-    Raises: TurnPipelineError wrapping any failure of the loop's model call. A tool
-        that fails is not one of those - it is answered to the model and the loop
-        continues.
+    Raises: TurnPipelineError wrapping any failure of the loop's model call, or
+        RuntimeError if the loop is entered with no request. A tool that fails is not
+        one of those - it is answered to the model and the loop continues.
 
     The reply is emitted whole rather than token by token, unlike the FAQ path. Only the
     loop's *last* model call produces the reply - every earlier one is a tool request -
@@ -531,13 +541,20 @@ async def handle_booking(
         local_now=local_now,
         practitioners=_practitioners_section(await _read_roster(registry)),
     )
+    if not segments:
+        raise RuntimeError("the booking loop was entered with no request")
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
     # This loop has no question field of its own - the prompt above tells the model to
-    # answer the last message in the conversation - so after a silent window it needs
-    # that last entry restated, or it would cancel or book against something a person
-    # had already taken over. See `to_claude_messages_separating_silence`. Copied into
-    # a list because the tool loop below appends this turn's exchanges to it.
-    messages: list[MessageParam] = list(to_claude_messages_separating_silence(bounded))
+    # answer the last message in the conversation - so the entry it reads as that
+    # message is replaced by this turn's own scheduling requests. That is also what a
+    # silent window needs: without it the loop would cancel or book against something a
+    # person had already taken over. See `to_claude_messages_separating_silence`.
+    # Copied into a list because the tool loop below appends this turn's exchanges.
+    messages: list[MessageParam] = list(
+        to_claude_messages_separating_silence(
+            bounded, answering="\n\n".join(segment.text for segment in segments)
+        )
+    )
     tools = registry.to_anthropic_tools()
     observed: list[dict[str, Any]] = []
     tool_calls = 0

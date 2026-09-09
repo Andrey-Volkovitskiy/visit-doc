@@ -1,0 +1,226 @@
+[
+ {
+  "id": "A1",
+  "text": "What are your clinic hours, and what should I bring to my first appointment?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your clinic hours?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "What should I bring to my first appointment?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A2",
+  "text": "Where are you located and do I need a referral to see a specialist?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Where are you located?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral to see a specialist?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A3",
+  "text": "How early should I arrive, and which insurance plans do you accept?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Which insurance plans do you accept?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A4",
+  "text": "Do you do telehealth, and how much is a dentist visit if I pay myself?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you offer telehealth appointments?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "How much does a dentist visit cost if I pay out of pocket?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A5",
+  "text": "When is payment due and what cards do you take?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "When is payment due?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "What payment methods do you accept?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A6",
+  "text": "What are your hours, and where is the nearest parking?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your hours?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Where is the nearest parking?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A7",
+  "text": "Do I need a referral, and what should I bring with me?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "What should I bring with me?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A8",
+  "text": "How much is a GP visit out-of-pocket, and when do I pay?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How much is a GP visit out-of-pocket?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "When do I pay for a GP visit?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A9",
+  "text": "Are you open on Saturdays, and do you take Medicare?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Are you open on Saturdays?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Do you take Medicare?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A10",
+  "text": "What if my insurance is out-of-network, and how early should I get there?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What happens if my insurance is out-of-network?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected": 2,
+  "count_matches": true
+ },
+ {
+  "id": "A11",
+  "text": "What should I bring, how early should I arrive, and what are your hours?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What should I bring?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "What are your hours?"
+   }
+  ],
+  "count": 3,
+  "cap_bound": false,
+  "expected": 3,
+  "count_matches": true
+ },
+ {
+  "id": "A12",
+  "text": "Do you accept Aetna, do you offer virtual visits, and where are you?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you accept Aetna?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Do you offer virtual visits?"
+   },
+   {
+    "intent": "faq_question",
+    "text": "Where are you located?"
+   }
+  ],
+  "count": 3,
+  "cap_bound": false,
+  "expected": 3,
+  "count_matches": true
+ }
+]

@@ -348,7 +348,11 @@ def _render_opening_bursts(opening_clinic: list[list[Message]]) -> str:
 
 
 def replace_trailing_entry(
-    entries: list[MessageParam], body: str, *, opening_clinic: str
+    entries: list[MessageParam],
+    body: str,
+    *,
+    opening_clinic: str,
+    heading: str = "",
 ) -> list[MessageParam]:
     """Return `entries` with the trailing entry's content replaced by `body`.
 
@@ -358,6 +362,12 @@ def replace_trailing_entry(
         opening_clinic: `render_opening_clinic` for the same bursts - re-prepended to
             `body` exactly when the entry being replaced is the one the fold went into,
             and ignored otherwise.
+        heading: what to put between the clinic's opening words and `body` when the
+            fold does happen, for a `body` that carries no label of its own. The
+            heading `to_claude_messages` puts there is inside the entry being replaced,
+            so without this the clinic's words run straight into the patient's request
+            with nothing to tell them apart by. Ignored when there is no fold, and
+            unnecessary for a `body` that already opens with a label of its own.
 
     A specialist replaces the trailing entry because it has a prompt of its own to put
     there. Writing that as `[*entries[:-1], new]` is wrong in the one case the fold was
@@ -371,22 +381,30 @@ def replace_trailing_entry(
     must.
     """
     folded_here = bool(opening_clinic) and len(entries) <= 1
-    content = f"{opening_clinic}\n\n{body}" if folded_here else body
+    labelled = f"{heading}\n{body}" if heading else body
+    content = f"{opening_clinic}\n\n{labelled}" if folded_here else body
     return [*entries[:-1], cast(MessageParam, {"role": "user", "content": content})]
 
 
 def to_claude_messages_separating_silence(
     bounded: list[list[Message]],
+    *,
+    answering: str | None = None,
 ) -> list[MessageParam]:
     """Render `bounded` with the silent window held apart from the trailing message.
 
     Args:
         bounded: this turn's history, already cut to the context window.
+        answering: what this turn is actually being asked, when that is not the whole
+            trailing message - a specialist's own requests, so the other specialist's
+            clause is not in the prompt to be answered. Defaults to the trailing
+            message, which is what it has always been.
 
     Returns: what `to_claude_messages` renders, except that a turn following a silent
         window gets its trailing entry restated - the held-back messages behind
-        `SILENT_WINDOW_NOTE`, then `ANSWERING_HEADING`, then the message this turn is
-        actually answering.
+        `SILENT_WINDOW_NOTE`, then `ANSWERING_HEADING`, then what this turn is
+        actually answering - and a turn given `answering` gets its trailing entry
+        replaced by that behind `ANSWERING_HEADING`, silent window or not.
 
     For every caller that sends the rendered window as it stands and answers its last
     entry. `to_claude_messages` rejoins two consecutive patient-sided bursts into one,
@@ -404,16 +422,23 @@ def to_claude_messages_separating_silence(
     """
     entries = to_claude_messages(bounded)
     silenced = render_silent_window(silent_window(bounded))
-    if not silenced:
+    if not silenced and answering is None:
         return entries
+    body = trailing_question(bounded) if answering is None else answering
+    if silenced:
+        body = f"{silenced}\n\n{ANSWERING_HEADING}\n{body}"
     # Through `replace_trailing_entry` rather than by assigning `entries[-1]`: that
     # entry is also the one carrying the clinic's opening words whenever the render
     # produced only one, and overwriting it would delete the offer the patient's own
-    # message is answering.
+    # message is answering. `heading` is what marks the patient's words off from those
+    # opening words when the fold puts both in one entry - needed only for a body that
+    # carries no label of its own, which is the substituted-requests case with no
+    # silent window.
     return replace_trailing_entry(
         entries,
-        f"{silenced}\n\n{ANSWERING_HEADING}\n{trailing_question(bounded)}",
+        body,
         opening_clinic=render_opening_clinic(bounded),
+        heading="" if silenced else ANSWERING_HEADING,
     )
 
 

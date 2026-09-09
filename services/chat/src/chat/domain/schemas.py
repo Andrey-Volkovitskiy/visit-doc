@@ -54,14 +54,73 @@ class IntentLabel(StrEnum):
     CLASSIFICATION_FAILED = "classification_failed"
 
 
+# How many requests one message may be split into. A bound on fan-out, not a claim
+# that a message never carries more: above it the segmenter combines the least
+# separable requests rather than dropping any, and says so with `cap_bound`.
+MAX_SEGMENTS = 3
+
+
+class RequestSegment(BaseModel):
+    """One thing the visitor asked for, as a request that stands on its own.
+
+    `text` is a restatement, not a substring: "do you have parking, and is it free?"
+    yields a second segment reading "is parking free?", which is a question a corpus can
+    answer where "is it free?" is not. It is what the turn retrieves for and what the
+    specialist is asked to answer, which is why a blank one is rejected rather than
+    carried - it would be searched for as though it were a question.
+
+    A part of a message that asks for nothing is not a segment: the segments are the
+    requests. A message that asks for nothing at all is one segment, labelled
+    `SMALL_TALK`, so the turn still reaches a specialist through the same derived label
+    list as every other turn.
+    """
+
+    intent: IntentLabel
+    text: str = Field(min_length=1)
+
+    @field_validator("text")
+    @classmethod
+    def _reject_blank_text(cls, value: str) -> str:
+        """Reject a segment whose text is whitespace only."""
+        if not value.strip():
+            raise ValueError("a request segment's text must not be blank")
+        return value
+
+
 class IntentClassificationResult(BaseModel):
     """The parsed, validated result of one `classify_intent()` call.
 
     Never contains `CLASSIFICATION_FAILED` - that value is assigned by the caller when
     `classify_intent()` raises, not returned in a result.
+
+    `cap_bound` is the segmenter's own report that it had to combine requests to fit
+    `MAX_SEGMENTS`, never inferred from the segment count: a message carrying exactly
+    three requests fits, and reading a full list as a truncated one would mark every
+    such turn as having lost something.
     """
 
-    intents: list[IntentLabel] = Field(min_length=1)
+    segments: list[RequestSegment] = Field(
+        min_length=1,
+        max_length=MAX_SEGMENTS,
+        # Stated here as well as in the prompt because the description travels with the
+        # request schema, where a model attends to it: the bounds themselves cannot be
+        # sent (the API rejects array bounds in a constrained-output schema), so this
+        # is the only place in the schema the limit can appear at all.
+        description=(
+            "The requests the message contains, in the order they appear. "
+            f"At most {MAX_SEGMENTS} items, never more."
+        ),
+    )
+    cap_bound: bool = False
+
+    @property
+    def intents(self) -> list[IntentLabel]:
+        """Return one label per segment, in the order the requests appear.
+
+        Derived rather than returned by the model, so the labels every routing rule
+        reads cannot drift from the segments they describe.
+        """
+        return [segment.intent for segment in self.segments]
 
 
 class FaqVerdict(StrEnum):

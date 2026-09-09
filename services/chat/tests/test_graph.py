@@ -25,6 +25,7 @@ from chat.agent.history import (
 from chat.agent.tools.registry import ToolContext
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.core.config import Settings
+from chat.core.errors import TurnPipelineError
 from chat.db.session import session_factory
 from chat.domain.models import (
     AttentionMark,
@@ -32,7 +33,13 @@ from chat.domain.models import (
     Message,
     MessageSender,
 )
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, FaqVerdict, IntentLabel
+from chat.domain.schemas import (
+    AnswerSource,
+    ChatDoneEvent,
+    ChatTokenEvent,
+    FaqVerdict,
+    IntentLabel,
+)
 from chat.rag.indexing import publish_revision, remove_entry_chunks
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import create_client, ensure_collection
@@ -40,10 +47,12 @@ from structlog.testing import capture_logs
 from ulid import ULID
 
 from .conftest import (
+    COMPOSE_SYSTEM_PROMPT,
     DEFAULT_BOOKING_REPLY,
     fake_anthropic_client,
     fake_classify_intent_client,
     fake_embed_texts,
+    recording_embed_texts,
     seeded_session_id,
     set_seeded_session,
 )
@@ -428,7 +437,7 @@ def test_a_booking_only_intent_launches_the_booking_specialist_alone(
     ]
     routing = _node_result(logs, "classify_intent")
     assert routing["specialists"] == ["handle_booking"]
-    assert routing["merge_required"] is False
+    assert routing["specialists_collect"] is False
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.answer_source == "booking"
@@ -476,7 +485,7 @@ def test_both_intents_fan_out_concurrently_and_merge(seeded_entry: int) -> None:
     }
     routing = _node_result(logs, "classify_intent")
     assert routing["specialists"] == ["answer_faq", "handle_booking"]
-    assert routing["merge_required"] is True
+    assert routing["specialists_collect"] is True
     # Both specialists collect rather than stream, so the composing step owns the reply.
     assert _node_result(logs, "answer_faq")["mode"] == "collected"
     assert _node_result(logs, "handle_booking")["mode"] == "collected"
@@ -972,7 +981,7 @@ async def test_small_talk_beside_a_question_runs_the_faq_node_alone(
 
     assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
     assert _node_result(logs, "classify_intent")["specialists"] == ["answer_faq"]
-    assert _node_result(logs, "classify_intent")["merge_required"] is False
+    assert _node_result(logs, "classify_intent")["specialists_collect"] is False
 
 
 async def test_small_talk_beside_a_booking_runs_the_booking_node_alone() -> None:
@@ -1015,7 +1024,7 @@ async def test_small_talk_beside_both_specialists_is_still_dropped(
     ]
     # Merged because two specialists ran - never because a pleasantry was in the
     # message.
-    assert _node_result(logs, "classify_intent")["merge_required"] is True
+    assert _node_result(logs, "classify_intent")["specialists_collect"] is True
 
 
 async def test_a_dropped_pleasantry_leaves_no_trace_in_the_reply(
@@ -1272,7 +1281,7 @@ async def test_an_unauthorized_request_beside_a_question_answers_and_forwards(
     assert routing["notice_required"] is True
     # Merged, because the notice is owed alongside an answer - and no fixed sentence
     # was stapled on: the composer wrote one reply (FR-022c1).
-    assert routing["merge_required"] is True
+    assert routing["specialists_collect"] is True
     assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
     streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
     from chat.agent.escalation import HANDOFF_TEXT
@@ -1398,7 +1407,7 @@ async def test_small_talk_beside_an_unauthorized_request_is_dropped() -> None:
     routing = _node_result(logs, "classify_intent")
     assert routing["specialists"] == ["hand_off"]
     assert routing["notice_required"] is False
-    assert routing["merge_required"] is False
+    assert routing["specialists_collect"] is False
     assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
 
     streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
@@ -1551,3 +1560,554 @@ async def test_an_ordinary_pleasantry_records_no_truncation() -> None:
         await _run_turn(client, "Thanks!")
 
     assert _node_result(logs, "small_talk")["truncated"] is False
+
+
+# --- Phase 1g: a failed classification is still one segment --------------------------
+
+
+def test_a_failed_classification_synthesizes_one_segment_of_the_whole_message(
+    seeded_entry: int,
+) -> None:
+    # The fallback must stay exactly what it is today: the whole message down the FAQ
+    # path. Making it a one-segment turn keeps every consumer downstream on one shape
+    # (FR-008, and spec 009's FR-009 preserved).
+    queries: list[str] = []
+    with (
+        patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=RuntimeError("boom")
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+    # One retrieval, for the whole message - byte for byte what it retrieves today.
+    assert queries == ["when can I visit?"]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+
+
+def test_a_failed_classification_calls_nobody_and_answers_no_pleasantry(
+    seeded_entry: int,
+) -> None:
+    # A failure is not evidence about what the message was: no small-talk reply, and
+    # not the not-authorized route either (FR-008).
+    escalation = EscalationRequests()
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=RuntimeError("boom")
+        )
+        events = asyncio.run(
+            _run_turn(anthropic_client, "when can I visit?", escalation=escalation)
+        )
+
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.FAQ
+    assert EscalationReason.NOT_AUTHORIZED not in escalation.recorded
+
+
+def test_an_invalid_segmentation_falls_back_to_the_faq_path(
+    seeded_entry: int,
+) -> None:
+    # An over-long segment list is an invalid result, and takes the existing fallback.
+    queries: list[str] = []
+    with (
+        patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours."])
+        fake_classify_intent_client(
+            raw_text=(
+                '{"segments": ['
+                '{"intent": "faq_question", "text": "a"},'
+                '{"intent": "faq_question", "text": "b"},'
+                '{"intent": "faq_question", "text": "c"},'
+                '{"intent": "faq_question", "text": "d"}]}'
+            ),
+            client=anthropic_client,
+        )
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+    assert queries == ["when can I visit?"]
+
+
+# --- Phase 1g: a turn carrying several requests --------------------------------------
+
+
+def _composing_calls(client: MagicMock) -> int:
+    """How many times the composing step ran on this turn."""
+    return sum(
+        1
+        for call in client.messages.stream.call_args_list
+        if call.kwargs.get("system") == COMPOSE_SYSTEM_PROMPT
+    )
+
+
+def test_two_answerable_requests_are_answered_in_one_merged_reply(
+    seeded_entry: int,
+) -> None:
+    queries: list[str] = []
+    with patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what are the visiting hours on Sunday?"),
+            ],
+        )
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client,
+                "when can I visit, and what are the hours on Sunday?",
+            )
+        )
+
+    assert queries == ["when can I visit?", "what are the visiting hours on Sunday?"]
+    assert _composing_calls(anthropic_client) == 1
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.MERGED
+    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+
+
+def test_one_unanswerable_request_abstains_for_the_whole_faq_half(
+    seeded_entry: int,
+) -> None:
+    # Serving the answerable half and naming the gap is Phase 1h. Here the half
+    # abstains whole - and with nothing else in the turn, that leaves one reply part,
+    # so no composing call is made to paraphrase a constant.
+    escalation = EscalationRequests()
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client,
+                "when can I visit, and what is your refund policy?",
+                escalation=escalation,
+            )
+        )
+
+    assert _composing_calls(anthropic_client) == 0
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert not done_event.faq_verdict.answered
+    assert done_event.citations == []
+    assert done_event.message is not None
+    assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
+
+
+def test_one_requests_retrieval_failure_fails_the_whole_turn(
+    seeded_entry: int,
+) -> None:
+    async def _embed(
+        client: object, texts: list[str], input_type: str = "document"
+    ) -> list[list[float]]:
+        if "refund" in texts[0]:
+            raise RuntimeError("voyage is down")
+        return await fake_embed_texts(client, texts, input_type)
+
+    with patch("chat.rag.retriever.embed_texts", _embed):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        with pytest.raises(TurnPipelineError):
+            asyncio.run(
+                _run_turn(anthropic_client, "when can I visit, and refund policy?")
+            )
+
+
+def test_a_mixed_message_retrieves_only_for_its_question(seeded_entry: int) -> None:
+    # The FAQ half never sees the scheduling clause, so it cannot abstain on one and
+    # cannot page a person for it.
+    queries: list[str] = []
+    escalation = EscalationRequests()
+    with patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.BOOKING, "can I book Friday?"),
+            ],
+        )
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client,
+                "when can I visit, and can I book Friday?",
+                escalation=escalation,
+            )
+        )
+
+    assert queries == ["when can I visit?"]
+    assert EscalationReason.CORPUS_COULD_NOT_ANSWER not in escalation.recorded
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.MERGED
+
+
+def test_the_booking_half_is_asked_only_about_the_scheduling_clause(
+    seeded_entry: int,
+) -> None:
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.BOOKING, "can I book Friday?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and can I book Friday?")
+        )
+
+    booking_prompts = [
+        str(call.kwargs["messages"])
+        for call in anthropic_client.messages.create.call_args_list
+        if call.kwargs.get("tools") is not None
+    ]
+    assert booking_prompts
+    for prompt in booking_prompts:
+        assert "can I book Friday?" in prompt
+        assert "when can I visit?" not in prompt
+
+
+# --- Phase 1g: one request still costs one path --------------------------------------
+
+
+def test_a_single_request_turn_streams_and_makes_no_composing_call(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[(IntentLabel.FAQ_QUESTION, "when can I visit?")],
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    assert _node_result(logs, "classify_intent")["specialists_collect"] is False
+    assert _node_result(logs, "answer_faq")["mode"] == "streamed"
+    assert _node_result(logs, "compose_answer")["merged"] is False
+    assert _composing_calls(anthropic_client) == 0
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.FAQ
+    assert any(isinstance(e, ChatTokenEvent) for e in events)
+
+
+def test_a_three_request_turn_still_classifies_once(seeded_entry: int) -> None:
+    # Segmentation rides on the classification the turn already makes: no second call
+    # and no second round trip, however many requests the message carried.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what are the visiting hours?"),
+                (IntentLabel.FAQ_QUESTION, "are visiting hours different on Sunday?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, hours, Sunday hours?")
+        )
+
+    classifications = [
+        call
+        for call in anthropic_client.messages.create.call_args_list
+        if call.kwargs.get("tools") is None
+    ]
+    assert len(classifications) == 1
+
+
+# --- Phase 1g: the earlier phases' rules, read per request ---------------------------
+
+
+@pytest.mark.parametrize(
+    ("label", "reason"),
+    [
+        (IntentLabel.URGENT_CONDITION, EscalationReason.URGENT_CONDITION),
+        (IntentLabel.DISTRESS, EscalationReason.DISTRESS),
+        (IntentLabel.CALL_STAFF, EscalationReason.PATIENT_ASKED_FOR_PERSON),
+        (
+            IntentLabel.BOOKING_FOR_ANOTHER,
+            EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+        ),
+    ],
+)
+def test_an_overriding_request_takes_the_whole_turn(
+    seeded_entry: int, label: IntentLabel, reason: EscalationReason
+) -> None:
+    # Answering half a message and then falling silent is worse than handing over
+    # cleanly, so every other request on the turn is suppressed.
+    queries: list[str] = []
+    escalation = EscalationRequests()
+    with (
+        patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (label, "my chest hurts"),
+            ],
+        )
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client,
+                "when can I visit? my chest hurts",
+                escalation=escalation,
+            )
+        )
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    assert queries == []
+    assert escalation.recorded == (reason,)
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.HAND_OFF
+    assert done_event.faq_verdict is None
+
+
+def test_a_pleasantry_beside_a_request_routes_nowhere(seeded_entry: int) -> None:
+    # Belt and braces: the segmenter is told not to emit one, and the router drops one
+    # that appears anyway - the two fail independently.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.SMALL_TALK, "hi!"),
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+            ],
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "hi! when can I visit?"))
+
+    assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.FAQ
+
+
+def test_an_unauthorized_request_beside_a_question_is_a_notice(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.UNKNOWN, "write me a sick note"),
+            ],
+        )
+        events = asyncio.run(
+            _run_turn(anthropic_client, "when can I visit? also a sick note please")
+        )
+
+    assert _node_result(logs, "classify_intent")["notice_required"] is True
+    assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.MERGED
+
+
+def test_an_unauthorized_request_alone_hands_the_turn_over(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["unused"],
+            segments=[(IntentLabel.UNKNOWN, "write me a sick note")],
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "write me a sick note"))
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.HAND_OFF
+
+
+def test_two_unanswerable_questions_raise_one_escalation(seeded_entry: int) -> None:
+    escalation = EscalationRequests()
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            ["unused"],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+                (IntentLabel.FAQ_QUESTION, "do you validate parking?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "refund policy? parking validation?"),
+        )
+        events = asyncio.run(
+            _run_turn(
+                anthropic_client,
+                "refund policy? parking validation?",
+                escalation=escalation,
+            )
+        )
+
+    assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
+    assert isinstance(events[-1], ChatDoneEvent)
+
+
+# --- Phase 1g: what the turn records about its requests ------------------------------
+
+
+def test_the_classification_event_carries_the_segmentation_it_chose(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.BOOKING, "can I book Friday?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and can I book Friday?")
+        )
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["segments"] == [
+        {"position": 0, "intent": "faq_question", "text": "when can I visit?"},
+        {"position": 1, "intent": "booking", "text": "can I book Friday?"},
+    ]
+    assert classified["cap_bound"] is False
+
+
+def test_a_capped_segmentation_says_so_rather_than_leaving_it_to_the_count(
+    seeded_entry: int,
+) -> None:
+    # Three segments is not evidence the cap bound - a message with exactly three
+    # requests fits.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        fake_classify_intent_client(
+            segments=[(IntentLabel.FAQ_QUESTION, "when can I visit?")],
+            cap_bound=True,
+            client=anthropic_client,
+        )
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["cap_bound"] is True
+
+
+def test_the_turn_records_each_requests_own_outcome_beside_the_summary(
+    seeded_entry: int,
+) -> None:
+    # The summary verdict is lossy where two requests stopped at different gates; the
+    # record is not.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        asyncio.run(_run_turn(anthropic_client, "when can I visit, and refund policy?"))
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["segment_count"] == 2
+    assert completed["segment_verdicts"] == [
+        {"position": 0, "verdict": "answered"},
+        {"position": 1, "verdict": "abstained_similarity_floor"},
+    ]
+    assert completed["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _node_result(logs, "answer_faq")["segment_count"] == 2
+
+
+def test_a_single_request_turn_records_one_segment(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["segment_count"] == 1
+    assert completed["segment_verdicts"] == [{"position": 0, "verdict": "answered"}]
+
+
+def test_each_requests_own_words_are_recorded_on_a_merged_turn(
+    seeded_entry: int,
+) -> None:
+    # On a merged turn `turn.completed` carries only what the composing model wrote, so
+    # without this the answers being merged appear in no record at all and a bad merge
+    # cannot be told from a bad half.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what are the visiting hours on Sunday?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and what about Sunday?")
+        )
+
+    answers = _node_result(logs, "answer_faq")["segment_answers"]
+    assert [a["position"] for a in answers] == [0, 1]
+    assert [a["question"] for a in answers] == [
+        "when can I visit?",
+        "what are the visiting hours on Sunday?",
+    ]
+    assert all(a["verdict"] == "answered" for a in answers)
+    assert all(a["answer_text"] for a in answers)
+
+
+def test_a_single_request_turn_records_its_one_answer_the_same_way(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
+        asyncio.run(_run_turn(anthropic_client, "when can I visit?"))
+
+    result = _node_result(logs, "answer_faq")
+    assert [a["position"] for a in result["segment_answers"]] == [0]
+    # The half's own single text keeps its own field, unchanged.
+    assert result["answer_text"] == "Visiting hours are 8am to 5pm."

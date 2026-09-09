@@ -324,6 +324,7 @@ nothing, and today each one takes the FAQ path, abstains, and calls a human — 
   which should be zero.
 
 #### Phase 1g — One message, several requests
+*(Shipped in `specs/010-multi-request-turns/`.)*
 A patient's sentence is a container, not a unit of work. "What's your address and what should I
 bring?" is two questions; "What's your address and what dentist slots are free tomorrow?" is two
 requests for two different specialists. Today the whole message is the retrieval query *and* the
@@ -336,7 +337,8 @@ of nothing.
 - **The classifier returns requests, not labels.** Same single call, same cheap model, same
   structured output: its schema becomes a list of `{intent, text}` segments, and 1b's list of
   intents becomes the set of their labels — so the router's existing selection keeps working
-  unchanged.
+  unchanged. *(`intents` survives as a derived property of the segments, which is what let five
+  routing rules go untouched.)*
 - **A segment is a standalone restatement, not a substring.** "Do you have parking, and is it
   free?" splits into a second half that retrieves nothing on its own. The segmenter resolves
   pronouns and ellipsis against the message and the history it already reads, so every segment
@@ -344,7 +346,12 @@ of nothing.
 - **Split conservatively — under-splitting is today's behavior, over-splitting is a new failure.**
   One request stays one segment; a message splits only where the parts are independently
   answerable, and the count is capped (3 to start, revisited against Phase 2's golden set) so a
-  rambling message cannot fan out without bound.
+  rambling message cannot fan out without bound. *(The cap cannot be put in the schema — the API
+  rejects array bounds in a constrained-output schema — so it is stated in the prompt and enforced
+  on arrival: an over-long result is rejected and the turn falls back to the whole message, never
+  trimmed. A four-request message is the one case the shipped classifier does not combine; see
+  `specs/010-multi-request-turns/evaluation/procedure.md`, which is also the data that cap is to be
+  revisited against.)*
 - **Each specialist reads only its own segments.** This is the whole of the fix for the
   mixed-intent failures: the FAQ node never sees the booking clause, so it cannot abstain on it,
   and the booking node never sees the policy question, so it cannot answer it. The booking prompt
@@ -358,12 +365,20 @@ of nothing.
   takes the whole turn, small talk is still dropped whenever any segment is a real request, and an
   `unknown` segment is still escalated deliberately.
 - **A single-request message pays nothing.** One segment means one specialist, no merge and no
-  composing call — the existing path, byte for byte.
+  composing call — the existing path, byte for byte. *(The routing-time flag that used to answer
+  both "do the specialists stream?" and "does the composer merge?" was split in two: the second is
+  now decided from the parts that actually exist, because a two-question turn whose FAQ half
+  abstains collapses to one part — a constant sentence, which no composing call should paraphrase.)*
 - **Every step is logged per segment.** 1e's six FAQ events gain the segment they belong to, so
   eight events from one turn are attributable to the question that produced them, and the
-  classifier logs the segmentation it chose.
+  classifier logs the segmentation it chose. *(By the request's position in the message, bound with
+  `structlog.contextvars` for its whole run; the request's text is carried once, on the
+  classification event.)*
 
 #### Phase 1h — Answer what you can
+*(1g stops exactly here: the turn keeps one verdict, and its FAQ half abstains as a whole if any of
+its requests could not be answered — no answered half is delivered beside a gap. Each request's own
+outcome is already in the log, which is what 1h moves onto the record.)*
 Once a turn carries several requests, one verdict for the turn is a value with two meanings: "the
 address question was answered" and "the what-to-bring question was not" cannot both be `answered`.
 This phase makes the turn report each request's outcome and serve the ones it can.

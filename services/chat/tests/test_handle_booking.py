@@ -24,7 +24,6 @@ from chat.agent.handle_booking import (
 from chat.agent.history import (
     ANSWERING_HEADING,
     OPENING_CLINIC_NOTE,
-    PATIENT_RESUMES_HEADING,
     exclude_silent_window,
     split_into_bursts,
     to_claude_messages,
@@ -44,7 +43,7 @@ from chat.agent.tools.scheduling_tools import (
 from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
-from chat.domain.schemas import ChatTokenEvent
+from chat.domain.schemas import ChatTokenEvent, IntentLabel, RequestSegment
 from shared_models.scheduling import BookingFailureReason, ChangeFailureReason
 from structlog.testing import capture_logs
 
@@ -174,9 +173,14 @@ async def _run(
     *,
     stream: bool = True,
     escalation: EscalationRequests | None = None,
+    segments: list[RequestSegment] | None = None,
 ) -> tuple[list[ChatTokenEvent], BookingResult]:
     events: list[ChatTokenEvent] = []
     result: BookingResult | None = None
+    if segments is None:
+        segments = [
+            RequestSegment(intent=IntentLabel.BOOKING, text=bursts[-1][-1].content)
+        ]
     async for item in handle_booking(
         client,
         registry,
@@ -184,6 +188,7 @@ async def _run(
         patient_name="Ada Lovelace",
         local_now=_LOCAL_NOW,
         stream=stream,
+        segments=segments,
         escalation=escalation if escalation is not None else EscalationRequests(),
     ):
         if isinstance(item, BookingResult):
@@ -1427,7 +1432,11 @@ async def test_the_clinics_offer_reaches_a_booking_turn_with_no_silence() -> Non
 
     entry = _first_user_entry(client)
     assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in entry
-    assert entry.endswith(f"{PATIENT_RESUMES_HEADING}\nyes please")
+    # The loop substitutes its own requests for the trailing entry here too, which
+    # replaces the heading `to_claude_messages` had put between the clinic's words and
+    # the patient's - so the substitution carries its own. One boundary marker in this
+    # entry, never none.
+    assert entry.endswith(f"{ANSWERING_HEADING}\nyes please")
 
 
 # --- Phase 1f: who the appointment is for -------------------------------------------
@@ -1446,3 +1455,76 @@ def test_the_prompt_establishes_the_beneficiary_before_booking() -> None:
     prompt = _SYSTEM_PROMPT.lower()
     assert "who the appointment is for" in prompt
     assert "someone else" in prompt
+
+
+# --- Phase 1g: the loop reads only its own requests ----------------------------------
+
+
+def _booking_segments(*texts: str) -> list[RequestSegment]:
+    return [RequestSegment(intent=IntentLabel.BOOKING, text=t) for t in texts]
+
+
+async def test_the_loop_is_asked_to_act_on_its_own_requests_only() -> None:
+    # The corpus question is not in the prompt to be answered, which is what stops the
+    # booking half inventing an address it never retrieved.
+    client = _client([_text_response("Booked.")])
+    bursts = _bursts("where are you, and can I book Friday?")
+
+    await _run(
+        client,
+        _RecordingRegistry({}),
+        bursts,
+        segments=_booking_segments("can I book Friday?"),
+    )
+
+    prompt = str(client.messages.create.call_args.kwargs["messages"])
+    assert "can I book Friday?" in prompt
+    assert "where are you" not in prompt
+
+
+async def test_several_booking_requests_enter_the_loop_once() -> None:
+    # Two scheduling requests are one piece of work against one set of records, and
+    # the loop already sequences them - two loops would be two writers on one patient.
+    client = _client([_text_response("Done.")])
+    bursts = _bursts("cancel Friday and book Monday")
+
+    _, result = await _run(
+        client,
+        _RecordingRegistry({}),
+        bursts,
+        segments=_booking_segments("cancel Friday", "book Monday"),
+    )
+
+    assert result.iterations == 1
+    prompt = str(client.messages.create.call_args.kwargs["messages"])
+    assert "cancel Friday" in prompt
+    assert "book Monday" in prompt
+
+
+async def test_the_conversation_still_reaches_the_loop_around_its_requests() -> None:
+    # History is context, the segment is the request: the substitution replaces what
+    # the loop is answering, not what it can see.
+    client = _client([_text_response("Booked.")])
+    bursts = _bursts(
+        "do you have evening slots?", "We do, on Thursdays.", "book me one then"
+    )
+
+    await _run(
+        client,
+        _RecordingRegistry({}),
+        bursts,
+        segments=_booking_segments("book me a Thursday evening slot"),
+    )
+
+    prompt = str(client.messages.create.call_args.kwargs["messages"])
+    assert "We do, on Thursdays." in prompt
+    assert "book me a Thursday evening slot" in prompt
+
+
+def test_the_prompt_says_the_loop_holds_no_clinic_knowledge() -> None:
+    # The input slice and the instruction fail independently, so both are asserted.
+    from chat.agent.handle_booking import _SYSTEM_PROMPT
+
+    prompt = _SYSTEM_PROMPT.lower()
+    assert "no clinic knowledge" in prompt
+    assert "outside" in prompt

@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Literal, NoReturn, Self
@@ -15,7 +15,11 @@ from alembic.config import Config
 from chat.agent.compose_answer import _SYSTEM_PROMPT as COMPOSE_SYSTEM_PROMPT
 from chat.api.session_cookie import COOKIE_NAME
 from chat.core.config import Settings
-from chat.domain.schemas import IntentClassificationResult, IntentLabel
+from chat.domain.schemas import (
+    IntentClassificationResult,
+    IntentLabel,
+    RequestSegment,
+)
 from fastapi.testclient import TestClient
 from httpx import AsyncClient as HttpxAsyncClient
 from httpx import Response
@@ -406,6 +410,14 @@ def _reranking_keeps_what_it_is_given() -> Iterator[None]:
     The default is a *working* reranker that keeps the shortlist in the order it was
     given, so an ordinary FAQ test still sees `answered`. A test about degradation
     patches over this with None; a test about ordering patches its own scores in.
+
+    One test opts out entirely and patches the *real* `rerank_chunks` back in:
+    `test_answer_faq.py`'s
+    `test_a_degraded_request_is_named_by_position_not_by_the_turn`, which is about the
+    event that module logs when a rerank call fails, and so cannot be written against a
+    fake that never logs it. It supplies its own failing client rather than a live one,
+    so the paid-API guard is not involved. It is the only opt-out; a second one needs a
+    reason as specific.
     """
     from chat.rag.pipeline import ScoredChunk
 
@@ -569,6 +581,7 @@ def fake_anthropic_client(
     stream_error: Exception | None = None,
     compose_error: Exception | None = None,
     intents: list[IntentLabel] | None = None,
+    segments: list[tuple[IntentLabel, str]] | None = None,
     classify_error: Exception | None = None,
     classify_gate: asyncio.Event | None = None,
     classify_started: asyncio.Event | None = None,
@@ -618,7 +631,10 @@ def fake_anthropic_client(
             tokens or [], stop_reason=stop_reason
         )
     fake_classify_intent_client(
-        intents if intents is not None else [IntentLabel.FAQ_QUESTION],
+        None
+        if segments is not None
+        else (intents if intents is not None else [IntentLabel.FAQ_QUESTION]),
+        segments=segments,
         call_error=classify_error,
         gate=classify_gate,
         started=classify_started,
@@ -630,9 +646,87 @@ def fake_anthropic_client(
     return client
 
 
+def classification_json(
+    intents: list[IntentLabel] | None = None,
+    *,
+    segments: list[tuple[IntentLabel, str]] | None = None,
+    cap_bound: bool = False,
+    message: str = "",
+) -> str:
+    """Serialize what a classification call returns, as the API would return it.
+
+    `segments` gives each request its own text, for a test about how a message is
+    split. `intents` is the shorthand for a turn that is not about splitting: one
+    segment per label, each carrying `message` - which the fakes below take from the
+    request they were handed, so an unsplit turn retrieves for exactly the text it
+    retrieves for today.
+    """
+    if segments is None:
+        segments = [(label, message) for label in intents or []]
+    return IntentClassificationResult(
+        segments=[
+            RequestSegment(intent=intent, text=text or "(empty)")
+            for intent, text in segments
+        ],
+        cap_bound=cap_bound,
+    ).model_dump_json()
+
+
+def trailing_user_text(messages: object) -> str:
+    """Return the visitor's own words from the trailing entry of a rendered list.
+
+    What a segmenter would restate when it splits an unsplit message, and therefore
+    what the fakes default a segment's text to.
+
+    The rendered entry is not always the message alone: a turn following a silent
+    window, or one whose whole window folded into a single entry, carries the clinic's
+    own words and a heading ahead of it. A real segmenter reads past those and returns
+    the request; this reads past them the only way a fake can, by cutting at the last
+    heading production put there - the headings themselves are imported, not restated,
+    so a change to either one reaches this.
+    """
+    from chat.agent.history import ANSWERING_HEADING, PATIENT_RESUMES_HEADING
+
+    if not isinstance(messages, list) or not messages:
+        return ""
+    content = messages[-1].get("content") if isinstance(messages[-1], dict) else None
+    if not isinstance(content, str):
+        return ""
+    for heading in (ANSWERING_HEADING, PATIENT_RESUMES_HEADING):
+        if heading in content:
+            content = content.rsplit(heading, 1)[1].lstrip("\n")
+    return content
+
+
+def recording_embed_texts(
+    queries: list[str],
+) -> Callable[..., Awaitable[list[list[float]]]]:
+    """`fake_embed_texts`, recording every *query* it was asked to embed.
+
+    The query a turn retrieves for is the one thing a per-segment fan-out has to get
+    right, and it is otherwise invisible: no log event carries it, and the pool a
+    search returns says nothing about what was asked. Only `input_type="query"` is
+    recorded - indexing embeds documents through the same function.
+    """
+
+    async def _embed(
+        client: AsyncClient,
+        texts: list[str],
+        input_type: Literal["document", "query"] = "document",
+    ) -> list[list[float]]:
+        if input_type == "query":
+            queries.extend(texts)
+        return await fake_embed_texts(client, texts, input_type)
+
+    return _embed
+
+
 def fake_classify_intent_client(
     intents: list[IntentLabel] | None = None,
     *,
+    segments: list[tuple[IntentLabel, str]] | None = None,
+    cap_bound: bool = False,
+    raw_text: str | None = None,
     call_error: Exception | None = None,
     gate: asyncio.Event | None = None,
     started: asyncio.Event | None = None,
@@ -644,8 +738,13 @@ def fake_classify_intent_client(
     """Stand-in for `AsyncAnthropic` when only `.messages.create(...)` is exercised, via
     `classify_intent()`'s structured-output call (research.md #3). Exposes
     `.messages.create(...)` returning a mocked response whose sole content block's
-    `.text` is `IntentClassificationResult(intents=intents).model_dump_json()`, or
-    raising `call_error` if given. `intents=None` (with no `call_error`) simulates a
+    `.text` is the segmentation `classification_json()` builds, or raising
+    `call_error` if given. `intents` is the shorthand: one segment per label, each
+    carrying the request's own trailing message, so a turn that is not about splitting
+    behaves exactly as it did before segments existed. `segments` gives each request
+    its own text, and `raw_text` bypasses both to return a response body verbatim -
+    for the invalid results only a hand-written body can express (too many segments,
+    a blank one). `intents=None` (with no `call_error`) simulates a
     response whose content doesn't validate against the schema (malformed text) -
     `classify_intent()` must raise for that case too, not just an outright API error.
     `gate` (if given) is awaited before the call resolves/raises, letting a test
@@ -686,12 +785,18 @@ def fake_classify_intent_client(
             await gate.wait()
         if call_error is not None:
             raise call_error
-        text = (
-            IntentClassificationResult(intents=intents).model_dump_json()
-            if intents is not None
-            else "not valid json"
+        if raw_text is not None:
+            return _mock_text_response(raw_text)
+        if intents is None and segments is None:
+            return _mock_text_response("not valid json")
+        return _mock_text_response(
+            classification_json(
+                intents,
+                segments=segments,
+                cap_bound=cap_bound,
+                message=trailing_user_text(kwargs.get("messages")),
+            )
         )
-        return _mock_text_response(text)
 
     # Wrapped in AsyncMock (side_effect=_create) rather than assigned directly, so
     # `.call_args_list` stays available - lets a test assert on what context a call
@@ -717,17 +822,17 @@ def fake_anthropic_client_sequence(
     later turns are supposed to get.
     """
     client = fake_anthropic_client(tokens)
-    remaining = [
-        _mock_text_response(
-            IntentClassificationResult(intents=intents).model_dump_json()
-        )
-        for intents in intents_sequence
-    ]
+    remaining = list(intents_sequence)
 
     async def _create(*_args: object, **kwargs: object) -> MagicMock:
         if kwargs.get("tools") is not None:
             return _mock_text_response(booking_reply)
-        return remaining.pop(0)
+        return _mock_text_response(
+            classification_json(
+                remaining.pop(0),
+                message=trailing_user_text(kwargs.get("messages")),
+            )
+        )
 
     client.messages.create = AsyncMock(side_effect=_create)
     return client

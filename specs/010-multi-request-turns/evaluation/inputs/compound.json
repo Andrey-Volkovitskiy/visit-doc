@@ -1,0 +1,12 @@
+[{"id":"A1","text":"What are your clinic hours, and what should I bring to my first appointment?","expected":2},
+ {"id":"A2","text":"Where are you located and do I need a referral to see a specialist?","expected":2},
+ {"id":"A3","text":"How early should I arrive, and which insurance plans do you accept?","expected":2},
+ {"id":"A4","text":"Do you do telehealth, and how much is a dentist visit if I pay myself?","expected":2},
+ {"id":"A5","text":"When is payment due and what cards do you take?","expected":2},
+ {"id":"A6","text":"What are your hours, and where is the nearest parking?","expected":2},
+ {"id":"A7","text":"Do I need a referral, and what should I bring with me?","expected":2},
+ {"id":"A8","text":"How much is a GP visit out-of-pocket, and when do I pay?","expected":2},
+ {"id":"A9","text":"Are you open on Saturdays, and do you take Medicare?","expected":2},
+ {"id":"A10","text":"What if my insurance is out-of-network, and how early should I get there?","expected":2},
+ {"id":"A11","text":"What should I bring, how early should I arrive, and what are your hours?","expected":3},
+ {"id":"A12","text":"Do you accept Aetna, do you offer virtual visits, and where are you?","expected":3}]

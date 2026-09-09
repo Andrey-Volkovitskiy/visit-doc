@@ -5,18 +5,32 @@ about the node's decisions - what reaches the prompt, what becomes a citation, w
 verdict is recorded, and which calls are never made - rather than about a provider.
 """
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Self
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import structlog
 from chat.agent.answer_faq import answer_faq
-from chat.agent.compose_answer import FaqResult
+from chat.agent.compose_answer import (
+    FaqResult,
+    deduplicate_chunks,
+    summarize_verdict,
+)
 from chat.agent.escalation import EscalationRequests
 from chat.core.config import get_settings
+from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
-from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, FaqVerdict
+from chat.domain.schemas import (
+    ChatDoneEvent,
+    ChatTokenEvent,
+    FaqVerdict,
+    IntentLabel,
+    RequestSegment,
+)
 from chat.rag.pipeline import ScoredChunk
+from chat.rag.reranking import rerank_chunks as real_rerank_chunks
 from structlog.testing import capture_logs
 
 _SESSION = "01JQ0000000000000000000000"
@@ -64,6 +78,7 @@ def _anthropic(recorder: dict[str, object]) -> AsyncMock:
     def stream(**kwargs: object) -> _Stream:
         recorder["calls"] = int(recorder.get("calls", 0)) + 1
         recorder["messages"] = kwargs.get("messages")
+        recorder.setdefault("prompts", []).append(str(kwargs.get("messages")))
         return _Stream("an answer", recorder)
 
     client.messages.stream = stream
@@ -97,6 +112,7 @@ async def _run(
             ["p1"],
             _SESSION,
             _REVISIONS if live_revisions is None else live_revisions,
+            segments=[RequestSegment(intent=IntentLabel.FAQ_QUESTION, text=question)],
             escalation=escalation,
             stream=False,
         ):
@@ -322,6 +338,7 @@ async def test_streaming_mode_emits_the_verdict_on_its_done_event() -> None:
             ["p1"],
             _SESSION,
             _REVISIONS,
+            segments=_segments("what should I bring?"),
             escalation=EscalationRequests(),
             stream=True,
         ):
@@ -449,6 +466,7 @@ async def test_the_rerank_gate_reports_its_own_floor_cap_and_drops() -> None:
                 ["p1"],
                 _SESSION,
                 _REVISIONS,
+                segments=_segments("what should I bring?"),
                 escalation=EscalationRequests(),
                 stream=False,
             ):
@@ -647,3 +665,450 @@ async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
     assert events["faq.retrieval_completed"]["pool_returned"] == 1
     assert events["faq.similarity_gate"]["kept"] == []
     assert events["faq.verdict"]["blocked_gate"] == "similarity_floor"
+
+
+# --- Phase 1g: one run per request ---------------------------------------------------
+
+
+def _segments(*questions: str) -> list[RequestSegment]:
+    return [RequestSegment(intent=IntentLabel.FAQ_QUESTION, text=q) for q in questions]
+
+
+async def _run_many(
+    *,
+    pools: dict[str, list[ScoredChunk]],
+    reranked: dict[str, list[ScoredChunk] | None],
+    gate: asyncio.Event | None = None,
+    expected_arrivals: int = 0,
+) -> tuple[FaqResult, dict[str, object]]:
+    """Drive one FAQ turn over several segments, each with its own pool and shortlist.
+
+    `pools`/`reranked` are keyed by the segment's own text, so a run that retrieved for
+    the wrong question gets the wrong chunks rather than quietly passing. `gate` (with
+    `expected_arrivals`) holds every search until they have all started, which only
+    completes if the runs really do overlap.
+    """
+    recorder: dict[str, object] = {}
+    arrivals: list[str] = []
+
+    async def _search(
+        _qdrant: object,
+        _voyage: object,
+        query: str,
+        _session: str,
+        _revisions: list[str],
+    ) -> list[ScoredChunk]:
+        arrivals.append(query)
+        if gate is not None:
+            if len(arrivals) >= expected_arrivals:
+                gate.set()
+            await gate.wait()
+        return pools[query]
+
+    async def _rerank(
+        _client: object, query: str, _chunks: list[ScoredChunk], **_kw: object
+    ) -> list[ScoredChunk] | None:
+        return reranked[query]
+
+    result: FaqResult | None = None
+    with (
+        patch("chat.agent.answer_faq.search_faq", _search),
+        patch("chat.agent.answer_faq.rerank_chunks", _rerank),
+    ):
+        async for event in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic(recorder),
+            _bursts(" ".join(pools)),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments(*pools),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            if isinstance(event, FaqResult):
+                result = event
+    assert result is not None
+    recorder["arrivals"] = arrivals
+    return result, recorder
+
+
+async def test_each_request_retrieves_for_its_own_text() -> None:
+    # The whole of the fix: a question is searched for on its own, not as part of a
+    # sentence that also carried something else.
+    pools = {"where are you?": [_chunk(0)], "what should I bring?": [_chunk(1)]}
+    reranked = {
+        "where are you?": [_chunk(0, rerank=0.9)],
+        "what should I bring?": [_chunk(1, rerank=0.9)],
+    }
+
+    _, recorder = await _run_many(pools=pools, reranked=reranked)
+
+    assert sorted(recorder["arrivals"]) == ["what should I bring?", "where are you?"]
+
+
+async def test_a_request_answers_only_from_its_own_chunks() -> None:
+    pools = {"where are you?": [_chunk(0)], "what should I bring?": [_chunk(1)]}
+    reranked = {
+        "where are you?": [_chunk(0, rerank=0.9)],
+        "what should I bring?": [_chunk(1, rerank=0.9)],
+    }
+
+    result, _ = await _run_many(pools=pools, reranked=reranked)
+
+    by_question = {a.question: a for a in result.segment_answers}
+    assert [c.chunk_index for c in by_question["where are you?"].citations] == [0]
+    assert [c.chunk_index for c in by_question["what should I bring?"].citations] == [1]
+
+
+async def test_no_request_sees_another_requests_chunks_in_its_prompt() -> None:
+    # Provenance is structural: another question's chunks are not in the prompt to be
+    # cross-wired, because each generation call is given one shortlist.
+    pools = {"where are you?": [_chunk(0)], "what should I bring?": [_chunk(1)]}
+    reranked = {
+        "where are you?": [_chunk(0, rerank=0.9)],
+        "what should I bring?": [_chunk(1, rerank=0.9)],
+    }
+
+    _, recorder = await _run_many(pools=pools, reranked=reranked)
+
+    for prompt in recorder["prompts"]:
+        assert not ("chunk text 0" in prompt and "chunk text 1" in prompt)
+
+
+async def test_the_runs_overlap_rather_than_queueing() -> None:
+    # A sequential loop never reaches the second search, so the gate never opens and
+    # this times out - which is the assertion. No wall-clock threshold is involved.
+    pools = {"where are you?": [_chunk(0)], "what should I bring?": [_chunk(1)]}
+    reranked = {
+        "where are you?": [_chunk(0, rerank=0.9)],
+        "what should I bring?": [_chunk(1, rerank=0.9)],
+    }
+
+    result, _ = await asyncio.wait_for(
+        _run_many(
+            pools=pools,
+            reranked=reranked,
+            gate=asyncio.Event(),
+            expected_arrivals=2,
+        ),
+        timeout=5,
+    )
+
+    assert result.verdict is FaqVerdict.ANSWERED
+
+
+async def test_a_turn_issues_one_search_and_one_generation_per_request() -> None:
+    pools = {f"q{i}?": [_chunk(i)] for i in range(3)}
+    reranked = {f"q{i}?": [_chunk(i, rerank=0.9)] for i in range(3)}
+
+    _, recorder = await _run_many(pools=pools, reranked=reranked)
+
+    assert len(recorder["arrivals"]) == 3
+    assert recorder["calls"] == 3
+
+
+async def test_one_requests_reranking_outage_degrades_only_the_turns_verdict() -> None:
+    # A dependency outage is not a corpus gap: the turn still answers, and says the
+    # evidence was weaker than a reranked turn's.
+    pools = {"a?": [_chunk(0)], "b?": [_chunk(1)]}
+    reranked: dict[str, list[ScoredChunk] | None] = {
+        "a?": [_chunk(0, rerank=0.9)],
+        "b?": None,
+    }
+
+    result, _ = await _run_many(pools=pools, reranked=reranked)
+
+    assert result.verdict is FaqVerdict.ANSWERED_UNRERANKED
+    assert {a.question: a.verdict for a in result.segment_answers} == {
+        "a?": FaqVerdict.ANSWERED,
+        "b?": FaqVerdict.ANSWERED_UNRERANKED,
+    }
+
+
+async def test_one_requests_search_failure_fails_the_whole_turn() -> None:
+    # A failure is not an abstention, and the half that worked is not delivered on its
+    # own - that is partial serving, and it is not this phase's.
+    async def _search(
+        _q: object, _v: object, query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        if query == "b?":
+            raise TurnPipelineError("retrieval", RuntimeError("qdrant is down"))
+        return [_chunk(0)]
+
+    with (
+        patch("chat.agent.answer_faq.search_faq", _search),
+        patch("chat.agent.answer_faq.rerank_chunks", AsyncMock(return_value=None)),
+        pytest.raises(TurnPipelineError),
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts("a? b?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("a?", "b?"),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+
+async def test_the_faq_half_abstains_whole_when_one_request_cannot_be_answered() -> (
+    None
+):
+    # Serving the answerable half is Phase 1h; here the turn abstains as a whole.
+    pools = {"a?": [_chunk(0)], "b?": [_chunk(1)]}
+    reranked: dict[str, list[ScoredChunk] | None] = {
+        "a?": [_chunk(0, rerank=0.9)],
+        "b?": [],
+    }
+
+    result, _ = await _run_many(pools=pools, reranked=reranked)
+
+    assert result.verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
+    assert result.citations == []
+    assert result.answer_text is not None
+
+
+async def test_one_call_to_staff_however_many_requests_abstained() -> None:
+    escalation = EscalationRequests()
+    with (
+        patch("chat.agent.answer_faq.search_faq", AsyncMock(return_value=[_chunk(0)])),
+        patch("chat.agent.answer_faq.rerank_chunks", AsyncMock(return_value=[])),
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts("a? b?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("a?", "b?"),
+            escalation=escalation,
+            stream=False,
+        ):
+            pass
+
+    assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
+
+
+async def test_citations_are_deduplicated_across_requests() -> None:
+    # One chunk that answers two questions is cited once.
+    shared = _chunk(0, rerank=0.9)
+    pools = {"a?": [_chunk(0)], "b?": [_chunk(0)]}
+    reranked = {"a?": [shared], "b?": [shared]}
+
+    result, _ = await _run_many(pools=pools, reranked=reranked)
+
+    assert [(c.entry_id, c.chunk_index) for c in result.citations] == [(1, 0)]
+
+
+# --- Phase 1g: the two collapse rules, as pure functions ------------------------------
+
+
+def test_a_single_verdict_summarizes_to_itself() -> None:
+    assert summarize_verdict([FaqVerdict.ANSWERED]) is FaqVerdict.ANSWERED
+
+
+def test_every_request_answered_summarizes_to_answered() -> None:
+    assert (
+        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ANSWERED])
+        is FaqVerdict.ANSWERED
+    )
+
+
+def test_a_degraded_answer_governs_a_fully_reranked_one() -> None:
+    # The weaker claim about the evidence wins: a turn resting partly on chunks no
+    # cross-encoder approved must not be recorded as one that rests on chunks it did.
+    assert (
+        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ANSWERED_UNRERANKED])
+        is FaqVerdict.ANSWERED_UNRERANKED
+    )
+
+
+def test_any_abstention_governs_an_answer() -> None:
+    assert (
+        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ABSTAINED_RERANK_FLOOR])
+        is FaqVerdict.ABSTAINED_RERANK_FLOOR
+    )
+
+
+def test_an_abstention_governs_a_degraded_answer_too() -> None:
+    assert (
+        summarize_verdict(
+            [FaqVerdict.ANSWERED_UNRERANKED, FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+        )
+        is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    )
+
+
+def test_the_first_abstention_in_message_order_is_the_one_reported() -> None:
+    # Several abstentions at different gates call for several fixes, and one field
+    # cannot say so - the log carries each request's own verdict.
+    assert (
+        summarize_verdict(
+            [FaqVerdict.ABSTAINED_EMPTY_POOL, FaqVerdict.ABSTAINED_RERANK_FLOOR]
+        )
+        is FaqVerdict.ABSTAINED_EMPTY_POOL
+    )
+
+
+def test_deduplication_keeps_the_first_appearance_and_its_order() -> None:
+    first, second = _chunk(0), _chunk(1)
+
+    assert deduplicate_chunks([first, second, _chunk(0)]) == [first, second]
+
+
+def test_deduplication_tells_chunks_of_one_entry_apart() -> None:
+    # Identity is the pair, not the entry: two chunks of one entry are two chunks.
+    chunks = [_chunk(0), _chunk(1)]
+
+    assert deduplicate_chunks(chunks) == chunks
+
+
+# --- Phase 1g: one request pays what it always paid ----------------------------------
+
+
+async def test_one_request_issues_one_search_one_rerank_and_one_generation() -> None:
+    result, recorder, rerank, _ = await _run(
+        pool=[_chunk(0)], reranked=[_chunk(0, rerank=0.9)]
+    )
+
+    assert recorder["search"].await_count == 1
+    assert rerank.await_count == 1
+    assert recorder["calls"] == 1
+    assert result.verdict is FaqVerdict.ANSWERED
+
+
+async def test_one_requests_prompt_keeps_the_shape_it_has_always_had() -> None:
+    _, recorder, _, _ = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        question="what should I bring?",
+    )
+
+    assert recorder["messages"] == [
+        {
+            "role": "user",
+            "content": "Context:\nchunk text 0\n\nQuestion: what should I bring?",
+        }
+    ]
+
+
+# --- Phase 1g: which request an event belongs to -------------------------------------
+
+
+async def test_every_retrieval_event_names_the_request_it_belongs_to() -> None:
+    # Two pipelines interleave in one turn's log; the ordering of lines carries no
+    # meaning, so the field is what makes it readable.
+    pools = {"a?": [_chunk(0)], "b?": [_chunk(1)]}
+    reranked = {"a?": [_chunk(0, rerank=0.9)], "b?": [_chunk(1, rerank=0.9)]}
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_many(pools=pools, reranked=reranked)
+
+    named = {
+        "faq.retrieval_completed",
+        "faq.similarity_gate",
+        "faq.reranking_completed",
+        "faq.rerank_gate",
+        "faq.verdict",
+    }
+    events = [entry for entry in logs if entry["event"] in named]
+    assert events
+    assert all(entry["segment"] in (0, 1) for entry in events)
+    # Each request's own verdict, under its own position.
+    verdicts = {
+        entry["segment"]: entry["verdict"]
+        for entry in logs
+        if entry["event"] == "faq.verdict"
+    }
+    assert verdicts == {0: "answered", 1: "answered"}
+
+
+async def test_a_degraded_request_is_named_by_position_not_by_the_turn() -> None:
+    # Driven through the *real* reranking module: the binding has to reach the events
+    # a request logs below this node, not only the ones the node logs itself.
+    failing_client = AsyncMock()
+    failing_client.rerank = AsyncMock(side_effect=RuntimeError("voyage is down"))
+    recorder: dict[str, object] = {}
+
+    async def _search(
+        _q: object, _v: object, query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        return [_chunk(0 if query == "a?" else 1)]
+
+    with (
+        patch("chat.agent.answer_faq.search_faq", _search),
+        # The autouse fixture fakes this boundary for every test; here the real one is
+        # what is under test, since the event it logs is the thing being attributed.
+        patch("chat.agent.answer_faq.rerank_chunks", real_rerank_chunks),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            failing_client,
+            _anthropic(recorder),
+            _bursts("a? b?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("a?", "b?"),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+    unavailable = [e for e in logs if e["event"] == "faq.reranking_unavailable"]
+    assert sorted(entry["segment"] for entry in unavailable) == [0, 1]
+
+
+async def test_an_empty_corpus_is_recorded_per_request() -> None:
+    # Driven through the real retriever, which returns on the empty revision list
+    # before it spends a dependency - so this reaches the event without a corpus.
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts("a? b?"),
+            ["p1"],
+            _SESSION,
+            [],
+            segments=_segments("a?", "b?"),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+    skipped = [e for e in logs if e["event"] == "turn.retrieval_skipped_empty_corpus"]
+    assert sorted(entry["segment"] for entry in skipped) == [0, 1]
+
+
+async def test_one_requests_binding_does_not_leak_into_another() -> None:
+    # `structlog.contextvars` is task-scoped, which is what makes a per-request binding
+    # safe to set inside a fan-out at all.
+    pools = {f"q{i}?": [_chunk(i)] for i in range(3)}
+    reranked = {f"q{i}?": [_chunk(i, rerank=0.9)] for i in range(3)}
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_many(pools=pools, reranked=reranked)
+
+    by_position: dict[int, set[int]] = {}
+    for entry in logs:
+        if entry["event"] != "faq.retrieval_completed":
+            continue
+        by_position.setdefault(entry["segment"], set()).update(
+            candidate["chunk_index"] for candidate in entry["candidates"]
+        )
+    assert by_position == {0: {0}, 1: {1}, 2: {2}}

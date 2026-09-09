@@ -1,5 +1,11 @@
 # Contract: Log Events
 
+> **Extended by Phase 1g.** Every event below now also carries `segment` — the position of the
+> request in the patient's message it belongs to, since a turn runs this pipeline once per request.
+> The addition, and the classification and completion events that go with it, are in
+> [`specs/010-multi-request-turns/contracts/log-events.md`](../../010-multi-request-turns/contracts/log-events.md).
+> Nothing in this document is superseded.
+
 This is the phase's deliverable for US4 and the input contract Phase 2 will compute metrics from, so
 field names are part of the contract, not an implementation detail. All events go through the
 existing structlog chain (`shared-logging`) and inherit `turn_id`/`node` from the bound context —

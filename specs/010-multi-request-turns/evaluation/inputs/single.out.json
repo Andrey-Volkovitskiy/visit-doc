@@ -1,0 +1,310 @@
+[
+ {
+  "id": "D1",
+  "text": "What are your clinic hours?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your clinic hours?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D2",
+  "text": "Do I need a referral to see a specialist?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral to see a specialist?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D3",
+  "text": "I have been meaning to ask for a while, and I hope this is the right place to ask, but what are your opening hours on Saturdays?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your opening hours on Saturdays?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D4",
+  "text": "What time do you open? When can I come in the morning?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What time do you open and when can you see me in the morning?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D5",
+  "text": "Can I book an appointment with a dentist on Friday afternoon, ideally after three?",
+  "segments": [
+   {
+    "intent": "booking",
+    "text": "Can I book an appointment with a dentist on Friday afternoon, ideally after three?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D6",
+  "text": "Hi there!",
+  "segments": [
+   {
+    "intent": "small_talk",
+    "text": "Hi there!"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D7",
+  "text": "Thanks, that is really helpful.",
+  "segments": [
+   {
+    "intent": "small_talk",
+    "text": "Thanks, that is really helpful."
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D8",
+  "text": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Does the clinic accept Blue Cross insurance?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D9",
+  "text": "What should I bring to my first appointment?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What should I bring to my first appointment?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D10",
+  "text": "How much does a GP visit cost if I pay out of pocket?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How much does a GP visit cost if I pay out of pocket?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D11",
+  "text": "Please cancel my appointment.",
+  "segments": [
+   {
+    "intent": "booking",
+    "text": "cancel my appointment"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D12",
+  "text": "Where exactly are you? I mean the street address.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What is the street address of the clinic?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D13",
+  "text": "Do you do telehealth appointments?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you offer telehealth appointments?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D14",
+  "text": "I need to move my Friday appointment to next week sometime, whenever you have room.",
+  "segments": [
+   {
+    "intent": "booking",
+    "text": "I need to reschedule my Friday appointment to next week."
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D15",
+  "text": "ok",
+  "segments": [
+   {
+    "intent": "small_talk",
+    "text": "ok"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D16",
+  "text": "Which insurance plans do you accept?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Which insurance plans do you accept?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D17",
+  "text": "How early should I arrive?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D18",
+  "text": "What are my upcoming appointments?",
+  "segments": [
+   {
+    "intent": "booking",
+    "text": "What are my upcoming appointments?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D19",
+  "text": "Is there parking near the clinic, because I will be driving in and I am not sure where to leave the car?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Is there parking near the clinic?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D20",
+  "text": "When is payment due?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "When is payment due?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D21",
+  "text": "Good morning, I hope you are well.",
+  "segments": [
+   {
+    "intent": "small_talk",
+    "text": "Good morning, I hope you are well."
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ },
+ {
+  "id": "D22",
+  "text": "Can I pay with an HSA card, or a Visa, or cash? Any of those?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What payment methods do you accept?"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected": 1,
+  "count_matches": true
+ }
+]

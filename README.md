@@ -433,3 +433,37 @@ capabilities — full rationale and alternatives considered live in
   pays one round trip on `POST /chats` instead of nine, and the single-entry save path is the same
   function called with a list of one — so there is one implementation of "chunk, embed, write", not
   two that can drift.
+
+## One Message, Several Requests: technology choices
+
+`specs/010-multi-request-turns/` (ROADMAP Phase 1g) makes the **request**, not the message, the unit
+of work: the classifier returns an ordered list of `{intent, text}` segments, each specialist reads
+only its own, and the retrieval pipeline runs once per question. Three choices carried a real
+tradeoff.
+
+- **The fan-out lives inside the FAQ node, not in the graph.** LangGraph's `Send` would give a node
+  instance per question — and per-question node spans for free — but it is *n* branches writing one
+  state key, which needs a channel reducer. The graph's standing rule is that every specialist writes
+  a *disjoint* key precisely so no reducer is needed, and retiring that rule to fan out one
+  specialist is a large change for a small gain. So the concurrency is `asyncio.gather` inside
+  `answer_faq`: one node, one key, one write, and the routing table, the conditional edges and the
+  merge detection are all untouched. The cost is that the fan-out is invisible in the graph's shape —
+  paid back by the per-request `segment` field on every retrieval event, which is what makes two
+  interleaved pipelines readable in the log.
+- **One generation call per question, not one over every question's shortlist.** A single prompt
+  carrying two questions and two shortlists is cheaper — one call instead of up to three — but it is
+  the same shape as the single *query* covering two questions that this phase exists to undo, and it
+  leaves "this answer used only its own evidence" resting on the model's obedience. Answering each
+  question from its own shortlist alone makes that structural: another question's chunks are not in
+  the prompt to be cross-wired. The cost is bounded by the cap at three generation calls plus one
+  composing call, and only a message that genuinely carries several questions pays it.
+- **The cap of three is stated, not encoded — because it cannot be encoded.** The intent was to make
+  an over-long segmentation unrepresentable, via `minItems`/`maxItems` in the classifier's
+  constrained-output schema. The Claude API rejects array bounds in such a schema
+  (`For 'array' type, property 'maxItems' is not supported`), which only a live call revealed — every
+  unit test stubs that call. So the cap is stated in the prompt and in the schema's field
+  description, and enforced *on arrival*: an over-long result is rejected as an invalid
+  classification and the turn falls back to the whole message on the FAQ path, exactly as it does for
+  any other classification failure. Nothing the patient asked is ever trimmed away. The measured
+  consequence is recorded with the labelled sets: a four-request message is the one shape the shipped
+  classifier does not combine, and it is the data the cap of three is to be revisited against.

@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 from chat.agent.compose_answer import (
     FaqResult,
+    FaqSegmentAnswer,
     TurnCompletion,
     compose_answer,
     record_single_specialist_completion,
@@ -21,6 +22,8 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     Citation,
     FaqVerdict,
+    IntentLabel,
+    RequestSegment,
 )
 from chat.rag.pipeline import ScoredChunk
 from structlog.testing import capture_logs
@@ -28,6 +31,10 @@ from structlog.testing import capture_logs
 from .conftest import FakeAnthropicStream, FakeTextEvent
 
 _CITATION = Citation(entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5.")
+_SEGMENTS = [
+    RequestSegment(intent=IntentLabel.FAQ_QUESTION, text="when can I visit?"),
+    RequestSegment(intent=IntentLabel.BOOKING, text="book me Friday"),
+]
 _REPLY_IDS = ["01TURN"]
 
 
@@ -38,27 +45,42 @@ def _client(tokens: list[str]) -> MagicMock:
 
 
 def _answered_faq() -> FaqResult:
-    return FaqResult(
-        answer_text="Visiting hours are 8am to 5pm.",
-        citations=[_CITATION],
-        verdict=FaqVerdict.ANSWERED,
-        scored_chunks=[
-            ScoredChunk(
-                faq_entry_id=_CITATION.entry_id,
-                chunk_index=_CITATION.chunk_index,
-                chunk_text=_CITATION.chunk_text,
-                similarity_score=0.9,
-                rerank_score=0.8,
+    return FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="when can I visit?",
+                answer_text="Visiting hours are 8am to 5pm.",
+                verdict=FaqVerdict.ANSWERED,
+                citations=[_CITATION],
+                scored_chunks=[
+                    ScoredChunk(
+                        faq_entry_id=_CITATION.entry_id,
+                        chunk_index=_CITATION.chunk_index,
+                        chunk_text=_CITATION.chunk_text,
+                        similarity_score=0.9,
+                        rerank_score=0.8,
+                    )
+                ],
             )
         ],
+        abstention_message="unused",
     )
 
 
 def _abstaining_faq() -> FaqResult:
-    return FaqResult(
-        answer_text="I don't have a confident answer to that.",
-        citations=[],
-        verdict=FaqVerdict.ABSTAINED_RERANK_FLOOR,
+    return FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="when can I visit?",
+                answer_text="",
+                verdict=FaqVerdict.ABSTAINED_RERANK_FLOOR,
+                citations=[],
+                scored_chunks=[],
+            )
+        ],
+        abstention_message="I don't have a confident answer to that.",
     )
 
 
@@ -74,6 +96,7 @@ async def _compose(
     completion = TurnCompletion()
     async for event in compose_answer(
         client,
+        segments=_SEGMENTS,
         faq_result=faq_result,
         booking_reply=booking_reply,
         booking_outcome=booking_outcome,
@@ -222,6 +245,7 @@ def test_a_single_specialist_turn_emits_only_its_completion() -> None:
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[{**_CITATION.model_dump(), "score": 0.9}],
             reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
         )
         completion.emit()
 
@@ -241,6 +265,7 @@ def test_a_completion_emitted_within_a_turn_reports_the_turn_duration() -> None:
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
         )
         completion.emit()
 
@@ -258,6 +283,7 @@ def test_a_completion_emitted_outside_a_turn_reports_no_duration() -> None:
             answer_text="Visiting hours are 8am to 5pm.",
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
         )
         completion.emit()
 
@@ -276,6 +302,7 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
             answer_text="I don't have a confident answer to that.",
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
         )
         completion.emit()
 
@@ -294,6 +321,7 @@ def test_a_booking_only_turn_reports_no_faq_verdict() -> None:
             answer_text="You're booked for Friday.",
             citations=[],
             reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
         )
         completion.emit()
 
@@ -501,6 +529,7 @@ async def _completion_fields(
     with capture_logs() as logs:
         async for _event in compose_answer(
             client,
+            segments=_SEGMENTS,
             faq_result=faq_result,
             booking_reply=booking_reply,
             booking_outcome=None,
@@ -543,3 +572,139 @@ async def test_a_genuine_two_specialist_merge_records_no_notice() -> None:
 
     assert fields["answer_source"] == AnswerSource.MERGED
     assert fields["notice_included"] is False
+
+
+# --- Phase 1g: several answers from one specialist -----------------------------------
+
+
+def _answer(position: int, question: str, text: str, entry_id: int) -> FaqSegmentAnswer:
+    citation = Citation(
+        entry_id=entry_id, chunk_index=0, chunk_text=f"chunk {entry_id}"
+    )
+    return FaqSegmentAnswer(
+        position=position,
+        question=question,
+        answer_text=text,
+        verdict=FaqVerdict.ANSWERED,
+        citations=[citation],
+        scored_chunks=[
+            ScoredChunk(
+                faq_entry_id=entry_id,
+                chunk_index=0,
+                chunk_text=citation.chunk_text,
+                similarity_score=0.9,
+                rerank_score=0.8,
+            )
+        ],
+    )
+
+
+def _two_answered_requests() -> FaqResult:
+    return FaqResult.from_segments(
+        [
+            _answer(0, "where are you?", "We are at 5 Oak Street.", 1),
+            _answer(1, "what should I bring?", "Bring your ID.", 2),
+        ],
+        abstention_message="unused",
+    )
+
+
+async def test_two_answers_from_one_specialist_are_merged_into_one_reply() -> None:
+    client = _client(["We are at 5 Oak Street, and bring your ID."])
+
+    tokens, done = await _compose(
+        client,
+        faq_result=_two_answered_requests(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    assert "".join(t.text for t in tokens) == (
+        "We are at 5 Oak Street, and bring your ID."
+    )
+    assert done.answer_source == AnswerSource.MERGED
+
+
+async def test_each_answer_reaches_the_composer_beside_its_own_question() -> None:
+    # An answer attached to the wrong question is a wrong answer, not a formatting
+    # problem - so the prompt names the question each answer belongs to.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_two_answered_requests(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert "where are you?" in prompt
+    assert "We are at 5 Oak Street." in prompt
+    assert "what should I bring?" in prompt
+    assert "Bring your ID." in prompt
+
+
+async def test_every_answered_request_reaches_the_reply() -> None:
+    # No servable request may be silently dropped on the way to the merge.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_two_answered_requests(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert prompt.count("Answer to the question") == 2
+
+
+async def test_the_citations_of_every_request_are_carried_through() -> None:
+    client = _client(["merged"])
+
+    _, done = await _compose(
+        client,
+        faq_result=_two_answered_requests(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    assert sorted(c.entry_id for c in done.citations) == [1, 2]
+
+
+async def test_an_abstaining_half_still_renders_as_one_gap() -> None:
+    # The FAQ half abstains whole, so the composer is told about one gap however many
+    # requests failed.
+    faq = FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="where are you?",
+                answer_text="",
+                verdict=FaqVerdict.ABSTAINED_RERANK_FLOOR,
+                citations=[],
+                scored_chunks=[],
+            ),
+            FaqSegmentAnswer(
+                position=1,
+                question="what should I bring?",
+                answer_text="",
+                verdict=FaqVerdict.ABSTAINED_EMPTY_POOL,
+                citations=[],
+                scored_chunks=[],
+            ),
+        ],
+        abstention_message="I don't have a confident answer to that.",
+    )
+    client = _client(["merged"])
+
+    _, done = await _compose(
+        client,
+        faq_result=faq,
+        booking_reply="Booked.",
+        booking_outcome=str(BookingOutcome.BOOKED),
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert prompt.count("no confident answer") == 1
+    assert done.faq_verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR

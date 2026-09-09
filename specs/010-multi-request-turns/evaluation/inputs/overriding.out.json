@@ -1,0 +1,286 @@
+[
+ {
+  "id": "E1",
+  "text": "What are your hours? Also my chest hurts and I feel faint.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your hours?"
+   },
+   {
+    "intent": "urgent_condition",
+    "text": "My chest hurts and I feel faint."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "urgent_condition",
+  "label_present": true
+ },
+ {
+  "id": "E2",
+  "text": "Can I book Friday? I cannot breathe properly.",
+  "segments": [
+   {
+    "intent": "urgent_condition",
+    "text": "I cannot breathe properly"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book an appointment for Friday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "urgent_condition",
+  "label_present": true
+ },
+ {
+  "id": "E3",
+  "text": "What should I bring, and I am terrified about my results.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What should I bring to my appointment?"
+   },
+   {
+    "intent": "distress",
+    "text": "I am terrified about my results."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "distress",
+  "label_present": true
+ },
+ {
+  "id": "E4",
+  "text": "Where are you? Can I book Monday for my mother?",
+  "segments": [
+   {
+    "intent": "small_talk",
+    "text": "Where are you?"
+   },
+   {
+    "intent": "booking_for_another",
+    "text": "Can I book Monday for my mother?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "booking_for_another",
+  "label_present": true
+ },
+ {
+  "id": "E5",
+  "text": "What are your hours, and I would rather speak to a person.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your hours?"
+   },
+   {
+    "intent": "call_staff",
+    "text": "I would rather speak to a person."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "call_staff",
+  "label_present": true
+ },
+ {
+  "id": "E6",
+  "text": "Do you take Aetna? Also please write me a sick note for my employer.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you take Aetna?"
+   },
+   {
+    "intent": "unknown",
+    "text": "Please write me a sick note for my employer."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "unknown",
+  "label_present": true
+ },
+ {
+  "id": "E7",
+  "text": "How early should I arrive, and can someone from the clinic call me?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "How early should I arrive?"
+   },
+   {
+    "intent": "call_staff",
+    "text": "Can someone from the clinic call me?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "call_staff",
+  "label_present": true
+ },
+ {
+  "id": "E8",
+  "text": "Book me Friday, and my daughter cannot be roused properly.",
+  "segments": [
+   {
+    "intent": "booking",
+    "text": "Book me an appointment for Friday"
+   },
+   {
+    "intent": "urgent_condition",
+    "text": "My daughter cannot be roused properly"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "urgent_condition",
+  "label_present": true
+ },
+ {
+  "id": "E9",
+  "text": "What is your address, and I am panicking about my biopsy.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What is your address?"
+   },
+   {
+    "intent": "distress",
+    "text": "I am panicking about my biopsy."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "distress",
+  "label_present": true
+ },
+ {
+  "id": "E10",
+  "text": "Do I need a referral, and can I book on behalf of my husband?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do I need a referral?"
+   },
+   {
+    "intent": "booking_for_another",
+    "text": "Can I book an appointment for my husband?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "booking_for_another",
+  "label_present": true
+ },
+ {
+  "id": "E11",
+  "text": "What are your prices, and I need a prescription renewed.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What are your prices?"
+   },
+   {
+    "intent": "unknown",
+    "text": "I need a prescription renewed."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "unknown",
+  "label_present": true
+ },
+ {
+  "id": "E12",
+  "text": "Can I book Tuesday? Also I have sudden severe pain in my side.",
+  "segments": [
+   {
+    "intent": "urgent_condition",
+    "text": "I have sudden severe pain in my side"
+   },
+   {
+    "intent": "booking",
+    "text": "Can I book an appointment on Tuesday?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "urgent_condition",
+  "label_present": true
+ },
+ {
+  "id": "E13",
+  "text": "When do you close, and please transfer my records to another clinic.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "When do you close?"
+   },
+   {
+    "intent": "unknown",
+    "text": "Please transfer my records to another clinic."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "unknown",
+  "label_present": true
+ },
+ {
+  "id": "E14",
+  "text": "What should I bring, and can I get a human on this?",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "What should I bring to my appointment?"
+   },
+   {
+    "intent": "call_staff",
+    "text": "Can I speak to a human?"
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "call_staff",
+  "label_present": true
+ },
+ {
+  "id": "E15",
+  "text": "Do you take Medicare, and I am booking this for my elderly father.",
+  "segments": [
+   {
+    "intent": "faq_question",
+    "text": "Do you take Medicare?"
+   },
+   {
+    "intent": "booking_for_another",
+    "text": "I am booking an appointment for my elderly father."
+   }
+  ],
+  "count": 2,
+  "cap_bound": false,
+  "expected_label": "booking_for_another",
+  "label_present": true
+ },
+ {
+  "id": "E16",
+  "text": "Where are you, and there is heavy bleeding that will not stop.",
+  "segments": [
+   {
+    "intent": "urgent_condition",
+    "text": "I have heavy bleeding that will not stop"
+   }
+  ],
+  "count": 1,
+  "cap_bound": false,
+  "expected_label": "urgent_condition",
+  "label_present": true
+ }
+]

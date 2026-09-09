@@ -12,8 +12,10 @@ from chat.domain.schemas import IntentClassificationResult, IntentLabel
 
 _MAX_TOKENS = 256
 _SYSTEM_PROMPT = (
-    "Classify the visitor's most recent message into every intent that applies, given "
-    "the conversation so far: faq_question (a clinic policy/FAQ question), booking "
+    "Split the visitor's most recent message into the requests it contains, given the "
+    "conversation so far, and label each one. Return one segment per request, in the "
+    "order the requests appear in the message. The labels are: "
+    "faq_question (a clinic policy/FAQ question), booking "
     "(anything only the clinic's live appointment records can answer - booking, "
     "rescheduling, cancelling, or listing appointments, and equally asking which "
     "practitioners this clinic has, what a named practitioner specializes in, or when "
@@ -58,22 +60,75 @@ _SYSTEM_PROMPT = (
     "The same words mean different things at different points in a conversation, so "
     'read the message against what was said before it. "OK" after arrival '
     'instructions is small_talk; the same "OK" after you offered a specific '
-    "appointment slot is the patient confirming that booking."
+    "appointment slot is the patient confirming that booking. "
+    "How to split the message. Two limits hold whatever it contains: never return "
+    "more than 3 segments, and never leave out something the visitor asked for - "
+    "every request must be inside one of the segments you return, even if that means "
+    "one segment carrying two of them: "
+    "(1) Segments are requests. A greeting, a thank-you or a reaction standing beside "
+    "a real request is not a segment of its own, and is not folded into one either - "
+    "leave it out. A message that asks for nothing at all is a single small_talk "
+    "segment carrying the message. "
+    "(2) Each segment must stand on its own, as a request someone could act on "
+    "without reading the rest of the message or the conversation. Resolve pronouns "
+    'and ellipsis: "do you have parking, and is it free?" becomes "do you have '
+    'parking?" and "is parking free?", never "is it free?". A segment does not have '
+    "to be a substring of the message. "
+    "(2a) A follow-up clause that refines, contrasts with or asks the other side of "
+    "the first request is a request of its own, and needs the same restating: "
+    '"what should I bring, and is that different for a returning patient?" becomes '
+    '"what should I bring?" and "what should a returning patient bring?"; "do you '
+    'take Medicare? what if you do not?" becomes "do you take Medicare?" and "what '
+    'happens if my insurance is not accepted?". Dropping such a clause loses a '
+    "question the visitor asked. "
+    "(3) Restate, never add. Never introduce a constraint, specialty, date, "
+    "practitioner or symptom that the message and the conversation do not carry: "
+    'turning "what should I bring?" into "what should I bring to a first cardiology '
+    'visit?" invents the thing that decides the answer. '
+    "(4) Split conservatively. One request is one segment, and a message is split only "
+    "where its parts are independently answerable - different answers, not merely "
+    "different sentences. Length, punctuation and repetition are not split points, and "
+    'two ways of asking one thing are one segment: "what time do you open? when can I '
+    'come in the morning?" is one request, not two. '
+    "(5) Three segments is the hard limit. A message carrying four or more requests "
+    "still returns three: combine the least separable of them into one segment, so "
+    "that nothing the visitor asked for is missing from every segment, and set "
+    "cap_bound to true. Leave cap_bound false whenever you did not have to combine "
+    "anything - three requests that fit are not a message that was cut short."
 )
 
 # The classifier's own request schema, built from `IntentClassificationResult`'s
 # schema but with `CLASSIFICATION_FAILED` excluded from the `intents` enum - that
-# value is assigned only by orchestration code on a failed/invalid call (FR-007), so
-# it must be structurally unreachable from the model's own response (research.md #3).
-# `additionalProperties: false` is required by the API for any `object`-typed JSON
-# Outputs schema - Pydantic's own `model_json_schema()` doesn't set it by default.
+# value is assigned only by orchestration code on a failed/invalid call, so it must be
+# structurally unreachable from the model's own response (research.md #3).
+#
+# `additionalProperties: false` and a `required` naming every property are what the API
+# asks of an `object`-typed JSON Outputs schema, and neither is what
+# `model_json_schema()` produces: it omits the first entirely and leaves a field with a
+# default out of the second. Both are applied to the segment object as well as to the
+# result - a nested object is an object.
+#
+# `cap_bound` is therefore required of the *model* while the Python model keeps a
+# default: the schema is what the response must contain, the default is what parsing
+# falls back to.
 _RESPONSE_SCHEMA: dict[str, Any] = IntentClassificationResult.model_json_schema()
 _RESPONSE_SCHEMA["$defs"]["IntentLabel"]["enum"] = [
     label.value
     for label in IntentLabel
     if label is not IntentLabel.CLASSIFICATION_FAILED
 ]
-_RESPONSE_SCHEMA["additionalProperties"] = False
+for _schema in (_RESPONSE_SCHEMA, _RESPONSE_SCHEMA["$defs"]["RequestSegment"]):
+    _schema["additionalProperties"] = False
+    _schema["required"] = list(_schema["properties"])
+# The API rejects `minItems`/`maxItems` on an array in a JSON Outputs schema ("For
+# 'array' type, property 'maxItems' is not supported"), which `model_json_schema()`
+# emits from the field's own bounds. So the cap cannot be made unrepresentable in the
+# response: it is stated in the prompt, and enforced on arrival by the model's own
+# `max_length`, which rejects an over-long list rather than trimming it - nothing the
+# visitor asked for is ever dropped, and the turn falls back exactly as it does for any
+# other invalid classification.
+for _bound in ("minItems", "maxItems"):
+    _RESPONSE_SCHEMA["properties"]["segments"].pop(_bound, None)
 
 
 class ClassificationFailedError(Exception):

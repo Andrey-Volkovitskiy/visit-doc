@@ -25,6 +25,7 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     Citation,
     FaqVerdict,
+    RequestSegment,
 )
 from chat.rag.pipeline import ScoredChunk
 
@@ -102,9 +103,71 @@ class TurnCompletion:
         get_logger().info("turn.completed", duration_ms=duration_ms, **self._fields)
 
 
+def summarize_verdict(verdicts: list[FaqVerdict]) -> FaqVerdict:
+    """Reduce one verdict per request to the single verdict the turn reports.
+
+    Applied in order: any abstention takes the turn, named by the first request that
+    abstained; otherwise a request answered without reranking governs one that was
+    reranked; otherwise the turn answered.
+
+    An abstention outranks a degraded answer because the two describe different things
+    - one is the turn's outcome, the other the strength of its evidence - and a turn
+    that abstained has no evidence to describe. Where several requests abstained at
+    different gates, this value names one of them and the log carries the rest: one
+    field cannot say that two different fixes are needed.
+
+    Raises: ValueError if `verdicts` is empty - a turn with no request never reaches
+        the FAQ half.
+    """
+    if not verdicts:
+        raise ValueError("a turn's FAQ half always answered at least one request")
+    abstention = next((v for v in verdicts if not v.answered), None)
+    if abstention is not None:
+        return abstention
+    if FaqVerdict.ANSWERED_UNRERANKED in verdicts:
+        return FaqVerdict.ANSWERED_UNRERANKED
+    return FaqVerdict.ANSWERED
+
+
+def deduplicate_chunks(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
+    """Return `chunks` with later repeats of a chunk dropped, first appearance kept.
+
+    Identity is `(entry_id, chunk_index)` - the pair every gate and every log event
+    already identifies a chunk by - so two chunks of one entry stay two chunks, while
+    one chunk that answered two of the turn's requests is carried, and cited, once.
+    """
+    seen: set[tuple[int, int]] = set()
+    unique: list[ScoredChunk] = []
+    for chunk in chunks:
+        key = (chunk.faq_entry_id, chunk.chunk_index)
+        if key not in seen:
+            seen.add(key)
+            unique.append(chunk)
+    return unique
+
+
+@dataclass(frozen=True)
+class FaqSegmentAnswer:
+    """What one of the turn's requests produced.
+
+    `question` is the request as the classifier restated it - what this run retrieved
+    for and answered - so the record can say which evidence belonged to which question
+    without joining anything.
+
+    `answer_text` is empty for a request that abstained: nothing was generated for it.
+    """
+
+    position: int
+    question: str
+    answer_text: str
+    verdict: FaqVerdict
+    citations: list[Citation]
+    scored_chunks: list[ScoredChunk] = field(default_factory=list)
+
+
 @dataclass(frozen=True)
 class FaqResult:
-    """What `answer_faq` produces for the turn.
+    """What `answer_faq` produces for the turn, over all of its requests.
 
     `scored_chunks` are the same chunks as `citations`, carrying the two scores that
     selected them. They are part of the turn's observable record but not of the reply,
@@ -112,12 +175,68 @@ class FaqResult:
     renders - and which deliberately carries no number at all.
 
     Empty for an abstention, which cited nothing.
+
+    `answer_text` is the half's own single text, and is None exactly when the half has
+    more than one reply part: several answers have no one text, and joining them would
+    put a reply nobody wrote into the record as the turn's answer.
     """
 
-    answer_text: str
+    answer_text: str | None
     citations: list[Citation]
     verdict: FaqVerdict
     scored_chunks: list[ScoredChunk] = field(default_factory=list)
+    segment_answers: list["FaqSegmentAnswer"] = field(default_factory=list)
+
+    @classmethod
+    def from_segments(
+        cls, answers: list["FaqSegmentAnswer"], *, abstention_message: str
+    ) -> "FaqResult":
+        """Assemble the turn's FAQ half from what each of its requests produced.
+
+        Args:
+            abstention_message: what the patient is told when the half abstains - the
+                whole of the reply in that case, since nothing was generated.
+
+        The half abstains as a whole if any request did: no answer is delivered and
+        nothing is cited, however many requests succeeded beside it. Otherwise the
+        citations are every request's survivors, deduplicated across the turn.
+
+        Raises: ValueError if `answers` is empty.
+        """
+        verdict = summarize_verdict([answer.verdict for answer in answers])
+        if not verdict.answered:
+            return cls(
+                answer_text=abstention_message,
+                citations=[],
+                verdict=verdict,
+                segment_answers=answers,
+            )
+        chunks = deduplicate_chunks(
+            [chunk for answer in answers for chunk in answer.scored_chunks]
+        )
+        return cls(
+            answer_text=answers[0].answer_text if len(answers) == 1 else None,
+            citations=[
+                Citation(
+                    entry_id=chunk.faq_entry_id,
+                    chunk_index=chunk.chunk_index,
+                    chunk_text=chunk.chunk_text,
+                )
+                for chunk in chunks
+            ],
+            verdict=verdict,
+            scored_chunks=chunks,
+            segment_answers=answers,
+        )
+
+    @property
+    def part_count(self) -> int:
+        """How many parts of the turn's reply this half contributes.
+
+        One for an abstention - the half abstains as a whole - and otherwise one per
+        request it answered.
+        """
+        return 1 if not self.verdict.answered else len(self.segment_answers)
 
     def scored_citations(self) -> list[dict[str, object]]:
         """Return each surviving chunk with both scores, for the completion record.
@@ -140,6 +259,7 @@ class FaqResult:
 async def compose_answer(
     anthropic_client: AsyncAnthropic,
     *,
+    segments: list[RequestSegment],
     faq_result: FaqResult | None,
     booking_reply: str | None,
     booking_outcome: BookingOutcome | None,
@@ -150,6 +270,7 @@ async def compose_answer(
     """Compose and stream the merged reply, recording the turn's completion fields.
 
     Args:
+        segments: The requests this turn carried, for the completion record.
         faq_result: The FAQ specialist's collected output, or None if it did not run.
         booking_reply: The booking specialist's own reply text, or None if it did not
             run.
@@ -196,6 +317,7 @@ async def compose_answer(
     citations = faq_result.citations if faq_result is not None else []
     verdict = faq_result.verdict if faq_result is not None else None
     fields: dict[str, object] = {
+        **_segment_fields(segments, faq_result),
         "outcome": "merged",
         "answer_source": AnswerSource.MERGED,
         "answer_text": answer_text,
@@ -243,6 +365,25 @@ def _single_specialist_outcome(
     return verdict.value
 
 
+def _segment_fields(
+    segments: list[RequestSegment], faq_result: "FaqResult | None"
+) -> dict[str, object]:
+    """Return what `turn.completed` says about the turn's requests.
+
+    `segment_verdicts` is what keeps the summary verdict lossy in that one field
+    alone: where two questions stopped at different gates, both are recoverable here.
+    Absent for a turn whose FAQ half did not run - a booking reply was never retrieved
+    against, so it has no verdict to report per request.
+    """
+    fields: dict[str, object] = {"segment_count": len(segments)}
+    if faq_result is not None:
+        fields["segment_verdicts"] = [
+            {"position": answer.position, "verdict": answer.verdict.value}
+            for answer in faq_result.segment_answers
+        ]
+    return fields
+
+
 def record_single_specialist_completion(
     completion: TurnCompletion,
     *,
@@ -252,14 +393,17 @@ def record_single_specialist_completion(
     answer_text: str,
     citations: list[dict[str, object]],
     reply_to_message_ids: list[str],
+    segments: list[RequestSegment],
+    faq_result: "FaqResult | None" = None,
 ) -> None:
-    """Record `turn.completed` for a turn whose sole specialist streamed its own reply.
+    """Record `turn.completed` for a turn whose reply came from one part.
 
     The no-op composing path still owns the event: this is the one node that runs on
     every path, so keeping it here is what makes "exactly once per turn" true rather
     than a property each specialist has to remember.
     """
     fields: dict[str, object] = {
+        **_segment_fields(segments, faq_result),
         "outcome": _single_specialist_outcome(answer_source, verdict),
         "answer_source": answer_source,
         "answer_text": answer_text,
@@ -286,7 +430,12 @@ def _build_prompt(
     parts: list[str] = []
     if faq_result is not None:
         if faq_result.verdict.answered:
-            parts.append(f"Answer to the question part:\n{faq_result.answer_text}")
+            # One block per request, each naming the question it answers: an answer
+            # attached to the wrong question is a wrong answer, not a formatting slip.
+            parts.extend(
+                f'Answer to the question "{answer.question}":\n{answer.answer_text}'
+                for answer in faq_result.segment_answers
+            )
         else:
             parts.append(
                 "Answer to the question part:\n"

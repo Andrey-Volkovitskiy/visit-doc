@@ -56,7 +56,7 @@ from chat.agent.escalation import (
     in_precedence_order,
 )
 from chat.agent.handle_booking import BookingResult, handle_booking
-from chat.agent.history import bound_to_last_n_turns
+from chat.agent.history import bound_to_last_n_turns, trailing_question
 from chat.agent.node_logging import node_span
 from chat.agent.small_talk import SmallTalkResult, answer_small_talk
 from chat.agent.tools.registry import ToolContext, ToolRegistry
@@ -72,7 +72,14 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     FaqVerdict,
     IntentLabel,
+    RequestSegment,
 )
+
+# What a synthesized segment carries when the message it stands for is empty. A
+# segment's text is what the turn retrieves for, and a blank one would be searched for
+# as though it were a question - unreachable in practice, since a turn is only entered
+# with a patient message, but the type forbids blank and something has to be there.
+_EMPTY_MESSAGE = "(empty message)"
 
 _ANSWER_FAQ = "answer_faq"
 _HANDLE_BOOKING = "handle_booking"
@@ -129,9 +136,21 @@ class _GraphState(TypedDict):
     alongside one it can. The notice is then the composer's to render, not a constant to
     staple on - which is why this is a flag read by the merge rather than a fifth
     hand-off.
+
+    `segments` is what the visitor actually asked for, one entry per request. Every
+    turn has at least one, a failed classification included, so nothing downstream
+    needs a second shape for the turn that could not be split.
+
+    `specialists_collect` says the specialists must collect their replies instead of
+    streaming them, because the turn could produce more than one part. Whether the
+    composer then actually merges is a different question, answered from the parts that
+    exist once they have run: a turn whose two questions both abstain collapses to the
+    one constant sentence, and paraphrasing that through a model is neither cheap nor
+    safe.
     """
 
     bursts: list[list[Message]]
+    segments: list[RequestSegment]
     reply_to_message_ids: list[str]
     session_id: str
     live_revisions: list[str]
@@ -140,7 +159,7 @@ class _GraphState(TypedDict):
     local_now: datetime
     tool_context: ToolContext | None
     specialists: list[str]
-    merge_required: bool
+    specialists_collect: bool
     faq_result: FaqResult | None
     booking_result: BookingResult | None
     small_talk_result: SmallTalkResult | None
@@ -171,6 +190,66 @@ _HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
     IntentLabel.BOOKING_FOR_ANOTHER: EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
     IntentLabel.UNKNOWN: EscalationReason.NOT_AUTHORIZED,
 }
+
+
+# Which intents the FAQ specialist answers. `CLASSIFICATION_FAILED` is here because it
+# is the fallback route: its one synthesized segment carries the whole message, and the
+# FAQ path is what answers it.
+_FAQ_INTENTS = (IntentLabel.FAQ_QUESTION, IntentLabel.CLASSIFICATION_FAILED)
+
+
+def segments_for(node: str, segments: list[RequestSegment]) -> list[RequestSegment]:
+    """Return the requests `node` is answering, in message order.
+
+    A specialist reads only its own requests: the FAQ half never sees a scheduling
+    clause, so it cannot abstain on one, and the booking half never sees a corpus
+    question, so it cannot answer one out of nothing.
+    """
+    if node == _ANSWER_FAQ:
+        return [s for s in segments if s.intent in _FAQ_INTENTS]
+    if node == _HANDLE_BOOKING:
+        return [s for s in segments if s.intent is IntentLabel.BOOKING]
+    return []
+
+
+def _expected_parts(
+    specialists: list[str], segments: list[RequestSegment], *, notice_required: bool
+) -> int:
+    """Return how many parts of a reply this route could produce.
+
+    Read before anything runs, so it counts what each selected node *could* contribute
+    - one per FAQ request, one for every other node. What the turn actually produced is
+    counted again once they have, since the FAQ half collapses to a single abstention
+    if any of its requests could not be answered.
+    """
+    parts = (
+        len(segments_for(_ANSWER_FAQ, segments)) if _ANSWER_FAQ in specialists else 0
+    )
+    parts += sum(
+        1 for node in (_HANDLE_BOOKING, _SMALL_TALK, _HAND_OFF) if node in specialists
+    )
+    return parts + (1 if notice_required else 0)
+
+
+def _actual_parts(state: "_GraphState") -> int:
+    """Return how many parts of the reply this turn really produced.
+
+    The FAQ half contributes one part per question it answered, or exactly one when it
+    abstained - it abstains as a whole, however many of its questions could not be
+    answered.
+    """
+    faq_result = state.get("faq_result")
+    parts = faq_result.part_count if faq_result is not None else 0
+    parts += sum(
+        1
+        for value in (
+            state.get("booking_result"),
+            state.get("small_talk_result"),
+            state["handoff_reason"],
+        )
+        if value is not None
+    )
+    return parts + (1 if state["notice_required"] else 0)
 
 
 def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
@@ -315,18 +394,44 @@ def _build_graph(
         """
         logger = get_logger()
         async with node_span("classify_intent") as span:
+            bounded_bursts = bound_to_last_n_turns(
+                state["bursts"], n=get_settings().CONTEXT_TURNS
+            )
+            cap_bound = False
             try:
-                bounded_bursts = bound_to_last_n_turns(
-                    state["bursts"], n=get_settings().CONTEXT_TURNS
-                )
                 result = await classify_intent(anthropic_client, bounded_bursts)
-                intents = result.intents
+                segments = result.segments
+                cap_bound = result.cap_bound
             except Exception as exc:  # noqa: BLE001 - a classification failure must
                 # never fail the request; it's recorded as CLASSIFICATION_FAILED
                 # instead, after logging the cause for visibility.
                 _record_classification_failure(exc)
-                intents = [IntentLabel.CLASSIFICATION_FAILED]
-            logger.info("intent.classified", intents=intents)
+                # One segment carrying the whole message: the fallback is the FAQ path
+                # answering what was actually said, which is what it answered before
+                # a message was ever split. A turn with no segment at all would be a
+                # second shape for everything downstream to branch on.
+                segments = [
+                    RequestSegment(
+                        intent=IntentLabel.CLASSIFICATION_FAILED,
+                        text=trailing_question(bounded_bursts) or _EMPTY_MESSAGE,
+                    )
+                ]
+            intents = [segment.intent for segment in segments]
+            # The one event carrying a request's text, and the one every per-request
+            # retrieval event is read against - they carry its position, not its words.
+            logger.info(
+                "intent.classified",
+                intents=intents,
+                segments=[
+                    {
+                        "position": position,
+                        "intent": segment.intent.value,
+                        "text": segment.text,
+                    }
+                    for position, segment in enumerate(segments)
+                ],
+                cap_bound=cap_bound,
+            )
             # The label *is* the decision, so nothing is asked to make it again: no
             # model call, and no dependence on whether the corpus happens to ground the
             # sentence the patient used. Recorded like every other call to staff, and
@@ -357,19 +462,23 @@ def _build_graph(
             # which case the notice is the composer's to render (FR-022d).
             handoff_reason = None if notice_required else stopping
 
-            merge_required = len(specialists) > 1 or notice_required
+            specialists_collect = (
+                _expected_parts(specialists, segments, notice_required=notice_required)
+                > 1
+            )
             span.set(
                 intents=[str(i) for i in intents],
                 specialists=specialists,
-                merge_required=merge_required,
+                specialists_collect=specialists_collect,
                 stopping_cause=(
                     handoff_reason.value if handoff_reason is not None else None
                 ),
                 notice_required=notice_required,
             )
         return {
+            "segments": segments,
             "specialists": specialists,
-            "merge_required": merge_required,
+            "specialists_collect": specialists_collect,
             "handoff_reason": handoff_reason,
             "notice_required": notice_required,
         }
@@ -380,7 +489,7 @@ def _build_graph(
         Raises: TurnPipelineError propagated from `answer_faq()`.
         """
         writer = get_stream_writer()
-        streaming = not state["merge_required"]
+        streaming = not state["specialists_collect"]
         result: FaqResult | None = None
         async with node_span(_ANSWER_FAQ) as span:
             async for event in answer_faq(
@@ -392,6 +501,7 @@ def _build_graph(
                 state["reply_to_message_ids"],
                 state["session_id"],
                 state["live_revisions"],
+                segments=segments_for(_ANSWER_FAQ, state["segments"]),
                 escalation=state["escalation"],
                 stream=streaming,
             ):
@@ -404,14 +514,31 @@ def _build_graph(
                     writer(event)
             span.set(
                 faq_verdict=result.verdict.value if result else None,
+                segment_count=len(result.segment_answers) if result else 0,
                 abstained=result is not None and not result.verdict.answered,
                 citation_count=len(result.citations) if result else 0,
-                answer_chars=len(result.answer_text) if result else 0,
-                # The half's own text, not the turn's. On a merged turn `turn.completed`
-                # carries only what the composing model wrote, so without this the two
-                # specialists' actual words - the ones being merged - appear in no
-                # record at all, and a bad merge cannot be told from a bad half.
+                answer_chars=sum(
+                    len(answer.answer_text) for answer in result.segment_answers
+                )
+                if result
+                else 0,
+                # The half's own text, not the turn's - and None once it answered more
+                # than one request, since several answers have no single text.
                 answer_text=result.answer_text if result else None,
+                # Which is why each request's own words are here as well. On a merged
+                # turn `turn.completed` carries only what the composing model wrote, so
+                # without this the answers being merged - one specialist's or two -
+                # appear in no record at all, and a bad merge cannot be told from a bad
+                # half.
+                segment_answers=[
+                    {
+                        "position": answer.position,
+                        "question": answer.question,
+                        "verdict": answer.verdict.value,
+                        "answer_text": answer.answer_text,
+                    }
+                    for answer in (result.segment_answers if result else [])
+                ],
                 mode="streamed" if streaming else "collected",
             )
         return {"faq_result": result}
@@ -423,7 +550,7 @@ def _build_graph(
             or TurnPipelineError propagated from `handle_booking()`.
         """
         writer = get_stream_writer()
-        streaming = not state["merge_required"]
+        streaming = not state["specialists_collect"]
         context = state["tool_context"]
         result: BookingResult | None = None
         async with node_span(_HANDLE_BOOKING) as span:
@@ -437,6 +564,7 @@ def _build_graph(
                 patient_name=state["patient_name"],
                 local_now=state["local_now"].isoformat(),
                 stream=streaming,
+                segments=segments_for(_HANDLE_BOOKING, state["segments"]),
                 escalation=state["escalation"],
             ):
                 if isinstance(event, BookingResult):
@@ -477,7 +605,7 @@ def _build_graph(
             over, and the patient would be answered twice.
             TurnPipelineError propagated from `answer_small_talk()`.
         """
-        if state["merge_required"]:
+        if state["specialists_collect"]:
             raise RuntimeError("small talk is never merged")
         writer = get_stream_writer()
         result: SmallTalkResult | None = None
@@ -537,7 +665,12 @@ def _build_graph(
         return {}
 
     async def compose_answer_node(state: _GraphState) -> None:
-        """Emit the turn's reply and completion, merging only when both halves ran.
+        """Emit the turn's reply and completion, merging only when there is more to it.
+
+        The merge is decided here rather than at routing time, from the parts that
+        actually exist: a turn routed as several parts collapses to one when its FAQ
+        half abstains, and there is then nothing to merge and nothing a composing call
+        could add - only a constant sentence for it to paraphrase.
 
         Raises: TurnPipelineError propagated from `compose_answer()` on a merged turn.
         """
@@ -546,14 +679,27 @@ def _build_graph(
         booking_result = state.get("booking_result")
         booking_outcome = booking_result.outcome if booking_result is not None else None
         completion = TurnCompletion()
+        parts = _actual_parts(state)
         async with node_span(_COMPOSE_ANSWER) as span:
-            if not state["merge_required"]:
+            if parts <= 1:
                 answer_text, citations, verdict, source = _single_specialist_reply(
                     faq_result,
                     booking_result,
                     state.get("small_talk_result"),
                     handoff_reason=state["handoff_reason"],
                 )
+                if state["specialists_collect"]:
+                    # Nothing streamed this turn's reply, because the route expected
+                    # more than one part - so this node owes the patient the single
+                    # part that survived, in the shape its specialist would have sent.
+                    writer(
+                        ChatDoneEvent(
+                            faq_verdict=verdict,
+                            citations=[],
+                            message=answer_text,
+                            answer_source=source,
+                        )
+                    )
                 record_single_specialist_completion(
                     completion,
                     answer_source=source,
@@ -562,10 +708,13 @@ def _build_graph(
                     answer_text=answer_text,
                     citations=citations,
                     reply_to_message_ids=state["reply_to_message_ids"],
+                    segments=state["segments"],
+                    faq_result=faq_result,
                 )
                 span.set(
                     answer_source=str(source),
                     merged=False,
+                    collapsed_to_one_part=state["specialists_collect"],
                     faq_verdict=verdict.value if verdict is not None else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(citations),
@@ -581,6 +730,7 @@ def _build_graph(
                 composed_parts: list[str] = []
                 async for event in compose_answer(
                     anthropic_client,
+                    segments=state["segments"],
                     notice_required=state["notice_required"],
                     faq_result=faq_result,
                     booking_reply=(
@@ -657,7 +807,7 @@ def _single_specialist_reply(
         return booking_result.reply_text, [], None, AnswerSource.BOOKING
     if faq_result is not None:
         return (
-            faq_result.answer_text,
+            faq_result.answer_text or "",
             faq_result.scored_citations(),
             faq_result.verdict,
             AnswerSource.FAQ,
@@ -706,6 +856,7 @@ async def run_turn(
     graph = _build_graph(qdrant_client, voyage_client, rerank_client, anthropic_client)
     state: _GraphState = {
         "bursts": bursts,
+        "segments": [],
         "reply_to_message_ids": reply_to_message_ids,
         "session_id": session_id,
         "live_revisions": live_revisions,
@@ -714,7 +865,7 @@ async def run_turn(
         "local_now": local_now,
         "tool_context": tool_context,
         "specialists": [],
-        "merge_required": False,
+        "specialists_collect": False,
         "faq_result": None,
         "booking_result": None,
         "small_talk_result": None,
