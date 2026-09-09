@@ -201,6 +201,11 @@ async def compose_answer(
         "answer_text": answer_text,
         "faq_verdict": verdict,
         "booking_outcome": booking_outcome,
+        # What was merged, beside the fact that something was. `merged` alone covers
+        # both a two-specialist turn and one specialist plus a notice, so a reader
+        # counting mixed-intent turns needs this to tell them apart - and needs it on
+        # this line, not joined from the router's (contracts/log-events.md).
+        "notice_included": notice_required,
         "message_ids_unified": reply_to_message_ids,
         "citations": (faq_result.scored_citations() if faq_result is not None else []),
     }

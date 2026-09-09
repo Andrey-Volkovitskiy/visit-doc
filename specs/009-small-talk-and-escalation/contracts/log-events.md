@@ -35,8 +35,18 @@ not. They now carry the four new values in those fields; nothing about the event
 
 ## `node.completed` for `small_talk` (existing shape, new node)
 
-Reports `answer_chars` and `answer_text`, as the other specialists do. `faq_verdict`, `citations`
-and any retrieval fields are absent, not null-filled: the node retrieved nothing.
+Reports `answer_chars` and `answer_text`, as the other specialists do, plus `truncated` — whether
+the reply ran into the node's token cap. `faq_verdict`, `citations` and any retrieval fields are
+absent, not null-filled: the node retrieved nothing.
+
+## `small_talk.truncated` (**NEW**, warning)
+
+Emitted only when a reply stopped because it ran out of room, carrying `max_tokens` and
+`answer_chars`. Warning rather than error, and it calls no one: the tokens have already reached the
+patient by the time it is known, so there is nothing left to fail cleanly, and paging a person over
+a clipped pleasantry is the queue noise this phase exists to remove. A truncated reply is otherwise
+shaped exactly like a short complete one — same absence of an error, same terminal event — so
+without this line the record says the turn went fine.
 
 ## `node.completed` for `hand_off` (existing, widened)
 
@@ -48,12 +58,25 @@ indistinguishable node records.
 `answer_source` may now be `small_talk`. For every hand-off it stays `hand_off`, and the cause is
 read from the escalation events (FR-049).
 
+A merged turn also carries **`notice_included`**. `merged` means the composing model wrote the
+reply and nothing more — a turn pairing one servable intent with a not-authorized notice is composed
+just as a two-specialist turn is — so without this field the two are one value, and a count of
+mixed-intent merges is wrong by however many notices there were. It is on this line rather than
+joined from the router's, because one node's decision should be readable from one record.
+
+It is deliberately *not* an `answer_source` value: a notice can accompany one specialist or two, so
+the two facts are orthogonal, and an enum trying to carry both would need a value per combination.
+
 ## The Phase 2 metric
 
 *Escalations raised by turns that contained no request* is computed by joining, per correlation id:
 `intent.classified.intents` (does it contain `small_talk` alone?) with the presence of an
 `escalation.raised` line. `node.completed`'s `stopping_cause` gives the same turn's cause without a
-second join, which is what the exception below is read from. The phase's own target is zero, with one deliberate exception —
+second join, which is what the exception below is read from.
+
+*Mixed-intent turns* are counted from `turn.completed` where `answer_source` is `merged` **and**
+`notice_included` is false — the notice turns are composed too, and counting `merged` alone
+includes them. The phase's own target is zero, with one deliberate exception —
 `distress`, which is an escalation from a turn that may contain no request, and which the join must
 therefore exclude by cause rather than by label.
 

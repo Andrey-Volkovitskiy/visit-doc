@@ -30,6 +30,10 @@ from chat.domain.schemas import ChatTokenEvent
 
 # Short by construction: the longest thing this node should ever produce is two
 # sentences, and a cap is cheaper than a prompt asking nicely for brevity.
+#
+# Kept small deliberately, which means it can bite - so `SmallTalkResult.truncated`
+# says when it did. Raising it was rejected: a larger cap does not remove the case, it
+# only makes a mid-sentence reply rarer and correspondingly harder to notice.
 _MAX_TOKENS = 150
 
 _SYSTEM_PROMPT = """You are the receptionist of a medical clinic, replying to a patient
@@ -57,12 +61,17 @@ Never give medical advice or comment on symptoms of any kind."""
 class SmallTalkResult:
     """What `answer_small_talk` produces for the turn.
 
-    Deliberately just the text: this node retrieves nothing, so it has no citations and
-    no verdict to report, and a field holding an always-empty list would invite a reader
-    to believe one could arrive.
+    Deliberately no citations and no verdict: this node retrieves nothing, and a field
+    holding an always-empty list would invite a reader to believe one could arrive.
+
+    `truncated` is the exception to that reasoning, because it is a fact about the reply
+    the patient actually received. A reply that ran out of room ends mid-sentence and is
+    otherwise indistinguishable from a short complete one - same shape, same absence of
+    an error - so without this the record says the turn went fine.
     """
 
     reply_text: str
+    truncated: bool = False
 
 
 async def answer_small_talk(
@@ -81,7 +90,8 @@ async def answer_small_talk(
             call in the turn separates them: nothing this node is told may fold a
             message still waiting for a person into the one it is replying to.
 
-    Yields: `ChatTokenEvent`s as they stream, then exactly one `SmallTalkResult`.
+    Yields: `ChatTokenEvent`s as they stream, then exactly one `SmallTalkResult`, whose
+        `truncated` says whether the reply ran into `_MAX_TOKENS`.
 
     Raises: TurnPipelineError("generation", ...) - the same failure every other
         generated reply raises, deliberately: a small-talk turn that breaks is a broken
@@ -112,7 +122,24 @@ async def answer_small_talk(
                 if event.type == "text":
                     parts.append(event.text)
                     yield ChatTokenEvent(text=event.text)
+            # Read after the loop rather than from a `message_delta` event: the SDK
+            # accumulates the final message, and this is the documented way to ask why
+            # it stopped. Inside the `try` because a failure to obtain it is a failure
+            # of the same call.
+            final = await stream_response.get_final_message()
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 
-    yield SmallTalkResult(reply_text="".join(parts))
+    reply_text = "".join(parts)
+    truncated = final.stop_reason == "max_tokens"
+    if truncated:
+        # Logged, not raised, and staff are not called: the tokens have already reached
+        # the patient, so there is nothing left to fail cleanly, and paging a person
+        # over a clipped pleasantry is the queue noise this whole path exists to stop.
+        # What is owed is a record, and this is it.
+        get_logger().warning(
+            "small_talk.truncated",
+            max_tokens=_MAX_TOKENS,
+            answer_chars=len(reply_text),
+        )
+    yield SmallTalkResult(reply_text=reply_text, truncated=truncated)

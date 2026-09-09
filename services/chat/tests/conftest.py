@@ -467,11 +467,28 @@ class FakeTextEvent:
         self.text = text
 
 
-class FakeAnthropicStream:
-    """Stand-in for `AsyncAnthropic().messages.stream(...)`'s context manager."""
+class FakeFinalMessage:
+    """Stand-in for the `Message` `get_final_message()` resolves to.
 
-    def __init__(self, tokens: list[str]) -> None:
+    Only `stop_reason` is modelled: it is the one field a caller reads to learn that
+    the model stopped because it ran out of room rather than because it was finished.
+    """
+
+    def __init__(self, stop_reason: str) -> None:
+        self.stop_reason = stop_reason
+
+
+class FakeAnthropicStream:
+    """Stand-in for `AsyncAnthropic().messages.stream(...)`'s context manager.
+
+    `stop_reason` defaults to `end_turn` - a reply that finished on its own - so the
+    many callers that do not care about it are unaffected. A test exercising the
+    truncation path passes `max_tokens`.
+    """
+
+    def __init__(self, tokens: list[str], stop_reason: str = "end_turn") -> None:
         self._tokens = tokens
+        self._stop_reason = stop_reason
 
     async def __aenter__(self) -> Self:
         return self
@@ -485,6 +502,9 @@ class FakeAnthropicStream:
     async def _generate(self) -> AsyncIterator[FakeTextEvent]:
         for token in self._tokens:
             yield FakeTextEvent(token)
+
+    async def get_final_message(self) -> FakeFinalMessage:
+        return FakeFinalMessage(self._stop_reason)
 
 
 class GatedAnthropicStream:
@@ -545,6 +565,7 @@ def fake_anthropic_client_gated(
 def fake_anthropic_client(
     tokens: list[str] | None = None,
     *,
+    stop_reason: str = "end_turn",
     stream_error: Exception | None = None,
     compose_error: Exception | None = None,
     intents: list[IntentLabel] | None = None,
@@ -593,7 +614,9 @@ def fake_anthropic_client(
     elif stream_error is not None:
         client.messages.stream.side_effect = stream_error
     else:
-        client.messages.stream.return_value = FakeAnthropicStream(tokens or [])
+        client.messages.stream.return_value = FakeAnthropicStream(
+            tokens or [], stop_reason=stop_reason
+        )
     fake_classify_intent_client(
         intents if intents is not None else [IntentLabel.FAQ_QUESTION],
         call_error=classify_error,

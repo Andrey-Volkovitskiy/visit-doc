@@ -497,6 +497,9 @@ def _build_graph(
             span.set(
                 answer_chars=len(result.reply_text) if result else 0,
                 answer_text=result.reply_text if result else None,
+                # A reply that ran into the cap ends mid-sentence and otherwise looks
+                # like a short complete one, so the node says which it was.
+                truncated=result.truncated if result else False,
             )
         return {"small_talk_result": result}
 
@@ -596,6 +599,10 @@ def _build_graph(
                 span.set(
                     answer_source=str(AnswerSource.MERGED),
                     merged=True,
+                    # `merged` says the composer wrote this; it does not say what it
+                    # merged. A turn carrying a notice beside one specialist is composed
+                    # too, so the two are only distinguishable with this beside it.
+                    notice_included=state["notice_required"],
                     faq_verdict=faq_result.verdict.value if faq_result else None,
                     booking_outcome=booking_outcome,
                     citation_count=len(faq_result.citations) if faq_result else 0,

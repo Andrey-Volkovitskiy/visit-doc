@@ -16,6 +16,7 @@ from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent
+from structlog.testing import capture_logs
 
 from .conftest import fake_anthropic_client
 
@@ -169,3 +170,45 @@ async def test_an_ordinary_turn_carries_no_silent_window_note() -> None:
 
     entries = client.messages.stream.call_args.kwargs["messages"]
     assert SILENT_WINDOW_NOTE not in " ".join(str(e["content"]) for e in entries)
+
+
+# --- a reply that ran out of room ----------------------------------------------------
+
+
+async def test_a_reply_that_hit_the_cap_is_recorded_as_truncated() -> None:
+    """The cap is small, so hitting it has to be visible.
+
+    The tokens are already on the wire by the time this is known - the node streams as
+    it goes - so nothing here can retract a half-sentence. What it can do is stop the
+    turn from recording it as an ordinary short reply, which is what left a truncated
+    pleasantry indistinguishable from a complete one.
+    """
+    client = fake_anthropic_client(["Of course, take your"], stop_reason="max_tokens")
+
+    events = await _run(client, "Let me think a bit")
+
+    result = events[-1]
+    assert isinstance(result, SmallTalkResult)
+    assert result.truncated is True
+    assert result.reply_text == "Of course, take your"
+
+
+async def test_a_reply_that_finished_on_its_own_is_not_marked_truncated() -> None:
+    client = fake_anthropic_client(_TOKENS)
+
+    events = await _run(client, "Thanks!")
+
+    result = events[-1]
+    assert isinstance(result, SmallTalkResult)
+    assert result.truncated is False
+
+
+async def test_a_truncated_reply_is_reported_where_an_operator_will_see_it() -> None:
+    client = fake_anthropic_client(["Of course, take your"], stop_reason="max_tokens")
+
+    with capture_logs() as logs:
+        await _run(client, "Let me think a bit")
+
+    entry = next(e for e in logs if e["event"] == "small_talk.truncated")
+    assert entry["log_level"] == "warning"
+    assert entry["max_tokens"] == 150

@@ -1486,3 +1486,68 @@ async def test_an_unauthorized_request_inside_a_stopping_turn_is_recorded_too() 
     )
     # Distress still takes the turn, silences it, and writes its own sentence.
     assert escalation.conversation_reason is EscalationReason.DISTRESS
+
+
+# --- what a merged turn merged, and a reply that ran out of room ---------------------
+
+
+async def test_the_compose_record_says_whether_a_notice_was_merged_in(
+    seeded_entry: int,
+) -> None:
+    client = fake_anthropic_client(
+        ["Hours are 8-5, and the sick note has gone to staff."],
+        intents=[IntentLabel.UNKNOWN, IntentLabel.FAQ_QUESTION],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "When can I visit, and write me a sick note?")
+
+    composed = _node_result(logs, "compose_answer")
+    assert composed["merged"] is True
+    # One specialist ran, so `merged` alone would count this with the two-specialist
+    # turns. This is what tells them apart on the same line.
+    assert composed["notice_included"] is True
+
+
+async def test_a_two_specialist_merge_records_no_notice(seeded_entry: int) -> None:
+    client = fake_anthropic_client(
+        ["Hours are 8-5, and you're booked."],
+        intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "When can I visit, and can I book Friday?")
+
+    composed = _node_result(logs, "compose_answer")
+    assert composed["merged"] is True
+    assert composed["notice_included"] is False
+
+
+async def test_a_truncated_pleasantry_is_visible_in_the_turns_record() -> None:
+    client = fake_anthropic_client(
+        ["Of course, take your"],
+        intents=[IntentLabel.SMALL_TALK],
+        stop_reason="max_tokens",
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "Let me think a bit")
+
+    assert _node_result(logs, "small_talk")["truncated"] is True
+
+
+async def test_an_ordinary_pleasantry_records_no_truncation() -> None:
+    client = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "Thanks!")
+
+    assert _node_result(logs, "small_talk")["truncated"] is False

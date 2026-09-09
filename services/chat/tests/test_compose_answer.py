@@ -484,3 +484,62 @@ def test_the_prompt_describes_the_parts_it_is_actually_given() -> None:
     # the message - otherwise "more than one part" invites the same invention.
     assert "labelled" in lowered
     assert "only the parts labelled below were in the message" in lowered
+
+
+# --- what the composer merged, not just that it merged -------------------------------
+
+
+async def _completion_fields(
+    client: MagicMock,
+    *,
+    faq_result: FaqResult | None,
+    booking_reply: str | None,
+    notice_required: bool,
+) -> dict[str, object]:
+    """Compose one turn and return the fields its `turn.completed` carried."""
+    completion = TurnCompletion()
+    with capture_logs() as logs:
+        async for _event in compose_answer(
+            client,
+            faq_result=faq_result,
+            booking_reply=booking_reply,
+            booking_outcome=None,
+            reply_to_message_ids=_REPLY_IDS,
+            completion=completion,
+            notice_required=notice_required,
+        ):
+            pass
+        completion.emit()
+    return next(e for e in logs if e["event"] == "turn.completed")
+
+
+async def test_a_merge_records_whether_a_notice_was_part_of_it() -> None:
+    """`merged` says the composer wrote the reply; it does not say what went into it.
+
+    One specialist plus a notice and two specialists are different turns that record
+    the same `answer_source`, so a reader counting mixed-intent merges over-counts
+    unless the notice is on the record too. It cannot be another `answer_source` value:
+    a notice can accompany one specialist *or* two, so the two facts are orthogonal and
+    an enum that tried to carry both would need a value per combination.
+    """
+    fields = await _completion_fields(
+        _client(["Hours are 8-5, and the receipt has gone to staff."]),
+        faq_result=_answered_faq(),
+        booking_reply=None,
+        notice_required=True,
+    )
+
+    assert fields["answer_source"] == AnswerSource.MERGED
+    assert fields["notice_included"] is True
+
+
+async def test_a_genuine_two_specialist_merge_records_no_notice() -> None:
+    fields = await _completion_fields(
+        _client(["Hours are 8-5, and you're booked for Friday."]),
+        faq_result=_answered_faq(),
+        booking_reply="Booked for Friday.",
+        notice_required=False,
+    )
+
+    assert fields["answer_source"] == AnswerSource.MERGED
+    assert fields["notice_included"] is False
