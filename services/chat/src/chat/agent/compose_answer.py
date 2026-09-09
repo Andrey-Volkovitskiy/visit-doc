@@ -29,7 +29,11 @@ from chat.domain.schemas import (
 )
 from chat.rag.pipeline import ScoredChunk
 
-_MAX_TOKENS = 1024
+# Larger than either half's own budget, because what this call writes has to hold both
+# of them: up to `MAX_SEGMENTS` question answers, each generated under a 1024 cap, plus
+# a booking reply. At the halves' own cap the merge is the one step that can silently
+# cut the reply off - nothing downstream records that it was truncated.
+_MAX_TOKENS = 2048
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
 message had more than one part. Every part that was in it is labelled below, with what
 was done about it - a question answered from the clinic's knowledge base, something
@@ -432,9 +436,16 @@ def _build_prompt(
         if faq_result.verdict.answered:
             # One block per request, each naming the question it answers: an answer
             # attached to the wrong question is a wrong answer, not a formatting slip.
+            # `answer_text` is the fallback for a result carrying no per-request
+            # answers at all, so a half that answered can never reach the composer as
+            # no block - which would drop the answered question from the reply
+            # silently, the one failure this prompt cannot be inspected for.
             parts.extend(
-                f'Answer to the question "{answer.question}":\n{answer.answer_text}'
-                for answer in faq_result.segment_answers
+                [
+                    f'Answer to the question "{answer.question}":\n{answer.answer_text}'
+                    for answer in faq_result.segment_answers
+                ]
+                or [f"Answer to the question part:\n{faq_result.answer_text or ''}"]
             )
         else:
             parts.append(

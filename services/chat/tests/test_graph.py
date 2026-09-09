@@ -1637,6 +1637,27 @@ def test_an_invalid_segmentation_falls_back_to_the_faq_path(
     assert queries == ["when can I visit?"]
 
 
+def test_a_blank_message_still_falls_back_rather_than_failing_the_turn(
+    seeded_entry: int,
+) -> None:
+    # `message` only has to be one character, so whitespace alone reaches the fallback,
+    # where a segment refuses to carry it. The handler exists so that a classification
+    # failure never fails the request - it must not be the thing that raises.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours."], classify_error=RuntimeError("boom")
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "   "))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
+    assert classified["segments"][0]["text"].strip()
+    assert isinstance(events[-1], ChatDoneEvent)
+
+
 # --- Phase 1g: a turn carrying several requests --------------------------------------
 
 

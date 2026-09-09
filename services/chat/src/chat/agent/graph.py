@@ -413,7 +413,13 @@ def _build_graph(
                 segments = [
                     RequestSegment(
                         intent=IntentLabel.CLASSIFICATION_FAILED,
-                        text=trailing_question(bounded_bursts) or _EMPTY_MESSAGE,
+                        # Stripped before the fallback: `message` is only bounded by
+                        # `min_length=1`, so a message of nothing but whitespace
+                        # reaches here as a truthy string a segment refuses to carry -
+                        # and the raise would come from inside the handler whose whole
+                        # job is that this turn does not fail.
+                        text=trailing_question(bounded_bursts).strip()
+                        or _EMPTY_MESSAGE,
                     )
                 ]
             intents = [segment.intent for segment in segments]
@@ -680,6 +686,12 @@ def _build_graph(
         booking_outcome = booking_result.outcome if booking_result is not None else None
         completion = TurnCompletion()
         parts = _actual_parts(state)
+        if parts > 1 and not state["specialists_collect"]:
+            # The route expected one part, so a specialist streamed its own reply and
+            # its own terminal event - composing a second one now would answer the
+            # patient twice. `_expected_parts` is what has to bound `_actual_parts`,
+            # and this is where a route that stopped doing so is caught.
+            raise RuntimeError("a streamed turn produced more than one part")
         async with node_span(_COMPOSE_ANSWER) as span:
             if parts <= 1:
                 answer_text, citations, verdict, source = _single_specialist_reply(
@@ -692,10 +704,18 @@ def _build_graph(
                     # Nothing streamed this turn's reply, because the route expected
                     # more than one part - so this node owes the patient the single
                     # part that survived, in the shape its specialist would have sent.
+                    # Its citations are the surviving half's own, read off the result
+                    # rather than left empty: today only an abstaining FAQ half
+                    # collapses here and cites nothing, and a constant that happens to
+                    # be right is not the same as one the reply decides.
                     writer(
                         ChatDoneEvent(
                             faq_verdict=verdict,
-                            citations=[],
+                            citations=(
+                                faq_result.citations
+                                if source is AnswerSource.FAQ and faq_result is not None
+                                else []
+                            ),
                             message=answer_text,
                             answer_source=source,
                         )

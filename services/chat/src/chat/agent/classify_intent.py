@@ -8,9 +8,14 @@ from chat.agent.history import to_claude_messages_separating_silence
 from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
 from chat.domain.models import Message
-from chat.domain.schemas import IntentClassificationResult, IntentLabel
+from chat.domain.schemas import MAX_SEGMENTS, IntentClassificationResult, IntentLabel
 
-_MAX_TOKENS = 256
+# Room for the largest legal response and then some. A response is no longer one short
+# label list: it is up to `MAX_SEGMENTS` restated requests, each a sentence of the
+# visitor's own length. Running into the cap truncates the JSON mid-string, which
+# parses as an invalid classification and drops the turn back to the unsplit message -
+# on exactly the multi-request traffic the split exists for.
+_MAX_TOKENS = 1024
 _SYSTEM_PROMPT = (
     "Split the visitor's most recent message into the requests it contains, given the "
     "conversation so far, and label each one. Return one segment per request, in the "
@@ -62,7 +67,8 @@ _SYSTEM_PROMPT = (
     'instructions is small_talk; the same "OK" after you offered a specific '
     "appointment slot is the patient confirming that booking. "
     "How to split the message. Two limits hold whatever it contains: never return "
-    "more than 3 segments, and never leave out something the visitor asked for - "
+    f"more than {MAX_SEGMENTS} segments, and never leave out something the visitor "
+    "asked for - "
     "every request must be inside one of the segments you return, even if that means "
     "one segment carrying two of them: "
     "(1) Segments are requests. A greeting, a thank-you or a reaction standing beside "
@@ -90,11 +96,12 @@ _SYSTEM_PROMPT = (
     "different sentences. Length, punctuation and repetition are not split points, and "
     'two ways of asking one thing are one segment: "what time do you open? when can I '
     'come in the morning?" is one request, not two. '
-    "(5) Three segments is the hard limit. A message carrying four or more requests "
-    "still returns three: combine the least separable of them into one segment, so "
-    "that nothing the visitor asked for is missing from every segment, and set "
-    "cap_bound to true. Leave cap_bound false whenever you did not have to combine "
-    "anything - three requests that fit are not a message that was cut short."
+    f"(5) {MAX_SEGMENTS} segments is the hard limit. A message carrying more requests "
+    f"than that still returns {MAX_SEGMENTS}: combine the least separable of them into "
+    "one segment, so that nothing the visitor asked for is missing from every segment, "
+    "and set cap_bound to true. Leave cap_bound false whenever you did not have to "
+    f"combine anything - {MAX_SEGMENTS} requests that fit are not a message that was "
+    "cut short."
 )
 
 # The classifier's own request schema, built from `IntentClassificationResult`'s

@@ -192,16 +192,7 @@ async def answer_faq(
             elif stream:
                 yield event
     else:
-        # Default `return_exceptions`: the first question to fail cancels the rest and
-        # propagates, so the turn fails whole rather than serving what survived.
-        answers = list(
-            await asyncio.gather(
-                *(
-                    _collect(_answer_one(position, segment, context, stream=False))
-                    for position, segment in enumerate(segments)
-                )
-            )
-        )
+        answers = await _answer_all(segments, context)
 
     result = FaqResult.from_segments(answers, abstention_message=_ABSTENTION_MESSAGE)
     if not result.verdict.answered:
@@ -219,6 +210,35 @@ async def answer_faq(
             message=None if result.verdict.answered else result.answer_text,
         )
     yield result
+
+
+async def _answer_all(
+    segments: list[RequestSegment], context: _TurnContext
+) -> list[FaqSegmentAnswer]:
+    """Run every question of one turn concurrently, in message order.
+
+    Raises: whatever the first question to fail raised - the turn fails whole rather
+        than serving what survived.
+
+    Not a bare `asyncio.gather`: that propagates the first exception and leaves the
+    other questions *running*, so a turn that has already failed would keep spending
+    generation calls on answers nobody will read, and each one's own failure would
+    surface later as an unretrieved task exception attributed to nothing. The siblings
+    are cancelled here, and waited for, before the failure leaves this function.
+    """
+    tasks = [
+        asyncio.ensure_future(
+            _collect(_answer_one(position, segment, context, stream=False))
+        )
+        for position, segment in enumerate(segments)
+    ]
+    try:
+        return list(await asyncio.gather(*tasks))
+    except BaseException:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
 
 
 async def _collect(
@@ -269,10 +289,11 @@ async def _answer_one_bound(
 ) -> AsyncIterator[ChatTokenEvent | FaqSegmentAnswer]:
     """`_answer_one`'s body, with this request's position already bound to the log.
 
-    Split out only so the binding wraps the whole run: `bound_contextvars` is a context
-    manager, and a generator that yields inside one is only bound while it is running -
-    which is exactly what is wanted here, since the binding is task-scoped and each
-    request runs in its own task.
+    Split out only so the binding wraps the whole run rather than one statement of it.
+    A fan-out runs each request in its own task, and `structlog`'s context is copied per
+    task, so the positions cannot cross. A turn with one request has no task of its own:
+    there the binding is set in the calling node's context for as long as this generator
+    is suspended, which is harmless where every event of the turn belongs to request 0.
     """
     logger = get_logger()
     outcome = await _run_pipeline(
@@ -295,10 +316,11 @@ async def _answer_one_bound(
 
     survivors = outcome.survivors
     retrieved = "\n\n".join(chunk.chunk_text for chunk in survivors)
-    # Identical to what it has always been when nothing was silenced, so an ordinary
-    # single-question turn's prompt does not change at all. The question is this
-    # request's own: another request's chunks and another request's words are not in
-    # this prompt to be answered from.
+    # The same three parts it has always had, and the same two when nothing was
+    # silenced. What the question *is* did change: it is this request as the classifier
+    # restated it, not the message verbatim - the same text this run retrieved for, so
+    # the prompt and the shortlist can never be about two different questions. Another
+    # request's chunks and another request's words are not in this prompt at all.
     prompt = "\n\n".join(
         part
         for part in (

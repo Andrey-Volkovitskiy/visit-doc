@@ -56,7 +56,7 @@ sense of the date.
 {practitioners}
 
 Rules you must follow:
-- You hold no clinic knowledge and answer nothing outside the requests above. Anything
+- You hold no clinic knowledge and answer nothing outside the last message. Anything
   about policies, directions, prices or what to bring is another part of this system's
   job, and it is being handled separately - say nothing about it, not even that you
   cannot help with it.

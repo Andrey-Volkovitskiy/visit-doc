@@ -859,6 +859,46 @@ async def test_one_requests_search_failure_fails_the_whole_turn() -> None:
             pass
 
 
+async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
+    # `asyncio.gather` alone leaves the siblings running: the turn is already over, and
+    # they would keep spending generation calls on an answer nobody reads, then raise
+    # into nothing. Neither reaches its generation call here.
+    generated: list[str] = []
+
+    async def _search(
+        _q: object, _v: object, query: str, _s: str, _r: list[str]
+    ) -> list[ScoredChunk]:
+        if query == "fails?":
+            await asyncio.sleep(0)
+            raise TurnPipelineError("retrieval", RuntimeError("qdrant is down"))
+        await asyncio.sleep(0.05)
+        generated.append(query)
+        return [_chunk(0)]
+
+    with (
+        patch("chat.agent.answer_faq.search_faq", _search),
+        patch("chat.agent.answer_faq.rerank_chunks", AsyncMock(return_value=None)),
+        pytest.raises(TurnPipelineError),
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts("fails? slow? also slow?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("fails?", "slow?", "also slow?"),
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+    await asyncio.sleep(0.1)
+    assert generated == []
+
+
 async def test_the_faq_half_abstains_whole_when_one_request_cannot_be_answered() -> (
     None
 ):
