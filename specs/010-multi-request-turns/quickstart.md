@@ -125,6 +125,11 @@ free?". Check `intent.classified`; a segment that retrieves nothing on its own i
 rule exists to prevent. Confirm too that neither segment invented a constraint the message never
 carried.
 
+**The turn itself abstains**, and that is correct: the starter corpus says where the parking is, not
+whether it is free, so the second request has no answer and the FAQ half abstains as a whole under
+FR-042 — the same shape as scenario 10. This scenario is about the *split*, which the log shows;
+the reply is the one from scenario 10.
+
 ## 8. An overriding intent still takes the whole turn  *(US4, SC-012)*
 
 ```bash

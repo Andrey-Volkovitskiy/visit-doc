@@ -61,7 +61,7 @@ Cost is one cheap-model classification call per message — 98 calls for the who
 - **`cap_bound` was never set** in any run. The one message that exceeds the cap is rejected rather
   than combined, so nothing has yet had occasion to set it.
 
-### The one standing miss
+### Standing misses
 
 **C26** — *"What are your hours, where are you, do you take Aetna, and can I book Friday?"* — four
 independently answerable requests. The classifier returns four segments; the result fails validation
@@ -73,6 +73,26 @@ this prompt. Three prompt attempts did not move it (below).
 Recorded rather than worked around, because it is the datum the cap of 3 is meant to be revisited
 against in Phase 2: either the model learns to combine, or the cap moves, or messages of this shape
 stay on the fallback. Raising the cap now, on one message, would be tuning to a sample of one.
+
+**Segment order deviates for the two safety intents.** Found in the manual quickstart walk
+(2026-09-09), reproducible: *"What should I bring on Friday? Also my chest hurts and I feel faint."*
+comes back with the urgent clause at **position 0**, though it appears second — FR-003 asks for
+message order. It happens only for `urgent_condition` and `distress`; `booking`, `call_staff`,
+`unknown` and `faq_question` siblings all keep their order across repeated runs. The same messages
+also show the *sibling's* label wobbling under a safety clause ("Where are you?" arriving as
+`small_talk` rather than `faq_question`, and in one sample dropped altogether).
+
+Neither reaches the patient: a safety intent takes the whole turn, so nothing is retrieved, no
+per-request verdict is produced, and no consumer reads a position on such a turn. The cost is
+confined to the record, where the log lists the alarming clause first — and the segment text makes
+the real order recoverable anyway.
+
+Three prompt attempts were made and reverted: stating the ordering rule up front, adding "your job
+is to say what the message contained", and a trimmed variant. None fixed the ordering, and two made
+a sibling segment *worse* (mislabelled where it had merely been out of order). The prompt is shared
+by every turn, so buying a record-only cosmetic fix with an unmeasured labelling change is the wrong
+trade — and one of the messages proved unstable across runs, which is what makes a sample of one a
+bad thing to tune against. Recorded here instead, as C26 is.
 
 ### Run 1 — 2026-09-09, first measurement
 
