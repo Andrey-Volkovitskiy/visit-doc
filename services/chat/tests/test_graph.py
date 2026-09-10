@@ -2523,3 +2523,32 @@ def test_every_per_request_retrieval_event_still_carries_its_fields(
     # The request's text is carried once, on the classification event, and joined by
     # position - not repeated onto every per-request line.
     assert all("question" not in e for e in verdicts)
+
+
+# --- The join key: a half's requests keep the message's own positions ----------------
+
+
+def test_a_halfs_requests_carry_their_place_in_the_message_not_in_the_half() -> None:
+    # The position is what every per-request record is joined on, so a half that
+    # renumbered its own share would file the FAQ question under the booking clause's
+    # position.
+    segments = [
+        RequestSegment(intent=IntentLabel.BOOKING, text="book me Friday"),
+        RequestSegment(intent=IntentLabel.FAQ_QUESTION, text="when can I visit?"),
+    ]
+
+    faq = graph_module.indexed_segments_for("answer_faq", segments)
+    booking = graph_module.indexed_segments_for("handle_booking", segments)
+
+    assert [position for position, _ in faq] == [1]
+    assert [position for position, _ in booking] == [0]
+
+
+def test_a_node_that_answers_no_request_of_its_own_is_handed_none() -> None:
+    # A hand-off and a small-talk reply are the turn's whole reply, not one request's.
+    segments = [
+        RequestSegment(intent=IntentLabel.FAQ_QUESTION, text="when can I visit?")
+    ]
+
+    assert graph_module.indexed_segments_for("hand_off", segments) == []
+    assert graph_module.segments_for("small_talk", segments) == []

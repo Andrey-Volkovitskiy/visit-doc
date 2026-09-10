@@ -316,8 +316,7 @@ class Message(Base):
     # to its turn(s) explicitly, so history-building never has to infer pairing from
     # row order (which a stray/delayed write can violate). Plain JSONB, like
     # `request_outcomes` above - not a FK, so no per-element referential integrity, but
-    # this
-    # is diagnostic-only data (never joined on in SQL) and a chat's messages are
+    # this is diagnostic-only data (never joined on in SQL) and a chat's messages are
     # always deleted together anyway (chat_id's own CASCADE).
     reply_to_message_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     # Only ever set on a patient message: which of `AttentionMark`'s eight kinds it is,

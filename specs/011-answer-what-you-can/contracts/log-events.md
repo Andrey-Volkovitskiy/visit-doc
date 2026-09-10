@@ -18,6 +18,20 @@ outcome, not how it is produced or logged.
 
 ---
 
+## 1a. `node.completed` — two fields whose meaning follows the requests
+
+The `answer_faq` node's span keeps both field names and changes what each counts, because the half
+no longer has one outcome to report:
+
+| Field | Change |
+|---|---|
+| `abstained` | **meaning changed**: true when **any** request abstained, not when the half abstained as a whole. A partially-served turn is `abstained=true` *and* carries answers; read `segment_answers`/`turn.completed`'s `request_outcomes` for which requests those were. |
+| `citation_count` | **meaning changed**: the sum over requests of the chunks each answer stood on. A chunk that supported two requests counts twice — two provenances, not a duplicate — so this is no longer the number of distinct chunks in the turn. |
+
+`compose_answer`'s span carries `citation_count` with the same new meaning.
+
+---
+
 ## 2. `turn.completed` — three changes
 
 | Field | Change |

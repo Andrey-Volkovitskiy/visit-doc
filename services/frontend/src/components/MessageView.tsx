@@ -106,10 +106,7 @@ export function MessageView({
   showOutcomes = false,
   mark,
 }: MessageViewProps) {
-  const outcomes =
-    showOutcomes && requestOutcomes !== null && requestOutcomes !== undefined
-      ? requestOutcomes
-      : [];
+  const outcomes = showOutcomes ? (requestOutcomes ?? []) : [];
   const label = ROLE_LABEL[sender];
   return (
     <div data-testid="message" data-sender={sender}>

@@ -127,9 +127,10 @@ def deduplicate_chunks(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
 
     Identity is `(entry_id, chunk_index)` - the pair every gate and every log event
     already identifies a chunk by - so two chunks of one entry stay two chunks, while
-    one chunk a single shortlist listed twice is carried once. Applied per request and
-    never across a turn: a chunk that supported two requests is two provenances, and
-    each of them is that request's own to report.
+    one chunk a single shortlist listed twice is carried once. Applied to one request's
+    survivors, where that request's evidence is assembled, and never across a turn: a
+    chunk that supported two requests is two provenances, and each of them is that
+    request's own to report.
     """
     seen: set[tuple[int, int]] = set()
     unique: list[ScoredChunk] = []
@@ -150,6 +151,12 @@ class FaqSegmentAnswer:
     without joining anything.
 
     `answer_text` is empty for a request that abstained: nothing was generated for it.
+
+    `citations` and `scored_chunks` describe the same chunks, in the same order, and
+    each is already free of repeats: a chunk this request's shortlist listed twice is
+    one chunk in both. That is established where the answer is built, so no reader has
+    to deduplicate again and no two readers can disagree about how many chunks a
+    request stood on.
     """
 
     position: int
@@ -239,15 +246,14 @@ class FaqResult:
         stay here rather than on `Citation` - the wire type the console renders, and one
         that deliberately carries no number at all.
 
-        Deduplicated within each request rather than across the turn: two chunks of one
-        entry are still two chunks, one chunk a single request's shortlist listed twice
-        is still one, and a chunk that supported two *different* requests appears under
-        each - which is two provenances, not a duplicate.
+        Concatenated, never deduplicated across the turn: a chunk that supported two
+        *different* requests appears under each, which is two provenances rather than a
+        duplicate. Within one request there is nothing left to remove - the request's
+        own evidence was deduplicated where it was assembled, so this list and that
+        request's `citations` count the same chunks.
         """
         return [
-            chunk
-            for answer in self.segment_answers
-            for chunk in deduplicate_chunks(answer.scored_chunks)
+            chunk for answer in self.segment_answers for chunk in answer.scored_chunks
         ]
 
     @property
@@ -314,7 +320,7 @@ class FaqResult:
                         "similarity_score": chunk.similarity_score,
                         "rerank_score": chunk.rerank_score,
                     }
-                    for chunk in deduplicate_chunks(answer.scored_chunks)
+                    for chunk in answer.scored_chunks
                 ],
             }
             for answer in self.segment_answers
@@ -426,19 +432,29 @@ async def compose_answer(
     )
 
 
+# One shape per source, and no source sharing another's name. A table rather than a
+# chain ending in a default: the default was `faq`, so a source it did not name - today
+# `merged`, tomorrow whatever is added next - would be filed in the log as an FAQ turn
+# with nothing saying it had been. A missing entry raises instead, which the completion
+# path reports as the turn failing rather than as a turn that answered.
+_OUTCOME_BY_SOURCE: dict[AnswerSource, str] = {
+    AnswerSource.HAND_OFF: "handed_off",
+    AnswerSource.SMALL_TALK: "small_talk",
+    AnswerSource.BOOKING: "booking",
+    AnswerSource.FAQ: "faq",
+    AnswerSource.MERGED: "merged",
+}
+
+
 def _single_specialist_outcome(answer_source: AnswerSource) -> str:
     """Name the shape of a single-specialist turn, for its `turn.completed` line.
+
+    Raises: KeyError if `answer_source` is a member no shape has been named for.
 
     What the turn did, never what a gate decided: which gate stopped which request is
     each request's own outcome to report, and a turn may now have two different ones.
     """
-    if answer_source is AnswerSource.HAND_OFF:
-        return "handed_off"
-    if answer_source is AnswerSource.SMALL_TALK:
-        return "small_talk"
-    if answer_source is AnswerSource.BOOKING:
-        return "booking"
-    return "faq"
+    return _OUTCOME_BY_SOURCE[answer_source]
 
 
 def _segment_fields(

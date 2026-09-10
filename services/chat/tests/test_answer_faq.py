@@ -203,6 +203,20 @@ async def test_citations_carry_both_scores_for_the_turn_record() -> None:
     assert result.scored_chunks[0].rerank_score == 0.93
 
 
+async def test_a_chunk_a_shortlist_listed_twice_is_cited_once() -> None:
+    # One request's evidence is deduplicated where it is assembled, so its citations,
+    # its scored chunks and the context it was answered from all count it once. A
+    # chunk that supported a *different* request is untouched by this - that is two
+    # provenances, and each request reports its own.
+    repeated = _chunk(0, rerank=0.9)
+
+    result, recorder, _, _ = await _run(pool=[_chunk(0)], reranked=[repeated, repeated])
+
+    assert [c.chunk_index for c in _citations(result)] == [0]
+    assert [c.chunk_index for c in result.scored_chunks] == [0]
+    assert str(recorder["messages"]).count("chunk text 0") == 1
+
+
 # --- FR-002b: the pool costs no extra model work -----------------------------------
 
 
@@ -1373,3 +1387,48 @@ async def test_a_turn_generates_once_per_answered_request_and_no_more(
     assert [a.verdict.answered for a in result.segment_answers] == [
         i < answered for i in range(3)
     ]
+
+
+# --- The positions a half is handed must be the questions it is handed ---------------
+
+
+async def test_a_position_list_that_does_not_match_the_questions_is_refused() -> None:
+    # The two lists are read in parallel and the position is the join key every
+    # per-request record carries, so a mismatch would not be a short list - it would be
+    # answers filed under other requests' positions.
+    with pytest.raises(RuntimeError, match="carries its position"):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts("a? b?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("a?", "b?"),
+            positions=[1],
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+
+async def test_a_half_entered_with_no_question_is_refused() -> None:
+    # The half answers requests; a turn with none never routes here, and one that did
+    # would otherwise build a result out of nothing.
+    with pytest.raises(RuntimeError, match="no question"):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic({}),
+            _bursts(),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=[],
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass

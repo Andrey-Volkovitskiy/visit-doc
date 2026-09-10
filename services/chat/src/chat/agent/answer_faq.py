@@ -33,7 +33,11 @@ from qdrant_client import AsyncQdrantClient
 from structlog.contextvars import bound_contextvars
 from voyageai.client_async import AsyncClient
 
-from chat.agent.compose_answer import FaqResult, FaqSegmentAnswer
+from chat.agent.compose_answer import (
+    FaqResult,
+    FaqSegmentAnswer,
+    deduplicate_chunks,
+)
 from chat.agent.escalation import EscalationRequests
 from chat.agent.history import (
     bound_to_last_n_turns,
@@ -226,7 +230,11 @@ async def answer_faq(
     if stream:
         yield ChatDoneEvent(
             request_outcomes=result.request_outcomes,
-            message=result.answer_text if result.any_abstained else None,
+            # Read off the same predicate that decides `answer_text` is the constant:
+            # a half that answered anything streamed those tokens already, so there is
+            # no reply to send instead of them. `any_abstained` is the other predicate
+            # and would pair the "some" question with a value only the "all" case has.
+            message=result.answer_text if not result.any_answered else None,
         )
     yield result
 
@@ -360,7 +368,12 @@ async def _answer_one_bound(
         )
         return
 
-    survivors = outcome.survivors
+    # Deduplicated here, once, where this request's evidence is assembled - not in
+    # each of the readers downstream. The same list becomes the prompt's context, the
+    # request's `citations` and its `scored_chunks`, so a chunk a single shortlist
+    # listed twice is one chunk in all three (FR-003, research #11). A chunk that
+    # supported a *different* request is untouched: nothing here sees another request.
+    survivors = deduplicate_chunks(outcome.survivors)
     retrieved = "\n\n".join(chunk.chunk_text for chunk in survivors)
     # The same three parts it has always had, and the same two when nothing was
     # silenced. What the question *is* did change: it is this request as the classifier
