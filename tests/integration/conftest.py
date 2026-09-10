@@ -18,7 +18,11 @@ import pytest_asyncio
 from alembic import command
 from alembic.config import Config
 from chat.core.config import Settings as ChatSettings
-from chat.domain.schemas import IntentClassificationResult, IntentLabel
+from chat.domain.schemas import (
+    IntentClassificationResult,
+    IntentLabel,
+    RequestSegment,
+)
 from scheduler.core.config import Settings as SchedulerSettings
 from scheduler.repositories import practitioner_repository
 from shared_db import ensure_database_exists, isolated_database_url, isolated_name
@@ -262,8 +266,24 @@ class _FakeTextEvent:
         self.text = text
 
 
+class _FakeFinalMessage:
+    """Stand-in for the `Message` `get_final_message()` resolves to.
+
+    Only `stop_reason` is modelled: it is the one field a caller reads, to learn that
+    the model stopped because it ran out of room rather than because it was finished.
+    """
+
+    def __init__(self, stop_reason: str) -> None:
+        self.stop_reason = stop_reason
+
+
 class _FakeStream:
-    """Stand-in for `AsyncAnthropic().messages.stream(...)`'s context manager."""
+    """Stand-in for `AsyncAnthropic().messages.stream(...)`'s context manager.
+
+    `stop_reason` is `end_turn` - a reply that finished on its own. This tier has no
+    test about the truncation path; it needs the method to exist because every
+    generating node reads it, and a fake missing it fails the turn instead.
+    """
 
     def __init__(self, tokens: list[str]) -> None:
         self._tokens = tokens
@@ -281,6 +301,9 @@ class _FakeStream:
         for token in self._tokens:
             yield _FakeTextEvent(token)
 
+    async def get_final_message(self) -> _FakeFinalMessage:
+        return _FakeFinalMessage("end_turn")
+
 
 def _text_response(text: str) -> MagicMock:
     block = MagicMock()
@@ -288,14 +311,31 @@ def _text_response(text: str) -> MagicMock:
     block.text = text
     response = MagicMock()
     response.content = [block]
+    # Set rather than left to the mock: a caller reads it to decide whether the
+    # response was cut off at the cap, and a `MagicMock` is neither of the two things
+    # that field can say.
+    response.stop_reason = "end_turn"
     return response
+
+
+def _trailing_text(messages: object) -> str:
+    """Return the trailing entry's text from a rendered message list.
+
+    What an unsplit message's one request carries, so this tier retrieves for the
+    words the patient actually sent rather than for a placeholder.
+    """
+    if not isinstance(messages, list) or not messages:
+        return "(empty)"
+    content = messages[-1].get("content") if isinstance(messages[-1], dict) else None
+    return content if isinstance(content, str) and content else "(empty)"
 
 
 def fake_anthropic_client(tokens: list[str] | None = None) -> MagicMock:
     """Stand-in for `AsyncAnthropic`, patched over `chat.main.AsyncAnthropic`.
 
-    Classification always answers `faq_question`, which is what these tests exercise;
-    the booking loop is answered with a plain reply so a mixed turn cannot hang.
+    Classification always answers one `faq_question` request carrying the message's
+    own text, which is what these tests exercise; the booking loop is answered with a
+    plain reply so a mixed turn cannot hang.
     """
     client = MagicMock()
     client.close = AsyncMock()
@@ -306,7 +346,12 @@ def fake_anthropic_client(tokens: list[str] | None = None) -> MagicMock:
             return _text_response("Which practitioner would you like to see?")
         return _text_response(
             IntentClassificationResult(
-                intents=[IntentLabel.FAQ_QUESTION]
+                segments=[
+                    RequestSegment(
+                        intent=IntentLabel.FAQ_QUESTION,
+                        text=_trailing_text(kwargs.get("messages")),
+                    )
+                ]
             ).model_dump_json()
         )
 
