@@ -391,6 +391,7 @@ async def _call_staff_for_the_failure(
     chat: Chat,
     patient_message_id: str,
     escalation: EscalationRequests,
+    task: "asyncio.Task[None]",
 ) -> None:
     """Record this turn's failure as a call to staff, and apply it.
 
@@ -404,10 +405,19 @@ async def _call_staff_for_the_failure(
     precedence decides, and a failure never outranks a hole in the corpus, a request
     the assistant may not serve, or a patient who needs a person.
 
+    Deregisters `task` first, and that ordering is the invariant this call rests on: the
+    write below queues on the chat's lock, a staff post takes that lock *before* it asks
+    for a cancellation, and `pg_advisory_lock` has no timeout - so a turn still
+    registered here would be a cancellation waiting on the very lock its canceller
+    holds. The success path deregisters ahead of its own writes for exactly this
+    reason; a failed turn owes the same. Idempotent: `run_pipeline`'s `finally` clears
+    the same task again, and a task that is no longer current clears nothing.
+
     Never raises. The call to staff is what the patient is owed *after* the turn broke,
     so a failure here may not replace the account of what actually went wrong; it is
     logged as `turn.staff_call_failed` and the original error goes on propagating.
     """
+    clear_if_current(chat.id, task)
     escalation.record(EscalationReason.ASSISTANT_FAILED)
     try:
         await _persist_outcome(
@@ -642,7 +652,7 @@ async def _event_stream(
                     # newer message is being answered, and marking this one would send a
                     # staff member to a conversation nothing is wrong with.
                     await _call_staff_for_the_failure(
-                        chat, patient_message.id, escalation
+                        chat, patient_message.id, escalation, task
                     )
                     raise
                 except Exception as exc:
@@ -653,7 +663,7 @@ async def _event_stream(
                     # is owed does not depend on the code having anticipated the way it
                     # broke.
                     await _call_staff_for_the_failure(
-                        chat, patient_message.id, escalation
+                        chat, patient_message.id, escalation, task
                     )
                     raise
                 finally:

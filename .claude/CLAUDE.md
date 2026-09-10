@@ -309,8 +309,11 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   it. Three properties make it safe to put on every failure path: it is the **weakest** precedence,
   so a turn that already called staff for a corpus gap or an unauthorized request keeps that cause
   and that mark; it does **not** silence, because the thing that broke may already be working
-  again; and a cancellation reaches it at all — `CancelledError` is a `BaseException`, and a
-  superseded turn is not a failure. If the staff call itself fails it is logged as
+  again; and a cancellation never reaches it — `CancelledError` is a `BaseException`, so neither
+  `except` clause catches one, and a superseded turn is not a failure. It deregisters the turn
+  before its write queues on the chat's lock, for the same reason the success path does: a staff
+  post takes that lock before it asks for a cancellation, and `pg_advisory_lock` has no timeout.
+  If the staff call itself fails it is logged as
   `turn.staff_call_failed` and swallowed: the original error is what the turn has to report.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —

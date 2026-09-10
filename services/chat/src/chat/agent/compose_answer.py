@@ -127,7 +127,9 @@ def deduplicate_chunks(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
 
     Identity is `(entry_id, chunk_index)` - the pair every gate and every log event
     already identifies a chunk by - so two chunks of one entry stay two chunks, while
-    one chunk that answered two of the turn's requests is carried, and cited, once.
+    one chunk a single shortlist listed twice is carried once. Applied per request and
+    never across a turn: a chunk that supported two requests is two provenances, and
+    each of them is that request's own to report.
     """
     seen: set[tuple[int, int]] = set()
     unique: list[ScoredChunk] = []
@@ -181,11 +183,9 @@ class FaqResult:
 
     `segment_answers` is what everything else is derived from: there is no turn-level
     verdict and no turn-level citation list, because a turn may answer one request and
-    abstain on another and neither value could describe both (FR-002, FR-003).
-
-    `scored_chunks` are the same chunks the outcomes cite, carrying the two scores that
-    selected them. They are part of the turn's observable record but not of the reply,
-    so they ride here rather than on `Citation`.
+    abstain on another and neither value could describe both (FR-002, FR-003). Every
+    other value here is a view of it rather than a second copy, so nothing can disagree
+    with what the requests actually produced.
 
     `answer_text` is the half's own single text, and is None exactly when the half has
     more than one reply part: several answers have no one text, and joining them would
@@ -193,7 +193,6 @@ class FaqResult:
     """
 
     answer_text: str | None
-    scored_chunks: list[ScoredChunk] = field(default_factory=list)
     segment_answers: list["FaqSegmentAnswer"] = field(default_factory=list)
 
     @classmethod
@@ -229,17 +228,27 @@ class FaqResult:
             # request is an answered one; two requests are two parts - an answer and a
             # gap, or two answers - which have no one text between them.
             answer_text=answers[0].answer_text if len(answers) == 1 else None,
-            # Deduplicated within each request rather than across the turn: two chunks
-            # of one entry are still two chunks, one chunk a single request's shortlist
-            # listed twice is still one, and a chunk that supported two *different*
-            # requests is cited under each - which is two provenances, not a duplicate.
-            scored_chunks=[
-                chunk
-                for answer in answers
-                for chunk in deduplicate_chunks(answer.scored_chunks)
-            ],
             segment_answers=answers,
         )
+
+    @property
+    def scored_chunks(self) -> list[ScoredChunk]:
+        """Return every chunk the outcomes cite, with the two scores that selected them.
+
+        Part of the turn's observable record but not of the reply, which is why they
+        stay here rather than on `Citation` - the wire type the console renders, and one
+        that deliberately carries no number at all.
+
+        Deduplicated within each request rather than across the turn: two chunks of one
+        entry are still two chunks, one chunk a single request's shortlist listed twice
+        is still one, and a chunk that supported two *different* requests appears under
+        each - which is two provenances, not a duplicate.
+        """
+        return [
+            chunk
+            for answer in self.segment_answers
+            for chunk in deduplicate_chunks(answer.scored_chunks)
+        ]
 
     @property
     def request_outcomes(self) -> list[RequestOutcome]:
@@ -284,7 +293,7 @@ class FaqResult:
         """Return what `turn.completed` says about each request, in position order.
 
         Each entry carries the request's position, its verdict, and the chunks its
-        answer stood on with both scores - `rerank_score` absent on a request answered
+        answer stood on with both scores - `rerank_score` null on a request answered
         without reranking, not zero and not a copy of the similarity score, because no
         rerank score was ever obtained for it.
 
@@ -402,9 +411,11 @@ async def compose_answer(
         "message_ids_unified": reply_to_message_ids,
     }
     if faq_result is not None and not faq_result.any_answered:
-        # Only when the reply really is the abstention: a turn that served one request
-        # and named a gap for another was answered, and filing it here would count it
-        # among the turns that told the patient nothing.
+        # Only when every request of the FAQ half abstained: a turn that served one and
+        # named a gap for another was answered, and filing it here would count it among
+        # the turns whose questions went unanswered. It says nothing about the turn's
+        # *other* halves - a merged reply that also booked an appointment is recorded
+        # here too, and this field is the reply, not a claim that it refused.
         fields["abstention_message"] = answer_text
     completion.set(**fields)
     yield ChatDoneEvent(

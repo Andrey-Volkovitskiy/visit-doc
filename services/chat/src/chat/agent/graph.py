@@ -197,6 +197,36 @@ _HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
 # FAQ path is what answers it.
 _FAQ_INTENTS = (IntentLabel.FAQ_QUESTION, IntentLabel.CLASSIFICATION_FAILED)
 
+# Which intents each specialist answers. A node absent from here answers no request of
+# its own - a hand-off and a small-talk reply are the turn's whole reply, not one
+# request's.
+_NODE_INTENTS: dict[str, tuple[IntentLabel, ...]] = {
+    _ANSWER_FAQ: _FAQ_INTENTS,
+    _HANDLE_BOOKING: (IntentLabel.BOOKING,),
+}
+
+
+def indexed_segments_for(
+    node: str, segments: list[RequestSegment]
+) -> list[tuple[int, RequestSegment]]:
+    """Return the requests `node` is answering, each with its place in the message.
+
+    Returns: pairs of the request's 0-based position in the patient's whole message and
+        the request itself, in message order.
+
+    The position is the request's index in the *message*, never in this node's share of
+    it. It is the key every per-request record is joined on - the retrieval events'
+    `segment`, `intent.classified`'s entry, and the stored `RequestOutcome` - so a half
+    that renumbered its own requests would file the second half of "book me Friday, and
+    when can I visit?" under the first's position.
+    """
+    wanted = _NODE_INTENTS.get(node, ())
+    return [
+        (position, segment)
+        for position, segment in enumerate(segments)
+        if segment.intent in wanted
+    ]
+
 
 def segments_for(node: str, segments: list[RequestSegment]) -> list[RequestSegment]:
     """Return the requests `node` is answering, in message order.
@@ -205,11 +235,7 @@ def segments_for(node: str, segments: list[RequestSegment]) -> list[RequestSegme
     clause, so it cannot abstain on one, and the booking half never sees a corpus
     question, so it cannot answer one out of nothing.
     """
-    if node == _ANSWER_FAQ:
-        return [s for s in segments if s.intent in _FAQ_INTENTS]
-    if node == _HANDLE_BOOKING:
-        return [s for s in segments if s.intent is IntentLabel.BOOKING]
-    return []
+    return [segment for _, segment in indexed_segments_for(node, segments)]
 
 
 def _expected_parts(
@@ -218,9 +244,9 @@ def _expected_parts(
     """Return how many parts of a reply this route could produce.
 
     Read before anything runs, so it counts what each selected node *could* contribute
-    - one per FAQ request, one for every other node. What the turn actually produced is
-    counted again once they have, since the FAQ half collapses to a single abstention
-    if any of its requests could not be answered.
+    - one per FAQ request, one for every other node. It is an upper bound: what the
+    turn actually produced is counted again once the specialists have run, since the
+    requests that could not be answered share one gap part between them.
     """
     parts = (
         len(segments_for(_ANSWER_FAQ, segments)) if _ANSWER_FAQ in specialists else 0
@@ -234,9 +260,9 @@ def _expected_parts(
 def _actual_parts(state: "_GraphState") -> int:
     """Return how many parts of the reply this turn really produced.
 
-    The FAQ half contributes one part per question it answered, or exactly one when it
-    abstained - it abstains as a whole, however many of its questions could not be
-    answered.
+    The FAQ half contributes one part per question it answered, plus exactly one for
+    the gap if any question could not be answered - one gap part however many fell into
+    it, which is what keeps this at or below `_expected_parts`.
     """
     faq_result = state.get("faq_result")
     parts = faq_result.part_count if faq_result is not None else 0
@@ -506,6 +532,10 @@ def _build_graph(
         writer = get_stream_writer()
         streaming = not state["specialists_collect"]
         result: FaqResult | None = None
+        # Carried as the message's own positions, not re-derived from this half's share
+        # of them: a turn whose booking clause came first would otherwise report its
+        # question under position 0 and file it against the booking segment.
+        requests = indexed_segments_for(_ANSWER_FAQ, state["segments"])
         async with node_span(_ANSWER_FAQ) as span:
             async for event in answer_faq(
                 qdrant_client,
@@ -516,7 +546,8 @@ def _build_graph(
                 state["reply_to_message_ids"],
                 state["session_id"],
                 state["live_revisions"],
-                segments=segments_for(_ANSWER_FAQ, state["segments"]),
+                segments=[segment for _, segment in requests],
+                positions=[position for position, _ in requests],
                 escalation=state["escalation"],
                 stream=streaming,
             ):

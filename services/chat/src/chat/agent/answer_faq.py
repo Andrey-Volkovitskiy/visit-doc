@@ -120,6 +120,7 @@ async def answer_faq(
     live_revisions: list[str],
     *,
     segments: list[RequestSegment],
+    positions: list[int] | None = None,
     escalation: EscalationRequests,
     stream: bool = True,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent | FaqResult]:
@@ -143,6 +144,13 @@ async def answer_faq(
         segments: The questions this half is answering, in the order they appeared in
             the message. Each is retrieved for, gated and answered on its own; nothing
             is pooled across them.
+        positions: Each question's 0-based place in the patient's *whole* message, in
+            the same order as `segments`. It is what every per-request record is joined
+            on - the retrieval events' `segment`, `intent.classified`'s entry, and the
+            stored `RequestOutcome` - so a message whose first request went to another
+            specialist starts this half at a position above zero. Omitted only by a
+            caller whose questions are the whole message, where it defaults to their
+            own order.
         escalation: This turn's collector of calls to staff. An abstention records one
             into it - once per turn, however many questions could not be answered -
             and nothing here writes the transition, which belongs to the end of the
@@ -157,13 +165,18 @@ async def answer_faq(
         generation, whichever question it happened on - the turn fails whole, and no
         other question's answer is delivered on its own. A reranking failure is
         deliberately not among them: it degrades that question's answer rather than
-        failing the turn. RuntimeError if the half is entered with no question, or
-        asked to stream more than one.
+        failing the turn. RuntimeError if the half is entered with no question, asked
+        to stream more than one, or handed a position per question that does not match
+        the questions.
     """
     settings = get_settings()
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
     if not segments:
         raise RuntimeError("the FAQ half was entered with no question to answer")
+    if positions is None:
+        positions = list(range(len(segments)))
+    elif len(positions) != len(segments):
+        raise RuntimeError("every question carries its position in the message")
     if stream and len(segments) > 1:
         # Streaming is decided before retrieval runs, from how many parts the reply
         # could have; more than one part is always collected and composed.
@@ -188,15 +201,17 @@ async def answer_faq(
         opening_clinic=render_opening_clinic(bounded),
     )
 
+    requests = list(zip(positions, segments, strict=True))
     answers: list[FaqSegmentAnswer] = []
-    if len(segments) == 1:
-        async for event in _answer_one(0, segments[0], context, stream=stream):
+    if len(requests) == 1:
+        position, segment = requests[0]
+        async for event in _answer_one(position, segment, context, stream=stream):
             if isinstance(event, FaqSegmentAnswer):
                 answers.append(event)
             elif stream:
                 yield event
     else:
-        answers = await _answer_all(segments, context)
+        answers = await _answer_all(requests, context)
 
     result = FaqResult.from_segments(answers, abstention_message=_ABSTENTION_MESSAGE)
     if result.any_abstained:
@@ -211,15 +226,18 @@ async def answer_faq(
     if stream:
         yield ChatDoneEvent(
             request_outcomes=result.request_outcomes,
-            message=None if not result.any_abstained else result.answer_text,
+            message=result.answer_text if result.any_abstained else None,
         )
     yield result
 
 
 async def _answer_all(
-    segments: list[RequestSegment], context: _TurnContext
+    requests: list[tuple[int, RequestSegment]], context: _TurnContext
 ) -> list[FaqSegmentAnswer]:
     """Run every question of one turn concurrently, in message order.
+
+    Args:
+        requests: each question paired with its position in the patient's message.
 
     Raises: whatever ended the run first - the first question's failure, or this
         turn's own cancellation. Either way the turn fails whole rather than serving
@@ -252,7 +270,7 @@ async def _answer_all(
         asyncio.ensure_future(
             _collect(_answer_one(position, segment, context, stream=False))
         )
-        for position, segment in enumerate(segments)
+        for position, segment in requests
     ]
     try:
         return list(await asyncio.gather(*tasks))
@@ -401,10 +419,21 @@ async def _answer_one_bound(
             answer_chars=sum(len(part) for part in answer_parts),
         )
 
+    answer_text = "".join(answer_parts)
+    if not answer_text.strip():
+        # A request whose verdict says it was answered has to carry the text it
+        # produced - its outcome pairs the two, and "answered, with nothing" is the one
+        # thing that pair may not say. Raised here rather than left to the outcome's own
+        # construction, which happens after the half has already streamed or been
+        # merged: the same failure would then reach the patient behind their own reply.
+        raise TurnPipelineError(
+            "generation", ValueError("the model returned no answer text")
+        )
+
     yield FaqSegmentAnswer(
         position=position,
         question=segment.text,
-        answer_text="".join(answer_parts),
+        answer_text=answer_text,
         verdict=outcome.verdict,
         citations=[
             Citation(

@@ -81,13 +81,13 @@ function OutcomeView({ outcome }: { outcome: RequestOutcome }) {
           Not answered from the knowledge base — forwarded to staff.
         </p>
       ) : (
-        outcome.citations.length > 0 && (
-          <ul data-testid="citations">
-            {outcome.citations.map((citation) => (
-              <li key={`${citation.entry_id}-${citation.chunk_index}`}>{citation.chunk_text}</li>
-            ))}
-          </ul>
-        )
+        // No emptiness check: an answered request cites what it stood on, which is at
+        // least one chunk, and a guard here would read as a case that can happen.
+        <ul data-testid="citations">
+          {outcome.citations.map((citation) => (
+            <li key={`${citation.entry_id}-${citation.chunk_index}`}>{citation.chunk_text}</li>
+          ))}
+        </ul>
       )}
     </div>
   );

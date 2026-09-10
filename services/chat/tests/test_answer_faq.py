@@ -1078,6 +1078,46 @@ async def test_an_answer_cut_off_at_the_cap_says_so_in_the_log() -> None:
     assert truncated["max_tokens"] > 0
 
 
+async def test_a_generation_that_returned_no_text_fails_the_request() -> None:
+    # A request's outcome pairs its answer with its verdict, so "answered, with
+    # nothing" is the one pair it may not hold. That outcome is built after the half has
+    # already streamed or been merged, so an empty generation discovered there would
+    # reach the patient behind their own reply - it is caught where the text was not
+    # produced instead, as the generation failure it is.
+    recorder: dict[str, object] = {}
+    client = AsyncMock()
+    client.messages.stream = lambda **_kwargs: _Stream("", recorder)
+
+    with (
+        patch("chat.agent.answer_faq.search_faq", AsyncMock(return_value=[_chunk(0)])),
+        patch(
+            "chat.agent.answer_faq.rerank_chunks",
+            AsyncMock(return_value=[_chunk(0, rerank=0.9)]),
+        ),
+        pytest.raises(TurnPipelineError) as raised,
+    ):
+        async for _ in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            client,
+            _bursts("what should I bring?"),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=[
+                RequestSegment(
+                    intent=IntentLabel.FAQ_QUESTION, text="what should I bring?"
+                )
+            ],
+            escalation=EscalationRequests(),
+            stream=False,
+        ):
+            pass
+
+    assert raised.value.pipeline_step == "generation"
+
+
 async def test_an_answer_that_finished_on_its_own_records_no_truncation() -> None:
     with capture_logs() as logs:
         await _run(pool=[_chunk(0)], reranked=[_chunk(0, rerank=0.9)])

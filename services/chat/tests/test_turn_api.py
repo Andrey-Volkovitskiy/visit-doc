@@ -1923,6 +1923,36 @@ def test_a_turn_that_settles_no_reply_deregisters_before_it_takes_the_lock() -> 
     assert registered_when_locked == [False, False]
 
 
+def test_a_failed_turn_deregisters_before_its_call_to_staff_takes_the_lock(
+    seeded_entry: int,
+) -> None:
+    # The same invariant as the test above, on the path 011 added: a turn that broke
+    # calls staff, and that write queues on the chat's lock too. A staff post takes the
+    # lock first and only then asks for a cancellation, so a turn still registered here
+    # would be a cancellation waiting on the very lock its canceller holds - with the
+    # patient's stream held open behind it, since the terminal `None` is queued after.
+    registered_when_locked: list[bool] = []
+    real_lock_chat = chat_repository.lock_chat
+
+    async def recording_lock_chat(db_session: AsyncSession, chat_id: str) -> None:
+        registered_when_locked.append(chat_id in generation_registry._in_flight)
+        await real_lock_chat(db_session, chat_id)
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch.object(chat_repository, "lock_chat", recording_lock_chat),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            stream_error=_model_outage()
+        )
+        with TestClient(app, raise_server_exceptions=False) as client:
+            turn(client, "when can I visit?")
+
+    # The patient message's insert, then the failure's own call to staff.
+    assert registered_when_locked == [False, False]
+
+
 def test_an_event_shape_the_turn_cannot_name_is_dropped_rather_than_fatal() -> None:
     # `run_turn` casts what the graph yields rather than checking it, so a third shape
     # arrives as an assertion nobody made good. Unguarded, it took the whole turn down
@@ -2397,6 +2427,44 @@ def test_a_merged_turn_reports_only_its_faq_halfs_requests(seeded_entry: int) ->
     assert outcomes[0]["question"] == "when can I visit?"
     assert "faq_verdict" not in done
     assert "citations" not in done
+
+
+def test_a_requests_position_is_its_place_in_the_message_not_in_its_half(
+    seeded_entry: int,
+) -> None:
+    # The same turn with the clauses the other way round. `position` is the key every
+    # per-request record is joined on - `intent.classified`'s entry, the retrieval
+    # events' `segment`, and this outcome - so a half that numbered its own share of
+    # the requests would file this question against the booking clause instead.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.BOOKING, "book me for Friday"),
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+            ],
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "book me for Friday, and when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    outcomes = _done_line(response)["request_outcomes"]
+    assert [o["position"] for o in outcomes] == [1]
+    assert outcomes[0]["question"] == "when can I visit?"
+    # Stored under the same number the wire reported.
+    assert [o["position"] for o in history[-1]["request_outcomes"]] == [1]
+    # And the number the classification event filed that question under, which is what
+    # makes the join between the two true.
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    asked = {s["position"]: s["text"] for s in classified["segments"]}
+    assert asked[1] == "when can I visit?"
+    # The per-request retrieval events carry it too - one request, at position 1.
+    assert [e["segment"] for e in logs if e["event"] == "faq.verdict"] == [1]
 
 
 def test_a_turn_with_no_faq_half_reports_no_outcomes_at_all(seeded_entry: int) -> None:
