@@ -383,8 +383,11 @@ Once a turn carries several requests, one verdict for the turn is a value with t
 address question was answered" and "the what-to-bring question was not" cannot both be `answered`.
 This phase makes the turn report each request's outcome and serve the ones it can.
 
-- **The verdict moves to the segment.** 1e's `FaqVerdict` becomes per-request, and the turn's own
-  record is a summary of them rather than a value in its own right.
+- **The verdict moves to the request, and nothing stays behind.** 1e's `FaqVerdict` becomes the
+  request's, and the turn keeps no verdict of its own — not even a derived summary. A summary is the
+  right shape for a log line and the wrong shape for the record: a field that is only sometimes right
+  is read as the answer by the first reader who does not know it is a summary. Citations move with
+  it, so a citation says which question it supports rather than which turn it came from.
 - **A turn answers what it can and abstains only where it must** — the answerable half is delivered
   with its citations, and the gap is named as a gap in the same reply.
 - **Escalation carries the unanswered question, not the message.** Staff receive the specific
@@ -395,25 +398,43 @@ This phase makes the turn report each request's outcome and serve the ones it ca
   "preserve every claim exactly" constraint the merge already carries, now with abstention as a
   claim.
 - **Phase 2 gets the cases to measure both phases** — golden-set messages carrying two and three
-  requests with a labeled expected segmentation, segmentation accuracy as a metric, and two that
-  read directly on this work: the share of escalations raised by a message that also contained an
-  answerable question, and the share of abstentions on questions the corpus demonstrably answers.
-  Both should be zero.
+  requests with a labeled expected segmentation, segmentation accuracy as a metric, and two that read
+  directly on this work: the share of *answerable* requests a turn left unserved, and the share of
+  abstentions on questions the corpus demonstrably answers. Both should be zero. The first of those
+  replaces the metric this bullet used to name — "escalations raised by a message that also contained
+  an answerable question" — which does not survive the phase it was written for: after 1h an
+  escalation is raised *for the requests that failed* and carries them, so a mixed message still
+  raises one, and a count of those would read nonzero on turns that behaved exactly as designed. What
+  is worth counting is the answerable request that went unserved, which is the thing partial serving
+  can actually get wrong.
 
 ### Phase 2 — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does:
 
 - **A golden dataset** — 50–100 realistic patient messages labeled with expected intent(s),
-  expected tool calls, and (for FAQ) the correct source document.
-- **Metrics**: intent-classification accuracy, tool-selection correctness, retrieval hit@k / MRR,
-  **answer groundedness** (run offline across the labeled set rather than per
-  turn), and **end-to-end task success** (did the booking land in the correct database state?).
+  expected tool calls, and (for FAQ) the correct source document. **The label attaches to a request,
+  not to a message**, following 1g and 1h: a message carries an expected segmentation — how many
+  requests, in what order, and each one's intent — and the retrieval and source-document labels hang
+  off the individual request. Labeled per message, the set could not express the traffic those two
+  phases exist to serve, and would have to score a turn that answered one of two questions as either
+  wholly right or wholly wrong.
+- **Metrics**, computed per request wherever a request is what the system decides about:
+  intent-classification accuracy and **segmentation accuracy** (against 1g's labels — the expected
+  number of requests, their order, and each one's intent), tool-selection correctness, retrieval
+  hit@k / MRR per request, **answer groundedness** (run offline across the labeled set rather than
+  per turn), and **end-to-end task success** (did the booking land in the correct database state?).
+  Two more read directly on 1g and 1h: the share of answerable requests a turn left unserved, and the
+  share of abstentions on questions the corpus demonstrably answers, both of which should be zero.
+  All of them are computed from the per-request record 1h moved onto the message — after 1h there is
+  no turn-level verdict left to compute them from, which is the point: a metric averaged over a
+  summary field cannot say which of a turn's requests was the one that failed.
 - **CI-gated evals** — run the suite in GitHub Actions on every commit and fail the build on a
   metric regression.
 - **End-to-end tests in a real browser** — the `tests/e2e/` tier, held open since Phase 0, is filled
   here. Not earlier: 1e replaces `grounded` with a typed verdict and rebuilds citations from the
-  reranked shortlist, so a suite written before it would assert against a contract already
-  scheduled to change. Kept deliberately small — three to five journeys aimed at the one class of
+  reranked shortlist, and 1h then moves both onto the request and removes the turn-level fields
+  altogether — so a suite written before either would assert against a contract already scheduled to
+  change, twice. Kept deliberately small — three to five journeys aimed at the one class of
   defect no other tier can reach, **frontend state across time**, where a pane, the 2-second poll
   and a reload disagree: an escalation raised in the patient pane and answered from the staff pane,
   a pause counting down in two tabs, a booking that lands in Scheduling's own database. Driven by
