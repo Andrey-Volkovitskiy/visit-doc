@@ -387,18 +387,37 @@ async def _persist_outcome(
             await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
 
-async def _call_staff_for_the_failure(
+async def _settle_the_failure(
     chat: Chat,
     patient_message_id: str,
     escalation: EscalationRequests,
     task: "asyncio.Task[None]",
+    *,
+    reply_delivered: bool,
 ) -> None:
-    """Record this turn's failure as a call to staff, and apply it.
+    """Apply what this turn's failure leaves owing, calling staff for it if it owes one.
 
-    A turn that ended without a reply is a message nobody answered, so a person is
+    Args:
+        reply_delivered: Whether the patient was shown a reply before the failure -
+            `run_pipeline`'s latch, true only once the reply's insert has committed and
+            its `done` has been taken by the stream.
+
+    A turn that ended *without* a reply is a message nobody answered, so a person is
     fetched for it - the weakest of the seven claims on one, and one of the three that
     do not silence: the thing that broke may already be working again, and the patient
     may keep asking while staff follow up.
+
+    A turn that ended *with* one records no failure at all. The only writes that can
+    fail after the reply is on the stream are the escalation's own - the lock's release
+    swallows its own - so a failure past that point is one the patient was answered in
+    spite of, and `assistant_failed` would
+    fetch a person to a conversation that got its answer - the mark reading, to the
+    staff member who opens it, as a patient left hanging. What such a turn does still
+    owe is the escalation that failure interrupted, which is why this runs at all
+    rather than being skipped for a delivered reply: the hole in the corpus that called
+    staff before the write broke is still a hole, and its mark still has to land. The
+    call below is that second attempt, and for a turn that collected nothing it writes
+    nothing - `apply_escalation` makes that judgement, from the same collector.
 
     Recorded into the turn's own collector rather than written directly, so a turn that
     had already called staff for something stronger keeps that cause and that mark: the
@@ -418,7 +437,8 @@ async def _call_staff_for_the_failure(
     logged as `turn.staff_call_failed` and the original error goes on propagating.
     """
     clear_if_current(chat.id, task)
-    escalation.record(EscalationReason.ASSISTANT_FAILED)
+    if not reply_delivered:
+        escalation.record(EscalationReason.ASSISTANT_FAILED)
     try:
         await _persist_outcome(
             chat,
@@ -541,6 +561,24 @@ async def _event_stream(
                 """
                 answer_parts: list[str] = []
                 done_event: ChatDoneEvent | None = None
+                # One thing, and only this thing: the reply committed *and* reached the
+                # patient's stream. Set by `_deliver_reply` and by nothing else, never
+                # cleared, and read only once the pipeline has broken - so what it
+                # answers there is "was this turn a message nobody answered", which is
+                # the question `_settle_the_failure` exists to ask.
+                reply_delivered = False
+
+                def _deliver_reply(event: ChatDoneEvent) -> None:
+                    """Show the patient their reply, and record that they were shown it.
+
+                    Latched after the queue has taken the event rather than before: a
+                    `done` that never reached the stream is a reply the patient did not
+                    get, and a turn that breaks afterwards still owes them a person.
+                    """
+                    nonlocal reply_delivered
+                    queue.put_nowait(event)
+                    reply_delivered = True
+
                 try:
                     async for event in run_turn(
                         qdrant_client,
@@ -611,8 +649,10 @@ async def _event_stream(
                             # instant the reply's insert commits: streamed only once it
                             # is stored, so the reply on screen and the reply in the
                             # thread are the same one, and no later failure can leave a
-                            # stored reply undelivered.
-                            on_stored=queue.put_nowait,
+                            # stored reply undelivered. Through `_deliver_reply`
+                            # rather than straight onto the queue, so the turn knows
+                            # afterwards that the patient was answered.
+                            on_stored=_deliver_reply,
                         )
                     except Exception as exc:
                         # Tagged with the step that actually failed, by the same
@@ -651,8 +691,12 @@ async def _event_stream(
                     # a `BaseException`, and a superseded turn is not a failure - the
                     # newer message is being answered, and marking this one would send a
                     # staff member to a conversation nothing is wrong with.
-                    await _call_staff_for_the_failure(
-                        chat, patient_message.id, escalation, task
+                    await _settle_the_failure(
+                        chat,
+                        patient_message.id,
+                        escalation,
+                        task,
+                        reply_delivered=reply_delivered,
                     )
                     raise
                 except Exception as exc:
@@ -662,8 +706,12 @@ async def _event_stream(
                     # The same for a failure this build cannot name: what the patient
                     # is owed does not depend on the code having anticipated the way it
                     # broke.
-                    await _call_staff_for_the_failure(
-                        chat, patient_message.id, escalation, task
+                    await _settle_the_failure(
+                        chat,
+                        patient_message.id,
+                        escalation,
+                        task,
+                        reply_delivered=reply_delivered,
                     )
                     raise
                 finally:

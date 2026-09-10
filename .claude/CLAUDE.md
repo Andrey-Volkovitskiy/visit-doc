@@ -304,9 +304,16 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 - **A turn that ends without a reply calls a person** (011, FR-026). Any pipeline failure — the
   composing call, a generation, an embedding, a retrieval, or a bug this build cannot name —
   records `assistant_failed` into the turn's own collector and applies it before the error
-  propagates (`_call_staff_for_the_failure` in `chat/api/turn.py`). Before 011 only the booking
+  propagates (`_settle_the_failure` in `chat/api/turn.py`). Before 011 only the booking
   loop's tool failures did, so a broken turn left the patient with an error and nobody looking at
-  it. Three properties make it safe to put on every failure path: it is the **weakest** precedence,
+  it. **Without a reply** is the whole of the condition, and it is answered by a latch rather than
+  inferred: `run_pipeline` sets `reply_delivered` when — and only when — the reply's insert has
+  committed and its `done` has been taken by the stream, and a turn that got that far records no
+  failure however it breaks afterwards. Only the escalation's own writes can fail past that point,
+  so the alternative was paging a person to a conversation the patient was answered in. Such a
+  turn still re-attempts the escalation the failure interrupted, so a corpus gap raised before the
+  write broke still gets its mark. Three properties make it safe to put on every failure path: it
+  is the **weakest** precedence,
   so a turn that already called staff for a corpus gap or an unauthorized request keeps that cause
   and that mark; it does **not** silence, because the thing that broke may already be working
   again; and a cancellation never reaches it — `CancelledError` is a `BaseException`, so neither

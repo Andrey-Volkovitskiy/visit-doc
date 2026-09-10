@@ -2734,6 +2734,77 @@ async def test_a_failure_never_outranks_the_reason_the_turn_already_had(
     assert state.escalated_at is None
 
 
+async def test_a_turn_the_patient_was_answered_in_is_not_recorded_as_a_failure(
+    seeded_entry: int,
+) -> None:
+    # The reply commits and its `done` goes on the wire before `apply_escalation` runs,
+    # so a write that fails after that point fails on a turn the patient was answered
+    # in. Recording `assistant_failed` for it fetches a staff member to a conversation
+    # that got its answer, and the mark reads to them as a patient left hanging. What
+    # the turn does still owe is the escalation the failure interrupted - the corpus gap
+    # is a gap whether or not the write broke - which is the second attempt below.
+    await engine.dispose()
+    attempts: list[str] = []
+    real_mark_attention = chat_repository.mark_attention
+
+    async def mark_attention_failing_once(
+        db_session: AsyncSession, chat_id: str, session_id: str
+    ) -> bool:
+        attempts.append(chat_id)
+        if len(attempts) == 1:
+            raise OSError("the connection went while the conversation was marked")
+        return await real_mark_attention(db_session, chat_id, session_id)
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch.object(chat_repository, "mark_attention", mark_attention_failing_once),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False),
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                response = await async_turn(
+                    http, "when can I visit, and what is your refund policy?"
+                )
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()[
+                    "messages"
+                ]
+
+    # The patient was answered: the reply is in the thread, and `done` reached the wire.
+    lines = [json.loads(line) for line in response.text.strip().splitlines() if line]
+    assert [m["sender"] for m in history] == ["patient", "assistant"]
+    assert [line["type"] for line in lines if line["type"] == "done"] == ["done"]
+    # The write that broke is still the turn's own account of what went wrong.
+    errors = [entry for entry in logs if entry["event"] == "turn.error"]
+    assert [entry["pipeline_step"] for entry in errors] == ["persistence"]
+    # But nothing in the turn calls a person for the failure: the only call to staff is
+    # the gap's, and it is the mark the patient's message carries.
+    calls_to_staff = [
+        entry.get("reason", entry.get("requested_reason"))
+        for entry in logs
+        if entry["event"] in {"escalation.raised", "escalation.unchanged"}
+    ]
+    assert calls_to_staff == [EscalationReason.CORPUS_COULD_NOT_ANSWER]
+    assert await _marks_in(chat_id) == [AttentionMark.CORPUS_COULD_NOT_ANSWER, None]
+    # Attempted twice: the interrupted escalation is retried, which is what let the
+    # gap's call to staff finish at all.
+    assert len(attempts) == 2
+
+
 async def test_a_superseded_turn_is_not_recorded_as_a_failure(
     seeded_entry: int,
 ) -> None:
