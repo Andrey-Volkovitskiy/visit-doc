@@ -30,7 +30,13 @@ from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.db.session import pinned_session, session_factory
-from chat.domain.models import AttentionMark, Chat, Message, MessageSender
+from chat.domain.models import (
+    AttentionMark,
+    Chat,
+    EscalationReason,
+    Message,
+    MessageSender,
+)
 from chat.domain.schemas import (
     ChatCancelledEvent,
     ChatDoneEvent,
@@ -299,9 +305,11 @@ async def _persist_outcome(
             outcome = ReplyOutcome.NOT_GENERATED
             if done_event is not None:
                 # `message` is set only when there is no streamed text to show, which
-                # today is the FAQ abstention case. `faq_verdict` stays NULL for a
-                # booking-only reply: it was never retrieved against, so it had no gate
-                # to stop at.
+                # today is the all-abstained turn and the collapse. `request_outcomes`
+                # stays NULL for a booking-only reply: it was never retrieved against,
+                # so it had no request with a gate to stop at - which is a different
+                # thing from a half that ran and produced nothing, and is why the null
+                # is carried through rather than flattened to a list.
                 write = await chat_repository.create_assistant_reply_unless_taken_over(
                     db_session,
                     id=str(ULID()),
@@ -309,8 +317,11 @@ async def _persist_outcome(
                     session_id=chat.session_id,
                     answering_message_id=patient_message_id,
                     content=done_event.message or answer,
-                    faq_verdict=done_event.faq_verdict,
-                    citations=[c.model_dump() for c in done_event.citations],
+                    request_outcomes=(
+                        [o.model_dump() for o in done_event.request_outcomes]
+                        if done_event.request_outcomes is not None
+                        else None
+                    ),
                     reply_to_message_ids=reply_to_message_ids,
                 )
                 # Read off the write's own answer, ahead of anything derived from it:
@@ -374,6 +385,56 @@ async def _persist_outcome(
             return outcome
         finally:
             await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
+
+
+async def _call_staff_for_the_failure(
+    chat: Chat,
+    patient_message_id: str,
+    escalation: EscalationRequests,
+) -> None:
+    """Record this turn's failure as a call to staff, and apply it.
+
+    A turn that ended without a reply is a message nobody answered, so a person is
+    fetched for it - the weakest of the seven claims on one, and one of the three that
+    do not silence: the thing that broke may already be working again, and the patient
+    may keep asking while staff follow up.
+
+    Recorded into the turn's own collector rather than written directly, so a turn that
+    had already called staff for something stronger keeps that cause and that mark: the
+    precedence decides, and a failure never outranks a hole in the corpus, a request
+    the assistant may not serve, or a patient who needs a person.
+
+    Never raises. The call to staff is what the patient is owed *after* the turn broke,
+    so a failure here may not replace the account of what actually went wrong; it is
+    logged as `turn.staff_call_failed` and the original error goes on propagating.
+    """
+    escalation.record(EscalationReason.ASSISTANT_FAILED)
+    try:
+        await _persist_outcome(
+            chat,
+            patient_message_id,
+            [],
+            escalation,
+            None,
+            "",
+            on_stored=_no_reply_to_deliver,
+        )
+    except Exception as exc:  # noqa: BLE001 - see the docstring: the original error wins
+        get_logger().error(
+            "turn.staff_call_failed",
+            chat_id=chat.id,
+            error_detail=str(exc),
+        )
+
+
+def _no_reply_to_deliver(_done: ChatDoneEvent) -> None:
+    """Refuse to deliver a reply on a turn that produced none.
+
+    `_persist_outcome` calls `on_stored` only for a reply it actually stored, and a
+    failed turn hands it none - so reaching this is a change that started storing one,
+    which the patient must not then be shown as the answer to a turn that broke.
+    """
+    raise RuntimeError("a failed turn has no reply to deliver")
 
 
 async def _event_stream(
@@ -575,10 +636,24 @@ async def _event_stream(
                             dependency=dependency,
                             error_detail=str(exc.cause),
                         )
+                    # After the log line, so the turn's account of what broke is on the
+                    # wire before the recovery's. A cancellation reaches neither: it is
+                    # a `BaseException`, and a superseded turn is not a failure - the
+                    # newer message is being answered, and marking this one would send a
+                    # staff member to a conversation nothing is wrong with.
+                    await _call_staff_for_the_failure(
+                        chat, patient_message.id, escalation
+                    )
                     raise
                 except Exception as exc:
                     get_logger().error(
                         "turn.error", pipeline_step="unknown", error_detail=str(exc)
+                    )
+                    # The same for a failure this build cannot name: what the patient
+                    # is owed does not depend on the code having anticipated the way it
+                    # broke.
+                    await _call_staff_for_the_failure(
+                        chat, patient_message.id, escalation
                     )
                     raise
                 finally:

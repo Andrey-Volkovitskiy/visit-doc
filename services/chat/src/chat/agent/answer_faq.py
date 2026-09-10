@@ -199,19 +199,19 @@ async def answer_faq(
         answers = await _answer_all(segments, context)
 
     result = FaqResult.from_segments(answers, abstention_message=_ABSTENTION_MESSAGE)
-    if not result.verdict.answered:
+    if result.any_abstained:
         # One call to staff for the turn, however many of its questions the corpus
-        # could not answer. Recorded on the same signal that produced the abstention,
-        # and before any of it reaches the patient. A visitor whose question the clinic
+        # could not answer. Recorded on the request that could not be answered, and
+        # before any of it reaches the patient. A visitor whose question the clinic
         # has no answer for is exactly who needs a person, so there is no exemption for
         # an empty corpus, and no distinction between the gates: all of them mean the
-        # corpus could not answer.
+        # corpus could not answer. Nothing is escalated for a request that *was*
+        # answered, including one answered without reranking.
         escalation.record(EscalationReason.CORPUS_COULD_NOT_ANSWER)
     if stream:
         yield ChatDoneEvent(
-            faq_verdict=result.verdict,
-            citations=result.citations,
-            message=None if result.verdict.answered else result.answer_text,
+            request_outcomes=result.request_outcomes,
+            message=None if not result.any_abstained else result.answer_text,
         )
     yield result
 

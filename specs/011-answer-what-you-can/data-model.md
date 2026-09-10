@@ -96,7 +96,9 @@ Four values disappear, and it is worth naming them because each one was read som
 
 ## 5. Migration
 
-One revision, `services/chat/alembic/versions/`:
+One revision — `575865d33df1`
+(`services/chat/alembic/versions/575865d33df1_move_the_verdict_and_citations_onto_.py`), on top of
+`7c76ca5716e8`:
 
 - **upgrade**: `DROP COLUMN faq_verdict`, `DROP COLUMN citations`, `ADD COLUMN request_outcomes JSONB NULL`.
 - **downgrade**: the reverse, restoring the two columns as NULL and dropping the new one.

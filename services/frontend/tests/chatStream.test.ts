@@ -32,10 +32,17 @@ describe("parseNdjsonStream", () => {
       JSON.stringify({ type: "token", text: "hours are 8am to 5pm." }),
       JSON.stringify({
         type: "done",
-        faq_verdict: "answered",
         answer_source: "faq",
-        citations: [
-          { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
+        request_outcomes: [
+          {
+            position: 0,
+            question: "when can I visit?",
+            answer: "Visiting hours are 8am to 5pm.",
+            verdict: "answered",
+            citations: [
+              { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
+            ],
+          },
         ],
       }),
     ]);
@@ -54,9 +61,18 @@ describe("parseNdjsonStream", () => {
     expect(text).toBe("Visiting hours are 8am to 5pm.");
     expect(done).toEqual({
       type: "done",
-      faq_verdict: "answered",
       answer_source: "faq",
-      citations: [{ entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." }],
+      request_outcomes: [
+        {
+          position: 0,
+          question: "when can I visit?",
+          answer: "Visiting hours are 8am to 5pm.",
+          verdict: "answered",
+          citations: [
+            { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
+          ],
+        },
+      ],
     });
   });
 
@@ -64,8 +80,15 @@ describe("parseNdjsonStream", () => {
     const response = fakeResponse([
       JSON.stringify({
         type: "done",
-        faq_verdict: "abstained_similarity_floor",
-        citations: [],
+        request_outcomes: [
+          {
+            position: 0,
+            question: "what is the weather?",
+            answer: null,
+            verdict: "abstained_similarity_floor",
+            citations: [],
+          },
+        ],
         answer_source: "faq",
         message: "I don't have a confident answer to that.",
       }),
@@ -77,16 +100,18 @@ describe("parseNdjsonStream", () => {
     }
 
     expect(events).toHaveLength(1);
-    expect(events[0]).toMatchObject({ type: "done", faq_verdict: "abstained_similarity_floor" });
+    expect(events[0]).toMatchObject({
+      type: "done",
+      request_outcomes: [{ position: 0, verdict: "abstained_similarity_floor", answer: null }],
+    });
   });
 
-  it("carries a booking reply with no FAQ verdict and no citations", async () => {
+  it("carries a booking reply with no request outcomes at all", async () => {
     const response = fakeResponse([
       JSON.stringify({ type: "token", text: "You're booked for Tuesday at 9." }),
       JSON.stringify({
         type: "done",
-        faq_verdict: null,
-        citations: [],
+        request_outcomes: null,
         answer_source: "booking",
       }),
     ]);
@@ -97,9 +122,8 @@ describe("parseNdjsonStream", () => {
     }
 
     expect(events[events.length - 1]).toMatchObject({
-      faq_verdict: null,
+      request_outcomes: null,
       answer_source: "booking",
-      citations: [],
     });
   });
 });
@@ -262,7 +286,7 @@ describe("the silent terminal event", () => {
     expect(events[0]!.type).not.toBe("cancelled");
   });
 
-  it("carries no reply, no citations and no FAQ verdict", async () => {
+  it("carries no reply and no request outcome", async () => {
     const response = fakeResponse([JSON.stringify({ type: "silent" })]);
 
     const [event] = await collect(parseNdjsonStream(response));
@@ -283,8 +307,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "staff",
       content: "I've got this one.",
-      faq_verdict: null,
-      citations: null,
+      request_outcomes: null,
       attention_mark: null,
       created_at: "2026-09-01T12:00:00",
     };
@@ -304,8 +327,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "patient" as const,
       content: "is anyone there?",
-      faq_verdict: null,
-      citations: null,
+      request_outcomes: null,
       attention_mark,
       created_at: "2026-09-01T12:00:00",
     }));
@@ -322,8 +344,7 @@ describe("a message's sender and mark", () => {
       id: "01M",
       sender: "staff",
       content: "I've got this one.",
-      faq_verdict: null,
-      citations: null,
+      request_outcomes: null,
       attention_mark: null,
       created_at: "2026-09-01T12:00:00",
       // @ts-expect-error - no message carries a staff name

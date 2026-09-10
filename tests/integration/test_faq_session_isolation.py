@@ -138,7 +138,24 @@ async def _points() -> list[ChunkPayload]:
 
 
 def _cited_texts(done: dict[str, Any]) -> list[str]:
-    return [c["chunk_text"] for c in done.get("citations", [])]
+    """Return every chunk the turn's requests cited, in position order.
+
+    The turn carries no citation list of its own: a turn may answer one request and
+    abstain on another, so citations belong to the request whose answer they supported.
+    """
+    return [c["chunk_text"] for c in _cited(done)]
+
+
+def _cited(done: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return every citation of every request the turn reported."""
+    return [c for o in done.get("request_outcomes") or [] for c in o["citations"]]
+
+
+def _verdicts(done: dict[str, Any]) -> list[str]:
+    """Return each request's verdict, in position order."""
+    outcomes = done["request_outcomes"]
+    assert outcomes is not None
+    return [o["verdict"] for o in outcomes]
 
 
 # --- one session's corpus, and the other's answers -----------------------------------
@@ -155,7 +172,7 @@ async def test_one_sessions_edits_change_nothing_the_other_answers() -> None:
     their_chat = await _chat_for(theirs)
 
     before = await _ask(theirs, their_chat)
-    assert before["faq_verdict"] == FaqVerdict.ANSWERED
+    assert _verdicts(before) == [FaqVerdict.ANSWERED]
     cited_before = _cited_texts(before)
 
     # Everything one session can do to a corpus, done to the other's.
@@ -166,7 +183,7 @@ async def test_one_sessions_edits_change_nothing_the_other_answers() -> None:
     their_second_chat = await _chat_for(theirs)
     after = await _ask(theirs, their_second_chat)
 
-    assert after["faq_verdict"] == FaqVerdict.ANSWERED
+    assert _verdicts(after) == [FaqVerdict.ANSWERED]
     assert _cited_texts(after) == cited_before
     assert all(_VISITING in text for text in _cited_texts(after))
 
@@ -180,8 +197,8 @@ async def test_no_citation_ever_names_another_sessions_entry() -> None:
     my_answer = await _ask(mine, await _chat_for(mine))
     their_answer = await _ask(theirs, await _chat_for(theirs))
 
-    assert [c["entry_id"] for c in my_answer["citations"]] == [my_entry]
-    assert [c["entry_id"] for c in their_answer["citations"]] == [their_entry]
+    assert [c["entry_id"] for c in _cited(my_answer)] == [my_entry]
+    assert [c["entry_id"] for c in _cited(their_answer)] == [their_entry]
 
 
 async def test_a_session_with_an_empty_corpus_answers_from_nobody_elses() -> None:
@@ -193,8 +210,8 @@ async def test_a_session_with_an_empty_corpus_answers_from_nobody_elses() -> Non
 
     done = await _ask(mine, await _chat_for(mine))
 
-    assert done["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
-    assert done["citations"] == []
+    assert _verdicts(done) == [FaqVerdict.ABSTAINED_EMPTY_CORPUS]
+    assert _cited(done) == []
 
 
 async def test_a_delete_leaves_the_other_sessions_chunks_in_place() -> None:
@@ -218,8 +235,8 @@ async def test_an_added_entry_is_what_the_next_answer_cites() -> None:
 
     done = await _ask(session_id, await _chat_for(session_id))
 
-    assert done["faq_verdict"] == FaqVerdict.ANSWERED
-    assert [c["entry_id"] for c in done["citations"]] == [entry_id]
+    assert _verdicts(done) == [FaqVerdict.ANSWERED]
+    assert [c["entry_id"] for c in _cited(done)] == [entry_id]
     assert _cited_texts(done) == [_VISITING]
 
 
@@ -247,8 +264,8 @@ async def test_a_deleted_entrys_question_abstains_and_calls_staff() -> None:
     await _call(session_id, "DELETE", f"/faq/{entry_id}")
     done = await _ask(session_id, chat_id)
 
-    assert done["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
-    assert done["citations"] == []
+    assert _verdicts(done) == [FaqVerdict.ABSTAINED_EMPTY_CORPUS]
+    assert _cited(done) == []
     async with session_factory() as session:
         state = await chat_repository.get_conversation_state(
             session, chat_id, session_id

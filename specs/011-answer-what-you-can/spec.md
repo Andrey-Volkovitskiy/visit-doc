@@ -346,12 +346,16 @@ reply, verdict, citation set, escalation and mark is identical.
 - **FR-025**: Every constraint this phase adds to the composer MUST hold **alongside** the existing
   ones — the booking outcome's wording rules, the not-authorized notice's three requirements, and
   the citation carry-through. None is replaced.
-- **FR-026**: A **failure of the composing call** MUST fail the whole turn exactly as it does today:
-  no reply stored, one failure escalation, nothing partial delivered — however many of the turn's
-  requests had already been answered. The answers generated before it are a sunk cost, not a reason:
-  nothing has checked them against each other, and the one path where an unchecked part could soften
-  a gap is this one. The requests' outcomes are still recorded in the turn's log, as every failed
-  turn's are.
+- **FR-026**: A **failure of the composing call** MUST fail the whole turn: no reply stored, one
+  failure escalation, nothing partial delivered — however many of the turn's requests had already
+  been answered. *(Two of the three were already true; the failure escalation was not. No path
+  recorded `assistant_failed` for a pipeline failure before this phase — only the booking loop's
+  tool failures did — so "exactly as it does today", as this requirement first read, described a
+  behaviour that did not exist. It exists now, on every pipeline failure rather than the composing
+  call alone: what the patient is owed does not depend on which step broke.)* The answers generated
+  before it are a sunk cost, not a reason: nothing has checked them against each other, and the one
+  path where an unchecked part could soften a gap is this one. The requests' outcomes are still
+  recorded in the turn's log, as every failed turn's are.
 
 **Escalation**
 

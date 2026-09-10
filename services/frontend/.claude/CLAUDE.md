@@ -93,7 +93,8 @@ two audiences; a third surface is a reason for a third module, not for a compone
 `tests/` mirrors `src/`, one file per module, run by vitest with jsdom and
 `@testing-library/react`. Assert through what a user sees — visible text, and the `data-testid`
 hooks components already expose (`chat-list`, `chat-list-item`, `chat-list-error`, `messages`,
-`message`, `role-label`, `attention-mark`, `verdict-mark`, `citations`, `error`, `length-error`, `no-chat`,
+`message`, `role-label`, `attention-mark`, `request-outcome`, `outcome-question`,
+`outcome-unanswered`, `verdict-mark`, `citations`, `error`, `length-error`, `no-chat`,
 `patient-pane`, `staff-pane`, `staff-console`, `staff-conversations`, `staff-conversation`,
 `staff-thread`, `staff-no-thread`, `staff-no-conversations`, `staff-error`, `attention-total`,
 `assistant-switch`, `pause-countdown`, `practitioner-admin`, `practitioner`, `working-range`,

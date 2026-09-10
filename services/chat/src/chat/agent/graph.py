@@ -70,7 +70,6 @@ from chat.domain.schemas import (
     AnswerSource,
     ChatDoneEvent,
     ChatTokenEvent,
-    FaqVerdict,
     IntentClassificationResult,
     IntentLabel,
     RequestSegment,
@@ -529,10 +528,9 @@ def _build_graph(
                 else:
                     writer(event)
             span.set(
-                faq_verdict=result.verdict.value if result else None,
                 segment_count=len(result.segment_answers) if result else 0,
-                abstained=result is not None and not result.verdict.answered,
-                citation_count=len(result.citations) if result else 0,
+                abstained=result is not None and result.any_abstained,
+                citation_count=len(result.scored_chunks) if result else 0,
                 answer_chars=sum(
                     len(answer.answer_text) for answer in result.segment_answers
                 )
@@ -589,12 +587,11 @@ def _build_graph(
                     writer(event)
             if streaming:
                 # The sole specialist ends its own turn, exactly as the FAQ path does.
-                # A booking reply was never retrieved against, so it carries no
-                # FAQ verdict and no citations.
+                # A booking reply was never retrieved against, so it carries no request
+                # outcome at all - null, not an empty list.
                 writer(
                     ChatDoneEvent(
-                        faq_verdict=None,
-                        citations=[],
+                        request_outcomes=None,
                         answer_source=AnswerSource.BOOKING,
                     )
                 )
@@ -633,8 +630,7 @@ def _build_graph(
                     writer(event)
             writer(
                 ChatDoneEvent(
-                    faq_verdict=None,
-                    citations=[],
+                    request_outcomes=None,
                     answer_source=AnswerSource.SMALL_TALK,
                 )
             )
@@ -672,8 +668,7 @@ def _build_graph(
             writer(ChatTokenEvent(text=text))
             writer(
                 ChatDoneEvent(
-                    faq_verdict=None,
-                    citations=[],
+                    request_outcomes=None,
                     answer_source=AnswerSource.HAND_OFF,
                 )
             )
@@ -712,7 +707,7 @@ def _build_graph(
             parts = 1
         async with node_span(_COMPOSE_ANSWER) as span:
             if parts <= 1:
-                answer_text, citations, verdict, source = _single_specialist_reply(
+                answer_text, source = _single_specialist_reply(
                     faq_result,
                     booking_result,
                     state.get("small_talk_result"),
@@ -722,7 +717,7 @@ def _build_graph(
                     # Nothing streamed this turn's reply, because the route expected
                     # more than one part - so this node owes the patient the single
                     # part that survived, in the shape its specialist would have sent.
-                    # Its citations are the surviving half's own, read off the result
+                    # Its outcomes are the surviving half's own, read off the result
                     # rather than left empty. No route reaches this with an answered
                     # FAQ half today - the one turn that collapses is one whose half
                     # abstained, and an abstention cites nothing - but a half that
@@ -732,11 +727,10 @@ def _build_graph(
                     # this arm is not first exercised in front of a patient.
                     writer(
                         ChatDoneEvent(
-                            faq_verdict=verdict,
-                            citations=(
-                                faq_result.citations
+                            request_outcomes=(
+                                faq_result.request_outcomes
                                 if source is AnswerSource.FAQ and faq_result is not None
-                                else []
+                                else None
                             ),
                             message=answer_text,
                             answer_source=source,
@@ -745,10 +739,8 @@ def _build_graph(
                 record_single_specialist_completion(
                     completion,
                     answer_source=source,
-                    verdict=verdict,
                     booking_outcome=booking_outcome,
                     answer_text=answer_text,
-                    citations=citations,
                     reply_to_message_ids=state["reply_to_message_ids"],
                     segments=state["segments"],
                     faq_result=faq_result,
@@ -757,9 +749,10 @@ def _build_graph(
                     answer_source=str(source),
                     merged=False,
                     collapsed_to_one_part=state["specialists_collect"],
-                    faq_verdict=verdict.value if verdict is not None else None,
                     booking_outcome=booking_outcome,
-                    citation_count=len(citations),
+                    citation_count=(
+                        len(faq_result.scored_chunks) if faq_result is not None else 0
+                    ),
                     answer_chars=len(answer_text),
                     # The same text the specialist node above already logged: this node
                     # passed it through unchanged, and that is what the field says.
@@ -795,9 +788,8 @@ def _build_graph(
                     # merged. A turn carrying a notice beside one specialist is composed
                     # too, so the two are only distinguishable with this beside it.
                     notice_included=state["notice_required"],
-                    faq_verdict=faq_result.verdict.value if faq_result else None,
                     booking_outcome=booking_outcome,
-                    citation_count=len(faq_result.citations) if faq_result else 0,
+                    citation_count=len(faq_result.scored_chunks) if faq_result else 0,
                     answer_chars=len(composed_text),
                     answer_text=composed_text,
                 )
@@ -834,27 +826,22 @@ def _single_specialist_reply(
     small_talk_result: SmallTalkResult | None = None,
     *,
     handoff_reason: EscalationReason | None = None,
-) -> tuple[str, list[dict[str, object]], FaqVerdict | None, AnswerSource]:
+) -> tuple[str, AnswerSource]:
     """Describe the reply a single node already streamed.
 
-    Returns: its text, its citations as logged, its FAQ verdict (None for a booking
-        reply or a handoff, neither of which was retrieved against), and which node
-        produced it.
+    Returns: its text, and which node produced it. What each of the turn's requests
+        got is the FAQ result's own to report, per request, and is read off it directly
+        rather than summarised through here.
     """
     if handoff_reason is not None:
-        return HANDOFF_TEXT[handoff_reason], [], None, AnswerSource.HAND_OFF
+        return HANDOFF_TEXT[handoff_reason], AnswerSource.HAND_OFF
     if small_talk_result is not None:
-        return small_talk_result.reply_text, [], None, AnswerSource.SMALL_TALK
+        return small_talk_result.reply_text, AnswerSource.SMALL_TALK
     if booking_result is not None:
-        return booking_result.reply_text, [], None, AnswerSource.BOOKING
+        return booking_result.reply_text, AnswerSource.BOOKING
     if faq_result is not None:
-        return (
-            faq_result.answer_text or "",
-            faq_result.scored_citations(),
-            faq_result.verdict,
-            AnswerSource.FAQ,
-        )
-    return "", [], None, AnswerSource.FAQ
+        return faq_result.answer_text or "", AnswerSource.FAQ
+    return "", AnswerSource.FAQ
 
 
 async def run_turn(

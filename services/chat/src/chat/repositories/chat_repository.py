@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     ColumnElement,
@@ -14,10 +15,12 @@ from sqlalchemy import (
     Text,
     and_,
     case,
+    cast,
     exists,
     func,
     insert,
     literal,
+    null,
     nullslast,
     or_,
     select,
@@ -42,7 +45,6 @@ from chat.domain.models import (
     MessageSender,
     Session,
 )
-from chat.domain.schemas import FaqVerdict
 
 # Shared ULID generator for both `Session.id` and `Chat.id`. `Session.id` is a bearer
 # credential (the session cookie value) and MUST be non-guessable (FR-017); bare
@@ -287,6 +289,23 @@ async def release_chat_lock_after_commit(session: AsyncSession, chat_id: str) ->
         )
 
 
+def _jsonb_or_null(value: object | None) -> ColumnElement[Any]:
+    """Return `value` as a JSONB literal, or a real SQL NULL when it is None.
+
+    `literal(None, JSONB)` is not that: it serializes to the JSON scalar `null`, which
+    is a *value* in the column rather than the absence of one. The two look identical
+    through the ORM - both read back as Python None - and differ exactly where it
+    matters, in SQL: `WHERE request_outcomes IS NULL` matches the row this returns and
+    misses the one a JSON `null` produced.
+
+    A column whose "nothing here" case cannot be selected for is a column whose
+    documented meaning no query can rely on, so the absence is written as an absence.
+    """
+    if value is None:
+        return cast(null(), JSONB)
+    return literal(value, JSONB)
+
+
 def _insert_into_owned_chat(
     *,
     id: str,
@@ -294,8 +313,7 @@ def _insert_into_owned_chat(
     session_id: str,
     sender: MessageSender,
     content: str,
-    faq_verdict: FaqVerdict | None,
-    citations: list[dict[str, object]] | None,
+    request_outcomes: list[dict[str, object]] | None,
     reply_to_message_ids: list[str] | None,
     unless: ColumnElement[bool] | None = None,
 ) -> Insert:
@@ -316,9 +334,8 @@ def _insert_into_owned_chat(
         Chat.id,
         literal(sender.value, String),
         literal(content, Text),
-        literal(faq_verdict.value if faq_verdict is not None else None, String),
-        literal(citations, JSONB),
-        literal(reply_to_message_ids, JSONB),
+        _jsonb_or_null(request_outcomes),
+        _jsonb_or_null(reply_to_message_ids),
     ).where(Chat.id == chat_id, Chat.session_id == session_id)
     if unless is not None:
         source = source.where(~unless)
@@ -328,8 +345,7 @@ def _insert_into_owned_chat(
             "chat_id",
             "sender",
             "content",
-            "faq_verdict",
-            "citations",
+            "request_outcomes",
             "reply_to_message_ids",
         ],
         source,
@@ -344,8 +360,7 @@ async def create_message(
     session_id: str,
     sender: MessageSender,
     content: str,
-    faq_verdict: FaqVerdict | None = None,
-    citations: list[dict[str, object]] | None = None,
+    request_outcomes: list[dict[str, object]] | None = None,
     reply_to_message_ids: list[str] | None = None,
 ) -> Message | None:
     """Insert a new `Message` into `session_id`'s chat `chat_id` and return it.
@@ -375,8 +390,7 @@ async def create_message(
             session_id=session_id,
             sender=sender,
             content=content,
-            faq_verdict=faq_verdict,
-            citations=citations,
+            request_outcomes=request_outcomes,
             reply_to_message_ids=reply_to_message_ids,
         ).returning(Message)
     )
@@ -420,8 +434,7 @@ async def create_assistant_reply_unless_taken_over(
     session_id: str,
     answering_message_id: str,
     content: str,
-    faq_verdict: FaqVerdict | None,
-    citations: list[dict[str, object]] | None,
+    request_outcomes: list[dict[str, object]] | None,
     reply_to_message_ids: list[str] | None,
 ) -> ReplyWrite:
     """Insert one assistant reply, unless a person has taken the conversation over.
@@ -453,8 +466,7 @@ async def create_assistant_reply_unless_taken_over(
             session_id=session_id,
             sender=MessageSender.ASSISTANT,
             content=content,
-            faq_verdict=faq_verdict,
-            citations=citations,
+            request_outcomes=request_outcomes,
             reply_to_message_ids=reply_to_message_ids,
             unless=_taken_over_since(answering_message_id),
         )

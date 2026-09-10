@@ -6,7 +6,7 @@ from itertools import pairwise
 import pytest
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import EscalationReason, MessageSender
-from chat.domain.schemas import FaqVerdict
+from chat.domain.schemas import Citation, FaqVerdict, RequestOutcome
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.chat_repository import ConversationState
 from sqlalchemy import text as sql_text
@@ -391,8 +391,7 @@ async def _reply_answering(
             session_id=session_id,
             answering_message_id=message_id,
             content="Visiting hours are 8am to 5pm.",
-            faq_verdict=FaqVerdict.ANSWERED,
-            citations=None,
+            request_outcomes=None,
             reply_to_message_ids=[message_id],
         )
 
@@ -971,3 +970,130 @@ async def test_list_sessions_counts_only_the_session_it_is_describing() -> None:
     assert summaries[quiet].last_message_at is None
     assert (summaries[busy].chats, summaries[busy].faq_entries) == (1, 1)
     assert summaries[busy].last_message_at is not None
+
+
+# --- Phase 1h: what one reply stores about each of its requests ----------------------
+
+
+def _outcomes() -> list[RequestOutcome]:
+    """Two outcomes in message order: the first answered, the second abstained."""
+    return [
+        RequestOutcome(
+            position=0,
+            question="when can I visit?",
+            answer="Visiting hours are 8am to 5pm.",
+            verdict=FaqVerdict.ANSWERED,
+            citations=[
+                Citation(entry_id=1, chunk_index=0, chunk_text="Hours are 8-5.")
+            ],
+        ),
+        RequestOutcome(
+            position=1,
+            question="what does a scan cost?",
+            answer=None,
+            verdict=FaqVerdict.ABSTAINED_EMPTY_POOL,
+            citations=[],
+        ),
+    ]
+
+
+async def _reply_with_outcomes(
+    outcomes: list[RequestOutcome] | None,
+) -> tuple[str, list[object]]:
+    """Store one reply carrying `outcomes` and read the stored value back.
+
+    Returns: the chat id and the messages of that chat, freshly read.
+    """
+    session_id, chat_id, message_id = await _answered_chat()
+    async with session_factory() as session:
+        write = await chat_repository.create_assistant_reply_unless_taken_over(
+            session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            answering_message_id=message_id,
+            content="Visiting hours are 8am to 5pm.",
+            request_outcomes=(
+                [o.model_dump() for o in outcomes] if outcomes is not None else None
+            ),
+            reply_to_message_ids=[message_id],
+        )
+    assert write is chat_repository.ReplyWrite.STORED
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat_id)
+    return chat_id, list(messages)
+
+
+async def test_a_faq_turn_stores_its_outcomes_in_position_order() -> None:
+    _, messages = await _reply_with_outcomes(_outcomes())
+
+    stored = messages[-1].request_outcomes
+    assert [o["position"] for o in stored] == [0, 1]
+    assert stored[0]["question"] == "when can I visit?"
+
+
+async def test_a_turn_with_no_faq_half_stores_null_never_an_empty_list() -> None:
+    # NULL means "no FAQ half ran" - a booking-only reply, a hand-off, a small-talk
+    # reply. `[]` would be a second way of saying it that a reader could take for a
+    # half that ran and produced nothing, which no path can produce.
+    _, messages = await _reply_with_outcomes(None)
+
+    assert messages[-1].request_outcomes is None
+
+
+async def test_the_stored_outcomes_round_trip_back_into_the_wire_type() -> None:
+    _, messages = await _reply_with_outcomes(_outcomes())
+
+    restored = [RequestOutcome.model_validate(o) for o in messages[-1].request_outcomes]
+    assert restored == _outcomes()
+    # Including the abstention's null answer: the field a JSON round-trip is likeliest
+    # to turn into an empty string is the one carrying "this was not answered".
+    assert restored[1].answer is None
+    assert restored[1].citations == []
+
+
+async def test_a_turn_with_no_faq_half_stores_a_real_sql_null() -> None:
+    # Not the JSON scalar `null`, which is a *value* in the column rather than the
+    # absence of one. Both read back as Python None through the ORM and differ exactly
+    # where the record's documented meaning is read from - in SQL, where
+    # `IS NULL` matches one and misses the other.
+    chat_id, _ = await _reply_with_outcomes(None)
+
+    async with session_factory() as session:
+        absent = await session.execute(
+            sql_text(
+                "select count(*) from messages"
+                " where chat_id = :chat and request_outcomes is null"
+            ),
+            {"chat": chat_id},
+        )
+        json_null = await session.execute(
+            sql_text(
+                "select count(*) from messages"
+                " where chat_id = :chat"
+                " and jsonb_typeof(request_outcomes) = 'null'"
+            ),
+            {"chat": chat_id},
+        )
+
+    # The patient message and the reply: neither ran an FAQ half.
+    assert absent.scalar_one() == 2
+    assert json_null.scalar_one() == 0
+
+
+async def test_a_message_answering_nothing_stores_a_null_reply_id_list_too() -> None:
+    # The same column shape, one field over: a patient message replies to nothing, and
+    # that has to be selectable as an absence for the same reason.
+    session_id, chat_id, _ = await _answered_chat()
+
+    async with session_factory() as session:
+        result = await session.execute(
+            sql_text(
+                "select count(*) from messages"
+                " where chat_id = :chat and reply_to_message_ids is null"
+            ),
+            {"chat": chat_id},
+        )
+
+    assert result.scalar_one() == 1
+    assert session_id

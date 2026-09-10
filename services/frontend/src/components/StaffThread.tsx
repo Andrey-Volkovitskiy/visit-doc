@@ -241,9 +241,8 @@ export function StaffThread({
             key={message.id}
             sender={message.sender}
             content={message.content}
-            citations={message.citations}
-            showCitations
-            faqVerdict={message.faq_verdict}
+            requestOutcomes={message.request_outcomes}
+            showOutcomes
             mark={message.attention_mark}
           />
         ))}

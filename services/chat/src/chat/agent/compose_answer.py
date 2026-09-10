@@ -26,6 +26,7 @@ from chat.domain.schemas import (
     ChatTokenEvent,
     Citation,
     FaqVerdict,
+    RequestOutcome,
     RequestSegment,
 )
 from chat.rag.pipeline import ScoredChunk
@@ -52,6 +53,15 @@ Combine them into a single, natural reply. You must:
   forwarded to staff who will follow up, and that you can still help with anything
   else in the meantime. Never fill the gap from your own knowledge, and never promise
   when they will reply.
+- Never soften a gap. A question labelled as having no confident answer has none. Do
+  not promise to look into it, do not suggest when staff will reply, do not imply the
+  answer is somewhere else in the reply, and do not turn it into a partial answer.
+- Never extend an answer to cover a gap. A claim given for one question answers that
+  question only. Two questions about the same subject are still two questions, and an
+  answer about one of them says nothing about the other.
+- Name each gap in your own words, so the patient can tell which of their requests went
+  unanswered - never by quoting the restatement they were given here, which is a
+  machine's wording and not what the patient wrote.
 - If the appointment half did not result in a booking, never write anything that
   suggests one exists.
 - The appointment half is labelled with the outcome that actually happened. Say only
@@ -112,32 +122,6 @@ class TurnCompletion:
         get_logger().info("turn.completed", duration_ms=duration_ms, **self._fields)
 
 
-def summarize_verdict(verdicts: list[FaqVerdict]) -> FaqVerdict:
-    """Reduce one verdict per request to the single verdict the turn reports.
-
-    Applied in order: any abstention takes the turn, named by the first request that
-    abstained; otherwise a request answered without reranking governs one that was
-    reranked; otherwise the turn answered.
-
-    An abstention outranks a degraded answer because the two describe different things
-    - one is the turn's outcome, the other the strength of its evidence - and a turn
-    that abstained has no evidence to describe. Where several requests abstained at
-    different gates, this value names one of them and the log carries the rest: one
-    field cannot say that two different fixes are needed.
-
-    Raises: ValueError if `verdicts` is empty - a turn with no request never reaches
-        the FAQ half.
-    """
-    if not verdicts:
-        raise ValueError("a turn's FAQ half always answered at least one request")
-    abstention = next((v for v in verdicts if not v.answered), None)
-    if abstention is not None:
-        return abstention
-    if FaqVerdict.ANSWERED_UNRERANKED in verdicts:
-        return FaqVerdict.ANSWERED_UNRERANKED
-    return FaqVerdict.ANSWERED
-
-
 def deduplicate_chunks(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
     """Return `chunks` with later repeats of a chunk dropped, first appearance kept.
 
@@ -173,17 +157,35 @@ class FaqSegmentAnswer:
     citations: list[Citation]
     scored_chunks: list[ScoredChunk] = field(default_factory=list)
 
+    def request_outcome(self) -> RequestOutcome:
+        """Project this request onto the record the turn stores and streams.
+
+        `scored_chunks` are deliberately dropped: they are the log's, and `Citation` -
+        the wire type the console renders - carries no number at all. Stripping them
+        here rather than at every call site is what keeps the scores from reaching the
+        wire by accident.
+        """
+        answered = self.verdict.answered
+        return RequestOutcome(
+            position=self.position,
+            question=self.question,
+            answer=self.answer_text if answered else None,
+            verdict=self.verdict,
+            citations=self.citations if answered else [],
+        )
+
 
 @dataclass(frozen=True)
 class FaqResult:
     """What `answer_faq` produces for the turn, over all of its requests.
 
-    `scored_chunks` are the same chunks as `citations`, carrying the two scores that
-    selected them. They are part of the turn's observable record but not of the reply,
-    so they ride here rather than on `Citation`, which is a wire type the console
-    renders - and which deliberately carries no number at all.
+    `segment_answers` is what everything else is derived from: there is no turn-level
+    verdict and no turn-level citation list, because a turn may answer one request and
+    abstain on another and neither value could describe both (FR-002, FR-003).
 
-    Empty for an abstention, which cited nothing.
+    `scored_chunks` are the same chunks the outcomes cite, carrying the two scores that
+    selected them. They are part of the turn's observable record but not of the reply,
+    so they ride here rather than on `Citation`.
 
     `answer_text` is the half's own single text, and is None exactly when the half has
     more than one reply part: several answers have no one text, and joining them would
@@ -191,8 +193,6 @@ class FaqResult:
     """
 
     answer_text: str | None
-    citations: list[Citation]
-    verdict: FaqVerdict
     scored_chunks: list[ScoredChunk] = field(default_factory=list)
     segment_answers: list["FaqSegmentAnswer"] = field(default_factory=list)
 
@@ -203,65 +203,112 @@ class FaqResult:
         """Assemble the turn's FAQ half from what each of its requests produced.
 
         Args:
-            abstention_message: what the patient is told when the half abstains - the
-                whole of the reply in that case, since nothing was generated.
+            abstention_message: what the patient is told when every request abstained -
+                the whole of the reply in that case, since nothing was generated.
 
-        The half abstains as a whole if any request did: no answer is delivered and
-        nothing is cited, however many requests succeeded beside it. Otherwise the
-        citations are every request's survivors, deduplicated across the turn.
-
-        Raises: ValueError if `answers` is empty.
+        Raises: ValueError if `answers` is empty, or if their positions are not unique
+            and ascending. Order is the message's order, and it is what the reply, the
+            console and the derived unserved list all read - so it is structural here
+            rather than a promise each caller has to keep.
         """
-        verdict = summarize_verdict([answer.verdict for answer in answers])
-        if not verdict.answered:
-            return cls(
-                answer_text=abstention_message,
-                citations=[],
-                verdict=verdict,
-                segment_answers=answers,
+        if not answers:
+            raise ValueError("a turn's FAQ half always answered at least one request")
+        positions = [answer.position for answer in answers]
+        if positions != sorted(set(positions)):
+            raise ValueError(
+                "a turn's requests carry unique positions, in ascending order"
             )
-        chunks = deduplicate_chunks(
-            [chunk for answer in answers for chunk in answer.scored_chunks]
-        )
+        if not any(answer.verdict.answered for answer in answers):
+            # Nothing was answered, so the half's whole reply is the constant - the one
+            # abstention wording a patient ever sees unaccompanied, and the one reply
+            # this design deliberately keeps model-free.
+            return cls(answer_text=abstention_message, segment_answers=answers)
         return cls(
+            # The half's own single text, and only when it contributes exactly one
+            # part. Reaching here means at least one request was answered, so a lone
+            # request is an answered one; two requests are two parts - an answer and a
+            # gap, or two answers - which have no one text between them.
             answer_text=answers[0].answer_text if len(answers) == 1 else None,
-            citations=[
-                Citation(
-                    entry_id=chunk.faq_entry_id,
-                    chunk_index=chunk.chunk_index,
-                    chunk_text=chunk.chunk_text,
-                )
-                for chunk in chunks
+            # Deduplicated within each request rather than across the turn: two chunks
+            # of one entry are still two chunks, one chunk a single request's shortlist
+            # listed twice is still one, and a chunk that supported two *different*
+            # requests is cited under each - which is two provenances, not a duplicate.
+            scored_chunks=[
+                chunk
+                for answer in answers
+                for chunk in deduplicate_chunks(answer.scored_chunks)
             ],
-            verdict=verdict,
-            scored_chunks=chunks,
             segment_answers=answers,
         )
+
+    @property
+    def request_outcomes(self) -> list[RequestOutcome]:
+        """Return one outcome per request, in ascending position order."""
+        return [answer.request_outcome() for answer in self.segment_answers]
+
+    @property
+    def any_answered(self) -> bool:
+        """Return True if at least one of this turn's requests was answered.
+
+        Not the negation of `any_abstained`: a turn may do both, which is the whole of
+        what this phase serves.
+        """
+        return any(answer.verdict.answered for answer in self.segment_answers)
+
+    @property
+    def any_abstained(self) -> bool:
+        """Return True if at least one of this turn's requests could not be answered.
+
+        A predicate, not a summary: it says that a gap exists, and never which gate
+        produced it or what the turn as a whole did. Which gate stopped which request
+        is each outcome's own to report, and there is no value here that answers it.
+        """
+        return any(not answer.verdict.answered for answer in self.segment_answers)
 
     @property
     def part_count(self) -> int:
         """How many parts of the turn's reply this half contributes.
 
-        One for an abstention - the half abstains as a whole - and otherwise one per
-        request it answered.
+        One per request it answered, plus exactly one for the gap if any request
+        abstained - one gap part however many requests fell into it. A turn whose every
+        request abstained therefore contributes exactly one part, which is the constant
+        message and reaches the patient through the collapse rather than a merge.
+
+        Never more than the number of requests, which is what keeps the routing-time
+        bound on `_actual_parts` true.
         """
-        return 1 if not self.verdict.answered else len(self.segment_answers)
+        answered = sum(1 for a in self.segment_answers if a.verdict.answered)
+        return answered + (1 if self.any_abstained else 0)
 
-    def scored_citations(self) -> list[dict[str, object]]:
-        """Return each surviving chunk with both scores, for the completion record.
+    def logged_request_outcomes(self) -> list[dict[str, object]]:
+        """Return what `turn.completed` says about each request, in position order.
 
-        `rerank_score` is absent on a turn answered without reranking - not zero, and
-        not a copy of the similarity score, because no rerank score was ever obtained.
+        Each entry carries the request's position, its verdict, and the chunks its
+        answer stood on with both scores - `rerank_score` absent on a request answered
+        without reranking, not zero and not a copy of the similarity score, because no
+        rerank score was ever obtained for it.
+
+        The request's *text* is deliberately not repeated here: it is on
+        `intent.classified`, joined by position. Its *answer* is not here either - that
+        is on the stored message, which is where a merged reply can be checked against
+        the parts it was built from.
         """
         return [
             {
-                "entry_id": chunk.faq_entry_id,
-                "chunk_index": chunk.chunk_index,
-                "chunk_text": chunk.chunk_text,
-                "similarity_score": chunk.similarity_score,
-                "rerank_score": chunk.rerank_score,
+                "position": answer.position,
+                "verdict": answer.verdict.value,
+                "citations": [
+                    {
+                        "entry_id": chunk.faq_entry_id,
+                        "chunk_index": chunk.chunk_index,
+                        "chunk_text": chunk.chunk_text,
+                        "similarity_score": chunk.similarity_score,
+                        "rerank_score": chunk.rerank_score,
+                    }
+                    for chunk in deduplicate_chunks(answer.scored_chunks)
+                ],
             }
-            for chunk in self.scored_chunks
+            for answer in self.segment_answers
         ]
 
 
@@ -342,14 +389,10 @@ async def compose_answer(
             max_tokens=_MAX_TOKENS,
             answer_chars=len(answer_text),
         )
-    citations = faq_result.citations if faq_result is not None else []
-    verdict = faq_result.verdict if faq_result is not None else None
     fields: dict[str, object] = {
         **_segment_fields(segments, faq_result),
         "outcome": "merged",
-        "answer_source": AnswerSource.MERGED,
         "answer_text": answer_text,
-        "faq_verdict": verdict,
         "booking_outcome": booking_outcome,
         # What was merged, beside the fact that something was. `merged` alone covers
         # both a two-specialist turn and one specialist plus a notice, so a reader
@@ -357,40 +400,34 @@ async def compose_answer(
         # this line, not joined from the router's (contracts/log-events.md).
         "notice_included": notice_required,
         "message_ids_unified": reply_to_message_ids,
-        "citations": (faq_result.scored_citations() if faq_result is not None else []),
     }
-    if verdict is not None and not verdict.answered:
-        # Carried on a merged turn too, so a log query or eval harness counting
-        # abstentions does not silently miss exactly the mixed-intent traffic this
-        # node exists to serve.
+    if faq_result is not None and not faq_result.any_answered:
+        # Only when the reply really is the abstention: a turn that served one request
+        # and named a gap for another was answered, and filing it here would count it
+        # among the turns that told the patient nothing.
         fields["abstention_message"] = answer_text
     completion.set(**fields)
     yield ChatDoneEvent(
-        faq_verdict=verdict,
-        citations=citations,
+        request_outcomes=(
+            faq_result.request_outcomes if faq_result is not None else None
+        ),
         answer_source=AnswerSource.MERGED,
     )
 
 
-def _single_specialist_outcome(
-    answer_source: AnswerSource, verdict: FaqVerdict | None
-) -> str:
-    """Describe a single-specialist turn's outcome for its `turn.completed` line.
+def _single_specialist_outcome(answer_source: AnswerSource) -> str:
+    """Name the shape of a single-specialist turn, for its `turn.completed` line.
 
-    `answer_source` decides before `verdict` does: a handoff, a small-talk reply and a
-    booking reply all carry no FAQ verdict, and reading one off the other would file
-    every handed-off and every courteous turn in the log as a booking.
-
-    An abstention reports which gate stopped it, so a log reader counting abstentions
-    can tell an empty corpus from a floor that is set too high.
+    What the turn did, never what a gate decided: which gate stopped which request is
+    each request's own outcome to report, and a turn may now have two different ones.
     """
     if answer_source is AnswerSource.HAND_OFF:
         return "handed_off"
     if answer_source is AnswerSource.SMALL_TALK:
         return "small_talk"
-    if verdict is None:
+    if answer_source is AnswerSource.BOOKING:
         return "booking"
-    return verdict.value
+    return "faq"
 
 
 def _segment_fields(
@@ -398,17 +435,14 @@ def _segment_fields(
 ) -> dict[str, object]:
     """Return what `turn.completed` says about the turn's requests.
 
-    `segment_verdicts` is what keeps the summary verdict lossy in that one field
-    alone: where two questions stopped at different gates, both are recoverable here.
-    Absent for a turn whose FAQ half did not run - a booking reply was never retrieved
-    against, so it has no verdict to report per request.
+    `request_outcomes` is where two requests that stopped at different gates are both
+    recoverable, together with the evidence each answer stood on. Absent for a turn
+    whose FAQ half did not run - a booking reply was never retrieved against, so it has
+    nothing to report per request.
     """
     fields: dict[str, object] = {"segment_count": len(segments)}
     if faq_result is not None:
-        fields["segment_verdicts"] = [
-            {"position": answer.position, "verdict": answer.verdict.value}
-            for answer in faq_result.segment_answers
-        ]
+        fields["request_outcomes"] = faq_result.logged_request_outcomes()
     return fields
 
 
@@ -416,10 +450,8 @@ def record_single_specialist_completion(
     completion: TurnCompletion,
     *,
     answer_source: AnswerSource,
-    verdict: FaqVerdict | None,
     booking_outcome: BookingOutcome | None,
     answer_text: str,
-    citations: list[dict[str, object]],
     reply_to_message_ids: list[str],
     segments: list[RequestSegment],
     faq_result: "FaqResult | None" = None,
@@ -432,19 +464,45 @@ def record_single_specialist_completion(
     """
     fields: dict[str, object] = {
         **_segment_fields(segments, faq_result),
-        "outcome": _single_specialist_outcome(answer_source, verdict),
-        "answer_source": answer_source,
+        "outcome": _single_specialist_outcome(answer_source),
         "answer_text": answer_text,
-        "faq_verdict": verdict,
         "booking_outcome": booking_outcome,
         "message_ids_unified": reply_to_message_ids,
-        "citations": citations,
     }
-    if verdict is not None and not verdict.answered:
+    if faq_result is not None and not faq_result.any_answered:
         # The abstained turn's own long-standing field, kept so a log reader (and the
-        # eval harness) can still pick out what the patient was actually told.
+        # eval harness) can still pick out what the patient was actually told - and set
+        # only when every request abstained, which is when the reply is that message.
         fields["abstention_message"] = answer_text
     completion.set(**fields)
+
+
+def _gap_block(faq_result: FaqResult) -> str:
+    """Build the one block naming every request that could not be answered.
+
+    One block however many requests fell into it: a reply repeating the same refusal
+    per question reads as several failures rather than one gap.
+
+    The "in your own words" rule is stated here as well as in the system prompt,
+    because the input slice and the instruction fail independently - a block that
+    arrives without its instruction is one the composer will quote back verbatim, and
+    the restatement is a machine's wording, not the patient's.
+    """
+    questions = "\n".join(
+        f'- "{answer.question}"'
+        for answer in faq_result.segment_answers
+        if not answer.verdict.answered
+    )
+    return (
+        "NO CONFIDENT ANSWER for these questions:\n"
+        f"{questions}\n"
+        "Say plainly that the clinic's knowledge base does not have this "
+        "information, that these questions have been forwarded to staff who will "
+        "follow up, and that you can still help with anything else in the meantime. "
+        "Refer to what each unanswered question was about in your own words - do NOT "
+        "quote the wording above back to the patient, which is a machine restatement "
+        "and not what they wrote."
+    )
 
 
 def _build_prompt(
@@ -457,27 +515,19 @@ def _build_prompt(
     """Build the composing call's single user message from the halves' outputs."""
     parts: list[str] = []
     if faq_result is not None:
-        if faq_result.verdict.answered:
-            # One block per request, each naming the question it answers: an answer
-            # attached to the wrong question is a wrong answer, not a formatting slip.
-            # Always at least one block - `FaqResult.from_segments` refuses to build a
-            # result out of no answers at all - so an answered half cannot reach the
-            # composer as no block, and there is no empty block to fall back on. An
-            # empty one would be worse than none: the prompt above requires every
-            # labelled claim to be preserved exactly, and a label with nothing under it
-            # is an invitation to write one.
-            parts.extend(
-                f'Answer to the question "{answer.question}":\n{answer.answer_text}'
-                for answer in faq_result.segment_answers
-            )
-        else:
-            parts.append(
-                "Answer to the question part:\n"
-                "There is no confident answer to this part. Say plainly that the "
-                "clinic's knowledge base does not have that information, that the "
-                "question has been forwarded to staff who will follow up, and that "
-                "you can still help with anything else in the meantime."
-            )
+        # One block per *answered* request, each naming the question it answers: an
+        # answer attached to the wrong question is a wrong answer, not a formatting
+        # slip. A request that abstained gets no block here - a label with nothing
+        # under it would be worse than none, since the prompt above requires every
+        # labelled claim to be preserved exactly, and an empty body is an invitation to
+        # write one. It is named in the gap block below instead.
+        parts.extend(
+            f'Answer to the question "{answer.question}":\n{answer.answer_text}'
+            for answer in faq_result.segment_answers
+            if answer.verdict.answered
+        )
+        if faq_result.any_abstained:
+            parts.append(_gap_block(faq_result))
     if booking_reply is not None:
         parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")
     if notice_required:

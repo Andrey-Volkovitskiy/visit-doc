@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StaffThread } from "../src/components/StaffThread";
 import * as consoleApi from "../src/lib/consoleApi";
-import type { Message } from "../src/lib/chatStream";
+import type { Message, RequestOutcome } from "../src/lib/chatStream";
 import {
   READ_TIMEOUT_MESSAGE,
   READ_TIMEOUT_MS,
@@ -13,8 +13,7 @@ function message(overrides: Partial<Message> = {}): Message {
     id: "01M",
     sender: "patient",
     content: "is anyone there?",
-    faq_verdict: null,
-    citations: null,
+    request_outcomes: null,
     attention_mark: null,
     created_at: "2026-09-01T12:00:00",
     ...overrides,
@@ -27,6 +26,16 @@ const CHAT_ID = "01CHAT000000000000000000";
 const CITED = [
   { entry_id: 7, chunk_index: 0, chunk_text: "Bring your referral letter." },
 ];
+
+/** One answered request's outcome, the shape a reply now carries per question. */
+function answeredOutcome(
+  position: number,
+  question: string,
+  answer: string,
+  verdict: RequestOutcome["verdict"] = "answered",
+): RequestOutcome {
+  return { position, question, answer, verdict, citations: CITED };
+}
 
 
 /** Render the thread as it appears for a conversation the assistant is still on. */
@@ -1298,8 +1307,9 @@ describe("StaffThread: following the poll", () => {
         id: "01A",
         sender: "assistant",
         content: "Bring your referral letter.",
-        faq_verdict: "answered",
-        citations: CITED,
+        request_outcomes: [
+          answeredOutcome(0, "what should I bring?", "Bring your referral letter."),
+        ],
       }),
     ]);
 
@@ -1315,12 +1325,19 @@ describe("StaffThread: following the poll", () => {
 
   it("marks an answer produced without reranking, and only that one", async () => {
     vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
-      message({ id: "01A", sender: "assistant", content: "one", faq_verdict: "answered" }),
+      message({
+        id: "01A",
+        sender: "assistant",
+        content: "one",
+        request_outcomes: [answeredOutcome(0, "what should I bring?", "one")],
+      }),
       message({
         id: "01B",
         sender: "assistant",
         content: "two",
-        faq_verdict: "answered_unreranked",
+        request_outcomes: [
+          answeredOutcome(0, "when are you open?", "two", "answered_unreranked"),
+        ],
       }),
     ]);
 
@@ -1341,8 +1358,9 @@ describe("StaffThread: following the poll", () => {
         id: "01A",
         sender: "assistant",
         content: "Bring your referral letter.",
-        faq_verdict: "answered",
-        citations: CITED,
+        request_outcomes: [
+          answeredOutcome(0, "what should I bring?", "Bring your referral letter."),
+        ],
       }),
     ]);
 
@@ -1352,5 +1370,51 @@ describe("StaffThread: following the poll", () => {
       expect(screen.getByTestId("citations")).toBeInTheDocument();
     });
     expect(screen.getByTestId("staff-thread").textContent).not.toMatch(/0\.\d/);
+  });
+});
+
+
+// --- Phase 1h: the thread hands each message's outcomes to the block that draws them --
+
+describe("StaffThread request outcomes", () => {
+  it("passes every outcome of a reply through to its own block", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01A",
+        sender: "assistant",
+        content: "We are at 5 Oak Street, and bring your referral letter.",
+        request_outcomes: [
+          answeredOutcome(0, "where are you?", "We are at 5 Oak Street."),
+          answeredOutcome(1, "what should I bring?", "Bring your referral letter."),
+        ],
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("request-outcome")).toHaveLength(2);
+    });
+    const blocks = screen.getAllByTestId("request-outcome");
+    expect(blocks[0]).toHaveTextContent("where are you?");
+    expect(blocks[1]).toHaveTextContent("what should I bring?");
+  });
+
+  it("draws no outcome block for a reply that ran no FAQ half", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01A",
+        sender: "assistant",
+        content: "You're booked for Friday at 9.",
+        request_outcomes: null,
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("staff-thread")).toHaveTextContent("booked for Friday");
+    });
+    expect(screen.queryByTestId("request-outcome")).toBeNull();
   });
 });

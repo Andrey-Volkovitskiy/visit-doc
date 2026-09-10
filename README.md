@@ -467,3 +467,47 @@ tradeoff.
   any other classification failure. Nothing the patient asked is ever trimmed away. The measured
   consequence is recorded with the labelled sets: a four-request message is the one shape the shipped
   classifier does not combine, and it is the data the cap of three is to be revisited against.
+
+## Answer What You Can: technology choices
+
+`specs/011-answer-what-you-can/` (ROADMAP Phase 1h) moves the verdict, the answer and the citations
+**onto the request**, and lets a turn deliver the requests it could answer beside a named gap for
+the ones it could not. Four choices carried a real tradeoff.
+
+- **One JSONB list on the message, not a `message_request_outcomes` table.** A table buys
+  per-element referential integrity and makes "how often did a turn serve half of what was asked?"
+  a SQL question. It also puts a join on every history read, for queries this phase does not make:
+  the outcomes are always read *with* the message that carries them — the console renders them under
+  a reply — and every aggregate question is answered from the log, which is where Phase 2 reads.
+  That is the profile `citations` and `reply_to_message_ids` already have on this table, and both
+  are JSONB for the same stated reason. A list also enforces order structurally, which is a
+  requirement rather than a convenience. The moment something aggregates outcomes in SQL, the table
+  becomes right; that is Phase 2's, and Phase 2 reads logs.
+- **The turn-level summary is deleted, not kept "for the log".** `summarize_verdict` reduced one
+  verdict per request to the single value the turn reported. Keeping it as the log's summary was the
+  obvious way to leave existing queries working — and would have put the value with two meanings
+  back one layer down, where a reader has no way to know it is a summary. So the reduction is gone,
+  `turn.completed` carries one entry per request, and `outcome` names the turn's *shape* rather than
+  a verdict. The cost is paid once, by the queries in
+  [`contracts/log-events.md`](specs/011-answer-what-you-can/contracts/log-events.md), which had to
+  be re-pointed in the same change. `answer_source` left that event too: once `outcome` names the
+  shape, the two carried one fact, and a contract saying "these two are always equal" is a contract
+  nobody re-checks. The wire keeps `answer_source` — a client reading one event asks a different
+  question than a log reader scanning a million.
+- **The gap is one reply part however many requests fell into it.** One part *per* unanswered
+  request is the simpler rule and reads worse: a reply that repeats the same refusal three times
+  reads as three failures rather than one gap. It would also break the bound the routing-time
+  streaming decision rests on — with *k* requests of which *m* abstained, actual parts are
+  `k − m + 1`, never more than the `k` the router counted, which is what keeps a specialist from
+  streaming a reply the composer then writes over. The cost is that the composer has to name several
+  subjects in one paragraph, which is why the gap block lists each question and the system prompt
+  carries three constraints about what may not happen to them.
+- **One migration, no backfill, and the downgrade restores no data.** The safe-looking alternative
+  is a data migration writing `{position: 0, question: null, …}` per existing row. It would invent
+  the one field it cannot know — the classifier's restatement was never stored — leaving a nullable
+  `question` for every future reader to branch on, permanently, to describe rows that no longer
+  exist. So every session was deleted first (verified empty in `visitdoc_chat`,
+  `visitdoc_scheduler` and Qdrant), the revision drops two columns and adds one, and no code path
+  may read the old shape. The cost is that the change is only legal on a store you are willing to
+  empty — which is exactly what a portfolio project's demo data is, and what a real one's would not
+  be.

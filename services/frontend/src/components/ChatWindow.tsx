@@ -195,8 +195,9 @@ export function ChatWindow({
         id: localId(),
         sender: "patient",
         content: messageText,
-        faq_verdict: null,
-        citations: null,
+        // A patient message was never retrieved against, so it has no request outcome
+        // to carry - null, never `[]`, which would read as a half that ran.
+        request_outcomes: null,
         attention_mark: null,
         created_at: new Date().toISOString(),
       },
@@ -238,8 +239,7 @@ export function ChatWindow({
               // never be accounted for by a history read, and would sit on screen
               // until the chat is switched away from.
               content: event.message || accumulated,
-              faq_verdict: event.faq_verdict,
-              citations: event.citations,
+              request_outcomes: event.request_outcomes,
               attention_mark: null,
               created_at: new Date().toISOString(),
             },
@@ -286,9 +286,9 @@ export function ChatWindow({
     <div>
       <div data-testid="messages">
         {messages.map((message) => (
-          // No `citations`/`faqVerdict`: this pane draws neither, so passing them
-          // would read as a rendering decision made somewhere else. The staff
-          // console is the surface that shows how an answer was produced.
+          // No `requestOutcomes`: this pane draws none of it, so passing them would
+          // read as a rendering decision made somewhere else. The staff console is the
+          // surface that shows how an answer was produced.
           <MessageView
             key={message.id}
             sender={message.sender}

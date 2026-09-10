@@ -41,14 +41,37 @@ export type FaqVerdict =
   | "abstained_similarity_floor"
   | "abstained_rerank_floor";
 
+/**
+ * What one request of a message got: its answer, its verdict, its evidence.
+ *
+ * The only place a verdict lives. A message may carry several requests, each retrieved
+ * for and gated on its own, so a turn that answered one and abstained on another has no
+ * single verdict to report - and nothing derives one.
+ *
+ * `question` is the request as the classifier restated it: what was retrieved for, not
+ * the patient's own wording. `answer` is null exactly when the verdict is an abstention,
+ * and `citations` is empty exactly then.
+ */
+export interface RequestOutcome {
+  position: number;
+  question: string;
+  answer: string | null;
+  verdict: FaqVerdict;
+  citations: Citation[];
+}
+
 export interface ChatDoneEvent {
   type: "done";
-  /** Null when no FAQ specialist ran, i.e. a booking-only reply. */
-  faq_verdict: FaqVerdict | null;
-  citations: Citation[];
   /**
-   * A reply to render *instead of* the accumulated tokens - today, the FAQ
-   * abstention.
+   * One entry per request the FAQ half answered or abstained on, in position order.
+   *
+   * Null when no FAQ specialist ran, i.e. a booking-only reply, a hand-off or a
+   * small-talk reply. Never `[]` - a half that ran had at least one request.
+   */
+  request_outcomes: RequestOutcome[] | null;
+  /**
+   * A reply to render *instead of* the accumulated tokens - today, a turn whose
+   * every request abstained, and a turn routed as several parts that collapsed to one.
    *
    * Absent, null and empty all say the same thing: there is no such reply, so the
    * tokens are the answer. The server settles it the same way when it stores the
@@ -103,8 +126,8 @@ export interface Message {
   id: string;
   sender: "patient" | "assistant" | "staff";
   content: string;
-  faq_verdict: FaqVerdict | null;
-  citations: Citation[] | null;
+  /** Only ever set on an assistant message whose turn ran the FAQ half. */
+  request_outcomes: RequestOutcome[] | null;
   attention_mark: AttentionMark | null;
   created_at: string;
 }

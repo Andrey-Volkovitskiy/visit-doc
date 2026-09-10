@@ -16,6 +16,7 @@ import pytest
 import structlog
 from anthropic import APITimeoutError, OverloadedError
 from chat.agent import graph as graph_module
+from chat.agent.answer_faq import _ABSTENTION_MESSAGE
 from chat.agent.compose_answer import FaqResult, FaqSegmentAnswer
 from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
 from chat.agent.history import (
@@ -41,6 +42,7 @@ from chat.domain.schemas import (
     Citation,
     FaqVerdict,
     IntentLabel,
+    RequestSegment,
 )
 from chat.rag.indexing import publish_revision, remove_entry_chunks
 from chat.rag.pipeline import ScoredChunk
@@ -186,6 +188,22 @@ async def _run_turn(
     return events
 
 
+def _verdicts(done: ChatDoneEvent) -> list[FaqVerdict]:
+    """Return each request's verdict, in position order, off a terminal event.
+
+    There is no turn-level verdict on the event to read: a turn may answer one request
+    and abstain on another, so the verdict lives on the request.
+    """
+    assert done.request_outcomes is not None
+    return [outcome.verdict for outcome in done.request_outcomes]
+
+
+def _cited(done: ChatDoneEvent) -> list[Citation]:
+    """Return every chunk the turn's requests cited, in position order."""
+    assert done.request_outcomes is not None
+    return [c for outcome in done.request_outcomes for c in outcome.citations]
+
+
 def test_grounded_answer_matches_answer_faq_byte_for_byte(seeded_entry: int) -> None:
     with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
         anthropic_client = fake_anthropic_client(["Visiting ", "hours are 8am to 5pm."])
@@ -195,8 +213,8 @@ def test_grounded_answer_matches_answer_faq_byte_for_byte(seeded_entry: int) -> 
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert "".join(e.text for e in token_events) == "Visiting hours are 8am to 5pm."
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
-    assert any(c.entry_id == seeded_entry for c in done_event.citations)
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
+    assert any(c.entry_id == seeded_entry for c in _cited(done_event))
 
 
 def test_abstention_matches_answer_faq_byte_for_byte(seeded_entry: int) -> None:
@@ -207,8 +225,8 @@ def test_abstention_matches_answer_faq_byte_for_byte(seeded_entry: int) -> None:
     assert len(events) == 1
     done_event = events[0]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
-    assert done_event.citations == []
+    assert _verdicts(done_event) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _cited(done_event) == []
 
 
 def test_intent_classified_is_logged_before_any_answer_faq_event(
@@ -283,7 +301,7 @@ def test_classification_failure_is_recorded_and_does_not_block_the_faq_reply(
     assert failure_logged["error_detail"] == "boom"
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
 
 
 def test_a_failed_classification_logs_the_whole_event_it_always_logged(
@@ -361,7 +379,7 @@ def test_a_model_outage_during_classification_raises_the_dependency_alert(
     assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
 
 
 def test_a_classification_answer_that_would_not_parse_raises_no_alert(
@@ -390,7 +408,7 @@ def test_a_classification_answer_that_would_not_parse_raises_no_alert(
     assert failure_logged["log_level"] == "error"
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
 
 
 async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_reply(
@@ -473,10 +491,9 @@ def test_a_booking_only_intent_launches_the_booking_specialist_alone(
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.answer_source == "booking"
-    # A booking reply was never retrieved against, so it is neither grounded nor
-    # abstaining - and it carries no citations.
-    assert done_event.faq_verdict is None
-    assert done_event.citations == []
+    # A booking reply was never retrieved against, so it has no request outcome at all
+    # - null, not an empty list, which would read as a half that ran.
+    assert done_event.request_outcomes is None
 
 
 def test_a_faq_only_intent_launches_the_faq_specialist_alone(
@@ -714,9 +731,8 @@ def test_call_staff_takes_the_whole_turn(seeded_entry: int) -> None:
     assert isinstance(done_event, ChatDoneEvent)
     assert "".join(e.text for e in token_events) == HANDOFF_MESSAGE
     assert done_event.answer_source == "hand_off"
-    # Never retrieved against, so neither grounded nor abstaining - and nothing to cite.
-    assert done_event.faq_verdict is None
-    assert done_event.citations == []
+    # Never retrieved against, so it carries no request outcome at all.
+    assert done_event.request_outcomes is None
 
 
 @pytest.mark.parametrize(
@@ -788,7 +804,7 @@ def test_a_handed_off_turn_is_reported_as_its_own_outcome(
 
     completed = next(e for e in logs if e["event"] == "turn.completed")
     assert completed["outcome"] == "handed_off"
-    assert completed["answer_source"] == "hand_off"
+    assert completed["outcome"] == "handed_off"
     assert completed["answer_text"] == HANDOFF_MESSAGE
     # The node that wrote the sentence reports it too, like every other node that
     # returns text - a handoff is not the one path a log reader has to infer.
@@ -922,7 +938,7 @@ def test_a_classification_timeout_is_not_reported_as_an_outage(
     # And the turn is untouched by it, exactly as on the outage path.
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
 
 
 # --- Phase 1f, US1: a message that asks for nothing ----------------------------------
@@ -978,8 +994,7 @@ async def test_a_small_talk_reply_carries_no_verdict_and_no_citations() -> None:
     done = events[-1]
     assert isinstance(done, ChatDoneEvent)
     assert done.answer_source == "small_talk"
-    assert done.faq_verdict is None
-    assert done.citations == []
+    assert done.request_outcomes is None
 
 
 async def test_small_talk_is_answered_even_with_no_corpus_to_answer_from() -> None:
@@ -1384,12 +1399,14 @@ async def test_a_small_talk_turn_records_its_own_text_and_no_retrieval_fields() 
     node = _node_result(logs, "small_talk")
     assert node["answer_text"] == "You're welcome!"
     assert node["answer_chars"] == len("You're welcome!")
-    assert "faq_verdict" not in node
+    assert "request_outcomes" not in node
     assert "citation_count" not in node
 
     completed = next(e for e in logs if e["event"] == "turn.completed")
-    assert completed["answer_source"] == "small_talk"
+    # One field, not two: `outcome` names the turn's shape, so an `answer_source`
+    # beside it would be the same fact twice in one event.
     assert completed["outcome"] == "small_talk"
+    assert "answer_source" not in completed
 
 
 async def test_the_phase_two_join_is_computable_from_one_turns_lines() -> None:
@@ -1619,7 +1636,7 @@ def test_a_failed_classification_synthesizes_one_segment_of_the_whole_message(
     assert queries == ["when can I visit?"]
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
 
 
 def test_a_failed_classification_calls_nobody_and_answers_no_pleasantry(
@@ -1727,15 +1744,15 @@ def test_two_answerable_requests_are_answered_in_one_merged_reply(
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.answer_source is AnswerSource.MERGED
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED, FaqVerdict.ANSWERED]
 
 
-def test_one_unanswerable_request_abstains_for_the_whole_faq_half(
+def test_one_unanswerable_request_no_longer_abstains_for_the_answered_one(
     seeded_entry: int,
 ) -> None:
-    # Serving the answerable half and naming the gap is Phase 1h. Here the half
-    # abstains whole - and with nothing else in the turn, that leaves one reply part,
-    # so no composing call is made to paraphrase a constant.
+    # Phase 1h's headline change, at the graph level: where this turn used to collapse
+    # to the constant message, it now merges the answered request's answer with a named
+    # gap for the one the corpus could not answer.
     escalation = EscalationRequests()
     with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
         anthropic_client = fake_anthropic_client(
@@ -1753,12 +1770,13 @@ def test_one_unanswerable_request_abstains_for_the_whole_faq_half(
             )
         )
 
-    assert _composing_calls(anthropic_client) == 0
+    assert _composing_calls(anthropic_client) == 1
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert not done_event.faq_verdict.answered
-    assert done_event.citations == []
-    assert done_event.message is not None
+    assert done_event.answer_source is AnswerSource.MERGED
+    assert [v.answered for v in _verdicts(done_event)] == [True, False]
+    # The gap still calls a person, exactly once, and still does not silence the
+    # conversation - what changed is only that an answer goes out beside it.
     assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
 
 
@@ -1788,7 +1806,9 @@ def test_a_collapsed_answered_half_cites_what_it_retrieved() -> None:
                 question="when can I visit?",
                 answer_text=_ENTRY_CONTENT,
                 verdict=FaqVerdict.ANSWERED,
-                citations=[],
+                citations=[
+                    Citation(entry_id=7, chunk_index=0, chunk_text=_ENTRY_CONTENT)
+                ],
                 scored_chunks=[chunk],
             )
         ],
@@ -1823,24 +1843,31 @@ def test_a_collapsed_answered_half_cites_what_it_retrieved() -> None:
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.answer_source is AnswerSource.FAQ
-    assert done_event.faq_verdict is FaqVerdict.ANSWERED
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
     assert done_event.message == _ENTRY_CONTENT
-    # The patient is told what the answer rested on, written out rather than compared
-    # against the result the stub returned: an assertion derived from it would pass on
-    # an empty list too.
-    assert done_event.citations == [
+    # The patient is told what the answer rested on: the collapse path reads the
+    # surviving half's own outcomes rather than emitting an empty list beside a reply
+    # that did cite something.
+    assert _cited(done_event) == [
         Citation(entry_id=7, chunk_index=0, chunk_text=_ENTRY_CONTENT)
     ]
-    # And the turn's record names the same chunk, with the scores the wire type does
-    # not carry - the two are one selection in two shapes, not two answers.
+    # And the turn's record names the same chunk under the same request, with the
+    # scores the wire type does not carry - the two are one selection in two shapes,
+    # not two answers.
     completed = next(e for e in logs if e["event"] == "turn.completed")
-    assert completed["citations"] == [
+    assert completed["request_outcomes"] == [
         {
-            "entry_id": 7,
-            "chunk_index": 0,
-            "chunk_text": _ENTRY_CONTENT,
-            "similarity_score": 0.9,
-            "rerank_score": 0.8,
+            "position": 0,
+            "verdict": "answered",
+            "citations": [
+                {
+                    "entry_id": 7,
+                    "chunk_index": 0,
+                    "chunk_text": _ENTRY_CONTENT,
+                    "similarity_score": 0.9,
+                    "rerank_score": 0.8,
+                }
+            ],
         }
     ]
 
@@ -2020,7 +2047,7 @@ def test_an_overriding_request_takes_the_whole_turn(
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.answer_source is AnswerSource.HAND_OFF
-    assert done_event.faq_verdict is None
+    assert done_event.request_outcomes is None
 
 
 def test_a_pleasantry_beside_a_request_routes_nowhere(seeded_entry: int) -> None:
@@ -2182,11 +2209,13 @@ def test_the_turn_records_each_requests_own_outcome_beside_the_summary(
 
     completed = next(e for e in logs if e["event"] == "turn.completed")
     assert completed["segment_count"] == 2
-    assert completed["segment_verdicts"] == [
+    assert [
+        {"position": o["position"], "verdict": o["verdict"]}
+        for o in completed["request_outcomes"]
+    ] == [
         {"position": 0, "verdict": "answered"},
         {"position": 1, "verdict": "abstained_similarity_floor"},
     ]
-    assert completed["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert _node_result(logs, "answer_faq")["segment_count"] == 2
 
 
@@ -2200,7 +2229,10 @@ def test_a_single_request_turn_records_one_segment(seeded_entry: int) -> None:
 
     completed = next(e for e in logs if e["event"] == "turn.completed")
     assert completed["segment_count"] == 1
-    assert completed["segment_verdicts"] == [{"position": 0, "verdict": "answered"}]
+    assert [
+        {"position": o["position"], "verdict": o["verdict"]}
+        for o in completed["request_outcomes"]
+    ] == [{"position": 0, "verdict": "answered"}]
 
 
 def test_each_requests_own_words_are_recorded_on_a_merged_turn(
@@ -2248,3 +2280,246 @@ def test_a_single_request_turn_records_its_one_answer_the_same_way(
     assert [a["position"] for a in result["segment_answers"]] == [0]
     # The half's own single text keeps its own field, unchanged.
     assert result["answer_text"] == "Visiting hours are 8am to 5pm."
+
+
+# --- Phase 1h, US1: a turn serves what it can and names what it cannot ---------------
+#
+# Driven through the seeded corpus, which answers a question about visiting hours and
+# nothing else - so "one answerable and one unanswerable request" is a property of the
+# corpus these turns run against rather than of a stub the assertions then read back.
+
+
+def _generation_calls(client: MagicMock) -> int:
+    """How many answer-generating calls this turn made, composing excluded."""
+    return sum(
+        1
+        for call in client.messages.stream.call_args_list
+        if call.kwargs.get("system") != COMPOSE_SYSTEM_PROMPT
+    )
+
+
+def _mixed_faq_turn(
+    *questions: str, tokens: list[str] | None = None
+) -> tuple[MagicMock, list[ChatTokenEvent | ChatDoneEvent]]:
+    """Run one turn carrying `questions` as separate FAQ requests.
+
+    Returns: the mocked client the turn ran against, and the events it produced.
+    """
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            tokens if tokens is not None else [_ENTRY_CONTENT],
+            segments=[(IntentLabel.FAQ_QUESTION, q) for q in questions],
+        )
+        events = asyncio.run(_run_turn(anthropic_client, ", and ".join(questions)))
+    return anthropic_client, events
+
+
+def test_a_partly_answerable_turn_is_composed_from_its_answer_and_its_gap(
+    seeded_entry: int,
+) -> None:
+    client, events = _mixed_faq_turn(
+        "when can I visit?", "what is your refund policy?", tokens=["merged reply"]
+    )
+
+    assert _composing_calls(client) == 1
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert [v.answered for v in _verdicts(done_event)] == [True, False]
+    # The answered request's own text reached the composer, rather than being replaced
+    # by the abstention the way the whole half used to be.
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert "when can I visit?" in prompt
+    assert "NO CONFIDENT ANSWER" in prompt
+
+
+def test_a_partly_answerable_turn_counts_the_answer_and_the_gap_as_two_parts(
+    seeded_entry: int,
+) -> None:
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        _mixed_faq_turn(
+            "when can I visit?", "what is your refund policy?", tokens=["merged reply"]
+        )
+
+    compose = _node_result(logs, "compose_answer")
+    # Merged, so the composing branch ran - the collapse to a single part is what the
+    # turn no longer does when one of its requests was answerable.
+    assert compose["merged"] is True
+    assert "collapsed_to_one_part" not in compose
+
+
+def test_a_turn_whose_every_request_abstained_keeps_the_constant_reply(
+    seeded_entry: int,
+) -> None:
+    client, events = _mixed_faq_turn(
+        "what is your refund policy?", "who won the game last night?"
+    )
+
+    assert _composing_calls(client) == 0
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert [v.answered for v in _verdicts(done_event)] == [False, False]
+    # Byte for byte: a stopping reply makes no claim about the clinic, which is the
+    # only thing retrieval could have grounded, so no model paraphrases it.
+    assert done_event.message == _ABSTENTION_MESSAGE
+
+
+def test_a_single_answered_request_still_streams_and_composes_nothing(
+    seeded_entry: int,
+) -> None:
+    client, events = _mixed_faq_turn("when can I visit?")
+
+    assert _composing_calls(client) == 0
+    assert [e for e in events if isinstance(e, ChatTokenEvent)]
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is AnswerSource.FAQ
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
+
+
+@pytest.mark.parametrize("answerable", [0, 1, 2])
+def test_a_turn_generates_one_answer_per_answerable_request(
+    seeded_entry: int, answerable: int
+) -> None:
+    # Counted, never timed: an abstaining request costs no generation call, so *m*
+    # answered requests cost exactly *m*, whatever the turn does with them afterwards.
+    questions = ["when can I visit?", "what are the visiting hours on Sunday?"][
+        :answerable
+    ] + ["what is your refund policy?", "who won the game last night?"][
+        : 2 - answerable
+    ]
+    client, _ = _mixed_faq_turn(*questions, tokens=["merged reply"])
+
+    assert _generation_calls(client) == answerable
+    assert _composing_calls(client) <= 1
+
+
+@pytest.mark.parametrize(
+    ("faq_requests", "abstained"),
+    [(k, m) for k in range(1, 4) for m in range(k + 1)],
+)
+def test_a_turn_never_produces_more_parts_than_its_route_expected(
+    faq_requests: int, abstained: int
+) -> None:
+    """The routing-time bound holds for every (k requests, m abstained).
+
+    `_expected_parts` decides before retrieval runs whether the specialists stream or
+    collect, so a turn that turned out to have *more* parts than expected would stream
+    a reply the composer then wrote over.
+    """
+    segments = [
+        RequestSegment(intent=IntentLabel.FAQ_QUESTION, text=f"q{i}?")
+        for i in range(faq_requests)
+    ]
+    answers = [
+        FaqSegmentAnswer(
+            position=i,
+            question=f"q{i}?",
+            answer_text="" if i < abstained else "an answer",
+            verdict=(
+                FaqVerdict.ABSTAINED_RERANK_FLOOR
+                if i < abstained
+                else FaqVerdict.ANSWERED
+            ),
+            citations=(
+                []
+                if i < abstained
+                else [Citation(entry_id=i, chunk_index=0, chunk_text="chunk")]
+            ),
+        )
+        for i in range(faq_requests)
+    ]
+    state = {
+        "faq_result": FaqResult.from_segments(answers, abstention_message="constant"),
+        "booking_result": None,
+        "small_talk_result": None,
+        "handoff_reason": None,
+        "notice_required": False,
+        "segments": segments,
+    }
+
+    expected = graph_module._expected_parts(
+        ["answer_faq"], segments, notice_required=False
+    )
+    assert graph_module._actual_parts(state) <= expected
+
+
+# --- Phase 1h, US5: everything that already worked still works -----------------------
+
+
+@pytest.mark.parametrize(
+    ("intents", "expected_source"),
+    [
+        ([IntentLabel.BOOKING], AnswerSource.BOOKING),
+        ([IntentLabel.SMALL_TALK], AnswerSource.SMALL_TALK),
+        ([IntentLabel.CALL_STAFF], AnswerSource.HAND_OFF),
+    ],
+)
+def test_a_turn_with_no_faq_half_reports_no_request_outcome_at_all(
+    seeded_entry: int, intents: list[IntentLabel], expected_source: AnswerSource
+) -> None:
+    # Null, never `[]`: a half that ran answered or abstained on at least one request,
+    # so an empty list would describe a state no path can produce.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(["reply"], intents=intents)
+        events = asyncio.run(_run_turn(anthropic_client, "a message"))
+
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.answer_source is expected_source
+    assert done_event.request_outcomes is None
+
+
+def test_an_embedding_failure_still_fails_the_whole_turn(seeded_entry: int) -> None:
+    # Unchanged by partial serving: a dependency that did not answer is not a corpus
+    # gap, so it is never recorded as an abstention and nothing partial is delivered -
+    # not even the sibling request that had already been answered.
+    async def _failing_embed(*_args: object, **_kwargs: object) -> list[list[float]]:
+        raise RuntimeError("voyage down")
+
+    with (
+        patch("chat.rag.retriever.embed_texts", _failing_embed),
+        pytest.raises(TurnPipelineError) as raised,
+    ):
+        anthropic_client = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and what about refunds?")
+        )
+
+    assert raised.value.pipeline_step == "embedding"
+
+
+def test_every_per_request_retrieval_event_still_carries_its_fields(
+    seeded_entry: int,
+) -> None:
+    # 1e's six events are unchanged, including 1g's `segment` binding: this phase
+    # changes what is done with a request's outcome, not how it is produced or logged.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "when can I visit, and what about refunds?")
+        )
+
+    retrievals = [e for e in logs if e["event"] == "faq.retrieval_completed"]
+    verdicts = [e for e in logs if e["event"] == "faq.verdict"]
+    assert sorted(e["segment"] for e in retrievals) == [0, 1]
+    assert sorted(e["segment"] for e in verdicts) == [0, 1]
+    assert all("candidates" in e for e in retrievals)
+    assert all("blocked_gate" in e for e in verdicts)
+    # The request's text is carried once, on the classification event, and joined by
+    # position - not repeated onto every per-request line.
+    assert all("question" not in e for e in verdicts)

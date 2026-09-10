@@ -96,9 +96,15 @@ def test_message_content_is_required() -> None:
     assert Message.__table__.c.content.nullable is False
 
 
-def test_message_grounded_and_citations_are_nullable() -> None:
-    assert Message.__table__.c.faq_verdict.nullable is True
-    assert Message.__table__.c.citations.nullable is True
+def test_message_request_outcomes_is_nullable() -> None:
+    assert Message.__table__.c.request_outcomes.nullable is True
+
+
+def test_a_message_carries_no_turn_level_verdict_or_citation_list() -> None:
+    # 011: both were message-level because the verdict was. A turn may now answer one
+    # request and abstain on another, so neither has a turn-wide value left to hold.
+    assert "faq_verdict" not in Message.__table__.c
+    assert "citations" not in Message.__table__.c
 
 
 def test_message_has_created_at() -> None:

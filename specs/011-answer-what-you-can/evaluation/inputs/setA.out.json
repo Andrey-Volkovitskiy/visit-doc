@@ -1,0 +1,970 @@
+[
+ {
+  "id": "A1",
+  "answerable": "clinic hours",
+  "unanswerable": "parking validation",
+  "message": "What are your clinic hours, and do you validate parking?",
+  "reply": "Thanks for reaching out! Here are the details:\n\nOur clinic is open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether that parking is validated by the clinic, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "What are your clinic hours?",
+    "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you validate parking?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here are the details:\n\nOur clinic is open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether that parking is validated by the clinic, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "What are your clinic hours?",
+    "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you validate parking?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EK7X16DV738KJC0CB7X4B"
+ },
+ {
+  "id": "A2",
+  "answerable": "referral not needed",
+  "unanswerable": "prescription renewal",
+  "message": "Do I need a referral to see a specialist, and can you renew my prescription?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\nYou do not need a referral to book an appointment with a specialist.\n\nAs for your other request, I'm not authorized to handle that one myself. I've forwarded it to our clinic staff, who will follow up with you. In the meantime, feel free to ask me if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Do I need a referral to see a specialist?",
+    "answer": "You do not need a referral to book an appointment with a specialist.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 528,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a specialist appointment without a referral."
+     }
+    ]
+   }
+  ],
+  "escalations": [
+   "not_authorized"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\nYou do not need a referral to book an appointment with a specialist.\n\nAs for your other request, I'm not authorized to handle that one myself. I've forwarded it to our clinic staff, who will follow up with you. In the meantime, feel free to ask me if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Do I need a referral to see a specialist?",
+    "answer": "You do not need a referral to book an appointment with a specialist.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 528,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a specialist appointment without a referral."
+     }
+    ]
+   }
+  ],
+  "marks": [
+   "not_authorized"
+  ],
+  "chat_id": "01M25EKF7FEF69TP5S0VPQJ0YS"
+ },
+ {
+  "id": "A3",
+  "answerable": "what to bring",
+  "unanswerable": "interpreter availability",
+  "message": "Is there an interpreter available, and what should I bring to my first appointment?",
+  "reply": "For your first appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nSince this is your first visit, please also arrive 15 minutes early to complete your registration paperwork.\n\nAs for whether an interpreter can be arranged for your visit, I don't have that information in the clinic's knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Is there an interpreter available?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   },
+   {
+    "position": 1,
+    "question": "What should I bring to my first appointment?",
+    "answer": "For your first appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, since it's your first visit, arrive 15 minutes early to complete your registration paperwork.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 529,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+     },
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "For your first appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nSince this is your first visit, please also arrive 15 minutes early to complete your registration paperwork.\n\nAs for whether an interpreter can be arranged for your visit, I don't have that information in the clinic's knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Is there an interpreter available?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   },
+   {
+    "position": 1,
+    "question": "What should I bring to my first appointment?",
+    "answer": "For your first appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, since it's your first visit, arrive 15 minutes early to complete your registration paperwork.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 529,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+     },
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EKND00GFWZFX8HEA6MK5G"
+ },
+ {
+  "id": "A4",
+  "answerable": "telehealth",
+  "unanswerable": "wheelchair access",
+  "message": "Do you offer telehealth appointments, and is the clinic wheelchair accessible?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\nWe currently do not offer telehealth appointments \u2014 all visits are in-person at our clinic location.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information available in our knowledge base right now. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you offer telehealth appointments?",
+    "answer": "No, we currently only offer in-person visits at our clinic location.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 530,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Is the clinic wheelchair accessible?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\nWe currently do not offer telehealth appointments \u2014 all visits are in-person at our clinic location.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information available in our knowledge base right now. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you offer telehealth appointments?",
+    "answer": "No, we currently only offer in-person visits at our clinic location.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 530,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Is the clinic wheelchair accessible?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EKX234BYQ2RZJ9B87JNAZ"
+ },
+ {
+  "id": "A5",
+  "answerable": "insurance plans",
+  "unanswerable": "lab result turnaround",
+  "message": "Which insurance plans do you accept, and how long does a blood test result take?",
+  "reply": "Thanks for your questions! Here's what I can share:\n\nWe accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage.\n\nAs for your question about turnaround time for blood test results, I don't have that information available in our knowledge base right now. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Which insurance plans do you accept?",
+    "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 531,
+      "chunk_index": 0,
+      "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "How long does a blood test result take?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for your questions! Here's what I can share:\n\nWe accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage.\n\nAs for your question about turnaround time for blood test results, I don't have that information available in our knowledge base right now. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Which insurance plans do you accept?",
+    "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 531,
+      "chunk_index": 0,
+      "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our front desk to verify your specific coverage."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "How long does a blood test result take?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EM33K9W9XXWNXQRG38GB6"
+ },
+ {
+  "id": "A6",
+  "answerable": "out-of-pocket rates",
+  "unanswerable": "no-show fee",
+  "message": "How much is a GP visit out of pocket, and do you charge a no-show fee?",
+  "reply": "Thanks for your questions! Here's what I can share:\n\n- A GP visit out of pocket costs **$120**.\n\nAs for whether there's a fee for missing an appointment without cancelling, I don't have that information in the clinic's knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "How much is a GP visit out of pocket?",
+    "answer": "A GP visit out of pocket costs **$120**.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 533,
+      "chunk_index": 0,
+      "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you charge a no-show fee?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for your questions! Here's what I can share:\n\n- A GP visit out of pocket costs **$120**.\n\nAs for whether there's a fee for missing an appointment without cancelling, I don't have that information in the clinic's knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "How much is a GP visit out of pocket?",
+    "answer": "A GP visit out of pocket costs **$120**.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 533,
+      "chunk_index": 0,
+      "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you charge a no-show fee?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EMCYMED28RBB79569A61Y"
+ },
+ {
+  "id": "A7",
+  "answerable": "payment due",
+  "unanswerable": "medical certificate",
+  "message": "When is payment due, and can I get a medical certificate for work?",
+  "reply": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and FSA/HSA cards.\n\nRegarding your other request, I'm not authorized to handle that myself, so I've forwarded it to our clinic staff who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "When is payment due?",
+    "answer": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and FSA/HSA cards.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 534,
+      "chunk_index": 0,
+      "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+     }
+    ]
+   }
+  ],
+  "escalations": [
+   "not_authorized"
+  ],
+  "composed": true,
+  "stored_reply": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and FSA/HSA cards.\n\nRegarding your other request, I'm not authorized to handle that myself, so I've forwarded it to our clinic staff who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "When is payment due?",
+    "answer": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and FSA/HSA cards.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 534,
+      "chunk_index": 0,
+      "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+     }
+    ]
+   }
+  ],
+  "marks": [
+   "not_authorized"
+  ],
+  "chat_id": "01M25EMKK8FK26X3GFQ4E78VMD"
+ },
+ {
+  "id": "A8",
+  "answerable": "arrival time",
+  "unanswerable": "waiting-room Wi-Fi",
+  "message": "How early should I arrive, and is there Wi-Fi in the waiting room?",
+  "reply": "Here's the information you need:\n\n**Arrival time:** Please arrive 15 minutes early if this is your first visit, so you have time to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is fine.\n\n**Wi-Fi availability:** I don't have information in our knowledge base about whether Wi-Fi is available in the waiting room. I've forwarded this question to our staff, who will follow up with you directly.\n\nLet me know if there's anything else I can help with in the meantime!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "How early should I arrive?",
+    "answer": "Please arrive **15 minutes early** if it's your first visit (to complete registration paperwork), or **5 to 10 minutes early** if you're a returning patient.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Is there Wi-Fi in the waiting room?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Here's the information you need:\n\n**Arrival time:** Please arrive 15 minutes early if this is your first visit, so you have time to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is fine.\n\n**Wi-Fi availability:** I don't have information in our knowledge base about whether Wi-Fi is available in the waiting room. I've forwarded this question to our staff, who will follow up with you directly.\n\nLet me know if there's anything else I can help with in the meantime!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "How early should I arrive?",
+    "answer": "Please arrive **15 minutes early** if it's your first visit (to complete registration paperwork), or **5 to 10 minutes early** if you're a returning patient.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Is there Wi-Fi in the waiting room?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EMS6JDRMGC03PBMRCK6S4"
+ },
+ {
+  "id": "A9",
+  "answerable": "clinic hours",
+  "unanswerable": "paediatric care",
+  "message": "Do you see children under five, and what are your opening hours?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\nWe're open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is about a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether the clinic treats young children, I don't have that information in our knowledge base right now. I've forwarded your question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you see children under five?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   },
+   {
+    "position": 1,
+    "question": "What are your opening hours?",
+    "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\nWe're open Monday through Saturday, 9:00 AM to 6:00 PM, at 15a Willson St. The nearest parking is about a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether the clinic treats young children, I don't have that information in our knowledge base right now. I've forwarded your question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you see children under five?",
+    "answer": null,
+    "verdict": "abstained_similarity_floor",
+    "citations": []
+   },
+   {
+    "position": 1,
+    "question": "What are your opening hours?",
+    "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EN0EQN6H10F2MRSJTFG4F"
+ },
+ {
+  "id": "A10",
+  "answerable": "clinic location",
+  "unanswerable": "MRI availability",
+  "message": "Where are you located, and do you have an MRI scanner on site?",
+  "reply": "We're located at 15a Willson St., with the nearest parking about a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether we have an MRI scanner on site, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Where are you located?",
+    "answer": "We are located at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you have an MRI scanner on site?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "We're located at 15a Willson St., with the nearest parking about a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nAs for whether we have an MRI scanner on site, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Where are you located?",
+    "answer": "We are located at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you have an MRI scanner on site?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25ENA98CS734NB2F31B6M1X"
+ },
+ {
+  "id": "A11",
+  "answerable": "out-of-network",
+  "unanswerable": "vaccinations",
+  "message": "What happens if my insurer is out-of-network, and do you offer flu vaccinations?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\nIf your insurer is out-of-network, you can pay for your visit out-of-pocket, and we're able to provide you with an itemized receipt that you can submit to your insurer for potential reimbursement.\n\nAs for whether flu shots are available at our clinic, I don't have that information on hand in our knowledge base. I've forwarded this question to our staff, who will follow up with you on it. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "What happens if my insurer is out-of-network?",
+    "answer": "If your insurer is out-of-network, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 532,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you offer flu vaccinations?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\nIf your insurer is out-of-network, you can pay for your visit out-of-pocket, and we're able to provide you with an itemized receipt that you can submit to your insurer for potential reimbursement.\n\nAs for whether flu shots are available at our clinic, I don't have that information on hand in our knowledge base. I've forwarded this question to our staff, who will follow up with you on it. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "What happens if my insurer is out-of-network?",
+    "answer": "If your insurer is out-of-network, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 532,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you offer flu vaccinations?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25ENGB33DHN6J7FQXF4EWJK"
+ },
+ {
+  "id": "A12",
+  "answerable": "payment methods",
+  "unanswerable": "assistance animals",
+  "message": "Can I pay with an HSA card, and can I bring my guide dog?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\n**Payment:** Yes, HSA cards are accepted, along with cash, major credit/debit cards, and FSA cards. Payment is due at the time of service.\n\n**Service animals:** I don't have information in our knowledge base regarding bringing service animals to your appointment. I've forwarded this question to our staff, who will follow up with you directly.\n\nIn the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Can I pay with an HSA card?",
+    "answer": "Yes, we accept Health Savings Account (HSA) cards as a valid payment method, along with cash, major credit and debit cards, and FSA cards. Payment is due at the time of service.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 534,
+      "chunk_index": 0,
+      "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Can I bring my guide dog?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\n**Payment:** Yes, HSA cards are accepted, along with cash, major credit/debit cards, and FSA cards. Payment is due at the time of service.\n\n**Service animals:** I don't have information in our knowledge base regarding bringing service animals to your appointment. I've forwarded this question to our staff, who will follow up with you directly.\n\nIn the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Can I pay with an HSA card?",
+    "answer": "Yes, we accept Health Savings Account (HSA) cards as a valid payment method, along with cash, major credit and debit cards, and FSA cards. Payment is due at the time of service.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 534,
+      "chunk_index": 0,
+      "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Can I bring my guide dog?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25ENP9JZP0FZYVQFDG8W9WT"
+ },
+ {
+  "id": "A13",
+  "answerable": "telehealth",
+  "unanswerable": "same-day waiting time",
+  "message": "Do you do telehealth, and how long is the usual wait for a same-day slot?",
+  "reply": "Thanks for reaching out! To answer your question: we currently don't offer telehealth appointments\u2014only in-person visits at our clinic location.\n\nAs for your question about typical wait times for same-day appointment availability, I don't have that information in the clinic's knowledge base. I've forwarded this to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you offer telehealth appointments?",
+    "answer": "No, we currently only offer in-person visits at our clinic location.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 530,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "How long is the usual wait for a same-day appointment slot?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! To answer your question: we currently don't offer telehealth appointments\u2014only in-person visits at our clinic location.\n\nAs for your question about typical wait times for same-day appointment availability, I don't have that information in the clinic's knowledge base. I've forwarded this to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Do you offer telehealth appointments?",
+    "answer": "No, we currently only offer in-person visits at our clinic location.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 530,
+      "chunk_index": 0,
+      "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "How long is the usual wait for a same-day appointment slot?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25ENYPRJHFQB3E991CB5ZSB"
+ },
+ {
+  "id": "A14",
+  "answerable": "what to bring",
+  "unanswerable": "fasting before a blood test",
+  "message": "What should I bring to a first visit, and do I need to fast before a blood test?",
+  "reply": "Thanks for reaching out! Here's what I can share:\n\nFor your first visit, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, please arrive 15 minutes early to complete your registration paperwork.\n\nAs for whether you need to fast before a blood test, I don't have that information in the clinic's knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "What should I bring to a first visit?",
+    "answer": "For your first visit, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, arrive 15 minutes early to complete your registration paperwork.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 529,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+     },
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do I need to fast before a blood test?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Thanks for reaching out! Here's what I can share:\n\nFor your first visit, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, please arrive 15 minutes early to complete your registration paperwork.\n\nAs for whether you need to fast before a blood test, I don't have that information in the clinic's knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "What should I bring to a first visit?",
+    "answer": "For your first visit, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, arrive 15 minutes early to complete your registration paperwork.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 529,
+      "chunk_index": 0,
+      "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+     },
+     {
+      "entry_id": 536,
+      "chunk_index": 0,
+      "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do I need to fast before a blood test?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EP3NSM465SSY1Y98JQN2B"
+ },
+ {
+  "id": "A15",
+  "answerable": "parking location",
+  "unanswerable": "dental sedation",
+  "message": "Is parking near the clinic, and do you offer sedation for dental work?",
+  "reply": "Hi there,\n\nYes, there's parking near the clinic\u2014you can use the Mega Mall parking garage at 9 Willson St., which is about a 3-minute walk away.\n\nAs for your question about sedation options for dental procedures, I don't have that information in the clinic's knowledge base. I've forwarded your question to staff, who will follow up with you directly.\n\nIn the meantime, feel free to reach out if there's anything else I can help with!",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "Is there parking near the clinic?",
+    "answer": "Yes, the nearest parking is at the Mega Mall parking garage (9 Willson St.), about a 3-minute walk from the clinic.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you offer sedation for dental work?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "Hi there,\n\nYes, there's parking near the clinic\u2014you can use the Mega Mall parking garage at 9 Willson St., which is about a 3-minute walk away.\n\nAs for your question about sedation options for dental procedures, I don't have that information in the clinic's knowledge base. I've forwarded your question to staff, who will follow up with you directly.\n\nIn the meantime, feel free to reach out if there's anything else I can help with!",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "Is there parking near the clinic?",
+    "answer": "Yes, the nearest parking is at the Mega Mall parking garage (9 Willson St.), about a 3-minute walk from the clinic.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 535,
+      "chunk_index": 0,
+      "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Do you offer sedation for dental work?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EPE10RMZQ32V4AWHJ9TJY"
+ },
+ {
+  "id": "A16",
+  "answerable": "out-of-pocket rates",
+  "unanswerable": "Medicare dental claims",
+  "message": "How much does a dentist appointment cost, and can I claim it through Medicare dental?",
+  "reply": "A dentist appointment costs $180 out-of-pocket.\n\nAs for whether Medicare dental can be used to claim that cost, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "answer_source": "merged",
+  "request_outcomes": [
+   {
+    "position": 0,
+    "question": "How much does a dentist appointment cost?",
+    "answer": "A dentist appointment costs $180 out-of-pocket.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 533,
+      "chunk_index": 0,
+      "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Can I claim a dentist appointment through Medicare dental?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "escalations": [
+   "corpus_could_not_answer"
+  ],
+  "composed": true,
+  "stored_reply": "A dentist appointment costs $180 out-of-pocket.\n\nAs for whether Medicare dental can be used to claim that cost, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+  "stored_outcomes": [
+   {
+    "position": 0,
+    "question": "How much does a dentist appointment cost?",
+    "answer": "A dentist appointment costs $180 out-of-pocket.",
+    "verdict": "answered",
+    "citations": [
+     {
+      "entry_id": 533,
+      "chunk_index": 0,
+      "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+     }
+    ]
+   },
+   {
+    "position": 1,
+    "question": "Can I claim a dentist appointment through Medicare dental?",
+    "answer": null,
+    "verdict": "abstained_rerank_floor",
+    "citations": []
+   }
+  ],
+  "marks": [
+   "corpus_could_not_answer"
+  ],
+  "chat_id": "01M25EPMCPHNKHGFWE7PN8B4AM"
+ }
+]

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from chat.agent.compose_answer import (
+    _SYSTEM_PROMPT,
     FaqResult,
     FaqSegmentAnswer,
     TurnCompletion,
@@ -24,9 +25,11 @@ from chat.domain.schemas import (
     Citation,
     FaqVerdict,
     IntentLabel,
+    RequestOutcome,
     RequestSegment,
 )
 from chat.rag.pipeline import ScoredChunk
+from pydantic import ValidationError
 from structlog.testing import capture_logs
 
 from .conftest import FakeAnthropicStream, FakeTextEvent
@@ -146,8 +149,9 @@ async def test_the_faq_halfs_citations_are_carried_through_structurally() -> Non
         booking_outcome=str(BookingOutcome.BOOKED),
     )
 
-    assert done.citations == [_CITATION]
-    assert done.faq_verdict is FaqVerdict.ANSWERED
+    assert done.request_outcomes is not None
+    assert [c for o in done.request_outcomes for c in o.citations] == [_CITATION]
+    assert [o.verdict for o in done.request_outcomes] == [FaqVerdict.ANSWERED]
 
 
 async def test_an_abstaining_faq_half_is_reported_as_an_abstention() -> None:
@@ -160,10 +164,13 @@ async def test_an_abstaining_faq_half_is_reported_as_an_abstention() -> None:
         booking_outcome=str(BookingOutcome.BOOKED),
     )
 
-    assert done.faq_verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
-    assert done.citations == []
+    assert done.request_outcomes is not None
+    assert [o.verdict for o in done.request_outcomes] == [
+        FaqVerdict.ABSTAINED_RERANK_FLOOR
+    ]
+    assert [o.answer for o in done.request_outcomes] == [None]
     prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
-    assert "no confident answer" in prompt
+    assert "NO CONFIDENT ANSWER" in prompt
     # The abstaining half's own text is deliberately not offered as an answer to
     # rephrase - only the instruction to say plainly that there isn't one.
     assert "Visiting hours" not in prompt
@@ -226,12 +233,15 @@ async def test_a_merged_turn_logs_completion_once_with_scored_citations() -> Non
 
     completions = [e for e in logs if e["event"] == "turn.completed"]
     assert len(completions) == 1
-    assert completions[0]["answer_source"] == AnswerSource.MERGED
+    assert completions[0]["outcome"] == "merged"
     assert completions[0]["booking_outcome"] == "booked"
-    # Both scores per citation now: a disagreement between the two stages is the
-    # phase's whole thesis, so the completion record carries the pair.
-    assert completions[0]["citations"][0]["similarity_score"] == 0.9
-    assert completions[0]["citations"][0]["rerank_score"] == 0.8
+    # Both scores per citation now, under the request whose answer stood on them: a
+    # disagreement between the two stages is the phase's whole thesis, so the record
+    # carries the pair - and carries it per request, since a turn may now have two
+    # verdicts and neither describes the other's evidence.
+    cited = completions[0]["request_outcomes"][0]["citations"][0]
+    assert cited["similarity_score"] == 0.9
+    assert cited["rerank_score"] == 0.8
 
 
 # --- the single-specialist no-op path ----------------------------------------
@@ -243,18 +253,18 @@ def test_a_single_specialist_turn_emits_only_its_completion() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
-            citations=[{**_CITATION.model_dump(), "score": 0.9}],
             reply_to_message_ids=_REPLY_IDS,
             segments=_SEGMENTS,
+            faq_result=_answered_faq(),
         )
         completion.emit()
 
     assert [e["event"] for e in logs] == ["turn.completed"]
-    assert logs[0]["outcome"] == "answered"
-    assert logs[0]["answer_source"] == AnswerSource.FAQ
+    # The turn's shape, never a verdict: which gate stopped which request is each
+    # request's own outcome to report.
+    assert logs[0]["outcome"] == "faq"
 
 
 def test_a_completion_emitted_within_a_turn_reports_the_turn_duration() -> None:
@@ -263,12 +273,11 @@ def test_a_completion_emitted_within_a_turn_reports_the_turn_duration() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
-            citations=[],
             reply_to_message_ids=_REPLY_IDS,
             segments=_SEGMENTS,
+            faq_result=_answered_faq(),
         )
         completion.emit()
 
@@ -281,12 +290,11 @@ def test_a_completion_emitted_outside_a_turn_reports_no_duration() -> None:
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            verdict=FaqVerdict.ANSWERED,
             booking_outcome=None,
             answer_text="Visiting hours are 8am to 5pm.",
-            citations=[],
             reply_to_message_ids=_REPLY_IDS,
             segments=_SEGMENTS,
+            faq_result=_answered_faq(),
         )
         completion.emit()
 
@@ -300,35 +308,41 @@ def test_an_abstained_single_specialist_turn_keeps_its_abstention_message() -> N
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.FAQ,
-            verdict=FaqVerdict.ABSTAINED_SIMILARITY_FLOOR,
             booking_outcome=None,
             answer_text="I don't have a confident answer to that.",
-            citations=[],
             reply_to_message_ids=_REPLY_IDS,
             segments=_SEGMENTS,
+            faq_result=_abstaining_faq(),
         )
         completion.emit()
 
-    assert logs[0]["outcome"] == "abstained_similarity_floor"
+    assert logs[0]["outcome"] == "faq"
+    assert logs[0]["request_outcomes"] == [
+        {
+            "position": 0,
+            "verdict": "abstained_rerank_floor",
+            "citations": [],
+        }
+    ]
     assert logs[0]["abstention_message"] == "I don't have a confident answer to that."
 
 
-def test_a_booking_only_turn_reports_no_faq_verdict() -> None:
+def test_a_booking_only_turn_reports_no_request_outcomes() -> None:
     with capture_logs() as logs:
         completion = TurnCompletion()
         record_single_specialist_completion(
             completion,
             answer_source=AnswerSource.BOOKING,
-            verdict=None,
             booking_outcome=str(BookingOutcome.BOOKED),
             answer_text="You're booked for Friday.",
-            citations=[],
             reply_to_message_ids=_REPLY_IDS,
             segments=_SEGMENTS,
         )
         completion.emit()
 
-    assert logs[0]["faq_verdict"] is None
+    # A booking reply was never retrieved against, so it has no request outcome to
+    # report at all - the key is absent, not an empty list.
+    assert "request_outcomes" not in logs[0]
     assert logs[0]["booking_outcome"] == "booked"
     assert "abstention_message" not in logs[0]
 
@@ -561,7 +575,7 @@ async def test_a_merge_records_whether_a_notice_was_part_of_it() -> None:
         notice_required=True,
     )
 
-    assert fields["answer_source"] == AnswerSource.MERGED
+    assert fields["outcome"] == "merged"
     assert fields["notice_included"] is True
 
 
@@ -573,7 +587,7 @@ async def test_a_genuine_two_specialist_merge_records_no_notice() -> None:
         notice_required=False,
     )
 
-    assert fields["answer_source"] == AnswerSource.MERGED
+    assert fields["outcome"] == "merged"
     assert fields["notice_included"] is False
 
 
@@ -672,7 +686,11 @@ async def test_the_citations_of_every_request_are_carried_through() -> None:
         booking_outcome=None,
     )
 
-    assert sorted(c.entry_id for c in done.citations) == [1, 2]
+    assert done.request_outcomes is not None
+    assert sorted(c.entry_id for o in done.request_outcomes for c in o.citations) == [
+        1,
+        2,
+    ]
 
 
 async def test_an_abstaining_half_still_renders_as_one_gap() -> None:
@@ -709,8 +727,12 @@ async def test_an_abstaining_half_still_renders_as_one_gap() -> None:
     )
 
     prompt = str(client.messages.stream.call_args.kwargs["messages"])
-    assert prompt.count("no confident answer") == 1
-    assert done.faq_verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
+    assert prompt.count("NO CONFIDENT ANSWER") == 1
+    assert done.request_outcomes is not None
+    assert [o.verdict for o in done.request_outcomes] == [
+        FaqVerdict.ABSTAINED_RERANK_FLOOR,
+        FaqVerdict.ABSTAINED_EMPTY_POOL,
+    ]
 
 
 async def test_a_merged_reply_cut_off_at_the_cap_says_so_in_the_log() -> None:
@@ -764,3 +786,481 @@ async def test_the_merge_budget_holds_every_part_it_can_be_handed() -> None:
 
     sent = client.messages.stream.call_args.kwargs["max_tokens"]
     assert sent >= MAX_SEGMENTS * FAQ_MAX_TOKENS + BOOKING_MAX_TOKENS
+
+
+# --- Phase 1h: the verdict, the answer and the citations move onto the request --------
+
+
+def _abstained(position: int, question: str, verdict: FaqVerdict) -> FaqSegmentAnswer:
+    return FaqSegmentAnswer(
+        position=position,
+        question=question,
+        answer_text="",
+        verdict=verdict,
+        citations=[],
+        scored_chunks=[],
+    )
+
+
+def test_an_answered_request_projects_its_own_answer_and_citations() -> None:
+    segment = _answer(0, "where are you?", "We are at 5 Oak Street.", 1)
+    outcome = segment.request_outcome()
+
+    assert outcome.position == 0
+    assert outcome.answer == "We are at 5 Oak Street."
+    assert outcome.verdict is FaqVerdict.ANSWERED
+    assert [c.entry_id for c in outcome.citations] == [1]
+
+
+def test_an_outcomes_question_is_the_classifiers_restatement() -> None:
+    # Not the patient's own wording: this is the text the pipeline retrieved for, so
+    # the record cannot say the evidence was selected for a question nobody asked.
+    segment = _answer(0, "where is the clinic located?", "5 Oak Street.", 1)
+
+    assert segment.request_outcome().question == "where is the clinic located?"
+
+
+def test_an_abstained_request_projects_no_answer_and_no_citation() -> None:
+    outcome = _abstained(
+        1, "what should I bring?", FaqVerdict.ABSTAINED_RERANK_FLOOR
+    ).request_outcome()
+
+    assert outcome.answer is None
+    assert outcome.citations == []
+    assert outcome.verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
+
+
+def test_an_abstained_outcome_may_not_be_built_carrying_an_answer() -> None:
+    # An empty string would be a second way of saying "abstained" that a reader could
+    # disagree with the verdict about, so the type refuses both it and real text.
+    with pytest.raises(ValidationError):
+        RequestOutcome(
+            position=0,
+            question="where are you?",
+            answer="We are at 5 Oak Street.",
+            verdict=FaqVerdict.ABSTAINED_EMPTY_POOL,
+            citations=[],
+        )
+
+
+def test_an_abstained_outcome_may_not_be_built_carrying_a_citation() -> None:
+    with pytest.raises(ValidationError):
+        RequestOutcome(
+            position=0,
+            question="where are you?",
+            answer=None,
+            verdict=FaqVerdict.ABSTAINED_EMPTY_POOL,
+            citations=[_CITATION],
+        )
+
+
+def test_an_answered_outcome_may_not_be_built_without_an_answer() -> None:
+    with pytest.raises(ValidationError):
+        RequestOutcome(
+            position=0,
+            question="where are you?",
+            answer=None,
+            verdict=FaqVerdict.ANSWERED,
+            citations=[_CITATION],
+        )
+
+
+def test_an_answered_outcome_may_not_be_built_without_a_citation() -> None:
+    # An answered request cites the survivors that were placed in its prompt, which is
+    # at least one - generation is what produced the verdict.
+    with pytest.raises(ValidationError):
+        RequestOutcome(
+            position=0,
+            question="where are you?",
+            answer="We are at 5 Oak Street.",
+            verdict=FaqVerdict.ANSWERED,
+            citations=[],
+        )
+
+
+def test_the_turns_outcomes_are_in_ascending_position_order() -> None:
+    result = FaqResult.from_segments(
+        [
+            _answer(0, "where are you?", "5 Oak Street.", 1),
+            _abstained(1, "what should I bring?", FaqVerdict.ABSTAINED_EMPTY_POOL),
+            _answer(2, "when are you open?", "8 to 5.", 2),
+        ],
+        abstention_message="unused",
+    )
+
+    assert [o.position for o in result.request_outcomes] == [0, 1, 2]
+
+
+def test_a_half_built_out_of_order_is_refused() -> None:
+    # Order is the message's order, and it is what the reply, the console and the
+    # derived unserved list all read - so it is structural, not a caller's promise.
+    with pytest.raises(ValueError, match="position"):
+        FaqResult.from_segments(
+            [
+                _answer(1, "what should I bring?", "Your ID.", 2),
+                _answer(0, "where are you?", "5 Oak Street.", 1),
+            ],
+            abstention_message="unused",
+        )
+
+
+def test_a_half_carrying_one_position_twice_is_refused() -> None:
+    with pytest.raises(ValueError, match="position"):
+        FaqResult.from_segments(
+            [
+                _answer(0, "where are you?", "5 Oak Street.", 1),
+                _answer(0, "what should I bring?", "Your ID.", 2),
+            ],
+            abstention_message="unused",
+        )
+
+
+def test_the_retrieval_scores_never_reach_the_wire_type() -> None:
+    # `scored_chunks` are the log's, and `Citation` deliberately carries no number:
+    # putting them on the wire would either leak them or need stripping at every call
+    # site.
+    outcome = _answer(0, "where are you?", "5 Oak Street.", 1).request_outcome()
+
+    dumped = outcome.model_dump()
+    assert "scored_chunks" not in dumped
+    assert set(dumped["citations"][0]) == {"entry_id", "chunk_index", "chunk_text"}
+
+
+# --- US1: the turn answers what it can and names what it cannot ----------------------
+
+
+def _partly_answered() -> FaqResult:
+    """Two requests: the first answered, the second stopped at the rerank floor."""
+    return FaqResult.from_segments(
+        [
+            _answer(0, "where are you?", "We are at 5 Oak Street.", 1),
+            _abstained(1, "what does a scan cost?", FaqVerdict.ABSTAINED_RERANK_FLOOR),
+        ],
+        abstention_message="unused: this half answered one request",
+    )
+
+
+def test_an_answered_request_survives_a_siblings_abstention() -> None:
+    result = _partly_answered()
+
+    outcomes = result.request_outcomes
+    assert outcomes[0].answer == "We are at 5 Oak Street."
+    assert [c.entry_id for c in outcomes[0].citations] == [1]
+    assert outcomes[1].answer is None
+
+
+def test_the_gap_is_one_part_however_many_requests_fell_into_it() -> None:
+    partly = _partly_answered()
+    two_gaps = FaqResult.from_segments(
+        [
+            _answer(0, "where are you?", "We are at 5 Oak Street.", 1),
+            _abstained(1, "what does a scan cost?", FaqVerdict.ABSTAINED_EMPTY_POOL),
+            _abstained(2, "do you bulk bill?", FaqVerdict.ABSTAINED_RERANK_FLOOR),
+        ],
+        abstention_message="unused",
+    )
+
+    assert partly.part_count == 2
+    assert two_gaps.part_count == 2
+
+
+def test_a_fully_answered_half_contributes_one_part_per_request() -> None:
+    assert _two_answered_requests().part_count == 2
+
+
+def test_an_all_abstained_half_contributes_exactly_one_part() -> None:
+    result = FaqResult.from_segments(
+        [
+            _abstained(0, "where are you?", FaqVerdict.ABSTAINED_EMPTY_POOL),
+            _abstained(1, "what does a scan cost?", FaqVerdict.ABSTAINED_RERANK_FLOOR),
+        ],
+        abstention_message="I don't have that in the knowledge base.",
+    )
+
+    assert result.part_count == 1
+    assert result.answer_text == "I don't have that in the knowledge base."
+
+
+def test_the_half_has_one_text_only_when_it_contributes_one_part() -> None:
+    # Several answers have no one text, and joining them would put a reply nobody wrote
+    # into the record as the turn's answer.
+    assert _partly_answered().answer_text is None
+    assert _two_answered_requests().answer_text is None
+    assert _answered_faq().answer_text == "Visiting hours are 8am to 5pm."
+
+
+async def test_the_gap_block_lists_every_unanswered_question_in_order() -> None:
+    client = _client(["merged"])
+    faq = FaqResult.from_segments(
+        [
+            _answer(0, "where are you?", "We are at 5 Oak Street.", 1),
+            _abstained(1, "what does a scan cost?", FaqVerdict.ABSTAINED_EMPTY_POOL),
+            _abstained(2, "do you bulk bill?", FaqVerdict.ABSTAINED_RERANK_FLOOR),
+        ],
+        abstention_message="unused",
+    )
+
+    await _compose(client, faq_result=faq, booking_reply=None, booking_outcome=None)
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert prompt.count("NO CONFIDENT ANSWER") == 1
+    assert prompt.index("what does a scan cost?") < prompt.index("do you bulk bill?")
+    assert "We are at 5 Oak Street." in prompt
+
+
+async def test_the_gap_block_says_the_gap_is_named_in_the_composers_own_words() -> None:
+    # The input slice and the instruction fail independently, so the rule is in the
+    # block as well as in the system prompt.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_partly_answered(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert "own words" in prompt
+    assert "do NOT quote" in prompt
+
+
+async def test_a_fully_answered_half_reaches_the_composer_with_no_gap_block() -> None:
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_two_answered_requests(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert "NO CONFIDENT ANSWER" not in prompt
+
+
+async def test_an_abstained_question_is_never_offered_as_an_empty_answer() -> None:
+    # Labelled as unanswered, never as an answer block with nothing under it: the
+    # prompt requires every labelled claim to be preserved exactly, and a label with an
+    # empty body is an invitation to write one.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_partly_answered(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = str(client.messages.stream.call_args.kwargs["messages"])
+    assert 'Answer to the question "what does a scan cost?"' not in prompt
+    assert 'Answer to the question "where are you?"' in prompt
+
+
+# --- US2: the answered half never covers for the gap ---------------------------------
+
+
+def test_the_system_prompt_carries_the_three_constraints_on_a_gap() -> None:
+    # A prompt clause is necessary and not sufficient - its *effect* is measured by the
+    # Phase 8 procedure against committed data. What is checkable here is that the
+    # clause is present at all, which is what a prompt edit can silently drop.
+    # Wrapping is a formatting detail of the prompt, not part of the clause, so the
+    # assertion reads it with its line breaks collapsed.
+    system = " ".join(_SYSTEM_PROMPT.lower().split())
+
+    # 1. Never soften a gap.
+    assert "do not promise to look into it" in system
+    assert "do not suggest when staff will reply" in system
+    # 2. Never extend an answer to cover a gap.
+    assert "answers that question only" in system
+    assert "two questions about the same subject are still two questions" in system
+    # 3. Name each gap in your own words.
+    assert "in your own words" in system
+    assert "never by quoting the restatement" in system
+
+
+def test_every_constraint_the_prompt_already_carried_survives() -> None:
+    # The three above are added to the existing list, not written over it: each of
+    # these prevents a failure of its own that this phase does not repeal.
+    system = _SYSTEM_PROMPT
+
+    # The claim-preservation rule.
+    assert "Preserve every factual claim exactly as given." in system
+    # The booking outcome wording rules, all nine outcomes.
+    for outcome in BookingOutcome:
+        assert f'"{outcome.value}"' in system
+    assert "never write anything that\n  suggests one exists" in system
+    # The not-authorized notice's three requirements.
+    assert "NOT AUTHORIZED" in system
+    assert "not authorized to handle that request" in system
+    assert "forwarded to the clinic's staff who will follow up" in system
+    assert "ask you\n  about anything else in the meantime" in system
+
+
+async def test_an_unanswered_question_reaches_the_composer_labelled_as_unanswered() -> (
+    None
+):
+    # Labelled, not merely absent: the composer needs the question to name the gap at
+    # all, and needs it labelled so the claim-preservation rule extends to it.
+    client = _client(["merged"])
+
+    await _compose(
+        client,
+        faq_result=_partly_answered(),
+        booking_reply=None,
+        booking_outcome=None,
+    )
+
+    prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
+    gap_start = prompt.index("NO CONFIDENT ANSWER")
+    assert "what does a scan cost?" in prompt[gap_start:]
+    assert "what does a scan cost?" not in prompt[:gap_start]
+
+
+# --- US4: the log answers the same way the stored record does ------------------------
+
+
+def _degraded_faq() -> FaqResult:
+    """One request answered from chunks no cross-encoder ever saw."""
+    citation = Citation(entry_id=3, chunk_index=0, chunk_text="chunk 3")
+    return FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="where are you?",
+                answer_text="We are at 5 Oak Street.",
+                verdict=FaqVerdict.ANSWERED_UNRERANKED,
+                citations=[citation],
+                scored_chunks=[
+                    ScoredChunk(
+                        faq_entry_id=3,
+                        chunk_index=0,
+                        chunk_text="chunk 3",
+                        similarity_score=0.7,
+                        rerank_score=None,
+                    )
+                ],
+            )
+        ],
+        abstention_message="unused",
+    )
+
+
+async def test_a_merged_turn_reports_no_turn_level_verdict_or_source() -> None:
+    client = _client(["merged"])
+
+    with capture_logs() as logs:
+        await _compose(
+            client,
+            faq_result=_partly_answered(),
+            booking_reply=None,
+            booking_outcome=None,
+        )
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert "faq_verdict" not in completed
+    assert "citations" not in completed
+    # `outcome` names the turn's shape, so `answer_source` would be the same fact in a
+    # second field of the same event.
+    assert "answer_source" not in completed
+    assert completed["outcome"] == "merged"
+
+
+def test_a_single_request_turn_that_abstained_reports_its_shape_not_its_verdict() -> (
+    None
+):
+    with capture_logs() as logs:
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.FAQ,
+            booking_outcome=None,
+            answer_text="I don't have that in the knowledge base.",
+            reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
+            faq_result=_abstaining_faq(),
+        )
+        completion.emit()
+
+    assert logs[0]["outcome"] == "faq"
+    assert "faq_verdict" not in logs[0]
+    assert "citations" not in logs[0]
+    assert "answer_source" not in logs[0]
+
+
+async def test_a_partly_served_turn_logs_two_verdicts_and_no_abstention_message() -> (
+    None
+):
+    # Filing an answered reply as an abstention is what setting it here would do: the
+    # patient was told something, and `abstention_message` means the reply *was* the
+    # abstention.
+    client = _client(["merged"])
+
+    with capture_logs() as logs:
+        await _compose(
+            client,
+            faq_result=_partly_answered(),
+            booking_reply=None,
+            booking_outcome=None,
+        )
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert [o["verdict"] for o in completed["request_outcomes"]] == [
+        "answered",
+        "abstained_rerank_floor",
+    ]
+    assert "abstention_message" not in completed
+
+
+def test_an_all_abstained_turn_logs_the_constant_the_patient_saw() -> None:
+    with capture_logs() as logs:
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.FAQ,
+            booking_outcome=None,
+            answer_text="I don't have that in the knowledge base.",
+            reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
+            faq_result=_abstaining_faq(),
+        )
+        completion.emit()
+
+    assert logs[0]["abstention_message"] == "I don't have that in the knowledge base."
+
+
+def test_a_booking_only_turn_logs_no_request_outcomes_key() -> None:
+    with capture_logs() as logs:
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.BOOKING,
+            booking_outcome=str(BookingOutcome.BOOKED),
+            answer_text="You're booked for Friday.",
+            reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
+        )
+        completion.emit()
+
+    assert "request_outcomes" not in logs[0]
+
+
+def test_a_degraded_requests_citations_carry_no_rerank_score_at_all() -> None:
+    # Absent, not zero and not a copy of the similarity score: no rerank score was ever
+    # obtained for it, and a zero would read as one the cross-encoder gave.
+    with capture_logs() as logs:
+        completion = TurnCompletion()
+        record_single_specialist_completion(
+            completion,
+            answer_source=AnswerSource.FAQ,
+            booking_outcome=None,
+            answer_text="We are at 5 Oak Street.",
+            reply_to_message_ids=_REPLY_IDS,
+            segments=_SEGMENTS,
+            faq_result=_degraded_faq(),
+        )
+        completion.emit()
+
+    cited = logs[0]["request_outcomes"][0]["citations"][0]
+    assert cited["similarity_score"] == 0.7
+    assert cited["rerank_score"] is None

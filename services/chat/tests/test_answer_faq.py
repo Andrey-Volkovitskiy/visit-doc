@@ -15,8 +15,8 @@ import structlog
 from chat.agent.answer_faq import answer_faq
 from chat.agent.compose_answer import (
     FaqResult,
+    FaqSegmentAnswer,
     deduplicate_chunks,
-    summarize_verdict,
 )
 from chat.agent.escalation import EscalationRequests
 from chat.core.config import get_settings
@@ -25,6 +25,7 @@ from chat.domain.models import EscalationReason, Message, MessageSender
 from chat.domain.schemas import (
     ChatDoneEvent,
     ChatTokenEvent,
+    Citation,
     FaqVerdict,
     IntentLabel,
     RequestSegment,
@@ -37,6 +38,27 @@ from .conftest import FakeFinalMessage
 
 _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
+
+
+def _only(result: FaqResult) -> FaqSegmentAnswer:
+    """Return the one request a single-request turn answered.
+
+    There is no turn-level verdict and no turn-level citation list to read: a turn may
+    answer one request and abstain on another, so both live on the request. Unpacking
+    is the assertion that this turn carried exactly one.
+    """
+    (answer,) = result.segment_answers
+    return answer
+
+
+def _verdict(result: FaqResult) -> FaqVerdict:
+    """Return the verdict of a single-request turn's only request."""
+    return _only(result).verdict
+
+
+def _citations(result: FaqResult) -> list[Citation]:
+    """Return the citations of a single-request turn's only request."""
+    return _only(result).citations
 
 
 def _bursts(question: str = "what should I bring?") -> list[list[Message]]:
@@ -142,8 +164,8 @@ async def test_only_reranked_survivors_reach_the_context_and_the_citations() -> 
 
     result, recorder, _, _ = await _run(pool=pool, reranked=survivors)
 
-    assert result.verdict is FaqVerdict.ANSWERED
-    assert [c.chunk_index for c in result.citations] == [0, 3]
+    assert _verdict(result) is FaqVerdict.ANSWERED
+    assert [c.chunk_index for c in _citations(result)] == [0, 3]
     prompt = str(recorder["messages"])
     assert "chunk text 0" in prompt
     assert "chunk text 3" in prompt
@@ -157,7 +179,7 @@ async def test_a_chunk_the_reranker_rejected_is_in_neither_context_nor_citations
 
     result, recorder, _, _ = await _run(pool=pool, reranked=survivors)
 
-    assert [c.chunk_index for c in result.citations] == [0]
+    assert [c.chunk_index for c in _citations(result)] == [0]
     assert "chunk text 1" not in str(recorder["messages"])
 
 
@@ -167,7 +189,7 @@ async def test_the_cited_set_and_the_context_set_are_identical() -> None:
     result, recorder, _, _ = await _run(pool=[_chunk(0), _chunk(1)], reranked=survivors)
 
     prompt = str(recorder["messages"])
-    cited = {c.chunk_text for c in result.citations}
+    cited = {c.chunk_text for c in _citations(result)}
     assert cited == {"chunk text 0", "chunk text 1"}
     assert all(text in prompt for text in cited)
 
@@ -231,8 +253,8 @@ async def test_an_empty_corpus_abstains_without_embedding_or_searching() -> None
         pool=[], reranked=None, live_revisions=[]
     )
 
-    assert result.verdict is FaqVerdict.ABSTAINED_EMPTY_CORPUS
-    assert result.citations == []
+    assert _verdict(result) is FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    assert _citations(result) == []
     assert recorder.get("calls") is None
     rerank.assert_not_awaited()
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
@@ -243,7 +265,7 @@ async def test_a_search_matching_nothing_abstains_at_the_pool_not_the_floor() ->
     # no floor rejected anything and lowering one would not help.
     result, recorder, rerank, escalation = await _run(pool=[], reranked=None)
 
-    assert result.verdict is FaqVerdict.ABSTAINED_EMPTY_POOL
+    assert _verdict(result) is FaqVerdict.ABSTAINED_EMPTY_POOL
     assert recorder.get("calls") is None
     rerank.assert_not_awaited()
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
@@ -254,7 +276,7 @@ async def test_a_below_floor_pool_abstains_with_no_rerank_and_no_generation() ->
         pool=[_chunk(0, similarity=0.05)], reranked=None
     )
 
-    assert result.verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _verdict(result) is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert recorder.get("calls") is None
     rerank.assert_not_awaited()
 
@@ -262,8 +284,8 @@ async def test_a_below_floor_pool_abstains_with_no_rerank_and_no_generation() ->
 async def test_an_all_rejected_rerank_abstains_with_no_generation() -> None:
     result, recorder, _, _ = await _run(pool=[_chunk(0)], reranked=[])
 
-    assert result.verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
-    assert result.citations == []
+    assert _verdict(result) is FaqVerdict.ABSTAINED_RERANK_FLOOR
+    assert _citations(result) == []
     assert recorder.get("calls") is None
 
 
@@ -285,8 +307,8 @@ async def test_all_four_abstentions_are_identical_to_the_patient(
         pool=pool, reranked=reranked, live_revisions=revisions
     )
 
-    assert not result.verdict.answered
-    assert result.citations == []
+    assert not _verdict(result).answered
+    assert _citations(result) == []
     assert "knowledge base" in result.answer_text
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
 
@@ -299,8 +321,8 @@ async def test_a_reranker_failure_answers_from_the_similarity_survivors() -> Non
 
     result, recorder, _, _ = await _run(pool=pool, reranked=None)
 
-    assert result.verdict is FaqVerdict.ANSWERED_UNRERANKED
-    assert len(result.citations) == 5
+    assert _verdict(result) is FaqVerdict.ANSWERED_UNRERANKED
+    assert len(_citations(result)) == 5
     assert recorder.get("calls") == 1
 
 
@@ -316,7 +338,7 @@ async def test_a_reranker_failure_does_not_rescue_a_similarity_abstention() -> N
         pool=[_chunk(0, similarity=0.01)], reranked=None
     )
 
-    assert result.verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _verdict(result) is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert recorder.get("calls") is None
 
 
@@ -356,7 +378,8 @@ async def test_streaming_mode_emits_the_verdict_on_its_done_event() -> None:
 
     done = [e for e in events if isinstance(e, ChatDoneEvent)]
     assert len(done) == 1
-    assert done[0].faq_verdict is FaqVerdict.ANSWERED
+    assert done[0].request_outcomes is not None
+    assert [o.verdict for o in done[0].request_outcomes] == [FaqVerdict.ANSWERED]
     assert any(isinstance(e, ChatTokenEvent) for e in events)
 
 
@@ -562,8 +585,8 @@ async def test_the_observation_pool_size_changes_no_answer(pool_size: int) -> No
 
     result, _, rerank, _ = await _run(pool=pool, reranked=survivors)
 
-    assert result.verdict is FaqVerdict.ANSWERED
-    assert [c.chunk_index for c in result.citations] == [0]
+    assert _verdict(result) is FaqVerdict.ANSWERED
+    assert [c.chunk_index for c in _citations(result)] == [0]
     # The reranker's input is the cap's output, never the pool's size.
     assert len(rerank.await_args.args[2]) == get_settings().SIMILARITY_CAP
 
@@ -807,7 +830,10 @@ async def test_the_runs_overlap_rather_than_queueing() -> None:
         timeout=5,
     )
 
-    assert result.verdict is FaqVerdict.ANSWERED
+    assert [a.verdict for a in result.segment_answers] == [
+        FaqVerdict.ANSWERED,
+        FaqVerdict.ANSWERED,
+    ]
 
 
 async def test_a_turn_issues_one_search_and_one_generation_per_request() -> None:
@@ -820,7 +846,7 @@ async def test_a_turn_issues_one_search_and_one_generation_per_request() -> None
     assert recorder["calls"] == 3
 
 
-async def test_one_requests_reranking_outage_degrades_only_the_turns_verdict() -> None:
+async def test_one_requests_reranking_outage_degrades_only_that_request() -> None:
     # A dependency outage is not a corpus gap: the turn still answers, and says the
     # evidence was weaker than a reranked turn's.
     pools = {"a?": [_chunk(0)], "b?": [_chunk(1)]}
@@ -831,7 +857,8 @@ async def test_one_requests_reranking_outage_degrades_only_the_turns_verdict() -
 
     result, _ = await _run_many(pools=pools, reranked=reranked)
 
-    assert result.verdict is FaqVerdict.ANSWERED_UNRERANKED
+    # Only that request's: a dependency outage on one question says nothing about the
+    # evidence the other one's answer rests on.
     assert {a.question: a.verdict for a in result.segment_answers} == {
         "a?": FaqVerdict.ANSWERED,
         "b?": FaqVerdict.ANSWERED_UNRERANKED,
@@ -1031,7 +1058,7 @@ async def test_an_answer_cut_off_at_the_cap_is_still_delivered() -> None:
         stop_reason="max_tokens",
     )
 
-    assert result.verdict is FaqVerdict.ANSWERED
+    assert _verdict(result) is FaqVerdict.ANSWERED
     assert result.answer_text == "an answer"
     # Nobody is called: the answer was grounded, it just stopped early.
     assert escalation.recorded == ()
@@ -1058,10 +1085,8 @@ async def test_an_answer_that_finished_on_its_own_records_no_truncation() -> Non
     assert "faq.truncated" not in _events(logs)
 
 
-async def test_the_faq_half_abstains_whole_when_one_request_cannot_be_answered() -> (
-    None
-):
-    # Serving the answerable half is Phase 1h; here the turn abstains as a whole.
+async def test_an_unanswerable_request_leaves_its_siblings_answer_standing() -> None:
+    # Phase 1h: what one request's gap costs is that request, not the turn.
     pools = {"a?": [_chunk(0)], "b?": [_chunk(1)]}
     reranked: dict[str, list[ScoredChunk] | None] = {
         "a?": [_chunk(0, rerank=0.9)],
@@ -1070,9 +1095,16 @@ async def test_the_faq_half_abstains_whole_when_one_request_cannot_be_answered()
 
     result, _ = await _run_many(pools=pools, reranked=reranked)
 
-    assert result.verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
-    assert result.citations == []
-    assert result.answer_text is not None
+    assert {a.question: a.verdict for a in result.segment_answers} == {
+        "a?": FaqVerdict.ANSWERED,
+        "b?": FaqVerdict.ABSTAINED_RERANK_FLOOR,
+    }
+    # The half no longer abstains as a whole: the answered request keeps its answer and
+    # its citations, and the gap is one further part for the composer to name.
+    assert result.answer_text is None
+    assert result.part_count == 2
+    assert result.request_outcomes[0].answer == "an answer"
+    assert result.request_outcomes[1].answer is None
 
 
 async def test_one_call_to_staff_however_many_requests_abstained() -> None:
@@ -1099,65 +1131,26 @@ async def test_one_call_to_staff_however_many_requests_abstained() -> None:
     assert escalation.recorded == (EscalationReason.CORPUS_COULD_NOT_ANSWER,)
 
 
-async def test_citations_are_deduplicated_across_requests() -> None:
-    # One chunk that answers two questions is cited once.
+async def test_one_chunk_answering_two_requests_is_cited_under_each() -> None:
+    # Two provenances, not a duplicate: it supported two answers, and a reader auditing
+    # either one has to see what that one stood on. Deduplication is within a request.
     shared = _chunk(0, rerank=0.9)
     pools = {"a?": [_chunk(0)], "b?": [_chunk(0)]}
     reranked = {"a?": [shared], "b?": [shared]}
 
     result, _ = await _run_many(pools=pools, reranked=reranked)
 
-    assert [(c.entry_id, c.chunk_index) for c in result.citations] == [(1, 0)]
+    assert [
+        [(c.entry_id, c.chunk_index) for c in answer.citations]
+        for answer in result.segment_answers
+    ] == [[(1, 0)], [(1, 0)]]
 
 
-# --- Phase 1g: the two collapse rules, as pure functions ------------------------------
-
-
-def test_a_single_verdict_summarizes_to_itself() -> None:
-    assert summarize_verdict([FaqVerdict.ANSWERED]) is FaqVerdict.ANSWERED
-
-
-def test_every_request_answered_summarizes_to_answered() -> None:
-    assert (
-        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ANSWERED])
-        is FaqVerdict.ANSWERED
-    )
-
-
-def test_a_degraded_answer_governs_a_fully_reranked_one() -> None:
-    # The weaker claim about the evidence wins: a turn resting partly on chunks no
-    # cross-encoder approved must not be recorded as one that rests on chunks it did.
-    assert (
-        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ANSWERED_UNRERANKED])
-        is FaqVerdict.ANSWERED_UNRERANKED
-    )
-
-
-def test_any_abstention_governs_an_answer() -> None:
-    assert (
-        summarize_verdict([FaqVerdict.ANSWERED, FaqVerdict.ABSTAINED_RERANK_FLOOR])
-        is FaqVerdict.ABSTAINED_RERANK_FLOOR
-    )
-
-
-def test_an_abstention_governs_a_degraded_answer_too() -> None:
-    assert (
-        summarize_verdict(
-            [FaqVerdict.ANSWERED_UNRERANKED, FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
-        )
-        is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
-    )
-
-
-def test_the_first_abstention_in_message_order_is_the_one_reported() -> None:
-    # Several abstentions at different gates call for several fixes, and one field
-    # cannot say so - the log carries each request's own verdict.
-    assert (
-        summarize_verdict(
-            [FaqVerdict.ABSTAINED_EMPTY_POOL, FaqVerdict.ABSTAINED_RERANK_FLOOR]
-        )
-        is FaqVerdict.ABSTAINED_EMPTY_POOL
-    )
+# --- Phase 1g: the collapse rule that survives, as a pure function --------------------
+#
+# `summarize_verdict` is gone with the value it produced: a turn has no single verdict
+# to reduce to (FR-002), and keeping the reduction "for the log" would put the value
+# with two meanings back one layer down.
 
 
 def test_deduplication_keeps_the_first_appearance_and_its_order() -> None:
@@ -1184,7 +1177,7 @@ async def test_one_request_issues_one_search_one_rerank_and_one_generation() -> 
     assert recorder["search"].await_count == 1
     assert rerank.await_count == 1
     assert recorder["calls"] == 1
-    assert result.verdict is FaqVerdict.ANSWERED
+    assert _verdict(result) is FaqVerdict.ANSWERED
 
 
 async def test_one_requests_prompt_keeps_the_shape_it_has_always_had() -> None:
@@ -1311,3 +1304,32 @@ async def test_one_requests_binding_does_not_leak_into_another() -> None:
             candidate["chunk_index"] for candidate in entry["candidates"]
         )
     assert by_position == {0: {0}, 1: {1}, 2: {2}}
+
+
+# --- Phase 1h: a request that abstains costs no generation call ----------------------
+
+
+@pytest.mark.parametrize("answered", [0, 1, 2, 3])
+async def test_a_turn_generates_once_per_answered_request_and_no_more(
+    answered: int,
+) -> None:
+    # Counted, never timed. An abstention is decided by the gates, before generation,
+    # so *m* answered requests cost exactly *m* calls however many others abstained -
+    # which is what keeps serving the answerable half from costing more than abstaining
+    # on the whole turn did.
+    questions = [f"q{i}?" for i in range(3)]
+    pools = {q: [_chunk(i)] for i, q in enumerate(questions)}
+    reranked: dict[str, list[ScoredChunk] | None] = {
+        q: ([_chunk(i, rerank=0.9)] if i < answered else [])
+        for i, q in enumerate(questions)
+    }
+
+    result, recorder = await _run_many(pools=pools, reranked=reranked)
+
+    # Absent rather than zero when nothing generated: the recorder only ever sees a
+    # call that happened.
+    assert int(recorder.get("calls", 0)) == answered
+    assert len(recorder["arrivals"]) == 3
+    assert [a.verdict.answered for a in result.segment_answers] == [
+        i < answered for i in range(3)
+    ]

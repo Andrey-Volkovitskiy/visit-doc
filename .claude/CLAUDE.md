@@ -275,9 +275,43 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   `answer_faq`, not in the graph: one node still writes one state key, so LangGraph needs no channel
   reducer. Two rules bound it: the cap of 3 cannot be expressed in the request schema (the API
   rejects array bounds in a constrained-output schema), so it is stated in the prompt and an
-  over-long result is *rejected*, never trimmed; and the turn still carries **one** verdict, its FAQ
-  half abstaining as a whole if any request could not be answered. Serving the answerable half is
-  Phase 1h's, and doing it early is how a merged reply comes to soften an abstention.
+  over-long result is *rejected*, never trimmed; and each request's own outcome is what the turn
+  reports, since 011 — see the entry below.
+- **The verdict, the answer and the citations live on the request** (011). There is no turn-level
+  verdict anywhere: `messages.faq_verdict` and `messages.citations` are gone, replaced by one
+  `messages.request_outcomes` JSONB column holding `{position, question, answer, verdict, citations}`
+  per request in ascending position order — and the same list is what `ChatDoneEvent`, `MessageOut`
+  and `turn.completed` carry. NULL means no FAQ half ran; `[]` is never written. `summarize_verdict`
+  is deleted and no equivalent reduction may reappear under another name: a turn may answer one
+  request and abstain on another, and any single value describing both is the "one value, two
+  meanings" defect this phase removed. `RequestOutcome` enforces the pair that follows from a
+  verdict — `answer` is None exactly when the verdict is an abstention, and `citations` is empty
+  exactly then — so no reader has to decide which of two fields to believe. Citations are
+  deduplicated **within** a request, so a chunk that supported two requests is cited under each.
+  On the reply itself: the FAQ half contributes one part per answered request plus exactly one for
+  the gap however many requests fell into it, which keeps `_actual_parts` bounded by the
+  routing-time `_expected_parts`; a turn whose every request abstained still takes the collapse
+  path and gets `_ABSTENTION_MESSAGE` byte for byte with no composing call. The composer gains a
+  gap block and three constraints — never soften a gap, never extend an answer to cover one, name
+  each gap in your own words rather than by quoting the classifier's restatement — and, being
+  model-obeyed, their effect is measured by hand against `specs/011-answer-what-you-can/evaluation/`
+  and re-checkable afterwards from the stored parts beside the stored reply. `turn.completed`'s
+  `outcome` names the turn's **shape** (`faq`, `booking`, `small_talk`, `handed_off`, `merged`),
+  never a verdict, and `answer_source` left that event once the two said one thing;
+  `abstention_message` is set only when *every* request abstained. `agent/escalation.py` is
+  unchanged and stores nothing new — what staff read as "the unserved requests" is derived from the
+  reply's outcomes at render time.
+- **A turn that ends without a reply calls a person** (011, FR-026). Any pipeline failure — the
+  composing call, a generation, an embedding, a retrieval, or a bug this build cannot name —
+  records `assistant_failed` into the turn's own collector and applies it before the error
+  propagates (`_call_staff_for_the_failure` in `chat/api/turn.py`). Before 011 only the booking
+  loop's tool failures did, so a broken turn left the patient with an error and nobody looking at
+  it. Three properties make it safe to put on every failure path: it is the **weakest** precedence,
+  so a turn that already called staff for a corpus gap or an unauthorized request keeps that cause
+  and that mark; it does **not** silence, because the thing that broke may already be working
+  again; and a cancellation reaches it at all — `CancelledError` is a `BaseException`, and a
+  superseded turn is not a failure. If the staff call itself fails it is logged as
+  `turn.staff_call_failed` and swallowed: the original error is what the turn has to report.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across

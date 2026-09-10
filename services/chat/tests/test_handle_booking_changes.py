@@ -574,19 +574,29 @@ async def test_a_read_that_fails_is_reported_as_unavailable_not_unknown() -> Non
 async def test_a_failed_change_turn_still_leaves_the_faq_half_untouched() -> None:
     # The two specialists are independent: a scheduling outage must not make grounded
     # FAQ answering stop working in the same session.
-    from chat.agent.compose_answer import FaqResult
+    from chat.agent.compose_answer import FaqResult, FaqSegmentAnswer
     from chat.domain.schemas import Citation
 
-    faq = FaqResult(
-        answer_text="Visiting hours are 8-5.",
-        citations=[
-            Citation(entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5.")
+    faq = FaqResult.from_segments(
+        [
+            FaqSegmentAnswer(
+                position=0,
+                question="when can I visit?",
+                answer_text="Visiting hours are 8-5.",
+                verdict=FaqVerdict.ANSWERED,
+                citations=[
+                    Citation(
+                        entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5."
+                    )
+                ],
+            )
         ],
-        verdict=FaqVerdict.ANSWERED,
+        abstention_message="unused: this half answered",
     )
 
-    assert faq.verdict is FaqVerdict.ANSWERED
-    assert faq.citations[0].chunk_text == "Visiting hours are 8-5."
+    (outcome,) = faq.request_outcomes
+    assert outcome.verdict is FaqVerdict.ANSWERED
+    assert outcome.citations[0].chunk_text == "Visiting hours are 8-5."
 
 
 # --- moving an appointment ---------------------------------------------------

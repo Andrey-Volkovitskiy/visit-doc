@@ -419,3 +419,91 @@ def test_message_out_still_rejects_a_mark_it_does_not_know() -> None:
             attention_mark="something_else",
             created_at=datetime.now(UTC),
         )
+
+
+# --- Phase 1h, US3: what a staff member can read off a turn that failed --------------
+
+
+async def _thread(session_id: str, chat_id: str) -> Response:
+    """Read one conversation's thread through the real app, on this test's own loop.
+
+    The console reads a thread through the same history endpoint the patient pane does
+    (`consoleApi.fetchThread`): one thread, read by both panes, so what staff can see
+    of a turn is a property of that one response rather than of a second route.
+    """
+    await engine.dispose()
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                return await http.get(f"/chats/{chat_id}/messages")
+
+
+async def test_a_turn_that_stored_no_reply_shows_its_mark_and_no_unserved_request() -> (
+    None
+):
+    # A turn superseded by a newer message, or one that failed outright, can call staff
+    # with no assistant message behind it. There are then no outcomes to derive from,
+    # and the console shows the mark with no unanswered request listed - not an empty
+    # one, and not a guess.
+    session_id = await _session()
+    chat_id = await _chat(session_id, waiting=True)
+    message_id = await _message(
+        session_id, chat_id, mark=AttentionMark.CORPUS_COULD_NOT_ANSWER
+    )
+
+    response = await _thread(session_id, chat_id)
+
+    messages = response.json()["messages"]
+    assert [m["id"] for m in messages] == [message_id]
+    assert messages[0]["attention_mark"] == AttentionMark.CORPUS_COULD_NOT_ANSWER
+    # The mark is on the patient's message; the outcomes would have been on a reply
+    # that was never written, so there is nothing here claiming otherwise.
+    assert messages[0]["request_outcomes"] is None
+
+
+async def test_a_reply_carries_each_unserved_request_verbatim_to_the_console() -> None:
+    session_id = await _session()
+    chat_id = await _chat(session_id, waiting=True)
+    await _message(session_id, chat_id, mark=AttentionMark.CORPUS_COULD_NOT_ANSWER)
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.ASSISTANT,
+            content="We are at 5 Oak Street. I don't have the rest.",
+            request_outcomes=[
+                {
+                    "position": 0,
+                    "question": "where are you?",
+                    "answer": "We are at 5 Oak Street.",
+                    "verdict": "answered",
+                    "citations": [
+                        {"entry_id": 1, "chunk_index": 0, "chunk_text": "5 Oak Street."}
+                    ],
+                },
+                {
+                    "position": 1,
+                    "question": "what does a scan cost?",
+                    "answer": None,
+                    "verdict": "abstained_empty_pool",
+                    "citations": [],
+                },
+            ],
+        )
+    await engine.dispose()
+
+    response = await _thread(session_id, chat_id)
+
+    reply = response.json()["messages"][-1]
+    unserved = [
+        outcome["question"]
+        for outcome in reply["request_outcomes"]
+        if outcome["answer"] is None
+    ]
+    assert unserved == ["what does a scan cost?"]

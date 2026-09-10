@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from chat.domain.validation import is_meaningless
 
@@ -173,6 +173,56 @@ class Citation(BaseModel):
     chunk_text: str
 
 
+class RequestOutcome(BaseModel):
+    """What one request of a message got: its answer, its verdict, its evidence.
+
+    The only place a verdict lives (FR-002). A message may carry several requests, and
+    each is retrieved for, gated and answered on its own - so a turn that answered one
+    and abstained on another has no single verdict to report, and nothing derives one.
+
+    `question` is the request **as the classifier restated it**: the text this run
+    actually retrieved for, not the patient's own wording. That is what staff act on,
+    and it is deliberately not what the patient-facing reply quotes back.
+
+    `answer` is what the FAQ half generated for this request alone, before any merge -
+    which is what makes a merged reply checkable against the parts it was built from.
+
+    Two invariants are enforced here rather than left to callers, because each is a
+    second way of saying what the verdict already says, and a reader could disagree
+    with it:
+
+    1. `answer` is None exactly when the verdict is an abstention. An empty string
+       would be that second way.
+    2. `citations` is empty exactly then. An answered request cites the survivors that
+       were placed in its prompt, which is at least one - generation is what produced
+       the verdict.
+
+    A chunk may appear under two outcomes of one message. That is two provenances, not
+    a duplicate: it supported two answers.
+    """
+
+    position: int
+    question: str
+    answer: str | None
+    verdict: FaqVerdict
+    citations: list[Citation]
+
+    @model_validator(mode="after")
+    def _answer_and_citations_follow_the_verdict(self) -> "RequestOutcome":
+        """Refuse an outcome whose answer or evidence disagrees with its verdict."""
+        if self.verdict.answered:
+            if not self.answer:
+                raise ValueError("an answered request carries the text it produced")
+            if not self.citations:
+                raise ValueError("an answered request cites what it stood on")
+        else:
+            if self.answer is not None:
+                raise ValueError("an abstained request generated nothing")
+            if self.citations:
+                raise ValueError("an abstained request cites nothing")
+        return self
+
+
 class ChatTokenEvent(BaseModel):
     """An incremental slice of the streamed answer."""
 
@@ -191,11 +241,11 @@ class AnswerSource(StrEnum):
     `MERGED` means the composing model wrote the reply, and nothing more. It does *not*
     say two specialists ran: a turn carrying a not-authorized notice beside one servable
     intent is composed too (FR-022c1). What went into the merge is recorded beside it -
-    `faq_verdict`, `booking_outcome`, and `notice_included` on the completion - rather
-    than encoded here, because those are orthogonal facts. A notice can accompany one
-    specialist or two, so folding it in would need an enum value per combination, and
-    the first reader to see `merged_with_notice` would still not know how many
-    specialists ran.
+    `request_outcomes`, `booking_outcome`, and `notice_included` on the completion -
+    rather than encoded here, because those are orthogonal facts. A notice can
+    accompany one specialist or two, so folding it in would need an enum value per
+    combination, and the first reader to see `merged_with_notice` would still not know
+    how many specialists ran.
     """
 
     FAQ = "faq"
@@ -206,28 +256,28 @@ class AnswerSource(StrEnum):
 
 
 class ChatDoneEvent(BaseModel):
-    """Terminal NDJSON event: provenance, the FAQ verdict, citations, and message.
+    """Terminal NDJSON event: provenance, what each request got, and message.
 
-    `faq_verdict` is None when no FAQ specialist ran, since a booking reply is streamed
-    text that was never retrieved against and so had no gate to stop at.
+    `request_outcomes` is None when no FAQ specialist ran, since a booking reply is
+    streamed text that was never retrieved against and so had no gate to stop at. It is
+    never `[]`: a half that ran answered or abstained on at least one request.
+
     `message` keeps its meaning: set only when there is no streamed text to show. Two
-    paths do that - the FAQ half abstaining, and a turn routed as several parts that
-    collapsed to one, where nothing streamed because the route expected a merge. The
-    second carries an answer rather than an abstention, so `message` being set says
-    nothing about the verdict; read `faq_verdict` for that. A client renders `message`
-    if present, otherwise the tokens it accumulated. `citations` are always empty for a
-    booking-only reply.
+    paths do that - a turn whose every request abstained, and a turn routed as several
+    parts that collapsed to one, where nothing streamed because the route expected a
+    merge. The second carries an answer rather than an abstention, so `message` being
+    set says nothing about any verdict; read the outcomes for that. A client renders
+    `message` if present, otherwise the tokens it accumulated.
 
-    `citations` is carried on the patient's path as well as the console's, and the
-    patient pane simply does not draw it. That is presentation, not access: one session
-    owns both panes and can read and edit every entry of the corpus on the FAQ screen,
-    so a payload that omitted them would protect nothing while splitting one message
-    record into two shapes free to drift apart.
+    The outcomes are carried on the patient's path as well as the console's, and the
+    patient pane simply does not draw them. That is presentation, not access: one
+    session owns both panes and can read and edit every entry of the corpus on the FAQ
+    screen, so a payload that omitted them would protect nothing while splitting one
+    message record into two shapes free to drift apart.
     """
 
     type: Literal["done"] = "done"
-    faq_verdict: FaqVerdict | None
-    citations: list[Citation]
+    request_outcomes: list[RequestOutcome] | None
     message: str | None = None
     answer_source: AnswerSource = AnswerSource.FAQ
 
@@ -264,8 +314,10 @@ class ChatSilentEvent(BaseModel):
 class MessageOut(BaseModel):
     """A single message in a chat's history.
 
-    `faq_verdict`/`citations` are only meaningful for `sender="assistant"`; always None
-    for a patient message and for a staff one, which was never retrieved against.
+    `request_outcomes` is only meaningful for `sender="assistant"`; always None for a
+    patient message and for a staff one, which was never retrieved against - and None
+    for an assistant reply whose turn ran no FAQ half, which is a different thing from
+    a half that ran and produced nothing (`[]`, which nothing writes).
 
     `attention_mark` is only ever set on a patient message: which of the eight kinds it
     is, or None for no mark. There is deliberately no field naming the person who wrote
@@ -278,8 +330,7 @@ class MessageOut(BaseModel):
     id: str
     sender: Literal["patient", "assistant", "staff"]
     content: str
-    faq_verdict: FaqVerdict | None = None
-    citations: list[Citation] | None = None
+    request_outcomes: list[RequestOutcome] | None = None
     attention_mark: (
         Literal[
             "urgent_condition",

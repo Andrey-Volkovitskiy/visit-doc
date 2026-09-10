@@ -8,6 +8,7 @@ kinds. Nothing else in this feature is as easy to implement as one flag and as w
 import json
 from unittest.mock import patch
 
+import pytest
 from chat.agent.escalation import EscalationRequests, apply_escalation
 from chat.db.session import engine, session_factory
 from chat.domain.models import (
@@ -17,6 +18,7 @@ from chat.domain.models import (
     Message,
     MessageSender,
 )
+from chat.domain.schemas import IntentLabel
 from chat.main import app
 from chat.repositories import chat_repository
 from chat.repositories.chat_repository import ConversationState
@@ -353,3 +355,53 @@ async def test_a_staff_reply_clears_not_authorized_and_keeps_a_corpus_gap() -> N
         None,
         AttentionMark.CORPUS_COULD_NOT_ANSWER,
     ]
+
+
+# --- Phase 1h, US5: an overriding intent takes the turn exactly as it did ------------
+
+
+@pytest.mark.parametrize(
+    ("intent", "mark"),
+    [
+        (IntentLabel.URGENT_CONDITION, AttentionMark.URGENT_CONDITION),
+        (IntentLabel.DISTRESS, AttentionMark.DISTRESS),
+        (IntentLabel.CALL_STAFF, AttentionMark.PATIENT_ASKED_FOR_PERSON),
+        (
+            IntentLabel.BOOKING_FOR_ANOTHER,
+            AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        ),
+    ],
+)
+async def test_an_overriding_intent_keeps_its_reply_mark_and_silence(
+    intent: IntentLabel, mark: AttentionMark
+) -> None:
+    # Partial serving changes what a turn does with its *requests*. A message that
+    # needs a person on safety or authority grounds has none to serve, so its reply,
+    # its cause, its mark and the silence it leaves are all untouched.
+    session_id, chat_id = await _chat()
+    await engine.dispose()
+
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client(intents=[intent])
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                response = await http.post(
+                    "/chat",
+                    json={
+                        "chat_id": chat_id,
+                        "message": "I need someone now",
+                        "local_now": LOCAL_NOW,
+                    },
+                )
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["answer_source"] == "hand_off"
+    # Nothing was retrieved for, so there is no request outcome of any kind.
+    assert lines[-1]["request_outcomes"] is None
+    assert [m["attention_mark"] for m in history["messages"]] == [mark, None]
+    assert (await _state(chat_id, session_id)).escalated_at is not None

@@ -1,29 +1,28 @@
-import type { AttentionMark, Citation, FaqVerdict } from "../lib/chatStream";
+import type { AttentionMark, RequestOutcome } from "../lib/chatStream";
 import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
 
 interface MessageViewProps {
   sender: "patient" | "assistant" | "staff";
   content: string;
-  citations?: Citation[] | null;
   /**
-   * Whether to draw the citation list at all.
+   * What each request of this turn got — its question, its verdict, its citations.
    *
-   * The staff console draws it; the patient pane does not. A citation is evidence
+   * Null means no FAQ half ran: a booking reply is a real action's outcome, not a claim
+   * about clinic policy, and a staff message was never retrieved against.
+   */
+  requestOutcomes?: RequestOutcome[] | null;
+  /**
+   * Whether to draw the outcome blocks at all.
+   *
+   * The staff console draws them; the patient pane does not. An outcome is evidence
    * about how an answer was produced — useful to a staff member auditing it, and the
    * clinic's working notes to a patient who asked a question and wants the answer.
    *
-   * This is presentation, not access: the citations are in the payload either way,
-   * and the session reading the patient pane owns the corpus and can read every entry
-   * of it on the FAQ screen.
+   * This is presentation, not access: the outcomes are in the payload either way, and
+   * the session reading the patient pane owns the corpus and can read every entry of it
+   * on the FAQ screen.
    */
-  showCitations?: boolean;
-  /**
-   * What the FAQ half of this turn did.
-   *
-   * Null means no FAQ specialist ran — a booking reply is a real action's outcome,
-   * not a claim about clinic policy, and a staff message was never retrieved against.
-   */
-  faqVerdict?: FaqVerdict | null;
+  showOutcomes?: boolean;
   /**
    * Why this message needs a person, when something decided one is needed.
    *
@@ -47,42 +46,24 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /**
- * Renders one message by sender, reused for historical and in-progress messages.
+ * One request's block: what was asked, and either what the answer stood on or that
+ * nobody answered it and staff now have it.
  *
- * No derived "unanswered" treatment: a patient message with no reply yet is the
- * normal shape of a mid-burst message, not a failure signal.
+ * The degraded marker sits here rather than on the message, because the verdict does:
+ * a marker on the message would be a claim about the requests it does not describe.
  */
-export function MessageView({
-  sender,
-  content,
-  citations,
-  showCitations = false,
-  faqVerdict,
-  mark,
-}: MessageViewProps) {
-  const citationsVisible =
-    showCitations && citations !== null && citations !== undefined && citations.length > 0;
-  // Only one verdict is worth a marker. An answer with citations and an abstention
-  // message already say what they are, and a marker on every message marks nothing.
-  const degraded = faqVerdict === "answered_unreranked";
-  const label = ROLE_LABEL[sender];
+function OutcomeView({ outcome }: { outcome: RequestOutcome }) {
+  const degraded = outcome.verdict === "answered_unreranked";
   return (
     <div
-      data-testid="message"
-      data-sender={sender}
-      data-faq-verdict={faqVerdict ?? undefined}
+      data-testid="request-outcome"
+      data-position={outcome.position}
+      data-verdict={outcome.verdict}
+      style={{ borderLeft: "2px solid rgba(0,0,0,0.15)", paddingLeft: "0.5em" }}
     >
-      {label !== undefined && (
-        <p data-testid="role-label" style={{ opacity: 0.7, fontSize: "0.85em" }}>
-          {label}
-        </p>
-      )}
-      <p style={{ whiteSpace: "pre-wrap" }}>{content}</p>
-      {mark !== null && mark !== undefined && (
-        <p data-testid="attention-mark" data-mark={mark} style={{ fontSize: "0.85em" }}>
-          {ATTENTION_MARK_LABEL[mark]}
-        </p>
-      )}
+      <p data-testid="outcome-question" style={{ fontSize: "0.85em", opacity: 0.7 }}>
+        {outcome.question}
+      </p>
       {degraded && (
         <p
           data-testid="verdict-mark"
@@ -95,13 +76,57 @@ export function MessageView({
           Answered without reranking
         </p>
       )}
-      {citationsVisible && (
-        <ul data-testid="citations">
-          {citations.map((citation) => (
-            <li key={`${citation.entry_id}-${citation.chunk_index}`}>{citation.chunk_text}</li>
-          ))}
-        </ul>
+      {outcome.answer === null ? (
+        <p data-testid="outcome-unanswered" style={{ fontSize: "0.85em" }}>
+          Not answered from the knowledge base — forwarded to staff.
+        </p>
+      ) : (
+        outcome.citations.length > 0 && (
+          <ul data-testid="citations">
+            {outcome.citations.map((citation) => (
+              <li key={`${citation.entry_id}-${citation.chunk_index}`}>{citation.chunk_text}</li>
+            ))}
+          </ul>
+        )
       )}
+    </div>
+  );
+}
+
+/**
+ * Renders one message by sender, reused for historical and in-progress messages.
+ *
+ * No derived "unanswered" treatment: a patient message with no reply yet is the
+ * normal shape of a mid-burst message, not a failure signal.
+ */
+export function MessageView({
+  sender,
+  content,
+  requestOutcomes,
+  showOutcomes = false,
+  mark,
+}: MessageViewProps) {
+  const outcomes =
+    showOutcomes && requestOutcomes !== null && requestOutcomes !== undefined
+      ? requestOutcomes
+      : [];
+  const label = ROLE_LABEL[sender];
+  return (
+    <div data-testid="message" data-sender={sender}>
+      {label !== undefined && (
+        <p data-testid="role-label" style={{ opacity: 0.7, fontSize: "0.85em" }}>
+          {label}
+        </p>
+      )}
+      <p style={{ whiteSpace: "pre-wrap" }}>{content}</p>
+      {mark !== null && mark !== undefined && (
+        <p data-testid="attention-mark" data-mark={mark} style={{ fontSize: "0.85em" }}>
+          {ATTENTION_MARK_LABEL[mark]}
+        </p>
+      )}
+      {outcomes.map((outcome) => (
+        <OutcomeView key={outcome.position} outcome={outcome} />
+      ))}
     </div>
   );
 }

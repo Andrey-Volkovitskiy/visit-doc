@@ -9,10 +9,14 @@ conversation, and that a corpus gap and a failure both emphasize without silenci
 """
 
 import json
+from collections.abc import AsyncIterator
 from datetime import datetime
+from typing import Self
 from unittest.mock import MagicMock, patch
 
 import pytest
+from chat.agent.answer_faq import answer_faq
+from chat.agent.compose_answer import FaqResult
 from chat.agent.escalation import (
     HANDOFF_MESSAGE,
     EscalationRequests,
@@ -23,8 +27,9 @@ from chat.agent.tools.staff_tools import ESCALATE_TO_STAFF, STAFF_TOOLS
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
-from chat.domain.schemas import IntentLabel
+from chat.domain.schemas import FaqVerdict, IntentLabel, RequestSegment
 from chat.main import app
+from chat.rag.pipeline import ScoredChunk
 from chat.repositories import chat_repository
 from chat.repositories.chat_repository import ConversationState
 from fastapi.testclient import TestClient
@@ -32,7 +37,7 @@ from httpx import ASGITransport, AsyncClient
 from structlog.testing import capture_logs
 from ulid import ULID
 
-from .conftest import LOCAL_NOW, fake_anthropic_client
+from .conftest import LOCAL_NOW, FakeFinalMessage, fake_anthropic_client
 
 _ASKED = EscalationReason.PATIENT_ASKED_FOR_PERSON
 _CORPUS = EscalationReason.CORPUS_COULD_NOT_ANSWER
@@ -877,3 +882,156 @@ def test_every_recorded_cause_survives_in_the_log_even_when_discarded() -> None:
     requests.record(_URGENT)
     requests.record(_CORPUS)
     assert requests.recorded == (_DISTRESS, _URGENT, _CORPUS)
+
+
+# --- Phase 1h, US3: one call to staff per turn, and what staff can read off it -------
+#
+# Driven through `answer_faq` with retrieval stubbed at the node's own seams, so which
+# requests abstained is decided by the gates rather than handed to the collector.
+
+
+def _chunk(index: int, *, rerank: float | None = None) -> ScoredChunk:
+    return ScoredChunk(
+        faq_entry_id=1,
+        chunk_index=index,
+        chunk_text=f"chunk {index}",
+        similarity_score=0.9,
+        rerank_score=rerank,
+    )
+
+
+async def _faq_turn(
+    verdicts: list[bool], *, reranked: bool = True
+) -> tuple[FaqResult, EscalationRequests]:
+    """Run one FAQ half whose i-th request answers iff `verdicts[i]`.
+
+    Args:
+        reranked: False to make every answered request one the reranker never saw,
+            which is a degraded answer rather than a gap.
+
+    Returns: the half's result and this turn's escalation collector.
+    """
+    questions = [f"q{i}?" for i in range(len(verdicts))]
+    pools = {q: [_chunk(i)] for i, q in enumerate(questions)}
+    shortlists: dict[str, list[ScoredChunk] | None] = {
+        q: (None if not reranked else ([_chunk(i, rerank=0.9)] if verdicts[i] else []))
+        for i, q in enumerate(questions)
+    }
+
+    async def _search(
+        _qdrant: object,
+        _voyage: object,
+        query: str,
+        _session: str,
+        _revisions: list[str],
+    ) -> list[ScoredChunk]:
+        return pools[query]
+
+    async def _rerank(
+        _client: object, query: str, _chunks: list[ScoredChunk], **_kw: object
+    ) -> list[ScoredChunk] | None:
+        return shortlists[query]
+
+    escalation = EscalationRequests()
+    result: FaqResult | None = None
+    client = MagicMock()
+    client.messages.stream.return_value = _EscalationFakeStream()
+    with (
+        patch("chat.agent.answer_faq.search_faq", _search),
+        patch("chat.agent.answer_faq.rerank_chunks", _rerank),
+    ):
+        async for event in answer_faq(
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            client,
+            [[Message(sender=MessageSender.PATIENT, content="ask", id="m1")]],
+            ["m1"],
+            "01SESSION",
+            ["01REVISION"],
+            segments=[
+                RequestSegment(intent=IntentLabel.FAQ_QUESTION, text=q)
+                for q in questions
+            ],
+            escalation=escalation,
+            stream=False,
+        ):
+            if isinstance(event, FaqResult):
+                result = event
+    assert result is not None
+    return result, escalation
+
+
+class _EscalationFakeStream:
+    """The generation call's stand-in: one token, then a clean stop."""
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, *_exc: object) -> None:
+        return None
+
+    async def __aiter__(self) -> AsyncIterator[object]:
+        yield _EscalationFakeToken()
+
+    async def get_final_message(self) -> FakeFinalMessage:
+        return FakeFinalMessage("end_turn")
+
+
+class _EscalationFakeToken:
+    def __init__(self) -> None:
+        self.type = "text"
+        self.text = "an answer"
+
+
+async def test_one_answered_and_one_abstained_calls_staff_exactly_once() -> None:
+    _, escalation = await _faq_turn([True, False])
+
+    assert escalation.recorded == (_CORPUS,)
+    # A corpus gap emphasizes without silencing: the patient really may go on asking
+    # while staff follow up, and an answer has just gone out beside the gap.
+    assert escalation.conversation_reason is None
+
+
+async def test_three_abstained_requests_still_call_staff_once() -> None:
+    _, escalation = await _faq_turn([False, False, False])
+
+    assert escalation.recorded == (_CORPUS,)
+
+
+async def test_a_fully_answered_turn_calls_nobody() -> None:
+    _, escalation = await _faq_turn([True, True])
+
+    assert escalation.recorded == ()
+
+
+async def test_an_answer_produced_without_reranking_calls_nobody() -> None:
+    # A degraded answer is an answer; a dependency outage is not a corpus gap.
+    result, escalation = await _faq_turn([True, True], reranked=False)
+
+    assert [a.verdict for a in result.segment_answers] == [
+        FaqVerdict.ANSWERED_UNRERANKED,
+        FaqVerdict.ANSWERED_UNRERANKED,
+    ]
+    assert escalation.recorded == ()
+
+
+async def test_the_unserved_requests_are_recoverable_from_the_reply_alone() -> None:
+    # FR-031 in full: staff read every unanswered request verbatim - as the classifier
+    # restated it, which is what was retrieved for - off the outcomes the reply already
+    # carries. Nothing is written a second time beside the escalation, so there is no
+    # second copy to disagree with this one.
+    result, _ = await _faq_turn([True, False, False])
+
+    unserved = [
+        outcome.question
+        for outcome in result.request_outcomes
+        if not outcome.verdict.answered
+    ]
+    assert unserved == ["q1?", "q2?"]
+
+
+async def test_a_fully_answered_turn_leaves_no_unserved_request() -> None:
+    result, _ = await _faq_turn([True, True])
+
+    assert [o for o in result.request_outcomes if not o.verdict.answered] == []

@@ -376,9 +376,10 @@ of nothing.
   classification event.)*
 
 #### Phase 1h — Answer what you can
-*(1g stops exactly here: the turn keeps one verdict, and its FAQ half abstains as a whole if any of
-its requests could not be answered — no answered half is delivered beside a gap. Each request's own
-outcome is already in the log, which is what 1h moves onto the record.)*
+*(Shipped in `specs/011-answer-what-you-can/`.)*
+*(1g stopped exactly here: the turn kept one verdict, and its FAQ half abstained as a whole if any of
+its requests could not be answered — no answered half was delivered beside a gap. Each request's own
+outcome was already in the log, which is what 1h moved onto the record.)*
 Once a turn carries several requests, one verdict for the turn is a value with two meanings: "the
 address question was answered" and "the what-to-bring question was not" cannot both be `answered`.
 This phase makes the turn report each request's outcome and serve the ones it can.
@@ -387,16 +388,31 @@ This phase makes the turn report each request's outcome and serve the ones it ca
   request's, and the turn keeps no verdict of its own — not even a derived summary. A summary is the
   right shape for a log line and the wrong shape for the record: a field that is only sometimes right
   is read as the answer by the first reader who does not know it is a summary. Citations move with
-  it, so a citation says which question it supports rather than which turn it came from.
+  it, so a citation says which question it supports rather than which turn it came from. *(One
+  `messages.request_outcomes` JSONB column — `{position, question, answer, verdict, citations}` per
+  request, ordered — replaces `messages.faq_verdict` and `messages.citations`, and the same list is
+  what `ChatDoneEvent`, `MessageOut` and `turn.completed` carry. `summarize_verdict` is deleted;
+  `turn.completed`'s `outcome` now names the turn's **shape**, and its `answer_source` is gone with
+  the duplication that created.)*
 - **A turn answers what it can and abstains only where it must** — the answerable half is delivered
-  with its citations, and the gap is named as a gap in the same reply.
+  with its citations, and the gap is named as a gap in the same reply. *(`FaqResult.from_segments`
+  no longer collapses the half; the FAQ half contributes one part per answered request plus exactly
+  one for the gap, which keeps `_actual_parts` bounded by the routing-time `_expected_parts`. A turn
+  whose every request abstained still reaches the constant abstention message through the existing
+  collapse, with no composing call.)*
 - **Escalation carries the unanswered question, not the message.** Staff receive the specific
   request the corpus could not serve, verbatim; one escalation per turn however many segments
-  failed.
+  failed. *(`agent/escalation.py` is unchanged and stores nothing new: the unserved requests are
+  **derived** from the reply's outcomes at render time, and the staff console draws one block per
+  request — its question, its citations, or a line saying it was not answered and went to staff.)*
 - **The composer must not let the halves bleed.** An abstention may not be softened by an answered
   segment beside it, and an answered segment may not be extended to cover the gap — the same
   "preserve every claim exactly" constraint the merge already carries, now with abstention as a
-  claim.
+  claim. *(Three clauses in the composing system prompt, plus one gap block naming every unanswered
+  question and restating the "in your own words, do not quote" rule where the questions themselves
+  are. Being model-obeyed, their effect is measured by hand against committed data —
+  `specs/011-answer-what-you-can/evaluation/` — and made checkable afterwards from the stored parts
+  and reply, which is the record-based check in that procedure.)*
 - **Phase 2 gets the cases to measure both phases** — golden-set messages carrying two and three
   requests with a labeled expected segmentation, segmentation accuracy as a metric, and two that read
   directly on this work: the share of *answerable* requests a turn left unserved, and the share of

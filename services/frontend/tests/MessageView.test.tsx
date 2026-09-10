@@ -1,7 +1,36 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { AttentionMark } from "../src/lib/chatStream";
+import type { AttentionMark, Citation, RequestOutcome } from "../src/lib/chatStream";
 import { MessageView } from "../src/components/MessageView";
+
+function chunk(entryId: number): Citation {
+  return { entry_id: entryId, chunk_index: 0, chunk_text: `chunk ${entryId}` };
+}
+
+function answered(
+  position: number,
+  question: string,
+  answer: string,
+  entryId = 1,
+): RequestOutcome {
+  return {
+    position,
+    question,
+    answer,
+    verdict: "answered",
+    citations: [{ entry_id: entryId, chunk_index: 0, chunk_text: `chunk ${entryId}` }],
+  };
+}
+
+function abstained(position: number, question: string): RequestOutcome {
+  return {
+    position,
+    question,
+    answer: null,
+    verdict: "abstained_empty_pool",
+    citations: [],
+  };
+}
 
 describe("MessageView", () => {
   it("renders a patient message", () => {
@@ -16,16 +45,12 @@ describe("MessageView", () => {
       <MessageView
         sender="assistant"
         content="Visiting hours are 8am to 5pm."
-        showCitations
-        citations={[
-          { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
-        ]}
+        showOutcomes
+        requestOutcomes={[answered(0, "when can I visit?", "Visiting hours are 8am to 5pm.")]}
       />,
     );
     expect(screen.getByTestId("message")).toHaveTextContent("Visiting hours are 8am to 5pm.");
-    expect(screen.getByTestId("citations")).toHaveTextContent(
-      "Visiting hours are 8am to 5pm.",
-    );
+    expect(screen.getByTestId("citations")).toHaveTextContent("chunk 1");
   });
 
   it("shows no derived 'unanswered' indicator for a patient message with no reply yet", () => {
@@ -50,66 +75,68 @@ describe("MessageView", () => {
   });
 });
 
-describe("MessageView booking replies", () => {
-  it("renders a booking reply with no citation block", () => {
+describe("MessageView request outcomes", () => {
+  it("renders a booking reply with no outcome block", () => {
     render(
       <MessageView
         sender="assistant"
         content="You're booked for Tuesday at 9."
-        citations={[]}
-        faqVerdict={null}
+        showOutcomes
+        requestOutcomes={null}
       />,
     );
 
     expect(screen.getByText("You're booked for Tuesday at 9.")).toBeInTheDocument();
+    expect(screen.queryByTestId("request-outcome")).toBeNull();
     expect(screen.queryByTestId("citations")).toBeNull();
+  });
+
+  it("renders one block per outcome, each carrying its own citations", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="We are at 5 Oak Street, and hours are 8 to 5."
+        showOutcomes
+        requestOutcomes={[
+          answered(0, "where are you?", "We are at 5 Oak Street.", 1),
+          answered(1, "when are you open?", "Open 8 to 5.", 2),
+        ]}
+      />,
+    );
+
+    const blocks = screen.getAllByTestId("request-outcome");
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toHaveTextContent("where are you?");
+    expect(blocks[0]).toHaveTextContent("chunk 1");
+    expect(blocks[1]).toHaveTextContent("when are you open?");
+    expect(blocks[1]).toHaveTextContent("chunk 2");
+  });
+
+  it("marks the degraded block, and marks nothing on the message", () => {
+    // The marker was message-level because the verdict was. A message-level marker
+    // would now be a claim about requests it does not describe.
+    render(
+      <MessageView
+        sender="assistant"
+        content="..."
+        showOutcomes
+        requestOutcomes={[
+          answered(0, "where are you?", "We are at 5 Oak Street.", 1),
+          {
+            ...answered(1, "when are you open?", "Open 8 to 5.", 2),
+            verdict: "answered_unreranked",
+          },
+        ]}
+      />,
+    );
+
+    const blocks = screen.getAllByTestId("request-outcome");
+    expect(within(blocks[0]).queryByTestId("verdict-mark")).toBeNull();
+    expect(within(blocks[1]).getByTestId("verdict-mark")).toHaveAttribute(
+      "title",
+      expect.stringContaining("reranking"),
+    );
     expect(screen.getByTestId("message")).not.toHaveAttribute("data-faq-verdict");
-  });
-
-  it("marks an answered FAQ reply distinctly from a booking one", () => {
-    render(
-      <MessageView
-        sender="assistant"
-        content="Visiting hours are 8am to 5pm."
-        citations={[{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }]}
-        showCitations
-        faqVerdict="answered"
-      />,
-    );
-
-    expect(screen.getByTestId("message")).toHaveAttribute("data-faq-verdict", "answered");
-    expect(screen.getByTestId("citations")).toBeInTheDocument();
-  });
-
-  it("draws no citations unless it is told to", () => {
-    // The patient pane passes nothing; the staff console passes showCitations. The
-    // citations are in the payload either way - this is what is drawn, not what is sent.
-    render(
-      <MessageView
-        sender="assistant"
-        content="Visiting hours are 8am to 5pm."
-        citations={[{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }]}
-        faqVerdict="answered"
-      />,
-    );
-
-    expect(screen.queryByTestId("citations")).toBeNull();
-  });
-
-  it("marks an answer produced without reranking", () => {
-    render(
-      <MessageView
-        sender="assistant"
-        content="Visiting hours are 8am to 5pm."
-        citations={[]}
-        showCitations
-        faqVerdict="answered_unreranked"
-      />,
-    );
-
-    const mark = screen.getByTestId("verdict-mark");
-    expect(mark).toBeInTheDocument();
-    expect(mark).toHaveAttribute("title", expect.stringContaining("reranking"));
   });
 
   it.each([
@@ -118,32 +145,97 @@ describe("MessageView booking replies", () => {
     "abstained_empty_pool",
     "abstained_similarity_floor",
     "abstained_rerank_floor",
-  ] as const)(
-    "leaves %s unmarked - a marker on every message marks nothing",
-    (verdict) => {
-      render(
-        <MessageView sender="assistant" content="..." citations={[]} showCitations faqVerdict={verdict} />,
-      );
+  ] as const)("leaves %s unmarked - a marker on every block marks nothing", (verdict) => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="..."
+        showOutcomes
+        requestOutcomes={[{ ...abstained(0, "where are you?"), verdict, ...(verdict === "answered" ? { answer: "5 Oak Street.", citations: [chunk(1)] } : {}) }]}
+      />,
+    );
 
-      expect(screen.queryByTestId("verdict-mark")).toBeNull();
-    },
-  );
+    expect(screen.queryByTestId("verdict-mark")).toBeNull();
+  });
 
-  it("keeps the verdict mark distinguishable from an attention mark", () => {
+  it("draws nothing about the outcomes unless it is told to", () => {
+    // The patient pane passes nothing; the staff console passes showOutcomes. The
+    // outcomes are in the payload either way - this is what is drawn, not what is sent.
+    render(
+      <MessageView
+        sender="assistant"
+        content="Visiting hours are 8am to 5pm."
+        requestOutcomes={[
+          answered(0, "when can I visit?", "Visiting hours are 8am to 5pm.", 1),
+        ]}
+      />,
+    );
+
+    expect(screen.queryByTestId("request-outcome")).toBeNull();
+    expect(screen.queryByTestId("citations")).toBeNull();
+    expect(screen.queryByTestId("outcome-question")).toBeNull();
+    expect(screen.queryByTestId("verdict-mark")).toBeNull();
+  });
+
+  it("keeps a degraded block distinguishable from an attention mark", () => {
     // One sits on an assistant message and means the answer above it is second-best;
     // the other sits on a patient message and means a person is needed.
     render(
       <MessageView
         sender="assistant"
         content="..."
-        citations={[]}
-        showCitations
-        faqVerdict="answered_unreranked"
+        showOutcomes
+        requestOutcomes={[
+          {
+            ...answered(0, "where are you?", "We are at 5 Oak Street.", 1),
+            verdict: "answered_unreranked",
+          },
+        ]}
       />,
     );
 
     expect(screen.getByTestId("verdict-mark")).toBeInTheDocument();
     expect(screen.queryByTestId("attention-mark")).toBeNull();
+  });
+});
+
+describe("MessageView unanswered requests", () => {
+  it("renders an abstained request's question verbatim, and says nobody answered it", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="We are at 5 Oak Street. I don't have the rest."
+        showOutcomes
+        requestOutcomes={[
+          answered(0, "where are you?", "We are at 5 Oak Street.", 1),
+          abstained(1, "what does a scan cost?"),
+        ]}
+      />,
+    );
+
+    const blocks = screen.getAllByTestId("request-outcome");
+    // Verbatim: the classifier's restatement, which is what was retrieved for and what
+    // a staff member is acting on.
+    expect(blocks[1]).toHaveTextContent("what does a scan cost?");
+    const unanswered = within(blocks[1]).getByTestId("outcome-unanswered");
+    expect(unanswered).toHaveTextContent(/not answered/i);
+    expect(unanswered).toHaveTextContent(/staff/i);
+    // And only that one: the answered block says nothing of the kind.
+    expect(within(blocks[0]).queryByTestId("outcome-unanswered")).toBeNull();
+    expect(within(blocks[1]).queryByTestId("citations")).toBeNull();
+  });
+
+  it("draws the unanswered line nowhere in the patient pane", () => {
+    render(
+      <MessageView
+        sender="assistant"
+        content="We are at 5 Oak Street. I don't have the rest."
+        requestOutcomes={[abstained(0, "what does a scan cost?")]}
+      />,
+    );
+
+    expect(screen.queryByTestId("outcome-unanswered")).toBeNull();
+    expect(screen.queryByText("what does a scan cost?")).toBeNull();
   });
 });
 

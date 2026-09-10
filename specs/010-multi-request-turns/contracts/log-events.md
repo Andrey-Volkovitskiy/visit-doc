@@ -5,6 +5,14 @@ This extends spec 008's field contract
 the fields (FR-063). Everything there still holds; this document says only what Phase 1g adds. All
 events go through the existing structlog chain and inherit `turn_id`/`node` from the bound context.
 
+> **Superseded in part by Phase 1h** —
+> [`specs/011-answer-what-you-can/contracts/log-events.md`](../../011-answer-what-you-can/contracts/log-events.md).
+> The six per-request retrieval events below, and the `segment` join key, are unchanged. What
+> changed is `turn.completed`: `faq_verdict`, the turn-level `citations` list and `answer_source`
+> are gone, `segment_verdicts` is superseded by `request_outcomes` (which carries it plus the
+> evidence), `outcome` names the turn's shape rather than a verdict, and `abstention_message` is set
+> only when every request abstained. Read that document beside this one before writing a query.
+
 ## The join key
 
 **A request is identified by its position in the patient's message** — `segment`, a 0-based integer.

@@ -24,8 +24,7 @@ describe("ChatWindow", () => {
         id: "1",
         sender: "patient",
         content: "I'm going to come on Tuesday",
-        faq_verdict: null,
-        citations: null,
+        request_outcomes: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
       },
@@ -33,8 +32,7 @@ describe("ChatWindow", () => {
         id: "2",
         sender: "assistant",
         content: "Noted.",
-        faq_verdict: "answered",
-        citations: [],
+        request_outcomes: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
       },
@@ -56,8 +54,7 @@ describe("ChatWindow", () => {
         id: "1",
         sender: "patient",
         content: "When can I see",
-        faq_verdict: null,
-        citations: null,
+        request_outcomes: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:00Z",
       },
@@ -65,8 +62,7 @@ describe("ChatWindow", () => {
         id: "2",
         sender: "patient",
         content: "Dr. Josh?",
-        faq_verdict: null,
-        citations: null,
+        request_outcomes: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:01Z",
       },
@@ -74,8 +70,7 @@ describe("ChatWindow", () => {
         id: "3",
         sender: "assistant",
         content: "Dr. Josh is available Tuesdays.",
-        faq_verdict: "answered",
-        citations: [],
+        request_outcomes: null,
         attention_mark: null,
         created_at: "2026-08-06T00:00:02Z",
       },
@@ -103,10 +98,17 @@ describe("ChatWindow", () => {
         { type: "token", text: "hours are 8am to 5pm." },
         {
           type: "done",
-          faq_verdict: "answered",
           answer_source: "faq",
-          citations: [
-            { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
+          request_outcomes: [
+            {
+              position: 0,
+              question: "when can I visit?",
+              answer: "Visiting hours are 8am to 5pm.",
+              verdict: "answered",
+              citations: [
+                { entry_id: 1, chunk_index: 0, chunk_text: "Visiting hours are 8am to 5pm." },
+              ],
+            },
           ],
         },
       ]),
@@ -132,15 +134,25 @@ describe("ChatWindow", () => {
     "answered_unreranked",
     "abstained_similarity_floor",
   ] as const)("draws no citation list on a %s turn", async (verdict) => {
+    const answered = verdict !== "abstained_similarity_floor";
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
       fakeEvents([
         { type: "token", text: "an answer" },
         {
           type: "done",
-          faq_verdict: verdict,
           answer_source: "faq",
-          citations: [{ entry_id: 1, chunk_index: 0, chunk_text: "source text" }],
+          request_outcomes: [
+            {
+              position: 0,
+              question: "when can I visit?",
+              answer: answered ? "an answer" : null,
+              verdict,
+              citations: answered
+                ? [{ entry_id: 1, chunk_index: 0, chunk_text: "source text" }]
+                : [],
+            },
+          ],
         },
       ]),
     );
@@ -165,8 +177,7 @@ describe("ChatWindow", () => {
       fakeEvents([
         {
           type: "done",
-          faq_verdict: "abstained_similarity_floor",
-          citations: [],
+          request_outcomes: null,
           answer_source: "faq",
           message: "I don't have a confident answer to that.",
         },
@@ -197,8 +208,7 @@ describe("ChatWindow", () => {
         { type: "token", text: "Visiting hours are 8am to 5pm." },
         {
           type: "done",
-          faq_verdict: "answered",
-          citations: [],
+          request_outcomes: null,
           answer_source: "faq",
           message: "",
         },
@@ -221,7 +231,7 @@ describe("ChatWindow", () => {
   it("sends the message when Enter is pressed without Shift", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
-      fakeEvents([{ type: "done", faq_verdict: "answered", citations: [], answer_source: "faq" }]),
+      fakeEvents([{ type: "done", request_outcomes: null, answer_source: "faq" }]),
     );
 
     await renderReady();
@@ -242,7 +252,7 @@ describe("ChatWindow", () => {
   it("sends the message when Ctrl+Enter is pressed", async () => {
     vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
     vi.spyOn(chatStream, "askChat").mockResolvedValue(
-      fakeEvents([{ type: "done", faq_verdict: "answered", citations: [], answer_source: "faq" }]),
+      fakeEvents([{ type: "done", request_outcomes: null, answer_source: "faq" }]),
     );
 
     await renderReady();
@@ -561,8 +571,7 @@ describe("ChatWindow", () => {
         fakeEvents([
           {
             type: "done",
-            faq_verdict: "abstained_similarity_floor",
-            citations: [],
+            request_outcomes: null,
             answer_source: "faq",
             message: "abstained for m",
           },
@@ -589,8 +598,7 @@ describe("ChatWindow", () => {
       fakeEvents([
         {
           type: "done",
-          faq_verdict: "abstained_similarity_floor",
-          citations: [],
+          request_outcomes: null,
           answer_source: "faq",
           message: "abstained for n",
         },
@@ -662,8 +670,7 @@ describe("ChatWindow", () => {
           id: "1",
           sender: "patient",
           content: "in the first chat",
-          faq_verdict: null,
-          citations: null,
+          request_outcomes: null,
           attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
         },
@@ -673,8 +680,7 @@ describe("ChatWindow", () => {
           id: "2",
           sender: "patient",
           content: "in the other chat",
-          faq_verdict: null,
-          citations: null,
+          request_outcomes: null,
           attention_mark: null,
           created_at: "2026-08-06T00:00:00Z",
         },
@@ -707,8 +713,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       id: `m${index}`,
       sender: index % 2 === 0 ? ("patient" as const) : ("staff" as const),
       content,
-      faq_verdict: null,
-      citations: null,
+      request_outcomes: null,
       attention_mark: null,
       created_at: `2026-09-01T12:0${index}:00Z`,
     }));
@@ -1215,7 +1220,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       // Held open so the poll tick below lands mid-stream, which is what defers it to
       // the moment the turn ends.
       await turnFinishes;
-      yield { type: "done", faq_verdict: "answered", answer_source: "faq", citations: [] };
+      yield { type: "done", request_outcomes: null, answer_source: "faq" };
     }
 
     function serverRow(
@@ -1227,8 +1232,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         id: `m${index}`,
         sender,
         content,
-        faq_verdict: null,
-        citations: null,
+        request_outcomes: null,
         attention_mark: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
       };
@@ -1302,8 +1306,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         id: `m${index}`,
         sender,
         content,
-        faq_verdict: null,
-        citations: null,
+        request_outcomes: null,
         attention_mark: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
       };
@@ -1321,8 +1324,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         { type: "token", text: "Visiting hours are 8am to 5pm." },
         {
           type: "done",
-          faq_verdict: "answered",
-          citations: [],
+          request_outcomes: null,
           answer_source: "faq",
           message: "",
         },
@@ -1349,5 +1351,48 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
     expect(
       screen.getAllByText("Visiting hours are 8am to 5pm."),
     ).toHaveLength(1);
+  });
+});
+
+
+// --- Phase 1h: the patient pane draws nothing about a request's outcome -------------
+
+describe("ChatWindow request outcomes", () => {
+  it("draws no outcome block for a message of any sender, in progress or final", async () => {
+    // The optimistic patient bubble carries no outcomes because a patient message was
+    // never retrieved against; the reply's arrive with its terminal event and are the
+    // staff console's to draw. Neither is drawn here (FR-042).
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockResolvedValue(
+      fakeEvents([
+        { type: "token", text: "Visiting hours are 8am to 5pm." },
+        {
+          type: "done",
+          answer_source: "faq",
+          request_outcomes: [
+            {
+              position: 0,
+              question: "when can I visit?",
+              answer: "Visiting hours are 8am to 5pm.",
+              verdict: "answered",
+              citations: [{ entry_id: 1, chunk_index: 0, chunk_text: "8am to 5pm." }],
+            },
+          ],
+        },
+      ]),
+    );
+
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    fireEvent.click(screen.getByText("Send"));
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("message")).toHaveLength(2);
+    });
+    expect(screen.queryByTestId("request-outcome")).toBeNull();
+    expect(screen.queryByTestId("citations")).toBeNull();
+    expect(screen.queryByTestId("verdict-mark")).toBeNull();
   });
 });

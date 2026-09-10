@@ -62,6 +62,24 @@ from .conftest import (
 _ENTRY_CONTENT = "Visiting hours are 8am to 5pm."
 
 
+def _verdicts(record: dict[str, object]) -> list[str]:
+    """Return each request's verdict, in position order, off an event or a message.
+
+    There is no turn-level verdict to read on either: a turn may answer one request and
+    abstain on another, so the verdict lives on the request.
+    """
+    outcomes = record["request_outcomes"]
+    assert outcomes is not None
+    return [o["verdict"] for o in outcomes]
+
+
+def _cited(record: dict[str, object]) -> list[dict[str, object]]:
+    """Return every chunk the turn's requests cited, in position order."""
+    outcomes = record["request_outcomes"]
+    assert outcomes is not None
+    return [c for o in outcomes for c in o["citations"]]
+
+
 @pytest.fixture
 async def seeded_entry() -> AsyncIterator[int]:
     """Seed one `FaqEntry` directly (bypassing the not-yet-built `/faq` API, per US1's
@@ -126,8 +144,8 @@ def test_grounded_answer_streams_tokens_and_citations(seeded_entry: int) -> None
 
     assert "".join(t["text"] for t in token_lines) == "Visiting hours are 8am to 5pm."
     assert done_line["type"] == "done"
-    assert done_line["faq_verdict"] == FaqVerdict.ANSWERED
-    assert any(c["entry_id"] == seeded_entry for c in done_line["citations"])
+    assert _verdicts(done_line) == [FaqVerdict.ANSWERED]
+    assert any(c["entry_id"] == seeded_entry for c in _cited(done_line))
 
 
 def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
@@ -145,8 +163,8 @@ def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
 
     assert len(lines) == 1
     assert lines[0]["type"] == "done"
-    assert lines[0]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
-    assert lines[0]["citations"] == []
+    assert _verdicts(lines[0]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _cited(lines[0]) == []
 
 
 @pytest.mark.parametrize(
@@ -191,16 +209,20 @@ def test_grounded_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> N
     assert scores == sorted(scores, reverse=True)
     assert events["faq.verdict"]["verdict"] == FaqVerdict.ANSWERED.value
     done = events["turn.completed"]
-    assert done["outcome"] == "answered"
+    # The turn's shape, never a verdict: which gate stopped which request is each
+    # request's own outcome to report, and a turn may have two different ones.
+    assert done["outcome"] == "faq"
+    assert _verdicts(done) == [FaqVerdict.ANSWERED.value]
     assert done["answer_text"] == "Visiting hours are 8am to 5pm."
     # The whole turn, not one node: no shorter than the slowest node within it.
     node_durations = [e["duration_ms"] for e in logs if e["event"] == "node.completed"]
     assert done["duration_ms"] >= max(node_durations)
-    assert any(c["entry_id"] == seeded_entry for c in done["citations"])
+    cited = [c for o in done["request_outcomes"] for c in o["citations"]]
+    assert any(c["entry_id"] == seeded_entry for c in cited)
     # Both scores per citation: the pair is what makes a disagreement between the
     # two stages visible, and the rerank one is absent (not zero) when none was got.
-    assert all("similarity_score" in c for c in done["citations"])
-    assert all("rerank_score" in c for c in done["citations"])
+    assert all("similarity_score" in c for c in cited)
+    assert all("rerank_score" in c for c in cited)
     # intent.classified sits between turn.message_received and turn.completed
     # (contracts/log-events.md §3, research.md #1/#8).
     assert "intent.classified" in events
@@ -237,7 +259,8 @@ def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> 
         events["faq.verdict"]["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
     )
     done = events["turn.completed"]
-    assert done["outcome"] == "abstained_similarity_floor"
+    assert done["outcome"] == "faq"
+    assert _verdicts(done) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value]
     assert "abstention_message" in done
     assert "intent.classified" in events
     assert (
@@ -273,7 +296,7 @@ def test_a_question_the_corpus_cannot_answer_still_abstains() -> None:
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert len(lines) == 1
     assert lines[0]["type"] == "done"
-    assert lines[0]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    assert _verdicts(lines[0]) == [FaqVerdict.ABSTAINED_EMPTY_CORPUS]
     assert lines[0]["answer_source"] == "faq"
     assert lines[0]["message"] == _ABSTENTION_MESSAGE
 
@@ -331,8 +354,8 @@ def test_classification_failure_does_not_block_the_faq_reply(seeded_entry: int) 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     done_line = lines[-1]
     assert done_line["type"] == "done"
-    assert done_line["faq_verdict"] == FaqVerdict.ANSWERED
-    assert any(c["entry_id"] == seeded_entry for c in done_line["citations"])
+    assert _verdicts(done_line) == [FaqVerdict.ANSWERED]
+    assert any(c["entry_id"] == seeded_entry for c in _cited(done_line))
 
     classified = next(e for e in logs if e["event"] == "intent.classified")
     assert classified["intents"] == [IntentLabel.CLASSIFICATION_FAILED]
@@ -942,7 +965,7 @@ async def test_followup_still_abstains_when_neither_message_is_grounded(
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
 
 
 async def test_burst_cancels_earlier_generation_and_yields_one_reply(
@@ -1004,7 +1027,7 @@ async def test_burst_cancels_earlier_generation_and_yields_one_reply(
 
     assert first_lines[-1] == {"type": "cancelled"}
     assert second_lines[-1]["type"] == "done"
-    assert second_lines[-1]["faq_verdict"] == FaqVerdict.ANSWERED
+    assert _verdicts(second_lines[-1]) == [FaqVerdict.ANSWERED]
 
     async with session_factory() as db_session:
         messages = await chat_repository.list_messages(db_session, chat_id)
@@ -1106,8 +1129,8 @@ def test_get_chat_history_returns_messages_in_chronological_order(
     assert [m["sender"] for m in messages] == ["patient", "assistant"]
     assert messages[0]["content"] == "when can I visit?"
     assert messages[1]["content"] == "Visiting hours are 8am to 5pm."
-    assert messages[1]["faq_verdict"] == FaqVerdict.ANSWERED
-    assert len(messages[1]["citations"]) > 0
+    assert _verdicts(messages[1]) == [FaqVerdict.ANSWERED]
+    assert len(_cited(messages[1])) > 0
     assert "created_at" in messages[0]
 
 
@@ -1122,8 +1145,8 @@ def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
             history_response = client.get(f"/chats/{chat_id_for(client)}/messages")
 
     messages = history_response.json()["messages"]
-    assert messages[1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
-    assert messages[1]["citations"] == []
+    assert _verdicts(messages[1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _cited(messages[1]) == []
     assert messages[1]["content"] == _ABSTENTION_MESSAGE
 
 
@@ -1170,8 +1193,7 @@ async def test_get_chat_history_shows_burst_without_forced_alternation() -> None
             session_id=session_row.id,
             sender=MessageSender.ASSISTANT,
             content="Dr. Josh is available Tuesdays.",
-            faq_verdict=FaqVerdict.ANSWERED,
-            citations=[],
+            request_outcomes=None,
         )
 
     transport = ASGITransport(app=app)
@@ -1252,8 +1274,8 @@ def test_a_booking_only_turn_persists_its_reply_and_reports_no_grounding(
     done_line = lines[-1]
     assert done_line["type"] == "done"
     assert done_line["answer_source"] == "booking"
-    # Never retrieved against, so neither grounded nor abstaining.
-    assert done_line["faq_verdict"] is None
+    # Never retrieved against, so it carries no request outcome at all.
+    assert done_line["request_outcomes"] is None
 
     assistant = [m for m in history if m["sender"] == "assistant"]
     assert len(assistant) == 1
@@ -1261,7 +1283,7 @@ def test_a_booking_only_turn_persists_its_reply_and_reports_no_grounding(
     # what is under test is that the persisted row is the reply the patient saw.
     assert assistant[0]["content"] == streamed
     assert assistant[0]["content"] != ""
-    assert assistant[0]["faq_verdict"] is None
+    assert assistant[0]["request_outcomes"] is None
 
 
 def test_a_mixed_intent_turn_persists_the_merged_reply(seeded_entry: int) -> None:
@@ -1315,7 +1337,7 @@ def test_an_empty_corpus_abstains_rather_than_failing() -> None:
     assert response.status_code == 200
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_EMPTY_CORPUS]
 
 
 def test_an_unreadable_corpus_fails_the_turn_and_never_abstains() -> None:
@@ -1386,7 +1408,7 @@ async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) 
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
     # No speculative answer alongside the abstention: the turn produced no tokens at
     # all, so there is nothing for a patient to mistake for an answer (FR-003b).
     assert not [line for line in lines if line["type"] == "token"]
@@ -1431,10 +1453,10 @@ async def test_the_assistant_goes_on_answering_after_an_abstention(
 
     lines = [json.loads(line) for line in second.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ANSWERED
+    assert _verdicts(lines[-1]) == [FaqVerdict.ANSWERED]
     # Answered from the corpus, not from a silent turn: the citation comes out of the
     # real Qdrant search rather than from anything this test handed the model.
-    assert [c["chunk_text"] for c in lines[-1]["citations"]] == [_ENTRY_CONTENT]
+    assert [c["chunk_text"] for c in _cited(lines[-1])] == [_ENTRY_CONTENT]
     assert [line for line in lines if line["type"] == "token"]
 
     state = await _conversation_state(chat_id)
@@ -1462,7 +1484,7 @@ async def test_an_empty_corpus_abstention_calls_staff_with_no_exemption() -> Non
                 response = await async_turn(http, "when can I visit?")
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_EMPTY_CORPUS]
     state = await _conversation_state(chat_id)
     assert state.attention_since is not None
     assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
@@ -1716,7 +1738,7 @@ def test_a_failed_lock_release_does_not_fail_a_committed_turn(
     assert response.status_code == 200
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert any(c["entry_id"] == seeded_entry for c in lines[-1]["citations"])
+    assert any(c["entry_id"] == seeded_entry for c in _cited(lines[-1]))
 
     failed = [e for e in logs if e["event"] == "chat.lock_release_failed"]
     assert len(failed) == 1
@@ -1749,7 +1771,7 @@ def test_a_failed_lock_release_leaves_the_turn_s_writes_in_the_thread(
 
     assert [m["sender"] for m in history] == ["patient", "assistant"]
     assert history[0]["content"] == "when can I visit?"
-    assert history[1]["citations"]
+    assert _cited(history[1])
 
 
 # --- how a turn ends ----------------------------------------------------------------
@@ -1799,7 +1821,7 @@ def test_an_escalation_write_that_fails_does_not_cost_the_patient_the_reply() ->
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
+                ChatDoneEvent(request_outcomes=None),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -1831,7 +1853,7 @@ def test_a_store_failure_in_the_writes_is_not_recorded_as_a_broken_pipeline() ->
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
+                ChatDoneEvent(request_outcomes=None),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -1912,7 +1934,7 @@ def test_an_event_shape_the_turn_cannot_name_is_dropped_rather_than_fatal() -> N
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
                 ChatSilentEvent(),
-                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
+                ChatDoneEvent(request_outcomes=None),
             ),
         ),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -1956,9 +1978,7 @@ def test_a_turn_that_stored_its_reply_never_re_asks_whether_it_was_taken_over() 
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(
-                    faq_verdict=FaqVerdict.ABSTAINED_EMPTY_CORPUS, citations=[]
-                ),
+                ChatDoneEvent(request_outcomes=None),
                 reason=EscalationReason.CORPUS_COULD_NOT_ANSWER,
             ),
         ),
@@ -2014,7 +2034,7 @@ def test_a_reply_write_this_build_cannot_name_still_ends_the_turn() -> None:
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
+                ChatDoneEvent(request_outcomes=None),
             ),
         ),
         patch.object(
@@ -2059,7 +2079,7 @@ def test_a_stored_reply_reaches_the_patient_when_its_outcome_cannot_be_mapped() 
             "chat.api.turn.run_turn",
             _StubGraph(
                 ChatTokenEvent(text=_STUB_REPLY),
-                ChatDoneEvent(faq_verdict=FaqVerdict.ANSWERED, citations=[]),
+                ChatDoneEvent(request_outcomes=None),
             ),
         ),
         patch.object(turn_api, "_OUTCOME_BY_REPLY_WRITE", {}),
@@ -2134,8 +2154,7 @@ async def test_a_pleasantry_is_answered_and_calls_nobody() -> None:
     streamed = "".join(line["text"] for line in lines if line["type"] == "token")
     assert streamed == "You're welcome!"
     assert lines[-1]["answer_source"] == "small_talk"
-    assert lines[-1]["faq_verdict"] is None
-    assert lines[-1]["citations"] == []
+    assert lines[-1]["request_outcomes"] is None
 
     # Nothing was marked and nobody was called: a message that asked for nothing is
     # not a failed question.
@@ -2171,8 +2190,7 @@ async def test_the_pleasantry_reply_is_stored_like_any_other_assistant_message()
     assert reply["content"] == "You're welcome!"
     # No marker of any kind distinguishes it: it is an ordinary assistant message,
     # readable from both panes.
-    assert reply["faq_verdict"] is None
-    assert reply["citations"] in (None, [])
+    assert reply["request_outcomes"] is None
     assert reply["attention_mark"] is None
     # One thread, read by both panes through this endpoint - so "visible in both" is
     # this one assertion, not two.
@@ -2288,3 +2306,432 @@ async def test_an_unauthorized_request_calls_staff_without_stopping_the_chat(
     second_lines = [json.loads(line) for line in second.text.strip().splitlines()]
     assert second_lines[-1]["type"] == "done"
     assert second_lines[-1]["answer_source"] == "faq"
+
+
+# --- Phase 1h: the terminal event carries one record per request ---------------------
+#
+# Three paths emit it - the streaming FAQ half, the collapse in `compose_answer_node`,
+# and the merge - and all three now carry the same list. One shape, whatever produced
+# the reply; a client that had to tell them apart would be reading the turn's route out
+# of a payload that never named it.
+
+
+def _done_line(response: httpx.Response) -> dict[str, object]:
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    return lines[-1]
+
+
+def test_a_streamed_faq_turn_reports_one_outcome_per_request(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client([_ENTRY_CONTENT])
+        with TestClient(app) as client:
+            response = turn(client, "when can I visit?")
+
+    done = _done_line(response)
+    outcomes = done["request_outcomes"]
+    assert len(outcomes) == 1
+    assert outcomes[0]["position"] == 0
+    assert outcomes[0]["verdict"] == FaqVerdict.ANSWERED
+    assert outcomes[0]["answer"] == _ENTRY_CONTENT
+    assert any(c["entry_id"] == seeded_entry for c in outcomes[0]["citations"])
+    assert "faq_verdict" not in done
+    assert "citations" not in done
+
+
+def test_a_collapsed_turn_reports_the_outcome_of_every_request(
+    seeded_entry: int,
+) -> None:
+    # Two questions the corpus cannot answer: routed as two parts, collapsed to the
+    # one constant reply - and still carrying what each request's own gate decided.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "what is the weather today?"),
+                (IntentLabel.FAQ_QUESTION, "who won the game last night?"),
+            ],
+        )
+        with TestClient(app) as client:
+            response = turn(
+                client, "what is the weather today? who won the game last night?"
+            )
+
+    done = _done_line(response)
+    outcomes = done["request_outcomes"]
+    assert [o["position"] for o in outcomes] == [0, 1]
+    assert all(o["answer"] is None for o in outcomes)
+    assert all(o["citations"] == [] for o in outcomes)
+    assert done["message"] == _ABSTENTION_MESSAGE
+    assert "faq_verdict" not in done
+    assert "citations" not in done
+
+
+def test_a_merged_turn_reports_only_its_faq_halfs_requests(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.BOOKING, "book me for Friday"),
+            ],
+        )
+        with TestClient(app) as client:
+            response = turn(client, "when can I visit? and book me for Friday")
+
+    done = _done_line(response)
+    outcomes = done["request_outcomes"]
+    # The booking request is not one of these: it was never retrieved against, so it
+    # has no verdict and nothing to cite.
+    assert [o["position"] for o in outcomes] == [0]
+    assert outcomes[0]["question"] == "when can I visit?"
+    assert "faq_verdict" not in done
+    assert "citations" not in done
+
+
+def test_a_turn_with_no_faq_half_reports_no_outcomes_at_all(seeded_entry: int) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING]
+        )
+        with TestClient(app) as client:
+            response = turn(client, "book me for Friday")
+
+    done = _done_line(response)
+    # Null, never `[]`: a booking-only reply ran no FAQ half, which is a different
+    # thing from one that ran and produced nothing.
+    assert done["request_outcomes"] is None
+
+
+# --- US2: a composing failure fails the whole turn, however much was answered --------
+
+
+def test_a_composing_failure_delivers_nothing_of_what_was_answered(
+    seeded_entry: int,
+) -> None:
+    """Both requests answered, and the merge fails: nothing partial reaches the patient.
+
+    The generation already paid for is a sunk cost. Nothing has checked the parts
+    against each other, and this is the one path where an unchecked part would sit
+    beside a gap - so the turn fails whole, exactly as it did before it could serve
+    half of one.
+    """
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what are the visiting hours on Sunday?"),
+            ],
+            compose_error=OverloadedError(
+                "overloaded",
+                response=httpx.Response(
+                    529,
+                    request=httpx.Request(
+                        "POST", "https://api.anthropic.com/v1/messages"
+                    ),
+                ),
+                body=None,
+            ),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False) as client,
+        ):
+            chat_id = chat_id_for(client)
+            response = turn(
+                client, "when can I visit, and what are the hours on Sunday?"
+            )
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines() if line]
+    # No reply stored, and no terminal event announcing one.
+    assert [m["sender"] for m in history] == ["patient"]
+    assert not [line for line in lines if line.get("type") == "done"]
+    assert not [line for line in lines if line.get("type") == "token"]
+
+    errors = [entry for entry in logs if entry["event"] == "turn.error"]
+    assert [entry["pipeline_step"] for entry in errors] == ["generation"]
+    # One call to staff, and it names the failure rather than a corpus gap: both
+    # requests were answered, so nothing here may read as a hole in the corpus.
+    assert [m["attention_mark"] for m in history] == [AttentionMark.ASSISTANT_FAILED]
+    raised = [e for e in logs if e["event"] == "escalation.raised"]
+    assert [e["reason"] for e in raised] == [EscalationReason.ASSISTANT_FAILED]
+
+
+# --- US4: the stored record, end to end ---------------------------------------------
+
+
+def test_a_partly_served_turn_stores_both_outcomes_in_position_order(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            turn(client, "when can I visit, and what is your refund policy?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    outcomes = history[-1]["request_outcomes"]
+    assert [o["position"] for o in outcomes] == [0, 1]
+    assert [o["question"] for o in outcomes] == [
+        "when can I visit?",
+        "what is your refund policy?",
+    ]
+    assert outcomes[0]["answer"] is not None
+    assert outcomes[1]["answer"] is None
+    assert outcomes[1]["citations"] == []
+
+
+def test_a_single_request_turn_stores_the_answer_the_patient_was_shown(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            ["Visiting ", "hours are 8am to 5pm."]
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            response = turn(client, "when can I visit?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    streamed = "".join(line["text"] for line in lines if line["type"] == "token")
+    outcomes = history[-1]["request_outcomes"]
+    assert len(outcomes) == 1
+    # The request's own answer, before any merge - which on a single-request turn is
+    # also the reply the patient was shown, so the two must agree.
+    assert outcomes[0]["answer"] == streamed
+    assert history[-1]["content"] == streamed
+
+
+def test_one_chunk_answering_two_requests_is_stored_under_both(
+    seeded_entry: int,
+) -> None:
+    # Two provenances, not a duplicate: the same entry answers both questions, and a
+    # staff member auditing either answer has to see what that one stood on.
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what are the visiting hours on Sunday?"),
+            ],
+        )
+        with TestClient(app) as client:
+            chat_id = chat_id_for(client)
+            turn(client, "when can I visit, and what are the hours on Sunday?")
+            history = client.get(f"/chats/{chat_id}/messages").json()["messages"]
+
+    outcomes = history[-1]["request_outcomes"]
+    assert len(outcomes) == 2
+    for outcome in outcomes:
+        assert [c["entry_id"] for c in outcome["citations"]] == [seeded_entry]
+
+
+async def test_a_hand_off_reply_is_stored_carrying_no_request_outcome() -> None:
+    # The third of contract R2's three no-FAQ-half cases, asserted where the other two
+    # already are: on the stored row, not only on the terminal event. A hand-off
+    # retrieved nothing, so it has no request to have an outcome — null, never `[]`.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.CALL_STAFF]
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                await async_turn(http, "I'd like to speak to a person please")
+                history = (await http.get(f"/chats/{chat_id}/messages")).json()
+
+    reply = history["messages"][-1]
+    assert reply["sender"] == "assistant"
+    assert reply["content"] == HANDOFF_MESSAGE
+    assert reply["request_outcomes"] is None
+
+
+async def test_a_failed_turn_calls_staff_and_leaves_the_conversation_open(
+    seeded_entry: int,
+) -> None:
+    """A turn that produced no reply is one nobody answered, so a person is fetched.
+
+    The weakest claim on a person, and the one that does not silence: the thing that
+    broke may already be working again, so the patient may keep asking while staff
+    follow up.
+    """
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            stream_error=_model_outage()
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False),
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                await async_turn(http, "when can I visit?")
+
+    assert await _marks_in(chat_id) == [AttentionMark.ASSISTANT_FAILED]
+    state = await _conversation_state(chat_id)
+    assert state.attention_since is not None
+    # Emphasized, never silenced (spec 009 FR-022b).
+    assert state.escalated_at is None
+    assert state.may_assistant_reply is True
+    raised = [e for e in logs if e["event"] == "escalation.raised"]
+    assert [e["reason"] for e in raised] == [EscalationReason.ASSISTANT_FAILED]
+
+
+async def test_a_failure_never_outranks_the_reason_the_turn_already_had(
+    seeded_entry: int,
+) -> None:
+    # A turn that already called staff for a hole in the corpus, and then broke, is
+    # triaged for the hole: a failure is the weakest of the seven claims on a person,
+    # so it may not rewrite the mark a staff member reads.
+    await engine.dispose()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            [_ENTRY_CONTENT],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.FAQ_QUESTION, "what is your refund policy?"),
+            ],
+            compose_error=_model_outage(),
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False),
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                await async_turn(
+                    http, "when can I visit, and what is your refund policy?"
+                )
+
+    assert await _marks_in(chat_id) == [AttentionMark.CORPUS_COULD_NOT_ANSWER]
+    # Both were recorded; the precedence decides the one mark, and neither silences.
+    raised = [e["reason"] for e in logs if e["event"] == "escalation.raised"]
+    assert raised == [EscalationReason.CORPUS_COULD_NOT_ANSWER]
+    state = await _conversation_state(chat_id)
+    assert state.escalated_at is None
+
+
+async def test_a_superseded_turn_is_not_recorded_as_a_failure(
+    seeded_entry: int,
+) -> None:
+    # A turn cancelled by a newer message produced no reply either, and it is not a
+    # failure: nothing broke, and marking it would send a staff member to a
+    # conversation the assistant is still answering.
+    await engine.dispose()
+    gate = asyncio.Event()
+    started = asyncio.Event()
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client_gated(
+            ["Visiting hours are 8am to 5pm."], gate, started=started
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                adopt_seeded_session(http)
+                chat_id = await async_chat_id_for(http)
+                first = asyncio.create_task(async_turn(http, "when can I visit?"))
+                await asyncio.wait_for(started.wait(), timeout=5)
+                gate.set()
+                second = await async_turn(http, "when can I visit?")
+                await first
+
+    assert second.status_code == 200
+    assert AttentionMark.ASSISTANT_FAILED not in await _marks_in(chat_id)
+
+
+async def test_a_failed_turn_whose_staff_call_also_fails_reports_the_failure_itself(
+    seeded_entry: int,
+) -> None:
+    # The call to staff is what the patient is owed *after* the turn broke, so it may
+    # not become the thing the log reports: a second failure here would replace the
+    # account of what actually went wrong with an account of the recovery.
+    await engine.dispose()
+
+    async def _failing_apply(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("the escalation write went too")
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.api.turn.apply_escalation", _failing_apply),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            stream_error=_model_outage()
+        )
+        with (
+            capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+            TestClient(app, raise_server_exceptions=False),
+        ):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                await async_turn(http, "when can I visit?")
+
+    errors = [e for e in logs if e["event"] == "turn.error"]
+    assert [e["pipeline_step"] for e in errors] == ["generation"]
+    failed_call = [e for e in logs if e["event"] == "turn.staff_call_failed"]
+    assert len(failed_call) == 1
+    assert "the escalation write went too" in failed_call[0]["error_detail"]
+    assert await _marks_in(chat_id) == [None]

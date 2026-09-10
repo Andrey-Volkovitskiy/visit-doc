@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from alembic import command
 from alembic.config import Config
 from chat.core.config import Settings
-from chat.domain.schemas import FaqVerdict
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
@@ -152,50 +152,45 @@ def test_messages_gains_a_partially_indexed_attention_mark() -> None:
     assert index.get("dialect_options", {}).get("postgresql_where") is not None
 
 
-# --- 008: the grounded boolean becomes a typed verdict ----------------------------
+# --- 011: the verdict and the citations move onto the request ---------------------
 
 
-def test_messages_carries_a_faq_verdict_instead_of_grounded() -> None:
+def test_messages_carries_request_outcomes_instead_of_a_turn_level_verdict() -> None:
     engine, inspector = _inspector()
     columns = {col["name"]: col for col in inspector.get_columns("messages")}
     engine.dispose()
 
-    # The boolean stopped partitioning the outcomes: an answered turn is always
-    # grounded, so `true` carried nothing, while `false` covered three situations
-    # needing three different fixes. Both must not coexist - FR-023 forbids one fact
-    # with two sources.
+    # 008's typed verdict and its citation list were both properties of the turn. A
+    # turn may now answer one request and abstain on another, so there is no turn-wide
+    # value left for either to hold - and no code path may read the old shape (FR-044a).
     assert "grounded" not in columns
-    assert columns["faq_verdict"]["nullable"] is True
+    assert "faq_verdict" not in columns
+    assert "citations" not in columns
+    assert columns["request_outcomes"]["nullable"] is True
 
 
-def test_faq_verdict_is_a_plain_string_column() -> None:
-    # A Python-level closed set, not a database type, matching `sender` and
-    # `attention_mark`: a sixth verdict must not cost an ALTER TYPE. See
-    # docs/python-style-guide.md.
+def test_request_outcomes_is_a_jsonb_column() -> None:
+    # Read only with the message that carries it and never joined on - the profile
+    # `citations` and `reply_to_message_ids` already have on this table.
     engine, inspector = _inspector()
     columns = {col["name"]: col for col in inspector.get_columns("messages")}
     engine.dispose()
 
-    assert isinstance(columns["faq_verdict"]["type"], sa.String)
+    assert isinstance(columns["request_outcomes"]["type"], JSONB)
 
 
-def test_no_message_carries_a_verdict_this_phase_did_not_produce() -> None:
-    # The migration translates nothing (FR-024): there was no stored message to
-    # translate. Any value here that is not one this phase's gates assign would mean a
-    # backfill was written after all, against rows nobody can check.
-
+def test_no_message_carries_an_outcome_this_migration_invented() -> None:
+    # The migration backfills nothing (FR-044a): every session was deleted first, so
+    # there was no stored message to translate. A row here would mean a backfill was
+    # written after all, against rows nobody can check.
     engine, _ = _inspector()
     with engine.connect() as conn:
-        found = {
-            row[0]
-            for row in conn.execute(
-                sa.text("select distinct faq_verdict from messages")
-            )
-            if row[0] is not None
-        }
+        found = conn.execute(
+            sa.text("select count(*) from messages where request_outcomes is not null")
+        ).scalar_one()
     engine.dispose()
 
-    assert found <= {v.value for v in FaqVerdict}
+    assert found == 0
 
 
 # --- 007: an FAQ entry has an owner and names a live revision ----------------------

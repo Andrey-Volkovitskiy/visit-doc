@@ -128,7 +128,9 @@ def test_update_is_reflected_in_chat_retrieval() -> None:
                 json.loads(line) for line in chat_response.text.strip().splitlines()
             ]
             done_line = lines[-1]
-            citations = done_line["citations"]
+            citations = [
+                c for o in done_line["request_outcomes"] for c in o["citations"]
+            ]
             assert any(
                 c["chunk_text"] == "Visiting hours are now 24/7." for c in citations
             )
@@ -165,7 +167,9 @@ def test_delete_stops_grounding_and_then_404s() -> None:
             lines = [
                 json.loads(line) for line in chat_response.text.strip().splitlines()
             ]
-            assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
+            assert [o["verdict"] for o in lines[-1]["request_outcomes"]] == [
+                FaqVerdict.ABSTAINED_EMPTY_CORPUS
+            ]
 
 
 @pytest.mark.parametrize(
@@ -326,7 +330,7 @@ def test_a_failed_update_leaves_the_entry_answering_and_repairs_nothing() -> Non
     assert update_response.status_code == 503
     assert after["content"] == "Visiting hours are 8am to 5pm."
     lines = [json.loads(line) for line in chat_response.text.strip().splitlines()]
-    citations = lines[-1]["citations"]
+    citations = [c for o in lines[-1]["request_outcomes"] for c in o["citations"]]
     assert any(c["chunk_text"] == "Visiting hours are 8am to 5pm." for c in citations)
 
 
@@ -516,5 +520,7 @@ def test_a_deleted_entry_is_never_citable_again() -> None:
             )
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
-    assert lines[-1]["faq_verdict"] == FaqVerdict.ABSTAINED_EMPTY_CORPUS
-    assert lines[-1]["citations"] == []
+    assert [o["verdict"] for o in lines[-1]["request_outcomes"]] == [
+        FaqVerdict.ABSTAINED_EMPTY_CORPUS
+    ]
+    assert [c for o in lines[-1]["request_outcomes"] for c in o["citations"]] == []

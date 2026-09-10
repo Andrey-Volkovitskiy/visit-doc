@@ -63,8 +63,9 @@ def test_the_seeded_corpus_grounds_the_sessions_first_question() -> None:
             )
 
     done = _done_event(response.text)
-    assert done["citations"]
-    for citation in done["citations"]:
+    cited = [c for o in done["request_outcomes"] for c in o["citations"]]
+    assert cited
+    for citation in cited:
         assert any(citation["chunk_text"] in entry for entry in DEFAULT_FAQ_ENTRIES), (
             citation
         )

@@ -294,13 +294,19 @@ class Message(Base):
     )
     sender: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    # Only ever set on an assistant message whose turn ran the FAQ specialist: which of
-    # `FaqVerdict`'s six outcomes that turn had, or NULL when no FAQ half ran - a
-    # booking-only reply, a patient message, a staff message. Plain string, like
-    # `sender` and `attention_mark`, so a further verdict needs no migration; callers
-    # pass a `FaqVerdict` member, never a bare literal.
-    faq_verdict: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    citations: Mapped[list[dict[str, object]] | None] = mapped_column(
+    # Only ever set on an assistant message whose turn ran the FAQ specialist: one
+    # `RequestOutcome` per request the message carried - its restated question, its
+    # answer, its verdict and the chunks that answer stood on - in ascending position
+    # order.
+    #
+    # NULL means no FAQ half ran: a booking-only reply, a hand-off, a small-talk reply,
+    # a patient message, a staff message. `[]` is never written and means nothing - a
+    # half that ran answered or abstained on at least one request, because it refuses
+    # to be entered with no request at all.
+    #
+    # Plain JSONB, like `reply_to_message_ids` below: read only with the message that
+    # carries it, never joined on, and a chat's messages are deleted together anyway.
+    request_outcomes: Mapped[list[dict[str, object]] | None] = mapped_column(
         JSONB, nullable=True
     )
     # Only ever set on an assistant message: every patient message id it answers, in
@@ -309,7 +315,8 @@ class Message(Base):
     # one assistant message, so a single scalar FK can't represent it; this ties a reply
     # to its turn(s) explicitly, so history-building never has to infer pairing from
     # row order (which a stray/delayed write can violate). Plain JSONB, like
-    # `citations` above - not a FK, so no per-element referential integrity, but this
+    # `request_outcomes` above - not a FK, so no per-element referential integrity, but
+    # this
     # is diagnostic-only data (never joined on in SQL) and a chat's messages are
     # always deleted together anyway (chat_id's own CASCADE).
     reply_to_message_ids: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)

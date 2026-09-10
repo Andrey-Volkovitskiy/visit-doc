@@ -27,9 +27,15 @@ tail -f .run/chat.log | grep -E 'intent.classified|faq\.verdict|turn.completed|e
 Every session starts holding the default corpus. **The scenarios below need one question the corpus
 answers and one it does not.** The default corpus covers referrals, what to bring, telehealth,
 insurance plans, out-of-pocket costs, payment, hours and location (including parking), and how early
-to arrive — and says nothing about imaging or prescriptions, so "do you do MRI scans?" and "can I
-get a prescription refill here?" are the reliable gaps. If that changes, pick any subject the
-listing below lacks, or add a known-answerable entry:
+to arrive — and says nothing about imaging or vaccinations, so "do you do MRI scans?" and "do you
+offer flu vaccinations?" are the reliable gaps. If that changes, pick any subject the listing below
+lacks, or add a known-answerable entry:
+
+**A gap is not the same as a request the assistant may not serve.** "Can I get a prescription refill
+here?" reads like a corpus gap and is not one: the classifier labels it `unknown`, so the turn
+raises `not_authorized` and the composer renders the notice instead of a gap. Both are correct and
+neither exercises these scenarios, so keep the unanswerable halves to subjects the corpus simply
+lacks.
 
 ```bash
 scripts/dev-chat.sh faq "Our lab returns routine blood work within two business days."
@@ -109,12 +115,17 @@ Then check the patient pane: no citations, no verdicts, no question labels (FR-0
 ## 6. Two gaps, one escalation  *(FR-030, FR-031, SC-006)*
 
 ```bash
-scripts/dev-chat.sh say $CHAT "Do you do MRI scans, can I get a prescription refill here, and what are your opening hours?"
+scripts/dev-chat.sh say $CHAT "Do you do MRI scans, do you offer flu vaccinations, and what are your opening hours?"
 ```
 
 **Expect** one reply serving the hours, one gap naming both other questions, **one** escalation, and
 three outcomes stored. Confirm in the log that only one `escalation.raised` line appears for the
 turn.
+
+A message that mixes a corpus gap with a request the assistant may not serve raises **one**
+escalation too, and it is the stronger cause: `escalation.raised` names `not_authorized` and the
+corpus gap follows as `escalation.unchanged`. Both are in the log; the conversation joins the queue
+once.
 
 ## 7. Everything abstains — nothing changed  *(FR-013, SC-010)*
 

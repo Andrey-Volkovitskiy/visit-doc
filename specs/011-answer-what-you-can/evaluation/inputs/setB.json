@@ -1,0 +1,12 @@
+[{"id":"B1","text":"What are your clinic hours, and are you open on public holidays?","subject":"opening hours","answerable":"Mon-Sat 9-6","unanswerable":"public holidays"},
+ {"id":"B2","text":"Where is the nearest parking, and how much does it cost per hour?","subject":"parking","answerable":"Mega Mall garage, 3-minute walk","unanswerable":"parking price"},
+ {"id":"B3","text":"How much is a GP visit out of pocket, and how much is a follow-up visit?","subject":"visit prices","answerable":"$120 GP","unanswerable":"follow-up price"},
+ {"id":"B4","text":"What should I bring to my first appointment, and do I need to bring a referral letter?","subject":"what to bring","answerable":"ID, insurance card, prior results","unanswerable":"referral letter as a document"},
+ {"id":"B5","text":"Which insurance plans do you accept, and does that include my dental cover?","subject":"insurance","answerable":"BCBS, Aetna, Cigna, UHC, Medicare","unanswerable":"dental cover specifics"},
+ {"id":"B6","text":"How early should I arrive for a first visit, and how long does the paperwork take?","subject":"arrival and registration","answerable":"15 minutes early","unanswerable":"paperwork duration"},
+ {"id":"B7","text":"When is payment due, and can I set up a payment plan?","subject":"payment","answerable":"due at time of service","unanswerable":"payment plans"},
+ {"id":"B8","text":"Do you offer telehealth, and can I get a phone call instead of coming in?","subject":"remote consultations","answerable":"in-person only","unanswerable":"phone consultations"},
+ {"id":"B9","text":"What are your hours on Saturday, and what time does the last appointment start?","subject":"opening hours","answerable":"9-6 Mon-Sat","unanswerable":"last appointment slot"},
+ {"id":"B10","text":"Do I need a referral for a specialist, and do I need one for a dentist?","subject":"referrals","answerable":"no referral needed for a specialist","unanswerable":"dentist referral"},
+ {"id":"B11","text":"What can I pay with, and do you take American Express contactless on a phone?","subject":"payment methods","answerable":"cash, Visa, Mastercard, Amex, FSA/HSA","unanswerable":"contactless on a phone"},
+ {"id":"B12","text":"What is the out-of-pocket rate for a specialist, and is a scan included in that?","subject":"specialist pricing","answerable":"$160 specialist","unanswerable":"whether a scan is included"}]
