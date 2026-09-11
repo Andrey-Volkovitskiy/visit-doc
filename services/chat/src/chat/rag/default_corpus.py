@@ -24,7 +24,7 @@ DEFAULT_FAQ_ENTRIES: tuple[str, ...] = (
     (
         "Question: Do I need a referral from a primary care doctor to book with a "
         "specialist?\n"
-        "Answer: You can book a specialist appointment without a referral."
+        "Answer: You can book a visit with any of our practitioners without a referral."
     ),
     (
         "Question: What should I bring to my first appointment?\n"
