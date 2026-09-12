@@ -38,7 +38,7 @@ resolve something; urgent or ambiguous requests are prioritized.
 over a conversation and reply in the patient's own thread, and manages the practitioners and FAQ
 entries the assistant answers from. Both sides live on one screen — patient chats on the left, the
 staff console on the right — so a visitor drives an escalation and then answers it, as the session's
-single staff member, without logging in as anyone. Operational analytics follow in Phase 3+.
+single staff member, without logging in as anyone. Operational analytics follow in Phase 4+.
 
 ---
 
@@ -181,7 +181,8 @@ flat, ordered log of messages from any sender (patient, assistant, or staff). Es
 state on the conversation as a whole, not per-message: once escalated, the assistant stops
 generating replies in it until a staff member resolves it or hands it back.
 
-**Part 2 also carries the staff-facing interface, pulled forward from what was Phase 2b**, together
+**Part 2 also carries the staff-facing interface, pulled forward from what an earlier draft of
+this roadmap put in Phase 2**, together
 with the two admin surfaces over data the assistant already depends on. The reason is manual
 verification: a handoff to a human that no human can see, a practitioner list editable only with
 `curl`, and an FAQ entry whose indexing state is invisible are all things that can be unit-tested
@@ -204,7 +205,7 @@ change lives in a cookie the browser cannot read; and resetting a demonstration 
 - **Staff notification.** An escalation is worth nothing if nobody happens to be looking at that
   pane. In-app first — a live push and an unread count on the staff side, raised by a turn the user
   may have been driving from the patient side a second earlier — because that needs no new
-  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 3+, where a
+  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 4+, where a
   broker and a Notification service actually exist.
 - **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
   practitioners, with the seeded-name defaults and the cascading deletes the service already
@@ -226,7 +227,7 @@ change lives in a cookie the browser cannot read; and resetting a demonstration 
   record, alongside sessions, chats, and messages — nothing about it touches Scheduling's
   invariants.
 
-Operational analytics over this console stay in Phase 3+.
+Operational analytics over this console stay in Phase 4+.
 
 #### Phase 1e — RAG done properly
 Upgrade Phase 0's naive embed-and-top-k retrieval into a pipeline with a defensible stage for each
@@ -270,7 +271,7 @@ job: chunking, retrieval, reranking.
   `faq.similarity_gate`, `faq.reranking_completed`, `faq.reranking_unavailable`, `faq.rerank_gate`
   and `faq.verdict`, with each gate reporting what it dropped **by the floor** and what it dropped
   **by the cap** separately — one says the bar is too high, the other that it is too low. The same
-  logs are the input Phase 2 computes its metrics and threshold adjustments from; their field
+  logs are the input Phase 2b computes its metrics and threshold adjustments from; their field
   contract is `specs/008-reranked-retrieval-pipeline/contracts/log-events.md`.
 - The turn attribute "Grounded" has no sense any more. If the FAQ node provides an answer then it's
   always grounded. If it can't then it should explicitly run the abstention path and call staff.
@@ -345,7 +346,7 @@ of nothing.
   stands as a question by itself.
 - **Split conservatively — under-splitting is today's behavior, over-splitting is a new failure.**
   One request stays one segment; a message splits only where the parts are independently
-  answerable, and the count is capped (3 to start, revisited against Phase 2's golden set) so a
+  answerable, and the count is capped (3 to start, revisited against Phase 2a's golden set) so a
   rambling message cannot fan out without bound. *(The cap cannot be put in the schema — the API
   rejects array bounds in a constrained-output schema — so it is stated in the prompt and enforced
   on arrival: an over-long result is rejected and the turn falls back to the whole message, never
@@ -425,44 +426,121 @@ This phase makes the turn report each request's outcome and serve the ones it ca
   can actually get wrong.
 
 ### Phase 2 — Evaluation & observability
-The centerpiece — the ability to *measure* whether the system works, not just demo that it does:
+The centerpiece — the ability to *measure* whether the system works, not just demo that it does.
+Split into subphases, the first three strictly consecutive: there is nothing to compute a
+metric over until the labeled set exists, and nothing to gate a build on until the metrics do.
+Tracing is last because nothing in the eval chain depends on it — the metrics are computed from the
+per-request record 1h moved onto the message, not from a trace — so it is the one piece that can
+move if something else needs the slot.
 
-- **A golden dataset** — 50–100 realistic patient messages labeled with expected intent(s),
-  expected tool calls, and (for FAQ) the correct source document. **The label attaches to a request,
-  not to a message**, following 1g and 1h: a message carries an expected segmentation — how many
-  requests, in what order, and each one's intent — and the retrieval and source-document labels hang
-  off the individual request. Labeled per message, the set could not express the traffic those two
-  phases exist to serve, and would have to score a turn that answered one of two questions as either
-  wholly right or wholly wrong.
-- **Metrics**, computed per request wherever a request is what the system decides about:
-  intent-classification accuracy and **segmentation accuracy** (against 1g's labels — the expected
-  number of requests, their order, and each one's intent), tool-selection correctness, retrieval
-  hit@k / MRR per request, **answer groundedness** (run offline across the labeled set rather than
-  per turn), and **end-to-end task success** (did the booking land in the correct database state?).
-  Two more read directly on 1g and 1h: the share of answerable requests a turn left unserved, and the
-  share of abstentions on questions the corpus demonstrably answers, both of which should be zero.
-  All of them are computed from the per-request record 1h moved onto the message — after 1h there is
-  no turn-level verdict left to compute them from, which is the point: a metric averaged over a
-  summary field cannot say which of a turn's requests was the one that failed.
-- **CI-gated evals** — run the suite in GitHub Actions on every commit and fail the build on a
-  metric regression.
-- **End-to-end tests in a real browser** — the `tests/e2e/` tier, held open since Phase 0, is filled
-  here. Not earlier: 1e replaces `grounded` with a typed verdict and rebuilds citations from the
-  reranked shortlist, and 1h then moves both onto the request and removes the turn-level fields
-  altogether — so a suite written before either would assert against a contract already scheduled to
-  change, twice. Kept deliberately small — three to five journeys aimed at the one class of
-  defect no other tier can reach, **frontend state across time**, where a pane, the 2-second poll
-  and a reload disagree: an escalation raised in the patient pane and answered from the staff pane,
-  a pause counting down in two tabs, a booking that lands in Scheduling's own database. Driven by
-  `pytest-playwright`, so the tier stays pytest behind `make test-e2e`. Alone among the tiers it may
-  spend live model calls (see `docs/testing-strategy.md`) — which is exactly what keeps it off the
-  per-push gate the unit tier holds, and what forces its assertions onto structure rather than onto
-  the model's wording. The 13-scenario `quickstart.md` stays a manual walk-through: its value is
-  that a person reads it before a demo, which automating it would remove rather than preserve.
-- **Tracing with Langfuse** — per-step latency, token cost, and the full decision trace for each
-  turn.
+#### Phase 2a — The golden dataset
+*(Shipped as `evals/golden/`: 135 labelled messages carrying 190 requests, with `schema.json`,
+a pinned `corpus.json`, and `PROVENANCE.md`. Data only — no runner, and nothing imports it yet.)*
+Realistic patient messages labeled with expected intent(s), expected tool calls, and (for FAQ) the
+correct source document. **The label attaches to a request, not to a message**, following 1g and 1h:
+a message carries an expected segmentation — how many requests, in what order, and each one's
+intent — and the retrieval and source-document labels hang off the individual request. Labeled
+per message, the set could not express the traffic those two phases exist to serve, and would have
+to score a turn that answered one of two questions as either wholly right or wholly wrong.
 
-### Phase 3+ — Platform layers (optional, if time allows)
+- **It lives outside `specs/`**, at `evals/golden/`. The four seed sets belong under `specs/` and
+  stay there — frozen records of a shipped phase, excluded from ruff and mypy with the rest of
+  `specs/**`. This set is the opposite kind of thing: 2b reads it, 2c gates every build on it, and
+  it is re-labelled whenever the corpus moves. Living, checked, and outliving the phase that
+  introduced it.
+- **The label says what the system may emit, not everything a scorer might want.** `intent` is
+  scored against `IntentLabel`'s eight values and array order *is* position, so no `position` field
+  exists to disagree with it. A request's restatement is carried as an unscored `gist`, because a
+  segment has many valid wordings and exact-matching one would measure phrasing. Answerability is
+  **two-valued**, not `FaqVerdict`'s six: the four abstentions are identical in behaviour, nothing
+  may branch on which one it is, and no hand-labeller can tell a similarity stop from a rerank stop
+  without running the pipeline. Tool labels are a required subset, not a sequence.
+- **Nothing is stored that the requests already say.** No case names its expected escalation — the
+  causes follow from the request intents by a table, the mark from `_PRECEDENCE`, and silence from
+  `_SILENCING`. `assistant_failed` is the one cause no case can carry: it is a property of a broken
+  run, not of a message.
+- **The corpus is pinned**, with a `sha256` over the entry texts, because every source-document
+  label is meaningless without the text it names. `DEFAULT_FAQ_ENTRIES` changed three times between
+  1h shipping and the set being written and two of those changes moved labels — a referral answer
+  that widened from "a specialist appointment" to "any of our practitioners", and a parking line
+  that became "fee parking" and so answered "is it free?". When the hash stops matching, the labels
+  on the changed entries are stale until someone re-checks them.
+
+Consolidating the seed was the first task and, as intended, the first real test of the per-request
+label shape. Four things did not survive it, each the same defect in a different set: 1h's sets
+filed *unauthorized* requests as "unanswerable", though a prescription renewal is not a corpus gap
+and no entry will ever fix it; 1f labelled whole messages with one intent where two of them carry
+two requests; 1g labelled segment *counts* with no intent per segment, and those had to be labelled
+by hand rather than lifted from the committed classifier output, which would have made segmentation
+accuracy unfalsifiable; and 1e scored one question against one entry where there were two requests
+sharing it. `PROVENANCE.md` records all four, plus what was left behind and why.
+
+Two decisions the phase surfaced rather than settled. The count is **135**, not the 50–100 this
+bullet used to name: that band was written before the seed was counted, and consolidating four
+phases' data without discarding distinct cases overshot it. And the one message carrying more
+requests than 1g's cap of 3 allows was **dropped by decision**, so nothing in the set now bears
+on whether that cap is right — `specs/010-multi-request-turns/evaluation/` is still where that
+datum lives.
+
+#### Phase 2b — Metrics over the labeled set
+**Metrics**, computed per request wherever a request is what the system decides about:
+intent-classification accuracy and **segmentation accuracy** (against 1g's labels — the expected
+number of requests, their order, and each one's intent), tool-selection correctness, retrieval
+hit@k / MRR per request, and **end-to-end task success** (did the booking land in the correct
+database state?). Two more read directly on 1g and 1h: the share of answerable requests a turn left
+unserved, and the share of abstentions on questions the corpus demonstrably answers, both of which
+should be zero. All of them are computed from the per-request record 1h moved onto the message —
+after 1h there is no turn-level verdict left to compute them from, which is the point: a metric
+averaged over a summary field cannot say which of a turn's requests was the one that failed.
+
+#### Phase 2c — CI-gated evals
+Run the suite in GitHub Actions and fail the build on a metric regression, so a change that makes
+the assistant measurably worse cannot land on the strength of a green unit tier. One question this
+phase has to settle rather than inherit: the suite spends live model calls, and the per-push gate
+today deliberately holds only the unit tier (`docs/testing-strategy.md`). Whether that means every
+commit, a nightly run, or a recorded-response mode is open — it is a cost and cadence decision, and
+naming it here is not the same as having made it.
+
+#### Phase 2d — Tracing with Langfuse
+Self-hosted Langfuse for per-step latency, token cost, and the full decision trace for each turn.
+This is the observability half rather than the evaluation half: it answers *why* a turn went the way
+it did, where 2b answers how often turns go the right way across a labeled set.
+
+### Phase 3 — The frontend on its own terms
+Every phase so far treated the frontend as the thinnest surface that made backend work
+demonstrable — 1c's chat list existed because a patient is one-to-one with a chat, 1d's two-pane
+screen existed because an escalation nobody can see cannot be exercised. This is the first phase
+where the frontend is the subject rather than the instrument, and it holds the two pieces of
+frontend work that were deliberately deferred rather than skipped.
+
+#### Phase 3a — Frontend design pass *(placeholder)*
+**Deliberately unspecified — a stub, to be written when the phase is reached.** What it holds a
+place for is the one part of the product that has never had a pass of its own: the SPA is "minimal,
+kept lean" by the Architecture table's own description, and each screen was shaped by whichever
+backend capability it was added to exercise. Scope, and whether a visual design pass is worth doing
+at all on a portfolio project judged on its AI core, are open questions this stub exists to keep
+visible — not decisions already taken.
+
+#### Phase 3b — End-to-end tests in a real browser
+The `tests/e2e/` tier, held open since Phase 0, is filled here. Not earlier, for two reasons that
+compound. First the contract: 1e replaces `grounded` with a typed verdict and rebuilds citations
+from the reranked shortlist, and 1h then moves both onto the request and removes the turn-level
+fields altogether — so a suite written before either would assert against a contract already
+scheduled to change, twice. Then the surface: a browser suite selects by the DOM and the
+`data-testid` hooks the components expose, which is exactly what 3a would reshape — so a suite
+written before the design pass would be rewritten by it.
+
+Kept deliberately small — three to five journeys aimed at the one class of defect no other tier can
+reach, **frontend state across time**, where a pane, the 2-second poll and a reload disagree: an
+escalation raised in the patient pane and answered from the staff pane, a pause counting down in two
+tabs, a booking that lands in Scheduling's own database. Driven by `pytest-playwright`, so the tier
+stays pytest behind `make test-e2e`. Alone among the test tiers it may spend live model calls (see
+`docs/testing-strategy.md`) — which is exactly what keeps it off the per-push gate the unit tier
+holds, and what forces its assertions onto structure rather than onto the model's wording. The
+13-scenario `quickstart.md` stays a manual walk-through: its value is that a person reads it before
+a demo, which automating it would remove rather than preserve.
+
+### Phase 4+ — Platform layers (optional, if time allows)
 Added as deliberate evolution, each with a one-line rationale in the README:
 
 - Extract further services from the core (Scheduling already stands alone; Patient, Knowledge, and
@@ -486,7 +564,7 @@ Added as deliberate evolution, each with a one-line rationale in the README:
 
 ---
 
-## Target architecture (Phase 3+ reference)
+## Target architecture (Phase 4+ reference)
 
 The fuller microservices shape, kept as the destination if the project is extended. Database-per-service,
 synchronous gRPC where a request needs an immediate answer, asynchronous messaging for the event

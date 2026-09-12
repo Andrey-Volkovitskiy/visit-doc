@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://visitdoc.local/evals/golden/schema.json",
+  "title": "VisitDoc golden-set case",
+  "description": "One labelled patient message. The label attaches to a request, not to a message: `requests` is the expected segmentation, in order. Anything derivable from `requests` is deliberately absent - see README.md.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "family", "message", "requests", "source"],
+    "properties": {
+      "id": {"type": "string", "pattern": "^G[0-9]{3}$"},
+      "family": {"type": "string", "description": "What this case is here to exercise. Grouping only - not scored."},
+      "message": {"type": "string", "minLength": 1, "description": "The patient's message, verbatim, as one turn."},
+      "history": {
+        "type": "array",
+        "description": "Prior turns, oldest first. Present only where the label depends on them.",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "text"],
+          "properties": {
+            "role": {"enum": ["user", "assistant"]},
+            "text": {"type": "string", "minLength": 1}
+          }
+        }
+      },
+      "requests": {
+        "type": "array",
+        "minItems": 1,
+        "description": "The expected segmentation. Array order IS the expected order; position is not stored separately.",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["intent", "gist"],
+          "properties": {
+            "intent": {
+              "enum": ["faq_question", "booking", "small_talk", "urgent_condition",
+                       "distress", "booking_for_another", "call_staff", "unknown"],
+              "description": "Must match chat.domain.schemas.IntentLabel."
+            },
+            "gist": {
+              "type": "string",
+              "description": "A human reference for what this request asks. NOT SCORED - a segment has many valid restatements, and exact-matching the classifier's wording would measure phrasing, not segmentation."
+            },
+            "answerable": {
+              "type": "boolean",
+              "description": "faq_question only. true when the pinned corpus answers this request, false when it is a gap. Two-valued on purpose: FaqVerdict's four abstentions are identical in behaviour and nothing may branch on which one it is, so only `FaqVerdict.answered` is labelable by hand."
+            },
+            "cites": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "faq_question only. Corpus entry ids from corpus.json the answer must rest on. Non-empty exactly when answerable is true."
+            },
+            "tools": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "enum": ["list_practitioners", "check_availability", "book_appointment",
+                         "list_my_appointments", "reschedule_appointment", "cancel_appointment"]
+              },
+              "description": "booking only. The tools whose absence means the request was not served - a required subset, not a sequence. A check_availability that precedes a book_appointment is not a miss."
+            }
+          },
+          "allOf": [
+            {
+              "if": {"properties": {"intent": {"const": "faq_question"}}},
+              "then": {"required": ["answerable", "cites"]},
+              "else": {"not": {"anyOf": [{"required": ["answerable"]}, {"required": ["cites"]}]}}
+            },
+            {
+              "if": {"properties": {"intent": {"const": "booking"}}},
+              "then": {"required": ["tools"]},
+              "else": {"not": {"required": ["tools"]}}
+            },
+            {
+              "if": {"properties": {"answerable": {"const": false}}},
+              "then": {"properties": {"cites": {"maxItems": 0}}}
+            },
+            {
+              "if": {"properties": {"answerable": {"const": true}}},
+              "then": {"properties": {"cites": {"minItems": 1}}}
+            }
+          ]
+        }
+      },
+      "source": {"type": "string", "description": "Where the case came from: `<spec>/<set>#<id>`, or `new`. A `(relabelled)` or `(re-expressed)` suffix means PROVENANCE.md records what changed."},
+      "note": {"type": "string", "description": "Why the case is here, or what is fragile about its label."}
+    }
+  }
+}

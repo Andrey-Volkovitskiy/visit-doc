@@ -38,8 +38,10 @@ DEFAULT_FAQ_ENTRIES: tuple[str, ...] = (
     (
         "Question: Which health insurance plans do you accept?\n"
         "Answer: We accept most major insurance providers, including Blue Cross Blue "
-        "Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. Please contact our "
-        "front desk to verify your specific coverage."
+        "Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. "
+        "If you're unsure whether your specific plan is covered, you can ask me to "
+        "connect you with a member of our friendly front desk team. "
+        "They'll be happy to help clarify your coverage."
     ),
     (
         "Question: What should I do if my insurance isn't listed or I am "
@@ -62,7 +64,7 @@ DEFAULT_FAQ_ENTRIES: tuple[str, ...] = (
     (
         "Question: What are your clinic hours and locations?\n"
         "Answer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a "
-        "Willson St. The nearest parking is a 3-minute walk away at the Mega Mall "
+        "Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall "
         "parking garage (9 Willson St.)."
     ),
     (

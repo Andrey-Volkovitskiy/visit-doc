@@ -1,9 +1,10 @@
 # tests/e2e
 
 Reserved for full-stack end-to-end tests: a browser against `services/frontend`, talking to a
-running `chat` and `scheduler`. Not yet populated — the tier is scheduled for Phase 2, once 1e has
-settled the verdict/citation contract those tests would assert on (see `docs/ROADMAP.md`). Until
-then `make test-e2e` exits with pytest's "no tests ran" status, which is expected.
+running `chat` and `scheduler`. Not yet populated — the tier is scheduled for Phase 3b, after 1e and
+1h have settled the verdict/citation contract those tests would assert on and 3a's design pass has
+settled the DOM they would select by (see `docs/ROADMAP.md`). Until then `make test-e2e` exits with
+pytest's "no tests ran" status, which is expected.
 
 Two things about this tier that differ from the others, both in `docs/testing-strategy.md`:
 

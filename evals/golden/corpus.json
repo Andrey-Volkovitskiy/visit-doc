@@ -1,0 +1,62 @@
+{
+  "source": "services/chat/src/chat/rag/default_corpus.py :: DEFAULT_FAQ_ENTRIES",
+  "entry_count": 9,
+  "sha256": "9552b098bcc15fde51207409f514f2da246c730cea55281a0bc405027c55a267",
+  "note": "A snapshot, pinned so every `cites` label in cases.json names a fixed text. Re-take it when the corpus changes and re-check the labels the changed entries carry; PROVENANCE.md records how that was done last time.",
+  "entries": [
+    {
+      "id": "referral",
+      "index": 0,
+      "question": "Do I need a referral from a primary care doctor to book with a specialist?",
+      "text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+    },
+    {
+      "id": "what-to-bring",
+      "index": 1,
+      "question": "What should I bring to my first appointment?",
+      "text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+    },
+    {
+      "id": "telehealth",
+      "index": 2,
+      "question": "Do you offer virtual or telehealth consultations?",
+      "text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+    },
+    {
+      "id": "insurance-plans",
+      "index": 3,
+      "question": "Which health insurance plans do you accept?",
+      "text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+    },
+    {
+      "id": "out-of-network",
+      "index": 4,
+      "question": "What should I do if my insurance isn't listed or I am out-of-network?",
+      "text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+    },
+    {
+      "id": "out-of-pocket-rates",
+      "index": 5,
+      "question": "How much will my visit cost if I am paying out-of-pocket?",
+      "text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+    },
+    {
+      "id": "payment",
+      "index": 6,
+      "question": "When is payment due, and what payment methods do you accept?",
+      "text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+    },
+    {
+      "id": "hours-location",
+      "index": 7,
+      "question": "What are your clinic hours and locations?",
+      "text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+    },
+    {
+      "id": "arrival-time",
+      "index": 8,
+      "question": "How early should I arrive before my scheduled appointment time?",
+      "text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+    }
+  ]
+}
