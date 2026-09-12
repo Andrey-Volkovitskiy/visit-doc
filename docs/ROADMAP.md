@@ -346,13 +346,14 @@ of nothing.
   stands as a question by itself.
 - **Split conservatively — under-splitting is today's behavior, over-splitting is a new failure.**
   One request stays one segment; a message splits only where the parts are independently
-  answerable, and the count is capped (3 to start, revisited against Phase 2a's golden set) so a
-  rambling message cannot fan out without bound. *(The cap cannot be put in the schema — the API
-  rejects array bounds in a constrained-output schema — so it is stated in the prompt and enforced
-  on arrival: an over-long result is rejected and the turn falls back to the whole message, never
-  trimmed. A four-request message is the one case the shipped classifier does not combine; see
-  `specs/010-multi-request-turns/evaluation/procedure.md`, which is also the data that cap is to be
-  revisited against.)*
+  answerable, and the count is capped (3 to start) so a rambling message cannot fan out without
+  bound. *(The cap cannot be put in the schema — the API rejects array bounds in a
+  constrained-output schema — so it is stated in the prompt and enforced on arrival: an over-long
+  result is rejected and the turn falls back to the whole message, never trimmed. A four-request
+  message is the one case the shipped classifier does not combine, and it stays the only evidence
+  the cap can be argued against: `specs/010-multi-request-turns/evaluation/procedure.md`. Not 2a's
+  golden set — that carries no over-cap case, by the decision recorded in its `PROVENANCE.md` — so
+  raising the cap would still be tuning to a sample of one.)*
 - **Each specialist reads only its own segments.** This is the whole of the fix for the
   mixed-intent failures: the FAQ node never sees the booking clause, so it cannot abstain on it,
   and the booking node never sees the policy question, so it cannot answer it. The booking prompt
