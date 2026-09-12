@@ -69,17 +69,17 @@ not a licence to move a floor inside this phase. The thresholds a run measured u
   it covered the whole. The fixture is data, it belongs beside the labels it makes scorable, and it
   extends 2a's artifact rather than duplicating it.
 - Q: A full pass spends live Claude, embedding and rerank calls on 135 cases. What run shapes does
-  the harness offer? → A: **Two tiers — classifier-only and full.** Intent accuracy and segmentation
-  accuracy are decided entirely by one call to the cheap classifying model, and making them cost a
-  generation call each buys nothing. The classifier tier runs the whole set for the price of the
-  cheapest thing in it; the full tier runs the whole pipeline and scores everything. Every report
-  declares its tier and names the metrics it did **not** compute, so a partial run cannot be read as
-  a full one — the same rule as the metric denominators below, applied to the report as a whole.
-- **A consequence of those two answers together, recorded rather than assumed**: the classifier tier
-  cannot go over HTTP. A posted turn runs its whole pipeline — there is no published way to ask the
-  service to classify a message and stop, and a paused conversation classifies nothing at all. So
-  the cheap tier calls the classification step directly while the full tier drives HTTP, and the two
-  are kept as separate kinds of run (FR-049, FR-049a) rather than as one run with fewer metrics.
+  the harness offer? → A: **One shape — every case is run as a full turn.** A cheap classifier-only
+  tier was considered and rejected: it would have had to call the classification step directly,
+  since a posted turn always runs its whole pipeline and a paused conversation classifies nothing,
+  and that makes the classification metrics a measurement of a *different execution path* from every
+  other metric in the report. A segmentation number taken from a step invoked in isolation cannot be
+  set beside a retrieval number taken from a real turn and treated as describing the same system.
+  Uniformity is worth more than the saving: every case goes through the same path, every metric is
+  computed from the same run, and the only lever on cost is running fewer cases (FR-008). What the
+  cheap tier was really buying — looking at classification without paying again — is bought instead
+  by FR-044: scoring is a pure function of a stored run, so classification can be re-scored against
+  runs already on disk for nothing.
 - Q: What happens to a request whose produced segmentation does not line up with the labelled one?
   → A: **It is reported as unaligned, never scored and never dropped.** Per-request metrics align by
   position, and position only means something when the counts agree. A run accounts for every
@@ -91,32 +91,31 @@ not a licence to move a floor inside this phase. The thresholds a run measured u
 
 ### User Story 1 - Score what the classifier decided (Priority: P1)
 
-A developer who has just changed the classification prompt runs the golden set's cheap tier. Each
-case's history and message go to the classification step and nothing else; the harness records the
-segmentation it produced for each, and reports how often the number of requests was right, how often
-their order and intents were right, and which cases disagreed — by id, with the labelled
-segmentation beside the produced one.
+A developer who has just changed the classification prompt runs the golden set. Every case is posted
+as a real turn, the harness stores everything that turn produced, and the report says how often the
+number of requests was right, how often their order and intents were right, and which cases
+disagreed — by id, with the labelled segmentation beside the produced one.
 
-**Why this priority**: It is the whole of the measurement loop in miniature — drive, record, align,
-score, report — and it is the tier that makes the other two affordable to build against. Segmentation
-is also the thing with the least evidence behind it today: 1g's cap of 3 rests on a single message,
-and `PROVENANCE.md` records that 010's segment intents had to be labelled by hand here rather than
+**Why this priority**: It carries the whole measurement loop — drive, record, align, score, report —
+and every later story is a second reading of the runs it already stored. Segmentation is also the
+thing with the least evidence behind it today: 1g's cap of 3 rests on a single message, and
+`PROVENANCE.md` records that 010's segment intents had to be labelled by hand here rather than
 lifted from committed model output, *because promoting model output to a label would make
 segmentation accuracy unfalsifiable*. This story is what makes it falsifiable.
 
-**Independent Test**: Run the classifier tier over the whole set with no other tier implemented. It
-produces a report carrying request-count accuracy, intent accuracy over aligned requests, exact
+**Independent Test**: Run the whole set with no other scoring implemented. It produces a stored run
+per case and a report carrying request-count accuracy, intent accuracy over aligned requests, exact
 segmentation match, and the per-case disagreement list — and names every metric it did not compute.
 
 **Acceptance Scenarios**:
 
-1. **Given** a case labelled with two requests, **When** classification produces two requests whose
-   intents match positionally, **Then** the case counts as an exact segmentation match and both
+1. **Given** a case labelled with two requests, **When** the turn's classification produces two
+   requests whose intents match positionally, **Then** the case counts as an exact segmentation match and both
    requests count as aligned and correct.
-2. **Given** a case labelled with two requests, **When** classification produces one, **Then** the
-   case is recorded as a count mismatch, its two labelled requests are counted as unaligned, and
+2. **Given** a case labelled with two requests, **When** the turn's classification produces one,
+   **Then** the case is recorded as a count mismatch, its two labelled requests are counted as unaligned, and
    neither is scored for intent.
-3. **Given** a case whose classification call failed, **When** the run is scored, **Then** the case
+3. **Given** a case whose turn's classification call failed, **When** the run is scored, **Then** the case
    is reported as a run error with its reason and is excluded from every metric's denominator rather
    than counted as a wrong intent.
 4. **Given** a completed run, **When** the report is produced, **Then** every labelled request in the
@@ -129,8 +128,8 @@ segmentation match, and the per-case disagreement list — and names every metri
 
 ### User Story 2 - Score what retrieval found and what the turn served (Priority: P2)
 
-The same developer runs the full tier. Now every FAQ request is retrieved for, gated and answered,
-and the harness reports where in the ranked candidates the labelled source document appeared, how
+The same developer scores retrieval — over a fresh run, or over one US1 already stored, which costs
+nothing. The harness reports where in the ranked candidates the labelled source document appeared, how
 often an answerable question went unserved, and how often an abstention landed on a question the
 corpus demonstrably answers.
 
@@ -139,8 +138,8 @@ independent check on 1e's two floors. It needs US1's driver and run record, and 
 G020's standing instruction — *re-measure it* — a thing that happens on every run rather than a note
 in a README.
 
-**Independent Test**: Run the full tier with the booking fixtures of US3 absent. It reports hit@k and
-MRR per retrieval stage, the unserved-answerable share and the wrong-abstention share, each with its
+**Independent Test**: Score a run with the booking fixtures of US3 absent. It reports hit@k and MRR
+per retrieval stage, the unserved-answerable share and the wrong-abstention share, each with its
 numerator and denominator, and reports end-to-end task success as not measured.
 
 **Acceptance Scenarios**:
@@ -164,7 +163,7 @@ numerator and denominator, and reports end-to-end task success as not measured.
 
 ### User Story 3 - Score whether the booking actually landed (Priority: P3)
 
-A developer who has changed the booking loop runs the full tier with fixtures. Cases that presuppose
+A developer who has changed the booking loop runs the set with fixtures. Cases that presuppose
 an existing appointment get one planted before the turn; after the turn, the harness reads the
 scheduler's own records and reports whether each booking request left the database in the state its
 label expects — and whether the tools the label requires were actually called.
@@ -287,9 +286,9 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
   then scores is that metric's own question; what this requirement forbids is a labelled request
   that no state describes.
 - **FR-018**: Exclusion reasons MUST be distinct values, one per situation, at minimum: run error,
-  silenced turn, handed-off turn, cancelled turn, missing log slice, unresolvable fixture, and tier
-  not run. A single "not scored" reason covering several of these would put back together exactly
-  what the report exists to tell apart.
+  silenced turn, handed-off turn, cancelled turn, missing log slice, and unresolvable fixture. A
+  single "not scored" reason covering several of these would put back together exactly what the
+  report exists to tell apart.
 
 ### Functional Requirements — classification metrics (US1)
 
@@ -401,8 +400,8 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
 - **FR-045**: Every metric MUST be published with its numerator, its denominator, and the count
   excluded from it with the reasons. A metric with an empty denominator MUST be reported as *not
   measured*.
-- **FR-046**: A report MUST declare its tier and MUST name every metric it did not compute, so a
-  classifier-tier report cannot be read as a full one.
+- **FR-046**: A report MUST name every metric it did not compute, and MUST record the case selection
+  it covers, so a report over one family cannot be read as a report over the set.
 - **FR-047**: A report MUST record the conditions it was measured under: the corpus hash, the run
   clock, the case selection, the model identifiers used for classification, generation, embedding
   and reranking, and the pipeline's thresholds and caps in effect. A number without them cannot be
@@ -410,15 +409,13 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
 - **FR-048**: The run artifact MUST be machine-readable and MUST carry the per-case record the report
   was computed from, so a surprising metric can be traced to the turn that produced it. A
   human-readable summary MUST be produced alongside it.
-- **FR-049**: The harness MUST provide two tiers. The **full tier** drives every case as a real turn
-  over the HTTP surface (FR-001) and computes every metric. The **classifier tier** invokes the same
-  classification step the service uses, directly, with the case's history and message and nothing
-  else — no session, no corpus, no scheduler, no generation — and computes only the metrics one
-  classification call can decide. A posted turn always runs its whole pipeline, so there is no way
-  to make a cheap tier out of one; a tier that costs a generation call per case is not the tier the
-  clarification asked for.
-- **FR-049a**: A classifier-tier run MUST be recorded as its own kind of run and MUST NOT be scored,
-  compared or merged as though it were a full one — it exercises one step, not a turn.
+- **FR-049**: There MUST be exactly one way a case is run: posted as a full turn over the HTTP
+  surface (FR-001). No metric may be computed from a step invoked outside a turn, and the harness
+  MUST NOT offer a reduced run shape. Every metric in a report is then a statement about the same
+  execution path, which is what lets them be read side by side.
+- **FR-049a**: Cost MUST be controlled by running fewer cases (FR-008) and by re-scoring stored runs
+  (FR-044), never by running a case differently. A narrowed run is still a run of full turns, and
+  its report says which cases it covered (FR-046).
 - **FR-050**: The harness and its tests MUST live outside `specs/` — it is living code that 2c will
   depend on — and MUST pass the repository's existing lint, type-check and test gates.
 - **FR-051**: This phase MUST NOT change the behaviour of the chat or scheduling services, beyond
@@ -435,7 +432,7 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
   hash that says whether the labels are still current.
 - **Case run**: what one case actually produced — the terminal event, the stored messages with their
   per-request outcomes, the turn's structured events, and the scheduler state read afterwards.
-- **Run**: a set of case runs sharing a session, a clock, a corpus hash, a tier and a case selection.
+- **Run**: a set of case runs sharing a session, a clock, a corpus hash and a case selection.
 - **Alignment**: the mapping from produced requests to labelled requests for one case, or the record
   that there is none.
 - **Metric**: one measured value with its numerator, denominator, exclusions and their reasons.
@@ -455,9 +452,8 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
 - **SC-003**: Re-scoring a stored run produces byte-identical metrics and makes zero model calls.
 - **SC-004**: A run started against a corpus whose hash does not match the pin stops before its first
   model call and names the entries whose text moved.
-- **SC-005**: The classifier tier completes all 135 cases making one classification call per case,
-  no generation, embedding or rerank call, and no write to any database, and its report names every
-  metric it did not compute.
+- **SC-005**: Every case in a run reaches the system by the same path — a posted turn — and no
+  metric in any report is computed from a step invoked outside one.
 - **SC-006**: A case whose turn failed, was silenced, was handed off, or was cancelled never appears
   in a metric's numerator or denominator, and appears in that metric's exclusion counts with its own
   reason.
@@ -481,9 +477,11 @@ passes; corrupt the expected post-state and confirm it fails and names what it f
 
 - The run is driven against a locally running stack (chat, scheduler, Postgres, Qdrant) started the
   way `.claude/CLAUDE.md` documents. Standing that stack up is not part of this phase.
-- A full run spends live Claude, Voyage embedding and rerank calls, which `docs/testing-strategy.md`
-  already sanctions for the tiers that are not on the per-push gate. How often that is affordable to
-  run, and whether a recorded-response mode is wanted, is explicitly 2c's decision.
+- A run spends live Claude, Voyage embedding and rerank calls on every case, which
+  `docs/testing-strategy.md` already sanctions for the tiers that are not on the per-push gate.
+  There is no cheaper run shape by design (FR-049), so how often a full pass is affordable — and
+  whether a recorded-response mode is wanted — is explicitly 2c's decision, and it is now the whole
+  of that decision rather than half of it.
 - One pass per run. Model non-determinism means a metric carries run-to-run variance that this phase
   measures nothing about; repeating the set and reporting spread is left to 2c, which is where a
   gate has to decide how much difference is noise.

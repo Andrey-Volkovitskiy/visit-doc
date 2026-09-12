@@ -66,11 +66,14 @@ the pass looked at, and what it changed:
 Three decisions are recorded rather than left open, and are where a reviewer should push back first
 if they disagree:
 
-- **The classifier tier does not go over HTTP** (FR-049, FR-049a). This follows from two of the
-  user's own answers meeting each other — drive over HTTP, and offer a cheap classifier-only tier —
-  and there is no way to have both for one kind of run: a posted turn runs its whole pipeline, and a
-  paused conversation classifies nothing. The tier calls the classification step directly and is
-  kept as a separate kind of run, so a cheap report can never be compared against a full one.
+- **There is one run shape, and it is a full turn** (FR-049, FR-049a). The clarification session
+  first settled on two tiers, a cheap classifier-only one beside the full one, and the user reversed
+  it for uniformity before any of it was planned. The reversal is the stronger position: a cheap
+  tier could only have called the classification step directly — a posted turn always runs its whole
+  pipeline — so its segmentation numbers would have described a different execution path from every
+  other metric in the same report. What the cheap tier was buying is bought by FR-044 instead, since
+  re-scoring a stored run costs nothing. Cost is now controlled only by running fewer cases, which
+  makes 2c's cadence question the whole of that decision rather than half of it.
 - **The set's labels are extended in this phase** (FR-037, FR-038). The user chose fixtures over
   scoring end-to-end task success from a denominator of four. That is data work on 2a's artifact
   inside 2b, and the last Out of Scope bullet is the fence around it: the fixture is added because a
