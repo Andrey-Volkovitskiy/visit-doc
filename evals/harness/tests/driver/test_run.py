@@ -1081,6 +1081,21 @@ async def test_a_resumed_run_stops_when_the_service_now_states_other_settings(
     assert stack.posted() == []
 
 
+async def test_a_resumed_run_stops_when_the_services_settings_cannot_be_read(
+    log: Path, artifacts: Path
+) -> None:
+    # A build that dropped a condition field is a changed condition, stopped as one.
+    run_dir = await _interrupted_run(log, artifacts)
+    _append(log, {k: v for k, v in _configured().items() if k != "rerank_cap"})
+    stack = _stack(log, artifacts)
+
+    with pytest.raises(ConditionsChangedError, match="rerank_cap") as stopped:
+        await _resume(stack, run_dir, _THREE)
+
+    assert isinstance(stopped.value.__cause__, ValidationError)
+    assert stack.posted() == []
+
+
 async def test_a_resumed_run_stops_when_a_selected_label_changed(
     log: Path, artifacts: Path
 ) -> None:
@@ -1635,6 +1650,26 @@ async def test_a_restart_with_other_settings_while_planting_stops_and_releases(
     with pytest.raises(ServiceRestartedError, match="G042"):
         await _drive(stack, [_booking_case("G042")])
 
+    assert stack.posted() == []
+    (chat,) = [call[1] for call in stack.calls if call[0] == "new_chat"]
+    assert ("release", f"PAT-{chat}") in stack.timeline
+    (run_dir,) = artifacts.iterdir()
+    assert recorded_case_ids(run_dir) == []
+
+
+async def test_a_restart_whose_settings_cannot_be_read_stops_and_releases_as_other(
+    log: Path, artifacts: Path
+) -> None:
+    # A build that renamed or dropped a condition field restarted: that is a restart
+    # under other settings, handled as one - not a validation error that skips the
+    # release a restart owes the planted patient.
+    unreadable = {k: v for k, v in _OTHER_SETTINGS.items() if k != "similarity_floor"}
+    stack = _stack(log, artifacts, restarts_during={("plant", 1): unreadable})
+
+    with pytest.raises(ServiceRestartedError, match="G042") as stopped:
+        await _drive(stack, [_booking_case("G042")])
+
+    assert isinstance(stopped.value.__cause__, ValidationError)
     assert stack.posted() == []
     (chat,) = [call[1] for call in stack.calls if call[0] == "new_chat"]
     assert ("release", f"PAT-{chat}") in stack.timeline

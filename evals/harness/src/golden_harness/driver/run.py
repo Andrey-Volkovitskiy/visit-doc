@@ -505,7 +505,8 @@ async def resume_run(
 
     Raises: LabelsChangedError when a selected case is missing from `cases` or its
         digest changed; ConditionsMissingError when the log states no settings;
-        ConditionsChangedError when the service states other settings than `run.json`;
+        ConditionsChangedError when the service states other settings than `run.json`,
+        or states them in a shape the run's conditions cannot be read from;
         CorpusMismatchError or EntryIdsChangedError when the corpus is not the one the
         run verified; CleanupFailedError when a recorded case's patient, or any other
         patient of the session's chats, cannot be released, before any case is driven;
@@ -532,7 +533,14 @@ async def resume_run(
 
     offset = log_offset(log_path)
     preceding = preceding_bytes(log_path, offset)
-    conditions = RunConditions.from_event(service_conditions(log_path, offset))
+    stated = service_conditions(log_path, offset)
+    try:
+        conditions = RunConditions.from_event(stated)
+    except ValidationError as exc:
+        raise ConditionsChangedError(
+            "the service now states settings the run's conditions cannot be read "
+            f"from: {exc}"
+        ) from exc
     if conditions != run.conditions:
         raise ConditionsChangedError(
             "the service now states other settings than the run was measured under: "
@@ -602,14 +610,23 @@ class _RestartWatch:
         A restart stating the run's own settings is not a change, and is passed over.
 
         Raises: ServiceRestartedError naming `case_id` and each differing setting when a
-            `service.configured` event states other settings than the run's.
+            `service.configured` event states other settings than the run's - or states
+            them in a shape the run's conditions cannot be read from, which a build that
+            renamed or dropped one of their fields logs, and which is no less a restart
+            under other settings.
         """
         restarts, self.offset = restarts_since(
             self._log_path, self.offset, preceding=self._preceding
         )
         self._preceding = preceding_bytes(self._log_path, self.offset)
         for restart in restarts:
-            restarted = RunConditions.from_event(restart)
+            try:
+                restarted = RunConditions.from_event(restart)
+            except ValidationError as exc:
+                raise ServiceRestartedError(
+                    f"{case_id}: the service restarted stating settings the run's "
+                    f"conditions cannot be read from: {exc}"
+                ) from exc
             if restarted != self._conditions:
                 raise ServiceRestartedError(
                     f"{case_id}: the service restarted with other settings: "

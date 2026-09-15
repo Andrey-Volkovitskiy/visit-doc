@@ -346,9 +346,19 @@ def test_two_given_entries_overlapping_for_one_practitioner_are_refused() -> Non
         validate_plantable(fixture, DEFAULT_CLOCK)
 
 
-def test_two_practitioners_at_the_same_time_do_not_overlap() -> None:
+def test_two_practitioners_at_the_same_time_are_refused_for_the_one_patient() -> None:
+    # Every precondition is planted for the case's one patient, and the scheduler's
+    # `appointments_patient_no_overlap` refuses the second as PATIENT_BUSY - so this
+    # would not plant, and must fail as a label rather than mid-run.
+    fixture = _fixture([_osler("+1d", "10:00"), _vesalius("+1d", "10:00")])
+
+    with pytest.raises(LabelError, match="overlap"):
+        validate_plantable(fixture, DEFAULT_CLOCK)
+
+
+def test_two_practitioners_at_separate_times_plant() -> None:
     validate_plantable(
-        _fixture([_osler("+1d", "10:00"), _vesalius("+1d", "10:00")]), DEFAULT_CLOCK
+        _fixture([_osler("+1d", "10:00"), _vesalius("+1d", "11:00")]), DEFAULT_CLOCK
     )
 
 

@@ -259,7 +259,7 @@ def score_retrieval(
         answerable = [
             position
             for position, request in enumerate(label.requests)
-            if _is_answerable_faq(request)
+            if request.is_answerable_faq
         ]
         if not answerable:
             continue
@@ -293,11 +293,6 @@ def score_retrieval(
             requests.append(_score_request(case_id, pair.position, cited, segment))
 
     return _scores(requests, unaligned, similarity_cap)
-
-
-def _is_answerable_faq(request: LabelledRequest) -> bool:
-    """Return True for a `faq_question` label the corpus answers."""
-    return request.intent is IntentLabel.FAQ_QUESTION and request.answerable is True
 
 
 def _excluded_from_both(

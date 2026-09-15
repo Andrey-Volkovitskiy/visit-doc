@@ -86,6 +86,11 @@ class LabelledRequest(BaseModel):
     cites: list[str] | None = None
     tools: list[BookingTool] | None = None
 
+    @property
+    def is_answerable_faq(self) -> bool:
+        """Whether this is a `faq_question` the corpus is labelled to answer."""
+        return self.intent is IntentLabel.FAQ_QUESTION and self.answerable is True
+
 
 class AppointmentRef(BaseModel):
     """One appointment of a scheduling fixture, stated relative to the run clock.
@@ -248,18 +253,21 @@ def validate_plantable(fixture: SchedulingFixture, clock: datetime) -> None:
 
     Raises: LabelError naming the first entry that names a practitioner a fresh session
         is not seeded with, starts at a time the scheduler would refuse - its refusal
-        reason in the message - or overlaps another precondition of the same
-        practitioner.
+        reason in the message - or overlaps another precondition, whichever practitioner
+        either names.
 
     Each start is judged by the scheduler's own booking predicates against the seeded
-    practitioner's schedule and the scheduler's default horizon. An expectation's
-    practitioner must be seeded too, since an entry naming anyone else can never match.
+    practitioner's schedule and the scheduler's default horizon. Every precondition is
+    planted for the one patient, and the scheduler refuses a patient two standing
+    appointments at once as surely as it refuses a practitioner, so an overlap across
+    practitioners would not plant either. An expectation's practitioner must be seeded
+    too, since an entry naming anyone else can never match.
     """
     for entry in fixture.expect:
         if entry.practitioner not in _SEED_BY_NAME:
             raise LabelError(f"expects {entry.practitioner}, who is not seeded")
 
-    planted: list[tuple[str, Interval]] = []
+    planted: list[Interval] = []
     for entry in fixture.given:
         seed = _SEED_BY_NAME.get(entry.practitioner)
         if seed is None:
@@ -284,13 +292,12 @@ def validate_plantable(fixture: SchedulingFixture, clock: datetime) -> None:
         slot = Interval(
             start, start + timedelta(minutes=seed.appointment_duration_minutes)
         )
-        for name, other in planted:
-            if name == entry.practitioner and slot.overlaps(other):
-                raise LabelError(
-                    f"{entry.practitioner} {entry.day} {entry.time} would overlap "
-                    "another precondition"
-                )
-        planted.append((entry.practitioner, slot))
+        if any(slot.overlaps(other) for other in planted):
+            raise LabelError(
+                f"{entry.practitioner} {entry.day} {entry.time} would overlap "
+                "another precondition of the same patient"
+            )
+        planted.append(slot)
 
 
 def _case_named_by(raw: Any, path: list[str | int]) -> str:

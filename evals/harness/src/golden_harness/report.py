@@ -390,8 +390,7 @@ def render_summary(report: Report) -> str:
         "",
         "## Metrics",
         "",
-        "| metric | value | numerator / denominator | excluded |",
-        "|---|---|---|---|",
+        *_TABLE_HEADER,
         *(_metric_row(metric) for metric in _classification_metrics(report)),
         "",
         (

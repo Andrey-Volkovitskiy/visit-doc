@@ -42,8 +42,10 @@ the same thing and keeps saying it.
 2. Every `given` entry must be plantable against the run clock: inside its practitioner's weekly
    working range, on the 60-minute grid, strictly after the clock, and within the 90-day horizon.
    The scheduler enforces all four; the loader checks them first so a bad label fails as a label.
-3. No two `given` entries may overlap for the same practitioner — the scheduler's exclusion
-   constraint would refuse the second, and a fixture that cannot plant is a broken label.
+3. No two `given` entries may overlap, whichever practitioner each names — every one is planted for
+   the case's one patient, so the scheduler's patient exclusion constraint would refuse the second
+   (as its practitioner constraint would for one practitioner), and a fixture that cannot plant is
+   a broken label.
 
 ### `corpus.json` *(existing, two changes)*
 
@@ -82,7 +84,7 @@ the same thing and keeps saying it.
 | `attempts` | how many times the case was driven; >1 only for a failure that prevented measurement (FR-007a) |
 | `terminal` | `done` \| `silent` \| `cancelled` \| `error`, with the event's own payload. Absent when no response stream was read to its end: an `unresolvable_fixture` case (no turn was posted), any case whose stream broke the service's contract (`stream_broke_contract`), settled or `outcome_unknown`, and a `run_error` case whose recorded attempt received no stream — no connection, or a 429 or 5xx status line |
 | `stream_broke_contract` | `true` exactly when the turn's response stream began and then broke the service's contract; `false` when it was read to its terminal event, broke off or timed out, or no stream was received. Never `true` beside a `terminal` (FR-041d) |
-| `patient_message` | id, content, `attention_mark`. Absent when the service stored no patient message for the turn, and when the thread was not read back: an `unresolvable_fixture` case (no turn was posted), an `outcome_unknown` case whose stream broke the service's contract or whose thread could not be read back, and a `run_error` case whose recorded attempt received no stream |
+| `patient_message` | id, content, `attention_mark`. Absent when the service stored no patient message for the turn, and when the thread was not read back: an `unresolvable_fixture` case (no turn was posted), an `outcome_unknown` case whose thread could not be read back (a stream that broke the service's contract is read back like one that broke off), and a `run_error` case whose recorded attempt received no stream |
 | `assistant_message` | id, content, `request_outcomes` — parsed through `RequestOutcome` itself, so the record's invariants are re-checked on the way in (research R5). Absent when no reply was stored, and wherever `patient_message` is absent because the thread was not read back. |
 | `segments` | the produced segmentation, from `intent.classified` — `{position, intent, text}` per segment, plus `cap_bound` (FR-021a) |
 | `events` | the turn's parsed log events, in order |

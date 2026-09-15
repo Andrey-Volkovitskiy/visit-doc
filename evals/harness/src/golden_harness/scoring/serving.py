@@ -236,7 +236,7 @@ def score_serving(
         answerable = [
             position
             for position, request in enumerate(label.requests)
-            if _is_faq(request) and request.answerable is True
+            if request.is_answerable_faq
         ]
 
         reason = case_alignment.turn_exclusion
@@ -264,7 +264,7 @@ def score_serving(
                     on_gaps.append(_answer(case_id, outcome))
                 continue
             abstentions += 1
-            if labelled is not None and _is_faq(labelled) and labelled.answerable:
+            if labelled is not None and labelled.is_answerable_faq:
                 wrong.append(
                     Abstention(
                         case_id=case_id,
