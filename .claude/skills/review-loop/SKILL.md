@@ -27,16 +27,28 @@ who normally runs at `medium` is not silently moved up.
 python3 .claude/skills/review-loop/set-effort.py
 ```
 
-Keep that value — it is what step 6 restores. Then set `effortLevel` to `xhigh`:
+Keep that value exactly as printed — it is what step 6 passes back (`unset` when the key is
+absent). Then set `effortLevel` to `xhigh`:
 
 ```bash
 python3 .claude/skills/review-loop/set-effort.py xhigh
 ```
 
-It prints the value read back; check it says `xhigh`. Run both from the repo root and in exactly
-this form: `.claude/settings.local.json` allows `python3 .claude/skills/review-loop/set-effort.py`
-and nothing broader, so a heredoc or `python3 -c` edit of the settings file is refused as
-self-modification. The script touches only this one key and accepts only a known level.
+It prints the value read back; check it says `xhigh`. It also prints a `warning:` line on stderr
+for each setting it finds that outranks that key — a per-model `modelSettings.<model>.effortLevel`
+(where `/effort` saves a pick), `ultracode`, `CLAUDE_CODE_EFFORT_LEVEL`, or an effort setting in
+the project's settings files. **Any such warning means the session is not running at the printed
+level**; say so in your first message. The script cannot see an `--effort` flag or a level picked
+in-session, so no warning is not proof either.
+
+Run both from the repo root and in exactly this form. On this machine `.claude/settings.local.json`
+allows those exact command lines (no argument, each level, `unset`), so a heredoc or `python3 -c`
+edit of the settings file is not needed and is refused as self-modification. That file is
+untracked, so a checkout without it has no such rule: each call then needs approval, and if the
+restore in step 6 is refused, stop and give the user the exact command to run. The rule approves
+the command line, not the script's content — the script accepts only a known level and changes no
+other key's value, but an edit to it, including one that arrives through a round's
+`git pull --rebase`, runs under the same approval.
 
 **State plainly in your first message that the global effort level is now raised and will be
 restored at the end.** The user is paying for it and cannot see the setting change.
@@ -101,9 +113,11 @@ Put back the value recorded in step 1:
 python3 .claude/skills/review-loop/set-effort.py <baseline>
 ```
 
-If the baseline was `<unset>`, pass `unset`, which removes the key rather than inventing a value.
-The script prints the value it read back after writing; confirm it matches the baseline rather than
-assuming the write landed, and report that confirmed value.
+Run it from the repo root, as in step 1: the Bash working directory persists between calls, and the
+rounds may have left it somewhere else, where the relative path does not resolve. Pass the baseline
+exactly as step 1 printed it; `unset` removes the key rather than inventing a value. The script
+prints the value it read back after writing; confirm it matches the baseline rather than assuming
+the write landed, and report that confirmed value.
 
 ### 7. Report
 
