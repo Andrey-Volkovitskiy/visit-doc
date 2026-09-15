@@ -215,6 +215,25 @@ def test_editing_a_scored_field_changes_the_digest(
     assert _digest_of(raw, tmp_path, case_id) != before
 
 
+def test_a_field_the_schema_adds_is_fingerprinted_before_the_model_types_it(
+    tmp_path: Path,
+) -> None:
+    # `Case` keeps a key the schema admits and the model does not type, so a scored
+    # field added to the schema cannot change unnoticed under a stored run.
+    schema = json.loads(_SCHEMA.read_text(encoding="utf-8"))
+    schema["items"]["properties"]["expected_reply"] = {"type": "string"}
+    schema_path = tmp_path / "schema.json"
+    schema_path.write_text(json.dumps(schema), encoding="utf-8")
+    raw = _raw_cases()
+    raw[0]["expected_reply"] = "one"
+    before = label_digests(load_cases(_write(tmp_path, raw), schema_path))["G001"]
+
+    raw[0]["expected_reply"] = "another"
+
+    after = label_digests(load_cases(_write(tmp_path, raw), schema_path))["G001"]
+    assert after != before
+
+
 def test_a_digest_names_only_its_own_case(tmp_path: Path) -> None:
     raw = _raw_cases()
     before = label_digests(load_cases(_write(tmp_path, raw), _SCHEMA))

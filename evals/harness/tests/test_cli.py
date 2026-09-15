@@ -83,6 +83,16 @@ def test_resume_is_exclusive_with_what_a_resumed_run_takes_from_run_json(
         cli.parse_args(["run", "--resume", "01K5ANY", *extra])
 
 
+@pytest.mark.parametrize(
+    "clock", ["2026-03-09T08:00+02:00", "2026-03-09T08:00Z", "soon"]
+)
+def test_a_clock_with_an_offset_or_no_date_time_is_refused(clock: str) -> None:
+    # `local_now` carries no timezone: the service answers one with a 422, and the
+    # fixture check compares it with naive starts, so it is refused before any turn.
+    with pytest.raises(SystemExit):
+        cli.parse_args(["run", "--clock", clock])
+
+
 def test_cases_and_family_are_exclusive() -> None:
     with pytest.raises(SystemExit):
         cli.parse_args(["run", "--cases", "G001", "--family", "small-talk"])

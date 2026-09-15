@@ -105,6 +105,22 @@ class StoredMessage(BaseModel):
     request_outcomes: list[RequestOutcome] | None = None
 
 
+def turn_settled(
+    patient_message: StoredMessage | None, assistant_message: StoredMessage | None
+) -> bool:
+    """Whether what a turn stored shows it ended (FR-041c).
+
+    Ended is a stored reply, or the turn's patient message marked `assistant_failed` -
+    the one rule the driver waits on, judges an attempt by, and the report lists
+    settled turns by.
+    """
+    failed = (
+        patient_message is not None
+        and patient_message.attention_mark is AttentionMark.ASSISTANT_FAILED
+    )
+    return assistant_message is not None or failed
+
+
 class ProducedSegment(BaseModel):
     """One request as the classifier produced it."""
 
@@ -388,7 +404,7 @@ class CaseRun(BaseModel):
 def write_run(run_dir: Path, run: Run) -> None:
     """Write `run.json` into `run_dir` atomically, replacing any previous one."""
     run_dir.mkdir(parents=True, exist_ok=True)
-    _write_atomically(run_dir / _RUN_FILE, run.model_dump_json(indent=2))
+    write_atomically(run_dir / _RUN_FILE, run.model_dump_json(indent=2))
 
 
 def read_run(run_dir: Path) -> Run:
@@ -403,7 +419,7 @@ def write_case(run_dir: Path, case_run: CaseRun) -> None:
     """Write `cases/<case_id>.json` into `run_dir` atomically."""
     cases_dir = run_dir / _CASES_DIR
     cases_dir.mkdir(parents=True, exist_ok=True)
-    _write_atomically(
+    write_atomically(
         cases_dir / f"{case_run.case_id}.json", case_run.model_dump_json(indent=2)
     )
 
@@ -434,7 +450,7 @@ def recorded_case_ids(run_dir: Path) -> list[str]:
     )
 
 
-def _write_atomically(path: Path, text: str) -> None:
+def write_atomically(path: Path, text: str) -> None:
     """Replace `path` with `text` so a reader sees the old file or the new, never half.
 
     The text goes to a hidden temporary file beside `path`, is flushed to disk, and is

@@ -1418,6 +1418,38 @@ async def test_a_chat_with_no_patient_is_not_released(
     assert "release" not in stack.names()
 
 
+@dataclass
+class _ProvisionedByTheTurn(FakeStack):
+    """A stack whose chats have no patient until a turn is posted into them."""
+
+    async def chat_identity(self, session_id: str, chat_id: str) -> ChatIdentity:
+        identity = await super().chat_identity(session_id, chat_id)
+        if any(chat == chat_id for chat, _message in self.messages):
+            return identity
+        return identity.model_copy(update={"patient_id": None})
+
+
+async def test_a_patient_the_turn_provisioned_is_released_and_recorded(
+    log: Path, artifacts: Path
+) -> None:
+    # `POST /chat` provisions a patient for a chat created while the scheduler was
+    # unreachable, so the turn can book with a patient the pre-turn read never saw.
+    stack = _ProvisionedByTheTurn(
+        log=log,
+        artifacts=artifacts,
+        scripts={"G001": [Attempt(books=("2026-03-05T09:00",))]},
+    )
+
+    run_dir = await _drive(stack, [_case("G001")])
+
+    case_run = _case_run(run_dir, "G001")
+    assert case_run.patient_id is not None
+    assert ("release", case_run.patient_id) in stack.timeline
+    assert case_run.cancelled_after == [
+        _appointment("2026-03-05T09:00:00", "cancelled")
+    ]
+
+
 async def test_a_cleanup_that_fails_writes_the_case_and_stops_the_run(
     log: Path, artifacts: Path
 ) -> None:

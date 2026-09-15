@@ -17,7 +17,6 @@ from golden_harness.driver.logslice import (
     produced_segmentation,
     read_slice,
     require_json_log,
-    restarts_in,
     restarts_since,
     select_turn,
     service_conditions,
@@ -325,8 +324,20 @@ def test_no_settings_event_before_the_offset_is_refused(tmp_path: Path) -> None:
     offset = log_offset(log)
     _append(log, json.dumps(_CONFIGURED))
 
-    with pytest.raises(ConditionsMissingError):
+    with pytest.raises(ConditionsMissingError) as raised:
         service_conditions(log, offset)
+
+    assert "LOG_FORMAT=json" not in str(raised.value)
+
+
+def test_a_log_with_no_json_line_names_the_format_it_needs(tmp_path: Path) -> None:
+    # A service logging for people fails here first, before `require_json_log` is
+    # reached - so the refusal has to name the fix itself.
+    log = tmp_path / "chat.log"
+    _append(log, _UVICORN_STARTUP, "\x1b[2m2026-09-14\x1b[0m [info] service.configured")
+
+    with pytest.raises(ConditionsMissingError, match="LOG_FORMAT=json"):
+        service_conditions(log, log_offset(log))
 
 
 def test_restarts_are_every_settings_event_inside_a_slice(tmp_path: Path) -> None:
@@ -341,7 +352,7 @@ def test_restarts_are_every_settings_event_inside_a_slice(tmp_path: Path) -> Non
         json.dumps({**_CONFIGURED, "timestamp": "b"}),
     )
 
-    restarts = restarts_in(_events(read_slice(log, offset)))
+    restarts, _offset = restarts_since(log, offset)
 
     assert [event["timestamp"] for event in restarts] == ["a", "b"]
 
@@ -350,7 +361,7 @@ def test_a_slice_without_a_restart_has_none(tmp_path: Path) -> None:
     log = tmp_path / "chat.log"
     _append(log, _received("t1", "M-CASE"))
 
-    assert restarts_in(_events(read_slice(log, 0))) == []
+    assert restarts_since(log, 0)[0] == []
 
 
 def test_restarts_since_an_offset_are_read_to_the_last_complete_line(

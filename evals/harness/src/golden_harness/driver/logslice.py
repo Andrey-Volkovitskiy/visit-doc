@@ -189,22 +189,23 @@ def service_conditions(path: Path, before_offset: int) -> LogEvent:
     Raises: ConditionsMissingError when no such event precedes `before_offset`.
     """
     latest: LogEvent | None = None
+    any_event = False
     for line in _complete_lines(path, 0, before_offset):
         if not line.startswith(b"{"):
             continue
         event = _parse(line)
+        any_event = any_event or event is not None
         if event is not None and event["event"] == _SETTINGS_EVENT:
             latest = event
     if latest is None:
+        # A service logging for people writes no JSON line at all, and this is the
+        # first check a run makes - so the fix is named here, not only by
+        # `require_json_log`, which a console log never gets as far as.
+        hint = "" if any_event else "; start the chat service with LOG_FORMAT=json"
         raise ConditionsMissingError(
-            f"{path} holds no {_SETTINGS_EVENT} event before byte {before_offset}"
+            f"{path} holds no {_SETTINGS_EVENT} event before byte {before_offset}{hint}"
         )
     return latest
-
-
-def restarts_in(events: list[LogEvent]) -> list[LogEvent]:
-    """Return every `service.configured` event in a slice - each one a service start."""
-    return [event for event in events if event["event"] == _SETTINGS_EVENT]
 
 
 def restarts_since(

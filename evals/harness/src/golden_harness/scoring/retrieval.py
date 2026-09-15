@@ -77,19 +77,6 @@ _SEGMENT_EVENTS: Final = (
 # The similarity cap at or below which rerank-stage hit@5 cannot be anything but 1.
 _HIT_AT_5_CAP: Final = 5
 
-# Reasons that set a request aside from a stage because of its whole turn.
-_TURN_REASONS: Final = frozenset(
-    {
-        ExclusionReason.RUN_ERROR,
-        ExclusionReason.SILENCED_TURN,
-        ExclusionReason.HANDED_OFF_TURN,
-        ExclusionReason.CANCELLED_TURN,
-        ExclusionReason.MISSING_LOG_SLICE,
-        ExclusionReason.UNRESOLVABLE_FIXTURE,
-        ExclusionReason.OUTCOME_UNKNOWN,
-    }
-)
-
 
 class LogContractError(ValueError):
     """A scored request's stored events are not what the log contract describes.
@@ -277,9 +264,11 @@ def score_retrieval(
         if not answerable:
             continue
 
+        # A case file carries only a turn-level reason, and every one of them - the
+        # case-scoped ones and `handed_off_turn` alike - sets a request aside from both
+        # stages.
         reason = case_alignment.turn_exclusion
-        if case_alignment.state is AlignmentState.EXCLUDED or reason in _TURN_REASONS:
-            assert reason is not None
+        if reason is not None:
             requests.extend(
                 _excluded_from_both(case_id, position, reason)
                 for position in answerable

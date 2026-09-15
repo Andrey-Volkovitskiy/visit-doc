@@ -259,7 +259,15 @@ async def _book(
             situation=UnplantableSituation.BOOKING_UNANSWERED,
             detail=f"BookAppointment was not answered: {exc.code().name}",
         )
-    if response.WhichOneof("result") != "appointment":
+    result = response.WhichOneof("result")
+    if result is None:
+        # Neither an appointment nor a failure: reading the unset `failure` would file a
+        # scheduler that answered unreadably as a refusal the label caused.
+        return Unplantable(
+            situation=UnplantableSituation.BOOKING_UNREADABLE,
+            detail="BookAppointment was answered with no result",
+        )
+    if result != "appointment":
         reason = pb.BookingFailureReason.Name(response.failure.reason)
         message = response.failure.detail
         return Unplantable(

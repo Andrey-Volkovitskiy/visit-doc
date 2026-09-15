@@ -302,6 +302,24 @@ async def test_each_way_planting_stops_is_named_by_its_situation() -> None:
         assert (planted.failure_reason, planted.scheduler_message) == (None, None)
 
 
+async def test_a_booking_answered_with_no_result_is_unreadable_not_refused() -> None:
+    # An unset `result` carries no failure: reading one would name the reason
+    # `BOOKING_FAILURE_REASON_UNSPECIFIED` and file the scheduler's answer as a refusal.
+    stub = _Stub(book=[pb.BookAppointmentResponse()])
+
+    planted = await plant(
+        stub,
+        session_id=_SESSION,
+        patient_id=_PATIENT,
+        given=[_ref("William Osler", "+1d", "10:00")],
+        clock=_CLOCK,
+    )
+
+    assert isinstance(planted, Unplantable)
+    assert planted.situation is UnplantableSituation.BOOKING_UNREADABLE
+    assert (planted.failure_reason, planted.scheduler_message) == (None, None)
+
+
 async def test_a_booking_refusal_carries_the_schedulers_reason_and_message() -> None:
     refused = pb.BookAppointmentResponse(
         failure=pb.BookingFailure(

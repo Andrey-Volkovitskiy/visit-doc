@@ -33,6 +33,8 @@ from golden_harness.record import (
     read_case,
     read_run,
     recorded_case_ids,
+    turn_settled,
+    write_atomically,
 )
 from golden_harness.scoring.alignment import AlignmentTotals, align_run
 from golden_harness.scoring.booking import (
@@ -274,8 +276,8 @@ def score_run(run_dir: Path, cases: Sequence[Case]) -> Report:
         drive_seconds=sum(case_run.elapsed_seconds for case_run in case_runs),
         score_seconds=time.perf_counter() - started,
     )
-    (run_dir / REPORT_JSON).write_text(to_json(report), encoding="utf-8")
-    (run_dir / REPORT_MD).write_text(render_summary(report), encoding="utf-8")
+    write_atomically(run_dir / REPORT_JSON, to_json(report))
+    write_atomically(run_dir / REPORT_MD, render_summary(report))
     return report
 
 
@@ -328,16 +330,8 @@ def _contract_broken_turns_that_settled(case_run: CaseRun) -> list[RecordedTurn]
     return [
         turn
         for turn, broke, patient, assistant in _stored_turns(case_run)
-        if broke and _settled(patient, assistant)
+        if broke and turn_settled(patient, assistant)
     ]
-
-
-def _settled(patient: StoredMessage | None, assistant: StoredMessage | None) -> bool:
-    """Say whether a turn stored a reply or has its patient message marked failed."""
-    failed = (
-        patient is not None and patient.attention_mark == AttentionMark.ASSISTANT_FAILED
-    )
-    return assistant is not None or failed
 
 
 def _failed_yet_replied(

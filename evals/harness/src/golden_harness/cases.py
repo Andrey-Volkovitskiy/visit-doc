@@ -133,9 +133,9 @@ class SchedulingFixture(BaseModel):
     def _a_status_exactly_on_an_expectation(self) -> "SchedulingFixture":
         """Refuse a precondition with a status or no time, or a bare expectation."""
         if any(entry.status is not None or entry.time is None for entry in self.given):
-            raise ValueError("a given entry carries a time and no status")
+            raise ValueError("a given entry must carry a time and no status")
         if any(entry.status is None for entry in self.expect):
-            raise ValueError("an expect entry carries a status")
+            raise ValueError("an expect entry must carry a status")
         return self
 
 
@@ -345,33 +345,36 @@ def label_digests(cases: Sequence[Case]) -> dict[str, str]:
 
     Returns: each case id mapped to the hex sha256 of its scored fields, in case order.
 
-    The digest covers `id`, `message`, `history`, each request's `intent`,
-    `answerable`, `cites` and `tools`, and `scheduling` - never `gist`, `note`,
-    `source` or `family`, so a corrected note leaves a run re-scorable while a changed
-    intent does not. The fields are serialized as canonical JSON (sorted keys, no
+    The digest covers every field of a case but `gist`, `note`, `source` and `family`
+    - today `id`, `message`, `history`, each request's `intent`, `answerable`, `cites`
+    and `tools`, and `scheduling` - so a corrected note leaves a run re-scorable while a
+    changed intent does not. The fields left out are named rather than the ones kept,
+    so a field added to the schema is fingerprinted from the start instead of changing
+    unnoticed. The fields are serialized as canonical JSON (sorted keys, no
     whitespace), and a field a case does not carry is absent from it rather than null.
     """
     return {case.id: _digest(_scored_fields(case)) for case in cases}
+
+
+# The fields no scorer reads: a human reference, provenance and grouping.
+_UNSCORED_CASE_FIELDS: Final = frozenset({"note", "source", "family"})
+_UNSCORED_REQUEST_FIELDS: Final = frozenset({"gist"})
 
 
 def _scored_fields(case: Case) -> dict[str, JsonValue]:
     """Return the part of a case scoring reads, as plain JSON data."""
     dumped = case.model_dump(mode="json", exclude_none=True)
     scored: dict[str, JsonValue] = {
-        "id": dumped["id"],
-        "message": dumped["message"],
-        "requests": [
-            {
-                key: request[key]
-                for key in ("intent", "answerable", "cites", "tools")
-                if key in request
-            }
-            for request in dumped["requests"]
-        ],
+        key: value for key, value in dumped.items() if key not in _UNSCORED_CASE_FIELDS
     }
-    for optional in ("history", "scheduling"):
-        if optional in dumped:
-            scored[optional] = dumped[optional]
+    scored["requests"] = [
+        {
+            key: value
+            for key, value in request.items()
+            if key not in _UNSCORED_REQUEST_FIELDS
+        }
+        for request in dumped["requests"]
+    ]
     return scored
 
 

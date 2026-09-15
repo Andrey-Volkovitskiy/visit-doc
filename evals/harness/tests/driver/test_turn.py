@@ -196,8 +196,15 @@ async def test_a_status_line_instead_of_a_stream_is_refused_with_its_body() -> N
         _ndjson({"type": "surprise"}),
         _ndjson({"type": "done", "answer_source": "nobody"}),
         _ndjson(_DONE, {"type": "cancelled"}),
+        _ndjson(_DONE, {"type": "token", "text": " more"}),
     ],
-    ids=["not-json", "unknown-type", "invalid-done", "two-terminals"],
+    ids=[
+        "not-json",
+        "unknown-type",
+        "invalid-done",
+        "two-terminals",
+        "token-after-terminal",
+    ],
 )
 async def test_a_stream_breaking_the_services_contract_is_refused(body: bytes) -> None:
     with pytest.raises(TurnProtocolError):

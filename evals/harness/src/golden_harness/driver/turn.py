@@ -23,7 +23,7 @@ from chat.domain.schemas import (
 )
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
-from golden_harness.record import StoredMessage, Terminal, TerminalKind
+from golden_harness.record import StoredMessage, Terminal, TerminalKind, turn_settled
 
 _BODY_EXCERPT = 2000
 _TERMINAL_EVENTS: dict[str, tuple[TerminalKind, type[BaseModel]]] = {
@@ -121,8 +121,8 @@ async def post_turn(
         local_now: the run clock, sent as the turn's local time.
 
     Raises: TurnProtocolError when the stream carries a line the service's contract
-        does not allow - unparseable, an unknown event, an invalid terminal event, or a
-        second terminal event.
+        does not allow - unparseable, an unknown event, an invalid terminal event, or
+        any event after the terminal one.
 
     The stream is read to its end even after the terminal event: the service closes it
     only once the turn's writes are finished, so a thread read afterwards sees them.
@@ -223,10 +223,7 @@ def classify_attempt(result: TurnResult, thread: ThreadRead | None) -> AttemptCl
         raise ValueError(
             "a turn with no terminal event is judged by the thread it left"
         )
-    patient = thread.patient_message
-    if patient is not None and patient.attention_mark is AttentionMark.ASSISTANT_FAILED:
-        return AttemptClass.MEASURED
-    if thread.assistant_message is not None:
+    if turn_settled(thread.patient_message, thread.assistant_message):
         return AttemptClass.MEASURED
     return AttemptClass.SENT_NO_ANSWER
 
@@ -242,13 +239,16 @@ async def _read_stream(response: httpx.Response) -> TurnSent:
             if not line.strip():
                 continue
             event = _parse_line(line)
-            if event is None:
-                continue
             if terminal is not None:
+                # Nothing may follow a terminal event - a token would add to a reply
+                # the service already called finished.
+                followed_by = _TOKEN_EVENT if event is None else event.kind.value
                 raise TurnProtocolError(
-                    f"a second terminal event {event.kind.value} followed "
+                    f"a {followed_by} event followed the terminal event "
                     f"{terminal.kind.value}"
                 )
+            if event is None:
+                continue
             terminal = event
     except httpx.TransportError as exc:
         if terminal is None:

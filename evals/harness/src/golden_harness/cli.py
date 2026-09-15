@@ -88,7 +88,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     chosen.add_argument("--family", help="drive one family of cases", default=None)
     run.add_argument(
         "--clock",
-        type=datetime.fromisoformat,
+        type=_local_clock,
         default=None,
         help=f"local time sent with every turn (default {DEFAULT_CLOCK.isoformat()})",
     )
@@ -169,6 +169,26 @@ async def _run(args: argparse.Namespace) -> None:
                 clock=args.clock if args.clock is not None else DEFAULT_CLOCK,
             )
     print(render_summary(score_run(run_dir, cases)))
+
+
+def _local_clock(value: str) -> datetime:
+    """Parse `--clock` as a local date-time carrying no timezone.
+
+    Raises: argparse.ArgumentTypeError when `value` is not ISO-8601 or carries an
+        offset - the chat service refuses a `local_now` with one, and the scheduler's
+        booking predicates cannot compare it with a local start.
+    """
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"not an ISO-8601 date-time: {value!r}"
+        ) from exc
+    if parsed.tzinfo is not None:
+        raise argparse.ArgumentTypeError(
+            f"the clock is local time and carries no timezone offset: {value!r}"
+        )
+    return parsed
 
 
 def _case_ids(value: str) -> list[str]:

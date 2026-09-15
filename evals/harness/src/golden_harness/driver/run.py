@@ -114,6 +114,7 @@ from golden_harness.record import (
     read_case,
     read_run,
     recorded_case_ids,
+    turn_settled,
     write_case,
     write_run,
 )
@@ -826,6 +827,10 @@ async def _drive_case(
         release: bool = True,
     ) -> _Driven:
         failure: CleanupFailedError | None = None
+        # A chat created while the scheduler was unreachable has no patient, and the
+        # turn's own request provisions one - so the patient read before the turn is
+        # read again, or what that turn booked would stand in a later case's way.
+        identity = await _current_identity(stack, run, case_run.chat_id, identity)
         try:
             if release:
                 cancelled.extend(await _release(stack, run, identity))
@@ -833,6 +838,7 @@ async def _drive_case(
             cancelled.extend(exc.cancelled)
             failure = exc
         update = {
+            "patient_id": identity.patient_id,
             "cancelled_after": list(cancelled),
             "elapsed_seconds": timer() - started,
         }
@@ -1357,7 +1363,7 @@ async def _settle(
             raise
         if failure is not None:
             return failure
-        if _has_ended(thread):
+        if turn_settled(thread.patient_message, thread.assistant_message):
             return replace(turn, thread=thread, verdict=AttemptClass.MEASURED)
     return TurnUnsettledError(
         f"{case_id}: the turn posted to chat {turn.chat_id} stored no reply and no "
@@ -1365,15 +1371,6 @@ async def _settle(
         "arriving, so it may still write; its patient was not released, and a resumed "
         "run releases it before driving another case"
     )
-
-
-def _has_ended(thread: ThreadRead) -> bool:
-    """Whether a turn's thread shows it ended: a stored reply, or `assistant_failed`."""
-    patient = thread.patient_message
-    failed = (
-        patient is not None and patient.attention_mark is AttentionMark.ASSISTANT_FAILED
-    )
-    return thread.assistant_message is not None or failed
 
 
 def _classified(
@@ -1387,13 +1384,11 @@ def _classified(
     Raises: ValueError when a stream that broke off, or broke the contract, comes with
         no thread.
     """
-    if not isinstance(result, TurnProtocolError):
-        return classify_attempt(result, thread)
-    if thread is None:
-        raise ValueError(
-            "a turn with no terminal event is judged by the thread it left"
+    if isinstance(result, TurnProtocolError):
+        result = TurnSent(
+            terminal=Terminal(kind=TerminalKind.ERROR), interruption=str(result)
         )
-    return AttemptClass.MEASURED if _has_ended(thread) else AttemptClass.SENT_NO_ANSWER
+    return classify_attempt(result, thread)
 
 
 def _arrived_whole(result: TurnResult | TurnProtocolError) -> bool:
@@ -1427,6 +1422,23 @@ async def _post_state(
         )
     except SchedulingCallError:
         return None
+
+
+async def _current_identity(
+    stack: Stack, run: Run, chat_id: str, identity: ChatIdentity
+) -> ChatIdentity:
+    """Return the chat's identity as it stands now when `identity` names no patient.
+
+    `POST /chat` provisions a patient for a chat that has none, so a chat read as
+    patientless before its turn may hold one after it. A chat with a patient keeps it,
+    and is not read again. A chat no longer found keeps `identity`.
+    """
+    if identity.patient_id is not None:
+        return identity
+    try:
+        return await stack.chat_identity(run.session_id, chat_id)
+    except ChatNotFoundError:
+        return identity
 
 
 async def _release(
