@@ -7,7 +7,7 @@
   "$defs": {
     "practitioner": {"type": "string", "minLength": 1, "description": "A pool name the scheduler seeds a fresh session with: `William Osler` (General Practice, Mon-Fri 09:00-17:00) or `Andreas Vesalius` (Dentistry, Mon-Sat 09:00-14:00)."},
     "day": {"type": "string", "pattern": "^[+-][0-9]+d$", "description": "Days from the run clock's date: `+3d` on the default Monday clock is Thursday."},
-    "time": {"type": "string", "pattern": "^[0-9]{2}:[0-9]{2}$", "description": "Local start time, HH:MM."}
+    "time": {"type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$", "description": "Local start time, HH:MM."}
   },
   "items": {
     "type": "object",

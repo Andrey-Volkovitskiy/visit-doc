@@ -29,7 +29,7 @@ first is committed data with a schema of its own; the other two are the harness'
 |---|---|---|---|
 | `practitioner` | string | yes | A pool name the scheduler seeds — `William Osler` or `Andreas Vesalius` for a fresh session. Resolved against the run's own roster; an unresolvable name excludes the case (FR-039). |
 | `day` | string, `^[+-][0-9]+d$` | yes | Days from the run clock's date. `+3d` on a Monday clock is Thursday. |
-| `time` | string, `^[0-9]{2}:[0-9]{2}$` | no | Omitted means *any time that day* — which is how "book one with William Osler on Friday" and "book Wednesday with William Osler instead" are labelled (FR-037a). |
+| `time` | string, `^([01][0-9]|2[0-3]):[0-5][0-9]$` | no | Omitted means *any time that day* — which is how "book one with William Osler on Friday" and "book Wednesday with William Osler instead" are labelled (FR-037a). |
 | `status` | `standing` \| `cancelled` | in `expect` only | A precondition is always a standing booking, so `given` carries no status; an expectation must say which, since a cancelled appointment is still a row. |
 
 **Why times are offsets and not instants**: the messages say "tomorrow", "Thursday", "Monday". An

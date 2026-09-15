@@ -149,7 +149,11 @@ def test_the_schema_rejects_a_day_not_written_as_a_signed_offset(day: str) -> No
     assert _schema_errors(_g102(given=given)) != []
 
 
-@pytest.mark.parametrize("time", ["10", "10:0", "1000", "10:00:00", "ten"])
+# "24:00", "25:99" and "10:60" have the HH:MM shape but name no clock time, so a
+# shape-only pattern would pass them on to fail later as a bare ValueError.
+@pytest.mark.parametrize(
+    "time", ["10", "10:0", "1000", "10:00:00", "ten", "24:00", "25:99", "10:60"]
+)
 def test_the_schema_rejects_a_time_not_written_as_hh_mm(time: str) -> None:
     expect = [
         {

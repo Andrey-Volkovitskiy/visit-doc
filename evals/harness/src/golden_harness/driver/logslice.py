@@ -27,9 +27,16 @@ from golden_harness.record import ProducedSegmentation
 type LogEvent = dict[str, JsonValue]
 
 _SETTINGS_EVENT = "service.configured"
+# A line lacking these bytes cannot be a settings event, so it is not parsed.
+_SETTINGS_EVENT_BYTES = _SETTINGS_EVENT.encode()
 _RECEIVED_EVENT = "turn.message_received"
 _CLASSIFIED_EVENT = "intent.classified"
 _PRECEDING_BYTES = 256
+# Every event the harness reads is logged at INFO, so a level above it empties the log
+# of them as surely as the console format does.
+_JSON_LOG_HINT = (
+    "start the chat service with LOG_FORMAT=json, and LOG_LEVEL at INFO or below"
+)
 
 
 class SliceMissingReason(StrEnum):
@@ -172,8 +179,7 @@ def require_json_log(path: Path, since_offset: int) -> None:
         if line.startswith(b"{") and _parse(line) is not None:
             return
     raise JsonLogMissingError(
-        f"{path} holds no JSON log event after byte {since_offset}; "
-        "start the chat service with LOG_FORMAT=json"
+        f"{path} holds no JSON log event after byte {since_offset}; {_JSON_LOG_HINT}"
     )
 
 
@@ -193,6 +199,10 @@ def service_conditions(path: Path, before_offset: int) -> LogEvent:
     for line in _complete_lines(path, 0, before_offset):
         if not line.startswith(b"{"):
             continue
+        # Once one line has shown the log holds JSON events, only a line that could be a
+        # settings event is parsed: the whole history before the run is read here.
+        if any_event and _SETTINGS_EVENT_BYTES not in line:
+            continue
         event = _parse(line)
         any_event = any_event or event is not None
         if event is not None and event["event"] == _SETTINGS_EVENT:
@@ -200,8 +210,13 @@ def service_conditions(path: Path, before_offset: int) -> LogEvent:
     if latest is None:
         # A service logging for people writes no JSON line at all, and this is the
         # first check a run makes - so the fix is named here, not only by
-        # `require_json_log`, which a console log never gets as far as.
-        hint = "" if any_event else "; start the chat service with LOG_FORMAT=json"
+        # `require_json_log`, which a console log never gets as far as. One logging
+        # JSON above INFO writes other events but never this one.
+        hint = (
+            f"; {_SETTINGS_EVENT} is logged at INFO, so check LOG_LEVEL"
+            if any_event
+            else f"; {_JSON_LOG_HINT}"
+        )
         raise ConditionsMissingError(
             f"{path} holds no {_SETTINGS_EVENT} event before byte {before_offset}{hint}"
         )
@@ -237,7 +252,7 @@ def restarts_since(
     *complete, unterminated = data.split(b"\n")
     restarts: list[LogEvent] = []
     for line in complete:
-        if not line.startswith(b"{"):
+        if not line.startswith(b"{") or _SETTINGS_EVENT_BYTES not in line:
             continue
         event = _parse(line)
         if event is not None and event["event"] == _SETTINGS_EVENT:

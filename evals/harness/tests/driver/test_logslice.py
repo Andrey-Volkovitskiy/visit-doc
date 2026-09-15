@@ -328,6 +328,8 @@ def test_no_settings_event_before_the_offset_is_refused(tmp_path: Path) -> None:
         service_conditions(log, offset)
 
     assert "LOG_FORMAT=json" not in str(raised.value)
+    # The service does log JSON, just not this event: above INFO it never would.
+    assert "LOG_LEVEL" in str(raised.value)
 
 
 def test_a_log_with_no_json_line_names_the_format_it_needs(tmp_path: Path) -> None:
@@ -336,8 +338,19 @@ def test_a_log_with_no_json_line_names_the_format_it_needs(tmp_path: Path) -> No
     log = tmp_path / "chat.log"
     _append(log, _UVICORN_STARTUP, "\x1b[2m2026-09-14\x1b[0m [info] service.configured")
 
-    with pytest.raises(ConditionsMissingError, match="LOG_FORMAT=json"):
+    with pytest.raises(ConditionsMissingError, match=r"LOG_FORMAT=json.*LOG_LEVEL"):
         service_conditions(log, log_offset(log))
+
+
+def test_a_log_with_no_json_event_after_the_offset_names_the_format_and_level(
+    tmp_path: Path,
+) -> None:
+    # A service logging JSON above INFO writes none of the events a turn is read by.
+    log = tmp_path / "chat.log"
+    _append(log, _UVICORN_STARTUP)
+
+    with pytest.raises(JsonLogMissingError, match=r"LOG_FORMAT=json.*LOG_LEVEL"):
+        require_json_log(log, 0)
 
 
 def test_restarts_are_every_settings_event_inside_a_slice(tmp_path: Path) -> None:

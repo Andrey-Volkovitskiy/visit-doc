@@ -50,7 +50,6 @@ from typing import Any, Final, NoReturn, Protocol
 import httpx
 from chat.agent.compose_answer import HANDED_OFF_OUTCOME
 from chat.core.config import Settings
-from chat.domain.models import AttentionMark
 from chat.domain.schemas import AnswerSource, FaqEntry, IntentLabel
 from pydantic import ValidationError
 from shared_db import create_engine, create_session_factory
@@ -111,6 +110,7 @@ from golden_harness.record import (
     TerminalKind,
     Unplantable,
     UnplantableSituation,
+    marked_assistant_failed,
     read_case,
     read_run,
     recorded_case_ids,
@@ -134,10 +134,9 @@ _CONNECT_TIMEOUT_SECONDS: Final = 10.0
 SETTLE_TIMEOUT_SECONDS: Final = 60.0
 SETTLE_INTERVAL_SECONDS: Final = 5.0
 
-# The event a turn's shape is logged in, and the shape a hand-off is logged as - the
-# chat service's own public name for it, so the two cannot drift apart (FR-041d).
+# The event a turn's shape is logged in. The shape a hand-off is logged as is the chat
+# service's own public `HANDED_OFF_OUTCOME`, so the two cannot drift apart (FR-041d).
 _COMPLETED_EVENT: Final = "turn.completed"
-_HANDED_OFF_OUTCOME: Final = HANDED_OFF_OUTCOME
 
 
 @dataclass(frozen=True)
@@ -547,10 +546,10 @@ async def resume_run(
             f"the pinned entries now map to {entry_ids}, not {run.entry_ids}"
         )
 
-    reconciled = _reconciled(run_dir, run)
-    recorded = [read_case(run_dir, case_id).patient_id for case_id in reconciled.cases]
+    reconciled, recorded = _reconciled(run_dir, run)
     in_session = await stack.session_patients(run.session_id)
-    for patient_id in dict.fromkeys((*recorded, *in_session)):
+    patients = (*(case_run.patient_id for case_run in recorded), *in_session)
+    for patient_id in dict.fromkeys(patients):
         if patient_id is not None:
             await stack.release(run.session_id, patient_id, run.clock)
 
@@ -858,7 +857,9 @@ async def _drive_case(
                     # As for a poll that cannot read the thread: the turn was not seen
                     # to end, so its patient is kept.
                     raise attempt.error
-                await _release_then_stop(stack, run, attempt.identity, attempt.error)
+                await _release_then_stop(
+                    stack, run, attempt.chat_id, attempt.identity, attempt.error
+                )
             # The turn may have booked something, so a resumed run must not post it
             # again: it is written as outcome unknown before the error stops the run.
             after = await _post_state(stack, run, attempt.identity)
@@ -875,6 +876,7 @@ async def _drive_case(
             await _release_then_stop(
                 stack,
                 run,
+                attempt.chat_id,
                 attempt.identity,
                 HarnessFaultError(case.id, refused.status_code, refused.body),
             )
@@ -885,7 +887,9 @@ async def _drive_case(
             except ServiceRestartedError as exc:
                 # The restart ended the process running the turn, so nothing of it can
                 # land later: the patient is released and the case left unwritten.
-                await _release_then_stop(stack, run, attempt.identity, exc)
+                await _release_then_stop(
+                    stack, run, attempt.chat_id, attempt.identity, exc
+                )
             if not isinstance(settled, _Attempt):
                 if case.scheduling is None and not isinstance(
                     settled, TurnUnsettledError
@@ -921,7 +925,9 @@ async def _drive_case(
                 case_run = _measured(case, attempt, number, timer() - started, log_path)
             except ValidationError as exc:
                 if case.scheduling is None:
-                    await _release_then_stop(stack, run, attempt.identity, exc)
+                    await _release_then_stop(
+                        stack, run, attempt.chat_id, attempt.identity, exc
+                    )
                 # The turn may have booked something, so a resumed run must not post
                 # it again: it is written as outcome unknown before the error stops it.
                 after = await _post_state(stack, run, attempt.identity)
@@ -970,6 +976,7 @@ async def _drive_case(
                 await _release_then_stop(
                     stack,
                     run,
+                    attempt.chat_id,
                     attempt.identity,
                     PostStateUnreadableError(
                         f"{case.id}: the patient's appointments could not be read"
@@ -1069,7 +1076,7 @@ async def _turn(
     try:
         watch.check(case_id)
     except ServiceRestartedError as exc:
-        await _release_then_stop(stack, run, identity, exc)
+        await _release_then_stop(stack, run, chat_id, identity, exc)
     result: TurnResult | TurnProtocolError
     try:
         result = await stack.post_turn(chat_id, message, run.clock)
@@ -1152,7 +1159,7 @@ def _handed_off(terminal: Terminal | None, events: Sequence[LogEvent] | None) ->
     if events is None:
         return False
     completed = [event for event in events if event["event"] == _COMPLETED_EVENT]
-    return len(completed) == 1 and completed[0].get("outcome") == _HANDED_OFF_OUTCOME
+    return len(completed) == 1 and completed[0].get("outcome") == HANDED_OFF_OUTCOME
 
 
 async def _drive_reply(
@@ -1201,6 +1208,7 @@ async def _drive_reply(
         await _release_then_stop(
             stack,
             run,
+            attempt.chat_id,
             attempt.identity,
             PostStateUnreadableError(
                 f"{case.id}: the patient's appointments could not be read after its "
@@ -1249,6 +1257,7 @@ async def _drive_reply(
         await _release_then_stop(
             stack,
             run,
+            attempt.chat_id,
             attempt.identity,
             HarnessFaultError(case.id, refused.status_code, refused.body),
         )
@@ -1276,7 +1285,7 @@ async def _drive_reply(
         try:
             settled = await _settle(case.id, stack, second, timer, settle, watch)
         except ServiceRestartedError as exc:
-            await _release_then_stop(stack, run, attempt.identity, exc)
+            await _release_then_stop(stack, run, attempt.chat_id, attempt.identity, exc)
         if not isinstance(settled, _Attempt):
             return _Replied(
                 unknown, AttemptClass.SENT_NO_ANSWER, settled, keep_patient=True
@@ -1454,12 +1463,16 @@ async def _release(
 
 
 async def _release_then_stop(
-    stack: Stack, run: Run, identity: ChatIdentity, error: Exception
+    stack: Stack, run: Run, chat_id: str, identity: ChatIdentity, error: Exception
 ) -> NoReturn:
     """Release the patient of an attempt that will not be recorded, then stop the run.
 
+    The patient is read again when `identity` names none, as a recorded case's is: a
+    turn posted into a patientless chat provisions one, and may have booked with it.
+
     Raises: `error`; or CleanupFailedError, chained to it, when the release fails.
     """
+    identity = await _current_identity(stack, run, chat_id, identity)
     try:
         await _release(stack, run, identity)
     except CleanupFailedError as failed:
@@ -1639,10 +1652,7 @@ def _turn_exclusion(
         return ExclusionReason.SILENCED_TURN
     if terminal is not None and terminal.kind is TerminalKind.CANCELLED:
         return ExclusionReason.CANCELLED_TURN
-    patient = thread.patient_message
-    failed = (
-        patient is not None and patient.attention_mark == AttentionMark.ASSISTANT_FAILED
-    )
+    failed = marked_assistant_failed(thread.patient_message)
     if failed and thread.assistant_message is None:
         return ExclusionReason.RUN_ERROR
     if segments is None:
@@ -1683,16 +1693,28 @@ def _verified_corpus(
     return check, map_entry_ids(live, pin)
 
 
-def _reconciled(run_dir: Path, run: Run) -> Run:
+def _reconciled(run_dir: Path, run: Run) -> tuple[Run, list[CaseRun]]:
     """Rebuild `run.json`'s recorded cases and drive time from the case files on disk.
+
+    Returns: the rebuilt run, and the recorded cases it was rebuilt from, in selection
+        order - each file read once, for the resume sweep to take its patient from
 
     A run stopped between writing a case file and updating `run.json` would otherwise
     resume with that case missing from both.
     """
-    recorded = set(recorded_case_ids(run_dir))
-    case_ids = [case_id for case_id in run.selection.case_ids if case_id in recorded]
-    drive_seconds = sum(read_case(run_dir, c).elapsed_seconds for c in case_ids)
-    return run.model_copy(update={"cases": case_ids, "drive_seconds": drive_seconds})
+    on_disk = set(recorded_case_ids(run_dir))
+    recorded = [
+        read_case(run_dir, case_id)
+        for case_id in run.selection.case_ids
+        if case_id in on_disk
+    ]
+    rebuilt = run.model_copy(
+        update={
+            "cases": [case_run.case_id for case_run in recorded],
+            "drive_seconds": sum(case_run.elapsed_seconds for case_run in recorded),
+        }
+    )
+    return rebuilt, recorded
 
 
 def _differences(recorded: RunConditions, stated: RunConditions) -> dict[str, str]:

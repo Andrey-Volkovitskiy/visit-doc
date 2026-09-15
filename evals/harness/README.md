@@ -42,7 +42,9 @@ asked to obey in prose (011's composer rules, for one) is still read by a person
    writes; `make run-chat-dev` logs to its terminal and leaves nothing to read (point `--log`
    elsewhere if the log lives somewhere else). The console format is for people and cannot be
    parsed as data, so a chat service not started with `LOG_FORMAT=json` stops the run before its
-   first turn.
+   first turn. Every event the harness reads is logged at INFO, so `LOG_LEVEL` must also be `INFO`
+   (the default) or `DEBUG`: above it those events are never written, and the refusals that name
+   `LOG_FORMAT` name `LOG_LEVEL` beside it.
 2. **Databases migrated:** `make migrate`.
 3. **Qdrant and both model providers reachable.** Every case is a full turn — there is no cheaper
    run shape.

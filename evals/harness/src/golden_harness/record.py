@@ -105,6 +105,14 @@ class StoredMessage(BaseModel):
     request_outcomes: list[RequestOutcome] | None = None
 
 
+def marked_assistant_failed(patient_message: StoredMessage | None) -> bool:
+    """Whether a turn's patient message was stored marked `assistant_failed`."""
+    return (
+        patient_message is not None
+        and patient_message.attention_mark is AttentionMark.ASSISTANT_FAILED
+    )
+
+
 def turn_settled(
     patient_message: StoredMessage | None, assistant_message: StoredMessage | None
 ) -> bool:
@@ -114,11 +122,7 @@ def turn_settled(
     the one rule the driver waits on, judges an attempt by, and the report lists
     settled turns by.
     """
-    failed = (
-        patient_message is not None
-        and patient_message.attention_mark is AttentionMark.ASSISTANT_FAILED
-    )
-    return assistant_message is not None or failed
+    return assistant_message is not None or marked_assistant_failed(patient_message)
 
 
 class ProducedSegment(BaseModel):

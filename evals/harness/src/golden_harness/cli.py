@@ -31,6 +31,7 @@ from golden_harness.driver.session import ChatNotFoundError, SessionError
 from golden_harness.driver.turn import ThreadReadError, TurnProtocolError
 from golden_harness.report import LabelDigestMismatchError, render_summary, score_run
 from golden_harness.scoring.alignment import ConservationError
+from golden_harness.scoring.retrieval import LogContractError
 
 _REPO_ROOT: Final = Path(__file__).resolve().parents[4]
 _GOLDEN: Final = _REPO_ROOT / "evals" / "golden"
@@ -54,6 +55,7 @@ _REPORTED_FAILURES: Final = (
     JsonLogMissingError,
     LabelDigestMismatchError,
     LabelError,
+    LogContractError,
     RunStoppedError,
     SelectionError,
     SessionError,

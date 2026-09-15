@@ -1450,6 +1450,26 @@ async def test_a_patient_the_turn_provisioned_is_released_and_recorded(
     ]
 
 
+async def test_a_stop_after_the_turn_releases_the_patient_the_turn_provisioned(
+    log: Path, artifacts: Path
+) -> None:
+    # The same provisioning, on a stop that leaves the case unwritten: the release
+    # before the stop reads the patient again rather than trusting the pre-turn read.
+    error = ThreadReadError("GET /chats/x/messages answered 500")
+    stack = _ProvisionedByTheTurn(
+        log=log,
+        artifacts=artifacts,
+        scripts={"G001": [Attempt(books=("2026-03-05T09:00",))]},
+        failures_during={("read_thread", 1): error},
+    )
+
+    with pytest.raises(ThreadReadError) as raised:
+        await _drive(stack, [_case("G001")])
+
+    assert raised.value is error
+    assert stack.timeline[-1] == ("release", f"PAT-{_last_chat(stack)}")
+
+
 async def test_a_cleanup_that_fails_writes_the_case_and_stops_the_run(
     log: Path, artifacts: Path
 ) -> None:

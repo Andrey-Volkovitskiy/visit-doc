@@ -99,7 +99,7 @@ class AppointmentRef(BaseModel):
 
     practitioner: str = Field(min_length=1)
     day: str = Field(pattern=r"^[+-][0-9]+d$")
-    time: str | None = Field(default=None, pattern=r"^[0-9]{2}:[0-9]{2}$")
+    time: str | None = Field(default=None, pattern=r"^([01][0-9]|2[0-3]):[0-5][0-9]$")
     status: AppointmentStatus | None = None
 
     def date_on(self, clock: datetime) -> date:

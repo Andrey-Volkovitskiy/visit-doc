@@ -17,6 +17,7 @@ from golden_harness import cli
 from golden_harness.cases import Selection, SelectionKind
 from golden_harness.driver.run import DEFAULT_CLOCK
 from golden_harness.driver.session import ChatNotFoundError
+from golden_harness.scoring.retrieval import LogContractError
 
 _REPO = Path(__file__).resolve().parents[3]
 _FIXTURE = Path(__file__).resolve().parent / "fixtures" / "runs" / "us1"
@@ -258,3 +259,25 @@ def test_a_run_stopped_by_the_service_or_its_database_is_reported_not_raised(
 
     assert status == 1
     assert f"golden_harness: {type(error).__name__}: {error}" in capsys.readouterr().err
+
+
+def test_a_record_the_log_contract_cannot_describe_is_reported_not_raised(
+    run_copy: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # Scoring refuses such a record by name, naming the case; the command line says so
+    # in a sentence rather than a traceback, as for every other failure it names.
+    error = LogContractError(
+        "G901 segment 0: reranking both completed and was unavailable"
+    )
+
+    def refused(*_args: Any, **_kwargs: Any) -> NoReturn:
+        raise error
+
+    monkeypatch.setattr(cli, "score_run", refused)
+
+    status = cli.main(["score", "--run", str(run_copy), "--labels", str(_LABELS)])
+
+    assert status == 1
+    assert f"golden_harness: LogContractError: {error}" in capsys.readouterr().err

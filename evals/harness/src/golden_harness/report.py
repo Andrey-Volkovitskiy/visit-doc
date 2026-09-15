@@ -18,7 +18,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Final
 
-from chat.domain.models import AttentionMark
 from pydantic import BaseModel, ConfigDict
 
 from golden_harness.cases import AppointmentRef, Case, Selection, label_digests
@@ -30,6 +29,7 @@ from golden_harness.record import (
     RunConditions,
     StoredMessage,
     Unplantable,
+    marked_assistant_failed,
     read_case,
     read_run,
     recorded_case_ids,
@@ -338,11 +338,7 @@ def _failed_yet_replied(
     patient: StoredMessage | None, assistant: StoredMessage | None
 ) -> bool:
     """Say whether a turn is marked `assistant_failed` beside a stored reply."""
-    return (
-        patient is not None
-        and patient.attention_mark == AttentionMark.ASSISTANT_FAILED
-        and assistant is not None
-    )
+    return marked_assistant_failed(patient) and assistant is not None
 
 
 def to_json(report: Report) -> str:
