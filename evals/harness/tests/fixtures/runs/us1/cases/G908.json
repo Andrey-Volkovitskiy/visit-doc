@@ -1,0 +1,27 @@
+{
+  "case_id": "G908",
+  "chat_id": "01K5CHAT908000000000000000",
+  "patient_id": "01K5PAT9080000000000000000",
+  "attempts": 2,
+  "elapsed_seconds": 9.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {"type": "done", "request_outcomes": null, "message": null, "answer_source": "small_talk"}
+  },
+  "patient_message": {"id": "01K5MSG9080000000000000000", "content": "Thanks!", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {"id": "01K5RPL9080000000000000000", "content": "You're welcome!", "attention_mark": null, "request_outcomes": null},
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "small_talk", "text": "Thanks!"}
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:07:05Z", "turn_id": "01K5MSG9080000000000000000", "message": "Thanks!", "message_ids_unified": ["01K5MSG9080000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:07:06Z", "turn_id": "01K5MSG9080000000000000000", "intents": ["small_talk"], "segments": [{"position": 0, "intent": "small_talk", "text": "Thanks!"}], "cap_bound": false},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T09:07:07Z", "turn_id": "01K5MSG9080000000000000000", "outcome": "small_talk"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

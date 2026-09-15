@@ -1,0 +1,15 @@
+{
+  "case_id": "G946",
+  "chat_id": "01K5CHAT946000000000000000",
+  "patient_id": "01K5PAT9460000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 0.5,
+  "terminal": null,
+  "patient_message": null,
+  "assistant_message": null,
+  "segments": null,
+  "events": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "unresolvable_fixture"
+}

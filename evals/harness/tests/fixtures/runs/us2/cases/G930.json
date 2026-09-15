@@ -1,0 +1,74 @@
+{
+  "case_id": "G930",
+  "chat_id": "01K5CHAT930000000000000000",
+  "patient_id": "01K5PAT9300000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What does a visit cost out of network or without insurance?",
+          "answer": "Self-pay patients may ask for a payment plan.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 106,
+              "chunk_index": 1,
+              "chunk_text": "Self-pay patients may ask for a payment plan."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9300000000000000000", "content": "What will I pay if I'm out of network or uninsured?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9300000000000000000",
+    "content": "Self-pay patients may ask for a payment plan.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What does a visit cost out of network or without insurance?",
+        "answer": "Self-pay patients may ask for a payment plan.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 106,
+            "chunk_index": 1,
+            "chunk_text": "Self-pay patients may ask for a payment plan."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What does a visit cost out of network or without insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:30:01Z", "turn_id": "01K5MSG9300000000000000000", "message": "What will I pay if I'm out of network or uninsured?", "message_ids_unified": ["01K5MSG9300000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:30:02Z", "turn_id": "01K5MSG9300000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "What does a visit cost out of network or without insurance?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9300000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:30:10Z", "pool_size": 25, "pool_returned": 4, "candidates": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.66, "considered": true, "chunk_text": "We accept credit cards, debit cards and cash.", "text_truncated": false}, {"entry_id": 104, "chunk_index": 0, "similarity_score": 0.61, "considered": true, "chunk_text": "We accept most major insurance providers, including Aetna.", "text_truncated": false}, {"entry_id": 106, "chunk_index": 1, "similarity_score": 0.58, "considered": true, "chunk_text": "Self-pay patients may ask for a payment plan.", "text_truncated": false}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.35, "considered": true, "chunk_text": "Our clinic is open from 8am to 5pm on weekdays.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9300000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:30:11Z", "floor": 0.3, "cap": 5, "pool_returned": 4, "kept": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.66}, {"entry_id": 104, "chunk_index": 0, "similarity_score": 0.61}, {"entry_id": 106, "chunk_index": 1, "similarity_score": 0.58}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.35}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9300000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:30:12Z", "model": "rerank-3", "candidate_count": 4, "duration_ms": 180.0, "scores": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.66, "rerank_score": 0.4}, {"entry_id": 104, "chunk_index": 0, "similarity_score": 0.61, "rerank_score": 0.22}, {"entry_id": 106, "chunk_index": 1, "similarity_score": 0.58, "rerank_score": 0.88}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.35, "rerank_score": 0.03}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9300000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:30:13Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 106, "chunk_index": 1, "rerank_score": 0.88}], "dropped_by_floor": [{"entry_id": 107, "chunk_index": 0, "rerank_score": 0.4}, {"entry_id": 104, "chunk_index": 0, "rerank_score": 0.22}, {"entry_id": 108, "chunk_index": 0, "rerank_score": 0.03}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9300000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:30:14Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.66, "best_rerank_score": 0.88},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:30:59Z", "turn_id": "01K5MSG9300000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

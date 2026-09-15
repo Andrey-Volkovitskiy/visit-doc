@@ -7,7 +7,9 @@ from unittest.mock import MagicMock
 
 import pytest
 from chat.agent.compose_answer import (
+    _OUTCOME_BY_SOURCE,
     _SYSTEM_PROMPT,
+    HANDED_OFF_OUTCOME,
     FaqResult,
     FaqSegmentAnswer,
     TurnCompletion,
@@ -1264,3 +1266,11 @@ def test_a_degraded_requests_citations_carry_no_rerank_score_at_all() -> None:
     cited = logs[0]["request_outcomes"][0]["citations"][0]
     assert cited["similarity_score"] == 0.7
     assert cited["rerank_score"] is None
+
+
+def test_the_hand_off_outcome_is_published_under_one_public_name() -> None:
+    # The golden harness reads a hand-off off `turn.completed` when a turn's stream
+    # never delivered its terminal event (spec 012 FR-041d), so the value is a data
+    # contract: it has a public name, and the event's table uses that name.
+    assert HANDED_OFF_OUTCOME == "handed_off"
+    assert _OUTCOME_BY_SOURCE[AnswerSource.HAND_OFF] == HANDED_OFF_OUTCOME

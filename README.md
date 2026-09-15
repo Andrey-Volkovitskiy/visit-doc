@@ -511,3 +511,72 @@ the ones it could not. Four choices carried a real tradeoff.
   may read the old shape. The cost is that the change is only legal on a store you are willing to
   empty — which is exactly what a portfolio project's demo data is, and what a real one's would not
   be.
+
+## Metrics Over the Golden Set: technology choices
+
+`specs/012-golden-set-metrics/` (ROADMAP Phase 2b) turns 2a's labels into numbers: a new workspace
+member, `evals/harness` (`golden-harness`), drives every golden case through the running stack as a
+real turn, stores what it left behind, and scores each request against its label. How to run it,
+and what each exclusion means, is in [`evals/harness/README.md`](evals/harness/README.md). Six
+choices carried a real tradeoff.
+
+- **The seam is the published HTTP surface, not an in-process call to the graph.** Calling
+  `run_turn` directly would be faster, need no running service, and hand the harness every event as
+  a Python object. It would also score what the graph *yielded* — the same data one layer before
+  anyone persisted it — so a bug between the graph and the stored row would be invisible to every
+  metric, and the escalation writes and silencing rules several families of the set exist to
+  exercise would never run. So a case is `POST /chat` and a read of the thread, exactly as a browser
+  does it. The cost is a stack that has to be up, events that have to be read back out of a log
+  file, and two writes no published surface offers: a case's prior turns are planted straight into
+  the chat database (no endpoint posts as the assistant, and the console posts as staff), and a
+  chat's scheduler patient is read from it.
+- **A JSON renderer in `shared-logging`, not a parser for the console output.** Hit@k and MRR are
+  questions about the candidates retrieval *ranked*, which only the log carries, and the produced
+  segmentation is only on `intent.classified`. The console renderer writes every value as a Python
+  `repr`, and parsing it was tried against real lines: plain data round-trips, but a nested enum
+  renders as `<IntentLabel.FAQ_QUESTION: 'faq_question'>` and a datetime as `datetime.datetime(...)`,
+  neither of which `ast.literal_eval` accepts — and the same enum renders differently at different
+  nesting depths. Beyond the mechanics, a development renderer carries no format guarantee, so a
+  structlog release could have moved every retrieval metric and read as "retrieval got worse". The
+  renderer is chosen by `LOG_FORMAT` (default `console`) and sits last in the chain, after
+  redaction, so the security control is upstream of the change. The cost is a setting the harness
+  depends on and cannot set: the service has to be started with `LOG_FORMAT=json`, and a run stops
+  before its first turn when it was not.
+- **One file per case, not one aggregate run document.** An aggregate is one thing to read, copy and
+  commit. Written as a run progresses, though, it is a half-written document the moment a run is
+  interrupted, and resuming means parsing it to find where it stopped. Per-case files make resume a
+  directory listing, confine a failed write to one case (each is written atomically), and make the
+  run what scoring needs it to be: a set of files that are the whole input. The cost is that a run is
+  a directory of up to 135 files plus `run.json`, and the committed record carries all of them.
+- **The corpus pin is re-taken with its construction written beside it.** `corpus.json`'s original
+  `sha256` was "over the entry texts" and matched none of seventeen plausible constructions, although
+  the texts themselves had not moved. Brute-forcing further was unbounded and would still not have
+  made the algorithm *documented*; dropping the pin would have left every `cites` label naming text
+  nobody checks. So the new value names its construction in an `algorithm` field, a test recomputes
+  it from `DEFAULT_FAQ_ENTRIES`, and a run verifies the live corpus against it before its first turn.
+  The cost is that the old value survives only as unverifiable history in `PROVENANCE.md`.
+- **A run's conditions come from a `service.configured` startup event, not the harness's own
+  environment.** Reading `.env` in the harness would have needed no change to the service. It would
+  also describe the wrong process, silently: a service started with an overridden floor, or still
+  running last week's build, would be recorded under settings it was not using, and the
+  classification, generation and embedding models appear on no per-turn event at all. So the chat
+  service logs its models, thresholds, caps and limits once at startup, and the harness takes the
+  latest such event before the run — and stops if one inside a later turn states other values. A
+  settings endpoint was the alternative, and a new published surface for what one log line carries.
+  The cost is a second change to the service this phase measures, and a set of field names that are
+  now a data contract with a reader in another package.
+- **Cases run strictly one after another, with each case's appointments cancelled before the next.**
+  Running cases concurrently is the obvious answer to a full pass being slow. But every case shares
+  one session — which is what lets the corpus be seeded and verified once — and the session is the
+  scope the scheduler enforces its practitioner constraints over, so two booking cases in flight
+  could contend for one slot and report a scheduling conflict as a booking-loop failure. Sequence
+  also makes a turn's log slice exact by byte offset. A session per case would remove the contention
+  and pay a corpus seeding and verification per case. For the same shared-calendar reason, once a
+  case's post-state is stored the harness cancels whatever that patient holds standing, through the
+  scheduler's own `CancelAppointment` — every case with a patient, since a misrouted turn can book
+  too. A cancelled appointment leaves the partial exclusion constraint, so the slot is free at the
+  datastore and no filter has to agree. The costs: a full pass takes as long as 135 turns in a row,
+  which is an input to 2c's cadence decision rather than something this phase optimizes; the
+  scheduler keeps a `cancelled` row for everything a run touched; and a cleanup that cannot complete
+  stops the run, because every later case would be measured against a calendar it no longer
+  controls.

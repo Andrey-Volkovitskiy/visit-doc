@@ -5,6 +5,8 @@ to get right - and what these tests hold it to - is that every secret-bearing fi
 declares actually reaches the redaction processor.
 """
 
+from unittest.mock import patch
+
 import structlog
 from chat.core.config import Settings
 from chat.core.logging import (
@@ -12,15 +14,17 @@ from chat.core.logging import (
     _SECRET_URL_SETTINGS_FIELDS,
     configure_logging,
 )
+from shared_logging import LogFormat
 
 
-def _settings() -> Settings:
+def _settings(**overrides: object) -> Settings:
     return Settings(
         DATABASE_URL="postgresql+asyncpg://user:s3cr3t-pass@localhost/db",
         QDRANT_URL="http://localhost:6333",
         ANTHROPIC_API_KEY="sk-ant-test-key",
         VOYAGE_API_KEY="voyage-test-key",
         ADMIN_SECRET="adm1n-s3cr3t-value",
+        **overrides,  # type: ignore[arg-type]
     )
 
 
@@ -84,3 +88,12 @@ def test_retrieved_chunk_text_passes_through_the_same_redaction_chain() -> None:
     )
 
     assert "s3cr3t-pass" not in str(result["candidates"])
+
+
+def test_the_configured_log_format_reaches_the_shared_chain() -> None:
+    # Forwarded, not defaulted: a service started with LOG_FORMAT=json that still
+    # rendered for a terminal would give the golden harness nothing it can parse.
+    with patch("chat.core.logging._configure_logging") as shared:
+        configure_logging(_settings(LOG_FORMAT=LogFormat.JSON))
+
+    assert shared.call_args.kwargs["log_format"] is LogFormat.JSON

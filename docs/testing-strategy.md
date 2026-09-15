@@ -4,7 +4,7 @@
 
 - **Unit tests are colocated per workspace member**: `services/chat/tests/`,
   `services/scheduler/tests/`, `packages/shared-db/tests/`, `packages/shared-models/tests/`,
-  `packages/shared-proto/tests/`.
+  `packages/shared-proto/tests/`, `evals/harness/tests/`.
   Each member already owns its own `pyproject.toml`/`src/` — its `tests/` dir is part of that same
   self-contained unit, not a separate tree. A package's `tests/` dir *is* the unit tier; there's no
   extra `tests/unit/` nesting.
@@ -162,6 +162,17 @@ paid boundary; e2e and a human at a keyboard are what exercise it.** A unit test
 "does the real model actually do this?" is still in the wrong place — that question belongs to e2e
 or to a quickstart scenario.
 
+**`make eval-run` is not a test tier either** (spec 012). It drives the golden set through the
+running stack and scores what came back, spending live Claude and Voyage calls on every case — but
+it asserts nothing, fails on no number, and gives a different answer each run, so it is a
+measurement rather than a gate, and it never runs in CI. Turning its numbers into a gate needs a
+baseline and a noise rule, which is Phase 2c's. The harness's *own* code is tested the ordinary way:
+`evals/harness/tests/` is in the unit tier and runs in `make test-unit`. It drives the scorer from
+small recorded runs under `tests/fixtures/runs/` and the driver from stubbed HTTP and gRPC surfaces,
+so none of its tests is written to reach a model provider — but unlike chat's suite it has no
+`_paid_apis_are_blocked` guard enforcing that. The history-planting and chat-identity tests use the
+isolated chat test database, as chat's own repository tests do. See `evals/harness/README.md`.
+
 ## Fixtures
 
 **Derive a fixture from production, never restate it.** When a test needs a default, a schema, or
@@ -299,7 +310,7 @@ pattern, and `test_turn_api.py`/`test_staff_messages.py`'s concurrency tests are
 
 ```bash
 make test              # = make test-unit + make test-frontend
-make test-unit          # uv run pytest (scoped to the four per-package tests/ dirs via testpaths)
+make test-unit          # uv run pytest (scoped to the per-member tests/ dirs via testpaths, evals/harness/tests included)
 make test-frontend      # vitest, in services/frontend
 make test-integration   # uv run pytest tests/integration
 make test-e2e           # uv run pytest tests/e2e

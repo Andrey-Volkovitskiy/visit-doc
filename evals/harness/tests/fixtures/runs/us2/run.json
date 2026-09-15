@@ -1,0 +1,89 @@
+{
+  "run_id": "01K5US2RVN0000000000000000",
+  "started_at": "2026-09-14T10:00:00Z",
+  "finished_at": "2026-09-14T10:30:00Z",
+  "drive_seconds": 28.0,
+  "clock": "2026-03-02T08:00:00",
+  "session_id": "01K5SESS200000000000000000",
+  "corpus": {
+    "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "matched": true
+  },
+  "selection": {
+    "kind": "ids",
+    "family": null,
+    "case_ids": [
+      "G921",
+      "G922",
+      "G923",
+      "G924",
+      "G925",
+      "G926",
+      "G927",
+      "G928",
+      "G929",
+      "G930",
+      "G931",
+      "G932",
+      "G933",
+      "G934"
+    ]
+  },
+  "entry_ids": {
+    "referral": 101,
+    "what-to-bring": 102,
+    "telehealth": 103,
+    "insurance-plans": 104,
+    "out-of-network": 105,
+    "out-of-pocket-rates": 106,
+    "payment": 107,
+    "hours-location": 108,
+    "arrival-time": 109
+  },
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "generation_model": "claude-sonnet-5",
+    "embedding_model": "voyage-3.5",
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_floor": 0.3,
+    "similarity_cap": 5,
+    "rerank_floor": 0.58,
+    "rerank_cap": 3,
+    "max_segments": 3,
+    "context_turns": 5
+  },
+  "labels": {
+    "G921": "bc292c975435ae0752c9841b0fcb88a45fd672634c8ec7cce5bf452f2f546d46",
+    "G922": "75e649b4d7e93f89c53d6c4c4b1f16690625e52144efff005d7547bec8ff3cb5",
+    "G923": "9ba9c701d5333ba4757ce32080bfe7751daa1dea300cdc1c9b6d3466466dd3b2",
+    "G924": "7f1fa06960c892c1efa248fba20bf2cecf98578e6c0056456b92925b76a0188e",
+    "G925": "f84eb0fa2e5fb092f6f113cbf10413cb165fe6cc25d3af7e4775cb71d47525d8",
+    "G926": "8e525f2ee35e2f4c5c374a75d693c9260c6e3d95539350bb9dd37d1f5cb7bdc6",
+    "G927": "125dd3b3828ba6a5f359f142c4dd1a6872b2a5151c30c0b54a9f457dae58fb24",
+    "G928": "ff8065ace8f36db356a3480556c3f1206ca8e949aeec99d0c3bdb1886c717d64",
+    "G929": "c0a4d754353272e31d3acf2e8c33328bfd51ca35e000c480b8aff0ee5789d17f",
+    "G930": "40e803ddf5feb39bb3c511f2b71dc96665f6d64fb78733b987d97395d6831447",
+    "G931": "c7e627fdea59053dcedb9c0e540c78601aedf7ca415ab0b97dbec258363c87c3",
+    "G932": "30beb7490e1f1f127b615b7e36b62d42164fd83b52c31608267d9496873bf0f4",
+    "G933": "f1a8a3b1ea859a130c0ebf886a51d416fcdca8261a08c37236532b9ce75bbf70",
+    "G934": "6525f0451608731e9fe1043f11fd724a7d82b1df000c72a9b2a5221519334416"
+  },
+  "cases": [
+    "G921",
+    "G922",
+    "G923",
+    "G924",
+    "G925",
+    "G926",
+    "G927",
+    "G928",
+    "G929",
+    "G930",
+    "G931",
+    "G932",
+    "G933",
+    "G934"
+  ]
+}

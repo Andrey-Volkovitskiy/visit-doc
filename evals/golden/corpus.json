@@ -1,7 +1,8 @@
 {
   "source": "services/chat/src/chat/rag/default_corpus.py :: DEFAULT_FAQ_ENTRIES",
   "entry_count": 9,
-  "sha256": "9552b098bcc15fde51207409f514f2da246c730cea55281a0bc405027c55a267",
+  "algorithm": "sha256 over entries[].text in index order, each text UTF-8 encoded and terminated by \"\\n\", with nothing else in the digest",
+  "sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
   "note": "A snapshot, pinned so every `cites` label in cases.json names a fixed text. Re-take it when the corpus changes and re-check the labels the changed entries carry; PROVENANCE.md records how that was done last time.",
   "entries": [
     {

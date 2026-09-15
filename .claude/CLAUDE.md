@@ -58,7 +58,14 @@ packages/
 ├── shared-logging/# the one structlog processor chain, incl. secret redaction (uv member "shared-logging")
 ├── shared-models/ # cross-service Pydantic schemas (uv member "shared-models")
 └── shared-proto/  # chat<->scheduler gRPC contract: protos/ source + generated *_pb2*.py (uv member "shared-proto")
+evals/
+├── golden/        # the golden set (2a): cases.json + schema.json, the corpus pin, PROVENANCE.md — data, no code
+└── harness/       # drives the golden set through the running stack and scores stored runs (uv member "golden-harness")
 ```
+
+`evals/harness` is a tool, not shared library code, so it sits beside the data it reads rather than
+under `packages/`. It depends on `chat` and `scheduler` so it parses through their own enums and seed
+rather than copies of them. See `evals/harness/README.md`.
 
 `shared-logging` and `shared-db` exist because `chat` and `scheduler` otherwise hold byte-identical
 copies of their infrastructure layer, varying only in a `Settings` field name. Redaction in
@@ -90,6 +97,14 @@ a second Node project ever appears, extract it then.
 `.python-version` is pinned to 3.12 for the whole workspace. Common commands are in the
 [`Makefile`](../Makefile): `make sync`, `make lint`, `make format`, `make typecheck`,
 `make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`.
+
+The golden harness has its own two: `make eval-run` (optionally `CASES=G001,G042` or
+`FAMILY=<name>`) drives cases against the running stack, **spending live Claude and Voyage calls**,
+then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a stored run under
+`.run/evals/` and needs no stack. `eval-run` requires the chat service to log JSON, so start the
+stack as `LOG_FORMAT=json make services-up` (the harness reads `.run/chat.log`). Resuming a stopped
+run takes an argument: `uv run --package golden-harness -- python -m golden_harness run --resume
+<run_id>`.
 
 A few less-common `uv` invocations that don't have a Makefile target (they take arguments):
 
@@ -149,7 +164,8 @@ using `google.protobuf`/`grpc` directly still gets real type checking.
 Testing conventions (folder layout, naming, why `--import-mode=importlib` is required, why `tests/`
 is excluded from mypy) are documented in `docs/testing-strategy.md`. In short: unit tests are
 colocated per workspace member (`services/chat/tests/`, `services/scheduler/tests/`,
-`packages/shared-db/tests/`, `packages/shared-models/tests/`, `packages/shared-proto/tests/`); integration/e2e tests are
+`packages/shared-db/tests/`, `packages/shared-models/tests/`, `packages/shared-proto/tests/`,
+`evals/harness/tests/`); integration/e2e tests are
 centralized at `tests/integration/`/`tests/e2e/` (placeholders for now). Run via `make test` /
 `make test-unit`, `make test-integration`, `make test-e2e`; only the unit tier runs in CI so far
 (`test` job in `.github/workflows/ci.yml`, alongside `pre-commit`).
@@ -341,6 +357,16 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   constants, not generated: a stopping reply makes no claim about the clinic, which is the only
   thing retrieval could have grounded. The assistant does not triage — `urgent_condition` is a
   routing decision whose reply points at emergency services rather than judging anything.
+- **Scoring the golden set is a pure function of a stored run** (012). `golden_harness.scoring` and
+  `report.py` read `run.json`, the case files and the labels and nothing else: no `scoring` module
+  may import `httpx`, `grpc`, `sqlalchemy` or `driver/` (`test_purity.py` checks), and `score` is
+  tested with the network and database refused. Any stored run therefore re-scores offline, and
+  scoring refuses labels whose scored-field digests changed since the run. A handed-off turn
+  classified before it handed off, so it is scored for classification and excluded from retrieval
+  and serving only (FR-018a); the other six turn-level reasons exclude a case from every metric.
+  The field names of `chat`'s startup `service.configured` event are a data contract with the
+  harness, which takes a run's conditions from it — rename one and runs stop rather than silently
+  recording less.
 - Scheduling failure handling (timeouts, retries, agent behavior when Scheduling is unreachable) is
   part of the design, not an afterthought.
 - Each significant technology choice should be documented with its tradeoff in the README, so later

@@ -133,3 +133,113 @@ ordered list of `{role, text}`, because a conversation is not one message deep.
 - **The `no-stop` / `not_small_talk` labels** (`009/setE#E4`, and `E2`/`E4`/`E9` in `009/retest`) —
   a label that says what the answer is *not*. It settled the question 009 was asking; nothing at the
   request level can be derived from it.
+
+## The corpus pin was re-taken (2026-09-14)
+
+`corpus.json` had recorded
+`sha256:9552b098bcc15fde51207409f514f2da246c730cea55281a0bc405027c55a267` (`9552b098…a267`),
+described only as "a `sha256` over the entry texts". The construction behind it was written down
+nowhere, and **none of the seventeen constructions tried in
+`specs/012-golden-set-metrics/research.md` (R3) reproduces it** — joins, JSON renderings, reprs and
+per-entry hash schemes of the texts, all listed there. That value is kept here as what was
+recorded, and it is unverifiable: no check can be run against it.
+
+**The texts had not drifted.** The nine `entries[].text` values were byte-identical to
+`DEFAULT_FAQ_ENTRIES` when the pin was re-taken, so no label was re-checked and none changed.
+
+The pin is now `ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0`, under the
+construction `corpus.json` states in its new `algorithm` field: `sha256` over `entries[].text` in
+index order, each text UTF-8 encoded and terminated by `\n`, with nothing else in the digest. The
+same digest over `DEFAULT_FAQ_ENTRIES` gives the same value, and the harness's tests recompute both.
+
+## Scheduling fixtures (2026-09-14) — approved
+
+The 18 cases carrying a booking request gained a `scheduling` fixture for spec 012's end-to-end
+task success. **Approved by the project owner on 2026-09-14 (spec 012 FR-038a, task T050a)**, after
+the review below reworded six messages and settled the replies; runs may now be taken against them
+as ground truth. No `tools` label was touched.
+
+Labelled against the default clock **Monday 2026-03-02 08:00** and a fresh session's roster:
+William Osler (General Practice, Mon–Fri 09:00–17:00) and Andreas Vesalius (Dentistry, Mon–Sat
+09:00–14:00), 60-minute slots. `+1d` is Tuesday, `+3d` Thursday, `+4d` Friday, `+7d` the next
+Monday. Every fixture passes `validate_plantable` against that clock.
+
+How they were decided:
+
+- **A fixture is what the scripted exchange leaves behind.** Where the message leaves too much
+  open for one scripted answer — which new time, which practitioner — the case carries no `reply` and the
+  expectation restates `given`.
+- **Read-only tools restate `given`.** Where the message presupposes an appointment ("my next
+  appointment", "my Friday appointment"), one plausible appointment is planted then: Vesalius
+  when the message implies a dentist, Osler otherwise, at a time inside hours on the grid.
+- **The contract's four worked examples are used as written** (G042, G049, G088, G102), and the
+  same reading is extended to the cases like them: a request that names the appointment, or the
+  day to book, is expected to complete. A booking whose practitioner is not implied defaults to
+  Osler, as G088's does.
+
+| Case | Message | `given` | `expect` | Reason |
+|---|---|---|---|---|
+| G042 | Hi, I need to cancel tomorrow | Osler +1d 10:00 | same, cancelled | Contract example: the one appointment tomorrow is cancelled. |
+| G044 | Thanks! Any slots with William Osler on Wednesday? | — | — | Availability is read-only and presupposes no appointment. |
+| G048 | Hey, can I move my Thursday appointment? | Osler +3d 11:00 | same, standing | Contract principle: no new time is named, so one turn can only ask which. |
+| G049 | Good afternoon, which cardiologists do you have? | — | — | Contract example: read-only; the session has no cardiologist. |
+| G050 | OK thanks, when is my next appointment? | Osler +2d 14:00 | same, standing | Presupposes an appointment; listing it must leave it alone. |
+| G051 | Cheers - cancel the Tuesday one please | Osler +1d 15:00 | same, cancelled | Names the day of the one appointment to cancel. |
+| G053 | Nice one. Can I see a cardiologist next week? | — | — | Contract: read-only; there is no cardiologist to offer. |
+| G062 | Can I book Wednesday with William Osler, and also get a receipt reissued for last month? | — | Osler +2d, standing, any time | Names practitioner and day but no time: the first turn offers times and asks which, and the reply takes the earliest. |
+| G087 | What are your clinic hours, and what dentist slots are free tomorrow? | — | — | Availability is read-only and presupposes no appointment. |
+| G088 | What should I bring, and can you book me Wednesday at 9 with William Osler? | — | Osler +2d 09:00, standing | Contract example: names practitioner, day and time. |
+| G089 | Which insurers do you accept, and which practitioners do you have? | — | — | Listing practitioners is read-only. |
+| G090 | What are your hours, and please cancel my Friday appointment. | Osler +4d 11:00 | same, cancelled | Names the day of the one appointment to cancel. |
+| G091 | Where do I park, and what appointments do I have booked? | Vesalius +3d 12:00 | same, standing | A listing needs something to list; it must leave it alone. |
+| G092 | What should I bring, and what does Dr. Vesalius specialize in? | — | — | Listing practitioners is read-only. |
+| G093 | What is your address, and can I reschedule to the same time next week? | Osler +2d 10:00 | Osler +9d 10:00, standing | Presupposes one appointment; its target is fully named. A reschedule keeps the row, so nothing is cancelled. |
+| G094 | Are you open Sundays, and can I book the earliest slot you have with William Osler? | — | — | Read-only by decision: the loop finds the earliest slot and asks to confirm it, and nothing is written in one turn. |
+| G095 | Where are you, how much is a GP visit, and can I book one with William Osler on Friday? | — | Osler +4d, standing, any time | Names practitioner and day; no time is named. |
+| G102 | Can you cancel Friday and book Wednesday with William Osler instead? | Osler +4d 10:00 | that one cancelled, plus Osler +2d standing, any time | Contract example, verbatim. |
+
+**The confirmation rule is decided (2026-09-14, spec 012 FR-037b).** `handle_booking.py` tells
+the loop to confirm practitioner and start before `book_appointment`, and never to call
+`cancel_appointment` without a confirmation given in the *current* turn, so one turn asked to
+cancel or book correctly writes nothing. The eight cases whose message asks for a write — G042,
+G051, G062, G088, G090, G093, G095 and G102 — therefore carry a scripted `reply`, posted verbatim as a
+second full turn in the same chat once the first turn has replied. The patient's appointments are
+read after the first turn, where they must still be `given`, all standing — a write before the
+confirmation fails the case — and after the reply, where they must match `expect`. Their `expect`
+labels stand as drafted; tool selection counts both turns' calls, so their 2a `tools` labels are correct as they are.
+Labelling them "unchanged" instead was rejected: no case would then write anything.
+G062 was the eighth, added by the second round of decisions the same day: drafted with no reply and
+an empty `expect`, its `book_appointment` label could never be met in one turn, so it was given a
+reply and now expects one standing Osler booking on Wednesday at any time.
+
+| Case | `reply` |
+|---|---|
+| G042, G051, G090, G093 | Yes, please go ahead. |
+| G088 | Yes, please book it. |
+| G062 | The earliest Wednesday time is fine, yes please book it. |
+| G095 | The earliest time you have on Friday is fine, yes please book it. |
+| G102 | Yes, please cancel Friday. The earliest Wednesday time is fine. |
+
+Each reply is written to answer every choice the loop is told to leave to the patient, so that a
+correct loop needs no third turn.
+
+**Six messages reworded (2026-09-14, by the reviewer's decision).** Two defects in the drafted
+messages would have measured the labels rather than the loop:
+
+1. **A message whose tool needs a practitioner names one.** `check_availability` and
+   `book_appointment` both take a `practitioner_id`, and the prompt says never to choose a
+   practitioner for the patient, so "any slots on Monday?" or "the earliest slot you have" can
+   only end in *which practitioner?* — a turn that is right to ask, spent on a question the case
+   was not written to measure. G044, G062, G088, G094, G095 and G102 now name William Osler, and
+   the replies no longer have to. G087 (*dentist slots*) and G053 (*a cardiologist*) keep their
+   wording: a specialty resolves to one practitioner or to none, so neither leaves a choice.
+2. **No booking message uses the run clock's own weekday.** The clock is Monday 08:00, so "Monday
+   at 9" reads as an hour from now or as a week out, and a label can only mean one. G044, G062,
+   G088 and G102 now say Wednesday (`+2d`); G088's expectation moved from `+7d` to `+2d`, and G102's
+   new booking with it.
+
+G094 stays read-only by decision: asked to book the earliest slot, one turn finds it and asks to
+confirm, and it carries no reply. A test guards both rules for the committed set
+(`evals/harness/tests/test_fixture_label.py`). The messages are scored fields, so every run taken
+before this change is refused by scoring (spec 012 FR-044a); none had been committed.
+

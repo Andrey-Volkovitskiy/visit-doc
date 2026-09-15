@@ -1,0 +1,161 @@
+{
+  "case_id": "G951",
+  "chat_id": "01K5CHAT951000000000000000",
+  "patient_id": "01K5PAT9510000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 10.5,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "patient_message": {
+    "id": "01K5MSG9510000000000000000",
+    "content": "Book me with William Osler on Monday at 9",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K5RPL9510000000000000000",
+    "content": "William Osler, General Practice, is free on Monday at 9am. Shall I book it?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "segment 0"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:01Z",
+      "turn_id": "01K5MSG9510000000000000000",
+      "message": "Book me with William Osler on Monday at 9",
+      "message_ids_unified": [
+        "01K5MSG9510000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:02Z",
+      "turn_id": "01K5MSG9510000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "segment 0"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "booking.tool_called",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:03Z",
+      "turn_id": "01K5MSG9510000000000000000",
+      "node": "handle_booking",
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {}
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:05Z",
+      "turn_id": "01K5MSG9510000000000000000",
+      "outcome": "booking"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "patient_message": {
+      "id": "01K5MSG951R000000000000000",
+      "content": "Yes, book it.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01K5RPL951R000000000000000",
+      "content": "That time was just taken. William Osler is free on Monday at 10am instead.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "event": "turn.message_received",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:01Z",
+        "turn_id": "01K5MSG951R000000000000000",
+        "message": "Yes, book it.",
+        "message_ids_unified": [
+          "01K5MSG951R000000000000000"
+        ]
+      },
+      {
+        "event": "intent.classified",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:02Z",
+        "turn_id": "01K5MSG951R000000000000000",
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "segment 0"
+          }
+        ],
+        "cap_bound": false
+      },
+      {
+        "event": "booking.tool_called",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:03Z",
+        "turn_id": "01K5MSG951R000000000000000",
+        "node": "handle_booking",
+        "tool_name": "book_appointment",
+        "iteration": 1,
+        "arguments": {}
+      },
+      {
+        "event": "booking.tool_called",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:03Z",
+        "turn_id": "01K5MSG951R000000000000000",
+        "node": "handle_booking",
+        "tool_name": "check_availability",
+        "iteration": 2,
+        "arguments": {}
+      },
+      {
+        "event": "turn.completed",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:05Z",
+        "turn_id": "01K5MSG951R000000000000000",
+        "outcome": "booking"
+      }
+    ]
+  },
+  "scheduling_before_reply": [],
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null
+}

@@ -1,0 +1,79 @@
+{
+  "case_id": "G928",
+  "chat_id": "01K5CHAT928000000000000000",
+  "patient_id": "01K5PAT9280000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Does the clinic accept Aetna?",
+          "answer": "Yes, we accept Aetna.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 104,
+              "chunk_index": 0,
+              "chunk_text": "We accept most major insurance providers, including Aetna."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9280000000000000000", "content": "Do you take Aetna? And can you renew my prescription?", "attention_mark": "not_authorized", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9280000000000000000",
+    "content": "Yes, we accept Aetna.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Does the clinic accept Aetna?",
+        "answer": "Yes, we accept Aetna.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 104,
+            "chunk_index": 0,
+            "chunk_text": "We accept most major insurance providers, including Aetna."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Does the clinic accept Aetna?"
+      },
+      {
+        "position": 1,
+        "intent": "unknown",
+        "text": "Can you renew my prescription?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:28:01Z", "turn_id": "01K5MSG9280000000000000000", "message": "Do you take Aetna? And can you renew my prescription?", "message_ids_unified": ["01K5MSG9280000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:28:02Z", "turn_id": "01K5MSG9280000000000000000", "intents": ["faq_question", "unknown"], "segments": [{"position": 0, "intent": "faq_question", "text": "Does the clinic accept Aetna?"}, {"position": 1, "intent": "unknown", "text": "Can you renew my prescription?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9280000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:28:10Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 104, "chunk_index": 0, "similarity_score": 0.83, "considered": true, "chunk_text": "We accept most major insurance providers, including Aetna.", "text_truncated": false}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.52, "considered": true, "chunk_text": "Out-of-network plans are billed at the out-of-network rate.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9280000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:28:11Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 104, "chunk_index": 0, "similarity_score": 0.83}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.52}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9280000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:28:12Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 104, "chunk_index": 0, "similarity_score": 0.83, "rerank_score": 0.96}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.52, "rerank_score": 0.31}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9280000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:28:13Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 104, "chunk_index": 0, "rerank_score": 0.96}], "dropped_by_floor": [{"entry_id": 105, "chunk_index": 0, "rerank_score": 0.31}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9280000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:28:14Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.83, "best_rerank_score": 0.96},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:28:59Z", "turn_id": "01K5MSG9280000000000000000", "outcome": "merged"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

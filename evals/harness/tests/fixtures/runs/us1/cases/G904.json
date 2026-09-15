@@ -1,0 +1,38 @@
+{
+  "case_id": "G904",
+  "chat_id": "01K5CHAT904000000000000000",
+  "patient_id": "01K5PAT9040000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 5.5,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": "Please call emergency services now. A member of our staff has been notified.",
+      "answer_source": "hand_off"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9040000000000000000", "content": "What are your hours? Also my chest hurts and I feel faint.", "attention_mark": "urgent_condition", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9040000000000000000",
+    "content": "Please call emergency services now. A member of our staff has been notified.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "faq_question", "text": "What are the clinic's hours?"},
+      {"position": 1, "intent": "urgent_condition", "text": "My chest hurts and I feel faint."}
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:03:01Z", "turn_id": "01K5MSG9040000000000000000", "message": "What are your hours? Also my chest hurts and I feel faint.", "message_ids_unified": ["01K5MSG9040000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:03:02Z", "turn_id": "01K5MSG9040000000000000000", "intents": ["faq_question", "urgent_condition"], "segments": [{"position": 0, "intent": "faq_question", "text": "What are the clinic's hours?"}, {"position": 1, "intent": "urgent_condition", "text": "My chest hurts and I feel faint."}], "cap_bound": false},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T09:03:03Z", "turn_id": "01K5MSG9040000000000000000", "outcome": "handed_off"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn"
+}

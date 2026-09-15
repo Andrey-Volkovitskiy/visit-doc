@@ -6,13 +6,17 @@ Each service's own wiring - that it declares every secret-bearing field it has -
 tested on that service's side.
 """
 
+import json
 from collections.abc import Generator
 from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 import pytest
 import structlog
 from shared_logging.logging import (
+    LogFormat,
     LogLevel,
     SafeLogger,
     _build_console_renderer,
@@ -276,3 +280,116 @@ def test_safe_logger_swallows_a_debug_processor_failure() -> None:
             raise RuntimeError("boom")
 
     SafeLogger(_RaisingLogger()).debug("booking.model_request", messages=[])
+
+
+class _Label(StrEnum):
+    """A stand-in for the `StrEnum` values the chat service nests inside its events."""
+
+    FAQ_QUESTION = "faq_question"
+
+
+def _json_line(capsys: pytest.CaptureFixture[str]) -> dict[str, Any]:
+    """Return the one JSON object the last log call printed, failing on any other."""
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    parsed = json.loads(lines[0])
+    assert isinstance(parsed, dict)
+    return parsed
+
+
+@pytest.mark.parametrize("log_format", [None, LogFormat.CONSOLE])
+def test_console_is_the_default_and_renders_as_it_always_has(
+    log_format: LogFormat | None,
+) -> None:
+    # Compared at the renderer rather than on printed output, whose timestamp differs
+    # from one call to the next: the last processor has to be today's console renderer.
+    if log_format is None:
+        configure_logging(_settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS)
+    else:
+        configure_logging(
+            _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=log_format
+        )
+    renderer = structlog.get_config()["processors"][-1]
+    event = {"event": "turn.error", "level": "error", "outcome": "faq"}
+
+    assert renderer(None, "error", dict(event)) == _build_console_renderer()(
+        None, "error", dict(event)
+    )
+
+
+def test_json_renders_one_object_per_line_with_the_shared_fields(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=LogFormat.JSON
+    )
+
+    with structlog.contextvars.bound_contextvars(turn_id="turn-1"):
+        get_logger().info("turn.completed", outcome="faq")
+
+    raw = capsys.readouterr().out
+    assert "\x1b[" not in raw
+    lines = raw.splitlines()
+    assert len(lines) == 1
+    parsed = json.loads(lines[0])
+    assert parsed["event"] == "turn.completed"
+    assert parsed["level"] == "info"
+    assert "timestamp" in parsed
+    assert parsed["turn_id"] == "turn-1"
+    assert parsed["outcome"] == "faq"
+
+
+def test_json_renders_a_nested_str_enum_as_its_value(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The console renderer takes a top-level StrEnum's str but a nested one's repr, so
+    # the same type read two ways depending on depth. A data format may not do that.
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=LogFormat.JSON
+    )
+
+    get_logger().info(
+        "intent.classified",
+        segments=[{"position": 0, "intent": _Label.FAQ_QUESTION}],
+    )
+
+    assert _json_line(capsys)["segments"] == [{"position": 0, "intent": "faq_question"}]
+
+
+def test_json_renders_a_non_serializable_value_as_its_str_rather_than_dropping_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=LogFormat.JSON
+    )
+    starts_at = datetime(2026, 3, 9, 9, 0)
+
+    get_logger().info("booking.tool_called", arguments={"starts_at": starts_at})
+
+    assert _json_line(capsys)["arguments"] == {"starts_at": str(starts_at)}
+
+
+@pytest.mark.parametrize("log_format", list(LogFormat))
+def test_a_live_secret_is_redacted_under_every_format(
+    log_format: LogFormat, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # The renderer is last, so whichever one it is receives an already-redacted entry.
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=log_format
+    )
+
+    get_logger().error("turn.error", error_detail="key=sk-ant-test-key")
+
+    out = capsys.readouterr().out
+    assert "sk-ant-test-key" not in out
+    assert "***REDACTED***" in out
+
+
+def test_json_truncates_a_long_string(capsys: pytest.CaptureFixture[str]) -> None:
+    configure_logging(
+        _settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS, log_format=LogFormat.JSON
+    )
+
+    get_logger().info("faq.retrieval_completed", chunk_text="a" * 2500)
+
+    assert _json_line(capsys)["chunk_text"] == "a" * 2000 + "..."

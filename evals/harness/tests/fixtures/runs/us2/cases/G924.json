@@ -1,0 +1,83 @@
+{
+  "case_id": "G924",
+  "chat_id": "01K5CHAT924000000000000000",
+  "patient_id": "01K5PAT9240000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I see the doctor over video?",
+          "answer": "Yes, video visits are available for follow-ups.",
+          "verdict": "answered_unreranked",
+          "citations": [
+            {
+              "entry_id": 103,
+              "chunk_index": 0,
+              "chunk_text": "Video visits are available for follow-up appointments."
+            },
+            {
+              "entry_id": 108,
+              "chunk_index": 1,
+              "chunk_text": "The clinic is located at 12 Main Street."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9240000000000000000", "content": "Can I see the doctor over video?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9240000000000000000",
+    "content": "Yes, video visits are available for follow-ups.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I see the doctor over video?",
+        "answer": "Yes, video visits are available for follow-ups.",
+        "verdict": "answered_unreranked",
+        "citations": [
+          {
+            "entry_id": 103,
+            "chunk_index": 0,
+            "chunk_text": "Video visits are available for follow-up appointments."
+          },
+          {
+            "entry_id": 108,
+            "chunk_index": 1,
+            "chunk_text": "The clinic is located at 12 Main Street."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I see the doctor over video?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:24:01Z", "turn_id": "01K5MSG9240000000000000000", "message": "Can I see the doctor over video?", "message_ids_unified": ["01K5MSG9240000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:24:02Z", "turn_id": "01K5MSG9240000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "Can I see the doctor over video?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9240000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:24:10Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 103, "chunk_index": 0, "similarity_score": 0.8, "considered": true, "chunk_text": "Video visits are available for follow-up appointments.", "text_truncated": false}, {"entry_id": 108, "chunk_index": 1, "similarity_score": 0.5, "considered": true, "chunk_text": "The clinic is located at 12 Main Street.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9240000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:24:11Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 103, "chunk_index": 0, "similarity_score": 0.8}, {"entry_id": 108, "chunk_index": 1, "similarity_score": 0.5}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_unavailable", "level": "error", "turn_id": "01K5MSG9240000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:24:12Z", "reason": "timeout", "timeout_seconds": 2.0, "candidate_count": 2},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9240000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:24:14Z", "verdict": "answered_unreranked", "survivor_count": 2, "blocked_gate": null, "best_similarity_score": 0.8, "best_rerank_score": null},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:24:59Z", "turn_id": "01K5MSG9240000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

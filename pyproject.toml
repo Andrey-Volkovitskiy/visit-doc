@@ -1,5 +1,5 @@
 [tool.uv.workspace]
-members = ["services/chat", "services/scheduler", "packages/*"]
+members = ["services/chat", "services/scheduler", "packages/*", "evals/harness"]
 
 [dependency-groups]
 dev = [
@@ -11,6 +11,7 @@ dev = [
     "pre-commit>=4.6.1",
     "pytest-asyncio>=1.4.0",
     "pytest-xdist>=3.8.0",
+    "types-jsonschema>=4.26.0.20260518",
 ]
 
 [tool.ruff]
@@ -74,12 +75,13 @@ testpaths = [
     "packages/shared-logging/tests",
     "packages/shared-models/tests",
     "packages/shared-proto/tests",
+    "evals/harness/tests",
 ]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
-mypy_path = "services/chat/src:services/scheduler/src:packages/shared-db/src:packages/shared-logging/src:packages/shared-models/src:packages/shared-proto/src"
+mypy_path = "services/chat/src:services/scheduler/src:packages/shared-db/src:packages/shared-logging/src:packages/shared-models/src:packages/shared-proto/src:evals/harness/src"
 files = [
     "services/chat/src",
     "services/scheduler/src",
@@ -87,6 +89,7 @@ files = [
     "packages/shared-logging/src",
     "packages/shared-models/src",
     "packages/shared-proto/src",
+    "evals/harness/src",
 ]
 explicit_package_bases = true
 strict = true

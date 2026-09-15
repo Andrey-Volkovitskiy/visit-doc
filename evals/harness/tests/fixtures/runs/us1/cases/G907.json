@@ -1,0 +1,62 @@
+{
+  "case_id": "G907",
+  "chat_id": "01K5CHAT907000000000000000",
+  "patient_id": "01K5PAT9070000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 7.25,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {"position": 0, "question": "Where is the clinic?", "answer": "We are at 12 Main Street.", "verdict": "answered", "citations": [{"entry_id": 108, "chunk_index": 1, "chunk_text": "The clinic is located at 12 Main Street."}]},
+        {"position": 1, "question": "How can I pay?", "answer": "We take cards and cash.", "verdict": "answered", "citations": [{"entry_id": 107, "chunk_index": 0, "chunk_text": "We accept credit cards, debit cards and cash."}]},
+        {"position": 2, "question": "Can you write me a sick note?", "answer": null, "verdict": "abstained_rerank_floor", "citations": []}
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9070000000000000000", "content": "Where are you, how do I pay, and can you write me a sick note?", "attention_mark": "corpus_could_not_answer", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9070000000000000000",
+    "content": "We are at 12 Main Street and take cards and cash. I have asked a colleague about the note.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {"position": 0, "question": "Where is the clinic?", "answer": "We are at 12 Main Street.", "verdict": "answered", "citations": [{"entry_id": 108, "chunk_index": 1, "chunk_text": "The clinic is located at 12 Main Street."}]},
+      {"position": 1, "question": "How can I pay?", "answer": "We take cards and cash.", "verdict": "answered", "citations": [{"entry_id": 107, "chunk_index": 0, "chunk_text": "We accept credit cards, debit cards and cash."}]},
+      {"position": 2, "question": "Can you write me a sick note?", "answer": null, "verdict": "abstained_rerank_floor", "citations": []}
+    ]
+  },
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "faq_question", "text": "Where is the clinic?"},
+      {"position": 1, "intent": "faq_question", "text": "How can I pay?"},
+      {"position": 2, "intent": "faq_question", "text": "Can you write me a sick note?"}
+    ],
+    "cap_bound": true
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:06:01Z", "turn_id": "01K5MSG9070000000000000000", "message": "Where are you, how do I pay, and can you write me a sick note?", "message_ids_unified": ["01K5MSG9070000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:06:02Z", "turn_id": "01K5MSG9070000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "Where is the clinic?"}, {"position": 1, "intent": "faq_question", "text": "How can I pay?"}, {"position": 2, "intent": "faq_question", "text": "Can you write me a sick note?"}], "cap_bound": true},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:06:02Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.78, "considered": true, "chunk_text": "The clinic is located at 12 Main Street.", "text_truncated": false}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52, "considered": true, "chunk_text": "Our clinic is open from 8am to 5pm on weekdays.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.78}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:06:02Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.78, "rerank_score": 0.94}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52, "rerank_score": 0.41}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 108, "chunk_index": 1, "rerank_score": 0.94}], "dropped_by_floor": [{"entry_id": 108, "chunk_index": 0, "rerank_score": 0.41}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:06:02Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.78, "best_rerank_score": 0.94},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 1, "timestamp": "2026-09-14T09:06:02Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.83, "considered": true, "chunk_text": "We accept credit cards, debit cards and cash.", "text_truncated": false}, {"entry_id": 106, "chunk_index": 0, "similarity_score": 0.39, "considered": true, "chunk_text": "A standard office visit costs $120 for self-pay patients.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 1, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.83}, {"entry_id": 106, "chunk_index": 0, "similarity_score": 0.39}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 1, "timestamp": "2026-09-14T09:06:02Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 107, "chunk_index": 0, "similarity_score": 0.83, "rerank_score": 0.9}, {"entry_id": 106, "chunk_index": 0, "similarity_score": 0.39, "rerank_score": 0.08}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 1, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 107, "chunk_index": 0, "rerank_score": 0.9}], "dropped_by_floor": [{"entry_id": 106, "chunk_index": 0, "rerank_score": 0.08}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 1, "timestamp": "2026-09-14T09:06:02Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.83, "best_rerank_score": 0.9},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 2, "timestamp": "2026-09-14T09:06:02Z", "pool_size": 25, "pool_returned": 1, "candidates": [{"entry_id": 101, "chunk_index": 0, "similarity_score": 0.34, "considered": true, "chunk_text": "A referral is required for most specialist visits.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 2, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.3, "cap": 5, "pool_returned": 1, "kept": [{"entry_id": 101, "chunk_index": 0, "similarity_score": 0.34}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 2, "timestamp": "2026-09-14T09:06:02Z", "model": "rerank-3", "candidate_count": 1, "duration_ms": 180.0, "scores": [{"entry_id": 101, "chunk_index": 0, "similarity_score": 0.34, "rerank_score": 0.12}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 2, "timestamp": "2026-09-14T09:06:02Z", "floor": 0.58, "cap": 3, "kept": [], "dropped_by_floor": [{"entry_id": 101, "chunk_index": 0, "rerank_score": 0.12}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9070000000000000000", "node": "answer_faq", "segment": 2, "timestamp": "2026-09-14T09:06:02Z", "verdict": "abstained_rerank_floor", "survivor_count": 0, "blocked_gate": "rerank_floor", "best_similarity_score": 0.34, "best_rerank_score": 0.12},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T09:06:07Z", "turn_id": "01K5MSG9070000000000000000", "outcome": "merged"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

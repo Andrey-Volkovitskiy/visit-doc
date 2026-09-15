@@ -1,0 +1,106 @@
+{
+  "case_id": "G943",
+  "chat_id": "01K5CHAT943000000000000000",
+  "patient_id": "01K5PAT9430000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 6.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "patient_message": {
+    "id": "01K5MSG9430000000000000000",
+    "content": "Which practitioners do you have?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K5RPL9430000000000000000",
+    "content": "We have William Osler and Andreas Vesalius. I've booked you with Andreas Vesalius tomorrow at 9am.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "segment 0"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:01Z",
+      "turn_id": "01K5MSG9430000000000000000",
+      "message": "Which practitioners do you have?",
+      "message_ids_unified": [
+        "01K5MSG9430000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:02Z",
+      "turn_id": "01K5MSG9430000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "segment 0"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "booking.tool_called",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:03Z",
+      "turn_id": "01K5MSG9430000000000000000",
+      "node": "handle_booking",
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {}
+    },
+    {
+      "event": "booking.tool_called",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:03Z",
+      "turn_id": "01K5MSG9430000000000000000",
+      "node": "handle_booking",
+      "tool_name": "book_appointment",
+      "iteration": 2,
+      "arguments": {}
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:05Z",
+      "turn_id": "01K5MSG9430000000000000000",
+      "outcome": "booking"
+    }
+  ],
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-03T09:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-03T09:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null
+}

@@ -1,0 +1,333 @@
+[
+ {
+  "id": "G941",
+  "family": "mixed-faq-booking",
+  "message": "Can I book a GP visit on Friday?",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "book a GP Friday",
+    "tools": [
+     "book_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "status": "standing"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "AS1: an expectation with no time matches any start that day; an extra check_availability is not a miss"
+ },
+ {
+  "id": "G942",
+  "family": "pleasantry-plus-request",
+  "message": "Please cancel my appointment tomorrow",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "cancel tomorrow",
+    "tools": [
+     "cancel_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "10:00",
+     "status": "cancelled"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "AS2: the planted appointment is cancelled"
+ },
+ {
+  "id": "G943",
+  "family": "pleasantry-plus-request",
+  "message": "Which practitioners do you have?",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "list practitioners",
+    "tools": [
+     "list_practitioners"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
+  "source": "new",
+  "note": "AS3: a read-only case whose turn booked something fails with it unaccounted"
+ },
+ {
+  "id": "G944",
+  "family": "segmentation-edges",
+  "message": "Book me two Wednesday appointments, one of them at 10",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "two Wednesday appointments",
+    "tools": [
+     "book_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "status": "standing"
+    },
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "10:00",
+     "status": "standing"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "the expectations are in the order a greedy matcher gets wrong"
+ },
+ {
+  "id": "G945",
+  "family": "segmentation-edges",
+  "message": "Can you cancel Friday and book Monday instead?",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "cancel Friday",
+    "tools": [
+     "cancel_appointment"
+    ]
+   },
+   {
+    "intent": "booking",
+    "gist": "book Monday instead",
+    "tools": [
+     "book_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00",
+     "status": "cancelled"
+    },
+    {
+     "practitioner": "William Osler",
+     "day": "+7d",
+     "status": "standing"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "AS4: two booking requests scored once; booked Monday, never cancelled Friday"
+ },
+ {
+  "id": "G946",
+  "family": "pleasantry-plus-request",
+  "message": "Cancel my Thursday appointment",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "cancel Thursday",
+    "tools": [
+     "cancel_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00",
+     "status": "cancelled"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "AS5: the fixture could not be planted"
+ },
+ {
+  "id": "G947",
+  "family": "pleasantry-plus-request",
+  "message": "Move my appointment to Tuesday at 10",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "reschedule to Tuesday",
+    "tools": [
+     "reschedule_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "10:00",
+     "status": "standing"
+    }
+   ]
+  },
+  "source": "new",
+  "note": "the stream broke after the request was sent: outcome unknown"
+ },
+ {
+  "id": "G948",
+  "family": "small-talk",
+  "message": "Thanks, that's all!",
+  "requests": [
+   {
+    "intent": "small_talk",
+    "gist": "thanks"
+   }
+  ],
+  "source": "new",
+  "note": "no booking request and no fixture: in neither booking metric"
+ },
+ {
+  "id": "G949",
+  "family": "pleasantry-plus-request",
+  "message": "Please cancel my Thursday appointment",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "cancel Thursday",
+    "tools": [
+     "cancel_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00",
+     "status": "cancelled"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
+  "source": "new",
+  "note": "AS2 with a reply: asked in the first turn, cancelled in the reply; cancel_appointment is called only in the reply turn"
+ },
+ {
+  "id": "G950",
+  "family": "pleasantry-plus-request",
+  "message": "Cancel my Friday appointment",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "cancel Friday",
+    "tools": [
+     "cancel_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00",
+     "status": "cancelled"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
+  "source": "new",
+  "note": "a write before the confirmation: the first turn already cancelled, so the case fails on its first read though the last one matches"
+ },
+ {
+  "id": "G951",
+  "family": "pleasantry-plus-request",
+  "message": "Book me with William Osler on Monday at 9",
+  "requests": [
+   {
+    "intent": "booking",
+    "gist": "book Monday at 9",
+    "tools": [
+     "book_appointment"
+    ]
+   }
+  ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+7d",
+     "time": "09:00",
+     "status": "standing"
+    }
+   ],
+   "reply": "Yes, book it."
+  },
+  "source": "new",
+  "note": "a correct first turn whose reply wrote nothing: book_appointment was called and refused, so the case fails on its last read"
+ }
+]

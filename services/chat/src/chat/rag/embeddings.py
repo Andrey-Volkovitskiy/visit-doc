@@ -4,7 +4,7 @@ from typing import Literal
 
 from voyageai.client_async import AsyncClient
 
-_MODEL = "voyage-4-lite"
+EMBEDDING_MODEL = "voyage-4-lite"
 
 
 async def embed_texts(
@@ -13,5 +13,5 @@ async def embed_texts(
     input_type: Literal["document", "query"] = "document",
 ) -> list[list[float]]:
     """Embed `texts` via Voyage AI, returning one vector per input string."""
-    result = await client.embed(texts, model=_MODEL, input_type=input_type)
+    result = await client.embed(texts, model=EMBEDDING_MODEL, input_type=input_type)
     return [[float(x) for x in vector] for vector in result.embeddings]

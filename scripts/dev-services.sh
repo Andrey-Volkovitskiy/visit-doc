@@ -11,6 +11,14 @@
 # recorded pid, plus `pkill -P` for the child that `uv`/`npm` spawns, matches nothing by accident.
 #
 # Logs go to .run/<service>.log. Both .run/*.pid and .run/*.log are gitignored.
+#
+# Each service is started from this script's own environment, so a variable exported for the call
+# reaches the service's process: `LOG_FORMAT=json make services-up` starts chat logging one JSON
+# object per line, which is what the golden harness (`make eval-run`) requires - it reads a turn's
+# events back out of .run/chat.log and stops before its first turn if they are not JSON. Without it
+# chat uses its console format, for people. The variable only takes effect when chat starts, and
+# `up` leaves an already-running service alone, so stop chat first (`make services-down`, or
+# `scripts/dev-services.sh down chat`).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

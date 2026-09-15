@@ -437,8 +437,13 @@ async def compose_answer(
 # `merged`, tomorrow whatever is added next - would be filed in the log as an FAQ turn
 # with nothing saying it had been. A missing entry raises instead, which the completion
 # path reports as the turn failing rather than as a turn that answered.
+# A data contract, not only a label: the golden harness reads a hand-off off
+# `turn.completed` when a turn's stream never delivered its terminal event (spec 012
+# FR-041d), so the value is imported by that name rather than copied as a string.
+HANDED_OFF_OUTCOME = "handed_off"
+
 _OUTCOME_BY_SOURCE: dict[AnswerSource, str] = {
-    AnswerSource.HAND_OFF: "handed_off",
+    AnswerSource.HAND_OFF: HANDED_OFF_OUTCOME,
     AnswerSource.SMALL_TALK: "small_talk",
     AnswerSource.BOOKING: "booking",
     AnswerSource.FAQ: "faq",

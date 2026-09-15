@@ -1,0 +1,46 @@
+{
+  "case_id": "G909",
+  "chat_id": "01K5CHAT909000000000000000",
+  "patient_id": "01K5PAT9090000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 4.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {"position": 0, "question": "What does a visit cost without insurance?", "answer": "A standard visit is $120 without insurance.", "verdict": "answered", "citations": [{"entry_id": 106, "chunk_index": 0, "chunk_text": "A standard office visit costs $120 for self-pay patients."}]}
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9090000000000000000", "content": "What does a visit cost without insurance?", "attention_mark": "assistant_failed", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9090000000000000000",
+    "content": "A standard visit is $120 without insurance.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {"position": 0, "question": "What does a visit cost without insurance?", "answer": "A standard visit is $120 without insurance.", "verdict": "answered", "citations": [{"entry_id": 106, "chunk_index": 0, "chunk_text": "A standard office visit costs $120 for self-pay patients."}]}
+    ]
+  },
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "faq_question", "text": "What does a visit cost without insurance?"}
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:08:01Z", "turn_id": "01K5MSG9090000000000000000", "message": "What does a visit cost without insurance?", "message_ids_unified": ["01K5MSG9090000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:08:02Z", "turn_id": "01K5MSG9090000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "What does a visit cost without insurance?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9090000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:08:02Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 106, "chunk_index": 0, "similarity_score": 0.86, "considered": true, "chunk_text": "A standard office visit costs $120 for self-pay patients.", "text_truncated": false}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.51, "considered": true, "chunk_text": "Out-of-network plans are billed at the out-of-network rate.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9090000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:08:02Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 106, "chunk_index": 0, "similarity_score": 0.86}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.51}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9090000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:08:02Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 106, "chunk_index": 0, "similarity_score": 0.86, "rerank_score": 0.97}, {"entry_id": 105, "chunk_index": 0, "similarity_score": 0.51, "rerank_score": 0.44}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9090000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:08:02Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 106, "chunk_index": 0, "rerank_score": 0.97}], "dropped_by_floor": [{"entry_id": 105, "chunk_index": 0, "rerank_score": 0.44}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9090000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T09:08:02Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.86, "best_rerank_score": 0.97},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T09:08:04Z", "turn_id": "01K5MSG9090000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

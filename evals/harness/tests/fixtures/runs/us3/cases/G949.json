@@ -1,0 +1,173 @@
+{
+  "case_id": "G949",
+  "chat_id": "01K5CHAT949000000000000000",
+  "patient_id": "01K5PAT9490000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 9.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "patient_message": {
+    "id": "01K5MSG9490000000000000000",
+    "content": "Please cancel my Thursday appointment",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K5RPL9490000000000000000",
+    "content": "You have an appointment with William Osler, General Practice, on Thursday at 11am. Shall I cancel it?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "segment 0"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:01Z",
+      "turn_id": "01K5MSG9490000000000000000",
+      "message": "Please cancel my Thursday appointment",
+      "message_ids_unified": [
+        "01K5MSG9490000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:02Z",
+      "turn_id": "01K5MSG9490000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "segment 0"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "booking.tool_called",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:03Z",
+      "turn_id": "01K5MSG9490000000000000000",
+      "node": "handle_booking",
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {}
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-14T09:00:05Z",
+      "turn_id": "01K5MSG9490000000000000000",
+      "outcome": "booking"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "patient_message": {
+      "id": "01K5MSG949R000000000000000",
+      "content": "Yes, please go ahead.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01K5RPL949R000000000000000",
+      "content": "Your Thursday 11am appointment with William Osler is cancelled.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "event": "turn.message_received",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:01Z",
+        "turn_id": "01K5MSG949R000000000000000",
+        "message": "Yes, please go ahead.",
+        "message_ids_unified": [
+          "01K5MSG949R000000000000000"
+        ]
+      },
+      {
+        "event": "intent.classified",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:02Z",
+        "turn_id": "01K5MSG949R000000000000000",
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "segment 0"
+          }
+        ],
+        "cap_bound": false
+      },
+      {
+        "event": "booking.tool_called",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:03Z",
+        "turn_id": "01K5MSG949R000000000000000",
+        "node": "handle_booking",
+        "tool_name": "list_my_appointments",
+        "iteration": 1,
+        "arguments": {}
+      },
+      {
+        "event": "booking.tool_called",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:03Z",
+        "turn_id": "01K5MSG949R000000000000000",
+        "node": "handle_booking",
+        "tool_name": "cancel_appointment",
+        "iteration": 2,
+        "arguments": {}
+      },
+      {
+        "event": "turn.completed",
+        "level": "info",
+        "timestamp": "2026-09-14T09:01:05Z",
+        "turn_id": "01K5MSG949R000000000000000",
+        "outcome": "booking"
+      }
+    ]
+  },
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-05T11:00:00",
+      "status": "standing"
+    }
+  ],
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-05T11:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "cancelled_after": [],
+  "excluded": null
+}

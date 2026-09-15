@@ -620,6 +620,24 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "10:00",
+     "status": "cancelled"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
   "source": "009/setB#B1"
  },
  {
@@ -641,16 +659,20 @@
  {
   "id": "G044",
   "family": "pleasantry-plus-request",
-  "message": "Thanks! Any slots on Monday?",
+  "message": "Thanks! Any slots with William Osler on Wednesday?",
   "requests": [
    {
     "intent": "booking",
-    "gist": "Monday availability",
+    "gist": "Wednesday availability",
     "tools": [
      "check_availability"
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "009/setB#B3"
  },
  {
@@ -710,6 +732,23 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+3d",
+     "time": "11:00",
+     "status": "standing"
+    }
+   ]
+  },
   "source": "009/setB#B7"
  },
  {
@@ -725,6 +764,10 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "009/setB#B8"
  },
  {
@@ -740,6 +783,23 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "14:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "14:00",
+     "status": "standing"
+    }
+   ]
+  },
   "source": "009/setB2#B12"
  },
  {
@@ -755,6 +815,24 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "15:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+1d",
+     "time": "15:00",
+     "status": "cancelled"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
   "source": "009/setB2#B14"
  },
  {
@@ -786,6 +864,10 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "009/setB2#B16"
  },
  {
@@ -896,11 +978,11 @@
  {
   "id": "G062",
   "family": "not-authorized",
-  "message": "Can I book Monday, and also get a receipt reissued for last month?",
+  "message": "Can I book Wednesday with William Osler, and also get a receipt reissued for last month?",
   "requests": [
    {
     "intent": "booking",
-    "gist": "book Monday",
+    "gist": "book Wednesday",
     "tools": [
      "book_appointment"
     ]
@@ -910,6 +992,17 @@
     "gist": "receipt reissue"
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "status": "standing"
+    }
+   ],
+   "reply": "The earliest Wednesday time is fine, yes please book it."
+  },
   "source": "009/setC#C16 (re-expressed)",
   "note": "RE-EXPRESSED, as above; 009's own retest already recorded this one as `unknown+booking`."
  },
@@ -1350,12 +1443,16 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "010/mixed#B1"
  },
  {
   "id": "G088",
   "family": "mixed-faq-booking",
-  "message": "What should I bring, and can you book me Monday at 9?",
+  "message": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
   "requests": [
    {
     "intent": "faq_question",
@@ -1367,12 +1464,24 @@
    },
    {
     "intent": "booking",
-    "gist": "book Monday 9am",
+    "gist": "book Wednesday 9am",
     "tools": [
      "book_appointment"
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "09:00",
+     "status": "standing"
+    }
+   ],
+   "reply": "Yes, please book it."
+  },
   "source": "010/mixed#B4"
  },
  {
@@ -1396,6 +1505,10 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "010/mixed#B6"
  },
  {
@@ -1419,6 +1532,24 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "11:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "11:00",
+     "status": "cancelled"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
   "source": "010/mixed#B9"
  },
  {
@@ -1442,6 +1573,23 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "Andreas Vesalius",
+     "day": "+3d",
+     "time": "12:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "Andreas Vesalius",
+     "day": "+3d",
+     "time": "12:00",
+     "status": "standing"
+    }
+   ]
+  },
   "source": "010/mixed#B10"
  },
  {
@@ -1465,6 +1613,10 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "010/mixed#B13",
   "note": "a practitioner's specialty is live scheduling data, not corpus content"
  },
@@ -1489,12 +1641,30 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+9d",
+     "time": "10:00",
+     "status": "standing"
+    }
+   ],
+   "reply": "Yes, please go ahead."
+  },
   "source": "010/mixed#B17"
  },
  {
   "id": "G094",
   "family": "mixed-faq-booking",
-  "message": "Are you open Sundays, and can I book the earliest slot you have?",
+  "message": "Are you open Sundays, and can I book the earliest slot you have with William Osler?",
   "requests": [
    {
     "intent": "faq_question",
@@ -1510,13 +1680,17 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": []
+  },
   "source": "010/mixed#B14",
   "note": "the partial case that matters most: staff are called for the gap while the booking half is served"
  },
  {
   "id": "G095",
   "family": "mixed-faq-booking",
-  "message": "Where are you, how much is a GP visit, and can I book one Friday?",
+  "message": "Where are you, how much is a GP visit, and can I book one with William Osler on Friday?",
   "requests": [
    {
     "intent": "faq_question",
@@ -1542,6 +1716,17 @@
     ]
    }
   ],
+  "scheduling": {
+   "given": [],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "status": "standing"
+    }
+   ],
+   "reply": "The earliest time you have on Friday is fine, yes please book it."
+  },
   "source": "010/mixed#B21"
  },
  {
@@ -1701,7 +1886,7 @@
  {
   "id": "G102",
   "family": "segmentation-edges",
-  "message": "Can you cancel Friday and book Monday instead?",
+  "message": "Can you cancel Friday and book Wednesday with William Osler instead?",
   "requests": [
    {
     "intent": "booking",
@@ -1712,12 +1897,35 @@
    },
    {
     "intent": "booking",
-    "gist": "book Monday",
+    "gist": "book Wednesday",
     "tools": [
      "book_appointment"
     ]
    }
   ],
+  "scheduling": {
+   "given": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00"
+    }
+   ],
+   "expect": [
+    {
+     "practitioner": "William Osler",
+     "day": "+4d",
+     "time": "10:00",
+     "status": "cancelled"
+    },
+    {
+     "practitioner": "William Osler",
+     "day": "+2d",
+     "status": "standing"
+    }
+   ],
+   "reply": "Yes, please cancel Friday. The earliest Wednesday time is fine."
+  },
   "source": "010/multi#C9"
  },
  {

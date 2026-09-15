@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from shared_logging import LogLevel
+from shared_logging import LogFormat, LogLevel
 
 
 class Settings(BaseSettings):
@@ -96,6 +96,10 @@ class Settings(BaseSettings):
     # default: that is the whole conversation, so it belongs in a dev terminal rather
     # than in a deployment's log stream.
     LOG_LEVEL: LogLevel = LogLevel.INFO
+    # `json` renders one object per line for the golden harness, which reads a turn's
+    # events back out of the log as data. The console format is for people, and carries
+    # no guarantee a program could parse it, so it stays the default.
+    LOG_FORMAT: LogFormat = LogFormat.CONSOLE
 
 
 @lru_cache

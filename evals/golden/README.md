@@ -60,6 +60,17 @@ What is scored and what is not:
   enforces in code.
 - **`tools` is a required subset, not a sequence.** A `check_availability` that precedes a
   `book_appointment` is not a miss; a `book_appointment` that never happens is.
+- **`scheduling` is scored, and present exactly on the 18 cases with a booking request.** `given`
+  is planted before the turn, `expect` is the complete set of the patient's appointments after
+  the case's last turn — practitioner, `day` offset from the run clock, optional `time`, `status`
+  — and a case expected to change nothing restates `given`. `PROVENANCE.md` gives each fixture its
+  reason.
+- **`reply` is optional, and part of `scheduling`**, so a changed reply changes the case's label
+  digest. It is the patient's scripted answer to what the first turn asked, posted verbatim as a
+  second full turn in the same chat, and it is on the eight cases whose write the booking loop has
+  to confirm first. With it, the appointments after the first turn must still be `given`, all
+  standing, and `expect` is read after the reply; tool selection counts both turns' calls, while
+  classification and retrieval read the first turn only.
 
 ## Derived, not stored
 

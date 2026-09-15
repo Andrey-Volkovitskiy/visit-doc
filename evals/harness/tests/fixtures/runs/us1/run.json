@@ -1,0 +1,54 @@
+{
+  "run_id": "01K5US1RVN0000000000000000",
+  "started_at": "2026-09-14T09:00:00Z",
+  "finished_at": "2026-09-15T17:30:00Z",
+  "drive_seconds": 42.0,
+  "clock": "2026-03-02T08:00:00",
+  "session_id": "01K5SESS100000000000000000",
+  "corpus": {
+    "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "matched": true
+  },
+  "selection": {
+    "kind": "ids",
+    "family": null,
+    "case_ids": ["G901", "G902", "G903", "G904", "G905", "G906", "G907", "G908", "G909"]
+  },
+  "entry_ids": {
+    "referral": 101,
+    "what-to-bring": 102,
+    "telehealth": 103,
+    "insurance-plans": 104,
+    "out-of-network": 105,
+    "out-of-pocket-rates": 106,
+    "payment": 107,
+    "hours-location": 108,
+    "arrival-time": 109
+  },
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "generation_model": "claude-sonnet-5",
+    "embedding_model": "voyage-3.5",
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_floor": 0.3,
+    "similarity_cap": 5,
+    "rerank_floor": 0.58,
+    "rerank_cap": 3,
+    "max_segments": 3,
+    "context_turns": 5
+  },
+  "labels": {
+    "G901": "dea8476bd92bc767acc5e5c000d89dcf7e2fbd0bd0db47dc36c1d89507e1cd2e",
+    "G902": "d4e79c2f4be5928858270b726307d9bffc116e6281d924807851b8c4318c3683",
+    "G903": "b482d50bd7665591954259dd96afe997ece0b9c6d399df5f4b88a300fee3e49d",
+    "G904": "548d28f04ad2bf8b93ac3d7250d78b04ac8b8f9e363f8dc598e5317b53e7ad9d",
+    "G905": "068181ef626fc70e10cb11dab5316466d7fb5ab1f4289359f98cc0e8d2e1e51e",
+    "G906": "8416c594206aca8f186382af15f482be2315a7406a102c52829a265c50a339f0",
+    "G907": "a3618ff2cf5b9b545f623df0245717f38c20e388c755efc80a7ffcd25cd252e5",
+    "G908": "8c88f5e2887fda295d554bb81ec6843a5f1441c1c113370cb64b2b8883ffbf34",
+    "G909": "50cd85f792d0337e8b8b64ab8cf40660cfca0c95c5190b7d26e3358ba1b1dcf2"
+  },
+  "cases": ["G901", "G902", "G903", "G904", "G905", "G906", "G907", "G908", "G909"]
+}

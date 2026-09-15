@@ -1,0 +1,23 @@
+{
+  "case_id": "G906",
+  "chat_id": "01K5CHAT906000000000000000",
+  "patient_id": "01K5PAT9060000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 6.0,
+  "terminal": {"kind": "cancelled", "payload": {"type": "cancelled"}},
+  "patient_message": {"id": "01K5MSG9060000000000000000", "content": "How early should I arrive?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": null,
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "faq_question", "text": "How early should I arrive?"}
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:05:01Z", "turn_id": "01K5MSG9060000000000000000", "message": "How early should I arrive?", "message_ids_unified": ["01K5MSG9060000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:05:02Z", "turn_id": "01K5MSG9060000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "How early should I arrive?"}], "cap_bound": false}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "cancelled_turn"
+}

@@ -1,0 +1,62 @@
+{
+  "case_id": "G934",
+  "chat_id": "01K5CHAT934000000000000000",
+  "patient_id": "01K5PAT9340000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "How long before an appointment should a patient arrive?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have an answer to that, so I've asked a member of staff to help.",
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9340000000000000000", "content": "How long before my appointment should I get there?", "attention_mark": "corpus_could_not_answer", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9340000000000000000",
+    "content": "I don't have an answer to that, so I've asked a member of staff to help.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "How long before an appointment should a patient arrive?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "How long before an appointment should a patient arrive?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:34:01Z", "turn_id": "01K5MSG9340000000000000000", "message": "How long before my appointment should I get there?", "message_ids_unified": ["01K5MSG9340000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:34:02Z", "turn_id": "01K5MSG9340000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "How long before an appointment should a patient arrive?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9340000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:34:10Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52, "considered": true, "chunk_text": "Our clinic is open from 8am to 5pm on weekdays.", "text_truncated": false}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.44, "considered": true, "chunk_text": "Please bring a photo ID and your insurance card.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9340000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:34:11Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.44}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9340000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:34:12Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 108, "chunk_index": 0, "similarity_score": 0.52, "rerank_score": 0.2}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.44, "rerank_score": 0.1}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9340000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:34:13Z", "floor": 0.58, "cap": 3, "kept": [], "dropped_by_floor": [{"entry_id": 108, "chunk_index": 0, "rerank_score": 0.2}, {"entry_id": 102, "chunk_index": 0, "rerank_score": 0.1}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9340000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:34:14Z", "verdict": "abstained_rerank_floor", "survivor_count": 0, "blocked_gate": "rerank_floor", "best_similarity_score": 0.52, "best_rerank_score": 0.2},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:34:59Z", "turn_id": "01K5MSG9340000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

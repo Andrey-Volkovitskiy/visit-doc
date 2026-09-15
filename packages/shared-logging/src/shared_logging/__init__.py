@@ -13,6 +13,7 @@ fields - and inherits the chain itself.
 """
 
 from shared_logging.logging import (
+    LogFormat,
     LogLevel,
     SafeLogger,
     configure_logging,
@@ -21,6 +22,7 @@ from shared_logging.logging import (
 )
 
 __all__ = [
+    "LogFormat",
     "LogLevel",
     "SafeLogger",
     "configure_logging",

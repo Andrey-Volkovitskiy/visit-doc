@@ -2,7 +2,8 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status migrate \
-        db-up db-down db-reset alembic-chat-history alembic-scheduler-history
+        db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
+        eval-run eval-score
 
 sync:
 	uv sync
@@ -106,3 +107,13 @@ alembic-chat-history:
 
 alembic-scheduler-history:
 	uv run --directory services/scheduler alembic history
+
+# The golden harness (spec 012; see its quickstart.md). `eval-run` drives the golden set against the
+# running stack, spending live model calls; `CASES=G001,G042` or `FAMILY=<name>` narrows it, and
+# each flag is passed only when set. `eval-score RUN=<run_id>` re-scores a stored run offline.
+eval-run:
+	uv run --package golden-harness -- python -m golden_harness run \
+		$(if $(CASES),--cases $(CASES)) $(if $(FAMILY),--family $(FAMILY))
+
+eval-score:
+	uv run --package golden-harness -- python -m golden_harness score --run $(RUN)

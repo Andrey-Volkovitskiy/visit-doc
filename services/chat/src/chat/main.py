@@ -16,13 +16,40 @@ from chat.api.console import router as console_router
 from chat.api.faq import router as faq_router
 from chat.api.turn import router as turn_router
 from chat.clients.scheduling import create_channel
-from chat.core.config import get_settings
+from chat.core.config import Settings, get_settings
 from chat.core.logging import configure_logging, get_logger
+from chat.domain.schemas import MAX_SEGMENTS
+from chat.rag.embeddings import EMBEDDING_MODEL
 from chat.repositories.qdrant_repository import (
     CollectionVectorSizeMismatchError,
     create_client,
     ensure_collection,
 )
+
+
+def _log_configuration(settings: Settings) -> None:
+    """State the models, thresholds, caps and limits this process answers turns with.
+
+    Emitted once, before any client is built, so even a start that fails on a
+    dependency says what it was configured with. The golden harness takes a run's
+    conditions from this event rather than from its own environment, which describes
+    the harness and not the process that answered. The field names are a contract with
+    that reader. No secret-bearing setting belongs on the list.
+    """
+    get_logger().info(
+        "service.configured",
+        classification_model=settings.CLASSIFICATION_MODEL,
+        generation_model=settings.GENERATION_MODEL,
+        embedding_model=EMBEDDING_MODEL,
+        rerank_model=settings.RERANK_MODEL,
+        retrieval_pool_size=settings.RETRIEVAL_POOL_SIZE,
+        similarity_floor=settings.SIMILARITY_FLOOR,
+        similarity_cap=settings.SIMILARITY_CAP,
+        rerank_floor=settings.RERANK_FLOOR,
+        rerank_cap=settings.RERANK_CAP,
+        max_segments=MAX_SEGMENTS,
+        context_turns=settings.CONTEXT_TURNS,
+    )
 
 
 @asynccontextmanager
@@ -51,6 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     for the duration of each call.
     """
     settings = get_settings()
+    _log_configuration(settings)
     async with AsyncExitStack() as stack:
         qdrant_client = create_client(settings)
         stack.push_async_callback(qdrant_client.close)

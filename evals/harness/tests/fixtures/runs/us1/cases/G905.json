@@ -1,0 +1,15 @@
+{
+  "case_id": "G905",
+  "chat_id": "01K5CHAT905000000000000000",
+  "patient_id": "01K5PAT9050000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 0.5,
+  "terminal": {"kind": "silent", "payload": {"type": "silent"}},
+  "patient_message": {"id": "01K5MSG9050000000000000000", "content": "Can I have a video visit?", "attention_mark": "unanswered", "request_outcomes": null},
+  "assistant_message": null,
+  "segments": null,
+  "events": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "silenced_turn"
+}

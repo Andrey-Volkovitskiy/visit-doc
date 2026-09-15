@@ -1,10 +1,12 @@
 """Structlog configuration: the one centralized place log entries are shaped/rendered.
 
 Every log call flows through one processor chain (merge correlation id -> add level ->
-add timestamp -> truncate -> redact -> render), so switching the rendering later is a
-one-line change here, not a rewrite of every call site.
+add timestamp -> truncate -> redact -> render), so the rendering is chosen in one place:
+`console` for a person reading a terminal, `json` for a program reading the log - one
+object per line - rather than in every call site.
 """
 
+import json
 import logging
 import re
 import sys
@@ -18,7 +20,7 @@ import structlog
 from structlog.types import EventDict, WrappedLogger
 
 _LogProcessor = Callable[[WrappedLogger, str, EventDict], EventDict]
-_ConsoleRenderer = Callable[[WrappedLogger, str, EventDict], str]
+_Renderer = Callable[[WrappedLogger, str, EventDict], str]
 
 _MAX_STRING_LENGTH = 2000
 _TRUNCATION_SUFFIX = "..."
@@ -38,6 +40,13 @@ _LEVEL_STYLES = {
     "error": "\033[31m",  # red foreground
     "critical": "\033[1m\033[41m\033[97m",  # bold, red background, bright white text
 }
+
+
+class LogFormat(StrEnum):
+    """How the last processor in the chain renders an entry."""
+
+    CONSOLE = "console"
+    JSON = "json"
 
 
 class LogLevel(StrEnum):
@@ -134,7 +143,7 @@ def make_redact_secrets_processor(
     return _processor
 
 
-def _build_console_renderer() -> _ConsoleRenderer:
+def _build_console_renderer() -> _Renderer:
     """Build the one terminal renderer: critical > error > warning > info > debug.
 
     A debug entry is dimmed whole rather than only in its level column, which is what
@@ -155,6 +164,29 @@ def _build_console_renderer() -> _ConsoleRenderer:
     return _render
 
 
+def _build_json_renderer() -> _Renderer:
+    """Build the machine-readable renderer: one JSON object per line, no colour.
+
+    A value `json` cannot encode is rendered as its `str` rather than dropped - a line
+    that silently loses a field is worse than one carrying a repr. A `StrEnum` needs no
+    such help: it is a `str`, so it renders as its value at any nesting depth.
+    """
+
+    def _render(
+        _logger: WrappedLogger, _method_name: str, event_dict: EventDict
+    ) -> str:
+        """Render one entry as a single line of JSON."""
+        return json.dumps(event_dict, default=str)
+
+    return _render
+
+
+_RENDERERS: dict[LogFormat, Callable[[], _Renderer]] = {
+    LogFormat.CONSOLE: _build_console_renderer,
+    LogFormat.JSON: _build_json_renderer,
+}
+
+
 def _threshold(level: LogLevel) -> int:
     """Return the numeric filtering threshold for `level`."""
     return logging.getLevelNamesMapping()[level]
@@ -165,6 +197,7 @@ def configure_logging(
     secret_fields: Sequence[str] = (),
     secret_url_fields: Sequence[str] = (),
     log_level: LogLevel = LogLevel.INFO,
+    log_format: LogFormat = LogFormat.CONSOLE,
 ) -> None:
     """Configure the shared structlog processor chain.
 
@@ -174,6 +207,9 @@ def configure_logging(
             is the secret.
         log_level: The lowest level to emit; anything below it is dropped before its
             arguments are rendered, so a debug call costs nothing when off.
+        log_format: How an entry is rendered. Only the last processor differs:
+            truncation and redaction run first under either format, so a JSON line is
+            rendered from an already-redacted entry.
 
     A service must pass every secret-bearing field it has: these two lists are what the
     redaction processor matches live values against, and a field missing from them is
@@ -186,7 +222,7 @@ def configure_logging(
             structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
             _truncate_long_strings,
             make_redact_secrets_processor(settings, secret_fields, secret_url_fields),
-            _build_console_renderer(),
+            _RENDERERS[log_format](),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(_threshold(log_level)),
         logger_factory=structlog.PrintLoggerFactory(),

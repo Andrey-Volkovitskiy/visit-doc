@@ -1,0 +1,35 @@
+{
+  "case_id": "G947",
+  "chat_id": "01K5CHAT947000000000000000",
+  "patient_id": "01K5PAT9470000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 180.0,
+  "terminal": {
+    "kind": "error",
+    "payload": {}
+  },
+  "patient_message": {
+    "id": "01K5MSG9470000000000000000",
+    "content": "Move my appointment to Tuesday at 10",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": null,
+  "segments": null,
+  "events": null,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-03T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-03T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": "outcome_unknown"
+}

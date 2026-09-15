@@ -1,0 +1,74 @@
+{
+  "case_id": "G926",
+  "chat_id": "01K5CHAT926000000000000000",
+  "patient_id": "01K5PAT9260000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "How early should I arrive?",
+          "answer": "Please arrive 15 minutes early.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 109,
+              "chunk_index": 0,
+              "chunk_text": "Please arrive 15 minutes before your appointment."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9260000000000000000", "content": "Good morning! How early should I arrive?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9260000000000000000",
+    "content": "Please arrive 15 minutes early.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "How early should I arrive?",
+        "answer": "Please arrive 15 minutes early.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 109,
+            "chunk_index": 0,
+            "chunk_text": "Please arrive 15 minutes before your appointment."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "How early should I arrive?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:26:01Z", "turn_id": "01K5MSG9260000000000000000", "message": "Good morning! How early should I arrive?", "message_ids_unified": ["01K5MSG9260000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:26:02Z", "turn_id": "01K5MSG9260000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "How early should I arrive?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9260000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:26:10Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 109, "chunk_index": 0, "similarity_score": 0.77, "considered": true, "chunk_text": "Please arrive 15 minutes before your appointment.", "text_truncated": false}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.41, "considered": true, "chunk_text": "Please bring a photo ID and your insurance card.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9260000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:26:11Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [{"entry_id": 109, "chunk_index": 0, "similarity_score": 0.77}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.41}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9260000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:26:12Z", "model": "rerank-3", "candidate_count": 2, "duration_ms": 180.0, "scores": [{"entry_id": 109, "chunk_index": 0, "similarity_score": 0.77, "rerank_score": 0.93}, {"entry_id": 102, "chunk_index": 0, "similarity_score": 0.41, "rerank_score": 0.12}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9260000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:26:13Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 109, "chunk_index": 0, "rerank_score": 0.93}], "dropped_by_floor": [{"entry_id": 102, "chunk_index": 0, "rerank_score": 0.12}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9260000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:26:14Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.77, "best_rerank_score": 0.93},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:26:59Z", "turn_id": "01K5MSG9260000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

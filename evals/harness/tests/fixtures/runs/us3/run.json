@@ -1,0 +1,80 @@
+{
+  "run_id": "01K5US3RVN0000000000000000",
+  "started_at": "2026-09-14T11:00:00Z",
+  "finished_at": "2026-09-14T11:20:00Z",
+  "drive_seconds": 241.0,
+  "clock": "2026-03-02T08:00:00",
+  "session_id": "01K5SESS300000000000000000",
+  "corpus": {
+    "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "matched": true
+  },
+  "selection": {
+    "kind": "ids",
+    "family": null,
+    "case_ids": [
+      "G941",
+      "G942",
+      "G943",
+      "G944",
+      "G945",
+      "G946",
+      "G947",
+      "G948",
+      "G949",
+      "G950",
+      "G951"
+    ]
+  },
+  "entry_ids": {
+    "referral": 101,
+    "what-to-bring": 102,
+    "telehealth": 103,
+    "insurance-plans": 104,
+    "out-of-network": 105,
+    "out-of-pocket-rates": 106,
+    "payment": 107,
+    "hours-location": 108,
+    "arrival-time": 109
+  },
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "generation_model": "claude-sonnet-5",
+    "embedding_model": "voyage-3.5",
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_floor": 0.3,
+    "similarity_cap": 5,
+    "rerank_floor": 0.58,
+    "rerank_cap": 3,
+    "max_segments": 3,
+    "context_turns": 5
+  },
+  "labels": {
+    "G941": "c7abebf766bab5066cc31653eaad0cfb562cfb1025dcf815a007c451f2a78ab6",
+    "G942": "21593dcb868ecda15cb86dc78f08b4941c73a2cbade80257662fa24504b5e344",
+    "G943": "388ed43cf089f2cc6d30a9c31f02b4dd125d7f3853fe521179f47741aab64a4e",
+    "G944": "bfa23f1958e39bbd0e450415321767e3d6735a29034f7ccded46cb5bae50e4a2",
+    "G945": "da7c8a95e42b29d50a4d1b3e88b957d4e0e18bd01a1b31ffed064d6f6727b82d",
+    "G946": "c9ae970f0e2aa2f82d12fdd6edfb90263b27af0758386d988c71fb83870cf82d",
+    "G947": "384f32f79086396d7ac686643ec3effed571a1cf011d28a28cfcc648bbfdbfbc",
+    "G948": "8e6841ee407ad5aedd42cf3f59a1f95bcf15564afd1bb61f15891a03ff02fa4f",
+    "G949": "77d34f488942cdd37ae723addc86eb4bbb635128df6a68fb9291ee7578abacc3",
+    "G950": "f782fbc654e26b4c45cc5aa068d981f5fa46317ba0cd3a3cdebdda2bc99a87d2",
+    "G951": "f0b22cb21b2e6098fabba3a53d673e97f36e5da6a386d5feb8f386f2b7fca401"
+  },
+  "cases": [
+    "G941",
+    "G942",
+    "G943",
+    "G944",
+    "G945",
+    "G946",
+    "G947",
+    "G948",
+    "G949",
+    "G950",
+    "G951"
+  ]
+}

@@ -9,6 +9,7 @@ is declared once instead of repeated.
 import pytest
 from chat.core.config import Settings
 from pydantic import ValidationError
+from shared_logging import LogFormat
 
 # Every field 007 adds, so an unconfigured build can be constructed deliberately.
 _NEW_FIELDS = (
@@ -23,6 +24,7 @@ _NEW_FIELDS = (
     "RERANK_CAP",
     "RERANK_TIMEOUT_SECONDS",
     "RERANK_MODEL",
+    "LOG_FORMAT",
 )
 
 
@@ -120,6 +122,20 @@ def test_rerank_gate_is_narrower_than_the_similarity_gate(
 def test_reranking_call_defaults(unconfigured: Settings) -> None:
     assert unconfigured.RERANK_TIMEOUT_SECONDS == 5.0
     assert unconfigured.RERANK_MODEL == "rerank-3"
+
+
+def test_log_format_defaults_to_the_console(unconfigured: Settings) -> None:
+    # `json` is for the golden harness, which reads the log as data; a person running
+    # the service in a terminal should not have to ask for the readable one.
+    assert unconfigured.LOG_FORMAT is LogFormat.CONSOLE
+
+
+def test_log_format_accepts_json_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LOG_FORMAT", "json")
+
+    assert _settings(_env_file=None).LOG_FORMAT is LogFormat.JSON
 
 
 def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:

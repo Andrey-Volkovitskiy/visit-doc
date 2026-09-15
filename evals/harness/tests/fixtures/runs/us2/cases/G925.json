@@ -1,0 +1,58 @@
+{
+  "case_id": "G925",
+  "chat_id": "01K5CHAT925000000000000000",
+  "patient_id": "01K5PAT9250000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Which cards does the clinic take?",
+          "answer": null,
+          "verdict": "abstained_empty_corpus",
+          "citations": []
+        }
+      ],
+      "message": "I don't have an answer to that, so I've asked a member of staff to help.",
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9250000000000000000", "content": "Which cards do you take?", "attention_mark": "corpus_could_not_answer", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9250000000000000000",
+    "content": "I don't have an answer to that, so I've asked a member of staff to help.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Which cards does the clinic take?",
+        "answer": null,
+        "verdict": "abstained_empty_corpus",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Which cards does the clinic take?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:25:01Z", "turn_id": "01K5MSG9250000000000000000", "message": "Which cards do you take?", "message_ids_unified": ["01K5MSG9250000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:25:02Z", "turn_id": "01K5MSG9250000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "Which cards does the clinic take?"}], "cap_bound": false},
+    {"event": "turn.retrieval_skipped_empty_corpus", "level": "info", "turn_id": "01K5MSG9250000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:25:10Z"},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:25:59Z", "turn_id": "01K5MSG9250000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

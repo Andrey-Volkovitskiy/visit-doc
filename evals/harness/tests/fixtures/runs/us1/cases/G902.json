@@ -1,0 +1,41 @@
+{
+  "case_id": "G902",
+  "chat_id": "01K5CHAT902000000000000000",
+  "patient_id": "01K5PAT9020000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 3.25,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {"position": 0, "question": "What should I bring to my first appointment?", "answer": "Bring a photo ID and your insurance card.", "verdict": "answered", "citations": [{"entry_id": 102, "chunk_index": 0, "chunk_text": "Please bring a photo ID and your insurance card."}]}
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9020000000000000000", "content": "Hi there! What should I bring to my first appointment?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9020000000000000000",
+    "content": "Bring a photo ID and your insurance card.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {"position": 0, "question": "What should I bring to my first appointment?", "answer": "Bring a photo ID and your insurance card.", "verdict": "answered", "citations": [{"entry_id": 102, "chunk_index": 0, "chunk_text": "Please bring a photo ID and your insurance card."}]}
+    ]
+  },
+  "segments": {
+    "segments": [
+      {"position": 0, "intent": "faq_question", "text": "What should I bring to my first appointment?"}
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T09:01:01Z", "turn_id": "01K5MSG9020000000000000000", "message": "Hi there! What should I bring to my first appointment?", "message_ids_unified": ["01K5MSG9020000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T09:01:02Z", "turn_id": "01K5MSG9020000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "What should I bring to my first appointment?"}], "cap_bound": false},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T09:01:04Z", "turn_id": "01K5MSG9020000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

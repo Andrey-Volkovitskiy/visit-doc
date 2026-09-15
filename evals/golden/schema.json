@@ -4,6 +4,11 @@
   "title": "VisitDoc golden-set case",
   "description": "One labelled patient message. The label attaches to a request, not to a message: `requests` is the expected segmentation, in order. Anything derivable from `requests` is deliberately absent - see README.md.",
   "type": "array",
+  "$defs": {
+    "practitioner": {"type": "string", "minLength": 1, "description": "A pool name the scheduler seeds a fresh session with: `William Osler` (General Practice, Mon-Fri 09:00-17:00) or `Andreas Vesalius` (Dentistry, Mon-Sat 09:00-14:00)."},
+    "day": {"type": "string", "pattern": "^[+-][0-9]+d$", "description": "Days from the run clock's date: `+3d` on the default Monday clock is Thursday."},
+    "time": {"type": "string", "pattern": "^[0-9]{2}:[0-9]{2}$", "description": "Local start time, HH:MM."}
+  },
   "items": {
     "type": "object",
     "additionalProperties": false,
@@ -82,6 +87,48 @@
               "then": {"properties": {"cites": {"minItems": 1}}}
             }
           ]
+        }
+      },
+      "scheduling": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["given", "expect"],
+        "description": "Present exactly on a case carrying a booking request. What the case should leave behind in the scheduler: `given` is planted before the turn, `expect` is the COMPLETE set of the patient's appointments after the case's last turn - the reply's, when `reply` is present. A case expected to change nothing restates `given`.",
+        "properties": {
+          "given": {
+            "type": "array",
+            "description": "The standing appointments planted before the turn, through the scheduler's own contract. May be empty.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["practitioner", "day", "time"],
+              "properties": {
+                "practitioner": {"$ref": "#/$defs/practitioner"},
+                "day": {"$ref": "#/$defs/day"},
+                "time": {"$ref": "#/$defs/time"}
+              }
+            }
+          },
+          "expect": {
+            "type": "array",
+            "description": "Every appointment the patient holds after the turn, standing or cancelled. Matched one-to-one; an appointment no entry accounts for is a failure.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["practitioner", "day", "status"],
+              "properties": {
+                "practitioner": {"$ref": "#/$defs/practitioner"},
+                "day": {"$ref": "#/$defs/day"},
+                "time": {"$ref": "#/$defs/time", "description": "Omitted means any start that day - how a message that names no time is labelled."},
+                "status": {"enum": ["standing", "cancelled"]}
+              }
+            }
+          },
+          "reply": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The patient's scripted answer to what the first turn asked, posted verbatim as a second full turn in the same chat once the first turn has replied (FR-037b). Present on a case whose write the booking loop has to confirm first; with it, the appointments after the first turn must still be `given`, all standing, and `expect` is read after the reply."
+          }
         }
       },
       "source": {"type": "string", "description": "Where the case came from: `<spec>/<set>#<id>`, or `new`. A `(relabelled)` or `(re-expressed)` suffix means PROVENANCE.md records what changed."},

@@ -1,0 +1,60 @@
+{
+  "case_id": "G923",
+  "chat_id": "01K5CHAT923000000000000000",
+  "patient_id": "01K5PAT9230000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Does the clinic offer acupuncture?",
+          "answer": null,
+          "verdict": "abstained_similarity_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have an answer to that, so I've asked a member of staff to help.",
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9230000000000000000", "content": "Do you offer acupuncture?", "attention_mark": "corpus_could_not_answer", "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9230000000000000000",
+    "content": "I don't have an answer to that, so I've asked a member of staff to help.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Does the clinic offer acupuncture?",
+        "answer": null,
+        "verdict": "abstained_similarity_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Does the clinic offer acupuncture?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:23:01Z", "turn_id": "01K5MSG9230000000000000000", "message": "Do you offer acupuncture?", "message_ids_unified": ["01K5MSG9230000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:23:02Z", "turn_id": "01K5MSG9230000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "Does the clinic offer acupuncture?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9230000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:23:10Z", "pool_size": 25, "pool_returned": 2, "candidates": [{"entry_id": 103, "chunk_index": 0, "similarity_score": 0.21, "considered": false, "chunk_text": "Video visits are available for follow-up appointments.", "text_truncated": false}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.18, "considered": false, "chunk_text": "Our clinic is open from 8am to 5pm on weekdays.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9230000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:23:11Z", "floor": 0.3, "cap": 5, "pool_returned": 2, "kept": [], "dropped_by_floor": [{"entry_id": 103, "chunk_index": 0, "similarity_score": 0.21}, {"entry_id": 108, "chunk_index": 0, "similarity_score": 0.18}], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9230000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:23:14Z", "verdict": "abstained_similarity_floor", "survivor_count": 0, "blocked_gate": "similarity_floor", "best_similarity_score": 0.21, "best_rerank_score": null},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:23:59Z", "turn_id": "01K5MSG9230000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

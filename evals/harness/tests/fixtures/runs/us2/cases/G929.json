@@ -1,0 +1,74 @@
+{
+  "case_id": "G929",
+  "chat_id": "01K5CHAT929000000000000000",
+  "patient_id": "01K5PAT9290000000000000000",
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Is there parking at the clinic?",
+          "answer": "The clinic is at 12 Main Street.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 108,
+              "chunk_index": 1,
+              "chunk_text": "The clinic is located at 12 Main Street."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {"id": "01K5MSG9290000000000000000", "content": "Is there parking at the clinic?", "attention_mark": null, "request_outcomes": null},
+  "assistant_message": {
+    "id": "01K5RPL9290000000000000000",
+    "content": "The clinic is at 12 Main Street.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Is there parking at the clinic?",
+        "answer": "The clinic is at 12 Main Street.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 108,
+            "chunk_index": 1,
+            "chunk_text": "The clinic is located at 12 Main Street."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Is there parking at the clinic?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {"event": "turn.message_received", "level": "info", "timestamp": "2026-09-14T10:29:01Z", "turn_id": "01K5MSG9290000000000000000", "message": "Is there parking at the clinic?", "message_ids_unified": ["01K5MSG9290000000000000000"]},
+    {"event": "intent.classified", "level": "info", "timestamp": "2026-09-14T10:29:02Z", "turn_id": "01K5MSG9290000000000000000", "intents": ["faq_question"], "segments": [{"position": 0, "intent": "faq_question", "text": "Is there parking at the clinic?"}], "cap_bound": false},
+    {"event": "faq.retrieval_completed", "level": "info", "turn_id": "01K5MSG9290000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:29:10Z", "pool_size": 25, "pool_returned": 1, "candidates": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.45, "considered": true, "chunk_text": "The clinic is located at 12 Main Street.", "text_truncated": false}]},
+    {"event": "faq.similarity_gate", "level": "info", "turn_id": "01K5MSG9290000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:29:11Z", "floor": 0.3, "cap": 5, "pool_returned": 1, "kept": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.45}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.reranking_completed", "level": "info", "turn_id": "01K5MSG9290000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:29:12Z", "model": "rerank-3", "candidate_count": 1, "duration_ms": 180.0, "scores": [{"entry_id": 108, "chunk_index": 1, "similarity_score": 0.45, "rerank_score": 0.61}]},
+    {"event": "faq.rerank_gate", "level": "info", "turn_id": "01K5MSG9290000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:29:13Z", "floor": 0.58, "cap": 3, "kept": [{"entry_id": 108, "chunk_index": 1, "rerank_score": 0.61}], "dropped_by_floor": [], "dropped_by_cap": []},
+    {"event": "faq.verdict", "level": "info", "turn_id": "01K5MSG9290000000000000000", "node": "answer_faq", "segment": 0, "timestamp": "2026-09-14T10:29:14Z", "verdict": "answered", "survivor_count": 1, "blocked_gate": null, "best_similarity_score": 0.45, "best_rerank_score": 0.61},
+    {"event": "turn.completed", "level": "info", "timestamp": "2026-09-14T10:29:59Z", "turn_id": "01K5MSG9290000000000000000", "outcome": "faq"}
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}
