@@ -24,22 +24,19 @@ who normally runs at `medium` is not silently moved up.
 ### 1. Record the baseline and raise the effort
 
 ```bash
-python3 -c "import json;print(json.load(open('$HOME/.claude/settings.json')).get('effortLevel','<unset>'))"
+python3 .claude/skills/review-loop/set-effort.py
 ```
 
 Keep that value — it is what step 6 restores. Then set `effortLevel` to `xhigh`:
 
 ```bash
-python3 - <<'PY'
-import json, pathlib
-p = pathlib.Path.home() / ".claude/settings.json"
-s = json.loads(p.read_text())
-s["effortLevel"] = "xhigh"
-p.write_text(json.dumps(s, indent=2) + "\n")
-PY
+python3 .claude/skills/review-loop/set-effort.py xhigh
 ```
 
-One key, edited in place — do not rewrite the file wholesale, and do not touch any other key.
+It prints the value read back; check it says `xhigh`. Run both from the repo root and in exactly
+this form: `.claude/settings.local.json` allows `python3 .claude/skills/review-loop/set-effort.py`
+and nothing broader, so a heredoc or `python3 -c` edit of the settings file is refused as
+self-modification. The script touches only this one key and accepts only a known level.
 
 **State plainly in your first message that the global effort level is now raised and will be
 restored at the end.** The user is paying for it and cannot see the setting change.
@@ -101,17 +98,12 @@ If the checks fail, say so prominently and do not describe the loop as successfu
 Put back the value recorded in step 1:
 
 ```bash
-python3 - <<'PY'
-import json, pathlib, sys
-p = pathlib.Path.home() / ".claude/settings.json"
-s = json.loads(p.read_text())
-s["effortLevel"] = sys.argv[1] if len(sys.argv) > 1 else "high"
-p.write_text(json.dumps(s, indent=2) + "\n")
-PY
+python3 .claude/skills/review-loop/set-effort.py <baseline>
 ```
 
-Read the file back and confirm the value, rather than assuming the write landed. Report the
-confirmed value.
+If the baseline was `<unset>`, pass `unset`, which removes the key rather than inventing a value.
+The script prints the value it read back after writing; confirm it matches the baseline rather than
+assuming the write landed, and report that confirmed value.
 
 ### 7. Report
 
