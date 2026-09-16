@@ -58,6 +58,7 @@ refusal, not a warning:
 | A run that recorded fewer cases than it selected | the selection says what a run meant to drive and the records say what it has, and it is the records every metric is computed over. A run that stopped partway measures each metric over a population of its own, so its value beside four full ones would put a population difference inside a range that claims to be run-to-run noise — while the band's `case_ids` named a set it never measured. This is the one place a band is stricter than a comparison, which reports such a run as incomplete and carries on (FR-012): a comparison over a narrower case set is still a comparison, whereas a band's whole claim is that its five runs differ by chance alone |
 | Conditions differ in any field | a band across two builds measures the change, not the noise (FR-030) |
 | Corpus hash differs | the runs answered against different text |
+| Run clocks differ | every scheduling fixture's day offset is resolved against the run clock, so two clocks are two sets of expected appointments — a difference in what was asked, not in what chance did with one question |
 | Label digests differ | the runs were scored against different questions |
 | Case sets differ | a metric's range would be taken over different populations |
 

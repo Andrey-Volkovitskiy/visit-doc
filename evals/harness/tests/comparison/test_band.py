@@ -7,6 +7,7 @@ produced each state - and never a standard deviation, a confidence interval or a
 threshold (FR-032, FR-038).
 """
 
+import json
 import shutil
 from collections.abc import Callable
 from pathlib import Path
@@ -18,6 +19,7 @@ from golden_harness.comparison.compare import compare
 from golden_harness.comparison.model import MovementDirection
 from golden_harness.comparison.render import BAND_STATEMENT, render_comparison
 from golden_harness.scoring.serving import UNSERVED_ANSWERABLE_SHARE
+from pydantic import ValidationError
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "runs" / "band"
 SCHEMA = Path(__file__).resolve().parents[4] / "evals" / "golden" / "schema.json"
@@ -313,3 +315,44 @@ def test_a_band_carries_no_threshold_and_no_target(band: NoiseBand) -> None:
     assert not {"threshold", "target", "pass", "verdict"} & set(stored)
     for observation in stored["metrics"].values():
         assert set(observation) == {"name", "values", "low", "high"}
+
+
+def test_runs_driven_on_different_clocks_are_refused(
+    band_run: Runs, band_labels: list[Case], tmp_path: Path
+) -> None:
+    # Two clocks are two sets of expected appointments, which is a difference in what
+    # was asked rather than in what chance did with one question.
+    other = tmp_path / "other-clock"
+    shutil.copytree(band_run("run5"), other)
+    run = json.loads((other / "run.json").read_text())
+    run["clock"] = "2026-03-09T08:00:00"
+    (other / "run.json").write_text(json.dumps(run))
+    runs = [band_run(name) for name in _FIVE[:4]] + [other]
+
+    with pytest.raises(BandRefusedError, match="clock"):
+        build_band(runs, band_labels)
+
+
+def test_a_stored_band_that_does_not_hold_five_runs_is_refused(
+    band: NoiseBand,
+) -> None:
+    # A band is read back from a file, and every sentence printed beside its numbers -
+    # "five observations", "in 4 of 5" - is true only while the counts are.
+    stored = band.model_dump(mode="json")
+    stored["run_ids"] = stored["run_ids"][:3]
+
+    with pytest.raises(ValidationError, match="5 runs"):
+        NoiseBand.model_validate(stored)
+
+
+def test_a_stored_band_with_a_metric_of_another_count_is_refused(
+    band: NoiseBand,
+) -> None:
+    stored = band.model_dump(mode="json")
+    observed = stored["metrics"][UNSERVED_ANSWERABLE_SHARE]
+    observed["values"] = observed["values"][:2]
+    observed["low"] = min(observed["values"])
+    observed["high"] = max(observed["values"])
+
+    with pytest.raises(ValidationError, match=UNSERVED_ANSWERABLE_SHARE):
+        NoiseBand.model_validate(stored)

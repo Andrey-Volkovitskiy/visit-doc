@@ -120,6 +120,7 @@ actually happened", and the one a reader acts on.
 | `direction` | `MovementDirection` | `improved`, `degraded` or `directionless` — never `unchanged`, since an unchanged case is not a movement |
 | `question` | `str \| None` | the request's question where one exists, so a finding arrives with the text attached |
 | `affects` | `list[str]` | the metric names this movement changed the contribution to, so FR-017's "for every metric, the cases behind it" is answerable in both directions — a movement knows its metrics, and a metric's movements are those naming it. Empty when the movement changes no published metric, which an exclusion movement often does not |
+| `labelled` | `str \| None` | what the label asks of this request in the reader's words — `answerable` or `a gap` — and the only thing licensing the renderer's "; labelled …" clause. Carried rather than re-derived, since a stored comparison is re-rendered without its labels, and None wherever the label asks nothing directed, which is every group but `verdict` |
 | `varies_on_its_own` | `bool` | the band observed this case varying on an unchanged build (FR-035) |
 
 `MovementGroup` (StrEnum): `verdict`, `retrieval_rank`, `segmentation`, `tool_selection`,
@@ -131,9 +132,9 @@ actually happened", and the one a reader acts on.
 |---|---|---|
 | `verdict` | `CaseRun.assistant_message.request_outcomes[position].verdict` | against the label's `answerable`: answer→abstention on an answerable request is `degraded`, the reverse `improved`; abstention→abstention at a different gate is `directionless` |
 | `retrieval_rank` | `RetrievalRequest.similarity` / `.rerank` | a lower rank is `improved`; scored↔excluded is `directionless` |
-| `segmentation` | produced segmentation vs the label's intents | moving to agreement is `improved`, away `degraded`, one disagreement to another `directionless` |
-| `tool_selection` | `BookingScores.tool_selection_misses` | losing a miss is `improved`, gaining one `degraded` |
-| `database_state` | `BookingScores.task_failures` | losing a failure is `improved`, gaining one `degraded` |
+| `segmentation` | produced segmentation vs the label's intents | moving to agreement is `improved`, away `degraded`, one disagreement to another `directionless`; a case a case-scoped reason set aside on either side is `directionless` too — the classification scorers measured nothing for it, so "not classified" is an absent measurement rather than a disagreement |
+| `tool_selection` | `BookingScores.tool_selection_misses` | losing a miss is `improved`, gaining one `degraded`; a case the booking scorers never scored — not a booking case, or set aside — reads as `not scored for booking` and is `directionless`, since the absence of a published miss is not the clean state |
+| `database_state` | `BookingScores.task_failures` | losing a failure is `improved`, gaining one `degraded`; `not scored for booking` on either side is `directionless`, as above |
 | `exclusion` | `CaseRun.excluded` | always `directionless` (FR-021) — the case left or entered a denominator, which is neither better nor worse |
 
 ---

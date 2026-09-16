@@ -109,7 +109,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--resume", help="a run id or directory to continue", default=None
     )
     chosen.add_argument(
-        "--cases", type=_case_ids, help="comma-separated case ids", default=None
+        "--cases", type=_ids, help="comma-separated case ids", default=None
     )
     chosen.add_argument("--family", help="drive one family of cases", default=None)
     run.add_argument(
@@ -151,7 +151,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     band.add_argument(
         "--runs",
         required=True,
-        type=_case_ids,
+        type=_ids,
         help="five run ids or directories, comma-separated, in the order taken",
     )
     band.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS)
@@ -252,8 +252,11 @@ def _local_clock(value: str) -> datetime:
     return parsed
 
 
-def _case_ids(value: str) -> list[str]:
-    """Split a comma-separated case list, ignoring blanks around commas."""
+def _ids(value: str) -> list[str]:
+    """Split a comma-separated id list, ignoring blanks around commas.
+
+    Shared by `run --cases` and `band --runs`: both take ids or, for a run, a path.
+    """
     return [part.strip() for part in value.split(",") if part.strip()]
 
 

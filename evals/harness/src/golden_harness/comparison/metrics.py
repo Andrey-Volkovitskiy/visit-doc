@@ -24,8 +24,28 @@ from golden_harness.comparison.model import (
     MetricMovement,
     MovementDirection,
 )
-from golden_harness.report import METRICS_BY_FAMILY, MetricFamily, Report
+from golden_harness.report import MetricFamily, Report
+from golden_harness.scoring.booking import (
+    END_TO_END_TASK_SUCCESS,
+    TOOL_SELECTION_CORRECTNESS,
+)
+from golden_harness.scoring.classification import (
+    EXACT_SEGMENTATION_MATCH,
+    INTENT_ACCURACY,
+    REQUEST_COUNT_ACCURACY,
+)
 from golden_harness.scoring.metric import NOT_MEASURED, Metric
+from golden_harness.scoring.retrieval import (
+    RERANK_HIT_AT_1,
+    RERANK_HIT_AT_3,
+    RERANK_HIT_AT_5,
+    RERANK_MRR,
+    SIMILARITY_GATE_SURVIVAL,
+    SIMILARITY_HIT_AT_1,
+    SIMILARITY_HIT_AT_3,
+    SIMILARITY_HIT_AT_5,
+    SIMILARITY_MRR,
+)
 from golden_harness.scoring.serving import (
     UNSERVED_ANSWERABLE_SHARE,
     VERDICT_DISTRIBUTION,
@@ -41,22 +61,46 @@ class Polarity(StrEnum):
     NONE = "none"
 
 
+# One row per metric, written out rather than defaulted: a table that fell back to
+# "higher is better" for a name it did not know would report the next lower-is-better
+# metric backwards, silently, and `_direction` reads a name with no row as `NONE`, so a
+# metric added to a family and forgotten here is reported unmarked rather than guessed
+# at. `test_every_published_metric_has_a_declared_polarity` is what keeps the two lists
+# together.
+_DECLARED: Final[dict[str, Polarity]] = {
+    REQUEST_COUNT_ACCURACY: Polarity.HIGHER_IS_BETTER,
+    INTENT_ACCURACY: Polarity.HIGHER_IS_BETTER,
+    EXACT_SEGMENTATION_MATCH: Polarity.HIGHER_IS_BETTER,
+    SIMILARITY_HIT_AT_1: Polarity.HIGHER_IS_BETTER,
+    SIMILARITY_HIT_AT_3: Polarity.HIGHER_IS_BETTER,
+    SIMILARITY_HIT_AT_5: Polarity.HIGHER_IS_BETTER,
+    SIMILARITY_MRR: Polarity.HIGHER_IS_BETTER,
+    RERANK_HIT_AT_1: Polarity.HIGHER_IS_BETTER,
+    RERANK_HIT_AT_3: Polarity.HIGHER_IS_BETTER,
+    RERANK_HIT_AT_5: Polarity.HIGHER_IS_BETTER,
+    RERANK_MRR: Polarity.HIGHER_IS_BETTER,
+    SIMILARITY_GATE_SURVIVAL: Polarity.HIGHER_IS_BETTER,
+    UNSERVED_ANSWERABLE_SHARE: Polarity.LOWER_IS_BETTER,
+    WRONG_ABSTENTION_SHARE: Polarity.LOWER_IS_BETTER,
+    TOOL_SELECTION_CORRECTNESS: Polarity.HIGHER_IS_BETTER,
+    END_TO_END_TASK_SUCCESS: Polarity.HIGHER_IS_BETTER,
+}
+
+
 def _polarity_table() -> dict[str, Polarity]:
-    """Build the polarity of every published metric name, once."""
-    table: dict[str, Polarity] = {}
-    for names in METRICS_BY_FAMILY.values():
-        for name in names:
-            if name == VERDICT_DISTRIBUTION:
-                table.update(
-                    {
-                        f"{VERDICT_DISTRIBUTION}.{verdict.value}": Polarity.NONE
-                        for verdict in FaqVerdict
-                    }
-                )
-                continue
-            table[name] = Polarity.HIGHER_IS_BETTER
-    table[UNSERVED_ANSWERABLE_SHARE] = Polarity.LOWER_IS_BETTER
-    table[WRONG_ABSTENTION_SHARE] = Polarity.LOWER_IS_BETTER
+    """Build the polarity of every published metric name, once.
+
+    The verdict distribution is the one family expanded here rather than listed above:
+    it publishes one row per `FaqVerdict`, and every one of them counts what the run
+    produced rather than what it should have produced, so none has a direction.
+    """
+    table = dict(_DECLARED)
+    table.update(
+        {
+            f"{VERDICT_DISTRIBUTION}.{verdict.value}": Polarity.NONE
+            for verdict in FaqVerdict
+        }
+    )
     return table
 
 

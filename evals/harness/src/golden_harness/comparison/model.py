@@ -217,6 +217,12 @@ class CaseMovement(BaseModel):
     to, so FR-017 is answerable in both directions: a movement knows its metrics, and a
     metric's movements are those naming it. It is empty when the movement changes no
     published metric, which an exclusion movement often does not.
+
+    `labelled` is what the label asks of this request in the reader's words -
+    `answerable` or `a gap` - and is what licenses the renderer's "; labelled ..."
+    clause. It is carried rather than re-derived because a stored comparison is
+    re-rendered without its labels, and it is None wherever the label asks nothing
+    directed, which is every group but `verdict`.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -233,6 +239,7 @@ class CaseMovement(BaseModel):
     ]
     question: str | None
     affects: list[str]
+    labelled: str | None = None
     varies_on_its_own: bool = False
 
     @model_validator(mode="after")

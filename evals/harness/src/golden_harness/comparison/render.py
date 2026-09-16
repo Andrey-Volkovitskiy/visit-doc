@@ -334,10 +334,15 @@ def _case_line(movement: CaseMovement) -> str:
 
 
 def _labelled_as(movement: CaseMovement) -> str:
-    """Name what the label asks of a directed movement, so the judgement is bounded."""
-    if movement.group is MovementGroup.VERDICT:
-        return "; labelled answerable"
-    return ""
+    """Name what the label asks of a directed movement, so the judgement is bounded.
+
+    The movement carries the words: a request labelled a gap must not be described as
+    labelled answerable, which is what naming the group rather than reading the label
+    used to do.
+    """
+    if movement.labelled is None:
+        return ""
+    return f"; labelled {movement.labelled}"
 
 
 def _churn_lines(comparison: Comparison) -> list[str]:

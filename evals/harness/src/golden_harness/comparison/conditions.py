@@ -19,10 +19,16 @@ from golden_harness.report import Report
 # the run records it beside them - and the delta names it as one so a reader has one
 # list to read rather than two.
 CORPUS_FIELD: Final = "corpus_sha256"
+# The run clock, reported the same way and for the same reason: it is not a
+# `RunConditions` field either, but `score_booking` resolves every scheduling fixture's
+# day offset against it, so two runs taken on different clocks expected different
+# appointments - and a delta that said "the conditions matched in every field" would be
+# saying something untrue about the booking numbers below it.
+CLOCK_FIELD: Final = "clock"
 
 
 def condition_delta(base: Report, new: Report) -> ConditionDelta:
-    """Return every condition that differs, corpus hash first, then declaration order.
+    """Return every condition that differs: corpus, clock, then declaration order.
 
     Both values are rendered as text, so a float threshold and a model id read alike.
     """
@@ -33,6 +39,14 @@ def condition_delta(base: Report, new: Report) -> ConditionDelta:
                 field=CORPUS_FIELD,
                 base=base.corpus.live_sha256,
                 new=new.corpus.live_sha256,
+            )
+        )
+    if base.clock != new.clock:
+        changes.append(
+            ConditionChange(
+                field=CLOCK_FIELD,
+                base=base.clock.isoformat(),
+                new=new.clock.isoformat(),
             )
         )
     changes.extend(

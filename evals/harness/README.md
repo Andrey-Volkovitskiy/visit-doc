@@ -444,7 +444,7 @@ metric, then the case movements beneath them and the cases that moved under a me
 | A label's scored fields moved since a run was taken | stops, naming the cases — 2b's own refusal, inherited rather than restated |
 | The two runs recorded no case in common | stops, saying so |
 | A run directory is missing or unreadable | stops, naming it |
-| Conditions differ — a floor, a model, the corpus hash | **reported, not refused**: a threshold change is usually the change under test |
+| Conditions differ — a floor, a model, the corpus hash, the run clock | **reported, not refused**: a threshold change is usually the change under test |
 | One run recorded fewer cases than it selected | **reported as incomplete**, with the count |
 
 ### What a band is
@@ -454,8 +454,8 @@ answer to "how much do these numbers move when nothing changes?". It records eve
 values in run order with its lowest and highest, and per case that varied, each state with how many
 of the five produced it. `make eval-band` refuses anything that contradicts "these five differ only
 by chance": a count other than five, a run that drove part of the set, a run that stopped partway
-and recorded fewer cases than it selected, or any difference in conditions, corpus hash, label
-digests or case set — each naming what differs. The incomplete-run refusal is the one asymmetry
+and recorded fewer cases than it selected, or any difference in conditions, corpus hash, run clock,
+label digests or case set — each naming what differs. The incomplete-run refusal is the one asymmetry
 worth knowing: a *comparison* reports such a run as incomplete and carries on, because a narrower
 case set is still comparable, while a band cannot — its value would sit in a range beside four
 measured over a different population.

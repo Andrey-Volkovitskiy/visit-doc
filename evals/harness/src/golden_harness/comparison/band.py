@@ -119,6 +119,29 @@ class NoiseBand(BaseModel):
     varying_cases: list[CaseVariation]
     measured_at: datetime
 
+    @model_validator(mode="after")
+    def _a_band_holds_one_value_per_run(self) -> "NoiseBand":
+        """Refuse a record whose counts do not match the claim every rendering makes.
+
+        `build_band` cannot produce one, but a band is read back from a file, and every
+        sentence printed beside these numbers - "the spread of five observations",
+        "in 4 of 5" - is true only while the counts are. FR-027's "a band from another
+        count is a different measurement" applies to a stored one too.
+        """
+        if len(self.run_ids) != BAND_RUNS:
+            raise ValueError(f"a band names {BAND_RUNS} runs, not {len(self.run_ids)}")
+        miscounted = sorted(
+            name
+            for name, observation in self.metrics.items()
+            if len(observation.values) != BAND_RUNS
+        )
+        if miscounted:
+            raise ValueError(
+                f"a band observes one value per run; these hold another count: "
+                f"{', '.join(miscounted)}"
+            )
+        return self
+
     def applies_to(self, base: Report, new: Report) -> bool:
         """Whether this band was measured under the conditions both runs ran under.
 
@@ -250,6 +273,15 @@ def _refuse_a_difference(runs: Sequence[Run]) -> None:
                 "the runs answered against different corpus text: "
                 f"{first.corpus.live_sha256} in {first.run_id} and "
                 f"{run.corpus.live_sha256} in {run.run_id}"
+            )
+        if first.clock != run.clock:
+            # Every scheduling fixture's day offset is resolved against the run clock,
+            # so two clocks are two sets of expected appointments - a difference in
+            # what was asked, not in what chance did with one question.
+            raise BandRefusedError(
+                "the runs were driven on different clocks, so their booking fixtures "
+                f"expected different appointments: {first.clock.isoformat()} in "
+                f"{first.run_id} and {run.clock.isoformat()} in {run.run_id}"
             )
         moved = sorted(
             case_id

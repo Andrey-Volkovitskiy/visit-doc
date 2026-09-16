@@ -307,3 +307,25 @@ def test_a_complete_run_is_named_as_complete(run_dir: Runs, labels: list[Case]) 
         for line in summary.splitlines()
         if line.startswith(("- Base:", "- New:"))
     )
+
+
+def test_a_movement_on_a_labelled_gap_is_not_described_as_labelled_answerable(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    # The clause names what the label asks. A request labelled `answerable: false` is a
+    # gap, and calling it answerable would state the opposite of the label the
+    # direction was taken from.
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+    on_a_gap = comparison.model_copy(
+        update={
+            "cases": [
+                movement.model_copy(update={"labelled": "a gap"})
+                for movement in comparison.cases
+            ]
+        }
+    )
+
+    summary = render_comparison(on_a_gap)
+
+    assert "labelled a gap" in summary
+    assert "labelled answerable" not in summary

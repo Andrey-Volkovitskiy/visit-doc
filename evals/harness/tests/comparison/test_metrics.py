@@ -10,6 +10,7 @@ metric's name. And a metric one run did not compute, or did not measure, is
 from collections.abc import Callable
 
 import pytest
+from chat.domain.schemas import FaqVerdict
 from golden_harness.comparison.metrics import POLARITY, Polarity, metric_movements
 from golden_harness.comparison.model import MetricMovement, MovementDirection
 from golden_harness.report import METRICS_BY_FAMILY, Report
@@ -205,3 +206,14 @@ def test_a_metric_not_measured_on_one_side_is_not_comparable(
     assert movement.base is not None and movement.base.value == "not_measured"
     assert movement.direction is MovementDirection.NOT_COMPARABLE
     assert movement.delta is None
+
+
+def test_the_polarity_table_is_a_declaration_and_not_a_default() -> None:
+    # A table that fell back to "higher is better" for a name it did not know would
+    # report the next lower-is-better metric backwards and silently. Every row is
+    # written out, so an undeclared name has none - and `_direction` reads that as no
+    # direction at all rather than as a guess.
+    distribution = {f"{VERDICT_DISTRIBUTION}.{verdict.value}" for verdict in FaqVerdict}
+
+    assert set(POLARITY) == _published_names() | distribution
+    assert "a_metric_nobody_declared" not in POLARITY

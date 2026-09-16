@@ -10,7 +10,7 @@ worse (FR-019, FR-021).
 
 from collections.abc import Callable, Sequence
 
-from chat.domain.schemas import FaqVerdict
+from chat.domain.schemas import Citation, FaqVerdict
 from golden_harness.cases import Case
 from golden_harness.comparison.cases import case_movements
 from golden_harness.comparison.model import (
@@ -18,7 +18,7 @@ from golden_harness.comparison.model import (
     MovementDirection,
     MovementGroup,
 )
-from golden_harness.record import CaseRun
+from golden_harness.record import CaseRun, ExclusionReason
 from golden_harness.report import Report
 from golden_harness.scoring.serving import (
     UNSERVED_ANSWERABLE_SHARE,
@@ -459,3 +459,144 @@ def _movements_of(
 def _one(movements: Sequence[CaseMovement], group: MovementGroup) -> CaseMovement:
     (found,) = _of_group(movements, group)
     return found
+
+
+def _excluded(records: list[CaseRun], case_id: str) -> list[CaseRun]:
+    """Return the records with one case set aside by a case-scoped reason."""
+    return [
+        record.model_copy(update={"excluded": ExclusionReason.RUN_ERROR})
+        if record.case_id == case_id
+        else record
+        for record in records
+    ]
+
+
+def _handed_off(records: list[CaseRun], case_id: str) -> list[CaseRun]:
+    """Return the records with one case's turn handed off to a person."""
+    return [
+        record.model_copy(update={"excluded": ExclusionReason.HANDED_OFF_TURN})
+        if record.case_id == case_id
+        else record
+        for record in records
+    ]
+
+
+def _answered(records: list[CaseRun], case_id: str) -> list[CaseRun]:
+    """Return the records with one case's abstained request answered instead."""
+    changed: list[CaseRun] = []
+    for record in records:
+        if record.case_id != case_id or record.assistant_message is None:
+            changed.append(record)
+            continue
+        outcomes = [
+            outcome.model_copy(
+                update={
+                    "verdict": FaqVerdict.ANSWERED,
+                    "answer": "Yes, we do.",
+                    "citations": [
+                        Citation(entry_id=101, chunk_index=0, chunk_text="chunk of 101")
+                    ],
+                }
+            )
+            for outcome in (record.assistant_message.request_outcomes or [])
+        ]
+        reply = record.assistant_message.model_copy(
+            update={"request_outcomes": outcomes}
+        )
+        changed.append(record.model_copy(update={"assistant_message": reply}))
+    return changed
+
+
+def test_a_booking_case_set_aside_is_not_read_as_every_labelled_tool_called(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    # G804 missed a tool in `tool` and errors out on the new side. The booking scorers
+    # publish no miss for a case they set aside, and reading that silence as the clean
+    # state would report an errored case as an improvement over one that missed a tool.
+    base, new = scored("tool"), scored("base")
+    new_records = _excluded(case_runs("base"), "G804")
+
+    movements = _movements_of(base, new, case_runs("tool"), new_records, labels, "G804")
+
+    tools = _one(movements, MovementGroup.TOOL_SELECTION)
+    assert (tools.base, tools.new) == (
+        "missing book_appointment",
+        "not scored for booking",
+    )
+    assert tools.direction is MovementDirection.DIRECTIONLESS
+
+
+def test_a_booking_case_set_aside_is_not_read_as_expected_appointments_found(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    base, new = scored("poststate"), scored("base")
+    new_records = _excluded(case_runs("base"), "G804")
+
+    movements = _movements_of(
+        base, new, case_runs("poststate"), new_records, labels, "G804"
+    )
+
+    landed = _one(movements, MovementGroup.DATABASE_STATE)
+    assert landed.new == "not scored for booking"
+    assert landed.direction is MovementDirection.DIRECTIONLESS
+
+
+def test_a_segmentation_movement_on_a_case_set_aside_carries_no_direction(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    # The classification scorers measure nothing for a case a case-scoped reason set
+    # aside, so its segmentation neither agreed nor disagreed with the label.
+    base, new = scored("base"), scored("segmentation")
+    new_records = _excluded(case_runs("segmentation"), "G803")
+
+    movements = _movements_of(base, new, case_runs("base"), new_records, labels, "G803")
+
+    assert _one(movements, MovementGroup.SEGMENTATION).direction is (
+        MovementDirection.DIRECTIONLESS
+    )
+
+
+def test_a_handed_off_turns_outcome_claims_no_serving_metric(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    # The serving scorer sets aside every case carrying a turn-level reason,
+    # `handed_off_turn` included, so none of its outcomes counts towards the two shares
+    # or the verdict distribution - and a movement of one may claim none of them.
+    report = scored("base")
+    base_records = _handed_off(case_runs("base"), "G803")
+    new_records = _also_abstained(_handed_off(case_runs("base"), "G803"), "G803")
+
+    movements = _movements_of(report, report, base_records, new_records, labels, "G803")
+
+    claimed = {name for movement in movements for name in movement.affects}
+    assert WRONG_ABSTENTION_SHARE not in claimed
+    assert UNSERVED_ANSWERABLE_SHARE not in claimed
+    assert not {name for name in claimed if name.startswith("verdict_distribution")}
+
+
+def test_a_verdict_movement_on_a_labelled_gap_is_named_a_gap(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    # G806 is labelled `answerable: false`. Answering it is what the label warns
+    # against, so the movement is a degradation - and calling it "labelled answerable"
+    # would state the opposite of the label the direction came from.
+    report = scored("base")
+    new_records = _answered(case_runs("base"), "G806")
+
+    movements = _movements_of(
+        report, report, case_runs("base"), new_records, labels, "G806"
+    )
+
+    verdict = _one(movements, MovementGroup.VERDICT)
+    assert verdict.labelled == "a gap"
+    assert verdict.direction is MovementDirection.DEGRADED
+
+
+def test_a_verdict_movement_on_an_answerable_request_is_named_answerable(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    verdict = _one(
+        _movements(scored, case_runs, labels, "base", "verdict"), MovementGroup.VERDICT
+    )
+
+    assert verdict.labelled == "answerable"

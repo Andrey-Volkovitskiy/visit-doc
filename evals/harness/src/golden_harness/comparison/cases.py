@@ -31,7 +31,7 @@ from golden_harness.comparison.model import (
     MovementDirection,
     MovementGroup,
 )
-from golden_harness.record import CaseRun, ExclusionReason
+from golden_harness.record import CaseRun
 from golden_harness.report import Report
 from golden_harness.scoring.metric import CASE_SCOPED_REASONS
 from golden_harness.scoring.retrieval import (
@@ -61,9 +61,6 @@ type Item = tuple[str, int | None]
 type Contribution = dict[Item, str]
 
 _SCORED: Final = "scored"
-_NOT_PERMITTED: Final = frozenset(
-    {ExclusionReason.HANDED_OFF_TURN, ExclusionReason.SILENCED_TURN}
-)
 _HIT_AT: Final = {
     Stage.SIMILARITY: (
         (SIMILARITY_HIT_AT_1, 1),
@@ -116,8 +113,12 @@ def case_movements(
         movements.extend(
             _segmentation_movements(case_id, label, on_base[case_id], on_new[case_id])
         )
-        movements.extend(_tool_movements(case_id, base, new))
-        movements.extend(_database_movements(case_id, base, new))
+        movements.extend(
+            _tool_movements(label, on_base[case_id], on_new[case_id], base, new)
+        )
+        movements.extend(
+            _database_movements(label, on_base[case_id], on_new[case_id], base, new)
+        )
         movements.extend(
             _exclusion_movements(case_id, on_base[case_id], on_new[case_id])
         )
@@ -151,6 +152,7 @@ def _movement(
     new: str,
     direction: MovementDirection,
     question: str | None = None,
+    labelled: str | None = None,
 ) -> CaseMovement:
     """Build a movement with its `affects` left to be filled in by one place."""
     return CaseMovement(
@@ -161,6 +163,7 @@ def _movement(
         new=new,
         direction=direction,
         question=question,
+        labelled=labelled,
         affects=[],
     )
 
@@ -192,6 +195,7 @@ def _verdict_movements(
                 _verdict_state(after),
                 _verdict_direction(label, position, before, after),
                 question=_question(after) or _question(before),
+                labelled=_labelled_expectation(_labelled_answerable(label, position)),
             )
         )
     return movements
@@ -242,20 +246,45 @@ def _verdict_direction(
         return MovementDirection.DIRECTIONLESS
     if before.verdict.answered == after.verdict.answered:
         return MovementDirection.DIRECTIONLESS
-    if not 0 <= position < len(label.requests):
-        return MovementDirection.DIRECTIONLESS
-    request = label.requests[position]
-    if request.intent is not IntentLabel.FAQ_QUESTION or request.answerable is None:
+    answerable = _labelled_answerable(label, position)
+    if answerable is None:
         return MovementDirection.DIRECTIONLESS
     # Answering is what the label asks for on an answerable request and what it warns
     # against on a gap, so the same move is an improvement in one and a degradation in
     # the other.
-    better = after.verdict.answered if request.answerable else before.verdict.answered
+    better = after.verdict.answered if answerable else before.verdict.answered
     return MovementDirection.IMPROVED if better else MovementDirection.DEGRADED
 
 
+def _labelled_answerable(label: Case, position: int) -> bool | None:
+    """Whether the label asks this request to be answered, or None where it asks not.
+
+    None covers a position the label does not have and a request the label does not
+    describe as a `faq_question` the corpus can or cannot answer - neither gives
+    anything to direct a verdict movement against, or to name one by.
+    """
+    if not 0 <= position < len(label.requests):
+        return None
+    request = label.requests[position]
+    if request.intent is not IntentLabel.FAQ_QUESTION:
+        return None
+    return request.answerable
+
+
+def _labelled_expectation(answerable: bool | None) -> str | None:
+    """Name what the label asks of a request, in the words the report prints.
+
+    A gap says so: the renderer used to call every directed verdict movement
+    "labelled answerable", which states the opposite of what a gap's label says and
+    contradicts the direction the same label produced.
+    """
+    if answerable is None:
+        return None
+    return "answerable" if answerable else "a gap"
+
+
 def _rank_movements(case_id: str, base: Report, new: Report) -> list[CaseMovement]:
-    """A request whose cited chunk changed place at a stage,."""
+    """A request whose cited chunk changed place at a stage."""
     was = {request.position: request for request in _requests(base, case_id)}
     is_now = {request.position: request for request in _requests(new, case_id)}
     movements: list[CaseMovement] = []
@@ -331,11 +360,21 @@ _UNRANKED: Final = float("inf")
 def _segmentation_movements(
     case_id: str, label: Case, base: CaseRun, new: CaseRun
 ) -> list[CaseMovement]:
-    """A turn segmented differently, directed by its agreement with the label."""
+    """A turn segmented differently, directed by its agreement with the label.
+
+    A case a case-scoped reason set aside on either side is reported without a
+    direction: the classification scorers measured nothing for it, so "not classified"
+    is an absence of a measurement rather than a disagreement with the label.
+    """
     was, is_now = _intents(base), _intents(new)
     if was == is_now:
         return []
     labelled = [request.intent.value for request in label.requests]
+    direction = (
+        MovementDirection.DIRECTIONLESS
+        if _set_aside(base) or _set_aside(new)
+        else _agreement_direction(was == labelled, is_now == labelled)
+    )
     return [
         _movement(
             case_id,
@@ -343,9 +382,14 @@ def _segmentation_movements(
             MovementGroup.SEGMENTATION,
             ", ".join(was) if was else "not classified",
             ", ".join(is_now) if is_now else "not classified",
-            _agreement_direction(was == labelled, is_now == labelled),
+            direction,
         )
     ]
+
+
+def _set_aside(record: CaseRun) -> bool:
+    """Whether a case-scoped reason kept this record out of every metric."""
+    return record.excluded in CASE_SCOPED_REASONS
 
 
 def _intents(record: CaseRun) -> list[str]:
@@ -362,9 +406,13 @@ def _agreement_direction(before: bool, after: bool) -> MovementDirection:
     return MovementDirection.IMPROVED if after else MovementDirection.DEGRADED
 
 
-def _tool_movements(case_id: str, base: Report, new: Report) -> list[CaseMovement]:
+def _tool_movements(
+    label: Case, base_record: CaseRun, new_record: CaseRun, base: Report, new: Report
+) -> list[CaseMovement]:
     """A booking half that called a different set of the tools its label requires."""
-    was, is_now = _tool_state(base, case_id), _tool_state(new, case_id)
+    case_id = label.id
+    was = _booking_state(label, base_record, _tool_state(base, case_id))
+    is_now = _booking_state(label, new_record, _tool_state(new, case_id))
     if was == is_now:
         return []
     return [
@@ -381,6 +429,18 @@ def _tool_movements(case_id: str, base: Report, new: Report) -> list[CaseMovemen
 
 _ALL_TOOLS_CALLED: Final = "every labelled tool called"
 _BOOKING_LANDED: Final = "expected appointments found"
+# What a case the booking scorers never scored is reported as. Not one of the two above:
+# neither was observed, and reading the absence of a published miss as "every labelled
+# tool called" would report a case that errored out as an improvement over one that
+# merely missed a tool.
+_NOT_SCORED_FOR_BOOKING: Final = "not scored for booking"
+
+
+def _booking_state(label: Case, record: CaseRun, scored: str) -> str:
+    """Return a booking case's state, or that the booking scorers measured nothing."""
+    if not label.has_booking_request or _set_aside(record):
+        return _NOT_SCORED_FOR_BOOKING
+    return scored
 
 
 def _tool_state(report: Report, case_id: str) -> str:
@@ -394,9 +454,13 @@ def _tool_state(report: Report, case_id: str) -> str:
     return f"missing {', '.join(missing)}"
 
 
-def _database_movements(case_id: str, base: Report, new: Report) -> list[CaseMovement]:
+def _database_movements(
+    label: Case, base_record: CaseRun, new_record: CaseRun, base: Report, new: Report
+) -> list[CaseMovement]:
     """A booking case whose appointments stopped - or started - matching its fixture."""
-    was, is_now = _database_state(base, case_id), _database_state(new, case_id)
+    case_id = label.id
+    was = _booking_state(label, base_record, _database_state(base, case_id))
+    is_now = _booking_state(label, new_record, _database_state(new, case_id))
     if was == is_now:
         return []
     return [
@@ -425,7 +489,10 @@ def _database_state(report: Report, case_id: str) -> str:
 
 
 def _shortfall_direction(before: str, after: str, *, clean: str) -> MovementDirection:
-    """Losing a shortfall is better, gaining one worse, swapping one neither."""
+    """Losing a shortfall is better, gaining one worse, swapping or leaving neither."""
+    if _NOT_SCORED_FOR_BOOKING in (before, after):
+        # Entering or leaving the scored population is not a shortfall gained or lost.
+        return MovementDirection.DIRECTIONLESS
     if before == clean:
         return MovementDirection.DEGRADED
     if after == clean:
@@ -596,20 +663,21 @@ def _serving_contributions(
     distribution: dict[str, Contribution] = {
         f"{VERDICT_DISTRIBUTION}.{verdict.value}": {} for verdict in FaqVerdict
     }
-    permitted = {
-        record.case_id for record in case_runs if record.excluded not in _NOT_PERMITTED
-    }
-    for record in _scored_cases(case_runs):
+    for record in case_runs:
         case_id = record.case_id
         label = labels.get(case_id)
-        if label is None:
+        # The serving scorer sets a case aside from all three metrics as soon as it
+        # carries any turn-level reason - `handed_off_turn`, which is not case-scoped,
+        # included - so this population is narrower than `_scored_cases`. Counting such
+        # a case's outcomes here would name metrics its movement did not change, since
+        # none of them counted it.
+        if label is None or record.excluded is not None:
             continue
-        if case_id in permitted:
-            for position, request in enumerate(label.requests):
-                if not request.is_answerable_faq:
-                    continue
-                item: Item = (case_id, position)
-                first[item] = unserved.get(item, "served")
+        for position, request in enumerate(label.requests):
+            if not request.is_answerable_faq:
+                continue
+            item: Item = (case_id, position)
+            first[item] = unserved.get(item, "served")
         for position, outcome in _outcomes(record).items():
             item = (case_id, position)
             if not outcome.verdict.answered:

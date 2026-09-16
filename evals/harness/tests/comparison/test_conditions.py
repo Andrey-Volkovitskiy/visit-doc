@@ -125,3 +125,18 @@ def test_a_condition_difference_never_stops_the_comparison(
 
     assert not delta.identical
     assert len(delta.changes) == 1
+
+
+def test_a_differing_run_clock_is_reported_as_a_condition(
+    scored: Callable[..., Report],
+) -> None:
+    # Every scheduling fixture's day offset is resolved against the run clock, so two
+    # clocks are two sets of expected appointments. A delta that said "the conditions
+    # matched in every field" would be saying something untrue about the booking rows.
+    base = scored("base")
+    later = base.model_copy(update={"clock": base.clock.replace(day=3)})
+
+    assert _delta(base, later) == [
+        ("clock", base.clock.isoformat(), later.clock.isoformat())
+    ]
+    assert not condition_delta(base, later).identical
