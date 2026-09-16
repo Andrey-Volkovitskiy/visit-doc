@@ -16,8 +16,8 @@ computes the report with no person in the loop: the judgement is the scorer's.
 
 **It is not a test tier.** It asserts nothing and nothing fails. It spends live Claude and Voyage
 calls on every case it drives, and the assistant's output is non-deterministic, so a number is a
-measurement rather than a verdict. Turning a measurement into a gate needs a baseline and a rule for
-how much difference is noise, which is Phase 2c's.
+measurement rather than a verdict. Comparing one build's measurement against another's — and
+measuring how much difference is noise before calling any of it a regression — is Phase 2c's.
 
 Three things exist side by side, and they are easy to confuse:
 

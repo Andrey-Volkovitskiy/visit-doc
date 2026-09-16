@@ -429,7 +429,8 @@ This phase makes the turn report each request's outcome and serve the ones it ca
 ### Phase 2 — Evaluation & observability
 The centerpiece — the ability to *measure* whether the system works, not just demo that it does.
 Split into subphases, the first three strictly consecutive: there is nothing to compute a
-metric over until the labeled set exists, and nothing to gate a build on until the metrics do.
+metric over until the labeled set exists, and nothing to compare between versions until the metrics
+do.
 Tracing is last because nothing in the eval chain depends on it — the metrics are computed from the
 per-request record 1h moved onto the message, not from a trace — so it is the one piece that can
 move if something else needs the slot.
@@ -446,9 +447,9 @@ to score a turn that answered one of two questions as either wholly right or who
 
 - **It lives outside `specs/`**, at `evals/golden/`. The four seed sets belong under `specs/` and
   stay there — frozen records of a shipped phase, excluded from ruff and mypy with the rest of
-  `specs/**`. This set is the opposite kind of thing: 2b reads it, 2c gates every build on it, and
-  it is re-labelled whenever the corpus moves. Living, checked, and outliving the phase that
-  introduced it.
+  `specs/**`. This set is the opposite kind of thing: 2b reads it, 2c compares one build's run
+  against another's over it, and it is re-labelled whenever the corpus moves. Living, checked, and
+  outliving the phase that introduced it.
 - **The label says what the system may emit, not everything a scorer might want.** `intent` is
   scored against `IntentLabel`'s eight values and array order *is* position, so no `position` field
   exists to disagree with it. A request's restatement is carried as an unscored `gist`, because a
@@ -494,13 +495,61 @@ should be zero. All of them are computed from the per-request record 1h moved on
 after 1h there is no turn-level verdict left to compute them from, which is the point: a metric
 averaged over a summary field cannot say which of a turn's requests was the one that failed.
 
-#### Phase 2c — CI-gated evals
-Run the suite in GitHub Actions and fail the build on a metric regression, so a change that makes
-the assistant measurably worse cannot land on the strength of a green unit tier. One question this
-phase has to settle rather than inherit: the suite spends live model calls, and the per-push gate
-today deliberately holds only the unit tier (`docs/testing-strategy.md`). Whether that means every
-commit, a nightly run, or a recorded-response mode is open — it is a cost and cadence decision, and
-naming it here is not the same as having made it.
+#### Phase 2c — Comparing one version against another
+2b can say what a build scores. It cannot say whether a change made things better, which is the
+question actually asked while working: *I adjusted the rerank floor / the composing prompt / the
+classifier — what moved?* This phase answers it with **a command a developer runs deliberately,
+against two stored runs**, not with a build gate.
+
+**The per-commit CI gate this phase used to call for is dropped.** A gate on every push would drive
+135 live turns per commit, on the slowest path the system has, to decide red or green from numbers
+that differ run to run on an unchanged build — so it would spend the most per decision exactly where
+the decision is least trustworthy, and the first flaky red would teach everyone to re-run it. CI
+keeps what it holds today: the unit tier, which includes the harness's own tests
+(`docs/testing-strategy.md`). Nothing about this phase is an argument that a gate is wrong forever —
+it is an argument that a gate needs the noise band below, and that the tool is useful long before
+the gate is.
+
+- **One command over two stored runs.** `make eval-compare BASE=<run_id> NEW=<run_id>` reads two run
+  artifacts and prints what moved: each metric's before and after with both numerators and
+  denominators, and the movement's sign. Comparing is, like scoring, **a pure function of stored
+  runs** — no stack, no model call, nothing to pay for — so 2b's purity rule (`scoring` may not
+  import `httpx`, `grpc` or the driver, enforced by `test_purity.py`) extends to it. Taking the new
+  run is the only part that costs anything, and that is `make eval-run`, unchanged.
+- **The per-case movement is the output that matters, not the delta.** An unserved-answerable share
+  going 6/87 → 7/87 can be one case degrading, or two degrading while one improves, and only the
+  second is worth a morning. So the comparison lists the cases that *changed*: each request whose
+  verdict moved, each turn whose segmentation or intents moved, each booking whose tool selection or
+  final database state moved — with the direction, by case id. A metric that did not move but whose
+  cases churned underneath it says something a delta of zero hides.
+- **A difference in conditions explains a difference in score, and must never be read as one.** Both
+  runs record the corpus hash, the model ids, the floors, caps and pool size exactly as the chat
+  service stated them (2b's `service.configured` contract). The comparison reports a condition delta
+  at the top, before any metric, and every number below it is read in that light — because when the
+  change under test *is* a threshold move, the conditions are supposed to differ, and when it is a
+  prompt change, a differing model id means the comparison is measuring the wrong thing. Changed
+  **labels** are the one hard stop: 2b already refuses to score a run whose scored-field digests
+  moved, and a per-case comparison across a re-labelled set is comparing two different questions.
+- **A narrowed run compares only what both runs drove.** `make eval-run CASES=…` during an
+  investigation is the cheap loop this tool has to serve, so a 12-case run compares against those 12
+  cases of a 135-case baseline, with the restriction stated in the report. Silently comparing 12
+  cases' aggregate against 135 cases' would be the "one value, two meanings" defect in numeric form.
+- **The noise band is measured before any movement is called a regression.** The first task of the
+  phase is the one 2b deliberately did not do: run the set several times against an unchanged build
+  and record the per-metric spread. Until that exists the tool reports *movement* and says so
+  plainly; once it exists a movement can be marked inside or outside the observed band, and only
+  then does "regression" mean anything. This is also what a gate would need first, which is why the
+  gate cannot be the phase's opening move.
+- **What a baseline is, and where it lives.** 2b committed exactly one run —
+  `specs/012-golden-set-metrics/evaluation/` — as evidence rather than a threshold, and kept every
+  other run local under `.run/evals/`. That committed run is the first baseline by default;
+  promoting a later one stays a deliberate act with a reason given, not something a passing
+  comparison does on its own.
+
+A note for later, not a commitment: the comparison being pure and free means *it* could run in CI
+over two artifacts at no cost — what cannot run there is producing the new artifact. So if a gate
+ever returns, the shape is a scheduled or manually-dispatched run that publishes an artifact, with
+the comparison as the cheap half. That is a later decision, with the noise band in hand.
 
 #### Phase 2d — Tracing with Langfuse
 Self-hosted Langfuse for per-step latency, token cost, and the full decision trace for each turn.

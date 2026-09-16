@@ -576,7 +576,8 @@ choices carried a real tradeoff.
   scheduler's own `CancelAppointment` — every case with a patient, since a misrouted turn can book
   too. A cancelled appointment leaves the partial exclusion constraint, so the slot is free at the
   datastore and no filter has to agree. The costs: a full pass takes as long as 135 turns in a row,
-  which is an input to 2c's cadence decision rather than something this phase optimizes; the
+  which is what a full comparison run costs whenever 2c takes one, rather than something this phase
+optimizes; the
   scheduler keeps a `cancelled` row for everything a run touched; and a cleanup that cannot complete
   stops the run, because every later case would be measured against a calendar it no longer
   controls.

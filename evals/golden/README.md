@@ -5,14 +5,14 @@ The labelled dataset Phase 2a exists to produce (`docs/ROADMAP.md`). 135 patient
 written procedure and deliberately no runner.
 
 **It is data. There is no runner here, and nothing imports it yet.** Computing metrics over it is
-Phase 2b and gating CI on those metrics is 2c; building either inside 2a would start the next phase
-inside this one, which is the mistake 1e, 1f, 1g and 1h each declined to make.
+Phase 2b and comparing one build's run against another's is 2c; building either inside 2a would
+start the next phase inside this one, which is the mistake 1e, 1f, 1g and 1h each declined to make.
 
 ## Why it lives here and not under `specs/`
 
 The four seed sets belong to `specs/` and should stay there: they are frozen records of a shipped
 phase, excluded from ruff and mypy along with the rest of `specs/**`. This set is the opposite kind
-of thing. 2b reads it, 2c gates every build on it, and it is re-labelled whenever the corpus moves —
+of thing. 2b reads it, 2c compares runs over it, and it is re-labelled whenever the corpus moves —
 it is living, checked, and outlives the spec that introduces it. `.claude/CLAUDE.md` already draws
 that line for code ("Do not put application code under `specs/`"); the same reasoning puts a living
 dataset outside it.

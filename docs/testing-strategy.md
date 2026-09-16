@@ -165,8 +165,9 @@ or to a quickstart scenario.
 **`make eval-run` is not a test tier either** (spec 012). It drives the golden set through the
 running stack and scores what came back, spending live Claude and Voyage calls on every case — but
 it asserts nothing, fails on no number, and gives a different answer each run, so it is a
-measurement rather than a gate, and it never runs in CI. Turning its numbers into a gate needs a
-baseline and a noise rule, which is Phase 2c's. The harness's *own* code is tested the ordinary way:
+measurement rather than a gate, and it never runs in CI. Comparing one build's numbers against
+another's, and measuring the run-to-run spread that says which movements mean anything, is Phase
+2c's — a command run deliberately, not a per-commit gate. The harness's *own* code is tested the ordinary way:
 `evals/harness/tests/` is in the unit tier and runs in `make test-unit`. It drives the scorer from
 small recorded runs under `tests/fixtures/runs/` and the driver from stubbed HTTP and gRPC surfaces,
 so none of its tests is written to reach a model provider — but unlike chat's suite it has no
