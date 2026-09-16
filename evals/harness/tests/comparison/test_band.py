@@ -356,3 +356,66 @@ def test_a_stored_band_with_a_metric_of_another_count_is_refused(
 
     with pytest.raises(ValidationError, match=UNSERVED_ANSWERABLE_SHARE):
         NoiseBand.model_validate(stored)
+
+
+def test_a_stored_band_with_a_variation_of_another_count_is_refused(
+    band: NoiseBand,
+) -> None:
+    # The variation list is counted per run exactly as the metric list is: the sentence
+    # beside it says "in 4 of 5", and a tally of another number renders "in 6 of 5" or
+    # silently drops a run.
+    stored = band.model_dump(mode="json")
+    stored["varying_cases"][0]["outcomes"] = {"answered": 2, "abstained_empty_pool": 1}
+
+    with pytest.raises(ValidationError, match="one state per run"):
+        NoiseBand.model_validate(stored)
+
+
+def test_a_stored_band_with_a_negative_state_count_is_refused(band: NoiseBand) -> None:
+    stored = band.model_dump(mode="json")
+    stored["varying_cases"][0]["outcomes"] = {"answered": -1, "abstained_empty_pool": 6}
+
+    with pytest.raises(ValidationError, match="no fewer than no runs"):
+        NoiseBand.model_validate(stored)
+
+
+def test_one_run_named_five_times_is_refused(
+    band_run: Runs, band_labels: list[Case]
+) -> None:
+    # One run five times agrees with itself in every field the other refusals check, and
+    # produces a zero-wide range and an empty variation list that render as "every case
+    # produced the same outcome in all five runs" - one observation wearing five.
+    with pytest.raises(BandRefusedError, match="more than once"):
+        build_band([band_run("run1")] * 5, band_labels)
+
+
+def test_a_stored_band_naming_one_run_twice_is_refused(band: NoiseBand) -> None:
+    stored = band.model_dump(mode="json")
+    stored["run_ids"] = [stored["run_ids"][0]] * 5
+
+    with pytest.raises(ValidationError, match="more than once"):
+        NoiseBand.model_validate(stored)
+
+
+def test_a_band_records_the_clock_its_five_runs_were_driven_on(
+    band: NoiseBand, band_run: Runs
+) -> None:
+    from golden_harness.record import read_run
+
+    assert band.clock == read_run(band_run("run1")).clock
+
+
+def test_a_band_measured_on_another_clock_applies_to_neither_run(
+    band: NoiseBand, band_run: Runs, band_labels: list[Case]
+) -> None:
+    # Every scheduling fixture's day offset is resolved against the clock, so a band
+    # taken on another one ranged over another set of expected appointments - and
+    # nothing may be marked against it (FR-033).
+    from golden_harness.report import score
+
+    base = score(band_run("run1"), band_labels)
+    new = score(band_run("run2"), band_labels)
+    moved = band.model_copy(update={"clock": band.clock.replace(day=3)})
+
+    assert band.applies_to(base, new)
+    assert not moved.applies_to(base, new)

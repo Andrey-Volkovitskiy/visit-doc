@@ -262,6 +262,7 @@ def _movement(**fields: Any) -> CaseMovement:
         "direction": MovementDirection.IMPROVED,
         "question": "Is parking free?",
         "affects": ["unserved_answerable_share"],
+        "labelled": "answerable",
         "varies_on_its_own": False,
     }
     return CaseMovement(**{**base, **fields})
@@ -282,13 +283,46 @@ def test_a_case_movement_whose_two_states_are_the_same_is_refused() -> None:
         _movement(base="answered", new="answered")
 
 
+def test_only_a_verdict_movement_names_what_the_label_asks() -> None:
+    # A segmentation or a booking is judged against something other than `answerable`,
+    # so a "; labelled answerable" printed beside one would attribute the judgement to a
+    # label that never made it.
+    with pytest.raises(ValidationError, match="only a verdict movement"):
+        _movement(
+            group=MovementGroup.SEGMENTATION,
+            position=None,
+            question=None,
+            labelled="answerable",
+        )
+
+
+def test_a_directed_verdict_movement_without_what_the_label_asks_is_refused() -> None:
+    # A verdict movement is directed *because* the label asked something of that
+    # request, so a directed one always knows which of the two words it was.
+    with pytest.raises(ValidationError, match="which of the two"):
+        _movement(labelled=None)
+
+
+def test_an_undirected_verdict_movement_may_name_nothing() -> None:
+    movement = _movement(direction=MovementDirection.DIRECTIONLESS, labelled=None)
+
+    assert movement.labelled is None
+
+
+def test_a_label_expectation_outside_the_two_words_is_refused() -> None:
+    with pytest.raises(ValidationError, match="labelled"):
+        _movement(labelled="probably answerable")
+
+
 def test_a_case_movement_carries_the_metrics_it_changed_the_contribution_to() -> None:
     assert _movement().affects == ["unserved_answerable_share"]
     assert _movement(affects=[]).affects == []
 
 
 def test_a_case_movement_may_have_no_position_where_the_group_is_per_turn() -> None:
-    movement = _movement(group=MovementGroup.SEGMENTATION, position=None, question=None)
+    movement = _movement(
+        group=MovementGroup.SEGMENTATION, position=None, question=None, labelled=None
+    )
 
     assert movement.position is None
 
@@ -302,6 +336,7 @@ def test_an_exclusion_movement_is_reported_with_both_states() -> None:
         position=None,
         question=None,
         affects=[],
+        labelled=None,
     )
 
     assert (movement.base, movement.new) == ("scored", "run_error")

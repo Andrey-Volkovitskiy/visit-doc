@@ -453,9 +453,9 @@ The spread of the golden set's metrics across **five full runs of one unchanged 
 answer to "how much do these numbers move when nothing changes?". It records every metric's five
 values in run order with its lowest and highest, and per case that varied, each state with how many
 of the five produced it. `make eval-band` refuses anything that contradicts "these five differ only
-by chance": a count other than five, a run that drove part of the set, a run that stopped partway
-and recorded fewer cases than it selected, or any difference in conditions, corpus hash, run clock,
-label digests or case set — each naming what differs. The incomplete-run refusal is the one asymmetry
+by chance": a count other than five, one run named more than once, a run that drove part of the
+set, a run that stopped partway and recorded fewer cases than it selected, or any difference in
+conditions, corpus hash, run clock, label digests or case set — each naming what differs. The incomplete-run refusal is the one asymmetry
 worth knowing: a *comparison* reports such a run as incomplete and carries on, because a narrower
 case set is still comparable, while a band cannot — its value would sit in a range beside four
 measured over a different population.
@@ -465,6 +465,7 @@ pass mark. It is **not a statistical interval**: five observations give a range 
 count, not a standard deviation or a significance test, and every rendering citing it says so. A
 movement inside the range is *not shown to be noise*; it is *not shown to be more than noise*.
 
-A band applies to a comparison only when its conditions, corpus hash and case set match **both**
-runs; otherwise the comparison says the band was measured under other conditions and marks nothing.
+A band applies to a comparison only when its conditions, corpus hash, run clock and case set match
+**both** runs; otherwise the comparison says the band was measured under other conditions and marks
+nothing.
 A metric the band never observed is reported unmarked, never assumed stable.

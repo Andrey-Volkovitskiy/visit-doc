@@ -28,6 +28,7 @@ from chat.domain.schemas import FaqVerdict, IntentLabel, RequestOutcome
 from golden_harness.cases import Case
 from golden_harness.comparison.model import (
     CaseMovement,
+    LabelledExpectation,
     MovementDirection,
     MovementGroup,
 )
@@ -152,7 +153,7 @@ def _movement(
     new: str,
     direction: MovementDirection,
     question: str | None = None,
-    labelled: str | None = None,
+    labelled: LabelledExpectation | None = None,
 ) -> CaseMovement:
     """Build a movement with its `affects` left to be filled in by one place."""
     return CaseMovement(
@@ -271,7 +272,7 @@ def _labelled_answerable(label: Case, position: int) -> bool | None:
     return request.answerable
 
 
-def _labelled_expectation(answerable: bool | None) -> str | None:
+def _labelled_expectation(answerable: bool | None) -> LabelledExpectation | None:
     """Name what the label asks of a request, in the words the report prints.
 
     A gap says so: the renderer used to call every directed verdict movement
@@ -410,9 +411,13 @@ def _tool_movements(
     label: Case, base_record: CaseRun, new_record: CaseRun, base: Report, new: Report
 ) -> list[CaseMovement]:
     """A booking half that called a different set of the tools its label requires."""
+    if not label.has_booking_request:
+        # Neither side was in the booking population, so there is nothing to compare -
+        # and asking the report for a miss it cannot hold would scan its list per case.
+        return []
     case_id = label.id
-    was = _booking_state(label, base_record, _tool_state(base, case_id))
-    is_now = _booking_state(label, new_record, _tool_state(new, case_id))
+    was = _booking_state(base_record, _tool_state(base, case_id))
+    is_now = _booking_state(new_record, _tool_state(new, case_id))
     if was == is_now:
         return []
     return [
@@ -436,9 +441,13 @@ _BOOKING_LANDED: Final = "expected appointments found"
 _NOT_SCORED_FOR_BOOKING: Final = "not scored for booking"
 
 
-def _booking_state(label: Case, record: CaseRun, scored: str) -> str:
-    """Return a booking case's state, or that the booking scorers measured nothing."""
-    if not label.has_booking_request or _set_aside(record):
+def _booking_state(record: CaseRun, scored: str) -> str:
+    """Return a booking case's state, or that the booking scorers measured nothing.
+
+    Only reached for a case whose label carries a booking request; the other half of
+    `score_booking`'s population is `_set_aside`, which is what this reads.
+    """
+    if _set_aside(record):
         return _NOT_SCORED_FOR_BOOKING
     return scored
 
@@ -458,9 +467,11 @@ def _database_movements(
     label: Case, base_record: CaseRun, new_record: CaseRun, base: Report, new: Report
 ) -> list[CaseMovement]:
     """A booking case whose appointments stopped - or started - matching its fixture."""
+    if not label.has_booking_request:
+        return []
     case_id = label.id
-    was = _booking_state(label, base_record, _database_state(base, case_id))
-    is_now = _booking_state(label, new_record, _database_state(new, case_id))
+    was = _booking_state(base_record, _database_state(base, case_id))
+    is_now = _booking_state(new_record, _database_state(new, case_id))
     if was == is_now:
         return []
     return [
@@ -568,11 +579,7 @@ def _contributions(
 
 def _scored_cases(case_runs: Sequence[CaseRun]) -> list[CaseRun]:
     """Return the records no case-scoped reason set aside."""
-    return [
-        record
-        for record in case_runs
-        if record.excluded is None or record.excluded not in CASE_SCOPED_REASONS
-    ]
+    return [record for record in case_runs if not _set_aside(record)]
 
 
 def _classification_contributions(

@@ -388,6 +388,7 @@ def render_band(band: NoiseBand) -> str:
         f"- Runs, in the order taken: {', '.join(band.run_ids)}",
         f"- Cases: {len(band.case_ids)}",
         f"- Corpus: {band.corpus_sha256}",
+        f"- Clock: {band.clock.isoformat()}",
         f"- Measured at: {band.measured_at.isoformat()}",
         *(f"- {name}: {value}" for name, value in band.conditions.model_dump().items()),
         "",
@@ -421,9 +422,7 @@ def _variation_lines(band: NoiseBand) -> list[str]:
         return ["None: every case produced the same outcome in all five runs."]
     total = len(band.run_ids)
     return [
-        f"- {variation.case_id}"
-        + (f" [{variation.position}]" if variation.position is not None else "")
-        + f" ({variation.group.value}): "
+        f"- {variation.name} ({variation.group.value}): "
         + ", ".join(
             f"{state} in {count} of {total}"
             for state, count in sorted(variation.outcomes.items())

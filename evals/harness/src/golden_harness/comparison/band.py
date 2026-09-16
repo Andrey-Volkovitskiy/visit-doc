@@ -12,8 +12,9 @@ not a statistical interval: five observations give a range and a frequency count
 standard deviation or a confidence interval, and the band publishes none (FR-032).
 
 A band asserts that its five runs differ *only* by chance, so anything contradicting
-that is a refusal rather than a warning - a different count, a run that drove part of
-the set, or any difference in conditions, corpus, labels or case set (FR-027, FR-030).
+that is a refusal rather than a warning - a different count, one run named twice, a run
+that drove part of the set, or any difference in conditions, corpus, clock, labels or
+case set (FR-027, FR-030).
 
 The per-case variation is read through the comparison itself: each of the other four
 runs is compared against the first, and the states those comparisons report are counted.
@@ -98,11 +99,36 @@ class CaseVariation(BaseModel):
                 f"{self.case_id}: a variation has at least two states, not "
                 f"{list(self.outcomes)}"
             )
+        negative = sorted(state for state, n in self.outcomes.items() if n < 0)
+        if negative:
+            raise ValueError(
+                f"{self.case_id}: a state was produced by no fewer than no runs: "
+                f"{', '.join(negative)}"
+            )
         return self
+
+    @property
+    def observed(self) -> int:
+        """Return how many runs this variation accounts for, across every state."""
+        return sum(self.outcomes.values())
+
+    @property
+    def name(self) -> str:
+        """Name what varied: the case, and the request where the group is per one."""
+        at = f" [{self.position}]" if self.position is not None else ""
+        return f"{self.case_id}{at}"
+
+
+def _named_more_than_once(names: Sequence[str]) -> list[str]:
+    """Return the names given twice or more, sorted - a band's five runs are five."""
+    return sorted(name for name, n in Counter(names).items() if n > 1)
 
 
 class NoiseBand(BaseModel):
     """What five runs of one unchanged build did, and under what conditions.
+
+    The conditions are the four a later comparison has to match to be marked against
+    this band: the `RunConditions`, the corpus hash, the run clock and the case set.
 
     Carries no verdict, no threshold and no target: nothing in it says what a run
     *should* score (FR-038).
@@ -114,6 +140,7 @@ class NoiseBand(BaseModel):
     run_ids: list[str]
     conditions: RunConditions
     corpus_sha256: str
+    clock: datetime
     case_ids: list[str]
     metrics: dict[str, MetricObservation]
     varying_cases: list[CaseVariation]
@@ -123,13 +150,28 @@ class NoiseBand(BaseModel):
     def _a_band_holds_one_value_per_run(self) -> "NoiseBand":
         """Refuse a record whose counts do not match the claim every rendering makes.
 
-        `build_band` cannot produce one, but a band is read back from a file, and every
+        Three counts say "five runs" and all three are checked here, because every
         sentence printed beside these numbers - "the spread of five observations",
-        "in 4 of 5" - is true only while the counts are. FR-027's "a band from another
-        count is a different measurement" applies to a stored one too.
+        "in 4 of 5" - is true only while they are, and FR-027's "a band from another
+        count is a different measurement" applies to each of them:
+
+        - `run_ids` names `BAND_RUNS` runs, and names each of them once: five names
+          that are one run are one observation wearing five, whose zero-width range
+          would be quoted as measured noise.
+        - every metric holds one value per run.
+        - every variation accounts for one run per run: a state count that sums to
+          another number renders as "in 6 of 5", or silently drops a run.
+
+        `build_band` cannot produce the last two, but a band is read back from a file.
         """
         if len(self.run_ids) != BAND_RUNS:
             raise ValueError(f"a band names {BAND_RUNS} runs, not {len(self.run_ids)}")
+        repeated = _named_more_than_once(self.run_ids)
+        if repeated:
+            raise ValueError(
+                f"a band observes {BAND_RUNS} runs, and these are named more than "
+                f"once: {', '.join(repeated)}"
+            )
         miscounted = sorted(
             name
             for name, observation in self.metrics.items()
@@ -140,18 +182,32 @@ class NoiseBand(BaseModel):
                 f"a band observes one value per run; these hold another count: "
                 f"{', '.join(miscounted)}"
             )
+        mistallied = sorted(
+            variation.name
+            for variation in self.varying_cases
+            if variation.observed != BAND_RUNS
+        )
+        if mistallied:
+            raise ValueError(
+                f"a band counts one state per run; these tally another number: "
+                f"{', '.join(mistallied)}"
+            )
         return self
 
     def applies_to(self, base: Report, new: Report) -> bool:
         """Whether this band was measured under the conditions both runs ran under.
 
-        All three have to match - the conditions, the corpus and the case set - or the
-        range describes some other measurement and nothing may be marked against it
-        (FR-033).
+        All four have to match - the conditions, the corpus, the clock and the case
+        set - or the range describes some other measurement and nothing may be marked
+        against it (FR-033). The clock is among them for the reason the band refuses
+        five runs that differ in it: every scheduling fixture's day offset is resolved
+        against it, so a band measured on another clock ranged over another set of
+        expected appointments.
         """
         return all(
             self.conditions == report.conditions
             and self.corpus_sha256 == report.corpus.live_sha256
+            and self.clock == report.clock
             and self.case_ids == sorted(report.recorded_cases)
             for report in (base, new)
         )
@@ -184,8 +240,8 @@ def build_band(
         measured_at: when the band was measured; now by default.
 
     Raises: BandRefusedError naming what differs, when the runs are not five, when one
-        of them did not drive the whole set, or when their conditions, corpus hashes,
-        label digests or case sets differ.
+        of them is another of them, when one did not drive the whole set, or when their
+        conditions, corpus hashes, clocks, label digests or case sets differ.
     """
     if len(run_dirs) != BAND_RUNS:
         raise BandRefusedError(
@@ -193,6 +249,7 @@ def build_band(
             "a band from another count is a different measurement"
         )
     runs = [read_run(directory) for directory in run_dirs]
+    _refuse_a_repeated_run(runs)
     _refuse_a_partial_run(runs)
     _refuse_an_incomplete_run(run_dirs, runs)
     _refuse_a_difference(runs)
@@ -204,6 +261,7 @@ def build_band(
         run_ids=[run.run_id for run in runs],
         conditions=runs[0].conditions,
         corpus_sha256=runs[0].corpus.live_sha256,
+        clock=runs[0].clock,
         case_ids=sorted(runs[0].selection.case_ids),
         metrics=_observations(reports),
         varying_cases=_variations(reports, records, cases),
@@ -235,6 +293,24 @@ def _refuse_an_incomplete_run(run_dirs: Sequence[Path], runs: Sequence[Run]) -> 
                 f"{len(run.selection.case_ids)} selected cases: a band is measured "
                 "from five runs that each drove the whole set"
             )
+
+
+def _refuse_a_repeated_run(runs: Sequence[Run]) -> None:
+    """Refuse a run named more than once among the five.
+
+    One run given five times passes every other check perfectly - its conditions,
+    corpus, clock, labels and case set agree with themselves - and produces a band whose
+    every range is zero wide and whose variation list is empty, which renders as "every
+    case produced the same outcome in all five runs". That is one observation wearing
+    five, and a comparison marked against it would read a real movement as outside
+    measured noise on the strength of a measurement nobody took (FR-027).
+    """
+    repeated = _named_more_than_once([run.run_id for run in runs])
+    if repeated:
+        raise BandRefusedError(
+            f"a band is measured from {BAND_RUNS} runs, and these are named more than "
+            f"once: {', '.join(repeated)}"
+        )
 
 
 def _refuse_a_partial_run(runs: Sequence[Run]) -> None:

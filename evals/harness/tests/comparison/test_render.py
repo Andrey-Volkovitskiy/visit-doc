@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from golden_harness.cases import Case
 from golden_harness.comparison.compare import compare
-from golden_harness.comparison.model import Comparison
+from golden_harness.comparison.model import Comparison, MovementGroup
 from golden_harness.comparison.render import render_comparison
 
 type Runs = Callable[[str], Path]
@@ -320,6 +320,8 @@ def test_a_movement_on_a_labelled_gap_is_not_described_as_labelled_answerable(
         update={
             "cases": [
                 movement.model_copy(update={"labelled": "a gap"})
+                if movement.group is MovementGroup.VERDICT
+                else movement
                 for movement in comparison.cases
             ]
         }

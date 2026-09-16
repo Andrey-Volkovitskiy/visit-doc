@@ -43,8 +43,8 @@ Per the `NoiseBand` model in [`data-model.md`](../data-model.md):
   observed state and how many of the five produced it. This is the frequency count that five runs
   buy over three: *"G024 answered in 4 of 5, abstained at the rerank floor in 1"* is a sentence a
   range cannot make, and it is the one that tells a flaky case from a stable one.
-- **The conditions**, the corpus hash and the case set, so a later comparison can tell whether the
-  band applies to it at all.
+- **The conditions**, the corpus hash, the run clock and the case set, so a later comparison can
+  tell whether the band applies to it at all.
 
 ## What it refuses
 
@@ -54,6 +54,7 @@ refusal, not a warning:
 | Refusal | Reason |
 |---|---|
 | Not exactly five runs | FR-027. A band from another count is a different measurement, and the record must not quietly say five |
+| One run named more than once | one run five times agrees with itself in every field below, and produces a zero-wide range per metric and an empty variation list that renders as "every case produced the same outcome in all five runs". That is one observation wearing five, and a comparison marked against it would read a real movement as outside measured noise on the strength of a measurement nobody took (FR-027) |
 | A run that is not a full-set run | FR-027 measures the noise over all 135 cases. Five narrowed runs agree with each other perfectly well and still measure something else, so the check is each run's own selection, not merely that the five match |
 | A run that recorded fewer cases than it selected | the selection says what a run meant to drive and the records say what it has, and it is the records every metric is computed over. A run that stopped partway measures each metric over a population of its own, so its value beside four full ones would put a population difference inside a range that claims to be run-to-run noise — while the band's `case_ids` named a set it never measured. This is the one place a band is stricter than a comparison, which reports such a run as incomplete and carries on (FR-012): a comparison over a narrower case set is still a comparison, whereas a band's whole claim is that its five runs differ by chance alone |
 | Conditions differ in any field | a band across two builds measures the change, not the noise (FR-030) |
@@ -66,9 +67,11 @@ Each refusal names the field and the run, so the fix is obvious.
 
 ## How a comparison uses one
 
-- A band applies only when its conditions, corpus hash and case set match **both** runs being
-  compared. Otherwise the comparison says the band was measured under other conditions and marks
-  nothing against it (FR-033).
+- A band applies only when its conditions, corpus hash, run clock and case set match **both** runs
+  being compared. Otherwise the comparison says the band was measured under other conditions and
+  marks nothing against it (FR-033). The clock is among them for the same reason the band refuses
+  five runs that differ in it: a band measured on another clock ranged over another set of expected
+  appointments.
 - A metric the band holds no observation for is reported unmarked — never assumed stable (FR-034).
 - A case the band saw vary on its own is marked wherever a comparison reports it as moved (FR-035),
   which is how a reader tells "this change did that" from "this case does that anyway".

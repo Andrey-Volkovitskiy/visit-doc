@@ -44,6 +44,12 @@ class MovementDirection(StrEnum):
     NOT_COMPARABLE = "not_comparable"
 
 
+# What a label asks of one request, in the words the report prints. A closed pair
+# rather than free text: it is a stored derivation of the label's `answerable`, and a
+# third word would be a claim no label makes.
+LabelledExpectation = Literal["answerable", "a gap"]
+
+
 class MovementGroup(StrEnum):
     """What changed about a case - one group per question a reader would ask.
 
@@ -106,7 +112,11 @@ class ConditionChange(BaseModel):
 
 
 class ConditionDelta(BaseModel):
-    """Every condition field that differs, in `RunConditions` declaration order.
+    """Every condition field that differs: corpus, clock, then declaration order.
+
+    The corpus hash and the run clock lead because neither is a `RunConditions` field -
+    the run records both beside them - and a reader scanning eleven rows can miss one.
+    The rest follow in `RunConditions` declaration order.
 
     An empty `changes` is reported as "the conditions matched" rather than omitted, so
     that is a statement the report makes rather than one a reader infers from silence.
@@ -222,7 +232,9 @@ class CaseMovement(BaseModel):
     `answerable` or `a gap` - and is what licenses the renderer's "; labelled ..."
     clause. It is carried rather than re-derived because a stored comparison is
     re-rendered without its labels, and it is None wherever the label asks nothing
-    directed, which is every group but `verdict`.
+    directed, which is every group but `verdict`. Being derived and stored, it is
+    checked against what it was derived from, as every other derived field here is: the
+    two words are the type, and the two rules below are the derivation.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -239,7 +251,7 @@ class CaseMovement(BaseModel):
     ]
     question: str | None
     affects: list[str]
-    labelled: str | None = None
+    labelled: LabelledExpectation | None = None
     varies_on_its_own: bool = False
 
     @model_validator(mode="after")
@@ -249,6 +261,30 @@ class CaseMovement(BaseModel):
             raise ValueError(
                 f"{self.case_id}: a movement's two states differ, not {self.base!r} "
                 "twice"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _only_a_verdict_names_what_the_label_asks(self) -> "CaseMovement":
+        """Refuse a `labelled` no label produced, and a directed verdict without one.
+
+        Only a request's verdict is judged against `answerable`; a segmentation, a
+        booking or an exclusion is judged against something else or against nothing, and
+        a "; labelled answerable" printed beside one would attribute the judgement to a
+        label that never made it. The converse is what the renderer relies on: a verdict
+        movement is directed *because* the label asked something of that request, so a
+        directed one always knows which of the two words it was.
+        """
+        if self.labelled is not None and self.group is not MovementGroup.VERDICT:
+            raise ValueError(
+                f"{self.case_id}: only a verdict movement names what the label asks, "
+                f"not a {self.group.value} one"
+            )
+        directed = self.direction is not MovementDirection.DIRECTIONLESS
+        if self.group is MovementGroup.VERDICT and directed and self.labelled is None:
+            raise ValueError(
+                f"{self.case_id}: a verdict movement directed {self.direction.value} "
+                "was directed by a label, and names which of the two it asked"
             )
         return self
 

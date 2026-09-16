@@ -120,7 +120,7 @@ actually happened", and the one a reader acts on.
 | `direction` | `MovementDirection` | `improved`, `degraded` or `directionless` — never `unchanged`, since an unchanged case is not a movement |
 | `question` | `str \| None` | the request's question where one exists, so a finding arrives with the text attached |
 | `affects` | `list[str]` | the metric names this movement changed the contribution to, so FR-017's "for every metric, the cases behind it" is answerable in both directions — a movement knows its metrics, and a metric's movements are those naming it. Empty when the movement changes no published metric, which an exclusion movement often does not |
-| `labelled` | `str \| None` | what the label asks of this request in the reader's words — `answerable` or `a gap` — and the only thing licensing the renderer's "; labelled …" clause. Carried rather than re-derived, since a stored comparison is re-rendered without its labels, and None wherever the label asks nothing directed, which is every group but `verdict` |
+| `labelled` | `Literal["answerable", "a gap"] \| None` | what the label asks of this request in the reader's words, and the only thing licensing the renderer's "; labelled …" clause. Carried rather than re-derived, since a stored comparison is re-rendered without its labels, and checked against its derivation like every other stored derivation here: it is set only on a `verdict` movement, and a directed `verdict` movement always has it, since the label is what directed it |
 | `varies_on_its_own` | `bool` | the band observed this case varying on an unchanged build (FR-035) |
 
 `MovementGroup` (StrEnum): `verdict`, `retrieval_rank`, `segmentation`, `tool_selection`,
@@ -202,6 +202,7 @@ The stored record (FR-025, FR-026).
 | `run_ids` | `list[str]` — the five runs, in the order taken |
 | `conditions` | `RunConditions` | shared by all five; a difference is refused (FR-030) |
 | `corpus_sha256` | `str` |
+| `clock` | `datetime` — the local time all five were driven on; a difference is refused, and a comparison whose runs used another clock is not marked against this band |
 | `case_ids` | `list[str]` — the case set all five ran |
 | `metrics` | `dict[str, MetricObservation]` |
 | `varying_cases` | `list[CaseVariation]` |
@@ -216,8 +217,14 @@ runs agreed and one did not — and costs five floats.
 the frequency count the move from three runs to five bought (research R7).
 
 **Rules**:
-- A band is built only from runs whose `RunConditions`, corpus hash and label digests all match
-  (FR-030); any difference is refused, naming the field and the run.
+- A band is built only from runs whose `RunConditions`, corpus hash, clock and label digests all
+  match (FR-030); any difference is refused, naming the field and the run.
+- The five runs are five *different* runs. One run named five times agrees with itself in every
+  field above and produces a zero-wide range and an empty variation list — one observation wearing
+  five — so it is refused, naming the run.
+- `run_ids`, every `MetricObservation.values` and every `CaseVariation.outcomes` each count five,
+  on the way in as well as on the way out: a stored band whose counts say otherwise renders
+  sentences ("the spread of five observations", "in 4 of 5") that its own numbers contradict.
 - A band carries no verdict, no threshold and no target. Nothing in it says what a run *should*
   score (FR-038).
 - The band's own record must state that it is five observations (FR-032). That sentence lives with
