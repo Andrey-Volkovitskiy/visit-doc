@@ -302,22 +302,22 @@ record.
   present; a run compared with itself reports no movement and leaves `git status` clean; re-comparing
   is identical apart from the two time fields; the same holds with `make services-down`; a one-field
   label edit stops the comparison naming the case, and is reverted afterwards
-- [ ] T044 Quickstart scenario 6 (a few cents): drive `make eval-run CASES=G016,G096,G097,G100` and
+- [X] T044 Quickstart scenario 6 (a few cents): drive `make eval-run CASES=G016,G096,G097,G100` and
   compare it against `specs/012-golden-set-metrics/evaluation`, confirming the restriction line, the
   131 baseline-only cases, and denominators over 4
-- [ ] T045 Take the five band runs: with the stack started as `LOG_FORMAT=json make services-up` and
+- [X] T045 Take the five band runs: with the stack started as `LOG_FORMAT=json make services-up` and
   databases migrated, run `make eval-run` five times against one unchanged build, then
   `make eval-band RUNS=<the five ids>`. This is the phase's one deliberate live-call expense
   (FR-027) — roughly an hour of driving
-- [ ] T046 Quickstart scenario 8: compare two of the five band runs with `BAND=`, confirming every
+- [X] T046 Quickstart scenario 8: compare two of the five band runs with `BAND=`, confirming every
   movement is marked inside the observed range and none outside it (SC-009)
-- [ ] T047 Commit the phase's record under `specs/013-compare-eval-runs/evaluation/` (FR-037): the
+- [X] T047 Commit the phase's record under `specs/013-compare-eval-runs/evaluation/` (FR-037): the
   five runs' `report.json`/`report.md`, the band, and the T046 comparison, with a `README.md` stating
   the conditions, that the band is evidence of self-movement and not a threshold (FR-038), and which
   cases the five runs showed to be unstable. The five runs' `cases/` are **not** committed (SC-011),
   and the README says so along with what that costs: the band's per-case variation cannot be traced
   to its turns once the local runs are gone
-- [ ] T048 Record in `specs/013-compare-eval-runs/evaluation/README.md` what the band found — the
+- [X] T048 Record in `specs/013-compare-eval-runs/evaluation/README.md` what the band found — the
   metrics whose range is widest, the cases
   that varied and how often, and what that implies for reading any future comparison — without moving
   a threshold, re-labelling a case, or changing anything the assistant does (spec Out of Scope)

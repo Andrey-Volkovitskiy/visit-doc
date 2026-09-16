@@ -1,0 +1,173 @@
+# Golden-set report - run 01M2NJDNMDARRKHDGJRT5PC07N
+
+## Conditions
+
+- Clock: 2026-03-02T08:00:00
+- Session: 01M2NJDN23GPXBYPHHPBX89TW9
+- Corpus: live ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0, pinned ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0, matched: True
+- Selection: all (135 cases)
+- Recorded cases: 135 of 135
+- classification_model: claude-haiku-4-5-20251001
+- generation_model: claude-sonnet-5
+- embedding_model: voyage-4-lite
+- rerank_model: rerank-3
+- retrieval_pool_size: 25
+- similarity_floor: 0.3
+- similarity_cap: 5
+- rerank_floor: 0.58
+- rerank_cap: 3
+- max_segments: 3
+- context_turns: 5
+
+## Alignment
+
+| aligned | unaligned | excluded | labelled |
+|---|---|---|---|
+| 185 | 5 | 0 | 190 |
+
+## Exclusions
+
+- handed_off_turn: 33
+
+### Fixtures that would not plant
+
+None.
+
+## Metrics
+
+| metric | value | numerator / denominator | excluded |
+|---|---|---|---|
+| request_count_accuracy | 0.970 | 131 / 135 | - |
+| intent_accuracy | 0.968 | 179 / 185 | - |
+| exact_segmentation_match | 0.933 | 126 / 135 | - |
+
+Unaligned requests beside intent accuracy: 5
+
+### Segmentation disagreements
+
+- G003: labelled ['faq_question'], produced ['booking']
+- G031: labelled ['small_talk'], produced ['booking']
+- G033: labelled ['small_talk'], produced ['faq_question']
+- G068: labelled ['urgent_condition'], produced ['urgent_condition', 'booking']
+- G077: labelled ['urgent_condition'], produced ['urgent_condition', 'booking_for_another']
+- G108: labelled ['faq_question'], produced ['faq_question', 'faq_question']
+- G111: labelled ['faq_question', 'urgent_condition'], produced ['urgent_condition', 'faq_question']
+- G113: labelled ['faq_question', 'booking_for_another'], produced ['small_talk', 'booking_for_another']
+- G117: labelled ['faq_question', 'urgent_condition'], produced ['urgent_condition']
+
+### Turns combined to stay within the segment cap
+
+none
+
+## Retrieval
+
+| metric | value | numerator / denominator | excluded |
+|---|---|---|---|
+| similarity_hit_at_1 | 0.976 | 83 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| similarity_hit_at_3 | 0.988 | 84 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| similarity_hit_at_5 | 1.000 | 85 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| similarity_mrr | 0.985 | 83.750 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| rerank_hit_at_1 | 0.976 | 83 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| rerank_hit_at_3 | 1.000 | 85 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| rerank_hit_at_5 | 1.000 | 85 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| rerank_mrr | 0.988 | 84.000 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+| similarity_gate_survival | 1.000 | 85 / 85 | not_routed_to_faq 1, handed_off_turn 6 |
+
+On rerank_hit_at_5: rerank_hit_at_5 is 1 by construction while similarity_cap (5) is 5 or less: the reranker is handed at most that many chunks, and the rerank stage scores only requests with a cited chunk among them - so it is not a finding.
+
+Unaligned labelled-answerable requests, scored at neither stage: 1
+
+## Serving
+
+| metric | value | numerator / denominator | excluded |
+|---|---|---|---|
+| unserved_answerable_share | 0.069 | 6 / 87 | handed_off_turn 6 |
+| wrong_abstention_share | 0.174 | 4 / 23 | handed_off_turn 33 |
+
+unserved_answerable_share and wrong_abstention_share share part of their numerator - an abstention on a labelled-answerable request counts in both - and differ in their denominator: the first asks how much of what could be served was not, over the labelled-answerable requests whose turn was permitted to answer; the second asks how often an abstention was wrong, over every abstention the run produced. A run can move one without moving the other.
+
+Denominators: unserved_answerable_share 87, wrong_abstention_share 23.
+
+### Unserved answerable requests
+
+By cause: abstained 4, lost_to_count_mismatch 1, misclassified 1.
+
+- G003 [0] misclassified: Can I see a specialist if my GP hasn't sent anything over?
+- G016 [0] abstained at rerank_floor: Is parking free?
+- G096 [1] abstained at rerank_floor: is parking free?
+- G097 [1] abstained at rerank_floor: Does this clinic have dentists?
+- G100 [1] abstained at rerank_floor: What happens if you do not take Medicare?
+- G108 [0] lost_to_count_mismatch: Is there parking near the clinic, because I will be driving in and I am not sure where to leave the car?
+
+### Not permitted to answer (handed off or silenced; out of the denominator)
+
+G111, G112, G113, G114, G116, G117
+
+### Wrong abstentions
+
+- G016 [0] at rerank_floor: Is parking free?
+- G096 [1] at rerank_floor: is parking free?
+- G097 [1] at rerank_floor: Does this clinic have dentists?
+- G100 [1] at rerank_floor: What happens if you do not take Medicare?
+
+### Degraded answers (answered_unreranked)
+
+None.
+
+### Answers on labelled gaps
+
+- G020 [0] answered: Do you accept Blue Cross for dental implants?
+- G024 [0] answered: do you do blood tests on Saturdays?
+- G094 [0] answered: Are you open Sundays?
+- G098 [1] answered: Is what I should bring different if I am a returning patient?
+- G129 [1] answered: How much is a follow-up visit out of pocket?
+
+### Verdict distribution
+
+| metric | value | numerator / denominator | excluded |
+|---|---|---|---|
+| verdict_distribution.answered | 0.795 | 89 / 112 | handed_off_turn 33 |
+| verdict_distribution.answered_unreranked | 0.000 | 0 / 112 | handed_off_turn 33 |
+| verdict_distribution.abstained_empty_corpus | 0.000 | 0 / 112 | handed_off_turn 33 |
+| verdict_distribution.abstained_empty_pool | 0.000 | 0 / 112 | handed_off_turn 33 |
+| verdict_distribution.abstained_similarity_floor | 0.036 | 4 / 112 | handed_off_turn 33 |
+| verdict_distribution.abstained_rerank_floor | 0.170 | 19 / 112 | handed_off_turn 33 |
+
+## Booking
+
+| metric | value | numerator / denominator | excluded |
+|---|---|---|---|
+| tool_selection_correctness | 0.556 | 10 / 18 | - |
+| end_to_end_task_success | 0.778 | 14 / 18 | - |
+
+tool_selection_correctness is scored once per turn's booking half, against the union of the tools its booking requests are labelled with. The booking loop is handed all of a turn's booking requests at once, and the log attributes a tool call to the loop rather than to one request, so no per-request number is published. A tool called that no label names is not a miss. For a case with a scripted reply, the tools called in both of its turns count together, as one booking half: the loop is specified to ask in the first turn and act in the second.
+
+### Tool-selection misses
+
+- G048: missing reschedule_appointment; called list_my_appointments
+- G049: missing list_practitioners; called nothing
+- G053: missing check_availability; called list_practitioners
+- G062: missing book_appointment; called check_availability
+- G090: missing cancel_appointment; called list_my_appointments
+- G092: missing list_practitioners; called nothing
+- G095: missing book_appointment; called check_availability
+- G102: missing cancel_appointment, book_appointment; called list_my_appointments, check_availability
+
+### End-to-end failures
+
+- G062, read after the last turn: expected, not found: William Osler +2d standing | found, not expected: none
+- G090, read after the last turn: expected, not found: William Osler +4d 11:00 cancelled | found, not expected: William Osler 2026-03-06T11:00:00 standing
+- G095, read after the last turn: expected, not found: William Osler +4d standing | found, not expected: none
+- G102, read after the last turn: expected, not found: William Osler +4d 10:00 cancelled; William Osler +2d standing | found, not expected: William Osler 2026-03-06T10:00:00 standing
+
+## Runs and attempts
+
+- Cases needing more than one attempt: 0
+- Turns marked assistant_failed that still replied: none
+- Streams that broke the service's contract and then settled: none
+- Drive seconds: 655.81
+- Score seconds: 0.1405
+
+## Not computed
+
+None.

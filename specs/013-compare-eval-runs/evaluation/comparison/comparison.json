@@ -1,0 +1,2095 @@
+{
+  "alignment": {
+    "base": {
+      "aligned": 183,
+      "excluded": 0,
+      "labelled": 190,
+      "unaligned": 7
+    },
+    "moved": true,
+    "new": {
+      "aligned": 184,
+      "excluded": 0,
+      "labelled": 190,
+      "unaligned": 6
+    }
+  },
+  "band_applicable": true,
+  "band_id": "01M2NN164ECVN78MTMYGEECKPP",
+  "base": {
+    "complete": true,
+    "conditions": {
+      "classification_model": "claude-haiku-4-5-20251001",
+      "context_turns": 5,
+      "embedding_model": "voyage-4-lite",
+      "generation_model": "claude-sonnet-5",
+      "max_segments": 3,
+      "rerank_cap": 3,
+      "rerank_floor": 0.58,
+      "rerank_model": "rerank-3",
+      "retrieval_pool_size": 25,
+      "similarity_cap": 5,
+      "similarity_floor": 0.3
+    },
+    "corpus": {
+      "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+      "matched": true,
+      "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0"
+    },
+    "location": "/home/andrey/visit-doc/.run/evals/01M2NHQFK02X5TJNJ05BM8BNX1",
+    "recorded_cases": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "run_id": "01M2NHQFK02X5TJNJ05BM8BNX1",
+    "selection": {
+      "case_ids": [
+        "G001",
+        "G002",
+        "G003",
+        "G004",
+        "G005",
+        "G006",
+        "G007",
+        "G008",
+        "G009",
+        "G010",
+        "G011",
+        "G012",
+        "G013",
+        "G014",
+        "G015",
+        "G016",
+        "G017",
+        "G018",
+        "G019",
+        "G020",
+        "G021",
+        "G022",
+        "G023",
+        "G024",
+        "G025",
+        "G026",
+        "G027",
+        "G028",
+        "G029",
+        "G030",
+        "G031",
+        "G032",
+        "G033",
+        "G034",
+        "G035",
+        "G036",
+        "G037",
+        "G038",
+        "G039",
+        "G040",
+        "G041",
+        "G042",
+        "G043",
+        "G044",
+        "G045",
+        "G046",
+        "G047",
+        "G048",
+        "G049",
+        "G050",
+        "G051",
+        "G052",
+        "G053",
+        "G054",
+        "G055",
+        "G056",
+        "G057",
+        "G058",
+        "G059",
+        "G060",
+        "G061",
+        "G062",
+        "G063",
+        "G064",
+        "G065",
+        "G066",
+        "G067",
+        "G068",
+        "G069",
+        "G070",
+        "G071",
+        "G072",
+        "G073",
+        "G074",
+        "G075",
+        "G076",
+        "G077",
+        "G078",
+        "G079",
+        "G080",
+        "G081",
+        "G082",
+        "G083",
+        "G084",
+        "G085",
+        "G086",
+        "G087",
+        "G088",
+        "G089",
+        "G090",
+        "G091",
+        "G092",
+        "G093",
+        "G094",
+        "G095",
+        "G096",
+        "G097",
+        "G098",
+        "G099",
+        "G100",
+        "G101",
+        "G102",
+        "G104",
+        "G105",
+        "G106",
+        "G107",
+        "G108",
+        "G109",
+        "G110",
+        "G111",
+        "G112",
+        "G113",
+        "G114",
+        "G115",
+        "G116",
+        "G117",
+        "G118",
+        "G119",
+        "G120",
+        "G121",
+        "G122",
+        "G123",
+        "G124",
+        "G125",
+        "G126",
+        "G127",
+        "G128",
+        "G129",
+        "G130",
+        "G131",
+        "G132",
+        "G133",
+        "G134",
+        "G135",
+        "G136"
+      ],
+      "family": null,
+      "kind": "all"
+    },
+    "started_at": "2026-09-16T16:45:17.280735Z"
+  },
+  "cases": [
+    {
+      "affects": [
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.answered"
+      ],
+      "base": "rerank set aside: not_routed_to_faq",
+      "base_excluded": null,
+      "case_id": "G003",
+      "direction": "directionless",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 1",
+      "new_excluded": null,
+      "position": 0,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.answered"
+      ],
+      "base": "similarity set aside: not_routed_to_faq",
+      "base_excluded": null,
+      "case_id": "G003",
+      "direction": "directionless",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 1",
+      "new_excluded": null,
+      "position": 0,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "exact_segmentation_match",
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.answered"
+      ],
+      "base": "booking",
+      "base_excluded": null,
+      "case_id": "G003",
+      "direction": "improved",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "faq_question",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.answered"
+      ],
+      "base": "no outcome recorded",
+      "base_excluded": null,
+      "case_id": "G003",
+      "direction": "directionless",
+      "group": "verdict",
+      "labelled": "answerable",
+      "new": "answered",
+      "new_excluded": null,
+      "position": 0,
+      "question": "Can I see a specialist without a GP referral?",
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "exact_segmentation_match",
+        "intent_accuracy",
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "small_talk",
+      "base_excluded": null,
+      "case_id": "G023",
+      "direction": "improved",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "faq_question",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "no outcome recorded",
+      "base_excluded": null,
+      "case_id": "G023",
+      "direction": "directionless",
+      "group": "verdict",
+      "labelled": "a gap",
+      "new": "abstained_rerank_floor",
+      "new_excluded": null,
+      "position": 0,
+      "question": "How much does parking at the Mega Mall garage cost per hour?",
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G042",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing cancel_appointment",
+      "base_excluded": null,
+      "case_id": "G042",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [],
+      "base": "booking_for_another, urgent_condition",
+      "base_excluded": "handed_off_turn",
+      "case_id": "G077",
+      "direction": "directionless",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "urgent_condition, booking_for_another",
+      "new_excluded": "handed_off_turn",
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_similarity_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "rerank rank 1",
+      "base_excluded": null,
+      "case_id": "G081",
+      "direction": "directionless",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank set aside: not_reached_reranker",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_similarity_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "answered",
+      "base_excluded": null,
+      "case_id": "G081",
+      "direction": "degraded",
+      "group": "verdict",
+      "labelled": "answerable",
+      "new": "abstained_similarity_floor",
+      "new_excluded": null,
+      "position": 1,
+      "question": "What cards do you take?",
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G088",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing book_appointment",
+      "base_excluded": null,
+      "case_id": "G088",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G090",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing cancel_appointment",
+      "base_excluded": null,
+      "case_id": "G090",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "rerank rank 1",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "degraded",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 2",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "similarity rank 2",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "degraded",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 4",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "answered",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "degraded",
+      "group": "verdict",
+      "labelled": "answerable",
+      "new": "abstained_rerank_floor",
+      "new_excluded": null,
+      "position": 1,
+      "question": "Does this clinic have a dentist?",
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_mrr"
+      ],
+      "base": "rerank rank 1",
+      "base_excluded": null,
+      "case_id": "G099",
+      "direction": "degraded",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 2",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_mrr"
+      ],
+      "base": "similarity rank 1",
+      "base_excluded": null,
+      "case_id": "G099",
+      "direction": "degraded",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 2",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "expected appointments found",
+      "base_excluded": null,
+      "case_id": "G102",
+      "direction": "degraded",
+      "group": "database_state",
+      "labelled": null,
+      "new": "did not match at scheduling_after",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "every labelled tool called",
+      "base_excluded": null,
+      "case_id": "G102",
+      "direction": "degraded",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "missing book_appointment, cancel_appointment",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share"
+      ],
+      "base": "rerank not scored",
+      "base_excluded": null,
+      "case_id": "G108",
+      "direction": "directionless",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 1",
+      "new_excluded": null,
+      "position": 0,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share"
+      ],
+      "base": "similarity not scored",
+      "base_excluded": null,
+      "case_id": "G108",
+      "direction": "directionless",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 1",
+      "new_excluded": null,
+      "position": 0,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "exact_segmentation_match",
+        "intent_accuracy",
+        "request_count_accuracy",
+        "rerank_hit_at_1",
+        "rerank_hit_at_3",
+        "rerank_hit_at_5",
+        "rerank_mrr",
+        "similarity_gate_survival",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_hit_at_5",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "faq_question, faq_question",
+      "base_excluded": null,
+      "case_id": "G108",
+      "direction": "improved",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "faq_question",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "abstained_rerank_floor",
+      "base_excluded": null,
+      "case_id": "G108",
+      "direction": "directionless",
+      "group": "verdict",
+      "labelled": null,
+      "new": "no outcome recorded",
+      "new_excluded": null,
+      "position": 1,
+      "question": "Where should I leave my car?",
+      "varies_on_its_own": true
+    }
+  ],
+  "compare_seconds": 0.20825173100456595,
+  "compared_at": "2026-09-16T17:43:37.901915Z",
+  "conditions": {
+    "changes": []
+  },
+  "corpus_moved": false,
+  "coverage": {
+    "base_only": [],
+    "common": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "new_only": [],
+    "restricted": false
+  },
+  "exclusions": {
+    "handed_off_turn": {
+      "base": 33,
+      "moved": false,
+      "new": 33
+    }
+  },
+  "metrics": [
+    {
+      "band": {
+        "high": 0.9703703703703703,
+        "inside": true,
+        "low": 0.9555555555555556
+      },
+      "base": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "request_count_accuracy",
+        "numerator": 129,
+        "value": 0.9555555555555556
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "classification",
+      "name": "request_count_accuracy",
+      "new": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "request_count_accuracy",
+        "numerator": 130,
+        "value": 0.9629629629629629
+      }
+    },
+    {
+      "band": {
+        "high": 0.972972972972973,
+        "inside": true,
+        "low": 0.9617486338797814
+      },
+      "base": {
+        "denominator": 183,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "intent_accuracy",
+        "numerator": 176,
+        "value": 0.9617486338797814
+      },
+      "denominator_moved": true,
+      "direction": "improved",
+      "family": "classification",
+      "name": "intent_accuracy",
+      "new": {
+        "denominator": 184,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "intent_accuracy",
+        "numerator": 179,
+        "value": 0.9728260869565217
+      }
+    },
+    {
+      "band": {
+        "high": 0.9333333333333333,
+        "inside": true,
+        "low": 0.9111111111111111
+      },
+      "base": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "exact_segmentation_match",
+        "numerator": 123,
+        "value": 0.9111111111111111
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "classification",
+      "name": "exact_segmentation_match",
+      "new": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "exact_segmentation_match",
+        "numerator": 126,
+        "value": 0.9333333333333333
+      }
+    },
+    {
+      "band": {
+        "high": 0.9882352941176471,
+        "inside": true,
+        "low": 0.9764705882352941
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "similarity_hit_at_1",
+        "numerator": 83,
+        "value": 0.9880952380952381
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "similarity_hit_at_1",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_1",
+        "numerator": 84,
+        "value": 0.9767441860465116
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9882352941176471
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "similarity_hit_at_3",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "similarity_hit_at_3",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_3",
+        "numerator": 85,
+        "value": 0.9883720930232558
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "similarity_hit_at_5",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "similarity_hit_at_5",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_5",
+        "numerator": 86,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.9941176470588236,
+        "inside": true,
+        "low": 0.9852941176470589
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "similarity_mrr",
+        "numerator": 83.5,
+        "value": 0.9940476190476191
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "similarity_mrr",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_mrr",
+        "numerator": 84.75,
+        "value": 0.9854651162790697
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9764705882352941
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_1",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "rerank_hit_at_1",
+      "new": {
+        "denominator": 85,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_1",
+        "numerator": 83,
+        "value": 0.9764705882352941
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9880952380952381
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_3",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "rerank_hit_at_3",
+      "new": {
+        "denominator": 85,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_3",
+        "numerator": 85,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_5",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "rerank_hit_at_5",
+      "new": {
+        "denominator": 85,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_5",
+        "numerator": 85,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9882352941176471
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_mrr",
+        "numerator": 84.0,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "rerank_mrr",
+      "new": {
+        "denominator": 85,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_mrr",
+        "numerator": 84.0,
+        "value": 0.9882352941176471
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9882352941176471
+      },
+      "base": {
+        "denominator": 84,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_routed_to_faq": 1
+          },
+          "total": 7
+        },
+        "name": "similarity_gate_survival",
+        "numerator": 84,
+        "value": 1.0
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "retrieval",
+      "name": "similarity_gate_survival",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_gate_survival",
+        "numerator": 85,
+        "value": 0.9883720930232558
+      }
+    },
+    {
+      "band": {
+        "high": 0.08045977011494253,
+        "inside": true,
+        "low": 0.05747126436781609
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "unserved_answerable_share",
+        "numerator": 6,
+        "value": 0.06896551724137931
+      },
+      "denominator_moved": false,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "unserved_answerable_share",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "unserved_answerable_share",
+        "numerator": 6,
+        "value": 0.06896551724137931
+      }
+    },
+    {
+      "band": {
+        "high": 0.22727272727272727,
+        "inside": true,
+        "low": 0.14285714285714285
+      },
+      "base": {
+        "denominator": 21,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "wrong_abstention_share",
+        "numerator": 3,
+        "value": 0.14285714285714285
+      },
+      "denominator_moved": true,
+      "direction": "degraded",
+      "family": "serving",
+      "name": "wrong_abstention_share",
+      "new": {
+        "denominator": 23,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "wrong_abstention_share",
+        "numerator": 5,
+        "value": 0.21739130434782608
+      }
+    },
+    {
+      "band": {
+        "high": 0.8108108108108109,
+        "inside": true,
+        "low": 0.7946428571428571
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered",
+        "numerator": 90,
+        "value": 0.8108108108108109
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.answered",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered",
+        "numerator": 89,
+        "value": 0.7946428571428571
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered_unreranked",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.answered_unreranked",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered_unreranked",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_corpus",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_empty_corpus",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_corpus",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_pool",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_empty_pool",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_pool",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.045454545454545456,
+        "inside": true,
+        "low": 0.03571428571428571
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_similarity_floor",
+        "numerator": 4,
+        "value": 0.036036036036036036
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_similarity_floor",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_similarity_floor",
+        "numerator": 5,
+        "value": 0.044642857142857144
+      }
+    },
+    {
+      "band": {
+        "high": 0.16964285714285715,
+        "inside": true,
+        "low": 0.15315315315315314
+      },
+      "base": {
+        "denominator": 111,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_rerank_floor",
+        "numerator": 17,
+        "value": 0.15315315315315314
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_rerank_floor",
+      "new": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_rerank_floor",
+        "numerator": 18,
+        "value": 0.16071428571428573
+      }
+    },
+    {
+      "band": {
+        "high": 0.6666666666666666,
+        "inside": true,
+        "low": 0.5
+      },
+      "base": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "tool_selection_correctness",
+        "numerator": 9,
+        "value": 0.5
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "booking",
+      "name": "tool_selection_correctness",
+      "new": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "tool_selection_correctness",
+        "numerator": 11,
+        "value": 0.6111111111111112
+      }
+    },
+    {
+      "band": {
+        "high": 0.8888888888888888,
+        "inside": true,
+        "low": 0.7222222222222222
+      },
+      "base": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "end_to_end_task_success",
+        "numerator": 13,
+        "value": 0.7222222222222222
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "booking",
+      "name": "end_to_end_task_success",
+      "new": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "end_to_end_task_success",
+        "numerator": 15,
+        "value": 0.8333333333333334
+      }
+    }
+  ],
+  "new": {
+    "complete": true,
+    "conditions": {
+      "classification_model": "claude-haiku-4-5-20251001",
+      "context_turns": 5,
+      "embedding_model": "voyage-4-lite",
+      "generation_model": "claude-sonnet-5",
+      "max_segments": 3,
+      "rerank_cap": 3,
+      "rerank_floor": 0.58,
+      "rerank_model": "rerank-3",
+      "retrieval_pool_size": 25,
+      "similarity_cap": 5,
+      "similarity_floor": 0.3
+    },
+    "corpus": {
+      "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+      "matched": true,
+      "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0"
+    },
+    "location": "/home/andrey/visit-doc/.run/evals/01M2NMC5ATQ0G5G6246PW0VP3E",
+    "recorded_cases": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "run_id": "01M2NMC5ATQ0G5G6246PW0VP3E",
+    "selection": {
+      "case_ids": [
+        "G001",
+        "G002",
+        "G003",
+        "G004",
+        "G005",
+        "G006",
+        "G007",
+        "G008",
+        "G009",
+        "G010",
+        "G011",
+        "G012",
+        "G013",
+        "G014",
+        "G015",
+        "G016",
+        "G017",
+        "G018",
+        "G019",
+        "G020",
+        "G021",
+        "G022",
+        "G023",
+        "G024",
+        "G025",
+        "G026",
+        "G027",
+        "G028",
+        "G029",
+        "G030",
+        "G031",
+        "G032",
+        "G033",
+        "G034",
+        "G035",
+        "G036",
+        "G037",
+        "G038",
+        "G039",
+        "G040",
+        "G041",
+        "G042",
+        "G043",
+        "G044",
+        "G045",
+        "G046",
+        "G047",
+        "G048",
+        "G049",
+        "G050",
+        "G051",
+        "G052",
+        "G053",
+        "G054",
+        "G055",
+        "G056",
+        "G057",
+        "G058",
+        "G059",
+        "G060",
+        "G061",
+        "G062",
+        "G063",
+        "G064",
+        "G065",
+        "G066",
+        "G067",
+        "G068",
+        "G069",
+        "G070",
+        "G071",
+        "G072",
+        "G073",
+        "G074",
+        "G075",
+        "G076",
+        "G077",
+        "G078",
+        "G079",
+        "G080",
+        "G081",
+        "G082",
+        "G083",
+        "G084",
+        "G085",
+        "G086",
+        "G087",
+        "G088",
+        "G089",
+        "G090",
+        "G091",
+        "G092",
+        "G093",
+        "G094",
+        "G095",
+        "G096",
+        "G097",
+        "G098",
+        "G099",
+        "G100",
+        "G101",
+        "G102",
+        "G104",
+        "G105",
+        "G106",
+        "G107",
+        "G108",
+        "G109",
+        "G110",
+        "G111",
+        "G112",
+        "G113",
+        "G114",
+        "G115",
+        "G116",
+        "G117",
+        "G118",
+        "G119",
+        "G120",
+        "G121",
+        "G122",
+        "G123",
+        "G124",
+        "G125",
+        "G126",
+        "G127",
+        "G128",
+        "G129",
+        "G130",
+        "G131",
+        "G132",
+        "G133",
+        "G134",
+        "G135",
+        "G136"
+      ],
+      "family": null,
+      "kind": "all"
+    },
+    "started_at": "2026-09-16T17:31:32.058255Z"
+  }
+}

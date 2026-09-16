@@ -1,0 +1,806 @@
+{
+  "band_id": "01M2NN164ECVN78MTMYGEECKPP",
+  "case_ids": [
+    "G001",
+    "G002",
+    "G003",
+    "G004",
+    "G005",
+    "G006",
+    "G007",
+    "G008",
+    "G009",
+    "G010",
+    "G011",
+    "G012",
+    "G013",
+    "G014",
+    "G015",
+    "G016",
+    "G017",
+    "G018",
+    "G019",
+    "G020",
+    "G021",
+    "G022",
+    "G023",
+    "G024",
+    "G025",
+    "G026",
+    "G027",
+    "G028",
+    "G029",
+    "G030",
+    "G031",
+    "G032",
+    "G033",
+    "G034",
+    "G035",
+    "G036",
+    "G037",
+    "G038",
+    "G039",
+    "G040",
+    "G041",
+    "G042",
+    "G043",
+    "G044",
+    "G045",
+    "G046",
+    "G047",
+    "G048",
+    "G049",
+    "G050",
+    "G051",
+    "G052",
+    "G053",
+    "G054",
+    "G055",
+    "G056",
+    "G057",
+    "G058",
+    "G059",
+    "G060",
+    "G061",
+    "G062",
+    "G063",
+    "G064",
+    "G065",
+    "G066",
+    "G067",
+    "G068",
+    "G069",
+    "G070",
+    "G071",
+    "G072",
+    "G073",
+    "G074",
+    "G075",
+    "G076",
+    "G077",
+    "G078",
+    "G079",
+    "G080",
+    "G081",
+    "G082",
+    "G083",
+    "G084",
+    "G085",
+    "G086",
+    "G087",
+    "G088",
+    "G089",
+    "G090",
+    "G091",
+    "G092",
+    "G093",
+    "G094",
+    "G095",
+    "G096",
+    "G097",
+    "G098",
+    "G099",
+    "G100",
+    "G101",
+    "G102",
+    "G104",
+    "G105",
+    "G106",
+    "G107",
+    "G108",
+    "G109",
+    "G110",
+    "G111",
+    "G112",
+    "G113",
+    "G114",
+    "G115",
+    "G116",
+    "G117",
+    "G118",
+    "G119",
+    "G120",
+    "G121",
+    "G122",
+    "G123",
+    "G124",
+    "G125",
+    "G126",
+    "G127",
+    "G128",
+    "G129",
+    "G130",
+    "G131",
+    "G132",
+    "G133",
+    "G134",
+    "G135",
+    "G136"
+  ],
+  "clock": "2026-03-02T08:00:00",
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "context_turns": 5,
+    "embedding_model": "voyage-4-lite",
+    "generation_model": "claude-sonnet-5",
+    "max_segments": 3,
+    "rerank_cap": 3,
+    "rerank_floor": 0.58,
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_cap": 5,
+    "similarity_floor": 0.3
+  },
+  "corpus_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+  "measured_at": "2026-09-16T17:43:01.042726Z",
+  "metrics": {
+    "end_to_end_task_success": {
+      "high": 0.8888888888888888,
+      "low": 0.7222222222222222,
+      "name": "end_to_end_task_success",
+      "values": [
+        0.7222222222222222,
+        0.7777777777777778,
+        0.8888888888888888,
+        0.7222222222222222,
+        0.8333333333333334
+      ]
+    },
+    "exact_segmentation_match": {
+      "high": 0.9333333333333333,
+      "low": 0.9111111111111111,
+      "name": "exact_segmentation_match",
+      "values": [
+        0.9111111111111111,
+        0.9333333333333333,
+        0.9333333333333333,
+        0.9185185185185185,
+        0.9333333333333333
+      ]
+    },
+    "intent_accuracy": {
+      "high": 0.972972972972973,
+      "low": 0.9617486338797814,
+      "name": "intent_accuracy",
+      "values": [
+        0.9617486338797814,
+        0.9675675675675676,
+        0.972972972972973,
+        0.9619565217391305,
+        0.9728260869565217
+      ]
+    },
+    "request_count_accuracy": {
+      "high": 0.9703703703703703,
+      "low": 0.9555555555555556,
+      "name": "request_count_accuracy",
+      "values": [
+        0.9555555555555556,
+        0.9703703703703703,
+        0.9703703703703703,
+        0.9629629629629629,
+        0.9629629629629629
+      ]
+    },
+    "rerank_hit_at_1": {
+      "high": 1.0,
+      "low": 0.9764705882352941,
+      "name": "rerank_hit_at_1",
+      "values": [
+        1.0,
+        0.9764705882352941,
+        1.0,
+        0.9880952380952381,
+        0.9764705882352941
+      ]
+    },
+    "rerank_hit_at_3": {
+      "high": 1.0,
+      "low": 0.9880952380952381,
+      "name": "rerank_hit_at_3",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        0.9880952380952381,
+        1.0
+      ]
+    },
+    "rerank_hit_at_5": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "rerank_hit_at_5",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "rerank_mrr": {
+      "high": 1.0,
+      "low": 0.9882352941176471,
+      "name": "rerank_mrr",
+      "values": [
+        1.0,
+        0.9882352941176471,
+        1.0,
+        0.9910714285714286,
+        0.9882352941176471
+      ]
+    },
+    "similarity_gate_survival": {
+      "high": 1.0,
+      "low": 0.9882352941176471,
+      "name": "similarity_gate_survival",
+      "values": [
+        1.0,
+        1.0,
+        0.9882352941176471,
+        0.9882352941176471,
+        0.9883720930232558
+      ]
+    },
+    "similarity_hit_at_1": {
+      "high": 0.9882352941176471,
+      "low": 0.9764705882352941,
+      "name": "similarity_hit_at_1",
+      "values": [
+        0.9880952380952381,
+        0.9764705882352941,
+        0.9882352941176471,
+        0.9882352941176471,
+        0.9767441860465116
+      ]
+    },
+    "similarity_hit_at_3": {
+      "high": 1.0,
+      "low": 0.9882352941176471,
+      "name": "similarity_hit_at_3",
+      "values": [
+        1.0,
+        0.9882352941176471,
+        1.0,
+        0.9882352941176471,
+        0.9883720930232558
+      ]
+    },
+    "similarity_hit_at_5": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "similarity_hit_at_5",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "similarity_mrr": {
+      "high": 0.9941176470588236,
+      "low": 0.9852941176470589,
+      "name": "similarity_mrr",
+      "values": [
+        0.9940476190476191,
+        0.9852941176470589,
+        0.9941176470588236,
+        0.9911764705882353,
+        0.9854651162790697
+      ]
+    },
+    "tool_selection_correctness": {
+      "high": 0.6666666666666666,
+      "low": 0.5,
+      "name": "tool_selection_correctness",
+      "values": [
+        0.5,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.5,
+        0.6111111111111112
+      ]
+    },
+    "unserved_answerable_share": {
+      "high": 0.08045977011494253,
+      "low": 0.05747126436781609,
+      "name": "unserved_answerable_share",
+      "values": [
+        0.06896551724137931,
+        0.06896551724137931,
+        0.05747126436781609,
+        0.08045977011494253,
+        0.06896551724137931
+      ]
+    },
+    "verdict_distribution.abstained_empty_corpus": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.abstained_empty_corpus",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "verdict_distribution.abstained_empty_pool": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.abstained_empty_pool",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "verdict_distribution.abstained_rerank_floor": {
+      "high": 0.16964285714285715,
+      "low": 0.15315315315315314,
+      "name": "verdict_distribution.abstained_rerank_floor",
+      "values": [
+        0.15315315315315314,
+        0.16964285714285715,
+        0.1559633027522936,
+        0.15454545454545454,
+        0.16071428571428573
+      ]
+    },
+    "verdict_distribution.abstained_similarity_floor": {
+      "high": 0.045454545454545456,
+      "low": 0.03571428571428571,
+      "name": "verdict_distribution.abstained_similarity_floor",
+      "values": [
+        0.036036036036036036,
+        0.03571428571428571,
+        0.03669724770642202,
+        0.045454545454545456,
+        0.044642857142857144
+      ]
+    },
+    "verdict_distribution.answered": {
+      "high": 0.8108108108108109,
+      "low": 0.7946428571428571,
+      "name": "verdict_distribution.answered",
+      "values": [
+        0.8108108108108109,
+        0.7946428571428571,
+        0.8073394495412844,
+        0.8,
+        0.7946428571428571
+      ]
+    },
+    "verdict_distribution.answered_unreranked": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.answered_unreranked",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "wrong_abstention_share": {
+      "high": 0.22727272727272727,
+      "low": 0.14285714285714285,
+      "name": "wrong_abstention_share",
+      "values": [
+        0.14285714285714285,
+        0.17391304347826086,
+        0.14285714285714285,
+        0.22727272727272727,
+        0.21739130434782608
+      ]
+    }
+  },
+  "run_ids": [
+    "01M2NHQFK02X5TJNJ05BM8BNX1",
+    "01M2NJDNMDARRKHDGJRT5PC07N",
+    "01M2NK2XD8NNJKXVAQZV81BVWW",
+    "01M2NKPXX05H24TYV51CKWGXEN",
+    "01M2NMC5ATQ0G5G6246PW0VP3E"
+  ],
+  "varying_cases": [
+    {
+      "case_id": "G002",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank not scored": 3,
+        "rerank rank 1": 2
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G002",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity not scored": 3,
+        "similarity rank 1": 2
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G002",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question": 2,
+        "faq_question, faq_question": 3
+      },
+      "position": null
+    },
+    {
+      "case_id": "G002",
+      "group": "verdict",
+      "outcomes": {
+        "answered": 3,
+        "no outcome recorded": 2
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G003",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank rank 1": 1,
+        "rerank set aside: not_routed_to_faq": 4
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G003",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity rank 1": 1,
+        "similarity set aside: not_routed_to_faq": 4
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G003",
+      "group": "segmentation",
+      "outcomes": {
+        "booking": 4,
+        "faq_question": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G003",
+      "group": "verdict",
+      "outcomes": {
+        "answered": 1,
+        "no outcome recorded": 4
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G023",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question": 2,
+        "small_talk": 3
+      },
+      "position": null
+    },
+    {
+      "case_id": "G023",
+      "group": "verdict",
+      "outcomes": {
+        "abstained_rerank_floor": 2,
+        "no outcome recorded": 3
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G033",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question": 1,
+        "faq_question, small_talk": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G042",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 1,
+        "expected appointments found": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G042",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 4,
+        "missing cancel_appointment": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G062",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 4,
+        "expected appointments found": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G062",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 1,
+        "missing book_appointment": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G077",
+      "group": "segmentation",
+      "outcomes": {
+        "booking_for_another, urgent_condition": 3,
+        "urgent_condition, booking_for_another": 2
+      },
+      "position": null
+    },
+    {
+      "case_id": "G081",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank rank 1": 3,
+        "rerank set aside: not_reached_reranker": 2
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G081",
+      "group": "verdict",
+      "outcomes": {
+        "abstained_similarity_floor": 2,
+        "answered": 3
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G088",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 1,
+        "expected appointments found": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G088",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 4,
+        "missing book_appointment": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G090",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 4,
+        "expected appointments found": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G090",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 1,
+        "missing cancel_appointment": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G093",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 1,
+        "expected appointments found": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G093",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 4,
+        "missing reschedule_appointment": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G097",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question, faq_question": 4,
+        "faq_question, unknown": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G097",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank rank 1": 1,
+        "rerank rank 2": 2,
+        "rerank rank 4": 1,
+        "rerank set aside: not_routed_to_faq": 1
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G097",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity rank 2": 1,
+        "similarity rank 4": 3,
+        "similarity set aside: not_routed_to_faq": 1
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G097",
+      "group": "verdict",
+      "outcomes": {
+        "abstained_rerank_floor": 3,
+        "answered": 1,
+        "no outcome recorded": 1
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G099",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank rank 1": 3,
+        "rerank rank 2": 2
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G099",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity rank 1": 3,
+        "similarity rank 2": 2
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G100",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank rank 1": 4,
+        "rerank set aside: not_reached_reranker": 1
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G100",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity rank 1": 4,
+        "similarity rank 2": 1
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G102",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 3,
+        "expected appointments found": 2
+      },
+      "position": null
+    },
+    {
+      "case_id": "G102",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 2,
+        "missing book_appointment": 1,
+        "missing book_appointment, cancel_appointment": 2
+      },
+      "position": null
+    },
+    {
+      "case_id": "G108",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "rerank not scored": 2,
+        "rerank rank 1": 3
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G108",
+      "group": "retrieval_rank",
+      "outcomes": {
+        "similarity not scored": 2,
+        "similarity rank 1": 3
+      },
+      "position": 0
+    },
+    {
+      "case_id": "G108",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question": 3,
+        "faq_question, faq_question": 2
+      },
+      "position": null
+    },
+    {
+      "case_id": "G108",
+      "group": "verdict",
+      "outcomes": {
+        "abstained_rerank_floor": 1,
+        "answered": 1,
+        "no outcome recorded": 3
+      },
+      "position": 1
+    },
+    {
+      "case_id": "G111",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question, urgent_condition": 1,
+        "urgent_condition, faq_question": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G130",
+      "group": "segmentation",
+      "outcomes": {
+        "faq_question, faq_question": 2,
+        "faq_question, unknown": 3
+      },
+      "position": null
+    },
+    {
+      "case_id": "G130",
+      "group": "verdict",
+      "outcomes": {
+        "abstained_rerank_floor": 2,
+        "no outcome recorded": 3
+      },
+      "position": 1
+    }
+  ]
+}
