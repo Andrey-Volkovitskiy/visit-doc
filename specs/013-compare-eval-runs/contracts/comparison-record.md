@@ -69,6 +69,13 @@ These are output rules, not prose preferences, because FR-036 is about what the 
 - A case movement's `improved` / `degraded` is about **that case against its label** — this request
   is now answered where the label says it is answerable — and the renderer says it in those terms,
   so a reader never reads a per-case judgement as a verdict on the build.
+- A movement on a case a run **set aside** says so, naming the side and the reason: *the case was
+  set aside in the new run (missing_log_slice)*. A request's verdict is a fact about the reply the
+  patient got, so it keeps the direction its label gives it there; the clause is what stops that
+  direction being read as a metric that moved, since the case counted towards less — or nothing —
+  on that side. The clause makes no claim about which metrics the exclusion cost, because that
+  varies by reason: the `affects` list printed beside it names the ones that changed. The exclusion
+  group is silent, its own two states being those two reasons.
 - A metric with no scorer on one side is **not computed**; a metric with an empty denominator is
   **not measured**. Both already exist in 2b with those exact names, and neither becomes a delta
   (FR-015).

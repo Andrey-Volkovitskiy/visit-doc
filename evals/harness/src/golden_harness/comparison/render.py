@@ -324,6 +324,7 @@ def _case_line(movement: CaseMovement) -> str:
     if movement.direction is not MovementDirection.DIRECTIONLESS:
         line += _labelled_as(movement)
     line += ")"
+    line += _set_aside_as(movement)
     if movement.varies_on_its_own:
         line += " - this case varied on an unchanged build"
     if movement.affects:
@@ -331,6 +332,32 @@ def _case_line(movement: CaseMovement) -> str:
     if movement.question is not None:
         line += f' - "{movement.question}"'
     return line
+
+
+def _set_aside_as(movement: CaseMovement) -> str:
+    """Name the exclusion a movement sits beside, where a run recorded one.
+
+    A verdict keeps the direction its label gives it on a case a run set aside - the
+    patient did get a different reply, whatever a scorer counted - and this clause is
+    what stops that direction being read as a metric that moved. It claims nothing
+    about which metrics the exclusion cost; `affects`, printed beside it, names the
+    ones that actually changed.
+
+    The exclusion group is silent here because its own two states are those two
+    reasons: the clause would print the same fact twice on one line.
+    """
+    if movement.group is MovementGroup.EXCLUSION:
+        return ""
+    was, is_now = movement.base_excluded, movement.new_excluded
+    if was is None and is_now is None:
+        return ""
+    if was is not None and is_now is not None:
+        reasons = was.value if was is is_now else f"{was.value} -> {is_now.value}"
+        return f" - the case was set aside in both runs ({reasons})"
+    if is_now is not None:
+        return f" - the case was set aside in the new run ({is_now.value})"
+    assert was is not None
+    return f" - the case was set aside in the baseline ({was.value})"
 
 
 def _labelled_as(movement: CaseMovement) -> str:

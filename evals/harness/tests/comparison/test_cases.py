@@ -600,3 +600,88 @@ def test_a_verdict_movement_on_an_answerable_request_is_named_answerable(
     )
 
     assert verdict.labelled == "answerable"
+
+
+def _set_aside(
+    records: list[CaseRun], case_id: str, reason: ExclusionReason
+) -> list[CaseRun]:
+    """Return the records with one case set aside by a turn-level reason."""
+    return [
+        record.model_copy(update={"excluded": reason})
+        if record.case_id == case_id
+        else record
+        for record in records
+    ]
+
+
+def test_a_verdict_on_a_set_aside_case_keeps_its_direction_and_names_the_reason(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    # The log slice could not be read, so the case counts towards nothing - but the
+    # patient was answered in one run and abstained on in the other, and that is a
+    # fact about the reply rather than about a scorer. The direction stands; the
+    # reason travels with it, so no reader takes the direction for a moved metric.
+    base = scored("base")
+    new_records = _set_aside(
+        _also_abstained(case_runs("base"), "G801"),
+        "G801",
+        ExclusionReason.MISSING_LOG_SLICE,
+    )
+
+    movements = _movements_of(
+        base, base, case_runs("base"), new_records, labels, "G801"
+    )
+
+    verdict = _one(movements, MovementGroup.VERDICT)
+    assert verdict.direction is MovementDirection.DEGRADED
+    assert verdict.labelled == "answerable"
+    assert verdict.base_excluded is None
+    assert verdict.new_excluded is ExclusionReason.MISSING_LOG_SLICE
+
+
+def test_every_movement_of_a_set_aside_case_carries_the_reason(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    base = scored("base")
+    new_records = _set_aside(
+        _also_abstained(case_runs("base"), "G801"),
+        "G801",
+        ExclusionReason.MISSING_LOG_SLICE,
+    )
+
+    movements = _movements_of(
+        base, base, case_runs("base"), new_records, labels, "G801"
+    )
+
+    assert movements
+    for movement in movements:
+        assert movement.new_excluded is ExclusionReason.MISSING_LOG_SLICE
+        assert movement.base_excluded is None
+
+
+def test_a_movement_on_a_case_neither_run_set_aside_carries_no_reason(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    movements = _movements(scored, case_runs, labels, "base", "verdict")
+
+    assert movements
+    for movement in movements:
+        assert (movement.base_excluded, movement.new_excluded) == (None, None)
+
+
+def test_a_case_set_aside_in_both_runs_names_both_reasons(
+    scored: Scored, case_runs: Records, labels: list[Case]
+) -> None:
+    base = scored("base")
+    base_records = _set_aside(case_runs("base"), "G801", ExclusionReason.RUN_ERROR)
+    new_records = _set_aside(
+        _also_abstained(case_runs("base"), "G801"),
+        "G801",
+        ExclusionReason.CANCELLED_TURN,
+    )
+
+    movements = _movements_of(base, base, base_records, new_records, labels, "G801")
+
+    verdict = _one(movements, MovementGroup.VERDICT)
+    assert verdict.base_excluded is ExclusionReason.RUN_ERROR
+    assert verdict.new_excluded is ExclusionReason.CANCELLED_TURN

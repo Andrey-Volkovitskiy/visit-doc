@@ -27,12 +27,13 @@ from chat.domain.schemas import FaqVerdict, IntentLabel, RequestOutcome
 
 from golden_harness.cases import Case
 from golden_harness.comparison.model import (
+    SCORED,
     CaseMovement,
     LabelledExpectation,
     MovementDirection,
     MovementGroup,
 )
-from golden_harness.record import CaseRun
+from golden_harness.record import CaseRun, ExclusionReason
 from golden_harness.report import Report
 from golden_harness.scoring.metric import CASE_SCOPED_REASONS
 from golden_harness.scoring.retrieval import (
@@ -61,7 +62,6 @@ type Item = tuple[str, int | None]
 # What one metric made of each item it was computed over.
 type Contribution = dict[Item, str]
 
-_SCORED: Final = "scored"
 _HIT_AT: Final = {
     Stage.SIMILARITY: (
         (SIMILARITY_HIT_AT_1, 1),
@@ -127,11 +127,14 @@ def case_movements(
     varying_items = set(varying)
     return sorted(
         (
-            movement.model_copy(
-                update={
+            CaseMovement(
+                **{
+                    **dict(movement),
                     "affects": _affects(*contributions, movement),
                     "varies_on_its_own": (movement.case_id, movement.position)
                     in varying_items,
+                    "base_excluded": on_base[movement.case_id].excluded,
+                    "new_excluded": on_new[movement.case_id].excluded,
                 }
             )
             for movement in movements
@@ -154,8 +157,15 @@ def _movement(
     direction: MovementDirection,
     question: str | None = None,
     labelled: LabelledExpectation | None = None,
+    excluded: tuple[ExclusionReason | None, ExclusionReason | None] = (None, None),
 ) -> CaseMovement:
-    """Build a movement with its `affects` left to be filled in by one place."""
+    """Build a movement with its `affects` left to be filled in by one place.
+
+    `excluded` is the pair of turn-level reasons the two runs recorded on the case.
+    Only the exclusion group needs it at construction - its own states are those two
+    reasons, and the model checks the pair against them - and `case_movements` sets it
+    on every movement afterwards, in the one place that already fills `affects`.
+    """
     return CaseMovement(
         case_id=case_id,
         position=position,
@@ -165,6 +175,8 @@ def _movement(
         direction=direction,
         question=question,
         labelled=labelled,
+        base_excluded=excluded[0],
+        new_excluded=excluded[1],
         affects=[],
     )
 
@@ -515,8 +527,8 @@ def _exclusion_movements(
     case_id: str, base: CaseRun, new: CaseRun
 ) -> list[CaseMovement]:
     """A case set aside in one run and not the other - always without a direction."""
-    was = base.excluded.value if base.excluded is not None else _SCORED
-    is_now = new.excluded.value if new.excluded is not None else _SCORED
+    was = base.excluded.value if base.excluded is not None else SCORED
+    is_now = new.excluded.value if new.excluded is not None else SCORED
     if was == is_now:
         return []
     return [
@@ -527,6 +539,7 @@ def _exclusion_movements(
             was,
             is_now,
             MovementDirection.DIRECTIONLESS,
+            excluded=(base.excluded, new.excluded),
         )
     ]
 

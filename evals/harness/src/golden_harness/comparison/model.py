@@ -17,12 +17,17 @@ are both real answers to "what moved" (FR-015, FR-019).
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Final, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from golden_harness.cases import Selection
-from golden_harness.record import CorpusRecord, ExclusionReason, RunConditions
+from golden_harness.record import (
+    TURN_LEVEL_REASONS,
+    CorpusRecord,
+    ExclusionReason,
+    RunConditions,
+)
 from golden_harness.report import MetricFamily
 from golden_harness.scoring.alignment import AlignmentTotals
 from golden_harness.scoring.metric import NOT_MEASURED, Metric
@@ -48,6 +53,12 @@ class MovementDirection(StrEnum):
 # rather than free text: it is a stored derivation of the label's `answerable`, and a
 # third word would be a claim no label makes.
 LabelledExpectation = Literal["answerable", "a gap"]
+
+
+# How an exclusion movement renders a run that set nothing aside. It lives here, beside
+# the validator that checks an exclusion movement's states against its reasons, so the
+# word and the check cannot drift apart.
+SCORED: Final = "scored"
 
 
 class MovementGroup(StrEnum):
@@ -228,6 +239,14 @@ class CaseMovement(BaseModel):
     metric's movements are those naming it. It is empty when the movement changes no
     published metric, which an exclusion movement often does not.
 
+    `base_excluded` and `new_excluded` are the turn-level reason each run recorded on
+    the case, None where that run scored it. They are carried so a line can say a
+    movement sits on a case a run set aside: a verdict keeps the direction its label
+    gives it there - the patient really did get a different reply - and the reason is
+    what stops a reader taking that direction for a metric that moved. What each
+    exclusion cost is not claimed here; `affects` beside it names the metrics that
+    actually changed.
+
     `labelled` is what the label asks of this request in the reader's words -
     `answerable` or `a gap` - and is what licenses the renderer's "; labelled ..."
     clause. It is carried rather than re-derived because a stored comparison is
@@ -252,6 +271,8 @@ class CaseMovement(BaseModel):
     question: str | None
     affects: list[str]
     labelled: LabelledExpectation | None = None
+    base_excluded: ExclusionReason | None = None
+    new_excluded: ExclusionReason | None = None
     varies_on_its_own: bool = False
 
     @model_validator(mode="after")
@@ -262,6 +283,46 @@ class CaseMovement(BaseModel):
                 f"{self.case_id}: a movement's two states differ, not {self.base!r} "
                 "twice"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _an_exclusion_is_one_a_case_can_carry(self) -> "CaseMovement":
+        """Refuse a reason no case record could have stored.
+
+        The record admits only turn-level reasons on a case (`CaseRun.excluded`); a
+        request-level one is derived per request at scoring time and describes a
+        request, never the whole case. Restating the rule here is what keeps a
+        hand-edited stored comparison from printing one.
+        """
+        for side, reason in (("base", self.base_excluded), ("new", self.new_excluded)):
+            if reason is not None and reason not in TURN_LEVEL_REASONS:
+                raise ValueError(
+                    f"{self.case_id}: {reason.value} is decided per request, so it is "
+                    f"not an exclusion the {side} run recorded on the case"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _an_exclusion_movement_agrees_with_its_own_states(self) -> "CaseMovement":
+        """Refuse an exclusion movement whose states are not the reasons beside it.
+
+        This group's two states *are* the two exclusions rendered, so the pair is
+        checked against them - the rule this file follows for every derived value it
+        stores. The other groups have nothing here to check against, and carry the
+        reasons as context rather than as their subject.
+        """
+        if self.group is not MovementGroup.EXCLUSION:
+            return self
+        for side, state, reason in (
+            ("base", self.base, self.base_excluded),
+            ("new", self.new, self.new_excluded),
+        ):
+            rendered = reason.value if reason is not None else SCORED
+            if state != rendered:
+                raise ValueError(
+                    f"{self.case_id}: the {side} state {state!r} disagrees with the "
+                    f"exclusion beside it, {rendered!r}"
+                )
         return self
 
     @model_validator(mode="after")

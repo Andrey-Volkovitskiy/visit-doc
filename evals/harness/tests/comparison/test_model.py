@@ -337,6 +337,8 @@ def test_an_exclusion_movement_is_reported_with_both_states() -> None:
         question=None,
         affects=[],
         labelled=None,
+        base_excluded=None,
+        new_excluded=ExclusionReason.RUN_ERROR,
     )
 
     assert (movement.base, movement.new) == ("scored", "run_error")
@@ -460,3 +462,71 @@ def test_a_stored_comparison_reads_back_as_the_one_that_was_written() -> None:
 
     assert read_back == comparison
     assert read_back.metrics[0].delta == comparison.metrics[0].delta
+
+
+# The exclusion a movement was recorded beside (spec 013, review round 2 follow-up).
+# A verdict movement keeps the direction its label gives it even on a case a turn-level
+# reason set aside - the patient really did get a different reply - and carries the
+# reason so the line can say so, rather than leaving a reader to read a direction as a
+# metric that moved.
+
+
+def test_a_movement_carries_the_exclusion_each_side_recorded() -> None:
+    movement = _movement(
+        base_excluded=None, new_excluded=ExclusionReason.MISSING_LOG_SLICE
+    )
+
+    assert movement.base_excluded is None
+    assert movement.new_excluded is ExclusionReason.MISSING_LOG_SLICE
+
+
+def test_a_movement_beside_no_exclusion_carries_neither() -> None:
+    movement = _movement()
+
+    assert (movement.base_excluded, movement.new_excluded) == (None, None)
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [ExclusionReason.NO_SEARCH, ExclusionReason.NOT_ROUTED_TO_FAQ],
+)
+def test_a_request_level_reason_is_refused_as_a_cases_exclusion(
+    reason: ExclusionReason,
+) -> None:
+    # The record stores only turn-level reasons on a case; a request-level one is
+    # derived per request at scoring time and never describes a whole case.
+    with pytest.raises(ValidationError, match="per request"):
+        _movement(new_excluded=reason)
+
+
+def test_an_exclusion_movement_carries_the_states_it_prints() -> None:
+    movement = _movement(
+        group=MovementGroup.EXCLUSION,
+        base="scored",
+        new="run_error",
+        direction=MovementDirection.DIRECTIONLESS,
+        position=None,
+        question=None,
+        labelled=None,
+        affects=[],
+        base_excluded=None,
+        new_excluded=ExclusionReason.RUN_ERROR,
+    )
+
+    assert movement.new_excluded is ExclusionReason.RUN_ERROR
+
+
+def test_an_exclusion_movement_whose_reason_contradicts_its_states_is_refused() -> None:
+    with pytest.raises(ValidationError, match="disagrees"):
+        _movement(
+            group=MovementGroup.EXCLUSION,
+            base="scored",
+            new="run_error",
+            direction=MovementDirection.DIRECTIONLESS,
+            position=None,
+            question=None,
+            labelled=None,
+            affects=[],
+            base_excluded=None,
+            new_excluded=ExclusionReason.SILENCED_TURN,
+        )

@@ -14,8 +14,9 @@ from pathlib import Path
 import pytest
 from golden_harness.cases import Case
 from golden_harness.comparison.compare import compare
-from golden_harness.comparison.model import Comparison, MovementGroup
+from golden_harness.comparison.model import CaseMovement, Comparison, MovementGroup
 from golden_harness.comparison.render import render_comparison
+from golden_harness.record import ExclusionReason
 
 type Runs = Callable[[str], Path]
 
@@ -331,3 +332,83 @@ def test_a_movement_on_a_labelled_gap_is_not_described_as_labelled_answerable(
 
     assert "labelled a gap" in summary
     assert "labelled answerable" not in summary
+
+
+def _relabelled(comparison: Comparison, **fields: object) -> str:
+    """Render the comparison with its first case movement's fields replaced."""
+    first, *rest = comparison.cases
+    moved = CaseMovement(**{**dict(first), **fields})
+    return render_comparison(comparison.model_copy(update={"cases": [moved, *rest]}))
+
+
+def test_a_movement_on_a_case_a_run_set_aside_names_that_exclusion(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    # The direction stands - the patient did get a different reply - and the clause is
+    # what stops a reader taking it for a metric that moved.
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+
+    summary = _relabelled(comparison, new_excluded=ExclusionReason.MISSING_LOG_SLICE)
+
+    (line,) = [line for line in summary.splitlines() if line.startswith("- G802")]
+    assert "degraded against its label" in line or "improved against its label" in line
+    assert "set aside in the new run (missing_log_slice)" in line
+
+
+def test_a_movement_set_aside_in_the_baseline_names_that_side(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+
+    summary = _relabelled(comparison, base_excluded=ExclusionReason.RUN_ERROR)
+
+    assert "set aside in the baseline (run_error)" in summary
+
+
+def test_a_movement_set_aside_in_both_runs_names_both(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+
+    summary = _relabelled(
+        comparison,
+        base_excluded=ExclusionReason.RUN_ERROR,
+        new_excluded=ExclusionReason.CANCELLED_TURN,
+    )
+
+    assert "set aside in both runs (run_error -> cancelled_turn)" in summary
+
+
+def test_a_case_set_aside_for_one_reason_in_both_runs_says_it_once(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+
+    summary = _relabelled(
+        comparison,
+        base_excluded=ExclusionReason.RUN_ERROR,
+        new_excluded=ExclusionReason.RUN_ERROR,
+    )
+
+    assert "set aside in both runs (run_error)" in summary
+
+
+def test_an_exclusion_movement_does_not_repeat_itself(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    # Its two states already are the two exclusions; a clause naming them again would
+    # print the same fact twice on one line.
+    summary = render_comparison(compare(run_dir("base"), run_dir("excluded"), labels))
+
+    section = summary.split("### exclusion", 1)[1].split("\n##", 1)[0]
+    (line,) = [line for line in section.splitlines() if line.startswith("- G805")]
+    assert "scored -> run_error" in line
+    assert "set aside in" not in line
+
+
+def test_a_movement_on_a_case_neither_run_set_aside_says_nothing_about_it(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    summary = render_comparison(compare(run_dir("base"), run_dir("verdict"), labels))
+
+    assert "set aside in" not in summary
