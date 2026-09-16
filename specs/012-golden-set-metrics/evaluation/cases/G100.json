@@ -1,0 +1,715 @@
+{
+  "case_id": "G100",
+  "chat_id": "01M2K0EFPYSDYQF1KJ5G4TWBWD",
+  "patient_id": "01M2K0EFQJ0HNRB7F4XW5X124V",
+  "attempts": 1,
+  "elapsed_seconds": 6.821500684018247,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you take Medicare?",
+          "answer": "Yes, we accept Medicare. If you have questions about your specific coverage, I can connect you with our front desk team for further assistance.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 603,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "What happens if you do not take Medicare?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+    "content": "Do you take Medicare? What if you do not?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0EPAMHYJG7TEX2T68HWWK",
+    "content": "Thanks for reaching out! Yes, we do accept Medicare — if you have questions about your specific coverage, I can connect you with our front desk team for further assistance.\n\nAs for what would happen if the clinic didn't accept Medicare, I don't have that information in our knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you take Medicare?",
+        "answer": "Yes, we accept Medicare. If you have questions about your specific coverage, I can connect you with our front desk team for further assistance.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 603,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "What happens if you do not take Medicare?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you take Medicare?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "What happens if you do not take Medicare?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "chat_id": "01M2K0EFPYSDYQF1KJ5G4TWBWD",
+      "sender": "patient",
+      "content": "Do you take Medicare? What if you do not?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:47.908516Z"
+    },
+    {
+      "message": "Do you take Medicare? What if you do not?",
+      "message_ids_unified": [
+        "01M2K0EFRVDBJ7RF0QREFX11KC"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:47.908751Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:47.910524Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you take Medicare?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "What happens if you do not take Medicare?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.698334Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2788.03,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.698584Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.700278Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.931535Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.937240Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.44857007,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3499592,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.28677377,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.27629814,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.26967123,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.25740778,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.23304248,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.22309497,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.18641454,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.961775Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.44857007
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3499592
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.28677377
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.27629814
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.26967123
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.25740778
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.23304248
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.22309497
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.18641454
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.963064Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3021744,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.275284,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.20957266,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.18382232,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.1771261,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.17589384,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.16115351,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.13647649,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.12858054,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.965275Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3021744
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.275284
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.20957266
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.18382232
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.1771261
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.17589384
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.16115351
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.13647649
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.12858054
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:50.965567Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 234.86,
+      "scores": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.44857007,
+          "rerank_score": 0.77734375
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3499592,
+          "rerank_score": 0.42578125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.198883Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "rerank_score": 0.77734375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "rerank_score": 0.42578125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.199343Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.44857007,
+      "best_rerank_score": 0.77734375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.199849Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Do you take Medicare?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:04:51.200160Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 1,
+      "duration_ms": 237.08,
+      "scores": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3021744,
+          "rerank_score": 0.376953125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.202839Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "rerank_score": 0.376953125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.203092Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.3021744,
+      "best_rerank_score": 0.376953125,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:51.203297Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1895.25,
+      "result": {
+        "segment_count": 2,
+        "abstained": true,
+        "citation_count": 1,
+        "answer_chars": 143,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you take Medicare?",
+            "verdict": "answered",
+            "answer_text": "Yes, we accept Medicare. If you have questions about your specific coverage, I can connect you with our front desk team for further assistance."
+          },
+          {
+            "position": 1,
+            "question": "What happens if you do not take Medicare?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:52.595525Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:52.596431Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2012.11,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 437,
+        "answer_text": "Thanks for reaching out! Yes, we do accept Medicare — if you have questions about your specific coverage, I can connect you with our front desk team for further assistance.\n\nAs for what would happen if the clinic didn't accept Medicare, I don't have that information in our knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:54.608559Z"
+    },
+    {
+      "duration_ms": 6709.51,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 603,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.44857007,
+              "rerank_score": 0.77734375
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Thanks for reaching out! Yes, we do accept Medicare — if you have questions about your specific coverage, I can connect you with our front desk team for further assistance.\n\nAs for what would happen if the clinic didn't accept Medicare, I don't have that information in our knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K0EFRVDBJ7RF0QREFX11KC"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:54.608808Z"
+    },
+    {
+      "message_id": "01M2K0EPAMHYJG7TEX2T68HWWK",
+      "chat_id": "01M2K0EFPYSDYQF1KJ5G4TWBWD",
+      "sender": "assistant",
+      "content": "Thanks for reaching out! Yes, we do accept Medicare — if you have questions about your specific coverage, I can connect you with our front desk team for further assistance.\n\nAs for what would happen if the clinic didn't accept Medicare, I don't have that information in our knowledge base. I've forwarded that question to our staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with!",
+      "event": "message.persisted",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:54.624336Z"
+    },
+    {
+      "chat_id": "01M2K0EFPYSDYQF1KJ5G4TWBWD",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0EFRVDBJ7RF0QREFX11KC",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:54.632549Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

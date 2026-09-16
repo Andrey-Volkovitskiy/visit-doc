@@ -1,0 +1,211 @@
+{
+  "case_id": "G077",
+  "chat_id": "01M2K088AZCZS7M2HAANN7RKS1",
+  "patient_id": "01M2K088C2F34XAQRJNRSQS0J3",
+  "attempts": 1,
+  "elapsed_seconds": 2.550370168988593,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K088D915P8Z38TADZ1P3WY",
+    "content": "I'm booking for my daughter, she can't breathe",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K08CKAA8ZWFEYK2SRC353K",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking_for_another",
+        "text": "book an appointment for my daughter"
+      },
+      {
+        "position": 1,
+        "intent": "urgent_condition",
+        "text": "my daughter cannot breathe"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "chat_id": "01M2K088AZCZS7M2HAANN7RKS1",
+      "sender": "patient",
+      "content": "I'm booking for my daughter, she can't breathe",
+      "event": "message.persisted",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:23.763313Z"
+    },
+    {
+      "message": "I'm booking for my daughter, she can't breathe",
+      "message_ids_unified": [
+        "01M2K088D915P8Z38TADZ1P3WY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:23.763629Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:23.766949Z"
+    },
+    {
+      "intents": [
+        "booking_for_another",
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking_for_another",
+          "text": "book an appointment for my daughter"
+        },
+        {
+          "position": 1,
+          "intent": "urgent_condition",
+          "text": "my daughter cannot breathe"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.034415Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2397.48,
+      "result": {
+        "intents": [
+          "booking_for_another",
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.034917Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.037313Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.29,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.037588Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.038727Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.038886Z"
+    },
+    {
+      "duration_ms": 2414.65,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K088D915P8Z38TADZ1P3WY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.039047Z"
+    },
+    {
+      "message_id": "01M2K08CKAA8ZWFEYK2SRC353K",
+      "chat_id": "01M2K088AZCZS7M2HAANN7RKS1",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.057278Z"
+    },
+    {
+      "chat_id": "01M2K088AZCZS7M2HAANN7RKS1",
+      "reason": "urgent_condition",
+      "message_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.069428Z"
+    },
+    {
+      "chat_id": "01M2K088AZCZS7M2HAANN7RKS1",
+      "requested_reason": "booking_for_another_person",
+      "existing_reason": "urgent_condition",
+      "message_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "event": "escalation.unchanged",
+      "turn_id": "01M2K088D915P8Z38TADZ1P3WY",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:28.069607Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

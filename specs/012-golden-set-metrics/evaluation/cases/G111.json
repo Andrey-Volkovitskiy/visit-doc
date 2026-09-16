@@ -1,0 +1,201 @@
+{
+  "case_id": "G111",
+  "chat_id": "01M2K0G9CT6GCKMXF62SR6RKV8",
+  "patient_id": "01M2K0G9DHECF3X5667DSWP4WD",
+  "attempts": 1,
+  "elapsed_seconds": 1.2902223150013015,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+    "content": "What are your hours? Also my chest hurts and I feel faint.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GAKHY9F5YZ2XDBKZEH5B",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What are your hours?"
+      },
+      {
+        "position": 1,
+        "intent": "urgent_condition",
+        "text": "My chest hurts and I feel faint."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "chat_id": "01M2K0G9CT6GCKMXF62SR6RKV8",
+      "sender": "patient",
+      "content": "What are your hours? Also my chest hurts and I feel faint.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.987019Z"
+    },
+    {
+      "message": "What are your hours? Also my chest hurts and I feel faint.",
+      "message_ids_unified": [
+        "01M2K0G9F00DVM3B9ZW34YX8RH"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.987255Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.989752Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What are your hours?"
+        },
+        {
+          "position": 1,
+          "intent": "urgent_condition",
+          "text": "My chest hurts and I feel faint."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.137911Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1148.45,
+      "result": {
+        "intents": [
+          "faq_question",
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.138179Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.139875Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.27,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.140193Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.141429Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.18,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.141598Z"
+    },
+    {
+      "duration_ms": 1165.12,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0G9F00DVM3B9ZW34YX8RH"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.141794Z"
+    },
+    {
+      "message_id": "01M2K0GAKHY9F5YZ2XDBKZEH5B",
+      "chat_id": "01M2K0G9CT6GCKMXF62SR6RKV8",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.157822Z"
+    },
+    {
+      "chat_id": "01M2K0G9CT6GCKMXF62SR6RKV8",
+      "reason": "urgent_condition",
+      "message_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0G9F00DVM3B9ZW34YX8RH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.170625Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

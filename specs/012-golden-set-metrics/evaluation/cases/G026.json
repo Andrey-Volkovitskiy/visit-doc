@@ -1,0 +1,189 @@
+{
+  "case_id": "G026",
+  "chat_id": "01M2K02MRWJE0WKXCVBV60F4A0",
+  "patient_id": "01M2K02MSGTG3YHG1754QVDR2X",
+  "attempts": 1,
+  "elapsed_seconds": 2.27100738696754,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K02MTVFPWPBWR06D18KS4Y",
+    "content": "Is 200mg of ibuprofen safe with my blood pressure medication?",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K02PYB9WV025YZY6AJ4NY8",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "unknown",
+        "text": "Is 200mg of ibuprofen safe to take with my blood pressure medication?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "chat_id": "01M2K02MRWJE0WKXCVBV60F4A0",
+      "sender": "patient",
+      "content": "Is 200mg of ibuprofen safe with my blood pressure medication?",
+      "event": "message.persisted",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:19.877821Z"
+    },
+    {
+      "message": "Is 200mg of ibuprofen safe with my blood pressure medication?",
+      "message_ids_unified": [
+        "01M2K02MTVFPWPBWR06D18KS4Y"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:19.878072Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:19.879824Z"
+    },
+    {
+      "intents": [
+        "unknown"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "unknown",
+          "text": "Is 200mg of ibuprofen safe to take with my blood pressure medication?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.021217Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2141.61,
+      "result": {
+        "intents": [
+          "unknown"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.021422Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.022944Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.18,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.023112Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.024025Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.12,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.024139Z"
+    },
+    {
+      "duration_ms": 2157.15,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K02MTVFPWPBWR06D18KS4Y"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.024268Z"
+    },
+    {
+      "message_id": "01M2K02PYB9WV025YZY6AJ4NY8",
+      "chat_id": "01M2K02MRWJE0WKXCVBV60F4A0",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.041040Z"
+    },
+    {
+      "chat_id": "01M2K02MRWJE0WKXCVBV60F4A0",
+      "reason": "not_authorized",
+      "message_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M2K02MTVFPWPBWR06D18KS4Y",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.049432Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

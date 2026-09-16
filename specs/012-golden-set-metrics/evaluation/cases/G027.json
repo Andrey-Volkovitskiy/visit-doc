@@ -1,0 +1,192 @@
+{
+  "case_id": "G027",
+  "chat_id": "01M2K02Q00DN81FCGJWEG4952B",
+  "patient_id": "01M2K02Q0FRSXVR0SQK965VBYY",
+  "attempts": 1,
+  "elapsed_seconds": 2.2337527140043676,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+    "content": "What's the best route to drive from the airport?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K02S4K49ZD5Y03FM3AHSCT",
+    "content": "I'm afraid I don't have information about the clinic's location or directions. If you let me know which clinic you're trying to reach, I'd be happy to help you find that information, or feel free to ask if there's anything else I can assist with!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "what is the best route to drive from the airport"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "chat_id": "01M2K02Q00DN81FCGJWEG4952B",
+      "sender": "patient",
+      "content": "What's the best route to drive from the airport?",
+      "event": "message.persisted",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.142293Z"
+    },
+    {
+      "message": "What's the best route to drive from the airport?",
+      "message_ids_unified": [
+        "01M2K02Q1NW4MZ2AHC9ZB62B9Q"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.142497Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:22.145237Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "what is the best route to drive from the airport"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:23.172822Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1028.04,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:23.173270Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:23.176588Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What's the best route to drive from the airport?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:58:23.177014Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1093.02,
+      "result": {
+        "answer_chars": 246,
+        "answer_text": "I'm afraid I don't have information about the clinic's location or directions. If you let me know which clinic you're trying to reach, I'd be happy to help you find that information, or feel free to ask if there's anything else I can assist with!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:24.269577Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:24.270970Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.2,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 246,
+        "answer_text": "I'm afraid I don't have information about the clinic's location or directions. If you let me know which clinic you're trying to reach, I'd be happy to help you find that information, or feel free to ask if there's anything else I can assist with!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:24.271135Z"
+    },
+    {
+      "duration_ms": 2137.3,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm afraid I don't have information about the clinic's location or directions. If you let me know which clinic you're trying to reach, I'd be happy to help you find that information, or feel free to ask if there's anything else I can assist with!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K02Q1NW4MZ2AHC9ZB62B9Q"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:24.271292Z"
+    },
+    {
+      "message_id": "01M2K02S4K49ZD5Y03FM3AHSCT",
+      "chat_id": "01M2K02Q00DN81FCGJWEG4952B",
+      "sender": "assistant",
+      "content": "I'm afraid I don't have information about the clinic's location or directions. If you let me know which clinic you're trying to reach, I'd be happy to help you find that information, or feel free to ask if there's anything else I can assist with!",
+      "event": "message.persisted",
+      "turn_id": "01M2K02Q1NW4MZ2AHC9ZB62B9Q",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:24.288907Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

@@ -1,0 +1,481 @@
+{
+  "case_id": "G033",
+  "chat_id": "01M2K03HDQ9C9P2XCV1C2NBJXD",
+  "patient_id": "01M2K03HE50TJTD55ST9RQ0MH1",
+  "attempts": 1,
+  "elapsed_seconds": 4.383940746076405,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I do before my visit?",
+          "answer": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+            },
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+    "content": "ok",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K03NJQKS2BK3D73C5J4JBX",
+    "content": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I do before my visit?",
+        "answer": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 608,
+            "chunk_index": 0,
+            "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+          },
+          {
+            "entry_id": 601,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I do before my visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "chat_id": "01M2K03HDQ9C9P2XCV1C2NBJXD",
+      "sender": "patient",
+      "content": "ok",
+      "event": "message.persisted",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:49.208128Z"
+    },
+    {
+      "message": "What should I do before my visit?\n\nok",
+      "message_ids_unified": [
+        "01M2K03HF07PJYDJ2NW820NZP8",
+        "01M2K03HFE9HTPWM0FSGT6YZ04"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:49.208341Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:49.211125Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I do before my visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.565299Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1354.4,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.565486Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.567143Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.868071Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4420275,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38333347,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.26222628,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.261707,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.24025962,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.23767476,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2048411,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.17678677,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.14979373,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.876542Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4420275
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38333347
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.26222628
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.261707
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.24025962
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.23767476
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2048411
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.17678677
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.14979373
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:50.876846Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 290.39,
+      "scores": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4420275,
+          "rerank_score": 0.67578125
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38333347,
+          "rerank_score": 0.6015625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:51.167448Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.67578125
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "rerank_score": 0.6015625
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:51.167739Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4420275,
+      "best_rerank_score": 0.67578125,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:51.167932Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.\n\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nQuestion: What should I do before my visit?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:58:51.168090Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2827.7,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 301,
+        "answer_text": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What should I do before my visit?",
+            "verdict": "answered",
+            "answer_text": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:53.394866Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:53.395931Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 301,
+        "answer_text": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:53.396084Z"
+    },
+    {
+      "duration_ms": 4197.86,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+              "similarity_score": 0.4420275,
+              "rerank_score": 0.67578125
+            },
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.38333347,
+              "rerank_score": 0.6015625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K03HF07PJYDJ2NW820NZP8",
+        "01M2K03HFE9HTPWM0FSGT6YZ04"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:53.396229Z"
+    },
+    {
+      "message_id": "01M2K03NJQKS2BK3D73C5J4JBX",
+      "chat_id": "01M2K03HDQ9C9P2XCV1C2NBJXD",
+      "sender": "assistant",
+      "content": "Before your visit:\n\n- **Arrive early**: 15 minutes ahead if it's your first visit (to complete registration paperwork), or 5–10 minutes ahead if you're a returning patient.\n- **Bring these items**: a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "event": "message.persisted",
+      "turn_id": "01M2K03HFE9HTPWM0FSGT6YZ04",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:53.502203Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

@@ -1,0 +1,673 @@
+{
+  "case_id": "G087",
+  "chat_id": "01M2K0A6SJS85V706N7YE28SY3",
+  "patient_id": "01M2K0A6T467DWF7M9CB7TMGHV",
+  "attempts": 1,
+  "elapsed_seconds": 8.709282516967505,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What are your clinic hours?",
+          "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0A6VK0CCYH6R749VXMJQG",
+    "content": "What are your clinic hours, and what dentist slots are free tomorrow?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0AH2SB2DM3RM6C2TMAKDZ",
+    "content": "Thanks for reaching out! Here's the info you asked about:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** For tomorrow, March 3rd, Dr. Andreas Vesalius (Dentistry) has the following 60-minute slots open: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm. Let me know which time works for you and I'll get it booked!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What are your clinic hours?",
+        "answer": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What are your clinic hours?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "What dentist appointments are available tomorrow?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "chat_id": "01M2K0A6SJS85V706N7YE28SY3",
+      "sender": "patient",
+      "content": "What are your clinic hours, and what dentist slots are free tomorrow?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:27.710669Z"
+    },
+    {
+      "message": "What are your clinic hours, and what dentist slots are free tomorrow?",
+      "message_ids_unified": [
+        "01M2K0A6VK0CCYH6R749VXMJQG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:27.710916Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:27.713351Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What are your clinic hours?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "What dentist appointments are available tomorrow?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.848453Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1135.35,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.848689Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.850788Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.851560Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.859998Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:28.860237Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What dentist appointments are available tomorrow?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:28.860436Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:30.961931Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.64345884,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.49388015,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.46741858,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36446798,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.3461246,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.3278924,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.31667775,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.29991105,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.27855572,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:30.968869Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.64345884
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.49388015
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.46741858
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36446798
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.3461246
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.29991105
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.27855572
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.3278924
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.31667775
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:30.969249Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 255.99,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.64345884,
+          "rerank_score": 0.90234375
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.49388015,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.46741858,
+          "rerank_score": 0.478515625
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36446798,
+          "rerank_score": 0.3828125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.3461246,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:31.225480Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.90234375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "rerank_score": 0.478515625
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "rerank_score": 0.3828125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:31.225768Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.64345884,
+      "best_rerank_score": 0.90234375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:31.225940Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What are your clinic hours?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:31.226090Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1886.67,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 180,
+        "answer_text": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What are your clinic hours?",
+            "verdict": "answered",
+            "answer_text": "We are open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:32.611019Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2862.3,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:33.596422Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M2JZZWH9G0JP1ZC4EC35B1B7",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:33.596771Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:33.609586Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 12.85,
+      "event": "booking.tool_result",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:33.609790Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What dentist appointments are available tomorrow?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01AizUKGYG5qyUmEboxKWZv5",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M2JZZWH9G0JP1ZC4EC35B1B7",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01AizUKGYG5qyUmEboxKWZv5",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:33.610001Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1842.4,
+      "tool_names": [],
+      "text": "Tomorrow (March 3rd), Dr. Andreas Vesalius (Dentistry) has these 60-minute appointment slots available:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWould you like to book one of these times?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:35.452680Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4728.26,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 196,
+        "answer_text": "Tomorrow (March 3rd), Dr. Andreas Vesalius (Dentistry) has these 60-minute appointment slots available:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWould you like to book one of these times?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:35.453433Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:35.455447Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2709.28,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 1,
+        "answer_chars": 480,
+        "answer_text": "Thanks for reaching out! Here's the info you asked about:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** For tomorrow, March 3rd, Dr. Andreas Vesalius (Dentistry) has the following 60-minute slots open: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm. Let me know which time works for you and I'll get it booked!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.164913Z"
+    },
+    {
+      "duration_ms": 8592.51,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.64345884,
+              "rerank_score": 0.90234375
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Thanks for reaching out! Here's the info you asked about:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** For tomorrow, March 3rd, Dr. Andreas Vesalius (Dentistry) has the following 60-minute slots open: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm. Let me know which time works for you and I'll get it booked!",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K0A6VK0CCYH6R749VXMJQG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.165162Z"
+    },
+    {
+      "message_id": "01M2K0AH2SB2DM3RM6C2TMAKDZ",
+      "chat_id": "01M2K0A6SJS85V706N7YE28SY3",
+      "sender": "assistant",
+      "content": "Thanks for reaching out! Here's the info you asked about:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** For tomorrow, March 3rd, Dr. Andreas Vesalius (Dentistry) has the following 60-minute slots open: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm. Let me know which time works for you and I'll get it booked!",
+      "event": "message.persisted",
+      "turn_id": "01M2K0A6VK0CCYH6R749VXMJQG",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.181309Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

@@ -1,0 +1,1037 @@
+{
+  "case_id": "G085",
+  "chat_id": "01M2K09ST5AS1C1GGM35DXKTK4",
+  "patient_id": "01M2K09STNY3EM0GV0HYZN16W2",
+  "attempts": 1,
+  "elapsed_seconds": 7.1137941249180585,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you accept Aetna?",
+          "answer": "Yes, we accept Aetna as one of our major insurance providers, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm details about your specific plan, I can connect you with our front desk team.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 603,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Do you offer virtual visits?",
+          "answer": "No, we currently only offer in-person visits at our clinic location.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 602,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "question": "Where are you located?",
+          "answer": "We are located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K09SVVV2SPCG49E7BEQDTF",
+    "content": "Do you accept Aetna, do you offer virtual visits, and where are you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0A0PNJ53708PJB06SE5HT",
+    "content": "Thanks for reaching out! Here's what I can share:\n\n- **Insurance**: Yes, we accept Aetna, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm specifics for your plan, I can connect you with our front desk team.\n- **Virtual visits**: We currently only offer in-person visits at our clinic location.\n- **Location**: We're located at 15a Willson St. The nearest paid parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nLet me know if there's anything else I can help with!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you accept Aetna?",
+        "answer": "Yes, we accept Aetna as one of our major insurance providers, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm details about your specific plan, I can connect you with our front desk team.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 603,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Do you offer virtual visits?",
+        "answer": "No, we currently only offer in-person visits at our clinic location.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 602,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+          }
+        ]
+      },
+      {
+        "position": 2,
+        "question": "Where are you located?",
+        "answer": "We are located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you accept Aetna?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Do you offer virtual visits?"
+      },
+      {
+        "position": 2,
+        "intent": "faq_question",
+        "text": "Where are you located?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "chat_id": "01M2K09ST5AS1C1GGM35DXKTK4",
+      "sender": "patient",
+      "content": "Do you accept Aetna, do you offer virtual visits, and where are you?",
+      "event": "message.persisted",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.405397Z"
+    },
+    {
+      "message": "Do you accept Aetna, do you offer virtual visits, and where are you?",
+      "message_ids_unified": [
+        "01M2K09SVVV2SPCG49E7BEQDTF"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.405649Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.408192Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you accept Aetna?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Do you offer virtual visits?"
+        },
+        {
+          "position": 2,
+          "intent": "faq_question",
+          "text": "Where are you located?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.149281Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2741.33,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.149513Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.150932Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.382715Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.387356Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.390953Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.45402837,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.27758777,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.26159534,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.24845602,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22057492,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.21595451,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.18244496,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.15740585,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.14408001,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.401864Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.45402837
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.27758777
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.26159534
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.24845602
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22057492
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.21595451
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.18244496
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.15740585
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.14408001
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.402203Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3789369,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.3002672,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.21464384,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.21174361,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.19383627,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.185691,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.17525089,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.15979254,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.1243849,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.403188Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3789369
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.3002672
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.21464384
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.21174361
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.19383627
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.185691
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.17525089
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.15979254
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.1243849
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.403432Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.5697877,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36244828,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.30545413,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.2745943,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.26712537,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.24305904,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.240748,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.23452166,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.22980183,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.405205Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.5697877
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36244828
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.30545413
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.2745943
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.26712537
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.24305904
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.240748
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.23452166
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.22980183
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.405514Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 1,
+      "duration_ms": 416.46,
+      "scores": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.45402837,
+          "rerank_score": 0.87890625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.818994Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "rerank_score": 0.87890625
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.819414Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.45402837,
+      "best_rerank_score": 0.87890625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.819713Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Do you accept Aetna?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:17.819994Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 3,
+      "duration_ms": 417.81,
+      "scores": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.5697877,
+          "rerank_score": 0.89453125
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.36244828,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.30545413,
+          "rerank_score": 0.357421875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.823585Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "rerank_score": 0.89453125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.357421875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.824179Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5697877,
+      "best_rerank_score": 0.89453125,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.825050Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.\n\nQuestion: Do you offer virtual visits?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:17.825466Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 425.71,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3789369,
+          "rerank_score": 0.66796875
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.3002672,
+          "rerank_score": 0.482421875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.829368Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.66796875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "rerank_score": 0.482421875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.829808Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.3789369,
+      "best_rerank_score": 0.66796875,
+      "event": "faq.verdict",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:17.830157Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Where are you located?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 2,
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:17.830466Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2380.25,
+      "result": {
+        "segment_count": 3,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 436,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you accept Aetna?",
+            "verdict": "answered",
+            "answer_text": "Yes, we accept Aetna as one of our major insurance providers, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm details about your specific plan, I can connect you with our front desk team."
+          },
+          {
+            "position": 1,
+            "question": "Do you offer virtual visits?",
+            "verdict": "answered",
+            "answer_text": "No, we currently only offer in-person visits at our clinic location."
+          },
+          {
+            "position": 2,
+            "question": "Where are you located?",
+            "verdict": "answered",
+            "answer_text": "We are located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:19.531098Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:19.531987Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1855.44,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 546,
+        "answer_text": "Thanks for reaching out! Here's what I can share:\n\n- **Insurance**: Yes, we accept Aetna, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm specifics for your plan, I can connect you with our front desk team.\n- **Virtual visits**: We currently only offer in-person visits at our clinic location.\n- **Location**: We're located at 15a Willson St. The nearest paid parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nLet me know if there's anything else I can help with!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:21.387492Z"
+    },
+    {
+      "duration_ms": 6992.38,
+      "segment_count": 3,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 603,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.45402837,
+              "rerank_score": 0.87890625
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 602,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+              "similarity_score": 0.5697877,
+              "rerank_score": 0.89453125
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.3789369,
+              "rerank_score": 0.66796875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Thanks for reaching out! Here's what I can share:\n\n- **Insurance**: Yes, we accept Aetna, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm specifics for your plan, I can connect you with our front desk team.\n- **Virtual visits**: We currently only offer in-person visits at our clinic location.\n- **Location**: We're located at 15a Willson St. The nearest paid parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nLet me know if there's anything else I can help with!",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K09SVVV2SPCG49E7BEQDTF"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:21.387960Z"
+    },
+    {
+      "message_id": "01M2K0A0PNJ53708PJB06SE5HT",
+      "chat_id": "01M2K09ST5AS1C1GGM35DXKTK4",
+      "sender": "assistant",
+      "content": "Thanks for reaching out! Here's what I can share:\n\n- **Insurance**: Yes, we accept Aetna, along with Blue Cross Blue Shield, Cigna, UnitedHealthcare, and Medicare. If you'd like to confirm specifics for your plan, I can connect you with our front desk team.\n- **Virtual visits**: We currently only offer in-person visits at our clinic location.\n- **Location**: We're located at 15a Willson St. The nearest paid parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nLet me know if there's anything else I can help with!",
+      "event": "message.persisted",
+      "turn_id": "01M2K09SVVV2SPCG49E7BEQDTF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:21.420409Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

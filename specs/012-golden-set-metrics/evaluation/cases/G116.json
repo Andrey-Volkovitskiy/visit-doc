@@ -1,0 +1,201 @@
+{
+  "case_id": "G116",
+  "chat_id": "01M2K0GNW2HMFKKWECDZAW89HH",
+  "patient_id": "01M2K0GNWM0G70VSHWGD49XTWC",
+  "attempts": 1,
+  "elapsed_seconds": 2.509202035027556,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+    "content": "What should I bring, and can I get a human on this?",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GR8W1NBV5EBKPSKMYCS0",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "what should I bring?"
+      },
+      {
+        "position": 1,
+        "intent": "call_staff",
+        "text": "can I speak to a human?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "chat_id": "01M2K0GNW2HMFKKWECDZAW89HH",
+      "sender": "patient",
+      "content": "What should I bring, and can I get a human on this?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:59.745503Z"
+    },
+    {
+      "message": "What should I bring, and can I get a human on this?",
+      "message_ids_unified": [
+        "01M2K0GNXR7CZR6HNB8AKFAD7P"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:59.745856Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:59.748270Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "what should I bring?"
+        },
+        {
+          "position": 1,
+          "intent": "call_staff",
+          "text": "can I speak to a human?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.131865Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2383.98,
+      "result": {
+        "intents": [
+          "faq_question",
+          "call_staff"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.132239Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.134098Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.28,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.134365Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.135515Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.19,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.135692Z"
+    },
+    {
+      "duration_ms": 2399.48,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0GNXR7CZR6HNB8AKFAD7P"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.136023Z"
+    },
+    {
+      "message_id": "01M2K0GR8W1NBV5EBKPSKMYCS0",
+      "chat_id": "01M2K0GNW2HMFKKWECDZAW89HH",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.153434Z"
+    },
+    {
+      "chat_id": "01M2K0GNW2HMFKKWECDZAW89HH",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0GNXR7CZR6HNB8AKFAD7P",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.165866Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

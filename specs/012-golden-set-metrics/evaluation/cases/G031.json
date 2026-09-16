@@ -1,0 +1,239 @@
+{
+  "case_id": "G031",
+  "chat_id": "01M2K032G2PHFTEG447HT4J9DD",
+  "patient_id": "01M2K032GF1Z8Y6K6Q9FHG7GF4",
+  "attempts": 1,
+  "elapsed_seconds": 11.651280991034582,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K032HV4AJYSXNXBH43AQX6",
+    "content": "Thanks!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K03DV0CY60MC4G0F3WWEMP",
+    "content": "",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Can I book an appointment on Monday at 9am?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "chat_id": "01M2K032G2PHFTEG447HT4J9DD",
+      "sender": "patient",
+      "content": "Thanks!",
+      "event": "message.persisted",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:33.924485Z"
+    },
+    {
+      "message": "Can I book Monday at 9am?\n\nThanks!",
+      "message_ids_unified": [
+        "01M2K032HCKYAKQSESTD3TDAVH",
+        "01M2K032HV4AJYSXNXBH43AQX6"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:33.924817Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:33.929637Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Can I book an appointment on Monday at 9am?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:35.876084Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1946.9,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:35.876485Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:35.878139Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:35.885844Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:35.886067Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can I book an appointment on Monday at 9am?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:58:35.886243Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 9580.1,
+      "tool_names": [],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.466485Z"
+    },
+    {
+      "iteration": 1,
+      "max_tokens": "***REDACTED***",
+      "text_chars": 0,
+      "tool_names": [],
+      "event": "booking.truncated",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "node": "handle_booking",
+      "level": "warning",
+      "timestamp": "2026-09-15T16:58:45.466667Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 9588.79,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 0,
+        "answer_text": "",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.466907Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.468056Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.19,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": ""
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.468235Z"
+    },
+    {
+      "duration_ms": 11552.96,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M2K032HCKYAKQSESTD3TDAVH",
+        "01M2K032HV4AJYSXNXBH43AQX6"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.468387Z"
+    },
+    {
+      "message_id": "01M2K03DV0CY60MC4G0F3WWEMP",
+      "chat_id": "01M2K032G2PHFTEG447HT4J9DD",
+      "sender": "assistant",
+      "content": "",
+      "event": "message.persisted",
+      "turn_id": "01M2K032HV4AJYSXNXBH43AQX6",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:45.481259Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

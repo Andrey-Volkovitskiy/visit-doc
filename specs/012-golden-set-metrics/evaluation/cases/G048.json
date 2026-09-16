@@ -1,0 +1,325 @@
+{
+  "case_id": "G048",
+  "chat_id": "01M2K05ASYRY947YN1E8Y6TJK3",
+  "patient_id": "01M2K05ATBWZXWDC76QDCF0RVA",
+  "attempts": 1,
+  "elapsed_seconds": 3.810947601101361,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K05AW45JXHG8PPTFM20E8D",
+    "content": "Hey, can I move my Thursday appointment?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K05G9WXE75SQB3SHV7A2WK",
+    "content": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "can I move my Thursday appointment?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "chat_id": "01M2K05ASYRY947YN1E8Y6TJK3",
+      "sender": "patient",
+      "content": "Hey, can I move my Thursday appointment?",
+      "event": "message.persisted",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:47.981249Z"
+    },
+    {
+      "message": "Hey, can I move my Thursday appointment?",
+      "message_ids_unified": [
+        "01M2K05AW45JXHG8PPTFM20E8D"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:47.981435Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:47.984049Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "can I move my Thursday appointment?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:48.827004Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 843.28,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:48.827317Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:48.829416Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:48.838905Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:48.839118Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "can I move my Thursday appointment?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:59:48.839260Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1513.56,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:52.236073Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:52.236367Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:52.246547Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 10.32,
+      "event": "booking.tool_result",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:52.246799Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "can I move my Thursday appointment?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UHk8LA82FDxbCCbdfHniqD",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UHk8LA82FDxbCCbdfHniqD",
+              "content": "{\"future\": [{\"id\": \"01M2K05AVN1EE3956W96ZJH5ZC\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-05T11:00:00\", \"ends_at\": \"2026-03-05T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:59:52.247019Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1278.32,
+      "tool_names": [],
+      "text": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.525557Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 2813.7,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 185,
+        "answer_text": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.526158Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.528059Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.26,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 185,
+        "answer_text": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.528282Z"
+    },
+    {
+      "duration_ms": 3672.6,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M2K05AW45JXHG8PPTFM20E8D"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.528458Z"
+    },
+    {
+      "message_id": "01M2K05G9WXE75SQB3SHV7A2WK",
+      "chat_id": "01M2K05ASYRY947YN1E8Y6TJK3",
+      "sender": "assistant",
+      "content": "You have one upcoming appointment on Thursday, March 5th at 11:00am with William Osler (General Practice). Is that the one you'd like to move? If so, what day/time works better for you?",
+      "event": "message.persisted",
+      "turn_id": "01M2K05AW45JXHG8PPTFM20E8D",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:53.544256Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-05T11:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-05T11:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null
+}

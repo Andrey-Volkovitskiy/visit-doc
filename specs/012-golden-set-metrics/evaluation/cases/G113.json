@@ -1,0 +1,201 @@
+{
+  "case_id": "G113",
+  "chat_id": "01M2K0GBT9T20Z97P09WZXQNBH",
+  "patient_id": "01M2K0GBTRD2620SSHAERR3X8S",
+  "attempts": 1,
+  "elapsed_seconds": 2.3824119470082223,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0GBW09A23AC78YM3EX6QJ",
+    "content": "Where are you? Can I book Monday for my mother?",
+    "attention_mark": "booking_for_another_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GE3889WZCKWWJ8PRCWVQ",
+    "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Where are you?"
+      },
+      {
+        "position": 1,
+        "intent": "booking_for_another",
+        "text": "Can I book Monday for my mother?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "chat_id": "01M2K0GBT9T20Z97P09WZXQNBH",
+      "sender": "patient",
+      "content": "Where are you? Can I book Monday for my mother?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.449105Z"
+    },
+    {
+      "message": "Where are you? Can I book Monday for my mother?",
+      "message_ids_unified": [
+        "01M2K0GBW09A23AC78YM3EX6QJ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.449348Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.452262Z"
+    },
+    {
+      "intents": [
+        "small_talk",
+        "booking_for_another"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Where are you?"
+        },
+        {
+          "position": 1,
+          "intent": "booking_for_another",
+          "text": "Can I book Monday for my mother?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.710661Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2258.9,
+      "result": {
+        "intents": [
+          "small_talk",
+          "booking_for_another"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "booking_for_another_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.711166Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.713640Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.29,
+      "result": {
+        "cause": "booking_for_another_person",
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.713910Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.715373Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.19,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.715550Z"
+    },
+    {
+      "duration_ms": 2275.13,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0GBW09A23AC78YM3EX6QJ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.715746Z"
+    },
+    {
+      "message_id": "01M2K0GE3889WZCKWWJ8PRCWVQ",
+      "chat_id": "01M2K0GBT9T20Z97P09WZXQNBH",
+      "sender": "assistant",
+      "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.730986Z"
+    },
+    {
+      "chat_id": "01M2K0GBT9T20Z97P09WZXQNBH",
+      "reason": "booking_for_another_person",
+      "message_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0GBW09A23AC78YM3EX6QJ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.744292Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

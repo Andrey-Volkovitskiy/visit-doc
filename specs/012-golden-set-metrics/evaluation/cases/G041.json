@@ -1,0 +1,192 @@
+{
+  "case_id": "G041",
+  "chat_id": "01M2K046BYT402PW6S1QE9XFD4",
+  "patient_id": "01M2K046CCJBWWA914TN9PF87A",
+  "attempts": 1,
+  "elapsed_seconds": 2.1472763560013846,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K046DQRNMAKR1A4QSQF5AK",
+    "content": "Thanks - my husband says hello",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K048DWK9PYW0WC6SWTXRR7",
+    "content": "How nice! Thank you for passing that along. Is there anything we can help you with today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "hello"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "chat_id": "01M2K046BYT402PW6S1QE9XFD4",
+      "sender": "patient",
+      "content": "Thanks - my husband says hello",
+      "event": "message.persisted",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:10.657251Z"
+    },
+    {
+      "message": "Thanks - my husband says hello",
+      "message_ids_unified": [
+        "01M2K046DQRNMAKR1A4QSQF5AK"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:10.657507Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:10.659204Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "hello"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:11.900039Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1241.29,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:11.900494Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:11.903706Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Thanks - my husband says hello"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:59:11.904055Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 792.57,
+      "result": {
+        "answer_chars": 89,
+        "answer_text": "How nice! Thank you for passing that along. Is there anything we can help you with today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:12.696244Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:12.697162Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.14,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 89,
+        "answer_text": "How nice! Thank you for passing that along. Is there anything we can help you with today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:12.697288Z"
+    },
+    {
+      "duration_ms": 2050.32,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "How nice! Thank you for passing that along. Is there anything we can help you with today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K046DQRNMAKR1A4QSQF5AK"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:12.697410Z"
+    },
+    {
+      "message_id": "01M2K048DWK9PYW0WC6SWTXRR7",
+      "chat_id": "01M2K046BYT402PW6S1QE9XFD4",
+      "sender": "assistant",
+      "content": "How nice! Thank you for passing that along. Is there anything we can help you with today?",
+      "event": "message.persisted",
+      "turn_id": "01M2K046DQRNMAKR1A4QSQF5AK",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:12.711861Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

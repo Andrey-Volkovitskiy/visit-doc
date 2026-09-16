@@ -1,0 +1,192 @@
+{
+  "case_id": "G029",
+  "chat_id": "01M2K02X5GXXZXC87TPEMEXDTY",
+  "patient_id": "01M2K02X63VSE7JD35NX9P2RDE",
+  "attempts": 1,
+  "elapsed_seconds": 2.843307249015197,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K02X7RNQ7WPD2E91VJX73W",
+    "content": "what is the weather in Paris today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K02ZX433PRFHPZ65QXVHFX",
+    "content": "I'm not able to help with that—I'm here to assist with clinic-related questions or to help arrange an appointment. Is there anything I can help you with regarding the clinic?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "what is the weather in Paris today?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "chat_id": "01M2K02X5GXXZXC87TPEMEXDTY",
+      "sender": "patient",
+      "content": "what is the weather in Paris today?",
+      "event": "message.persisted",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:28.486044Z"
+    },
+    {
+      "message": "what is the weather in Paris today?",
+      "message_ids_unified": [
+        "01M2K02X7RNQ7WPD2E91VJX73W"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:28.486315Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:28.488851Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "what is the weather in Paris today?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:30.433631Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1945.15,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:30.433973Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:30.435248Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "what is the weather in Paris today?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:58:30.435391Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 764.45,
+      "result": {
+        "answer_chars": 174,
+        "answer_text": "I'm not able to help with that—I'm here to assist with clinic-related questions or to help arrange an appointment. Is there anything I can help you with regarding the clinic?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:31.199727Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:31.201118Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.25,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 174,
+        "answer_text": "I'm not able to help with that—I'm here to assist with clinic-related questions or to help arrange an appointment. Is there anything I can help you with regarding the clinic?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:31.201354Z"
+    },
+    {
+      "duration_ms": 2728.72,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not able to help with that—I'm here to assist with clinic-related questions or to help arrange an appointment. Is there anything I can help you with regarding the clinic?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K02X7RNQ7WPD2E91VJX73W"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:31.201495Z"
+    },
+    {
+      "message_id": "01M2K02ZX433PRFHPZ65QXVHFX",
+      "chat_id": "01M2K02X5GXXZXC87TPEMEXDTY",
+      "sender": "assistant",
+      "content": "I'm not able to help with that—I'm here to assist with clinic-related questions or to help arrange an appointment. Is there anything I can help you with regarding the clinic?",
+      "event": "message.persisted",
+      "turn_id": "01M2K02X7RNQ7WPD2E91VJX73W",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:31.216929Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

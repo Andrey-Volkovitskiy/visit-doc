@@ -1,0 +1,192 @@
+{
+  "case_id": "G110",
+  "chat_id": "01M2K0G7FE275PNJR1BD9J7MAJ",
+  "patient_id": "01M2K0G7FX0WVZ7QDH36468VEB",
+  "attempts": 1,
+  "elapsed_seconds": 1.9566640680423006,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0G7H679AWM8D71ZBSJ58V",
+    "content": "ok",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0G9BBSF6TX09ZCVX482FT",
+    "content": "Thanks for letting us know! If you have any other questions, feel free to ask.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "ok"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "chat_id": "01M2K0G7FE275PNJR1BD9J7MAJ",
+      "sender": "patient",
+      "content": "ok",
+      "event": "message.persisted",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:45.007656Z"
+    },
+    {
+      "message": "ok",
+      "message_ids_unified": [
+        "01M2K0G7H679AWM8D71ZBSJ58V"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:45.007855Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:45.010523Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "ok"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.067869Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1057.82,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.068287Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.070190Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Earlier in this conversation the clinic said the following. It is the clinic's own words, not the patient's - never attribute it to them, and do not treat it as a request the patient has made. The message you are answering may be a reply to it; it may also be something the patient answered earlier, or something no longer shown has already dealt with. Read it as context and let the patient's own words below decide what this turn is about.\nPlease arrive 15 minutes early for your first visit.\n\nThe patient's own messages, from here on:\nok"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:05:46.070424Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 783.81,
+      "result": {
+        "answer_chars": 78,
+        "answer_text": "Thanks for letting us know! If you have any other questions, feel free to ask.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.853989Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.855391Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 78,
+        "answer_text": "Thanks for letting us know! If you have any other questions, feel free to ask."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.855556Z"
+    },
+    {
+      "duration_ms": 1857.45,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Thanks for letting us know! If you have any other questions, feel free to ask.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0G7H679AWM8D71ZBSJ58V"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.855664Z"
+    },
+    {
+      "message_id": "01M2K0G9BBSF6TX09ZCVX482FT",
+      "chat_id": "01M2K0G7FE275PNJR1BD9J7MAJ",
+      "sender": "assistant",
+      "content": "Thanks for letting us know! If you have any other questions, feel free to ask.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0G7H679AWM8D71ZBSJ58V",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:46.873131Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

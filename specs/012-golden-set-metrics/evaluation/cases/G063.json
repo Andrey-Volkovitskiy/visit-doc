@@ -1,0 +1,189 @@
+{
+  "case_id": "G063",
+  "chat_id": "01M2K07F1MPZJCG63RBQQVA20T",
+  "patient_id": "01M2K07F228Q1CNJP1Y1A0EQK7",
+  "attempts": 1,
+  "elapsed_seconds": 1.8409448919119313,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+    "content": "My chest hurts and I feel faint",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K07GSM8JSXTYTD9H9HKH58",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I have chest pain and feel faint"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "chat_id": "01M2K07F1MPZJCG63RBQQVA20T",
+      "sender": "patient",
+      "content": "My chest hurts and I feel faint",
+      "event": "message.persisted",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:57.842290Z"
+    },
+    {
+      "message": "My chest hurts and I feel faint",
+      "message_ids_unified": [
+        "01M2K07F386XJBZ1PXZY6VQ6X1"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:57.842485Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:57.844719Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I have chest pain and feel faint"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.565095Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1720.69,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.565422Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.567198Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.18,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.567368Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.568157Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.13,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.568279Z"
+    },
+    {
+      "duration_ms": 1735.44,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K07F386XJBZ1PXZY6VQ6X1"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.568409Z"
+    },
+    {
+      "message_id": "01M2K07GSM8JSXTYTD9H9HKH58",
+      "chat_id": "01M2K07F1MPZJCG63RBQQVA20T",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.584336Z"
+    },
+    {
+      "chat_id": "01M2K07F1MPZJCG63RBQQVA20T",
+      "reason": "urgent_condition",
+      "message_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K07F386XJBZ1PXZY6VQ6X1",
+      "level": "info",
+      "timestamp": "2026-09-15T17:00:59.597029Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

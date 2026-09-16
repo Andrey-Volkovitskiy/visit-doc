@@ -1,0 +1,192 @@
+{
+  "case_id": "G023",
+  "chat_id": "01M2K027MJDZXVKDCCV86N5XB0",
+  "patient_id": "01M2K027N0KHDVY980VBAPE7P7",
+  "attempts": 1,
+  "elapsed_seconds": 5.972203045967035,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K027P55X93CSM661JJDPMV",
+    "content": "How much does parking at the Mega Mall garage cost per hour?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K02DDZPHVA4H6THXB8VD8P",
+    "content": "I don't have information about parking rates at Mega Mall or any other locations. You'd want to check directly with Mega Mall or their website for those details. Is there something I can help you with regarding the clinic?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "how much does parking at the Mega Mall garage cost per hour?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K027P55X93CSM661JJDPMV",
+      "chat_id": "01M2K027MJDZXVKDCCV86N5XB0",
+      "sender": "patient",
+      "content": "How much does parking at the Mega Mall garage cost per hour?",
+      "event": "message.persisted",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:06.415596Z"
+    },
+    {
+      "message": "How much does parking at the Mega Mall garage cost per hour?",
+      "message_ids_unified": [
+        "01M2K027P55X93CSM661JJDPMV"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:06.415971Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:06.418410Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "how much does parking at the Mega Mall garage cost per hour?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:11.415788Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 4997.59,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:11.415995Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:11.417291Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "How much does parking at the Mega Mall garage cost per hour?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:58:11.417433Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 863.85,
+      "result": {
+        "answer_chars": 222,
+        "answer_text": "I don't have information about parking rates at Mega Mall or any other locations. You'd want to check directly with Mega Mall or their website for those details. Is there something I can help you with regarding the clinic?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:12.281172Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:12.282464Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.22,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 222,
+        "answer_text": "I don't have information about parking rates at Mega Mall or any other locations. You'd want to check directly with Mega Mall or their website for those details. Is there something I can help you with regarding the clinic?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:12.282665Z"
+    },
+    {
+      "duration_ms": 5877.62,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I don't have information about parking rates at Mega Mall or any other locations. You'd want to check directly with Mega Mall or their website for those details. Is there something I can help you with regarding the clinic?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K027P55X93CSM661JJDPMV"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:12.282866Z"
+    },
+    {
+      "message_id": "01M2K02DDZPHVA4H6THXB8VD8P",
+      "chat_id": "01M2K027MJDZXVKDCCV86N5XB0",
+      "sender": "assistant",
+      "content": "I don't have information about parking rates at Mega Mall or any other locations. You'd want to check directly with Mega Mall or their website for those details. Is there something I can help you with regarding the clinic?",
+      "event": "message.persisted",
+      "turn_id": "01M2K027P55X93CSM661JJDPMV",
+      "level": "info",
+      "timestamp": "2026-09-15T16:58:12.300307Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

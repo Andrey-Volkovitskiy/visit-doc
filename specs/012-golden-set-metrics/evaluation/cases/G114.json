@@ -1,0 +1,201 @@
+{
+  "case_id": "G114",
+  "chat_id": "01M2K0GE4YEB5MR9B0449KA902",
+  "patient_id": "01M2K0GE5D850XBJBA9MB9YNQR",
+  "attempts": 1,
+  "elapsed_seconds": 2.0554726669797674,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+    "content": "What are your hours, and I would rather speak to a person.",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GG3KTNEB1H357V95VZ36",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What are your hours?"
+      },
+      {
+        "position": 1,
+        "intent": "call_staff",
+        "text": "I would like to speak to a person."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "chat_id": "01M2K0GE4YEB5MR9B0449KA902",
+      "sender": "patient",
+      "content": "What are your hours, and I would rather speak to a person.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.834295Z"
+    },
+    {
+      "message": "What are your hours, and I would rather speak to a person.",
+      "message_ids_unified": [
+        "01M2K0GE6JT8N9GF65HRPM4MVF"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.834488Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:51.837492Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What are your hours?"
+        },
+        {
+          "position": 1,
+          "intent": "call_staff",
+          "text": "I would like to speak to a person."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.772816Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1935.59,
+      "result": {
+        "intents": [
+          "faq_question",
+          "call_staff"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.773043Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.774480Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.19,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.774663Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.775612Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.775802Z"
+    },
+    {
+      "duration_ms": 1949.6,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0GE6JT8N9GF65HRPM4MVF"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.776014Z"
+    },
+    {
+      "message_id": "01M2K0GG3KTNEB1H357V95VZ36",
+      "chat_id": "01M2K0GE4YEB5MR9B0449KA902",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.786560Z"
+    },
+    {
+      "chat_id": "01M2K0GE4YEB5MR9B0449KA902",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0GE6JT8N9GF65HRPM4MVF",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:53.802675Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

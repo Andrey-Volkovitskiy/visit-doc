@@ -1,0 +1,189 @@
+{
+  "case_id": "G117",
+  "chat_id": "01M2K0GRANX6F16M3CPYY45VYZ",
+  "patient_id": "01M2K0GRB3VFN12GP06PD5T3QH",
+  "attempts": 1,
+  "elapsed_seconds": 2.0827137159649283,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+    "content": "Where are you, and there is heavy bleeding that will not stop.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GTA6V3ZV9K2T610KAK69",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I have heavy bleeding that will not stop"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "chat_id": "01M2K0GRANX6F16M3CPYY45VYZ",
+      "sender": "patient",
+      "content": "Where are you, and there is heavy bleeding that will not stop.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.256342Z"
+    },
+    {
+      "message": "Where are you, and there is heavy bleeding that will not stop.",
+      "message_ids_unified": [
+        "01M2K0GRC7M47GQ7CTQWSQ2RAZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.256547Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:02.258360Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I have heavy bleeding that will not stop"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.220116Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1962.17,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.220576Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.223420Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.47,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.223869Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.226143Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.32,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.226446Z"
+    },
+    {
+      "duration_ms": 1979.39,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0GRC7M47GQ7CTQWSQ2RAZ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.226755Z"
+    },
+    {
+      "message_id": "01M2K0GTA6V3ZV9K2T610KAK69",
+      "chat_id": "01M2K0GRANX6F16M3CPYY45VYZ",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.243133Z"
+    },
+    {
+      "chat_id": "01M2K0GRANX6F16M3CPYY45VYZ",
+      "reason": "urgent_condition",
+      "message_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0GRC7M47GQ7CTQWSQ2RAZ",
+      "level": "info",
+      "timestamp": "2026-09-15T17:06:04.256462Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

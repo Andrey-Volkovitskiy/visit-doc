@@ -1,0 +1,639 @@
+{
+  "case_id": "G094",
+  "chat_id": "01M2K0CS2BTMMW5G7TWRTJT09P",
+  "patient_id": "01M2K0CS2TDHEKERSWT1DVKQZ7",
+  "attempts": 1,
+  "elapsed_seconds": 8.538352421019226,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Are you open on Sundays?",
+          "answer": "Based on the provided information, no—we are open Monday through Saturday from 9:00 AM to 6:00 PM. We are not open on Sundays.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0CS3YN06YA12KA0BKXWYH",
+    "content": "Are you open Sundays, and can I book the earliest slot you have with William Osler?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0D1BC80YYTEE1VEW3KTHE",
+    "content": "Thanks for reaching out! To answer your question, we're open Monday through Saturday from 9:00 AM to 6:00 PM, and we are closed on Sundays.\n\nRegarding your appointment request, the earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9:00 AM for a 60-minute appointment. Please let me know if you'd like me to go ahead and book that for you.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Are you open on Sundays?",
+        "answer": "Based on the provided information, no—we are open Monday through Saturday from 9:00 AM to 6:00 PM. We are not open on Sundays.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Are you open on Sundays?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Can I book the earliest available slot with William Osler?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "chat_id": "01M2K0CS2BTMMW5G7TWRTJT09P",
+      "sender": "patient",
+      "content": "Are you open Sundays, and can I book the earliest slot you have with William Osler?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:51.943784Z"
+    },
+    {
+      "message": "Are you open Sundays, and can I book the earliest slot you have with William Osler?",
+      "message_ids_unified": [
+        "01M2K0CS3YN06YA12KA0BKXWYH"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:51.944024Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:51.947225Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Are you open on Sundays?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Can I book the earliest available slot with William Osler?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.951938Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1005.19,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.952460Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.955263Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.956596Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.968257Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:52.968475Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can I book the earliest available slot with William Osler?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:52.968629Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.255487Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.42975092,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30988276,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.2584734,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.23841256,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.23460948,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.23400412,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.22686282,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.1965932,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.14164224,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.263762Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.42975092
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30988276
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.2584734
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.23841256
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.23460948
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.23400412
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.22686282
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.1965932
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.14164224
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.264037Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 578.41,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.42975092,
+          "rerank_score": 0.625
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30988276,
+          "rerank_score": 0.359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.842664Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "rerank_score": 0.359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.842988Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.42975092,
+      "best_rerank_score": 0.625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:53.843245Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Are you open on Sundays?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:53.843439Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2231.92,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 126,
+        "answer_text": "Based on the provided information, no—we are open Monday through Saturday from 9:00 AM to 6:00 PM. We are not open on Sundays.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Are you open on Sundays?",
+            "verdict": "answered",
+            "answer_text": "Based on the provided information, no—we are open Monday through Saturday from 9:00 AM to 6:00 PM. We are not open on Sundays."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:55.187154Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2512.15,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:55.480924Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+        "from_date": "2026-03-02",
+        "to_date": "2026-03-16"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:55.481166Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:55.491346Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 10.76,
+      "event": "booking.tool_result",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:55.492079Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can I book the earliest available slot with William Osler?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01SjgPUSorkj9nDHNcv8WmM1",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+                "from_date": "2026-03-02",
+                "to_date": "2026-03-16"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01SjgPUSorkj9nDHNcv8WmM1",
+              "content": "{\"available_starts\": [\"2026-03-02T09:00:00\", \"2026-03-02T10:00:00\", \"2026-03-02T11:00:00\", \"2026-03-02T12:00:00\", \"2026-03-02T13:00:00\", \"2026-03-02T14:00:00\", \"2026-03-02T15:00:00\", \"2026-03-02T16:00:00\", \"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\", \"2026-03-03T14:00:00\", \"2026-03-03T15:00:00\", \"2026-03-03T16:00:00\", \"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\", \"2026-03-05T09:00:00\", \"2026-03-05T10:00:00\", \"2026-03-05T11:00:00\", \"2026-03-05T12:00:00\", \"2026-03-05T13:00:00\", \"2026-03-05T14:00:00\", \"2026-03-05T15:00:00\", \"2026-03-05T16:00:00\", \"2026-03-06T09:00:00\", \"2026-03-06T10:00:00\", \"2026-03-06T11:00:00\", \"2026-03-06T12:00:00\", \"2026-03-06T13:00:00\", \"2026-03-06T14:00:00\", \"2026-03-06T15:00:00\", \"2026-03-06T16:00:00\", \"2026-03-09T09:00:00\", \"2026-03-09T10:00:00\", \"2026-03-09T11:00:00\", \"2026-03-09T12:00:00\", \"2026-03-09T13:00:00\", \"2026-03-09T14:00:00\", \"2026-03-09T15:00:00\", \"2026-03-09T16:00:00\", \"2026-03-10T09:00:00\", \"2026-03-10T10:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": true}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:55.492320Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2683.11,
+      "tool_names": [],
+      "text": "The earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9am, for a 60-minute appointment. Would you like me to book that for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:58.175622Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5219.28,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 169,
+        "answer_text": "The earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9am, for a 60-minute appointment. Would you like me to book that for you?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:58.175844Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:58.176582Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2180.97,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 1,
+        "answer_chars": 380,
+        "answer_text": "Thanks for reaching out! To answer your question, we're open Monday through Saturday from 9:00 AM to 6:00 PM, and we are closed on Sundays.\n\nRegarding your appointment request, the earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9:00 AM for a 60-minute appointment. Please let me know if you'd like me to go ahead and book that for you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:00.357640Z"
+    },
+    {
+      "duration_ms": 8423.09,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.42975092,
+              "rerank_score": 0.625
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Thanks for reaching out! To answer your question, we're open Monday through Saturday from 9:00 AM to 6:00 PM, and we are closed on Sundays.\n\nRegarding your appointment request, the earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9:00 AM for a 60-minute appointment. Please let me know if you'd like me to go ahead and book that for you.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K0CS3YN06YA12KA0BKXWYH"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:00.358107Z"
+    },
+    {
+      "message_id": "01M2K0D1BC80YYTEE1VEW3KTHE",
+      "chat_id": "01M2K0CS2BTMMW5G7TWRTJT09P",
+      "sender": "assistant",
+      "content": "Thanks for reaching out! To answer your question, we're open Monday through Saturday from 9:00 AM to 6:00 PM, and we are closed on Sundays.\n\nRegarding your appointment request, the earliest available slot with William Osler (General Practice) is this Monday, March 2nd, at 9:00 AM for a 60-minute appointment. Please let me know if you'd like me to go ahead and book that for you.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0CS3YN06YA12KA0BKXWYH",
+      "level": "info",
+      "timestamp": "2026-09-15T17:04:00.378125Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

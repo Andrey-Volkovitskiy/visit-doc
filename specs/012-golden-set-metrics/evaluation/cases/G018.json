@@ -1,0 +1,389 @@
+{
+  "case_id": "G018",
+  "chat_id": "01M2K01X64P372NN859MWDZ67W",
+  "patient_id": "01M2K01X6K67EFD5MJJPY9NE90",
+  "attempts": 1,
+  "elapsed_seconds": 1.3264432279393077,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What is your cancellation and no-show policy?",
+          "answer": null,
+          "verdict": "abstained_similarity_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K01X7S2S09G4ZSKBJA897K",
+    "content": "What is your cancellation and no-show policy?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K01YEBBT2JMM08T7M969N4",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What is your cancellation and no-show policy?",
+        "answer": null,
+        "verdict": "abstained_similarity_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is your cancellation and no-show policy?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "chat_id": "01M2K01X64P372NN859MWDZ67W",
+      "sender": "patient",
+      "content": "What is your cancellation and no-show policy?",
+      "event": "message.persisted",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:55.714086Z"
+    },
+    {
+      "message": "What is your cancellation and no-show policy?",
+      "message_ids_unified": [
+        "01M2K01X7S2S09G4ZSKBJA897K"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:55.714359Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:55.717920Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is your cancellation and no-show policy?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.691590Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 973.94,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.691826Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.693581Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.926653Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.29266274,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.2807097,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.24841434,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.23269711,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.22936092,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.22290733,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.20849311,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.20291492,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.16666093,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.933375Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.29266274
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.2807097
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.24841434
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.23269711
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.22936092
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.22290733
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.20849311
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.20291492
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.16666093
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.933667Z"
+    },
+    {
+      "verdict": "abstained_similarity_floor",
+      "survivor_count": 0,
+      "blocked_gate": "similarity_floor",
+      "best_similarity_score": 0.29266274,
+      "best_rerank_score": null,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.933853Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 240.53,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What is your cancellation and no-show policy?",
+            "verdict": "abstained_similarity_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.934104Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.935184Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.18,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.935469Z"
+    },
+    {
+      "duration_ms": 1230.15,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_similarity_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K01X7S2S09G4ZSKBJA897K"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.935657Z"
+    },
+    {
+      "message_id": "01M2K01YEBBT2JMM08T7M969N4",
+      "chat_id": "01M2K01X64P372NN859MWDZ67W",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.944622Z"
+    },
+    {
+      "chat_id": "01M2K01X64P372NN859MWDZ67W",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M2K01X7S2S09G4ZSKBJA897K",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:56.953281Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

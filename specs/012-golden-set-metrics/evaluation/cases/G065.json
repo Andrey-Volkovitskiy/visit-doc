@@ -1,0 +1,189 @@
+{
+  "case_id": "G065",
+  "chat_id": "01M2K07J7CTTN8FRH09MJDVMZT",
+  "patient_id": "01M2K07J7T9FRJ5H6NFD1PCEFG",
+  "attempts": 1,
+  "elapsed_seconds": 2.131136336014606,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+    "content": "I think I'm having a heart attack",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K07M8DK7W6PV0H6CRMGTJM",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I think I'm having a heart attack"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "chat_id": "01M2K07J7CTTN8FRH09MJDVMZT",
+      "sender": "patient",
+      "content": "I think I'm having a heart attack",
+      "event": "message.persisted",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:01.095347Z"
+    },
+    {
+      "message": "I think I'm having a heart attack",
+      "message_ids_unified": [
+        "01M2K07J8YPGW9KRQWF0F9JC6N"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:01.095585Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:01.098311Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I think I'm having a heart attack"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.107479Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2009.47,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.107786Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.109827Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.35,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.110215Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.111660Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.24,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.111894Z"
+    },
+    {
+      "duration_ms": 2025.91,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K07J8YPGW9KRQWF0F9JC6N"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.112159Z"
+    },
+    {
+      "message_id": "01M2K07M8DK7W6PV0H6CRMGTJM",
+      "chat_id": "01M2K07J7CTTN8FRH09MJDVMZT",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.124425Z"
+    },
+    {
+      "chat_id": "01M2K07J7CTTN8FRH09MJDVMZT",
+      "reason": "urgent_condition",
+      "message_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K07J8YPGW9KRQWF0F9JC6N",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:03.138972Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

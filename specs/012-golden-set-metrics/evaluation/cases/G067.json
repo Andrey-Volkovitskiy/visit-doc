@@ -1,0 +1,189 @@
+{
+  "case_id": "G067",
+  "chat_id": "01M2K07NB3AFVDFCFAWGSND318",
+  "patient_id": "01M2K07NBN4MW48336B1KVZH8A",
+  "attempts": 1,
+  "elapsed_seconds": 2.23444132192526,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K07ND622W8GKY5ZQA1WJKP",
+    "content": "My child has a fever of 40 and won't wake properly",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K07QF61HMSAVZJ7ATFCHXY",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "My child has a fever of 40 and won't wake properly"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "chat_id": "01M2K07NB3AFVDFCFAWGSND318",
+      "sender": "patient",
+      "content": "My child has a fever of 40 and won't wake properly",
+      "event": "message.persisted",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:04.305206Z"
+    },
+    {
+      "message": "My child has a fever of 40 and won't wake properly",
+      "message_ids_unified": [
+        "01M2K07ND622W8GKY5ZQA1WJKP"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:04.305513Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:04.309285Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "My child has a fever of 40 and won't wake properly"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.396715Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2087.89,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.397185Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.399794Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.28,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.400089Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.401688Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.401873Z"
+    },
+    {
+      "duration_ms": 2107.06,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K07ND622W8GKY5ZQA1WJKP"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.402031Z"
+    },
+    {
+      "message_id": "01M2K07QF61HMSAVZJ7ATFCHXY",
+      "chat_id": "01M2K07NB3AFVDFCFAWGSND318",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.418539Z"
+    },
+    {
+      "chat_id": "01M2K07NB3AFVDFCFAWGSND318",
+      "reason": "urgent_condition",
+      "message_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K07ND622W8GKY5ZQA1WJKP",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:06.430541Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

@@ -1,0 +1,201 @@
+{
+  "case_id": "G112",
+  "chat_id": "01M2K0GAN9E3QT1QRRK55PMCMD",
+  "patient_id": "01M2K0GANQ0M57T36R0ZC6M2A6",
+  "attempts": 1,
+  "elapsed_seconds": 1.176918484037742,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+    "content": "What should I bring, and I am terrified about my results.",
+    "attention_mark": "distress",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0GBREW6THBJZCJVPCYNGB",
+    "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring to my appointment?"
+      },
+      {
+        "position": 1,
+        "intent": "distress",
+        "text": "I am terrified about my results"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "chat_id": "01M2K0GAN9E3QT1QRRK55PMCMD",
+      "sender": "patient",
+      "content": "What should I bring, and I am terrified about my results.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.261250Z"
+    },
+    {
+      "message": "What should I bring, and I am terrified about my results.",
+      "message_ids_unified": [
+        "01M2K0GAPVNV1Q5V69QTKGAHJT"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.261588Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:48.263752Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "distress"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring to my appointment?"
+        },
+        {
+          "position": 1,
+          "intent": "distress",
+          "text": "I am terrified about my results"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.315655Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1052.52,
+      "result": {
+        "intents": [
+          "faq_question",
+          "distress"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "distress",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.316335Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.319186Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.36,
+      "result": {
+        "cause": "distress",
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.319543Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.321883Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.27,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.322143Z"
+    },
+    {
+      "duration_ms": 1070.54,
+      "segment_count": 2,
+      "outcome": "handed_off",
+      "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K0GAPVNV1Q5V69QTKGAHJT"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.322380Z"
+    },
+    {
+      "message_id": "01M2K0GBREW6THBJZCJVPCYNGB",
+      "chat_id": "01M2K0GAN9E3QT1QRRK55PMCMD",
+      "sender": "assistant",
+      "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.339474Z"
+    },
+    {
+      "chat_id": "01M2K0GAN9E3QT1QRRK55PMCMD",
+      "reason": "distress",
+      "message_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K0GAPVNV1Q5V69QTKGAHJT",
+      "level": "info",
+      "timestamp": "2026-09-15T17:05:49.352850Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

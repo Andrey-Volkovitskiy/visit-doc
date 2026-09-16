@@ -1,0 +1,192 @@
+{
+  "case_id": "G038",
+  "chat_id": "01M2K03ZN8THGRW1MTHS9WWZPH",
+  "patient_id": "01M2K03ZNNRY76ZBVZGV52Z82T",
+  "attempts": 1,
+  "elapsed_seconds": 1.7913847470190376,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+    "content": "👍",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K041C2BXT5BBJ5B68RY70K",
+    "content": "Hi there! Thanks for reaching out. How can I help you today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "acknowledgement"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "chat_id": "01M2K03ZN8THGRW1MTHS9WWZPH",
+      "sender": "patient",
+      "content": "👍",
+      "event": "message.persisted",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:03.779175Z"
+    },
+    {
+      "message": "👍",
+      "message_ids_unified": [
+        "01M2K03ZPTA3DJ8YDY3W78NDVM"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:03.779394Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:03.781401Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "acknowledgement"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:04.737661Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 956.56,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:04.737977Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:04.739420Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "👍"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:59:04.739598Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 729.36,
+      "result": {
+        "answer_chars": 60,
+        "answer_text": "Hi there! Thanks for reaching out. How can I help you today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:05.468779Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:05.470006Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 60,
+        "answer_text": "Hi there! Thanks for reaching out. How can I help you today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:05.470159Z"
+    },
+    {
+      "duration_ms": 1699.37,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Hi there! Thanks for reaching out. How can I help you today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K03ZPTA3DJ8YDY3W78NDVM"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:05.470245Z"
+    },
+    {
+      "message_id": "01M2K041C2BXT5BBJ5B68RY70K",
+      "chat_id": "01M2K03ZN8THGRW1MTHS9WWZPH",
+      "sender": "assistant",
+      "content": "Hi there! Thanks for reaching out. How can I help you today?",
+      "event": "message.persisted",
+      "turn_id": "01M2K03ZPTA3DJ8YDY3W78NDVM",
+      "level": "info",
+      "timestamp": "2026-09-15T16:59:05.485792Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

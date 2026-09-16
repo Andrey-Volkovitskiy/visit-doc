@@ -1,0 +1,226 @@
+{
+  "case_id": "G003",
+  "chat_id": "01M2K007WA0B7SY6SX5KEWG7ZN",
+  "patient_id": "01M2K007WV01V7VTXXBYGE4AYS",
+  "attempts": 1,
+  "elapsed_seconds": 2.639988847076893,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K007Y4WF35GANDQ37CASGX",
+    "content": "Can I see a specialist if my GP hasn't sent anything over?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K00AD91BEAW5FKSEMKPE3G",
+    "content": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Can I see a specialist if my GP hasn't sent a referral?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "chat_id": "01M2K007WA0B7SY6SX5KEWG7ZN",
+      "sender": "patient",
+      "content": "Can I see a specialist if my GP hasn't sent anything over?",
+      "event": "message.persisted",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:01.134160Z"
+    },
+    {
+      "message": "Can I see a specialist if my GP hasn't sent anything over?",
+      "message_ids_unified": [
+        "01M2K007Y4WF35GANDQ37CASGX"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:01.134373Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:01.136403Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Can I see a specialist if my GP hasn't sent a referral?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:02.059549Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 923.38,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:02.059788Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:02.062317Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:02.077833Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:02.078275Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can I see a specialist if my GP hasn't sent a referral?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T16:57:02.078719Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1569.08,
+      "tool_names": [],
+      "text": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.648064Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 1586.04,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 257,
+        "answer_text": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.648323Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.649963Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.31,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 257,
+        "answer_text": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.650238Z"
+    },
+    {
+      "duration_ms": 2526.06,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M2K007Y4WF35GANDQ37CASGX"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.650557Z"
+    },
+    {
+      "message_id": "01M2K00AD91BEAW5FKSEMKPE3G",
+      "chat_id": "01M2K007WA0B7SY6SX5KEWG7ZN",
+      "sender": "assistant",
+      "content": "I'm not able to help with questions about referral requirements or clinic policies — that's handled elsewhere. What I can help with is booking, changing, or cancelling appointments here. Would you like me to check availability with one of our practitioners?",
+      "event": "message.persisted",
+      "turn_id": "01M2K007Y4WF35GANDQ37CASGX",
+      "level": "info",
+      "timestamp": "2026-09-15T16:57:03.674297Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

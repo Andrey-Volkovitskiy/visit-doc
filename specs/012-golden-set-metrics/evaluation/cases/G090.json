@@ -1,0 +1,1077 @@
+{
+  "case_id": "G090",
+  "chat_id": "01M2K0B6VWXECY33SXAM53CK19",
+  "patient_id": "01M2K0B6W97C5JZJK5855C5YNG",
+  "attempts": 1,
+  "elapsed_seconds": 20.485511559061706,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What are your hours?",
+          "answer": "Our clinic is open Monday through Saturday, from 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+    "content": "What are your hours, and please cancel my Friday appointment.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0BGS326ZJSF63JP8E6GK1",
+    "content": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What are your hours?",
+        "answer": "Our clinic is open Monday through Saturday, from 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What are your hours?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Please cancel my Friday appointment."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "chat_id": "01M2K0B6VWXECY33SXAM53CK19",
+      "sender": "patient",
+      "content": "What are your hours, and please cancel my Friday appointment.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:00.558440Z"
+    },
+    {
+      "message": "What are your hours, and please cancel my Friday appointment.",
+      "message_ids_unified": [
+        "01M2K0B6Y4DTR50H101GZ97Z6B"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:00.558671Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:00.561670Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What are your hours?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Please cancel my Friday appointment."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.704685Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2304.99,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.705105Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.707154Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.708070Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.717437Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.717860Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please cancel my Friday appointment."
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:04.718142Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.941971Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.27506128,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.25445843,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22085062,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2007851,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.18355305,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.17906818,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.162246,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.950587Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.27506128
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.25445843
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22085062
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2007851
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.18355305
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.17906818
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.162246
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:04.951144Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 303.5,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961,
+          "rerank_score": 0.484375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:05.255042Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.82421875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.484375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:05.255253Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.46837598,
+      "best_rerank_score": 0.82421875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:05.255375Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What are your hours?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:05.255444Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1702.81,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:06.421276Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:06.421644Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:06.437419Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 16.26,
+      "event": "booking.tool_result",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:06.438413Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please cancel my Friday appointment."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01H4xaJGP5EkSWxgvAuJpFKt",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01H4xaJGP5EkSWxgvAuJpFKt",
+              "content": "{\"future\": [{\"id\": \"01M2K0B6XQBNAWWRP6TB2K0MAN\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-06T11:00:00\", \"ends_at\": \"2026-03-06T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:03:06.439001Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2364.06,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 192,
+        "answer_text": "Our clinic is open Monday through Saturday, from 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What are your hours?",
+            "verdict": "answered",
+            "answer_text": "Our clinic is open Monday through Saturday, from 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:07.071218Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1915.13,
+      "tool_names": [],
+      "text": "You have one upcoming appointment: a General Practice appointment with William Osler on Friday, March 6th at 11:00am. Shall I go ahead and cancel it?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:08.354539Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 3646.69,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 149,
+        "answer_text": "You have one upcoming appointment: a General Practice appointment with William Osler on Friday, March 6th at 11:00am. Shall I go ahead and cancel it?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:08.354749Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:08.355528Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2265.66,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "informational",
+        "citation_count": 1,
+        "answer_chars": 418,
+        "answer_text": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:10.621204Z"
+    },
+    {
+      "duration_ms": 8234.05,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.46837598,
+              "rerank_score": 0.82421875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it.",
+      "booking_outcome": "informational",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K0B6Y4DTR50H101GZ97Z6B"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:10.621464Z"
+    },
+    {
+      "message_id": "01M2K0BGS326ZJSF63JP8E6GK1",
+      "chat_id": "01M2K0B6VWXECY33SXAM53CK19",
+      "sender": "assistant",
+      "content": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0B6Y4DTR50H101GZ97Z6B",
+      "level": "info",
+      "timestamp": "2026-09-15T17:03:10.635468Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M2K0BGTWQJNKM040P7TBK3DY",
+      "content": "Yes, please go ahead.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M2K0BWM34503R9C9F3QX8WQ6",
+      "content": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "chat_id": "01M2K0B6VWXECY33SXAM53CK19",
+        "sender": "patient",
+        "content": "Yes, please go ahead.",
+        "event": "message.persisted",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:10.700041Z"
+      },
+      {
+        "message": "Yes, please go ahead.",
+        "message_ids_unified": [
+          "01M2K0BGTWQJNKM040P7TBK3DY"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:10.700447Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:10.707129Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Cancel my Friday appointment with William Osler on March 6th at 11:00 AM."
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:13.153144Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 2446.31,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:13.153363Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:13.154900Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:13.162872Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:13.163116Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What are your hours, and please cancel my Friday appointment."
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it."
+          },
+          {
+            "role": "user",
+            "content": "Cancel my Friday appointment with William Osler on March 6th at 11:00 AM."
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:03:13.163271Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 3960.93,
+        "tool_names": [
+          "list_my_appointments"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:17.124378Z"
+      },
+      {
+        "tool_name": "list_my_appointments",
+        "iteration": 1,
+        "arguments": {},
+        "event": "booking.tool_called",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:17.124921Z"
+      },
+      {
+        "method": "ListAppointments",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:17.135581Z"
+      },
+      {
+        "tool_name": "list_my_appointments",
+        "iteration": 1,
+        "status": "ok",
+        "reason": null,
+        "duration_ms": 10.61,
+        "event": "booking.tool_result",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:17.135878Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What are your hours, and please cancel my Friday appointment."
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it."
+          },
+          {
+            "role": "user",
+            "content": "Cancel my Friday appointment with William Osler on March 6th at 11:00 AM."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01Gn7XuoQYjCKea8fnEqrD9j",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {},
+                "name": "list_my_appointments",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Gn7XuoQYjCKea8fnEqrD9j",
+                "content": "{\"future\": [{\"id\": \"01M2K0B6XQBNAWWRP6TB2K0MAN\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-06T11:00:00\", \"ends_at\": \"2026-03-06T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:03:17.136057Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 2440.22,
+        "tool_names": [
+          "cancel_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:19.576495Z"
+      },
+      {
+        "tool_name": "cancel_appointment",
+        "iteration": 2,
+        "arguments": {
+          "appointment_id": "01M2K0B6XQBNAWWRP6TB2K0MAN",
+          "expected_starts_at": "2026-03-06T11:00:00",
+          "expected_practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:19.576808Z"
+      },
+      {
+        "method": "CancelAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:19.601939Z"
+      },
+      {
+        "tool_name": "cancel_appointment",
+        "iteration": 2,
+        "status": "changed",
+        "reason": null,
+        "duration_ms": 25.25,
+        "event": "booking.tool_result",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:19.602302Z"
+      },
+      {
+        "iteration": 3,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What are your hours, and please cancel my Friday appointment."
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you asked for:\n\n**Clinic hours:** We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\n**Appointment:** You have an upcoming General Practice appointment with William Osler on Friday, March 6th at 11:00 AM. Just let me know if you'd like me to go ahead and cancel it."
+          },
+          {
+            "role": "user",
+            "content": "Cancel my Friday appointment with William Osler on March 6th at 11:00 AM."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01Gn7XuoQYjCKea8fnEqrD9j",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {},
+                "name": "list_my_appointments",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Gn7XuoQYjCKea8fnEqrD9j",
+                "content": "{\"future\": [{\"id\": \"01M2K0B6XQBNAWWRP6TB2K0MAN\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-06T11:00:00\", \"ends_at\": \"2026-03-06T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "id": "toolu_01XGsfsXwVtXkkrwaSoBi1vF",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "appointment_id": "01M2K0B6XQBNAWWRP6TB2K0MAN",
+                  "expected_starts_at": "2026-03-06T11:00:00",
+                  "expected_practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE"
+                },
+                "name": "cancel_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01XGsfsXwVtXkkrwaSoBi1vF",
+                "content": "{\"status\": \"changed\", \"change\": \"cancelled\", \"appointment\": {\"id\": \"01M2K0B6XQBNAWWRP6TB2K0MAN\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-06T11:00:00\", \"ends_at\": \"2026-03-06T12:00:00\", \"status\": \"cancelled\"}, \"previous_starts_at\": \"2026-03-06T11:00:00\", \"previous_practitioner_full_name\": \"William Osler\"}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:03:19.602510Z"
+      },
+      {
+        "iteration": 3,
+        "duration_ms": 3146.41,
+        "tool_names": [],
+        "text": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else.",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.749154Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 9594.49,
+        "result": {
+          "outcome": "cancelled",
+          "appointment_id": "01M2K0B6XQBNAWWRP6TB2K0MAN",
+          "iterations": 3,
+          "tool_calls": 2,
+          "answer_chars": 156,
+          "answer_text": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.749364Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.750527Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.16,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "cancelled",
+          "citation_count": 0,
+          "answer_chars": 156,
+          "answer_text": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else."
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.750675Z"
+      },
+      {
+        "duration_ms": 12066.53,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else.",
+        "booking_outcome": "cancelled",
+        "message_ids_unified": [
+          "01M2K0BGTWQJNKM040P7TBK3DY"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.750896Z"
+      },
+      {
+        "message_id": "01M2K0BWM34503R9C9F3QX8WQ6",
+        "chat_id": "01M2K0B6VWXECY33SXAM53CK19",
+        "sender": "assistant",
+        "content": "Your appointment with William Osler on Friday, March 6th at 11:00 AM has been cancelled. Let me know if you'd like to book a new time or need anything else.",
+        "event": "message.persisted",
+        "turn_id": "01M2K0BGTWQJNKM040P7TBK3DY",
+        "level": "info",
+        "timestamp": "2026-09-15T17:03:22.761422Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-06T11:00:00",
+      "status": "standing"
+    }
+  ],
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-06T11:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

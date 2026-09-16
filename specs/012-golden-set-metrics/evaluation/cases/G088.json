@@ -1,0 +1,1150 @@
+{
+  "case_id": "G088",
+  "chat_id": "01M2K0AH4GYXJJKF4JY805T8D8",
+  "patient_id": "01M2K0AH4XR2JDK0SFKTPEB8K0",
+  "attempts": 1,
+  "elapsed_seconds": 14.834349752985872,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I bring to my appointment?",
+          "answer": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAdditionally, if this is your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5 to 10 minutes early** is sufficient.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K0AH654GA2TK6778VQWF8K",
+    "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K0ARNR82EEHXVAYDW40Y5A",
+    "content": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I bring to my appointment?",
+        "answer": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAdditionally, if this is your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5 to 10 minutes early** is sufficient.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 601,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          },
+          {
+            "entry_id": 608,
+            "chunk_index": 0,
+            "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring to my appointment?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Can you book me Wednesday at 9 with William Osler?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "chat_id": "01M2K0AH4GYXJJKF4JY805T8D8",
+      "sender": "patient",
+      "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+      "event": "message.persisted",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.286397Z"
+    },
+    {
+      "message": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+      "message_ids_unified": [
+        "01M2K0AH654GA2TK6778VQWF8K"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.286653Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:38.289255Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring to my appointment?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Can you book me Wednesday at 9 with William Osler?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.669283Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 2380.34,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.669563Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.671016Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.671682Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.680687Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.680930Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you book me Wednesday at 9 with William Osler?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:40.681124Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.901459Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3218845,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30630583,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.28499588,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.25561053,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.908999Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.28499588
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.25561053
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3218845
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30630583
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:40.909482Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 246.05,
+      "scores": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565,
+          "rerank_score": 0.61328125
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164,
+          "rerank_score": 0.45703125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406,
+          "rerank_score": 0.41796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:41.155864Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.61328125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "rerank_score": 0.45703125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "rerank_score": 0.41796875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:41.156286Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6026195,
+      "best_rerank_score": 0.890625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:41.156607Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nQuestion: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.\n\nQuestion: What should I bring to my appointment?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:41.156840Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2141.66,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:42.823016Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:42.823815Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:42.839184Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 15.18,
+      "event": "booking.tool_result",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:42.839416Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you book me Wednesday at 9 with William Osler?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01Mk1VT3HiAPaNPYqQzo7hN3",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01Mk1VT3HiAPaNPYqQzo7hN3",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:42.839610Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2295.22,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 336,
+        "answer_text": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAdditionally, if this is your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5 to 10 minutes early** is sufficient.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What should I bring to my appointment?",
+            "verdict": "answered",
+            "answer_text": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAdditionally, if this is your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5 to 10 minutes early** is sufficient."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:42.966302Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 849.47,
+      "tool_names": [],
+      "text": "Wednesday, March 4th at 9am with William Osler (General Practice) is available. Shall I book that for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:43.689255Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 3017.85,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 106,
+        "answer_text": "Wednesday, March 4th at 9am with William Osler (General Practice) is available. Shall I book that for you?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:43.689533Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:43.690595Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2249.31,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 2,
+        "answer_chars": 517,
+        "answer_text": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:45.939911Z"
+    },
+    {
+      "duration_ms": 7662.5,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.6026195,
+              "rerank_score": 0.890625
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+              "similarity_score": 0.45527565,
+              "rerank_score": 0.61328125
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K0AH654GA2TK6778VQWF8K"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:45.940214Z"
+    },
+    {
+      "message_id": "01M2K0ARNR82EEHXVAYDW40Y5A",
+      "chat_id": "01M2K0AH4GYXJJKF4JY805T8D8",
+      "sender": "assistant",
+      "content": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you.",
+      "event": "message.persisted",
+      "turn_id": "01M2K0AH654GA2TK6778VQWF8K",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:45.949529Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+      "content": "Yes, please book it.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M2K0AZHRV1HHMXQJNP0CKBBH",
+      "content": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "chat_id": "01M2K0AH4GYXJJKF4JY805T8D8",
+        "sender": "patient",
+        "content": "Yes, please book it.",
+        "event": "message.persisted",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:45.987836Z"
+      },
+      {
+        "message": "Yes, please book it.",
+        "message_ids_unified": [
+          "01M2K0ARPT7QZFZQQQ9M60JPMG"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:45.988147Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:45.990834Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Book me Wednesday at 9 with William Osler"
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:47.919816Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 1929.18,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:47.919996Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:47.921219Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:47.928566Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:47.928788Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?"
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you."
+          },
+          {
+            "role": "user",
+            "content": "Book me Wednesday at 9 with William Osler"
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:02:47.928932Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 2706.07,
+        "tool_names": [
+          "check_availability"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:50.635185Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "arguments": {
+          "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+          "from_date": "2026-03-04",
+          "to_date": "2026-03-04"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:50.635628Z"
+      },
+      {
+        "method": "CheckAvailability",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:50.649355Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "status": "ok",
+        "reason": null,
+        "duration_ms": 13.96,
+        "event": "booking.tool_result",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:50.649719Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?"
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you."
+          },
+          {
+            "role": "user",
+            "content": "Book me Wednesday at 9 with William Osler"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_018MwrXJCPpRCMR7XgBaNzDG",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+                  "from_date": "2026-03-04",
+                  "to_date": "2026-03-04"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_018MwrXJCPpRCMR7XgBaNzDG",
+                "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:02:50.649950Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 1242.26,
+        "tool_names": [
+          "book_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:51.892480Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "arguments": {
+          "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+          "starts_at": "2026-03-04T09:00:00"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:51.892872Z"
+      },
+      {
+        "method": "BookAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:51.909860Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "status": "booked",
+        "reason": null,
+        "duration_ms": 16.99,
+        "event": "booking.tool_result",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:51.910078Z"
+      },
+      {
+        "iteration": 3,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?"
+          },
+          {
+            "role": "assistant",
+            "content": "Here's the information you requested:\n\nFor your appointment, please bring:\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nIf this is your first visit, please arrive 15 minutes early to complete registration paperwork. If you're a returning patient, arriving 5 to 10 minutes early is sufficient.\n\nRegarding scheduling, I found an opening on Wednesday, March 4th at 9am with William Osler (General Practice). Please confirm and I'll go ahead and book it for you."
+          },
+          {
+            "role": "user",
+            "content": "Book me Wednesday at 9 with William Osler"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_018MwrXJCPpRCMR7XgBaNzDG",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+                  "from_date": "2026-03-04",
+                  "to_date": "2026-03-04"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_018MwrXJCPpRCMR7XgBaNzDG",
+                "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01GgyJT8bigsYJf35xoYvish",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M2JZZWH6A9F8JHF35Q05E8BE",
+                  "starts_at": "2026-03-04T09:00:00"
+                },
+                "name": "book_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01GgyJT8bigsYJf35xoYvish",
+                "content": "{\"status\": \"booked\", \"appointment\": {\"id\": \"01M2K0AYFYTG3WMCG0944WPNCP\", \"practitioner_full_name\": \"William Osler\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\"}}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-09-15T17:02:51.910313Z"
+      },
+      {
+        "iteration": 3,
+        "duration_ms": 1065.09,
+        "tool_names": [],
+        "text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am.",
+        "event": "booking.model_call",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.975718Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 5055.05,
+        "result": {
+          "outcome": "booked",
+          "appointment_id": "01M2K0AYFYTG3WMCG0944WPNCP",
+          "iterations": 3,
+          "tool_calls": 2,
+          "answer_chars": 113,
+          "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.976289Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.978869Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.38,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "booked",
+          "citation_count": 0,
+          "answer_chars": 113,
+          "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am."
+        },
+        "event": "node.completed",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.979216Z"
+      },
+      {
+        "duration_ms": 7001.43,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am.",
+        "booking_outcome": "booked",
+        "message_ids_unified": [
+          "01M2K0ARPT7QZFZQQQ9M60JPMG"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.979605Z"
+      },
+      {
+        "message_id": "01M2K0AZHRV1HHMXQJNP0CKBBH",
+        "chat_id": "01M2K0AH4GYXJJKF4JY805T8D8",
+        "sender": "assistant",
+        "content": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9am.",
+        "event": "message.persisted",
+        "turn_id": "01M2K0ARPT7QZFZQQQ9M60JPMG",
+        "level": "info",
+        "timestamp": "2026-09-15T17:02:52.999132Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [],
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T09:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T09:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null
+}

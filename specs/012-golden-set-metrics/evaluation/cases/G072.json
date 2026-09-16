@@ -1,0 +1,189 @@
+{
+  "case_id": "G072",
+  "chat_id": "01M2K07ZFBZB5H16JHYY2W2F98",
+  "patient_id": "01M2K07ZG114C620DBBTK9GRAS",
+  "attempts": 1,
+  "elapsed_seconds": 1.4371182899922132,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K07ZHD6STDFPZ29GB735QE",
+    "content": "I'm panicking about tomorrow's procedure",
+    "attention_mark": "distress",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K080T99Q32F5D6FPE31147",
+    "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "distress",
+        "text": "I'm panicking about tomorrow's procedure"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "chat_id": "01M2K07ZFBZB5H16JHYY2W2F98",
+      "sender": "patient",
+      "content": "I'm panicking about tomorrow's procedure",
+      "event": "message.persisted",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:14.678225Z"
+    },
+    {
+      "message": "I'm panicking about tomorrow's procedure",
+      "message_ids_unified": [
+        "01M2K07ZHD6STDFPZ29GB735QE"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:14.678493Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:14.680848Z"
+    },
+    {
+      "intents": [
+        "distress"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "distress",
+          "text": "I'm panicking about tomorrow's procedure"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.969349Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1288.87,
+      "result": {
+        "intents": [
+          "distress"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "distress",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.969705Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.970890Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.19,
+      "result": {
+        "cause": "distress",
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.971057Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.972160Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.28,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.972294Z"
+    },
+    {
+      "duration_ms": 1303.21,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M2K07ZHD6STDFPZ29GB735QE"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.972449Z"
+    },
+    {
+      "message_id": "01M2K080T99Q32F5D6FPE31147",
+      "chat_id": "01M2K07ZFBZB5H16JHYY2W2F98",
+      "sender": "assistant",
+      "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "event": "message.persisted",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:15.990336Z"
+    },
+    {
+      "chat_id": "01M2K07ZFBZB5H16JHYY2W2F98",
+      "reason": "distress",
+      "message_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M2K07ZHD6STDFPZ29GB735QE",
+      "level": "info",
+      "timestamp": "2026-09-15T17:01:16.007179Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

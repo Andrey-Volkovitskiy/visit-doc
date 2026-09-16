@@ -1,0 +1,1089 @@
+{
+  "case_id": "G084",
+  "chat_id": "01M2K09M3Q2864H7YCGKF5QFAR",
+  "patient_id": "01M2K09M46Y63N72WSVDEAC56K",
+  "attempts": 1,
+  "elapsed_seconds": 5.831223524059169,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I bring to my appointment?",
+          "answer": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, if it's your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5–10 minutes** before your scheduled time is sufficient.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "How early should I arrive?",
+          "answer": "If it's your first visit, please arrive **15 minutes early** to complete registration paperwork. If you're a returning patient, arriving **5 to 10 minutes early** is sufficient.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "question": "What are your hours?",
+          "answer": "We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M2K09M5E16PV33CFS435JSKM",
+    "content": "What should I bring, how early should I arrive, and what are your hours?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M2K09SRRCZQB4V9NK2BB27XN",
+    "content": "For your appointment, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nAs for arrival time: if it's your first visit, please arrive 15 minutes early to complete registration paperwork; if you're a returning patient, arriving 5–10 minutes early is sufficient.\n\nOur hours are Monday through Saturday, 9:00 AM to 6:00 PM, and we're located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I bring to my appointment?",
+        "answer": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, if it's your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5–10 minutes** before your scheduled time is sufficient.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 601,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          },
+          {
+            "entry_id": 608,
+            "chunk_index": 0,
+            "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "How early should I arrive?",
+        "answer": "If it's your first visit, please arrive **15 minutes early** to complete registration paperwork. If you're a returning patient, arriving **5 to 10 minutes early** is sufficient.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 608,
+            "chunk_index": 0,
+            "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+          }
+        ]
+      },
+      {
+        "position": 2,
+        "question": "What are your hours?",
+        "answer": "We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring to my appointment?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "How early should I arrive?"
+      },
+      {
+        "position": 2,
+        "intent": "faq_question",
+        "text": "What are your hours?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M2K09M5E16PV33CFS435JSKM",
+      "chat_id": "01M2K09M3Q2864H7YCGKF5QFAR",
+      "sender": "patient",
+      "content": "What should I bring, how early should I arrive, and what are your hours?",
+      "event": "message.persisted",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:08.568714Z"
+    },
+    {
+      "message": "What should I bring, how early should I arrive, and what are your hours?",
+      "message_ids_unified": [
+        "01M2K09M5E16PV33CFS435JSKM"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:08.568977Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:08.570700Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring to my appointment?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "How early should I arrive?"
+        },
+        {
+          "position": 2,
+          "intent": "faq_question",
+          "text": "What are your hours?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:09.930437Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1360.1,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:09.930824Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:09.932574Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.163491Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.166208Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3218845,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30630583,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.28499588,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.25561053,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.173975Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.28499588
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.25561053
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3218845
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.30630583
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.174270Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4951136,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3343011,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.28657934,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.188959,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.16555218,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.15210249,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.13398339,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.12965283,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.08721544,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.175745Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4951136
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3343011
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.28657934
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.188959
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.16555218
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.15210249
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.13398339
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.12965283
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.08721544
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.176107Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.240757Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.27506128,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.25445843,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22085062,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2007851,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.18355305,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.17906818,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.162246,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.249619Z"
+    },
+    {
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": 0.27506128
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.25445843
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.22085062
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.2007851
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.18355305
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.17906818
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.162246
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.249948Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 403.24,
+      "scores": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.4951136,
+          "rerank_score": 0.91015625
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.3343011,
+          "rerank_score": 0.53125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.579579Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.91015625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.53125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.579804Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4951136,
+      "best_rerank_score": 0.91015625,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.579917Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.\n\nQuestion: How early should I arrive?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:10.580110Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 407.41,
+      "scores": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.6026195,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.45527565,
+          "rerank_score": 0.61328125
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.35527164,
+          "rerank_score": 0.45703125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.32221875,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "similarity_score": 0.33267406,
+          "rerank_score": 0.41796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.581875Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.61328125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "rerank_score": 0.45703125
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 0,
+          "rerank_score": 0.41796875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.582172Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6026195,
+      "best_rerank_score": 0.890625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.582334Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nQuestion: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.\n\nQuestion: What should I bring to my appointment?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:10.582454Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 397.61,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.46837598,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.3289961,
+          "rerank_score": 0.484375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.647788Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.82421875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.484375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.648118Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.46837598,
+      "best_rerank_score": 0.82421875,
+      "event": "faq.verdict",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:10.648372Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Context:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What are your hours?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 2,
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-09-15T17:02:10.648580Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2533.2,
+      "result": {
+        "segment_count": 3,
+        "abstained": false,
+        "citation_count": 4,
+        "answer_chars": 699,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What should I bring to my appointment?",
+            "verdict": "answered",
+            "answer_text": "For your appointment, please bring:\n\n- A valid photo ID\n- Your insurance card\n- Any relevant prior lab or test results related to your case\n\nAlso, if it's your **first visit**, arrive **15 minutes early** to complete registration paperwork. If you're a **returning patient**, arriving **5–10 minutes** before your scheduled time is sufficient."
+          },
+          {
+            "position": 1,
+            "question": "How early should I arrive?",
+            "verdict": "answered",
+            "answer_text": "If it's your first visit, please arrive **15 minutes early** to complete registration paperwork. If you're a returning patient, arriving **5 to 10 minutes early** is sufficient."
+          },
+          {
+            "position": 2,
+            "question": "What are your hours?",
+            "verdict": "answered",
+            "answer_text": "We're open Monday through Saturday, 9:00 AM to 6:00 PM, located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:12.465775Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:12.467157Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1825.34,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 4,
+        "answer_chars": 521,
+        "answer_text": "For your appointment, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nAs for arrival time: if it's your first visit, please arrive 15 minutes early to complete registration paperwork; if you're a returning patient, arriving 5–10 minutes early is sufficient.\n\nOur hours are Monday through Saturday, 9:00 AM to 6:00 PM, and we're located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+      },
+      "event": "node.completed",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.292569Z"
+    },
+    {
+      "duration_ms": 5733.99,
+      "segment_count": 3,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 601,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.6026195,
+              "rerank_score": 0.890625
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+              "similarity_score": 0.45527565,
+              "rerank_score": 0.61328125
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+              "similarity_score": 0.4951136,
+              "rerank_score": 0.91015625
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.46837598,
+              "rerank_score": 0.82421875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "For your appointment, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nAs for arrival time: if it's your first visit, please arrive 15 minutes early to complete registration paperwork; if you're a returning patient, arriving 5–10 minutes early is sufficient.\n\nOur hours are Monday through Saturday, 9:00 AM to 6:00 PM, and we're located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M2K09M5E16PV33CFS435JSKM"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.292898Z"
+    },
+    {
+      "message_id": "01M2K09SRRCZQB4V9NK2BB27XN",
+      "chat_id": "01M2K09M3Q2864H7YCGKF5QFAR",
+      "sender": "assistant",
+      "content": "For your appointment, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nAs for arrival time: if it's your first visit, please arrive 15 minutes early to complete registration paperwork; if you're a returning patient, arriving 5–10 minutes early is sufficient.\n\nOur hours are Monday through Saturday, 9:00 AM to 6:00 PM, and we're located at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+      "event": "message.persisted",
+      "turn_id": "01M2K09M5E16PV33CFS435JSKM",
+      "level": "info",
+      "timestamp": "2026-09-15T17:02:14.309256Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}
