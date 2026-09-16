@@ -1,0 +1,191 @@
+{
+  "case_id": "G802",
+  "chat_id": "01K6CHAT802000000000000000",
+  "patient_id": null,
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I bring?",
+          "answer": "Yes.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 102,
+              "chunk_index": 0,
+              "chunk_text": "chunk of 102"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {
+    "id": "01K6MSG8020000000000000000",
+    "content": "What should I bring to my first visit?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K6RPL8020000000000000000",
+    "content": "I could not answer that from the clinic's documents.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I bring?",
+        "answer": "Yes.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 102,
+            "chunk_index": 0,
+            "chunk_text": "chunk of 102"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:01Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "message": "What should I bring to my first visit?",
+      "message_ids_unified": [
+        "01K6MSG8020000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:02Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring?"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "faq.retrieval_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:10Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "pool_size": 25,
+      "pool_returned": 2,
+      "candidates": [
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.7,
+          "considered": true,
+          "chunk_text": "chunk of 104",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 102,
+          "chunk_index": 0,
+          "similarity_score": 0.6,
+          "considered": true,
+          "chunk_text": "chunk of 102",
+          "text_truncated": false
+        }
+      ]
+    },
+    {
+      "event": "faq.similarity_gate",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:11Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 2,
+      "kept": [
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.7
+        },
+        {
+          "entry_id": 102,
+          "chunk_index": 0,
+          "similarity_score": 0.6
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": []
+    },
+    {
+      "event": "faq.reranking_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:12Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 120.0,
+      "scores": [
+        {
+          "entry_id": 102,
+          "chunk_index": 0,
+          "similarity_score": 0.5,
+          "rerank_score": 0.5
+        },
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.5,
+          "rerank_score": 0.2
+        }
+      ]
+    },
+    {
+      "event": "faq.verdict",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:13Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:20Z",
+      "turn_id": "01K6MSG8020000000000000000",
+      "outcome": "faq"
+    }
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

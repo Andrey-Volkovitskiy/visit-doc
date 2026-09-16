@@ -1,0 +1,153 @@
+{
+  "case_id": "G806",
+  "chat_id": "01K6CHAT806000000000000000",
+  "patient_id": null,
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you treat horses?",
+          "answer": null,
+          "verdict": "abstained_similarity_floor",
+          "citations": []
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {
+    "id": "01K6MSG8060000000000000000",
+    "content": "Do you treat horses?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K6RPL8060000000000000000",
+    "content": "I could not answer that from the clinic's documents.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you treat horses?",
+        "answer": null,
+        "verdict": "abstained_similarity_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you treat horses?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:01Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "message": "Do you treat horses?",
+      "message_ids_unified": [
+        "01K6MSG8060000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:02Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you treat horses?"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "faq.retrieval_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:10Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "pool_size": 25,
+      "pool_returned": 1,
+      "candidates": [
+        {
+          "entry_id": 101,
+          "chunk_index": 0,
+          "similarity_score": 0.2,
+          "considered": true,
+          "chunk_text": "chunk of 101",
+          "text_truncated": false
+        }
+      ]
+    },
+    {
+      "event": "faq.similarity_gate",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:11Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 1,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 101,
+          "chunk_index": 0,
+          "similarity_score": 0.2
+        }
+      ],
+      "dropped_by_cap": []
+    },
+    {
+      "event": "faq.reranking_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:12Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "model": "rerank-3",
+      "candidate_count": 0,
+      "duration_ms": 120.0,
+      "scores": []
+    },
+    {
+      "event": "faq.verdict",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:13Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "verdict": "abstained_similarity_floor",
+      "survivor_count": 0,
+      "blocked_gate": "similarity_floor"
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:20Z",
+      "turn_id": "01K6MSG8060000000000000000",
+      "outcome": "faq"
+    }
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

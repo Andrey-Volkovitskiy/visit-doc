@@ -1,0 +1,172 @@
+{
+  "case_id": "G805",
+  "chat_id": "01K6CHAT805000000000000000",
+  "patient_id": null,
+  "attempts": 1,
+  "elapsed_seconds": 2.0,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Where do I park?",
+          "answer": "There is free parking behind the building.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 104,
+              "chunk_index": 0,
+              "chunk_text": "chunk of 104"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "patient_message": {
+    "id": "01K6MSG8050000000000000000",
+    "content": "Where do I park?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01K6RPL8050000000000000000",
+    "content": "There is free parking behind the building.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Where do I park?",
+        "answer": "There is free parking behind the building.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 104,
+            "chunk_index": 0,
+            "chunk_text": "chunk of 104"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Where do I park?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "event": "turn.message_received",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:01Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "message": "Where do I park?",
+      "message_ids_unified": [
+        "01K6MSG8050000000000000000"
+      ]
+    },
+    {
+      "event": "intent.classified",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:02Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Where do I park?"
+        }
+      ],
+      "cap_bound": false
+    },
+    {
+      "event": "faq.retrieval_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:10Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "pool_size": 25,
+      "pool_returned": 1,
+      "candidates": [
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.85,
+          "considered": true,
+          "chunk_text": "chunk of 104",
+          "text_truncated": false
+        }
+      ]
+    },
+    {
+      "event": "faq.similarity_gate",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:11Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "floor": 0.3,
+      "cap": 5,
+      "pool_returned": 1,
+      "kept": [
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.85
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": []
+    },
+    {
+      "event": "faq.reranking_completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:12Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "model": "rerank-3",
+      "candidate_count": 1,
+      "duration_ms": 120.0,
+      "scores": [
+        {
+          "entry_id": 104,
+          "chunk_index": 0,
+          "similarity_score": 0.5,
+          "rerank_score": 0.92
+        }
+      ]
+    },
+    {
+      "event": "faq.verdict",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:13Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "node": "answer_faq",
+      "segment": 0,
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null
+    },
+    {
+      "event": "turn.completed",
+      "level": "info",
+      "timestamp": "2026-09-16T10:00:20Z",
+      "turn_id": "01K6MSG8050000000000000000",
+      "outcome": "faq"
+    }
+  ],
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null
+}

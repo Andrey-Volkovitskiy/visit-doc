@@ -16,7 +16,9 @@ from golden_harness.record import ExclusionReason, Unplantable, read_run
 from golden_harness.report import (
     SHARED_NUMERATOR_STATEMENT,
     LabelDigestMismatchError,
+    Report,
     render_summary,
+    score,
     score_run,
     to_json,
 )
@@ -723,3 +725,93 @@ def test_a_broken_stream_that_never_settled_is_not_listed(run_dir: Path) -> None
 
     assert report.contract_broken_then_settled == []
     assert report.contract_broken_then_settled_turns == {}
+
+
+# The pure entry point (spec 013 T003-T005): `score` computes a report and writes
+# nothing, so a run under `specs/` can be scored where it sits, and takes a restriction
+# so two runs covering different case sets can be scored over the cases they share.
+
+
+def _tree(run_dir: Path) -> dict[str, tuple[int, bytes]]:
+    """Every file under `run_dir` with its modification time and its bytes."""
+    return {
+        str(path.relative_to(run_dir)): (path.stat().st_mtime_ns, path.read_bytes())
+        for path in sorted(run_dir.rglob("*"))
+        if path.is_file()
+    }
+
+
+def _comparable(report: Report) -> dict[str, Any]:
+    """The report without the one field two scorings of one run may differ in."""
+    listed: dict[str, Any] = json.loads(to_json(report))
+    del listed["score_seconds"]
+    return listed
+
+
+def test_the_pure_entry_point_writes_nothing_into_the_run_it_scores(
+    run_dir: Path,
+) -> None:
+    before = _tree(run_dir)
+
+    score(run_dir, _labels())
+
+    assert _tree(run_dir) == before
+    assert not (run_dir / "report.json").exists()
+    assert not (run_dir / "report.md").exists()
+
+
+def test_score_run_still_writes_both_artifacts_beside_the_run(run_dir: Path) -> None:
+    report = score_run(run_dir, _labels())
+
+    assert (run_dir / "report.json").read_text(encoding="utf-8") == to_json(report)
+    assert (run_dir / "report.md").read_text(encoding="utf-8") == render_summary(report)
+
+
+def test_the_pure_entry_point_and_the_writing_one_produce_the_same_report(
+    run_dir: Path,
+) -> None:
+    pure = score(run_dir, _labels())
+    written = score_run(run_dir, _labels())
+
+    assert _comparable(pure) == _comparable(written)
+
+
+def test_a_restricted_scoring_computes_every_metric_over_only_those_cases(
+    run_dir: Path,
+) -> None:
+    only = ["G901", "G902"]
+
+    report = score(run_dir, _labels(), only=only)
+
+    assert report.recorded_cases == only
+    # Four labelled requests between them - G901's two aligned, G902's two unaligned -
+    # and neither case excluded, so the restricted totals are those two cases' alone.
+    assert report.alignment.labelled == 4
+    assert (report.alignment.aligned, report.alignment.unaligned) == (2, 2)
+    assert report.alignment.excluded == 0
+    assert report.exclusions.counts == {}
+    assert report.classification.request_count_accuracy.denominator == 2
+
+
+def test_a_restriction_that_names_no_case_is_refused(run_dir: Path) -> None:
+    with pytest.raises(ValueError, match="restriction"):
+        score(run_dir, _labels(), only=[])
+
+
+def test_a_restriction_naming_a_case_the_run_did_not_record_is_refused(
+    run_dir: Path,
+) -> None:
+    with pytest.raises(ValueError, match="G999"):
+        score(run_dir, _labels(), only=["G901", "G999"])
+
+
+def test_a_restriction_leaves_the_runs_own_conditions_and_selection_intact(
+    run_dir: Path,
+) -> None:
+    run = read_run(run_dir)
+
+    report = score(run_dir, _labels(), only=["G901"])
+
+    assert report.selection == run.selection
+    assert report.conditions == run.conditions
+    assert report.labels == run.labels

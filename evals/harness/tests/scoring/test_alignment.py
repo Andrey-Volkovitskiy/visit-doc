@@ -252,3 +252,56 @@ def test_a_missing_and_a_doubled_request_cannot_cancel_out() -> None:
 
     with pytest.raises(ConservationError, match="G011"):
         AlignmentTotals.of(alignments, cases)
+
+
+# Conservation over a restricted population (spec 013 T005): a comparison scores each
+# run over the cases both recorded, so conservation is a property of whatever
+# population was scored - not of the whole set. A subset that broke it would otherwise
+# be indistinguishable from a scorer bug.
+
+
+def test_conservation_holds_over_a_subset_of_a_runs_cases() -> None:
+    cases, runs = _mixed_run()
+    kept = {"G011", "G012", "G013"}
+    subset_cases = [case for case in cases if case.id in kept]
+    subset_runs = [run for run in runs if run.case_id in kept]
+
+    result = align_run(subset_cases, subset_runs)
+
+    # G011 unaligned (2), G012 excluded (1), G013 aligned (3): every labelled request
+    # of the subset in exactly one state, and none of the cases left out counted.
+    assert result.totals == AlignmentTotals(
+        aligned=3, unaligned=2, excluded=1, labelled=6
+    )
+    assert (
+        result.totals.aligned + result.totals.unaligned + result.totals.excluded
+        == result.totals.labelled
+    )
+
+
+def test_a_subset_that_breaks_conservation_is_still_caught() -> None:
+    cases, runs = _mixed_run()
+    kept = {"G010", "G011"}
+    subset_cases = [case for case in cases if case.id in kept]
+    subset_runs = [run for run in runs if run.case_id in kept]
+    alignments = [
+        align_case(case, run)
+        for case, run in zip(subset_cases, subset_runs, strict=True)
+    ]
+    alignments[1] = _tampered(alignments[1], unaligned_positions=[0])
+
+    with pytest.raises(ConservationError, match="G011"):
+        AlignmentTotals.of(alignments, subset_cases)
+
+
+def test_labels_outside_the_subset_do_not_enter_its_totals() -> None:
+    cases, runs = _mixed_run()
+    subset_runs = [run for run in runs if run.case_id == "G014"]
+
+    # The full label set is passed, as a restricted scoring passes it: only the
+    # recorded case's requests are counted.
+    result = align_run(cases, subset_runs)
+
+    assert result.totals == AlignmentTotals(
+        aligned=1, unaligned=0, excluded=0, labelled=1
+    )

@@ -1,0 +1,109 @@
+[
+  {
+    "id": "G801",
+    "family": "faq-single",
+    "message": "Do I need a referral to see a specialist?",
+    "requests": [
+      {
+        "intent": "faq_question",
+        "gist": "referral needed",
+        "answerable": true,
+        "cites": [
+          "referral"
+        ]
+      }
+    ],
+    "source": "new"
+  },
+  {
+    "id": "G802",
+    "family": "faq-single",
+    "message": "What should I bring to my first visit?",
+    "requests": [
+      {
+        "intent": "faq_question",
+        "gist": "what to bring",
+        "answerable": true,
+        "cites": [
+          "what-to-bring"
+        ]
+      }
+    ],
+    "source": "new"
+  },
+  {
+    "id": "G803",
+    "family": "pleasantry-plus-request",
+    "message": "Hi there! Do you do video visits?",
+    "requests": [
+      {
+        "intent": "faq_question",
+        "gist": "telehealth offered",
+        "answerable": true,
+        "cites": [
+          "telehealth"
+        ]
+      },
+      {
+        "intent": "small_talk",
+        "gist": "greeting"
+      }
+    ],
+    "source": "new"
+  },
+  {
+    "id": "G804",
+    "family": "booking",
+    "message": "Can I book a GP visit on Friday?",
+    "requests": [
+      {
+        "intent": "booking",
+        "gist": "book a GP Friday",
+        "tools": [
+          "book_appointment"
+        ]
+      }
+    ],
+    "scheduling": {
+      "given": [],
+      "expect": [
+        {
+          "practitioner": "William Osler",
+          "day": "+4d",
+          "status": "standing"
+        }
+      ]
+    },
+    "source": "new"
+  },
+  {
+    "id": "G805",
+    "family": "faq-single",
+    "message": "Where do I park?",
+    "requests": [
+      {
+        "intent": "faq_question",
+        "gist": "parking",
+        "answerable": true,
+        "cites": [
+          "parking"
+        ]
+      }
+    ],
+    "source": "new"
+  },
+  {
+    "id": "G806",
+    "family": "faq-gap",
+    "message": "Do you treat horses?",
+    "requests": [
+      {
+        "intent": "faq_question",
+        "gist": "veterinary care",
+        "answerable": false,
+        "cites": []
+      }
+    ],
+    "source": "new"
+  }
+]

@@ -116,8 +116,8 @@ trace can be reconstructed from logs alone — full rationale and alternatives c
 
 - **Structured logging library**: `structlog`, not stdlib `logging` + a custom `Formatter` or
   `loguru` — its processor-chain architecture lets truncation/redaction/rendering be centralized in
-  one place (`core/logging.py`) and swapped later (e.g. for a Langfuse-ready renderer) without
-  touching any of the ~20 call sites that actually log.
+  one place (`core/logging.py`) and swapped later without touching any of the ~20 call sites that
+  actually log.
 - **Correlation IDs**: ULID (`python-ulid`), not a hyphenated UUID4 — same collision resistance,
   but shorter, separator-free (one double-click selects the whole ID in a terminal), and
   lexicographically sortable by creation time. Bound per-request via `structlog.contextvars`
@@ -581,3 +581,77 @@ optimizes; the
   scheduler keeps a `cancelled` row for everything a run touched; and a cleanup that cannot complete
   stops the run, because every later case would be measured against a calendar it no longer
   controls.
+
+## Comparing Runs: technology choices
+
+`specs/013-compare-eval-runs/` (ROADMAP Phase 2c) adds two offline commands to the harness:
+`make eval-compare` says what moved between two stored runs, and `make eval-band` measures how much
+those numbers move across five full runs of one unchanged build. Neither drives a turn, spends a
+model call or needs anything running. How to run them is in
+[`evals/harness/README.md`](evals/harness/README.md). Five choices carried a real tradeoff.
+
+- **The comparison re-scores both runs rather than parsing their stored reports.** Reading the two
+  `report.json` files is what a person does by hand today and would have been the cheapest thing to
+  build. It also freezes the report schema for the life of the project — `Report` and everything
+  under it is `extra="forbid"`, so the first field this phase adds makes the record committed under
+  `specs/012-golden-set-metrics/evaluation/` a document the current code cannot load — and it
+  cannot answer the narrowed case at all: against a four-case run, the baseline's published 6/87 is
+  not the honest number, and only recomputing over the four cases both runs recorded produces one.
+  2b's own SC-003 guarantees re-scoring reproduces what the stored report says, so this is the same
+  opinion recomputed rather than a second one. The cost is reading 2.5 MB twice per comparison,
+  which at about 0.1 s a run is not a problem to solve.
+- **`score_run` split into a pure `score(...)` and a thin writing wrapper.** The existing entry
+  point writes `report.json` and `report.md` beside the run it scored, so comparing against the
+  committed baseline *where it sits* — which FR-002 requires, and which is the whole reason the
+  baseline is not copied around — would have silently rewritten a frozen record. Copying each run
+  to a temporary directory first was the alternative and makes a read cost a 2.5 MB copy while
+  leaving the writing behaviour in place for the next caller. A `write=False` flag was the other,
+  and a boolean that decides whether a function has a side effect is the shape this project treats
+  as a smell. Two functions say it plainly. The cost is one change to 2b's shipped code, with no
+  behaviour change: same inputs, same `Report`, same bytes from the same caller.
+- **An observed range over five runs, not a statistical interval.** A per-metric standard deviation
+  is one number instead of two and is familiar. Five samples give it an enormous error of its own,
+  and a reader who sees `σ = 0.01` will treat it as a distribution parameter — so the band publishes
+  the five values, their lowest and highest, and per varying case how often each outcome occurred,
+  and every rendering that cites it says it is five observations and not a confidence interval. The
+  frequency count is what five runs buy over the three first proposed: *"G024 answered in 4 of 5,
+  abstained at the rerank floor in 1"* is the sentence that tells a flaky case from a stable one.
+  The cost is five full runs — roughly an hour and five times a run's model spend — for a range that
+  supports no significance claim.
+- **A constant exit code, and no `--fail-on-regression`.** The exit code is the one surface a CI step
+  attaches to without anyone deciding to build a gate, and a gate here would decide red or green
+  from numbers that move on their own, at 135 live turns per push. So the command exits zero
+  whatever it finds, including a movement outside the band, and offers no flag that changes it;
+  *refusing to compare* — mismatched labels, no common cases — is a different thing and follows the
+  CLI's existing reported-failure path. The cost is that adding a gate later means writing one on
+  purpose, which is the point.
+- **A sibling `comparison/` package with its own purity test, not an extension of `scoring/`.** Both
+  are pure and offline, so folding the comparison into `scoring/` was tempting. They answer
+  different questions — one turns a run into metrics, the other turns two scored runs into movements
+  — and keeping them apart is what keeps a failing test informative: one in `scoring/` says the
+  metrics are wrong, one in `comparison/` says the reading of them is. 2b's purity test globs
+  `scoring/*.py` and is not recursive, so the new package inherits none of its protection and gets
+  its own copy rather than a widened glob: one test file silently governing two packages is exactly
+  what leaves a third one unguarded later. The cost is a second test file that must be kept in step
+  with the first.
+
+## Tracing with Langfuse: technology choices
+
+*Decided ahead of ROADMAP Phase 2d; nothing is built yet.* The full reasoning is in the 2d section
+of [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+- **Langfuse Cloud's free Hobby tier, not self-hosted Langfuse.** Self-hosting is the choice with no
+  third party in the loop, and it costs six containers — web, worker, PostgreSQL, ClickHouse, Redis
+  and S3-compatible storage — for a debugging view, tripling a local stack that is Postgres and
+  Qdrant today. Hobby covers the use: 50k units a month, 30 days of history, two users, no card.
+  The costs are that patient messages and prompts leave the machine, which is why span masking is
+  part of the phase rather than a follow-up, and that traces older than 30 days are gone, which
+  loses nothing the eval chain reads. Lock-in is limited to configuration: Langfuse is open source,
+  the SDK takes its host and keys from settings, and moving to a self-hosted instance means
+  changing three environment variables and starting with no trace history.
+- **Eval runs are untraced by default; `make eval-run TRACE=1` opts in.** Tracing every run would be
+  the zero-configuration choice. A full golden-set run is roughly 3k units and a noise band is five
+  runs, so it would spend most of a month's allowance on traces that answer no question a run
+  asks — its metrics come from the stored run, never from a trace. The cost is that a surprising
+  case in an untraced run has no trace to open, so investigating it means re-running that case
+  with `CASES=… TRACE=1`, which is a few turns rather than 135.

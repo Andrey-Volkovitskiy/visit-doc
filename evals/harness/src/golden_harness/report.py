@@ -182,13 +182,40 @@ class Report(BaseModel):
 def score_run(run_dir: Path, cases: Sequence[Case]) -> Report:
     """Score the run stored in `run_dir` against `cases`; write its report beside it.
 
+    The writing half of `score`, and the only one that touches the run directory: a
+    caller that must not write into what it reads - a comparison over a run committed
+    under `specs/` - calls `score` instead.
+
     Args:
         cases: the labels; must hold every case the run selected, with the scored
             fields the run recorded digests of.
 
+    Raises: whatever `score` raises, before either file is written.
+    """
+    report = score(run_dir, cases)
+    write_atomically(run_dir / REPORT_JSON, to_json(report))
+    write_atomically(run_dir / REPORT_MD, render_summary(report))
+    return report
+
+
+def score(
+    run_dir: Path, cases: Sequence[Case], *, only: Sequence[str] | None = None
+) -> Report:
+    """Score the run stored in `run_dir` against `cases`, writing nothing.
+
+    Args:
+        cases: the labels; must hold every case the run selected, with the scored
+            fields the run recorded digests of.
+        only: the case ids to score, when the report is to cover part of the run - a
+            comparison scores each of its two runs over the cases both recorded. Every
+            metric, alignment total and exclusion count is then computed over exactly
+            these, by construction rather than by filtering afterwards. None scores
+            every case the run recorded.
+
     Raises: LabelDigestMismatchError, before anything is computed, when a selected case
         is missing from `cases` or its digest differs from the run's; ValueError when
-        the run holds a case file for a case it did not select; ConservationError when
+        the run holds a case file for a case it did not select, when `only` is empty,
+        or when it names a case the run did not record; ConservationError when
         alignment does not account for every labelled request.
     """
     started = time.perf_counter()
@@ -212,6 +239,8 @@ def score_run(run_dir: Path, cases: Sequence[Case]) -> Report:
     if unselected:
         raise ValueError(f"case files for cases the run did not select: {unselected}")
     recorded = [case_id for case_id in run.selection.case_ids if case_id in on_disk]
+    if only is not None:
+        recorded = _restricted(recorded, only)
     case_runs = [read_case(run_dir, case_id) for case_id in recorded]
 
     run_alignment = align_run(selected, case_runs)
@@ -276,9 +305,25 @@ def score_run(run_dir: Path, cases: Sequence[Case]) -> Report:
         drive_seconds=sum(case_run.elapsed_seconds for case_run in case_runs),
         score_seconds=time.perf_counter() - started,
     )
-    write_atomically(run_dir / REPORT_JSON, to_json(report))
-    write_atomically(run_dir / REPORT_MD, render_summary(report))
     return report
+
+
+def _restricted(recorded: Sequence[str], only: Sequence[str]) -> list[str]:
+    """Narrow `recorded` to `only`, in the run's own order.
+
+    Raises: ValueError when `only` is empty - a report over no case at all is a
+        restriction nobody meant - or names a case the run did not record, which names
+        the cases rather than silently scoring fewer.
+    """
+    if not only:
+        raise ValueError("a restriction must name at least one case")
+    wanted = set(only)
+    unrecorded = sorted(wanted - set(recorded))
+    if unrecorded:
+        raise ValueError(
+            f"the restriction names cases the run did not record: {unrecorded}"
+        )
+    return [case_id for case_id in recorded if case_id in wanted]
 
 
 type _StoredTurn = tuple[RecordedTurn, bool, StoredMessage | None, StoredMessage | None]

@@ -281,3 +281,347 @@ def test_a_record_the_log_contract_cannot_describe_is_reported_not_raised(
 
     assert status == 1
     assert f"golden_harness: LogContractError: {error}" in capsys.readouterr().err
+
+
+# `compare` (spec 013): two stored runs in, a comparison written beside neither of
+# them. A finding is never a failure - the exit status is 0 whatever it finds (FR-006)
+# - and a refusal to compare at all is the CLI's existing reported-failure path.
+
+_COMPARE = Path(__file__).resolve().parent / "fixtures" / "runs" / "compare"
+_COMPARE_LABELS = _COMPARE / "labels.json"
+
+
+def test_compare_needs_both_runs_and_defaults_to_the_golden_labels() -> None:
+    args = cli.parse_args(["compare", "--base", "01K6A", "--new", "01K6B"])
+
+    assert args.command == "compare"
+    assert (args.base, args.new) == ("01K6A", "01K6B")
+    assert args.band is None
+    assert args.artifacts == _REPO / ".run" / "evals"
+    assert args.labels == _REPO / "evals" / "golden" / "cases.json"
+    with pytest.raises(SystemExit):
+        cli.parse_args(["compare", "--base", "01K6A"])
+    with pytest.raises(SystemExit):
+        cli.parse_args(["compare", "--new", "01K6B"])
+
+
+def _compare(tmp_path: Path, base: str, new: str, *extra: str) -> int:
+    return cli.main(
+        [
+            "compare",
+            "--base",
+            str(_COMPARE / base),
+            "--new",
+            str(_COMPARE / new),
+            "--labels",
+            str(_COMPARE_LABELS),
+            "--artifacts",
+            str(tmp_path),
+            *extra,
+        ]
+    )
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_finds_movement_and_still_exits_zero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = _compare(tmp_path, "base", "verdict")
+
+    assert status == 0
+    printed = capsys.readouterr().out
+    assert "## Metrics" in printed
+    assert "G802" in printed
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_writes_its_record_under_the_artifacts_directory(
+    tmp_path: Path,
+) -> None:
+    _compare(tmp_path, "base", "verdict")
+
+    written = sorted((tmp_path / "comparisons").iterdir())
+    assert len(written) == 1
+    assert "__" in written[0].name
+    assert (written[0] / "comparison.json").is_file()
+    assert (written[0] / "comparison.md").is_file()
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_writes_nothing_into_either_input_run(tmp_path: Path) -> None:
+    before = {
+        name: sorted(path.name for path in (_COMPARE / name).rglob("*"))
+        for name in ("base", "verdict")
+    }
+
+    _compare(tmp_path, "base", "verdict")
+
+    for name, listing in before.items():
+        assert sorted(path.name for path in (_COMPARE / name).rglob("*")) == listing
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_resolves_bare_run_ids_under_the_artifacts_directory(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    artifacts = tmp_path / "artifacts"
+    for name in ("base", "verdict"):
+        shutil.copytree(_COMPARE / name, artifacts / name)
+
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            "base",
+            "--new",
+            "verdict",
+            "--labels",
+            str(_COMPARE_LABELS),
+            "--artifacts",
+            str(artifacts),
+        ]
+    )
+
+    assert status == 0
+    assert "## Metrics" in capsys.readouterr().out
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_label_digest_difference_exits_one_naming_the_cases(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = _compare(tmp_path, "base", "labels")
+
+    assert status == 1
+    printed = capsys.readouterr().err
+    assert "G802" in printed
+    assert "Traceback" not in printed
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_two_runs_with_no_case_in_common_exit_one(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    one = _only_cases(tmp_path / "one", ["G801"])
+    other = _only_cases(tmp_path / "other", ["G802"])
+
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            str(one),
+            "--new",
+            str(other),
+            "--labels",
+            str(_COMPARE_LABELS),
+            "--artifacts",
+            str(tmp_path / "artifacts"),
+        ]
+    )
+
+    assert status == 1
+    printed = capsys.readouterr().err
+    assert "no case in common" in printed
+    assert "Traceback" not in printed
+
+
+def _only_cases(destination: Path, keep: list[str]) -> Path:
+    """Copy the baseline fixture run, keeping only the named cases' records."""
+    shutil.copytree(_COMPARE / "base", destination)
+    for record in (destination / "cases").iterdir():
+        if record.stem not in keep:
+            record.unlink()
+    return destination
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_missing_run_directory_exits_one(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            "01K6NOSUCHRUN",
+            "--new",
+            str(_COMPARE / "base"),
+            "--labels",
+            str(_COMPARE_LABELS),
+            "--artifacts",
+            str(tmp_path),
+        ]
+    )
+
+    assert status == 1
+    assert "01K6NOSUCHRUN" in capsys.readouterr().err
+
+
+# `band` (spec 013): five stored runs in, one band out, and every refusal a named
+# sentence. The band is written under the artifacts directory, as a comparison is.
+
+_BAND = Path(__file__).resolve().parent / "fixtures" / "runs" / "band"
+_BAND_LABELS = _BAND / "labels.json"
+_BAND_FIVE = "run1,run2,run3,run4,run5"
+
+
+def _band(tmp_path: Path, runs: str) -> int:
+    return cli.main(
+        [
+            "band",
+            "--runs",
+            ",".join(str(_BAND / name) for name in runs.split(",")),
+            "--labels",
+            str(_BAND_LABELS),
+            "--artifacts",
+            str(tmp_path),
+        ]
+    )
+
+
+def test_band_needs_its_runs_and_defaults_to_the_golden_labels() -> None:
+    args = cli.parse_args(["band", "--runs", "01A,01B,01C,01D,01E"])
+
+    assert args.command == "band"
+    assert args.runs == ["01A", "01B", "01C", "01D", "01E"]
+    assert args.labels == _REPO / "evals" / "golden" / "cases.json"
+    with pytest.raises(SystemExit):
+        cli.parse_args(["band"])
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_built_band_exits_zero_and_is_written_under_the_artifacts_directory(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = _band(tmp_path, _BAND_FIVE)
+
+    assert status == 0
+    (written,) = sorted((tmp_path / "bands").iterdir())
+    assert written.suffix == ".json"
+    printed = capsys.readouterr().out
+    assert "five observations" in printed
+    assert written.stem in printed
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_band_from_four_runs_exits_one_naming_the_count(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = _band(tmp_path, "run1,run2,run3,run4")
+
+    assert status == 1
+    printed = capsys.readouterr().err
+    assert "4" in printed and "Traceback" not in printed
+
+
+@pytest.mark.usefixtures("stack_is_down")
+@pytest.mark.parametrize(
+    ("fifth", "named"),
+    [
+        ("other-conditions", "rerank_floor"),
+        ("other-corpus", "corpus"),
+        ("other-labels", "G802"),
+        ("other-cases", "G806"),
+        ("narrowed", "part of it"),
+    ],
+)
+def test_each_band_refusal_exits_one_with_its_field_named(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], fifth: str, named: str
+) -> None:
+    status = _band(tmp_path, f"run1,run2,run3,run4,{fifth}")
+
+    assert status == 1
+    assert named in capsys.readouterr().err
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_marks_movements_against_a_band_given_by_id(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert _band(tmp_path, _BAND_FIVE) == 0
+    (written,) = sorted((tmp_path / "bands").iterdir())
+    capsys.readouterr()
+
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            str(_BAND / "run1"),
+            "--new",
+            str(_BAND / "run2"),
+            "--band",
+            written.stem,
+            "--labels",
+            str(_BAND_LABELS),
+            "--artifacts",
+            str(tmp_path),
+        ]
+    )
+
+    assert status == 0
+    printed = capsys.readouterr().out
+    assert "within the observed range" in printed
+    assert written.stem in printed
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_compare_accepts_a_band_given_by_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert _band(tmp_path, _BAND_FIVE) == 0
+    (written,) = sorted((tmp_path / "bands").iterdir())
+    capsys.readouterr()
+
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            str(_BAND / "run1"),
+            "--new",
+            str(_BAND / "run2"),
+            "--band",
+            str(written),
+            "--labels",
+            str(_BAND_LABELS),
+            "--artifacts",
+            str(tmp_path / "elsewhere"),
+        ]
+    )
+
+    assert status == 0
+    assert "observed range" in capsys.readouterr().out
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_band_that_does_not_exist_exits_one(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = cli.main(
+        [
+            "compare",
+            "--base",
+            str(_BAND / "run1"),
+            "--new",
+            str(_BAND / "run2"),
+            "--band",
+            "01K6NOSUCHBAND",
+            "--labels",
+            str(_BAND_LABELS),
+            "--artifacts",
+            str(tmp_path),
+        ]
+    )
+
+    assert status == 1
+    assert "01K6NOSUCHBAND" in capsys.readouterr().err
+
+
+@pytest.mark.usefixtures("stack_is_down")
+def test_a_comparison_without_a_band_marks_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    status = _compare(tmp_path, "base", "verdict")
+
+    assert status == 0
+    printed = capsys.readouterr().out
+    assert "observed range" not in printed
+    assert "No band was supplied" in printed

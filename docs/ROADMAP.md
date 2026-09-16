@@ -53,7 +53,7 @@ single staff member, without logging in as anyone. Operational analytics follow 
 | Vector store | **Qdrant** | Embeddings for retrieval-augmented FAQ answering. |
 | Frontend | **React + Vite SPA**, minimal | A streaming chat UI, kept lean. |
 | Agent framework | **LangGraph** | Real branching and parallel intent handling, not just a linear chain. |
-| Tracing / eval | **Langfuse** (self-hosted) | Open-source and self-hostable: trace UI, per-step latency, and token cost, with no vendor lock-in. |
+| Tracing / eval | **Langfuse Cloud** (free Hobby tier) | Trace UI, per-step latency, and token cost with no infrastructure to run. Open source, so self-hosting stays a configuration change rather than a rewrite — see Phase 2d. |
 
 **Double-booking is prevented in the Scheduling service at the database level**, using PostgreSQL's
 interval/range types and an exclusion constraint in Scheduling's own database rather than relying on
@@ -552,9 +552,40 @@ ever returns, the shape is a scheduled or manually-dispatched run that publishes
 the comparison as the cheap half. That is a later decision, with the noise band in hand.
 
 #### Phase 2d — Tracing with Langfuse
-Self-hosted Langfuse for per-step latency, token cost, and the full decision trace for each turn.
-This is the observability half rather than the evaluation half: it answers *why* a turn went the way
-it did, where 2b answers how often turns go the right way across a labeled set.
+Langfuse for per-step latency, token cost, and the full decision trace for each turn. This is the
+observability half rather than the evaluation half: it answers *why* a turn went the way it did,
+where 2b answers how often turns go the right way across a labeled set.
+
+- **Langfuse Cloud's free Hobby tier, not a self-hosted instance.** Self-hosting Langfuse is not one
+  container but six — web, worker, PostgreSQL, ClickHouse, Redis and S3-compatible storage — which
+  would triple the local stack for a phase whose output is a debugging view, against the "thinnest
+  backend" principle. Hobby's limits fit the use: 50k units a month (a unit is one trace, span,
+  generation or score, so roughly 15–25 per turn), 30 days of history, two users. The 30-day window
+  costs nothing the eval chain needs, because 2b and 2c read stored runs, never traces.
+- **Self-hosting stays a configuration change.** The destination and keys reach the SDK through
+  `Settings` like every other endpoint, so moving to a self-hosted instance is standing one up and
+  changing three environment variables — no instrumentation code knows which instance it talks to.
+  Traces are treated as disposable and are not migrated; there is no built-in export/import, only
+  a scripted copy over the public API, which is worth doing for prompts or datasets and neither is
+  in this phase.
+- **Traces reach Langfuse over OpenTelemetry, not through the logs.** The Langfuse SDK is an
+  OpenTelemetry tracer exporting over OTLP; structlog stays exactly as it is, and the harness keeps
+  reading `.run/chat.log`. LangGraph nodes are spanned by Langfuse's callback handler, Claude calls
+  are recorded as generations carrying model id and token usage, and the retrieval steps — embed,
+  search, both gates, rerank — get explicit spans carrying what each one decided.
+- **Patient text leaves the machine, so masking is designed in, not added later.** A trace carries
+  full messages and prompts to a third party, and the redaction in `shared-logging` is a structlog
+  processor that never sees a span. The SDK's mask hook gets the same treatment the log redaction
+  did: one declaration, applied to every span.
+- **An eval run sends no Langfuse events unless asked.** `make eval-run` drives turns untraced by
+  default, and `make eval-run TRACE=1` opts in — for the narrowed `CASES=…` run where the question
+  is why a specific case moved. The default follows from the budget and from what a run is for: a full
+  run is roughly 3k units and a noise band is five of them, so tracing every run would spend most
+  of a month's allowance on traces nobody opens, and a run's metrics never come from a trace
+  anyway. The opt-out is per run, not per stack, so a developer tracing the app by hand keeps
+  tracing while a run executes beside it; how the harness's choice reaches the chat service is the
+  spec's to settle. The run records whether it was traced, and tracing must not change what a turn
+  does — a traced and an untraced run of one build compare as the same conditions.
 
 ### Phase 3 — The frontend on its own terms
 Every phase so far treated the frontend as the thinnest surface that made backend work

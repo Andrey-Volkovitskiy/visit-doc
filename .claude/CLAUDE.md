@@ -98,10 +98,14 @@ a second Node project ever appears, extract it then.
 [`Makefile`](../Makefile): `make sync`, `make lint`, `make format`, `make typecheck`,
 `make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`.
 
-The golden harness has its own two: `make eval-run` (optionally `CASES=G001,G042` or
+The golden harness has its own four: `make eval-run` (optionally `CASES=G001,G042` or
 `FAMILY=<name>`) drives cases against the running stack, **spending live Claude and Voyage calls**,
 then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a stored run under
-`.run/evals/` and needs no stack. `eval-run` requires the chat service to log JSON, so start the
+`.run/evals/` and needs no stack. `make eval-compare BASE=<run> NEW=<run>` (optionally
+`BAND=<band>`) reports what moved between two stored runs, and `make eval-band
+RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
+build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
+directory path, so the committed 2b run is usable as a baseline where it sits. `eval-run` requires the chat service to log JSON, so start the
 stack as `LOG_FORMAT=json make services-up` (the harness reads `.run/chat.log`). Resuming a stopped
 run takes an argument: `uv run --package golden-harness -- python -m golden_harness run --resume
 <run_id>`.
@@ -237,7 +241,8 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 - **Agent framework** — LangGraph, with real branching (parallel specialist nodes + merge) for
   mixed-intent messages rather than a linear chain.
 - **Frontend** — a minimal React + Vite streaming chat UI.
-- **Tracing/eval** — Langfuse (self-hosted) for per-step latency, token cost, and decision traces.
+- **Tracing/eval** — Langfuse Cloud (free Hobby tier) for per-step latency, token cost, and decision
+  traces; eval runs send no Langfuse events unless run with `TRACE=1`.
 
 ### Key design decisions to preserve
 
@@ -357,6 +362,18 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   constants, not generated: a stopping reply makes no claim about the clinic, which is the only
   thing retrieval could have grounded. The assistant does not triage — `urgent_condition` is a
   routing decision whose reply points at emergency services rather than judging anything.
+- **A comparison re-scores both runs; it never reads their stored reports, and never writes into
+  an input run** (013). `report.json` is a serialized `Report` whose models are `extra="forbid"`,
+  so a phase that adds a field would otherwise make the committed 2b record unparseable — and only
+  re-scoring gives an honest answer when the two runs cover different case sets, since every metric
+  is then computed over the cases both recorded rather than quoted from a published report. This is
+  why `score_run` split into a pure `score(run_dir, cases, *, only=None)` and the thin wrapper that
+  writes both artifacts: comparing against the baseline under `specs/` must not rewrite it. A
+  comparison's own record goes under `.run/evals/comparisons/<base>__<new>/`, never beside either
+  input, and the command exits zero whatever it finds — a finding belongs in the report, not in an
+  exit code, so a gate stays a deliberate act rather than an accident. A noise band is five full
+  runs of one build, an observed range and a frequency count: never a threshold, and never a
+  confidence interval.
 - **Scoring the golden set is a pure function of a stored run** (012). `golden_harness.scoring` and
   `report.py` read `run.json`, the case files and the labels and nothing else: no `scoring` module
   may import `httpx`, `grpc`, `sqlalchemy` or `driver/` (`test_purity.py` checks), and `score` is

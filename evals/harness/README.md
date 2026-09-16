@@ -17,14 +17,17 @@ computes the report with no person in the loop: the judgement is the scorer's.
 **It is not a test tier.** It asserts nothing and nothing fails. It spends live Claude and Voyage
 calls on every case it drives, and the assistant's output is non-deterministic, so a number is a
 measurement rather than a verdict. Comparing one build's measurement against another's — and
-measuring how much difference is noise before calling any of it a regression — is Phase 2c's.
+measuring how much difference is noise before calling any of it a regression — is what `compare`
+and `band` below do, offline, over runs already taken.
 
-Three things exist side by side, and they are easy to confuse:
+Four things exist side by side, and they are easy to confuse:
 
 | | What it checks | Deterministic | Cost | Runs in CI | Who judges |
 |---|---|---|---|---|---|
 | `make test-unit` | the harness's own code, against recorded fixtures and stubbed seams | yes | free | yes | assertions |
 | `make eval-run` | the assistant, against the golden set | no | live calls | no | the scorer |
+| `make eval-compare` | what moved between two stored runs | yes | free | no | a person reading |
+| `make eval-band` | how much the numbers move on their own | yes, given the runs | free (the five runs are not) | no | a person reading |
 | `specs/<n>/evaluation/procedure.md` | what a label cannot capture | no | live calls | no | a person reading |
 
 The third survives this harness: the golden set labels no reply *wording*, so a constraint a model is
@@ -390,3 +393,78 @@ against a changed intent or fixture would publish numbers nobody measured. A cor
 `note` leaves every run re-scorable. The consequence to plan around: once a scored field of a case
 changes, runs taken before the change cannot be re-scored against the new labels, and measuring that
 case again means a new run. A resumed run refuses a changed label the same way.
+
+## Comparing two runs, and measuring the noise (spec 013)
+
+Two more commands, both **offline**: they read stored runs and the labels and nothing else, so they
+work with the whole stack down and spend no model call.
+
+```bash
+make eval-compare BASE=<run> NEW=<run>              # what moved between two stored runs
+make eval-compare BASE=<run> NEW=<run> BAND=<band>  # ... and whether it is outside the noise
+make eval-band RUNS=<id>,<id>,<id>,<id>,<id>        # measure the noise from five full runs
+```
+
+`BASE` and `NEW` each take a run id under `.run/evals/` **or** a directory path, so the run
+committed under `specs/012-golden-set-metrics/evaluation/` is usable as a baseline where it sits.
+It is the *documented* baseline a comparison starts from, and naming it is the caller's job: neither
+command ever defaults to a path under `specs/`.
+
+### What a comparison is
+
+The report is printed and written, in this order, which is the order it should be read in: both
+runs, the condition delta, the coverage restriction, the band, alignment and exclusions, every
+metric, then the case movements beneath them and the cases that moved under a metric that did not.
+
+- **It re-scores both runs.** Its inputs are each run's `run.json` and `cases/*.json`; it never
+  reads either run's stored `report.json`. That is what lets this phase add a field without the
+  committed 2b record becoming unparseable, and what makes a narrowed comparison honest — a metric
+  is recomputed over the cases both runs recorded, never quoted from a published report.
+- **It writes into neither input run.** The record goes to
+  `.run/evals/comparisons/<base>__<new>/comparison.json` and `comparison.md`. A read does not add
+  files to what it read, and the new run may be the committed baseline or someone else's future one.
+- **It always exits zero.** A finding is in the report, never in the exit code, and there is no flag
+  that changes that. Refusing to compare at all is a different thing and exits 1.
+- **It is reproducible.** Comparing the same pair twice produces the same record apart from
+  `compared_at` and `compare_seconds`.
+
+### What a comparison is not
+
+- **Not a verdict on a build.** There is no overall score and no `regression` flag. Without a band
+  the report describes movement and nothing more; the words *regression*, *better* and *worse* do
+  not appear about a metric.
+- **Not a gate.** Nothing here fails a build, in CI or anywhere else.
+- **Not a statement about the whole set when it was narrowed.** A comparison over four common cases
+  says so, with the count, before any metric.
+
+### What stops a comparison
+
+| Situation | What happens |
+|---|---|
+| A label's scored fields moved since a run was taken | stops, naming the cases — 2b's own refusal, inherited rather than restated |
+| The two runs recorded no case in common | stops, saying so |
+| A run directory is missing or unreadable | stops, naming it |
+| Conditions differ — a floor, a model, the corpus hash | **reported, not refused**: a threshold change is usually the change under test |
+| One run recorded fewer cases than it selected | **reported as incomplete**, with the count |
+
+### What a band is
+
+The spread of the golden set's metrics across **five full runs of one unchanged build** — the
+answer to "how much do these numbers move when nothing changes?". It records every metric's five
+values in run order with its lowest and highest, and per case that varied, each state with how many
+of the five produced it. `make eval-band` refuses anything that contradicts "these five differ only
+by chance": a count other than five, a run that drove part of the set, a run that stopped partway
+and recorded fewer cases than it selected, or any difference in conditions, corpus hash, label
+digests or case set — each naming what differs. The incomplete-run refusal is the one asymmetry
+worth knowing: a *comparison* reports such a run as incomplete and carries on, because a narrower
+case set is still comparable, while a band cannot — its value would sit in a range beside four
+measured over a different population.
+
+A band is **not a threshold**: no run is required to beat it, and nothing reads a band value as a
+pass mark. It is **not a statistical interval**: five observations give a range and a frequency
+count, not a standard deviation or a significance test, and every rendering citing it says so. A
+movement inside the range is *not shown to be noise*; it is *not shown to be more than noise*.
+
+A band applies to a comparison only when its conditions, corpus hash and case set match **both**
+runs; otherwise the comparison says the band was measured under other conditions and marks nothing.
+A metric the band never observed is reported unmarked, never assumed stable.

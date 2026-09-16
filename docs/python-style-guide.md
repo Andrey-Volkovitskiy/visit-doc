@@ -139,7 +139,7 @@ the clear, and no test or type error catches the difference.
 - **One processor chain, shared by every service**, configured once via that service's
   `configure_logging(settings)` call at app startup: merge correlation-id context → add log level →
   add timestamp → truncate long strings → redact secrets → render. The chain is declared once in
-  `packages/shared-logging`, so changing how logs are rendered later (e.g. a JSON/Langfuse-ready
+  `packages/shared-logging`, so changing how logs are rendered later (e.g. a JSON
   renderer) is a one-line change in that one module — for every service at once, not per service
   and not per call site.
 - **Call sites never call `structlog.get_logger()` directly.** Use the service's own `get_logger()`

@@ -1,0 +1,60 @@
+{
+  "run_id": "01K6CONDITIONS000000000000",
+  "started_at": "2026-09-16T12:00:00Z",
+  "finished_at": "2026-09-16T12:00:00Z",
+  "drive_seconds": 12.0,
+  "clock": "2026-03-02T08:00:00",
+  "session_id": "01K6SESS000000000000000000",
+  "corpus": {
+    "live_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "pinned_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "matched": true
+  },
+  "selection": {
+    "kind": "all",
+    "family": null,
+    "case_ids": [
+      "G801",
+      "G802",
+      "G803",
+      "G804",
+      "G805",
+      "G806"
+    ]
+  },
+  "entry_ids": {
+    "referral": 101,
+    "what-to-bring": 102,
+    "telehealth": 103,
+    "parking": 104
+  },
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "generation_model": "claude-sonnet-5",
+    "embedding_model": "voyage-3.5",
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_floor": 0.3,
+    "similarity_cap": 5,
+    "rerank_floor": 0.52,
+    "rerank_cap": 3,
+    "max_segments": 3,
+    "context_turns": 5
+  },
+  "labels": {
+    "G801": "c243f834b6f19599b28de4d3be69129391a97adb97af3c13de2a7f8e9e16b91e",
+    "G802": "6894fbd5e81aee03892233d1ae8a2dd7cec48dc24b8a2f434d8b34eba3ba0190",
+    "G803": "fa07b2a464bf1b05973afbdc3e4ed0de15d4de17e75b12eb1f21f1b1b91e2ac1",
+    "G804": "9b44586292bd3f49a14063aebff7b96e01ecc6cae5c350eb7568b03e7f31eebf",
+    "G805": "920aa0f963cc99d05fdf540784e743c63d0fc32064764569933e13f23a7a7add",
+    "G806": "f1f5269051bd9714933fcc6ef55954c6f6fc95b9fb26e5a663caf340ce5d1b10"
+  },
+  "cases": [
+    "G801",
+    "G802",
+    "G803",
+    "G804",
+    "G805",
+    "G806"
+  ]
+}

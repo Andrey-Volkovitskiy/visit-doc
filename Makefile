@@ -3,7 +3,7 @@
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
-        eval-run eval-score
+        eval-run eval-score eval-compare eval-band
 
 sync:
 	uv sync
@@ -117,3 +117,15 @@ eval-run:
 
 eval-score:
 	uv run --package golden-harness -- python -m golden_harness score --run $(RUN)
+
+# Comparing runs (spec 013; see its quickstart.md). Both are offline: they read stored runs and the
+# labels, spend no model call, and need nothing running. `eval-compare BASE=<run> NEW=<run>` reports
+# what moved between two stored runs, with an optional `BAND=<band id or file>` marking each
+# movement against measured noise; `eval-band RUNS=<id>,<id>,<id>,<id>,<id>` builds that band from
+# five full runs of one unchanged build.
+eval-compare:
+	uv run --package golden-harness -- python -m golden_harness compare \
+		--base $(BASE) --new $(NEW) $(if $(BAND),--band $(BAND))
+
+eval-band:
+	uv run --package golden-harness -- python -m golden_harness band --runs $(RUNS)
