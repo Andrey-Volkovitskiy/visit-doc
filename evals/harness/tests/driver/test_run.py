@@ -2339,17 +2339,43 @@ async def test_a_case_whose_fixture_has_no_reply_still_drives_exactly_one_turn(
     assert case_run.scheduling_after == [_PLANTED]
 
 
-async def test_a_first_turn_that_wrote_before_the_reply_is_recorded_as_it_stood(
+async def test_a_first_turn_that_already_did_the_task_posts_no_reply(
     log: Path, artifacts: Path
 ) -> None:
+    # The fixture expects the cancellation, and the first turn made it: the reply would
+    # answer a question the loop never asked.
     stack = _stack(log, artifacts, scripts={"G042": [Attempt(cancels=True), Attempt()]})
 
     run_dir = await _drive(stack, [_reply_case("G042")])
 
+    assert len(stack.posted()) == 1
+    names = stack.names()
+    assert names[names.index("post_turn") + 1 :] == [
+        "read_thread",
+        "read_post_state",
+        "read_post_state",
+        "release",
+    ]
     case_run = _case_run(run_dir, "G042")
+    assert (case_run.reply_turn, case_run.reply_skipped) == (None, True)
     assert case_run.scheduling_before_reply == [_CANCELLED]
     assert case_run.scheduling_after == [_CANCELLED]
     assert case_run.excluded is None
+
+
+async def test_a_first_turn_that_wrote_something_else_still_gets_the_reply(
+    log: Path, artifacts: Path
+) -> None:
+    # G042 expects its appointment cancelled; a first turn that left it standing and
+    # asked has not done the task, so the reply is posted.
+    stack = _stack(log, artifacts, scripts={"G042": _confirmed_cancel()})
+
+    run_dir = await _drive(stack, [_reply_case("G042")])
+
+    assert len(stack.posted()) == 2
+    case_run = _case_run(run_dir, "G042")
+    assert case_run.reply_skipped is False
+    assert case_run.reply_turn is not None
 
 
 # --- when the reply is not posted -----------------------------------------------------

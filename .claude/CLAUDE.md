@@ -294,8 +294,8 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   specialist answers. They are the same restatement when the message carried several requests, but
   a message the classifier found **one** request in is answered in the patient's own words
   (`_in_patient_wording` in `agent/graph.py`) — with no other clause to keep out, a restatement can
-  only lose something, and "yes please book it" restated as "book it" is a new request the booking
-  loop confirms again rather than a confirmation. The retrieval pipeline runs once per FAQ
+  only lose something - the "yes" in "yes, please go ahead", which is what tells the booking loop
+  that a change it described is now chosen. The retrieval pipeline runs once per FAQ
   segment, concurrently, **never pooled** — a shared shortlist under the 3-chunk cap lets the
   stronger question crowd the other out, which is the defect splitting exists to remove — and each
   segment's answer is generated from its own shortlist alone. The fan-out lives *inside*

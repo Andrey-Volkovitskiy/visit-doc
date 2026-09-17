@@ -239,6 +239,48 @@ def test_scheduling_after_is_absent_for_a_case_with_no_fixture() -> None:
     assert CaseRun.model_validate(_case()).scheduling_after is None
 
 
+# --- a reply the first turn made unnecessary ------------------------------------------
+
+
+def test_a_skipped_reply_is_recorded_beside_the_read_that_skipped_it() -> None:
+    case_run = CaseRun.model_validate(
+        _case(
+            scheduling_before_reply=[_CANCELLED_STATE],
+            reply_skipped=True,
+            scheduling_after=[_CANCELLED_STATE],
+        )
+    )
+
+    assert case_run.reply_skipped is True
+
+
+def test_a_case_recorded_before_replies_could_be_skipped_reads_as_not_skipped() -> None:
+    assert CaseRun.model_validate(_case()).reply_skipped is False
+
+
+def test_a_skipped_reply_with_no_read_to_decide_it_is_refused() -> None:
+    with pytest.raises(ValidationError, match="skipped reply"):
+        CaseRun.model_validate(_case(reply_skipped=True))
+
+
+def test_a_skipped_reply_beside_a_posted_one_is_refused() -> None:
+    with pytest.raises(ValidationError, match="skipped reply"):
+        CaseRun.model_validate(
+            _case(
+                reply_turn=_reply_turn(),
+                scheduling_before_reply=[_CANCELLED_STATE],
+                reply_skipped=True,
+            )
+        )
+
+
+_CANCELLED_STATE = {
+    "practitioner_full_name": "William Osler",
+    "starts_at": "2026-03-03T10:00:00",
+    "status": "cancelled",
+}
+
+
 # --- the reply turn (FR-037b) --------------------------------------------------------
 
 _STANDING = {

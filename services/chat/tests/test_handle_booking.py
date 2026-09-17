@@ -514,8 +514,8 @@ async def test_the_clients_local_now_reaches_the_system_prompt_verbatim() -> Non
     assert "Ada Lovelace" in system
 
 
-async def test_the_prompt_forbids_booking_without_confirmation() -> None:
-    """FR-027 is a prompt rule reinforced by the tool's own description.
+async def test_the_prompt_books_once_a_practitioner_and_time_are_chosen() -> None:
+    """The booking rule is a prompt rule reinforced by the tool's own description.
 
     Asserted structurally because a mocked model cannot demonstrate judgement - what is
     checkable is that the instruction is actually sent, on every turn.
@@ -525,11 +525,43 @@ async def test_the_prompt_forbids_booking_without_confirmation() -> None:
 
     await _run(client, registry, _bursts("book me something"))
 
-    system = client.messages.create.call_args.kwargs["system"]
-    assert "Confirm BOTH the practitioner and the exact start time" in system
+    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    assert "Book when the current message tells you to or accepts an offer" in system
+    assert "confirm what they have already chosen" in system
+    assert "more than one start time" in system
 
     book_tool = next(t for t in SCHEDULING_TOOLS if t.name == "book_appointment")
-    assert "explicitly confirmed" in book_tool.description
+    assert "No separate confirmation needed" in book_tool.description
+    assert "a question about what is possible is neither" in book_tool.description
+
+
+async def test_the_prompt_answers_a_question_about_booking_with_an_offer() -> None:
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("ok")])
+
+    await _run(client, registry, _bursts("can I book Friday?"))
+
+    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    assert "A question about booking is not an instruction to book" in system
+    assert "offer to book the time they asked about - but book nothing" in system
+    assert "A request addressed to you is an instruction" in system
+    assert '"can you book me with Dr. Smith at 9am?"' in system
+
+
+async def test_the_prompt_looks_up_an_appointment_the_conversation_reported() -> None:
+    # Earlier turns' tool results are not replayed, so a "yes, book it" after a booking
+    # was reported must be answered from the patient's list - availability would show
+    # the slot taken by their own appointment and read as "it was never booked".
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("ok")])
+
+    await _run(client, registry, _bursts("yes, book it"))
+
+    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    assert 'call list_my_appointments with status_filter "both"' in system
+    assert "Never book or cancel it a second time" in system
+    assert "a listing that leaves out cancelled appointments" in system
+    assert "or from check_availability" in system
 
 
 async def test_the_prompt_forbids_leaking_ids_and_timezones() -> None:

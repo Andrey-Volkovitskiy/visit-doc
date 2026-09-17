@@ -430,7 +430,7 @@ def test_booking_metrics_are_reported_with_their_exclusions(us3_dir: Path) -> No
     booking = {m.name: m for m in report.booking.metrics()}
     assert set(booking) == {"tool_selection_correctness", "end_to_end_task_success"}
     success = booking["end_to_end_task_success"]
-    assert (success.numerator, success.denominator) == (4, 8)
+    assert (success.numerator, success.denominator) == (5, 8)
     assert booking["tool_selection_correctness"].denominator == 8
     assert report.not_computed == []
 
@@ -545,14 +545,11 @@ def test_the_summary_says_tool_selection_spans_both_turns_of_a_reply_case(
     assert "both of its turns" in booking
 
 
-def test_the_summary_names_which_read_of_a_reply_case_failed(us3_dir: Path) -> None:
+def test_the_summary_scores_a_reply_case_on_its_last_read(us3_dir: Path) -> None:
     summary = render_summary(score_run(us3_dir, _us3_labels()))
 
     failures = summary[summary.index("### End-to-end failures") :].splitlines()
-    (g950,) = [line for line in failures if line.startswith("- G950")]
-    assert "after the first turn, before the reply" in g950
-    assert "William Osler +4d 10:00 standing" in g950
-    assert "William Osler 2026-03-06T10:00:00 cancelled" in g950
+    assert not [line for line in failures if line.startswith("- G950")]
     (g951,) = [line for line in failures if line.startswith("- G951")]
     assert "after the last turn" in g951
     assert "William Osler +7d 09:00 standing" in g951

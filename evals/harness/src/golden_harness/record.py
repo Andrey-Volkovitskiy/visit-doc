@@ -356,7 +356,9 @@ class CaseRun(BaseModel):
     posted that may have reached the pipeline - the case's fixture carries none, the
     first turn ended without a reply of its own, or the reply was provably never sent.
     `scheduling_before_reply` is the patient's appointments read after the first turn
-    and before the reply was posted, None when that read was not taken.
+    ended with a reply of its own, None when that read was not taken. `reply_skipped`
+    is True exactly when that read already matched the fixture's expectation, so the
+    reply was not posted.
     `scheduling_after` is None when the patient's appointments were not read after the
     case's last turn. `excluded` carries only a turn-level reason; request-level ones
     are derived when scoring. `unplantable` says why the fixture would not plant, and is
@@ -379,6 +381,7 @@ class CaseRun(BaseModel):
     events: list[dict[str, JsonValue]] | None = None
     reply_turn: ReplyTurn | None = None
     scheduling_before_reply: list[AppointmentState] | None = None
+    reply_skipped: bool = False
     scheduling_after: list[AppointmentState] | None = None
     cancelled_after: list[AppointmentState] = Field(default_factory=list)
     excluded: ExclusionReason | None = None
@@ -398,6 +401,17 @@ class CaseRun(BaseModel):
     def _a_broken_stream_has_no_terminal(self) -> "CaseRun":
         """Refuse a terminal beside a stream that broke the service's contract."""
         _no_terminal_beside_a_broken_stream(self.terminal, self.stream_broke_contract)
+        return self
+
+    @model_validator(mode="after")
+    def _a_skipped_reply_was_decided_from_its_read(self) -> "CaseRun":
+        """Refuse a skipped reply beside a posted one, or with no read to decide it."""
+        if self.reply_skipped and (
+            self.reply_turn is not None or self.scheduling_before_reply is None
+        ):
+            raise ValueError(
+                "a skipped reply has no reply turn, and the read that skipped it"
+            )
         return self
 
     @model_validator(mode="after")

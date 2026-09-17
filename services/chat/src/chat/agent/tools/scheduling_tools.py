@@ -91,7 +91,7 @@ CHANGE_EXPLANATION_BY_REASON = {
         "That appointment has already started, so it can no longer be changed."
     ),
     ChangeFailureReason.STALE_CONFIRMATION: (
-        "That appointment has changed since it was read out. Describe it as it now "
+        "That appointment has changed since it was described. Describe it as it now "
         "stands and ask again - do not repeat the change."
     ),
     ChangeFailureReason.PRACTITIONER_NOT_FOUND: (
@@ -780,8 +780,11 @@ SCHEDULING_TOOLS = [
     Tool(
         name="book_appointment",
         description=(
-            "Creates a REAL appointment. Only call this after the patient has "
-            "explicitly confirmed both the practitioner and the exact start time. "
+            "Creates a REAL appointment. Call this once the patient has told you to "
+            "book or accepted your offer - a question about what is possible is "
+            "neither - and one practitioner and one start time are chosen, named "
+            'outright or implicitly ("the earliest" among times you offered). No '
+            "separate confirmation needed. "
             "Never call it to 'check' whether something is possible - use "
             "check_availability for that. An appointment booked by mistake is not "
             "undone for free: it holds the slot until the patient confirms a "
@@ -843,11 +846,13 @@ SCHEDULING_TOOLS = [
         description=(
             "Moves a REAL appointment to a different time, and optionally to a "
             "different practitioner. The appointment keeps its identity - this is not "
-            "a cancellation plus a new booking. Only call this after the patient has "
-            "explicitly confirmed, in this turn, the appointment being moved and the "
-            "exact new time. expected_starts_at and expected_practitioner_id must be "
-            "the values you stated to the patient when you asked them to confirm - not "
-            "values you have just re-read."
+            "a cancellation plus a new booking. Call this once the patient's current "
+            "message tells you to move it or accepts a move you offered - a question "
+            "about what is possible is neither - and picks out one appointment and "
+            "one new time, named outright or implicitly. No separate confirmation "
+            "needed. expected_starts_at and "
+            "expected_practitioner_id must be the appointment as the conversation "
+            "last described it - not values you have just re-read."
             " appointment_id is not something you can work out: it comes from a "
             "list_my_appointments result in THIS turn. Earlier turns' tool results "
             "are not in the conversation you can see, so call list_my_appointments "
@@ -875,12 +880,12 @@ SCHEDULING_TOOLS = [
                 "expected_starts_at": {
                     "type": "string",
                     "description": (
-                        "the start you read out to the patient, YYYY-MM-DDTHH:MM:SS"
+                        "the start the conversation described, YYYY-MM-DDTHH:MM:SS"
                     ),
                 },
                 "expected_practitioner_id": {
                     "type": "string",
-                    "description": "the practitioner you read out",
+                    "description": "the practitioner the conversation described",
                 },
             },
             "required": [
@@ -898,12 +903,14 @@ SCHEDULING_TOOLS = [
     Tool(
         name="cancel_appointment",
         description=(
-            "Cancels a REAL appointment. Cancellation is final - there is no way to "
-            "un-cancel, and the freed time may be taken by someone else immediately. "
-            "Only call this after the patient has explicitly confirmed, in this turn, "
-            "which appointment is being cancelled. expected_starts_at and "
-            "expected_practitioner_id must be the values you stated to the patient "
-            "when you asked them to confirm - not values you have just re-read."
+            "Cancels a REAL appointment. "
+            "Call this once the patient's current message tells you to cancel or "
+            "accepts a cancellation you offered - a question about what is possible "
+            "is neither - and picks out one appointment, named outright or implicitly. "
+            "No separate confirmation needed. expected_starts_at and "
+            "expected_practitioner_id must be the "
+            "appointment as the conversation last described it - not values you have "
+            "just re-read."
             " appointment_id is not something you can work out: it comes from a "
             "list_my_appointments result in THIS turn. Earlier turns' tool results "
             "are not in the conversation you can see, so call list_my_appointments "
@@ -923,12 +930,12 @@ SCHEDULING_TOOLS = [
                 "expected_starts_at": {
                     "type": "string",
                     "description": (
-                        "the start you read out to the patient, YYYY-MM-DDTHH:MM:SS"
+                        "the start the conversation described, YYYY-MM-DDTHH:MM:SS"
                     ),
                 },
                 "expected_practitioner_id": {
                     "type": "string",
-                    "description": "the practitioner you read out",
+                    "description": "the practitioner the conversation described",
                 },
             },
             "required": [

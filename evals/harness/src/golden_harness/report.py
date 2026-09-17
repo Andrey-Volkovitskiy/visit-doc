@@ -40,7 +40,6 @@ from golden_harness.scoring.alignment import AlignmentTotals, align_run
 from golden_harness.scoring.booking import (
     BOOKING_METRICS,
     BookingScores,
-    PostStateRead,
     TaskFailure,
     ToolSelectionMiss,
     score_booking,
@@ -612,19 +611,12 @@ def _miss_lines(misses: Sequence[ToolSelectionMiss]) -> list[str]:
     ]
 
 
-# How a failure line names the read it was found in.
-_READ_NAMES: Final[dict[PostStateRead, str]] = {
-    PostStateRead.BEFORE_REPLY: "after the first turn, before the reply",
-    PostStateRead.AFTER: "after the last turn",
-}
-
-
 def _failure_lines(failures: Sequence[TaskFailure]) -> list[str]:
-    """Render each failed read: which read it was, what was missing, what was extra."""
+    """Render each failed case: what was missing, and what was extra."""
     if not failures:
         return ["None."]
     return [
-        f"- {f.case_id}, read {_READ_NAMES[f.read]}: expected, not found: "
+        f"- {f.case_id}, read after the last turn: expected, not found: "
         f"{'; '.join(_expected(e) for e in f.unmatched_expected) or 'none'} | "
         "found, not expected: "
         f"{'; '.join(_found(a) for a in f.unaccounted_appointments) or 'none'}"

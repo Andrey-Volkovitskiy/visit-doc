@@ -66,11 +66,13 @@ What is scored and what is not:
   — and a case expected to change nothing restates `given`. `PROVENANCE.md` gives each fixture its
   reason.
 - **`reply` is optional, and part of `scheduling`**, so a changed reply changes the case's label
-  digest. It is the patient's scripted answer to what the first turn asked, posted verbatim as a
-  second full turn in the same chat, and it is on the eight cases whose write the booking loop has
-  to confirm first. With it, the appointments after the first turn must still be `given`, all
-  standing, and `expect` is read after the reply; tool selection counts both turns' calls, while
-  classification and retrieval read the first turn only.
+  digest. It is the patient's scripted answer to an offer, posted verbatim as a second full turn
+  in the same chat, and it is on the eight cases whose message asks for a write - every
+  cancellation among them - since a first turn may reasonably answer with an offer or a question
+  rather than act. It is **optional to the case**: the harness posts it only when the appointments
+  after the first turn do not already match `expect`, and scores the case on the read after its
+  last driven turn. Tool selection counts every driven turn's calls, while classification and
+  retrieval read the first turn only.
 
 ## Derived, not stored
 

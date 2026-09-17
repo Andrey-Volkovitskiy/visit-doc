@@ -13,20 +13,20 @@ run clock Monday 2026-03-02 08:00:
     G947  reschedule     - (outcome_unknown)           excl  stored, unscored   excl
     G948  small_talk     - (no booking, no fixture)    -     -                  -
 
-The last three carry a scripted reply, so each is read twice - after its first turn,
-where the planted appointments must still stand, and after the reply - and its tools
-are the union of both turns' calls:
+The last three carry a scripted reply that was posted, so their tools are the union of
+both turns' calls, and each is scored on the read after its reply. The read taken after
+the first turn is recorded but not scored:
 
     case  labelled  calls: first turn / reply      D1   first read    last read  D2
     G949  cancel    list_my / list_my, cancel      hit  Thu standing  Thu cxl    match
-    G950  cancel    list_my, cancel / -            hit  Fri cxl       Fri cxl    fail
+    G950  cancel    list_my, cancel / -            hit  Fri cxl       Fri cxl    match
     G951  book      check_avail. / book, check_av. hit  none          none       fail
 
-    G950 fails on its first read: it cancelled before the patient confirmed. G951 fails
-    on its last: book_appointment was called in the reply and refused.
+    G950 cancelled in its first turn, which is as good as cancelling after the reply.
+    G951 fails: book_appointment was called in the reply and refused.
 
     D1 tool_selection_correctness: 7 / 8
-    D2 end_to_end_task_success:    4 / 8
+    D2 end_to_end_task_success:    5 / 8
     both excluding unresolvable_fixture 1 and outcome_unknown 1
 """
 
@@ -50,7 +50,6 @@ from golden_harness.scoring.booking import (
     TOOL_SELECTION_CORRECTNESS,
     TOOL_SELECTION_STATEMENT,
     BookingScores,
-    PostStateRead,
     match_post_state,
     score_booking,
 )
@@ -107,7 +106,7 @@ def test_end_to_end_task_success_over_the_fixture_run() -> None:
     metric = _score().end_to_end_task_success
 
     assert metric.name == END_TO_END_TASK_SUCCESS
-    assert (metric.numerator, metric.denominator) == (4, 8)
+    assert (metric.numerator, metric.denominator) == (5, 8)
     assert metric.excluded.counts == _EXCLUDED
 
 
@@ -153,7 +152,6 @@ def test_only_the_failing_cases_are_listed_in_case_order() -> None:
     assert [failure.case_id for failure in _score().task_failures] == [
         "G943",
         "G945",
-        "G950",
         "G951",
     ]
 
@@ -308,23 +306,14 @@ def _failures_of(case_id: str, runs: list[CaseRun] | None = None) -> list[Any]:
     return [f for f in scores.task_failures if f.case_id == case_id]
 
 
-def test_a_reply_case_succeeds_when_both_of_its_reads_match() -> None:
+def test_a_reply_case_succeeds_when_its_last_read_matches() -> None:
     assert _failures_of("G949") == []
 
 
-def test_a_first_turn_that_already_cancelled_fails_on_the_read_before_the_reply() -> (
-    None
-):
-    (g950,) = _failures_of("G950")
-
-    assert g950.read is PostStateRead.BEFORE_REPLY
-    # The expectation of that read is the planted appointment restated as standing.
-    assert g950.unmatched_expected == [
-        _ref("William Osler", "+4d", "10:00", "standing")
-    ]
-    assert g950.unaccounted_appointments == [
-        _appointment("2026-03-06T10:00:00", "cancelled")
-    ]
+def test_what_the_first_turn_wrote_before_a_posted_reply_is_not_scored() -> None:
+    # G950 cancelled in its first turn: the appointments after the reply are what the
+    # case expects, and that is all a reply case is scored on.
+    assert _failures_of("G950") == []
 
 
 def test_a_first_turn_right_and_a_reply_that_wrote_nothing_fails_on_the_last_read() -> (
@@ -332,45 +321,68 @@ def test_a_first_turn_right_and_a_reply_that_wrote_nothing_fails_on_the_last_rea
 ):
     (g951,) = _failures_of("G951")
 
-    assert g951.read is PostStateRead.AFTER
     assert g951.unmatched_expected == [
         _ref("William Osler", "+7d", "09:00", "standing")
     ]
     assert g951.unaccounted_appointments == []
 
 
-def test_a_case_without_a_reply_fails_on_its_one_read() -> None:
-    assert {
-        f.read for f in _score().task_failures if f.case_id in {"G943", "G945"}
-    } == {PostStateRead.AFTER}
+def test_a_case_without_a_reply_fails_once() -> None:
+    assert [
+        f.case_id for f in _score().task_failures if f.case_id in {"G943", "G945"}
+    ] == ["G943", "G945"]
 
 
-def test_a_reply_case_succeeds_once_its_first_read_matches_as_well() -> None:
-    fixed = _edited(
-        "G950", scheduling_before_reply=[_appointment("2026-03-06T10:00:00")]
-    )
-
-    assert _failures_of("G950", fixed) == []
-    assert (
-        score_booking(_labels(), fixed, clock=_CLOCK).end_to_end_task_success.numerator
-        == 5
-    )
-
-
-def test_a_reply_case_whose_two_reads_both_failed_is_listed_once_per_read() -> None:
+def test_a_reply_case_whose_last_read_failed_is_listed_once() -> None:
     runs = _edited("G950", scheduling_after=[])
 
-    failures = _failures_of("G950", runs)
+    (failure,) = _failures_of("G950", runs)
 
-    assert [f.read for f in failures] == [
-        PostStateRead.BEFORE_REPLY,
-        PostStateRead.AFTER,
-    ]
-    assert failures[1].unmatched_expected == [
+    assert failure.unmatched_expected == [
         _ref("William Osler", "+4d", "10:00", "cancelled")
     ]
     scores = score_booking(_labels(), runs, clock=_CLOCK)
     assert scores.end_to_end_task_success.numerator == 4
+
+
+def _skipped(case_id: str, done: list[AppointmentState]) -> list[CaseRun]:
+    """`case_id` as recorded when its first turn already left `done`."""
+    return _edited(
+        case_id,
+        reply_turn=None,
+        reply_skipped=True,
+        scheduling_before_reply=done,
+        scheduling_after=done,
+    )
+
+
+def test_a_skipped_reply_case_succeeds_on_its_first_turn_alone() -> None:
+    runs = _skipped("G949", [_appointment("2026-03-05T11:00:00", "cancelled")])
+
+    assert _failures_of("G949", runs) == []
+    scores = score_booking(_labels(), runs, clock=_CLOCK)
+    assert scores.end_to_end_task_success.numerator == 5
+
+
+def test_a_skipped_reply_case_is_scored_on_the_first_turns_tools_alone() -> None:
+    # G949's first turn only listed: with no reply turn, nothing called the cancel.
+    runs = _skipped("G949", [_appointment("2026-03-05T11:00:00", "cancelled")])
+
+    (miss,) = [
+        m
+        for m in score_booking(_labels(), runs, clock=_CLOCK).tool_selection_misses
+        if m.case_id == "G949"
+    ]
+    assert miss.missing == [BookingTool.CANCEL_APPOINTMENT]
+
+
+def test_a_skipped_reply_recorded_on_a_case_whose_label_has_no_reply_is_refused() -> (
+    None
+):
+    runs = _skipped("G942", [_appointment("2026-03-03T10:00:00", "cancelled")])
+
+    with pytest.raises(ValueError, match="G942"):
+        score_booking(_labels(), runs, clock=_CLOCK)
 
 
 def test_a_cancel_called_only_in_the_reply_turn_is_a_tool_selection_hit() -> None:
@@ -427,7 +439,6 @@ def test_a_reply_case_whose_first_turn_did_not_reply_is_scored_on_its_one_read()
 
     (g949,) = _failures_of("G949", runs)
 
-    assert g949.read is PostStateRead.AFTER
     assert g949.unaccounted_appointments == [_appointment("2026-03-05T11:00:00")]
 
 
@@ -516,13 +527,6 @@ def test_a_reply_turn_that_handed_off_is_scored_for_classification_and_booking()
     assert (tools.numerator, tools.denominator) == (1, 1)
     assert (success.numerator, success.denominator) == (1, 1)
     assert success.excluded.counts == {}
-
-
-def test_a_posted_reply_with_no_read_before_it_is_refused() -> None:
-    runs = _edited("G949", scheduling_before_reply=None)
-
-    with pytest.raises(ValueError, match="G949"):
-        score_booking(_labels(), runs, clock=_CLOCK)
 
 
 def test_a_posted_reply_with_no_events_and_no_exclusion_is_refused() -> None:

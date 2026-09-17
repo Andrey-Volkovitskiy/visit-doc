@@ -945,10 +945,10 @@ async def reschedule_appointment(
     Args:
         new_practitioner_id: The practitioner to move it to, or None to keep the one it
             has. Practitioner, start and end change together in one write.
-        expected_starts_at: The start the assistant stated to the patient when it asked
-            them to confirm - not a value re-read just now, which would match the
+        expected_starts_at: The start the conversation last described the appointment
+            as having - not a value re-read just now, which would match the
             appointment's current state by definition and disable the guard.
-        expected_practitioner_id: The practitioner it stated, for the same reason.
+        expected_practitioner_id: The practitioner it described, for the same reason.
 
     Returns: a `ChangeApplied` when the appointment moved, carrying the state it came
         from, a `ChangeNoOp` when it was already there, or a `ChangeRefusal` naming why
@@ -1002,10 +1002,10 @@ async def cancel_appointment(
     """Cancel one appointment, or report the one reason it was not.
 
     Args:
-        expected_starts_at: The start the assistant stated to the patient when it asked
-            them to confirm - not a value re-read just now, which would match the
+        expected_starts_at: The start the conversation last described the appointment
+            as having - not a value re-read just now, which would match the
             appointment's current state by definition and disable the guard.
-        expected_practitioner_id: The practitioner it stated, for the same reason.
+        expected_practitioner_id: The practitioner it described, for the same reason.
 
     Returns: a `ChangeApplied` when the appointment is now cancelled, a `ChangeNoOp`
         when it already was, or a `ChangeRefusal` naming why not.

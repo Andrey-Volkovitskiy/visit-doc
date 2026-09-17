@@ -324,15 +324,34 @@ async def _captured_prompt() -> str:
     return re.sub(r"\s+", " ", _system_prompt(client))
 
 
-async def test_the_prompt_forbids_changing_without_a_confirmation_this_turn() -> None:
+async def test_the_prompt_changes_once_the_current_message_picks_one_out() -> None:
     prompt = await _captured_prompt()
 
-    assert "cancel_appointment" in prompt
-    assert re.search(r"confirm", prompt, re.IGNORECASE)
-    assert re.search(r"this turn|current turn", prompt, re.IGNORECASE)
+    assert "Cancel or move when the current message tells you to" in prompt
+    assert "Do not ask the patient to confirm what they have already chosen" in prompt
+    assert "more than one appointment or more than one new time" in prompt
+    assert "An earlier message does not authorize a change on its own" in prompt
 
 
-async def test_the_prompt_requires_the_appointment_to_be_read_back_in_full() -> None:
+async def test_the_prompt_carries_out_a_cancel_instruction_in_the_same_turn() -> None:
+    prompt = await _captured_prompt()
+
+    assert '"please cancel my Friday appointment" are instructions' in prompt
+    assert "cancel it in this turn and report it done" in prompt
+    assert 'never answer with "would you like me to cancel it?"' in prompt
+
+
+async def test_the_prompt_answers_a_question_about_a_change_with_an_offer() -> None:
+    prompt = await _captured_prompt()
+
+    assert "A question about a change is not an instruction to make it" in prompt
+    assert "offer to make it - but change nothing" in prompt
+    assert '"Can you cancel Friday?" is addressed to you, so it is an instruction' in (
+        prompt
+    )
+
+
+async def test_the_prompt_requires_a_described_change_to_be_stated_in_full() -> None:
     prompt = await _captured_prompt()
 
     assert re.search(r"start date-time|start time", prompt, re.IGNORECASE)
@@ -340,11 +359,11 @@ async def test_the_prompt_requires_the_appointment_to_be_read_back_in_full() -> 
     assert re.search(r"specialty", prompt, re.IGNORECASE)
 
 
-async def test_the_prompt_says_a_confirmation_binds_only_for_its_own_turn() -> None:
+async def test_the_prompt_keeps_the_staleness_guard_on_what_was_described() -> None:
     prompt = await _captured_prompt()
 
-    assert re.search(r"re-?state", prompt, re.IGNORECASE)
-    assert re.search(r"intervening|another turn|since", prompt, re.IGNORECASE)
+    assert "as the conversation last described it" in prompt
+    assert "never overwrite a described value with one you have just re-read" in prompt
 
 
 async def test_the_prompt_says_a_non_answer_is_not_a_decline() -> None:
@@ -647,7 +666,7 @@ async def test_a_stale_refusal_never_re_issues_the_change() -> None:
                 "status": "refused",
                 "reason": "stale_confirmation",
                 "explanation": (
-                    "That appointment has changed since it was read out. Describe it "
+                    "That appointment has changed since it was described. Describe it "
                     "as it now stands and ask again - do not repeat the change."
                 ),
             },

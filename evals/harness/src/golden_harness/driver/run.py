@@ -13,16 +13,16 @@ A request the service refused as malformed is the harness's own fault and stops 
 A case carrying a scheduling fixture has its preconditions planted in its chat's patient
 before the turn is posted, and its patient's appointments read once the turn has ended.
 A fixture carrying a scripted reply has them read once the first turn has ended with a
-reply of its own, then the reply posted as a second turn in the same chat, and read
-again once that has ended; an attempt is the whole exchange, so a retry drives both
-turns again in a fresh chat. Every case whose chat has a patient then has that patient's
-standing appointments cancelled before its file is written, so no case's appointments
-stand in a later case's way. A cleanup that cannot complete stops the run once the case
-is written. Each stop named in `_drive_case` that comes once a chat's patient has been
-read releases that patient first; for a fixture case whose turn was posted before its
-thread could not be read back, or its logged segmentation broke the record's shape, the
-case is also written as outcome unknown before the run stops, so a resumed run does not
-post it again.
+reply of its own; unless they already match the fixture's expectation, the reply is then
+posted as a second turn in the same chat, and they are read again once that has ended;
+an attempt is the whole exchange, so a retry drives both turns again in a fresh chat.
+Every case whose chat has a patient then has that patient's standing appointments
+cancelled before its file is written, so no case's appointments stand in a later case's
+way. A cleanup that cannot complete stops the run once the case is written. Each stop
+named in `_drive_case` that comes once a chat's patient has been read releases that
+patient first; for a fixture case whose turn was posted before its thread could not be
+read back, or its logged segmentation broke the record's shape, the case is also written
+as outcome unknown before the run stops, so a resumed run does not post it again.
 
 A turn whose answer did not arrive whole - its stream broke off, timed out or broke the
 service's contract - is polled every `SETTLE_INTERVAL_SECONDS`, within
@@ -118,6 +118,7 @@ from golden_harness.record import (
     write_case,
     write_run,
 )
+from golden_harness.scoring.booking import match_post_state
 
 # A Monday at 08:00, so the whole working week lies ahead of every turn.
 DEFAULT_CLOCK: Final = datetime(2026, 3, 2, 8, 0, 0)
@@ -1191,7 +1192,7 @@ async def _drive_reply(
     timer: Callable[[], float],
     settle: SettleWait,
 ) -> _Replied:
-    """Read a reply case's appointments after its first turn, then post the reply.
+    """Read a reply case's appointments after its first turn, then reply if needed.
 
     Args:
         first: the record of the measured first turn.
@@ -1199,18 +1200,19 @@ async def _drive_reply(
 
     Returns: `first` carrying the appointments read after it, the reply's turn once a
         reply was posted that may have reached the pipeline, and the exclusion of the
-        whole exchange; with what the reply turn amounts to. A reply provably never
-        sent makes the case a run error, and one whose outcome is unknown makes it
-        outcome unknown, whatever the first turn was excluded as. A reply whose answer
-        did not arrive whole is waited for until it settles (FR-041c): one that settles
-        is measured like any other, and one that does not - or whose thread cannot be
-        read while it has not - is outcome unknown with its patient kept. A measured
-        reply is
-        judged by the first turn's rules, and its reason recorded only when the first
-        turn has none. A reply that handed off is recorded as `handed_off_turn` like
-        any other reason (FR-037b): its scope sets the whole case aside from retrieval
-        and serving, the first turn's included, and leaves classification and booking
-        scored (FR-018a).
+        whole exchange; with what the reply turn amounts to. When those appointments
+        already match the fixture's expectation the reply is not posted: the record says
+        it was skipped, and the exchange is measured on its first turn alone. A reply
+        provably never sent makes the case a run error, and one whose outcome is unknown
+        makes it outcome unknown, whatever the first turn was excluded as. A reply whose
+        answer did not arrive whole is waited for until it settles (FR-041c): one that
+        settles is measured like any other, and one that does not - or whose thread
+        cannot be read while it has not - is outcome unknown with its patient kept. A
+        measured reply is judged by the first turn's rules, and its reason recorded only
+        when the first turn has none. A reply that handed off is recorded as
+        `handed_off_turn` like any other reason (FR-037b): its scope sets the whole case
+        aside from retrieval and serving, the first turn's included, and leaves
+        classification and booking scored (FR-018a).
 
     Raises: PostStateUnreadableError when the appointments after the first turn cannot
         be read; ServiceRestartedError when the service restarted with other settings
@@ -1233,6 +1235,15 @@ async def _drive_reply(
             ),
         )
     recorded = first.model_copy(update={"scheduling_before_reply": before})
+    fixture = case.scheduling
+    assert fixture is not None
+    if match_post_state(fixture.expect, before, run.clock).matched:
+        # The first turn already did what the exchange is for, so the reply would
+        # answer a question nobody asked.
+        return _Replied(
+            recorded.model_copy(update={"reply_skipped": True}),
+            AttemptClass.MEASURED,
+        )
     thread = attempt.thread
     assert thread is not None
     answered = [

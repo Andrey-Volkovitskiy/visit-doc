@@ -7,16 +7,16 @@ aside.
   booking loop is handed every booking request of a turn at once, and a
   `booking.tool_called` event belongs to the loop rather than to one request. A turn
   scores when it called every tool in the union of its booking requests' labelled
-  tools. A tool no label names is not a miss. For a case with a scripted reply, the
-  calls of both its turns count together, as one booking half.
+  tools. A tool no label names is not a miss. For a case whose scripted reply was
+  posted, the calls of both its turns count together, as one booking half.
 - **End-to-end task success** (D2) compares the patient's appointments after the case's
   last turn with the fixture's expectation, under a perfect one-to-one matching: every
   expected entry matches exactly one appointment and no appointment is left over. A
-  case with a scripted reply is read twice: after its first turn its appointments must
-  still match its preconditions restated as standing, under the same matching, and
-  after the reply they must match the expectation. A failure names the read it was
-  found in and both halves - what was expected and not found, and what was found and
-  not expected - since too little and too much are opposite defects.
+  scripted reply is optional to the case: the driver posts it only when the first turn
+  did not already leave the expected appointments, so the last turn is the first one
+  when it did and the reply otherwise. What the first turn did on the way is not
+  scored. A failure names both halves - what was expected and not found, and what was
+  found and not expected - since too little and too much are opposite defects.
 
 A case whose fixture could not be planted, or whose outcome is unknown, is excluded from
 both, with its reason, and never counted as a failure.
@@ -24,11 +24,9 @@ both, with its reason, and never counted as a failure.
 
 from collections.abc import Sequence
 from datetime import datetime
-from enum import StrEnum
 from typing import Final
 
 from pydantic import BaseModel, ConfigDict
-from shared_models.scheduling import AppointmentStatus
 
 from golden_harness.cases import AppointmentRef, BookingTool, Case
 from golden_harness.record import AppointmentState, CaseRun, ExclusionReason
@@ -45,22 +43,12 @@ TOOL_SELECTION_STATEMENT: Final = (
     "union of the tools its booking requests are labelled with. The booking loop is "
     "handed all of a turn's booking requests at once, and the log attributes a tool "
     "call to the loop rather than to one request, so no per-request number is "
-    "published. A tool called that no label names is not a miss. For a case with a "
-    "scripted reply, the tools called in both of its turns count together, as one "
-    "booking half: the loop is specified to ask in the first turn and act in the "
-    "second."
+    "published. A tool called that no label names is not a miss. For a case whose "
+    "scripted reply was posted, the tools called in both of its turns count together, "
+    "as one booking half. The reply is posted only when the first turn did not already "
+    "leave the expected appointments, so a case the loop finished in one turn is "
+    "scored on that turn's calls alone."
 )
-
-
-class PostStateRead(StrEnum):
-    """Which read of a fixture case's appointments a failure was found in.
-
-    Named after the record field the read is stored in: `scheduling_before_reply` is
-    taken after a reply case's first turn, `scheduling_after` after a case's last turn.
-    """
-
-    BEFORE_REPLY = "scheduling_before_reply"
-    AFTER = "scheduling_after"
 
 
 class ToolSelectionMiss(BaseModel):
@@ -100,17 +88,11 @@ class PostStateMatching(BaseModel):
 
 
 class TaskFailure(BaseModel):
-    """One read of a fixture case whose appointments did not match what it expects.
-
-    `read` names the read. The expectation of the read before a reply is the fixture's
-    preconditions restated as standing, so `unmatched_expected` holds those entries
-    there. A reply case whose two reads both failed has one failure per read.
-    """
+    """A fixture case whose appointments after its last turn did not match `expect`."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     case_id: str
-    read: PostStateRead
     unmatched_expected: list[AppointmentRef]
     unaccounted_appointments: list[AppointmentState]
 
@@ -141,8 +123,7 @@ def score_booking(
 
     Raises: ValueError when a recorded case has no label, or when a booking case no
         exclusion set aside has no log events, no post-state, a reply turn with no log
-        events, a reply turn and a read before it not recorded together, or a reply
-        turn its label carries no reply for.
+        events, or a reply turn or skipped reply its label carries no reply for.
     """
     labels = {case.id: case for case in cases}
     exclusions: list[ExclusionReason] = []
@@ -168,22 +149,18 @@ def score_booking(
         else:
             misses.append(miss)
 
-        found: list[TaskFailure] = []
-        for read, expect, appointments in _reads(case, case_run):
-            matching = match_post_state(expect, appointments, clock)
-            if not matching.matched:
-                found.append(
-                    TaskFailure(
-                        case_id=case.id,
-                        read=read,
-                        unmatched_expected=matching.unmatched_expected,
-                        unaccounted_appointments=matching.unaccounted_appointments,
-                    )
-                )
-        if found:
-            failures.extend(found)
-        else:
+        expect, appointments = _last_read(case, case_run)
+        matching = match_post_state(expect, appointments, clock)
+        if matching.matched:
             task_successes += 1
+        else:
+            failures.append(
+                TaskFailure(
+                    case_id=case.id,
+                    unmatched_expected=matching.unmatched_expected,
+                    unaccounted_appointments=matching.unaccounted_appointments,
+                )
+            )
 
     excluded = Exclusions.tally(exclusions)
     return BookingScores(
@@ -262,38 +239,24 @@ def _matches(
     )
 
 
-def _reads(
+def _last_read(
     case: Case, case_run: CaseRun
-) -> list[tuple[PostStateRead, list[AppointmentRef], list[AppointmentState]]]:
-    """Return each read of a fixture case beside what it must match, in read order.
+) -> tuple[list[AppointmentRef], list[AppointmentState]]:
+    """Return a fixture case's expectation beside its appointments after its last turn.
 
-    A case whose reply was posted is read after its first turn, against its
-    preconditions restated as standing, and after the reply against its expectation;
-    any other case once, after its last turn, against its expectation.
+    Returns: the fixture's expected entries, and the appointments read after the case's
+        last turn.
 
-    Raises: ValueError when the case has no fixture or no post-state, when a reply turn
-        and the read before it are not recorded together, or when a reply turn is
-        recorded for a label that carries no reply.
+    Raises: ValueError when the case has no fixture or no post-state, or when a posted
+        or skipped reply is recorded for a label that carries no reply.
     """
     fixture = case.scheduling
     if fixture is None or case_run.scheduling_after is None:
         raise ValueError(f"{case.id} has no fixture or no recorded post-state")
-    reads = [(PostStateRead.AFTER, fixture.expect, case_run.scheduling_after)]
-    if case_run.reply_turn is None and case_run.scheduling_before_reply is None:
-        return reads
-    if fixture.reply is None:
+    replied = case_run.reply_turn is not None or case_run.reply_skipped
+    if replied and fixture.reply is None:
         raise ValueError(f"{case.id} recorded a reply its label carries no reply for")
-    before = case_run.scheduling_before_reply
-    if case_run.reply_turn is None or before is None:
-        raise ValueError(
-            f"{case.id} recorded a reply turn and the read before it, one without the "
-            "other"
-        )
-    standing = [
-        entry.model_copy(update={"status": AppointmentStatus.STANDING})
-        for entry in fixture.given
-    ]
-    return [(PostStateRead.BEFORE_REPLY, standing, before), *reads]
+    return fixture.expect, case_run.scheduling_after
 
 
 def _tool_selection_miss(case: Case, case_run: CaseRun) -> ToolSelectionMiss | None:

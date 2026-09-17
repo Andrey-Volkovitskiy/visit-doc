@@ -223,6 +223,17 @@ reply and now expects one standing Osler booking on Wednesday at any time.
 Each reply is written to answer every choice the loop is told to leave to the patient, so that a
 correct loop needs no third turn.
 
+**A scripted reply is optional to its case (2026-09-17).** Whether "can you book me Wednesday at 9?"
+is a request to act or a question is not something a label should have to settle, so the harness no
+longer does: it reads the appointments after the first turn, and posts the `reply` only when they do
+not already match `expect`. A case is scored on the read after its last driven turn, and the read
+before the reply stops being a pass condition - a first turn that did the task is a success, not a
+write before confirmation. So the eight cases keep their replies - the three plain cancellations
+(G042, G051, G090) included, where a loop that cancels at once never sees one - and no label changed
+for this: every committed digest stands, but re-scoring an earlier run can move its end-to-end
+success: a case that used to fail on the read before its reply now passes when its last read
+matched.
+
 **Six messages reworded (2026-09-14, by the reviewer's decision).** Two defects in the drafted
 messages would have measured the labels rather than the loop:
 

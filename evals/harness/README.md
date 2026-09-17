@@ -161,11 +161,12 @@ Those field names are a data contract with this harness — see
 
 ## The reply turn
 
-The booking loop confirms before it writes: it confirms the practitioner and the exact start before
-`book_appointment`, and never calls `cancel_appointment` without a confirmation given in the current
-turn. So one turn asked to cancel or book correctly writes nothing. The eight cases whose message
-asks for a write carry a scripted `reply` in their fixture, and the harness drives them as an
-exchange:
+The booking loop acts on an instruction and offers on a question: "please cancel my Friday
+appointment" is cancelled in one turn, while "can I book Wednesday at 9?" gets the availability and
+an offer, and writes nothing. It also offers when the patient's words leave the choice open - a day
+with no time. Where a message sits between the two, either is a correct first turn, so the scripted
+`reply` a fixture carries is **optional to the case**: it is posted only when the first turn did not
+already do the task. The harness drives such a case as an exchange:
 
 1. The first turn is posted, read back and sliced exactly as any other.
 2. Only if it ended with a reply of its own — a stored reply, with a `done` terminal event that is
@@ -174,12 +175,15 @@ exchange:
    the patient's appointments are read and stored as
    `scheduling_before_reply`. A first turn that handed off, went silent, was cancelled or failed
    without a reply keeps its own exclusion, and no reply is posted.
-3. The reply is posted verbatim in the same chat, with the run clock. Its slice is taken by the same
+3. If those appointments already match the fixture's `expect`, the first turn did the task: no reply
+   is posted, the case records `reply_skipped: true`, and it continues at step 5 with nothing
+   further driven.
+4. Otherwise the reply is posted verbatim in the same chat, with the run clock. Its slice is taken by the same
    byte offset and `turn_id` rule, selected by the reply's own patient message, and its thread read
    passes over the history and the first turn's two messages. The log is checked for a restart
    before it is posted, as before every turn.
-4. The appointments are read again, as `scheduling_after`; then the patient is released, once, and
-   the case written. `elapsed_seconds` covers both turns.
+5. The appointments are read again, as `scheduling_after`; then the patient is released, once, and
+   the case written. `elapsed_seconds` covers every turn driven.
 
 **An attempt is the whole exchange.** A reply that provably never reached the pipeline (no
 connection, a 429 or 5xx) drives both turns again in a fresh chat, once the patient is released, and
@@ -197,14 +201,14 @@ classification and booking, both reads stored as usual. A first turn that hands 
 reply is posted, and the case is scored on booking against `expect`. A read after the first turn
 that fails stops the run before the reply is posted, with the case unwritten.
 
-**How it is scored.** End-to-end task success needs both reads to match: after the first turn, the
-appointments must still be the fixture's `given`, all standing — under the same exhaustive matching
-— so a first turn that booked or cancelled before the patient confirmed fails the case even when the
-calendar ends right; after the reply, they must match `expect`. A failure names the read it was
-found in, with both halves for that read, and a case whose two reads both failed is listed once per
-read. Tool selection counts the `booking.tool_called` events of both turns together, as one booking
-half, since the loop is specified to ask in one and act in the other. Classification and retrieval
-read the first turn only: the reply is not a labelled message.
+**How it is scored.** End-to-end task success reads the appointments after the case's last driven
+turn - the first turn when the reply was skipped, the reply otherwise - and needs them to match
+`expect` under the exhaustive matching. `scheduling_before_reply` is what decided whether to post the
+reply, and is not itself scored: a first turn that wrote part of the task, or all of it, before a
+reply that finished it is a success. A failure lists both halves of that one read. Tool selection
+counts the `booking.tool_called` events of every driven turn together, as one booking half, so a case
+the loop finished in one turn is scored on that turn's calls. Classification and retrieval read the
+first turn only: the reply is not a labelled message.
 
 ## Cleanup between cases
 

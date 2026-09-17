@@ -446,6 +446,8 @@ def _tool_movements(
 
 _ALL_TOOLS_CALLED: Final = "every labelled tool called"
 _BOOKING_LANDED: Final = "expected appointments found"
+# The one read a booking case is scored on, named as the record field it is stored in.
+_BOOKING_MISSED: Final = "did not match at scheduling_after"
 # What a case the booking scorers never scored is reported as. Not one of the two above:
 # neither was observed, and reading the absence of a published miss as "every labelled
 # tool called" would report a case that errored out as an improvement over one that
@@ -500,15 +502,9 @@ def _database_movements(
 
 def _database_state(report: Report, case_id: str) -> str:
     """Render a case's post-state outcome, from the published failures."""
-    failures = [
-        failure
-        for failure in report.booking.task_failures
-        if failure.case_id == case_id
-    ]
-    if not failures:
-        return _BOOKING_LANDED
-    reads = ", ".join(sorted(failure.read.value for failure in failures))
-    return f"did not match at {reads}"
+    if any(f.case_id == case_id for f in report.booking.task_failures):
+        return _BOOKING_MISSED
+    return _BOOKING_LANDED
 
 
 def _shortfall_direction(before: str, after: str, *, clean: str) -> MovementDirection:
