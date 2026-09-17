@@ -43,7 +43,9 @@ dataset outside it.
 
 **The label attaches to a request.** `requests` is the expected segmentation: how many, in what
 order, and each one's intent. Array order *is* position — there is no `position` field, because a
-second way of saying the same thing is a second thing that can be wrong.
+second way of saying the same thing is a second thing that can be wrong. One latitude is scored as
+correct: a labelled `faq_question` the classifier split into consecutive `faq_question`s, since the
+reply still carries every half. A question split into a `faq_question` and anything else is not.
 
 What is scored and what is not:
 

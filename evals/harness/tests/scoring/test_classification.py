@@ -203,3 +203,44 @@ def test_cap_bound_turns_are_counted_and_listed() -> None:
     scores = _score()
 
     assert scores.cap_bound_cases == ["G907"]
+
+
+# --- a labelled question the classifier split into two FAQ questions -----------------
+
+
+def _g909_split_into(*intents: IntentLabel) -> list[CaseRun]:
+    """G909 - labelled one faq_question - recorded as producing `intents`."""
+    g909 = read_case(_RUN, "G909")
+    assert g909.segments is not None
+    (only,) = g909.segments.segments
+    produced = g909.segments.model_copy(
+        update={
+            "segments": [
+                only.model_copy(update={"position": i, "intent": intent})
+                for i, intent in enumerate(intents)
+            ]
+        }
+    )
+    return [
+        run.model_copy(update={"segments": produced}) if run.case_id == "G909" else run
+        for run in _case_runs()
+    ]
+
+
+def test_a_faq_question_split_into_two_faq_questions_scores_as_classified_right() -> (
+    None
+):
+    full = _score()
+    split = _score(_g909_split_into(IntentLabel.FAQ_QUESTION, IntentLabel.FAQ_QUESTION))
+
+    assert split.request_count_accuracy == full.request_count_accuracy
+    assert split.intent_accuracy == full.intent_accuracy
+    assert split.exact_segmentation_match == full.exact_segmentation_match
+    assert "G909" not in {d.case_id for d in split.disagreements}
+
+
+def test_a_faq_question_split_into_faq_and_booking_is_a_disagreement() -> None:
+    split = _score(_g909_split_into(IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING))
+
+    assert split.request_count_accuracy.numerator == 4
+    assert "G909" in {d.case_id for d in split.disagreements}

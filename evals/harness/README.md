@@ -114,7 +114,12 @@ interrupted and resumed run reports the time actually spent.
   what the turn stored and takes the turn's slice of the log — and, for a case with a scripted
   reply, does the same again for the reply (see [The reply turn](#the-reply-turn)).
 - **The scorer** (`scoring/`) computes alignment and the classification, retrieval, serving and
-  booking metrics.
+  booking metrics. Alignment groups the produced requests onto the labelled ones in order: each
+  labelled request takes one, except that a labelled `faq_question` may take several consecutive
+  produced `faq_question`s — the classifier split one question, and the reply still answers both
+  halves. Such a request counts once everywhere: classified right, retrieved at the best rank either
+  half reached, and served only when every half was answered. A split that could be grouped two ways
+  leaves the case unaligned rather than guessing which question was split.
 - **The reporter** (`report.py`) reads a run directory, calls the scorers and writes the report.
 
 **Scoring is a pure function of a stored run.** It reads `run.json`, the case files and the labels,
@@ -362,7 +367,7 @@ stored on the case; four are decided per request at scoring time and never store
 | `outcome_unknown` | a fixture case's turn — the first or the reply — was posted and its thread could not be read back (for a turn whose answer did not arrive whole, before it settled) or its logged segmentation broke the record's shape; or any case's turn whose answer did not arrive whole and that did not settle within the bound | every metric |
 | `handed_off_turn` | the stream ended `done` with `answer_source == "hand_off"`, or — for a turn that ended with no terminal event — its own `turn.completed` has `outcome == "handed_off"`; the first turn's, or a reply turn's when the first turn has no reason of its own | retrieval and serving only, the first turn's requests included — it classified before it handed off, so classification scores it, and booking scores it too |
 | `no_search` | the turn's corpus was empty, so no search was issued (`turn.retrieval_skipped_empty_corpus`) | both retrieval stages |
-| `not_routed_to_faq` | a labelled `faq_question` request aligned by count but was produced under another intent, so it never reached the FAQ half | both retrieval stages |
+| `not_routed_to_faq` | a labelled `faq_question` request aligned to one produced request under another intent, so it never reached the FAQ half | both retrieval stages |
 | `not_reached_reranker` | none of the request's cited chunks was kept by the similarity gate | the rerank stage only |
 | `reranker_unavailable` | the reranker was unavailable for the request | the rerank stage only |
 

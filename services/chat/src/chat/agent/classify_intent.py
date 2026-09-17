@@ -16,6 +16,12 @@ from chat.domain.schemas import MAX_SEGMENTS, IntentClassificationResult, Intent
 # parses as an invalid classification and drops the turn back to the unsplit message -
 # on exactly the multi-request traffic the split exists for.
 _MAX_TOKENS = 1024
+# Zero, not the API's default of 1: a message on a label boundary would otherwise be
+# sampled onto either side of it from one run to the next, and every later stage - which
+# specialist runs, what is searched for, whether a person is paged - follows the label.
+# Zero makes the most likely reading the one returned; it does not make the call
+# fully deterministic.
+_TEMPERATURE = 0.0
 _SYSTEM_PROMPT = (
     "Split the visitor's most recent message into the requests it contains, given the "
     "conversation so far, and label each one. Return one segment per request, in the "
@@ -60,6 +66,21 @@ _SYSTEM_PROMPT = (
     "(a request the assistant is not authorized to serve, such as a sick note, a "
     "prescription, a records transfer or a billing correction). "
     "A message may carry more than one intent at once. "
+    "Three boundaries decide most borderline messages. "
+    "(a) faq_question or booking: a question about what a visit requires - whether a "
+    "referral is needed, whether a specialist can be seen without one, what the "
+    'patient must have first - is faq_question even when it is phrased "can I see '
+    'a specialist if...". booking is a request for, or about, a particular '
+    'appointment, time or practitioner in the live records: "can I see a '
+    'cardiologist next week?" is booking. '
+    "(b) faq_question or small_talk: parking, directions, transport, opening hours and "
+    "prices at or near the clinic are the clinic's business and faq_question - "
+    "including a garage, stop or shop its visitors use. "
+    "(c) faq_question or unknown: asking whether something is possible or how a "
+    "policy works - is a payment plan available, when is payment due, is a receipt "
+    "free - is faq_question. unknown is asking the clinic to do something for the "
+    "patient that the assistant may not do: issue a sick note, correct or reissue a "
+    "bill, transfer records. "
     "If a message could be read either as asking for something or as asking for "
     "nothing, it is not small_talk: answering a real request with a pleasantry is the "
     "worse mistake, and the other paths know how to say they cannot help. "
@@ -91,12 +112,22 @@ _SYSTEM_PROMPT = (
     "(3) Restate, never add. Never introduce a constraint, specialty, date, "
     "practitioner or symptom that the message and the conversation do not carry: "
     'turning "what should I bring?" into "what should I bring to a first cardiology '
-    'visit?" invents the thing that decides the answer. '
-    "(4) Split conservatively. One request is one segment, and a message is split only "
-    "where its parts are independently answerable - different answers, not merely "
-    "different sentences. Length, punctuation and repetition are not split points, and "
-    'two ways of asking one thing are one segment: "what time do you open? when can I '
-    'come in the morning?" is one request, not two. '
+    'visit?" invents the thing that decides the answer. Resolving a reference must '
+    'keep what is asked: "do I need a referral? and what about for a dentist?" gives '
+    '"do I need a referral to see a dentist?", never "do you have a dentist?" - '
+    "changing the question is adding one. "
+    "(4) Split by answer. A message is split wherever its parts are independently "
+    "answerable - different answers, not merely different sentences - even when they "
+    'share a sentence and a topic: "what are your clinic hours and locations?" is two '
+    'requests, "what are your clinic hours?" and "where is the clinic?". Length, '
+    "punctuation and repetition are not split points, and two ways of asking one "
+    'thing are one segment: "what time do you open? when can I come in the '
+    'morning?" is one request, not two. '
+    "(4a) Keep the visitor's order. Segments come in the order their requests were "
+    "asked, even when a later one is more specific or restates part of an earlier "
+    'one: "do I need a referral? and what about for a dentist?" gives "do I need a '
+    'referral?" first and "do I need a referral to see a dentist?" second, never the '
+    "reverse. "
     f"(5) {MAX_SEGMENTS} segments is the hard limit. A message carrying more requests "
     f"than that still returns {MAX_SEGMENTS}: combine the least separable of them into "
     "one segment, so that nothing the visitor asked for is missing from every segment, "
@@ -196,6 +227,7 @@ async def classify_intent(
         response = await anthropic_client.messages.create(
             model=get_settings().CLASSIFICATION_MODEL,
             max_tokens=_MAX_TOKENS,
+            temperature=_TEMPERATURE,
             system=_SYSTEM_PROMPT,
             messages=to_claude_messages_separating_silence(bursts),
             output_config={

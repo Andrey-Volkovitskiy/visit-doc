@@ -8,7 +8,10 @@ the turn's own log events, joined to a request by their `segment` field - never 
 order the lines appear in, since concurrent requests interleave.
 
 Only aligned `faq_question` requests labelled answerable are scored: a gap cites
-nothing, so there is no rank to look for. A labelled slug is compared through the run's
+nothing, so there is no rank to look for. A request the classifier split into several
+`faq_question`s is scored once, on the best its halves did - the lowest rank at each
+stage, and a gate survival if any half survived - since the reply carries every half's
+answer. A labelled slug is compared through the run's
 own slug-to-entry-id map, and a chunk belongs to a cited entry when its `entry_id` does.
 
 A request is set aside from a stage, with one reason, in pipeline order:
@@ -282,17 +285,75 @@ def score_retrieval(
             if pair.position not in answerable:
                 continue
             cited = _cited_entry_ids(case_id, pair.labelled, entry_ids)
-            if pair.produced.intent is not IntentLabel.FAQ_QUESTION:
+            if any(s.intent is not IntentLabel.FAQ_QUESTION for s in pair.produced):
                 requests.append(
                     _excluded_from_both(
                         case_id, pair.position, ExclusionReason.NOT_ROUTED_TO_FAQ
                     )
                 )
                 continue
-            segment = _segment_events(case_run, pair.position)
-            requests.append(_score_request(case_id, pair.position, cited, segment))
+            halves = [
+                _score_request(
+                    case_id,
+                    segment.position,
+                    cited,
+                    _segment_events(case_run, segment.position),
+                )
+                for segment in pair.produced
+            ]
+            requests.append(_best_of(case_id, pair.position, halves))
 
     return _scores(requests, unaligned, similarity_cap)
+
+
+# The reasons a half can be set aside from a stage for, earliest in the pipeline first.
+_PIPELINE_ORDER: Final[list[ExclusionReason | None]] = [
+    ExclusionReason.NO_SEARCH,
+    ExclusionReason.NOT_REACHED_RERANKER,
+    ExclusionReason.RERANKER_UNAVAILABLE,
+]
+
+
+def _best_of(
+    case_id: str, position: int, halves: Sequence[RetrievalRequest]
+) -> RetrievalRequest:
+    """Score one labelled request from the halves the classifier split it into.
+
+    Args:
+        position: the labelled request's position.
+        halves: each produced half, scored on its own segment's events.
+
+    A single half is that half, filed under the labelled position. Of several, each
+    stage takes the best any half reached: the lowest rank among the halves it scored,
+    and a miss when it scored halves and none ranked. When it scored none, the request
+    is set aside for the reason of the half that got furthest down the pipeline - so a
+    half the reranker was unavailable for outranks one that never reached it.
+    """
+    if len(halves) == 1:
+        return halves[0].model_copy(update={"position": position})
+    return RetrievalRequest(
+        case_id=case_id,
+        position=position,
+        similarity=_best_stage([half.similarity for half in halves]),
+        rerank=_best_stage([half.rerank for half in halves]),
+        survived_similarity_gate=_best_survival(halves),
+    )
+
+
+def _best_stage(results: Sequence[StageResult]) -> StageResult:
+    """Return the best of several halves' results at one stage."""
+    scored = [result for result in results if result.excluded is None]
+    if not scored:
+        return max(results, key=lambda r: _PIPELINE_ORDER.index(r.excluded))
+    ranks = [result.rank for result in scored if result.rank is not None]
+    return StageResult(rank=min(ranks) if ranks else None)
+
+
+def _best_survival(halves: Sequence[RetrievalRequest]) -> bool | None:
+    """Return whether any half's cited chunk survived the similarity gate."""
+    flags = [h.survived_similarity_gate for h in halves]
+    known = [flag for flag in flags if flag is not None]
+    return any(known) if known else None
 
 
 def _excluded_from_both(

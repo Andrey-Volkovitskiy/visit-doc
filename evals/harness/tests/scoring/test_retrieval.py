@@ -46,6 +46,8 @@ from golden_harness.scoring.retrieval import (
     RetrievalRequest,
     RetrievalScores,
     Stage,
+    StageResult,
+    _best_of,
     score_retrieval,
 )
 from pydantic import JsonValue
@@ -427,3 +429,118 @@ def test_a_kept_cited_chunk_with_no_rerank_event_of_either_kind_is_refused() -> 
 
     with pytest.raises(ValueError, match="G921"):
         _score(_with_events("G921", events))
+
+
+# --- a labelled question the classifier split into two FAQ questions -----------------
+
+
+def _split_g930(first: str, second: str) -> list[CaseRun]:
+    """G930 recorded as two produced FAQ halves, carrying `first`'s and `second`'s
+    retrieval events as segments 0 and 1."""
+
+    def retagged(case_id: str, segment: int) -> list[dict[str, JsonValue]]:
+        return [
+            {**event, "segment": segment} if "segment" in event else event
+            for event in _events_of(case_id)
+        ]
+
+    g930 = read_case(_RUN, "G930")
+    assert g930.segments is not None
+    (only,) = g930.segments.segments
+    halves = g930.segments.model_copy(
+        update={
+            "segments": [only, only.model_copy(update={"position": 1})],
+        }
+    )
+    events = retagged(first, 0) + [e for e in retagged(second, 1) if "segment" in e]
+    return [
+        run.model_copy(update={"segments": halves, "events": events})
+        if run.case_id == "G930"
+        else run
+        for run in _case_runs()
+    ]
+
+
+def test_a_split_question_is_scored_once_under_its_labelled_position() -> None:
+    scores = _score(_split_g930("G930", "G934"))
+
+    assert [r.position for r in scores.requests if r.case_id == "G930"] == [0]
+
+
+@pytest.mark.parametrize(("first", "second"), [("G930", "G934"), ("G934", "G930")])
+def test_a_split_question_takes_the_best_rank_either_half_reached(
+    first: str, second: str
+) -> None:
+    alone = _request(_score(), "G930")
+
+    request = _request(_score(_split_g930(first, second)), "G930")
+
+    # G930's own half ranks its cited entry 3rd and 1st after reranking; the other
+    # half's shortlist does no better, so the best of the two is G930's own.
+    assert request.similarity.rank == alone.similarity.rank == 3
+    assert request.rerank.rank == alone.rerank.rank == 1
+    assert request.survived_similarity_gate is True
+
+
+def _half(
+    similarity: StageResult, rerank: StageResult, survived: bool | None
+) -> RetrievalRequest:
+    return RetrievalRequest(
+        case_id="G999",
+        position=7,
+        similarity=similarity,
+        rerank=rerank,
+        survived_similarity_gate=survived,
+    )
+
+
+def test_the_best_of_two_halves_is_the_lower_rank_at_each_stage() -> None:
+    best = _best_of(
+        "G999",
+        0,
+        [
+            _half(StageResult(rank=4), StageResult(rank=2), True),
+            _half(StageResult(rank=1), StageResult(rank=3), True),
+        ],
+    )
+
+    assert (best.position, best.similarity.rank, best.rerank.rank) == (0, 1, 2)
+
+
+def test_a_half_that_missed_does_not_hide_a_half_that_ranked() -> None:
+    best = _best_of(
+        "G999",
+        0,
+        [
+            _half(
+                StageResult(rank=None),
+                StageResult(excluded=ExclusionReason.NOT_REACHED_RERANKER),
+                False,
+            ),
+            _half(StageResult(rank=2), StageResult(rank=1), True),
+        ],
+    )
+
+    assert (best.similarity.rank, best.rerank.rank) == (2, 1)
+    assert best.survived_similarity_gate is True
+
+
+def test_the_furthest_half_names_why_a_stage_scored_no_half() -> None:
+    best = _best_of(
+        "G999",
+        0,
+        [
+            _half(
+                StageResult(rank=None),
+                StageResult(excluded=ExclusionReason.NOT_REACHED_RERANKER),
+                False,
+            ),
+            _half(
+                StageResult(rank=2),
+                StageResult(excluded=ExclusionReason.RERANKER_UNAVAILABLE),
+                True,
+            ),
+        ],
+    )
+
+    assert best.rerank.excluded is ExclusionReason.RERANKER_UNAVAILABLE

@@ -453,12 +453,14 @@ def test_the_prompt_reads_the_message_against_the_conversation() -> None:
     assert "against what was said before it" in prompt
 
 
-def test_the_prompt_splits_conservatively() -> None:
-    # Under-splitting is today's behaviour; over-splitting is a new failure, and it
-    # lands on the common case (FR-005, FR-005a).
+def test_the_prompt_splits_by_answer() -> None:
+    # Two parts with two answers are two requests even inside one sentence: each gets
+    # its own retrieval, and the golden set scores a labelled question split this way
+    # as answered whole.
     prompt = _prompt()
-    assert "split conservatively" in prompt
+    assert "split by answer" in prompt
     assert "independently answerable" in prompt
+    assert '"what are your clinic hours and locations?" is two requests' in prompt
 
 
 def test_the_prompt_combines_above_the_cap_rather_than_dropping() -> None:
@@ -499,3 +501,51 @@ def test_a_segment_built_without_a_query_searches_for_its_text() -> None:
 def test_a_segment_refuses_a_blank_query() -> None:
     with pytest.raises(ValidationError):
         RequestSegment(intent=IntentLabel.FAQ_QUESTION, text="is it free?", query="  ")
+
+
+async def test_the_classification_is_sampled_at_temperature_zero() -> None:
+    # A borderline message sampled at the default temperature lands on either side of
+    # a label boundary from run to run, and every later stage follows the label.
+    client = fake_classify_intent_client([IntentLabel.FAQ_QUESTION])
+
+    await classify_intent(client, _CONTEXT)
+
+    assert client.messages.create.call_args.kwargs["temperature"] == 0.0
+
+
+def test_the_prompt_puts_a_question_about_what_a_visit_requires_on_the_faq_side() -> (
+    None
+):
+    prompt = _prompt()
+    assert "faq_question or booking: a question about what a visit requires" in prompt
+    assert '"can i see a cardiologist next week?" is booking' in prompt
+
+
+def test_the_prompt_puts_logistics_near_the_clinic_on_the_faq_side() -> None:
+    prompt = _prompt()
+    assert "faq_question or small_talk: parking, directions" in prompt
+    assert "including a garage, stop or shop its visitors use" in prompt
+
+
+def test_the_prompt_separates_asking_about_a_policy_from_asking_for_an_action() -> None:
+    prompt = _prompt()
+    assert "faq_question or unknown: asking whether something is possible" in prompt
+    assert "unknown is asking the clinic to do something for the patient" in prompt
+
+
+def test_the_prompt_forbids_a_restatement_that_changes_the_question() -> None:
+    prompt = _prompt()
+    assert "resolving a reference must keep what is asked" in prompt
+    assert 'never "do you have a dentist?"' in prompt
+
+
+def test_the_prompt_keeps_the_segments_in_the_order_the_visitor_asked() -> None:
+    # Positions are what every per-request record joins on, and what the golden set
+    # scores a request against: a reversed pair files each answer under the other's
+    # question.
+    prompt = _prompt()
+    assert "keep the visitor's order" in prompt
+    assert (
+        'gives "do i need a referral?" first and "do i need a referral to see a '
+        'dentist?" second, never the reverse' in prompt
+    )

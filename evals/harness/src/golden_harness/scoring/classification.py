@@ -1,8 +1,11 @@
 """Classification metrics: did the turn find the labelled requests, in order, by intent.
 
 Three numbers, because the strict one alone cannot say what failed: request-count
-accuracy (the count was right), intent accuracy over aligned requests (the intents were
-right where the count was), and exact segmentation match (both, at every position).
+accuracy (the produced requests aligned with the labelled ones), intent accuracy over
+aligned requests (the intents were right where they aligned), and exact segmentation
+match (both, for every labelled request). A labelled `faq_question` the classifier split
+into consecutive `faq_question`s aligns, and counts as one request with the right
+intent - its reply still carries every half.
 
 Only intents are compared. A segment's produced text and a label's gist are both
 restatements, and neither is read here.
@@ -117,7 +120,11 @@ def score_classification(
 
         count_matches += 1
         pairs = case_alignment.pairs
-        matching = sum(1 for p in pairs if p.labelled.intent is p.produced.intent)
+        matching = sum(
+            1
+            for p in pairs
+            if all(segment.intent is p.labelled.intent for segment in p.produced)
+        )
         aligned_requests += len(pairs)
         matching_intents += matching
         if matching == len(pairs):
@@ -126,7 +133,7 @@ def score_classification(
         disagreements.append(
             SegmentationDisagreement(
                 case_id=case_run.case_id,
-                labelled=[p.labelled.intent for p in pairs],
+                labelled=[request.intent for request in label.requests],
                 produced=produced,
             )
         )

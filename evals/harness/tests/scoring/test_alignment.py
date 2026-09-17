@@ -6,6 +6,7 @@ import pytest
 from golden_harness.cases import Case
 from golden_harness.record import CaseRun, ExclusionReason
 from golden_harness.scoring.alignment import (
+    AlignedPair,
     Alignment,
     AlignmentState,
     AlignmentTotals,
@@ -13,6 +14,7 @@ from golden_harness.scoring.alignment import (
     align_case,
     align_run,
 )
+from pydantic import ValidationError
 
 _INTENT_FIELDS: dict[str, dict[str, Any]] = {
     "faq_question": {"answerable": True, "cites": ["what-to-bring"]},
@@ -68,9 +70,9 @@ def test_equal_counts_align_by_position() -> None:
         "booking",
     ]
     # Position, not intent, decides the pairing: a swapped order pairs across intents.
-    assert [pair.produced.intent.value for pair in alignment.pairs] == [
-        "booking",
-        "faq_question",
+    assert [[s.intent.value for s in pair.produced] for pair in alignment.pairs] == [
+        ["booking"],
+        ["faq_question"],
     ]
     assert alignment.unaligned_positions == []
     assert alignment.excluded_positions == []
@@ -90,6 +92,100 @@ def test_unequal_counts_leave_every_labelled_request_unaligned(
     assert alignment.pairs == []
     assert alignment.unaligned_positions == [0, 1]
     assert alignment.produced_count == len(produced)
+
+
+# --- a labelled FAQ question the classifier split ------------------------------------
+
+
+def test_a_faq_question_split_into_two_faq_questions_aligns_as_one_request() -> None:
+    case = _case("G003", "faq_question")
+
+    alignment = align_case(case, _run("G003", "faq_question", "faq_question"))
+
+    assert alignment.state is AlignmentState.ALIGNED
+    (pair,) = alignment.pairs
+    assert pair.position == 0
+    assert [s.position for s in pair.produced] == [0, 1]
+    assert alignment.unaligned_positions == []
+
+
+def test_a_split_beside_another_request_groups_only_the_faq_halves() -> None:
+    case = _case("G004", "faq_question", "booking")
+
+    alignment = align_case(
+        case, _run("G004", "faq_question", "faq_question", "booking")
+    )
+
+    assert alignment.state is AlignmentState.ALIGNED
+    assert [[s.position for s in p.produced] for p in alignment.pairs] == [[0, 1], [2]]
+
+
+@pytest.mark.parametrize(
+    ("labelled", "produced"),
+    [
+        # A FAQ question whose other half left the FAQ path is not answered whole.
+        (("faq_question",), ("faq_question", "booking")),
+        # Only a FAQ question is answered as one merged reply.
+        (("booking",), ("booking", "booking")),
+    ],
+)
+def test_a_split_that_is_not_faq_throughout_is_unaligned(
+    labelled: tuple[str, ...], produced: tuple[str, ...]
+) -> None:
+    alignment = align_case(_case("G005", *labelled), _run("G005", *produced))
+
+    assert alignment.state is AlignmentState.UNALIGNED
+    assert alignment.pairs == []
+
+
+def test_a_split_that_could_belong_to_either_question_is_unaligned() -> None:
+    # Two labelled questions, three produced halves: which question was split is a
+    # guess, so neither grouping is chosen.
+    case = _case("G006", "faq_question", "faq_question")
+
+    alignment = align_case(
+        case, _run("G006", "faq_question", "faq_question", "faq_question")
+    )
+
+    assert alignment.state is AlignmentState.UNALIGNED
+    assert alignment.unaligned_positions == [0, 1]
+
+
+def test_a_wrong_intent_one_to_one_still_aligns() -> None:
+    alignment = align_case(_case("G007", "faq_question"), _run("G007", "booking"))
+
+    assert alignment.state is AlignmentState.ALIGNED
+    assert [s.intent.value for s in alignment.pairs[0].produced] == ["booking"]
+
+
+def _segment(position: int, intent: str) -> dict[str, Any]:
+    return {"position": position, "intent": intent, "text": f"request {position}"}
+
+
+def test_a_pair_refuses_several_produced_requests_that_are_not_faq_throughout() -> None:
+    (labelled,) = _case("G008", "faq_question").requests
+
+    with pytest.raises(ValidationError, match="only a faq_question"):
+        AlignedPair.model_validate(
+            {
+                "position": 0,
+                "labelled": labelled,
+                "produced": [_segment(0, "faq_question"), _segment(1, "booking")],
+            }
+        )
+
+
+def test_a_pair_refuses_produced_requests_that_are_not_consecutive() -> None:
+    (labelled,) = _case("G009", "faq_question").requests
+
+    with pytest.raises(ValidationError, match="not consecutive"):
+        AlignedPair.model_validate(
+            {
+                "position": 0,
+                "labelled": labelled,
+                "produced": [_segment(0, "faq_question"), _segment(2, "faq_question")],
+            }
+        )
 
 
 @pytest.mark.parametrize(

@@ -9,9 +9,13 @@ Two zero-target shares that share part of a numerator and differ in denominator.
   and are listed by id. An `unknown` request escalates without silencing, so a case
   pairing one with a question stays. Its numerator is every such request that did not
   get an answered verdict, by cause: the turn abstained on it, the case was unaligned so
-  it never became an outcome, or it aligned but was produced under another intent.
+  it never became an outcome, or it aligned but was produced under another intent. A
+  request the classifier split into several `faq_question`s is served only when every
+  half was answered - the reply is then whole - and is otherwise unserved at the first
+  half that abstained.
 - **Wrong-abstention share** (C2) asks how often an abstention was wrong: of every
-  abstention the run produced, those aligned to a labelled-answerable request.
+  abstention the run produced, those aligned to a labelled-answerable request - each
+  half of a split request counted as the abstention it is.
 
 `answered_unreranked` is an answer for both, and is listed separately as a degraded
 answer. The verdict distribution counts every outcome the run produced across all six
@@ -20,7 +24,7 @@ verdicts, zeros included, because which gate stopped a request is what says what
 Every case-scoped exclusion, and `handed_off_turn`, sets a case aside from all three.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from enum import StrEnum
 
 from chat.domain.schemas import FaqVerdict, IntentLabel, RequestOutcome
@@ -28,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, computed_field, model_validator
 
 from golden_harness.cases import Case, LabelledRequest
 from golden_harness.record import CaseRun, ExclusionReason
-from golden_harness.scoring.alignment import AlignmentState, RunAlignment
+from golden_harness.scoring.alignment import AlignedPair, AlignmentState, RunAlignment
 from golden_harness.scoring.metric import Exclusions, Metric
 
 UNSERVED_ANSWERABLE_SHARE = "unserved_answerable_share"
@@ -250,9 +254,14 @@ def score_serving(
 
         aligned = case_alignment.state is AlignmentState.ALIGNED
         outcomes = _outcomes_by_position(case_run)
+        labelled_by_produced = {
+            segment.position: pair.labelled
+            for pair in case_alignment.pairs
+            for segment in pair.produced
+        }
         for outcome in outcomes.values():
             counts[outcome.verdict] += 1
-            labelled = _labelled_at(label, outcome, aligned)
+            labelled = _labelled_at(label, outcome, labelled_by_produced, aligned)
             if outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED:
                 degraded.append(_answer(case_id, outcome))
             if outcome.verdict.answered:
@@ -295,38 +304,9 @@ def score_serving(
         for pair in case_alignment.pairs:
             if pair.position not in answerable:
                 continue
-            produced = outcomes.get(pair.position)
-            if pair.produced.intent is not IntentLabel.FAQ_QUESTION:
-                if produced is not None:
-                    raise ValueError(
-                        f"{case_id}: position {pair.position} was produced as "
-                        f"{pair.produced.intent.value} but carries a FAQ outcome"
-                    )
-                unserved.append(
-                    UnservedRequest(
-                        case_id=case_id,
-                        position=pair.position,
-                        question=pair.produced.text,
-                        cause=UnservedCause.MISCLASSIFIED,
-                        gate=None,
-                    )
-                )
-                continue
-            if produced is None:
-                raise ValueError(
-                    f"{case_id}: the faq_question at position {pair.position} "
-                    "has no outcome"
-                )
-            if not produced.verdict.answered:
-                unserved.append(
-                    UnservedRequest(
-                        case_id=case_id,
-                        position=pair.position,
-                        question=produced.question,
-                        cause=UnservedCause.ABSTAINED,
-                        gate=StoppingGate.of(produced.verdict),
-                    )
-                )
+            miss = _unserved_pair(case_id, pair, outcomes)
+            if miss is not None:
+                unserved.append(miss)
 
     by_case = Exclusions.tally(case_exclusions)
     return ServingScores(
@@ -377,21 +357,69 @@ def _outcomes_by_position(case_run: CaseRun) -> dict[int, RequestOutcome]:
     return by_position
 
 
+def _unserved_pair(
+    case_id: str, pair: AlignedPair, outcomes: Mapping[int, RequestOutcome]
+) -> UnservedRequest | None:
+    """Return how a labelled-answerable request went unserved, or None when served.
+
+    Raises: ValueError naming the case when a request produced under another intent
+        carries a FAQ outcome, or a produced `faq_question` has none.
+    """
+    (first, *rest) = pair.produced
+    if not rest and first.intent is not IntentLabel.FAQ_QUESTION:
+        if first.position in outcomes:
+            raise ValueError(
+                f"{case_id}: position {first.position} was produced as "
+                f"{first.intent.value} but carries a FAQ outcome"
+            )
+        return UnservedRequest(
+            case_id=case_id,
+            position=pair.position,
+            question=first.text,
+            cause=UnservedCause.MISCLASSIFIED,
+            gate=None,
+        )
+    for segment in pair.produced:
+        produced = outcomes.get(segment.position)
+        if produced is None:
+            raise ValueError(
+                f"{case_id}: the faq_question at position {segment.position} "
+                "has no outcome"
+            )
+        if not produced.verdict.answered:
+            return UnservedRequest(
+                case_id=case_id,
+                position=pair.position,
+                question=produced.question,
+                cause=UnservedCause.ABSTAINED,
+                gate=StoppingGate.of(produced.verdict),
+            )
+    return None
+
+
 def _labelled_at(
-    label: Case, outcome: RequestOutcome, aligned: bool
+    label: Case,
+    outcome: RequestOutcome,
+    labelled_by_produced: Mapping[int, LabelledRequest],
+    aligned: bool,
 ) -> LabelledRequest | None:
     """Return the labelled request an outcome aligns to, or None in an unaligned case.
 
+    Args:
+        labelled_by_produced: each produced position's labelled request, from the
+            case's alignment.
+
     Raises: ValueError naming the case when an aligned case's outcome sits at a
-        position its label does not have.
+        produced position its alignment does not have.
     """
     if not aligned:
         return None
-    if not 0 <= outcome.position < len(label.requests):
+    labelled = labelled_by_produced.get(outcome.position)
+    if labelled is None:
         raise ValueError(
             f"{label.id}: an outcome at position {outcome.position} has no label"
         )
-    return label.requests[outcome.position]
+    return labelled
 
 
 def _answer(case_id: str, outcome: RequestOutcome) -> Answer:

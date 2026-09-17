@@ -251,3 +251,73 @@ def test_the_verdict_distribution_publishes_one_metric_per_verdict() -> None:
     }
     empty_pool = metrics["verdict_distribution.abstained_empty_pool"]
     assert (empty_pool.numerator, empty_pool.denominator) == (0, 13)
+
+
+# --- a labelled question the classifier split into two FAQ questions -----------------
+
+
+def _split_g930(second_verdict: FaqVerdict) -> list[CaseRun]:
+    """G930 recorded as two produced FAQ halves: its own answered outcome at position 0,
+    and a second half at position 1 with `second_verdict`."""
+    g930 = read_case(_RUN, "G930")
+    assert g930.segments is not None and g930.assistant_message is not None
+    (only,) = g930.segments.segments
+    (answered,) = g930.assistant_message.request_outcomes or []
+    abstained = not second_verdict.answered
+    second = answered.model_copy(
+        update={
+            "position": 1,
+            "question": "What are your out-of-pocket rates?",
+            "verdict": second_verdict,
+            "answer": None if abstained else answered.answer,
+            "citations": [] if abstained else answered.citations,
+        }
+    )
+    halves = g930.segments.model_copy(
+        update={
+            "segments": [
+                only,
+                only.model_copy(update={"position": 1, "text": second.question}),
+            ]
+        }
+    )
+    message = g930.assistant_message.model_copy(
+        update={"request_outcomes": [answered, second]}
+    )
+    return [
+        run.model_copy(update={"segments": halves, "assistant_message": message})
+        if run.case_id == "G930"
+        else run
+        for run in _case_runs()
+    ]
+
+
+def test_a_split_question_both_of_whose_halves_were_answered_is_served() -> None:
+    scores = _score(_split_g930(FaqVerdict.ANSWERED))
+
+    assert "G930" not in {u.case_id for u in scores.unserved}
+    assert (
+        scores.unserved_answerable_share.numerator,
+        scores.unserved_answerable_share.denominator,
+    ) == (6, 12)
+
+
+def test_a_split_question_with_an_abstained_half_is_unserved_at_that_half() -> None:
+    scores = _score(_split_g930(FaqVerdict.ABSTAINED_RERANK_FLOOR))
+
+    (unserved,) = [u for u in scores.unserved if u.case_id == "G930"]
+    assert (unserved.position, unserved.cause, unserved.gate) == (
+        0,
+        UnservedCause.ABSTAINED,
+        StoppingGate.RERANK_FLOOR,
+    )
+    assert unserved.question == "What are your out-of-pocket rates?"
+    # One labelled question, so one unserved request - not one per half.
+    assert scores.unserved_answerable_share.denominator == 12
+
+
+def test_an_abstained_half_of_an_answerable_question_is_a_wrong_abstention() -> None:
+    scores = _score(_split_g930(FaqVerdict.ABSTAINED_RERANK_FLOOR))
+
+    assert ("G930", 1) in {(a.case_id, a.position) for a in scores.wrong_abstentions}
+    assert scores.wrong_abstention_share.denominator == 6

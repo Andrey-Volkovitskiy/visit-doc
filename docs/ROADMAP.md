@@ -344,9 +344,9 @@ of nothing.
   free?" splits into a second half that retrieves nothing on its own. The segmenter resolves
   pronouns and ellipsis against the message and the history it already reads, so every segment
   stands as a question by itself.
-- **Split conservatively — under-splitting is today's behavior, over-splitting is a new failure.**
-  One request stays one segment; a message splits only where the parts are independently
-  answerable, and the count is capped (3 to start) so a rambling message cannot fan out without
+- **Split by answer.** One request stays one segment; a message splits wherever the parts are
+  independently answerable, even inside one sentence ("hours and locations" is two), since a
+  question split into two FAQ halves is still answered whole in one reply, and the count is capped (3 to start) so a rambling message cannot fan out without
   bound. *(The cap cannot be put in the schema — the API rejects array bounds in a
   constrained-output schema — so it is stated in the prompt and enforced on arrival: an over-long
   result is rejected and the turn falls back to the whole message, never trimmed. A four-request
