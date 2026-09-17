@@ -1,0 +1,1820 @@
+{
+  "alignment": {
+    "base": {
+      "aligned": 185,
+      "excluded": 0,
+      "labelled": 190,
+      "unaligned": 5
+    },
+    "moved": true,
+    "new": {
+      "aligned": 186,
+      "excluded": 0,
+      "labelled": 190,
+      "unaligned": 4
+    }
+  },
+  "band_applicable": true,
+  "band_id": "01M2QVRDGXFN3W7FT21EP4N0KG",
+  "base": {
+    "complete": true,
+    "conditions": {
+      "classification_model": "claude-haiku-4-5-20251001",
+      "context_turns": 5,
+      "embedding_model": "voyage-4-lite",
+      "generation_model": "claude-sonnet-5",
+      "max_segments": 3,
+      "rerank_cap": 3,
+      "rerank_floor": 0.58,
+      "rerank_model": "rerank-3",
+      "retrieval_pool_size": 25,
+      "similarity_cap": 5,
+      "similarity_floor": 0.3
+    },
+    "corpus": {
+      "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+      "matched": true,
+      "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0"
+    },
+    "location": "/home/andrey/visit-doc/.run/evals/01M2NMC5ATQ0G5G6246PW0VP3E",
+    "recorded_cases": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "run_id": "01M2NMC5ATQ0G5G6246PW0VP3E",
+    "selection": {
+      "case_ids": [
+        "G001",
+        "G002",
+        "G003",
+        "G004",
+        "G005",
+        "G006",
+        "G007",
+        "G008",
+        "G009",
+        "G010",
+        "G011",
+        "G012",
+        "G013",
+        "G014",
+        "G015",
+        "G016",
+        "G017",
+        "G018",
+        "G019",
+        "G020",
+        "G021",
+        "G022",
+        "G023",
+        "G024",
+        "G025",
+        "G026",
+        "G027",
+        "G028",
+        "G029",
+        "G030",
+        "G031",
+        "G032",
+        "G033",
+        "G034",
+        "G035",
+        "G036",
+        "G037",
+        "G038",
+        "G039",
+        "G040",
+        "G041",
+        "G042",
+        "G043",
+        "G044",
+        "G045",
+        "G046",
+        "G047",
+        "G048",
+        "G049",
+        "G050",
+        "G051",
+        "G052",
+        "G053",
+        "G054",
+        "G055",
+        "G056",
+        "G057",
+        "G058",
+        "G059",
+        "G060",
+        "G061",
+        "G062",
+        "G063",
+        "G064",
+        "G065",
+        "G066",
+        "G067",
+        "G068",
+        "G069",
+        "G070",
+        "G071",
+        "G072",
+        "G073",
+        "G074",
+        "G075",
+        "G076",
+        "G077",
+        "G078",
+        "G079",
+        "G080",
+        "G081",
+        "G082",
+        "G083",
+        "G084",
+        "G085",
+        "G086",
+        "G087",
+        "G088",
+        "G089",
+        "G090",
+        "G091",
+        "G092",
+        "G093",
+        "G094",
+        "G095",
+        "G096",
+        "G097",
+        "G098",
+        "G099",
+        "G100",
+        "G101",
+        "G102",
+        "G104",
+        "G105",
+        "G106",
+        "G107",
+        "G108",
+        "G109",
+        "G110",
+        "G111",
+        "G112",
+        "G113",
+        "G114",
+        "G115",
+        "G116",
+        "G117",
+        "G118",
+        "G119",
+        "G120",
+        "G121",
+        "G122",
+        "G123",
+        "G124",
+        "G125",
+        "G126",
+        "G127",
+        "G128",
+        "G129",
+        "G130",
+        "G131",
+        "G132",
+        "G133",
+        "G134",
+        "G135",
+        "G136"
+      ],
+      "family": null,
+      "kind": "all"
+    },
+    "started_at": "2026-09-16T17:31:32.058255Z"
+  },
+  "cases": [
+    {
+      "affects": [
+        "intent_accuracy",
+        "request_count_accuracy"
+      ],
+      "base": "faq_question, small_talk",
+      "base_excluded": null,
+      "case_id": "G033",
+      "direction": "directionless",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "faq_question",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G062",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing book_appointment",
+      "base_excluded": null,
+      "case_id": "G062",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [],
+      "base": "urgent_condition, booking_for_another",
+      "base_excluded": "handed_off_turn",
+      "case_id": "G077",
+      "direction": "directionless",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "booking_for_another, urgent_condition",
+      "new_excluded": "handed_off_turn",
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G095",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing book_appointment",
+      "base_excluded": null,
+      "case_id": "G095",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "rerank rank 2",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "improved",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 1",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "similarity rank 4",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "improved",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 1",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_hit_at_3",
+        "similarity_mrr",
+        "unserved_answerable_share",
+        "verdict_distribution.abstained_rerank_floor",
+        "verdict_distribution.answered",
+        "wrong_abstention_share"
+      ],
+      "base": "abstained_rerank_floor",
+      "base_excluded": null,
+      "case_id": "G097",
+      "direction": "improved",
+      "group": "verdict",
+      "labelled": "answerable",
+      "new": "answered",
+      "new_excluded": null,
+      "position": 1,
+      "question": "Do I need a referral to see a dentist?",
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_mrr"
+      ],
+      "base": "rerank rank 2",
+      "base_excluded": null,
+      "case_id": "G099",
+      "direction": "improved",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "rerank rank 1",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "rerank_hit_at_1",
+        "rerank_mrr",
+        "similarity_hit_at_1",
+        "similarity_mrr"
+      ],
+      "base": "similarity rank 2",
+      "base_excluded": null,
+      "case_id": "G099",
+      "direction": "improved",
+      "group": "retrieval_rank",
+      "labelled": null,
+      "new": "similarity rank 1",
+      "new_excluded": null,
+      "position": 1,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "did not match at scheduling_after",
+      "base_excluded": null,
+      "case_id": "G102",
+      "direction": "improved",
+      "group": "database_state",
+      "labelled": null,
+      "new": "expected appointments found",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "end_to_end_task_success",
+        "tool_selection_correctness"
+      ],
+      "base": "missing book_appointment, cancel_appointment",
+      "base_excluded": null,
+      "case_id": "G102",
+      "direction": "improved",
+      "group": "tool_selection",
+      "labelled": null,
+      "new": "every labelled tool called",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": true
+    },
+    {
+      "affects": [
+        "exact_segmentation_match",
+        "intent_accuracy",
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "faq_question, unknown",
+      "base_excluded": null,
+      "case_id": "G130",
+      "direction": "improved",
+      "group": "segmentation",
+      "labelled": null,
+      "new": "faq_question, faq_question",
+      "new_excluded": null,
+      "position": null,
+      "question": null,
+      "varies_on_its_own": false
+    },
+    {
+      "affects": [
+        "intent_accuracy",
+        "verdict_distribution.abstained_rerank_floor",
+        "wrong_abstention_share"
+      ],
+      "base": "no outcome recorded",
+      "base_excluded": null,
+      "case_id": "G130",
+      "direction": "directionless",
+      "group": "verdict",
+      "labelled": "a gap",
+      "new": "abstained_rerank_floor",
+      "new_excluded": null,
+      "position": 1,
+      "question": "Can I set up a payment plan?",
+      "varies_on_its_own": false
+    }
+  ],
+  "compare_seconds": 0.28004555602092296,
+  "compared_at": "2026-09-17T17:39:19.464066Z",
+  "conditions": {
+    "changes": []
+  },
+  "corpus_moved": false,
+  "coverage": {
+    "base_only": [],
+    "common": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "new_only": [],
+    "restricted": false
+  },
+  "exclusions": {
+    "handed_off_turn": {
+      "base": 33,
+      "moved": false,
+      "new": 33
+    }
+  },
+  "metrics": [
+    {
+      "band": {
+        "high": 0.9777777777777777,
+        "inside": true,
+        "low": 0.9777777777777777
+      },
+      "base": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "request_count_accuracy",
+        "numerator": 131,
+        "value": 0.9703703703703703
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "classification",
+      "name": "request_count_accuracy",
+      "new": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "request_count_accuracy",
+        "numerator": 132,
+        "value": 0.9777777777777777
+      }
+    },
+    {
+      "band": {
+        "high": 0.9731182795698925,
+        "inside": true,
+        "low": 0.9731182795698925
+      },
+      "base": {
+        "denominator": 185,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "intent_accuracy",
+        "numerator": 180,
+        "value": 0.972972972972973
+      },
+      "denominator_moved": true,
+      "direction": "improved",
+      "family": "classification",
+      "name": "intent_accuracy",
+      "new": {
+        "denominator": 186,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "intent_accuracy",
+        "numerator": 181,
+        "value": 0.9731182795698925
+      }
+    },
+    {
+      "band": {
+        "high": 0.9481481481481482,
+        "inside": true,
+        "low": 0.9481481481481482
+      },
+      "base": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "exact_segmentation_match",
+        "numerator": 127,
+        "value": 0.9407407407407408
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "classification",
+      "name": "exact_segmentation_match",
+      "new": {
+        "denominator": 135,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "exact_segmentation_match",
+        "numerator": 128,
+        "value": 0.9481481481481482
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_1",
+        "numerator": 85,
+        "value": 0.9770114942528736
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "retrieval",
+      "name": "similarity_hit_at_1",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_1",
+        "numerator": 87,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_3",
+        "numerator": 86,
+        "value": 0.9885057471264368
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "retrieval",
+      "name": "similarity_hit_at_3",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_3",
+        "numerator": 87,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_5",
+        "numerator": 87,
+        "value": 1.0
+      },
+      "denominator_moved": false,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "similarity_hit_at_5",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_hit_at_5",
+        "numerator": 87,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_mrr",
+        "numerator": 85.75,
+        "value": 0.985632183908046
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "retrieval",
+      "name": "similarity_mrr",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_mrr",
+        "numerator": 87.0,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_1",
+        "numerator": 84,
+        "value": 0.9767441860465116
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "retrieval",
+      "name": "rerank_hit_at_1",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_1",
+        "numerator": 86,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_3",
+        "numerator": 86,
+        "value": 1.0
+      },
+      "denominator_moved": false,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "rerank_hit_at_3",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_3",
+        "numerator": 86,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_5",
+        "numerator": 86,
+        "value": 1.0
+      },
+      "denominator_moved": false,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "rerank_hit_at_5",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_hit_at_5",
+        "numerator": 86,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 1.0
+      },
+      "base": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_mrr",
+        "numerator": 85.0,
+        "value": 0.9883720930232558
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "retrieval",
+      "name": "rerank_mrr",
+      "new": {
+        "denominator": 86,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6,
+            "not_reached_reranker": 1
+          },
+          "total": 7
+        },
+        "name": "rerank_mrr",
+        "numerator": 86.0,
+        "value": 1.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.9885057471264368,
+        "inside": true,
+        "low": 0.9885057471264368
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_gate_survival",
+        "numerator": 86,
+        "value": 0.9885057471264368
+      },
+      "denominator_moved": false,
+      "direction": "unchanged",
+      "family": "retrieval",
+      "name": "similarity_gate_survival",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "similarity_gate_survival",
+        "numerator": 86,
+        "value": 0.9885057471264368
+      }
+    },
+    {
+      "band": {
+        "high": 0.04597701149425287,
+        "inside": true,
+        "low": 0.04597701149425287
+      },
+      "base": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "unserved_answerable_share",
+        "numerator": 5,
+        "value": 0.05747126436781609
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "serving",
+      "name": "unserved_answerable_share",
+      "new": {
+        "denominator": 87,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 6
+          },
+          "total": 6
+        },
+        "name": "unserved_answerable_share",
+        "numerator": 4,
+        "value": 0.04597701149425287
+      }
+    },
+    {
+      "band": {
+        "high": 0.17391304347826086,
+        "inside": true,
+        "low": 0.17391304347826086
+      },
+      "base": {
+        "denominator": 23,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "wrong_abstention_share",
+        "numerator": 5,
+        "value": 0.21739130434782608
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "serving",
+      "name": "wrong_abstention_share",
+      "new": {
+        "denominator": 23,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "wrong_abstention_share",
+        "numerator": 4,
+        "value": 0.17391304347826086
+      }
+    },
+    {
+      "band": {
+        "high": 0.7964601769911505,
+        "inside": true,
+        "low": 0.7964601769911505
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered",
+        "numerator": 89,
+        "value": 0.7946428571428571
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.answered",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered",
+        "numerator": 90,
+        "value": 0.7964601769911505
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered_unreranked",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.answered_unreranked",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.answered_unreranked",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_corpus",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_empty_corpus",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_corpus",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.0,
+        "inside": true,
+        "low": 0.0
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_pool",
+        "numerator": 0,
+        "value": 0.0
+      },
+      "denominator_moved": true,
+      "direction": "unchanged",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_empty_pool",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_empty_pool",
+        "numerator": 0,
+        "value": 0.0
+      }
+    },
+    {
+      "band": {
+        "high": 0.04424778761061947,
+        "inside": true,
+        "low": 0.04424778761061947
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_similarity_floor",
+        "numerator": 5,
+        "value": 0.044642857142857144
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_similarity_floor",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_similarity_floor",
+        "numerator": 5,
+        "value": 0.04424778761061947
+      }
+    },
+    {
+      "band": {
+        "high": 0.1592920353982301,
+        "inside": true,
+        "low": 0.1592920353982301
+      },
+      "base": {
+        "denominator": 112,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_rerank_floor",
+        "numerator": 18,
+        "value": 0.16071428571428573
+      },
+      "denominator_moved": true,
+      "direction": "directionless",
+      "family": "serving",
+      "name": "verdict_distribution.abstained_rerank_floor",
+      "new": {
+        "denominator": 113,
+        "excluded": {
+          "counts": {
+            "handed_off_turn": 33
+          },
+          "total": 33
+        },
+        "name": "verdict_distribution.abstained_rerank_floor",
+        "numerator": 18,
+        "value": 0.1592920353982301
+      }
+    },
+    {
+      "band": {
+        "high": 0.7777777777777778,
+        "inside": true,
+        "low": 0.7222222222222222
+      },
+      "base": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "tool_selection_correctness",
+        "numerator": 11,
+        "value": 0.6111111111111112
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "booking",
+      "name": "tool_selection_correctness",
+      "new": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "tool_selection_correctness",
+        "numerator": 14,
+        "value": 0.7777777777777778
+      }
+    },
+    {
+      "band": {
+        "high": 1.0,
+        "inside": true,
+        "low": 0.9444444444444444
+      },
+      "base": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "end_to_end_task_success",
+        "numerator": 15,
+        "value": 0.8333333333333334
+      },
+      "denominator_moved": false,
+      "direction": "improved",
+      "family": "booking",
+      "name": "end_to_end_task_success",
+      "new": {
+        "denominator": 18,
+        "excluded": {
+          "counts": {},
+          "total": 0
+        },
+        "name": "end_to_end_task_success",
+        "numerator": 18,
+        "value": 1.0
+      }
+    }
+  ],
+  "new": {
+    "complete": true,
+    "conditions": {
+      "classification_model": "claude-haiku-4-5-20251001",
+      "context_turns": 5,
+      "embedding_model": "voyage-4-lite",
+      "generation_model": "claude-sonnet-5",
+      "max_segments": 3,
+      "rerank_cap": 3,
+      "rerank_floor": 0.58,
+      "rerank_model": "rerank-3",
+      "retrieval_pool_size": 25,
+      "similarity_cap": 5,
+      "similarity_floor": 0.3
+    },
+    "corpus": {
+      "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+      "matched": true,
+      "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0"
+    },
+    "location": "/home/andrey/visit-doc/.run/evals/01M2QV47S2PM18W25RGYQM7Q8Z",
+    "recorded_cases": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "run_id": "01M2QV47S2PM18W25RGYQM7Q8Z",
+    "selection": {
+      "case_ids": [
+        "G001",
+        "G002",
+        "G003",
+        "G004",
+        "G005",
+        "G006",
+        "G007",
+        "G008",
+        "G009",
+        "G010",
+        "G011",
+        "G012",
+        "G013",
+        "G014",
+        "G015",
+        "G016",
+        "G017",
+        "G018",
+        "G019",
+        "G020",
+        "G021",
+        "G022",
+        "G023",
+        "G024",
+        "G025",
+        "G026",
+        "G027",
+        "G028",
+        "G029",
+        "G030",
+        "G031",
+        "G032",
+        "G033",
+        "G034",
+        "G035",
+        "G036",
+        "G037",
+        "G038",
+        "G039",
+        "G040",
+        "G041",
+        "G042",
+        "G043",
+        "G044",
+        "G045",
+        "G046",
+        "G047",
+        "G048",
+        "G049",
+        "G050",
+        "G051",
+        "G052",
+        "G053",
+        "G054",
+        "G055",
+        "G056",
+        "G057",
+        "G058",
+        "G059",
+        "G060",
+        "G061",
+        "G062",
+        "G063",
+        "G064",
+        "G065",
+        "G066",
+        "G067",
+        "G068",
+        "G069",
+        "G070",
+        "G071",
+        "G072",
+        "G073",
+        "G074",
+        "G075",
+        "G076",
+        "G077",
+        "G078",
+        "G079",
+        "G080",
+        "G081",
+        "G082",
+        "G083",
+        "G084",
+        "G085",
+        "G086",
+        "G087",
+        "G088",
+        "G089",
+        "G090",
+        "G091",
+        "G092",
+        "G093",
+        "G094",
+        "G095",
+        "G096",
+        "G097",
+        "G098",
+        "G099",
+        "G100",
+        "G101",
+        "G102",
+        "G104",
+        "G105",
+        "G106",
+        "G107",
+        "G108",
+        "G109",
+        "G110",
+        "G111",
+        "G112",
+        "G113",
+        "G114",
+        "G115",
+        "G116",
+        "G117",
+        "G118",
+        "G119",
+        "G120",
+        "G121",
+        "G122",
+        "G123",
+        "G124",
+        "G125",
+        "G126",
+        "G127",
+        "G128",
+        "G129",
+        "G130",
+        "G131",
+        "G132",
+        "G133",
+        "G134",
+        "G135",
+        "G136"
+      ],
+      "family": null,
+      "kind": "all"
+    },
+    "started_at": "2026-09-17T14:08:01.314143Z"
+  }
+}

@@ -1,0 +1,2105 @@
+{
+  "alignment": {
+    "aligned": 186,
+    "excluded": 0,
+    "labelled": 190,
+    "unaligned": 4
+  },
+  "assistant_failed_with_reply": [],
+  "assistant_failed_with_reply_turns": {},
+  "booking": {
+    "end_to_end_task_success": {
+      "denominator": 18,
+      "excluded": {
+        "counts": {},
+        "total": 0
+      },
+      "name": "end_to_end_task_success",
+      "numerator": 18,
+      "value": 1.0
+    },
+    "task_failures": [],
+    "tool_selection_correctness": {
+      "denominator": 18,
+      "excluded": {
+        "counts": {},
+        "total": 0
+      },
+      "name": "tool_selection_correctness",
+      "numerator": 14,
+      "value": 0.7777777777777778
+    },
+    "tool_selection_misses": [
+      {
+        "called": [
+          "list_my_appointments"
+        ],
+        "case_id": "G048",
+        "labelled": [
+          "reschedule_appointment"
+        ],
+        "missing": [
+          "reschedule_appointment"
+        ]
+      },
+      {
+        "called": [],
+        "case_id": "G049",
+        "labelled": [
+          "list_practitioners"
+        ],
+        "missing": [
+          "list_practitioners"
+        ]
+      },
+      {
+        "called": [],
+        "case_id": "G053",
+        "labelled": [
+          "check_availability"
+        ],
+        "missing": [
+          "check_availability"
+        ]
+      },
+      {
+        "called": [],
+        "case_id": "G092",
+        "labelled": [
+          "list_practitioners"
+        ],
+        "missing": [
+          "list_practitioners"
+        ]
+      }
+    ],
+    "tool_selection_statement": "tool_selection_correctness is scored once per turn's booking half, against the union of the tools its booking requests are labelled with. The booking loop is handed all of a turn's booking requests at once, and the log attributes a tool call to the loop rather than to one request, so no per-request number is published. A tool called that no label names is not a miss. For a case whose scripted reply was posted, the tools called in both of its turns count together, as one booking half. The reply is posted only when the first turn did not already leave the expected appointments, so a case the loop finished in one turn is scored on that turn's calls alone."
+  },
+  "cases_needing_retry": 0,
+  "classification": {
+    "cap_bound_cases": [],
+    "disagreements": [
+      {
+        "case_id": "G031",
+        "labelled": [
+          "small_talk"
+        ],
+        "produced": [
+          "booking"
+        ]
+      },
+      {
+        "case_id": "G033",
+        "labelled": [
+          "small_talk"
+        ],
+        "produced": [
+          "faq_question"
+        ]
+      },
+      {
+        "case_id": "G068",
+        "labelled": [
+          "urgent_condition"
+        ],
+        "produced": [
+          "urgent_condition",
+          "booking"
+        ]
+      },
+      {
+        "case_id": "G077",
+        "labelled": [
+          "urgent_condition"
+        ],
+        "produced": [
+          "booking_for_another",
+          "urgent_condition"
+        ]
+      },
+      {
+        "case_id": "G111",
+        "labelled": [
+          "faq_question",
+          "urgent_condition"
+        ],
+        "produced": [
+          "urgent_condition",
+          "faq_question"
+        ]
+      },
+      {
+        "case_id": "G113",
+        "labelled": [
+          "faq_question",
+          "booking_for_another"
+        ],
+        "produced": [
+          "small_talk",
+          "booking_for_another"
+        ]
+      },
+      {
+        "case_id": "G117",
+        "labelled": [
+          "faq_question",
+          "urgent_condition"
+        ],
+        "produced": [
+          "urgent_condition"
+        ]
+      }
+    ],
+    "exact_segmentation_match": {
+      "denominator": 135,
+      "excluded": {
+        "counts": {},
+        "total": 0
+      },
+      "name": "exact_segmentation_match",
+      "numerator": 128,
+      "value": 0.9481481481481482
+    },
+    "intent_accuracy": {
+      "denominator": 186,
+      "excluded": {
+        "counts": {},
+        "total": 0
+      },
+      "name": "intent_accuracy",
+      "numerator": 181,
+      "value": 0.9731182795698925
+    },
+    "request_count_accuracy": {
+      "denominator": 135,
+      "excluded": {
+        "counts": {},
+        "total": 0
+      },
+      "name": "request_count_accuracy",
+      "numerator": 132,
+      "value": 0.9777777777777777
+    },
+    "unaligned_requests": 4
+  },
+  "clock": "2026-03-02T08:00:00",
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "context_turns": 5,
+    "embedding_model": "voyage-4-lite",
+    "generation_model": "claude-sonnet-5",
+    "max_segments": 3,
+    "rerank_cap": 3,
+    "rerank_floor": 0.58,
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_cap": 5,
+    "similarity_floor": 0.3
+  },
+  "contract_broken_then_settled": [],
+  "contract_broken_then_settled_turns": {},
+  "corpus": {
+    "live_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+    "matched": true,
+    "pinned_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0"
+  },
+  "drive_seconds": 628.1477337747347,
+  "exclusions": {
+    "counts": {
+      "handed_off_turn": 33
+    },
+    "total": 33
+  },
+  "labels": {
+    "G001": "a4ddfb5127eea6b9a07221ba070813115097e562cd87a060ed5779580aeaaa48",
+    "G002": "f30bb2135cc7b73006b45f088c2587e23ebed79cb0c33c2d99c9d64749fe41f5",
+    "G003": "4a15248cfb772db061bcd98eea3da46e8ee9f765f31fb41295c98d7bdca9a9ab",
+    "G004": "8fb55049e744183300148619146fe46921a5f687fb8cb6c0ce801744a3d43743",
+    "G005": "16f6eb05c3a02a417c151c2b4ebd40eb46a429197a88f1accfd05d57e41ab0ba",
+    "G006": "b104c1a604ad01bc99f0197b2c8191d489f76902f8b39c2d9006b9b1bb2122e3",
+    "G007": "73c7cd14697fa803eb6282b6cbe4a7a143d1a67d4fda1cdfb3d8caf785b7a23b",
+    "G008": "8910dae39fc831df16f507601071d87877f21978d8692d1368549649c156bf8c",
+    "G009": "bc4ee16b4a54503b916d98fd566aa50dc818381431648708a3688a1f0ace275d",
+    "G010": "4df2a359f25c1742ffd751be041d878fb1fc76fdeda849e664859bcc75105b33",
+    "G011": "a72e0089c2d5a39c5ac7b4d3eb4c88fc300110d8812d300ab2649c19a7594254",
+    "G012": "ad5e9a49dd7ff0036bb2f93bb35d4cadf715cd538899a2bdbcf33ca3ab1c34e9",
+    "G013": "64822aab30918aa631d2c1816fdba129a431beaee497443eda6e8816698e5d8e",
+    "G014": "34777f3777e7de8f85264899bd0fb398a4120d09b46f69a936812bbfc1af1da2",
+    "G015": "00d4ed1c51699c5f892c241b5aaa133bca8ac1cf8fda7caf9259c6c861f3601a",
+    "G016": "b85fb9992ad09db339c73007db3b6c804364e55eec8d04b7d8c1591ba24502f0",
+    "G017": "74c8a4765726b7ca03e279b0874bbe86f83236093fa43cf2761e7827cf599f2c",
+    "G018": "8b5a42063826f294226003aa6488dd25bc0234656eb5b8a3c4d54dea121d7025",
+    "G019": "178f1ce0070ebeae1d385fb0cabb6d04962231f3bcabeee031d9f617b1ef65a7",
+    "G020": "a20ccfb27acd06add63bf25af87d62cccbc989945bbd55a0a002e24cab31b5e2",
+    "G021": "814cca479bf564ae4e983665f9e7d932aa413eb97e169c5d3662caed2a2e0e29",
+    "G022": "f6feec3e5aac16a3cad2954a13354b7d912f62943cee9e8cfe0bc3a4ecb71fed",
+    "G023": "417170c845353e4f2bd08c29e73a6011d91b8af87a7742810b96d5cc17c64ae9",
+    "G024": "8183c157f20a3ce620862e989220e0c4b6a7bc23f1279b57dfec87e15f21964b",
+    "G025": "15f98f7615952bc993f0546cc7019545874bb855b053b7073c28ed81add7ecd8",
+    "G026": "a1b1641df6d5edd9183246fdba64886e35e34c1ed20ea31cfb104f16dc80e5e8",
+    "G027": "eadb84d3273973bf2b0e869c9d6fad7f90896f061ade116e41305adc615dd184",
+    "G028": "49d75e9d8658eed2cf5c03af2a50b1edd5717047831f06a1c6bbcb4d996ccdc7",
+    "G029": "37cefd586c701dabd9400573bcd236d89e1ccf97083829176d995365176a80ed",
+    "G030": "e813e7212a75bc35a4f8d51b6ef823698de30b35b77dc4a0f8361301a4ef138d",
+    "G031": "26155acdd1e6a6f5fb1a16f3c1eb7c3d40e79d94392d6db593416a8438f07f62",
+    "G032": "6f15369b986ae50c544df0d7afee8228517b21d84490a937cffba5f075dcc453",
+    "G033": "9205d2026e8dd9aa55c6fa6776aef71314941fd9b2ad843d29ad71c7018f99f7",
+    "G034": "46cf02febabd31e71438edbbf2cf7136346ee2b5450f311b8f045e8e3bf6508e",
+    "G035": "c7c43f7e5780bd2d9f1453ebb6ae8b9ac9c9989c1490a02fac7c482a9dd7ea6a",
+    "G036": "11484f7def883d9b0c8802897b83d0bce6a727d8500846bfc3d80fef52c1af23",
+    "G037": "6d7bfc1cbf97842b694a47d61eff2428aa29094a3ddb6b806b9045d63de288a3",
+    "G038": "3b7802620ef036a75ec7d65dd717dcf6a6dbd20f23027c7cd7e24076ecbcbdb2",
+    "G039": "c8809e41bf51e7f52df17d91e0f5e0bbf19a2cef56920f5ca0e01e8a9d977127",
+    "G040": "48d8978f146ac67e7b403c6bd2534137021c16631baba2c7644a6442e07bf008",
+    "G041": "aefb876fb6fa16b9dcd6bd1a6ab079de54e8d9546cd52e1a61cc0b68e34514a8",
+    "G042": "7b2d92f0c0ffb842df2b7aa2c05342ed4949fd003a8f756c2d44728341c41a95",
+    "G043": "5c2cb933b96a57dedf996e62d65694f90bf21054fc619291b4b535446418f1de",
+    "G044": "326fca884e9e4061a880352506c3309da42678efffffb193f9e2f77c8fb7f043",
+    "G045": "96b1309340b667fd97aa30c5cc887c77d8d2216f3dffc9268f84298f18c9dc68",
+    "G046": "33813b492057399e3e891b0ef26b2f3d7727cc9fdb259fe823c1c8ff92987efe",
+    "G047": "9d728c2b83e13d9608e017855fa7ec303ad28fc86655a3cfe2b8562406846d53",
+    "G048": "350a39cd3ffb3f97aeed9dcefd0c5f7290bc740776eb5b06b4df5d73b8af502f",
+    "G049": "a54d89b16bb2103d1cbcd6502f0d13e2afa0f4b1f78eef25a07ba2eab70c0f50",
+    "G050": "4824d6c167ec06dfc5bc2c09b3af892995ffab25b5859f592731b7800ebd49a6",
+    "G051": "8a3f734b8c5f8b2e7fe8df5883b32bfa079a291a9ed68496f5c972e8eb970a7e",
+    "G052": "af47f4eaf197560bb2fe0af8e28e82802218a4b022e62ec66005e701259eaafa",
+    "G053": "74c4a5da2225f70959e3f8e785bcfaca1e32a6c2506e66111f5061ad1da4b9ba",
+    "G054": "f6312de1138f8c777edaabb464edeee724604094fc74c64fa4320b0601817d73",
+    "G055": "0698af3a80be29cd98475e3a92ee8acfb9f6a8045855fe6697c296213b0ce4f4",
+    "G056": "ec677856e1fe2db1bf2a2ecacec6343444d90b1a60f49f17ecd21f9f3346d2f0",
+    "G057": "795003f6af60b8d7e0cdd6216032e087d44bdd0fd7337f416965f7d269591beb",
+    "G058": "12ecd7b2eee05f3193ec9d2da337b8d02e9756c0563cb3ff91e74d73129d11a0",
+    "G059": "ba188521d3baefc12d30424c1ba4c8d8f163177c35a498330a4941c9918ce42e",
+    "G060": "359170df878c9ca38310257027c34b9e8000fb79516f6697df19a6bdc6d8351b",
+    "G061": "cd7eaf1c2e63a93624f5dc65f9b0005e69f1b0784416a18dd42313dca067c7ed",
+    "G062": "7d7bfa4285fb89d38bd026732e952b77effdf87b3ea470b6912bcc07fc5b79eb",
+    "G063": "bbd07e5d42f24c7b8c58f485bbe68c87ef07054e6b0b55c1671243bd7caeb5b4",
+    "G064": "2bf32205cace1f33cd30c0e82aeb8e4b4fdf3057ad8c203fbad0e4591da7539c",
+    "G065": "b06c1c53631e86e65f00a4abf6d6e85258146f7badb0a28ed1e8d004dd6a59ad",
+    "G066": "70b072337f1e8bfd2f77092fb6e73d68ec0454ed5ff3167a8b58f1ad75c1ff61",
+    "G067": "8b6a1783e75bb0b53a512928c317dcc42f7aeb2f4284b1a50f54a29083b3e35b",
+    "G068": "1447cf7798acaadc8a1e9082f79a81f077f74d9c496347deb6b551aa8583e010",
+    "G069": "7ce65a7b60a8cfc2b8c950a9cb3d8de35bec9fb14c989958b64e6d37733a0425",
+    "G070": "9a3ca560b2153e4fc846a4b95714d92f42afae77e68575de7ed51cfc475c5a7b",
+    "G071": "37b2ed5a0c04319ee31193d58e514c92618b5ffdfc612f20b4071bf78449b838",
+    "G072": "9367a251d61a7d76893a65aa979f0b29ebee28be3d9ab20c95e29e677d516a54",
+    "G073": "d47e464b02806a3f5f04a8ec8cc1aa0b22085b4cdc821f78db291ed6b65a3dcd",
+    "G074": "0ae21a17c8e36deedfa2cb5b30d8b023c72302b458b7a84f3fc964ded0d8158d",
+    "G075": "42af6376651fc9c168cd1b23802514cd1c8ed8f18043351ba60294acffa1a48f",
+    "G076": "667e6d956a45a6fcbca8647d57711a192e5fb8aad6631397fccd47d7fd413b8f",
+    "G077": "deb4669400510fdcbe612cd2dfac048d98bd93162cbabea21261c1698911d4dc",
+    "G078": "6dd71725ae0c700b59bd179d0ff8a8ba3a98ae4d6a08aa0d89a032b9917c9d3c",
+    "G079": "f8d662372f9cef043a94821afcf40e870a222210d0010be50d87fe8033be9e77",
+    "G080": "4561c3363610a4f2f2980e05939783fa56811851dde7109f71524a6a7823d992",
+    "G081": "ade654852f9fb6b11622bda3afd3b70c27398e22fd3ce901e15699cd21ed1516",
+    "G082": "9a261ee0b31b8942a4f43c97a6f06414dba206c40fce0981924efad299fb80e4",
+    "G083": "9999e88c26394c4fb391c57b3e1346e466034b05cacffa580f656fc4475de6e6",
+    "G084": "3cbdd236bfdd94cc1b05f4223c0021ca987423ccce7da00a6907b172b5978ee7",
+    "G085": "ce8c799995c16efa23a164297dd8a142ed1ad8b95e73400973f95f4ab6fb9801",
+    "G086": "b1e110c4fadcf02ea721d723addfe7b8bae8fb0fbf3fc88416fef1a371670e02",
+    "G087": "4517d30cc2667e299b21513fe81b8f4678dd25a85bb215299a4f4a4955f6bf24",
+    "G088": "7c8af7ba89bb2ada918dfa59e0ba3902091a6663a1b9a6d32ffc8ecf34d50aa5",
+    "G089": "e0c9f817174c6476e44216f02fa13dc53ea9224480e4281e08db6d0a7b56a809",
+    "G090": "2b3ce1f525a4d19a9a45049f3994dfdcb92748f8504ad9bbc083dc6f70717b15",
+    "G091": "40ff478943685fe5db831b8f4673fa0a5cc68d04dde48cc99a6436b85136200d",
+    "G092": "4b505e411af69e6a09e45e615857dd0dd9d0a09454e265af914bfbf770584764",
+    "G093": "39851ad3ecc760214d67600057139567f006032fc35aa84c5dacd4fcabdbe58d",
+    "G094": "d27be99be991ffc45d45e19c40a2511b3a3b13a64758d67b82e4bc039d59b4d3",
+    "G095": "31e2621959ac72c777e5e9141c95fb4f6400bc5a633b1a7af0095d09a86063d0",
+    "G096": "1606092f38a2bc6b60999d676f28b9eb98e5f555669ddd36a62945a9dff7000c",
+    "G097": "3bd240aac7556fc4cd3bb71ab901079b1250882d20c81cb0d5c39149107b57ab",
+    "G098": "10f60786defe5b1db2625e530c2f7ab89a1a81be53928e22618fc3baac1d1acf",
+    "G099": "7c187c6fa1e42bae91b384b3b3538ec26bff9135a97802bd37037d1df8aa21a8",
+    "G100": "7ade4c1c20992be1e3d554e495204b59bbe8ff8c9fa69858964875eaf8af0a8b",
+    "G101": "77054db7f051525b223bd6e863ec67811e46faaf74cfc5f9d8e89c5811f144a1",
+    "G102": "1b012ea42b79ed1812617d3587e84c876671ad4ac6bc56d6f37f5703bb9720b7",
+    "G104": "d1c5251332d681f343903805b3e6e11f254dd4a83acf1e980a347a23f8702f47",
+    "G105": "81d6cc176100b0aeb129c7b2b09dd32d316d0335ea5554d004c7b0bc626661a5",
+    "G106": "c87f6245404a57735b25a54f3410aac6094dec2369822d0273ed99b12ce246a3",
+    "G107": "8b984d93e00914d2083931165e3a7743fc0e5ae69f65b061481827e3ae7e0644",
+    "G108": "1514bce7d31c36d1047d9a7b192ec85224ecb79bd8d39044bb3aa0aba7222b3b",
+    "G109": "c35df9b4b8cf06201a926f3c6860f3b9df2e960c0b75c9627499f59ae87d9ddf",
+    "G110": "dcd25d73ebc8d2bf214828f9a52c27abe22c9d2b8c1eb997fb317ca29200f44c",
+    "G111": "960de8e834b7eca88299afe81406d5ae5b5f1a52aaaed401f3d8f8b092aafd98",
+    "G112": "857ca1b34a5cbf64e3f6a971cb90e5a544d90d7433044702a0dd49ccfcc564b7",
+    "G113": "9f9b4d74e3851581d4ee128d5dcb583a1dca277b45c73c60d32fc5971100928b",
+    "G114": "b152f1d2f36f0075a0ef75d61310553eacb9378878d09bced29e05721452ab46",
+    "G115": "1c042081ce488e36c22fd0ba5150c6db2af6b1588421284bb18cb3e9744ac41e",
+    "G116": "fa2a26cb44c5f6f423a412d21002ae9ae346c1ab2bfa8752630dc50ecf5404de",
+    "G117": "f813cab3678887e14d6665802d9631f121f58e73cf82ef0c03681c861c1ee19f",
+    "G118": "1ad433e789b2fa0dd29924d71c39ca21b5bb543f56af76405c25839ee0cd1ea0",
+    "G119": "876b8c1b7fb8b2291858a6237602f816b5cf894d33e1ffd6ee4a01d4697e4807",
+    "G120": "df6265e0043a5a573cc23871e6a4fba82be7f7d41be109483486d73f41905929",
+    "G121": "98b8600a80e2e5081cb48c7f51fc4e4b340236f34e6179689de2405a666a78fd",
+    "G122": "56e79fc877970a41a4a94de414148865831329742ba07d13ae856759f2b25533",
+    "G123": "46cdbbcc1e8ba89defa349da68a8bceccb04b66032a71b3d5074f5e7a7a3f8a5",
+    "G124": "27bfa4c5300f3e3f35d094939aa06e0dc9eedc5359138e6d911b8154b9f0a8f2",
+    "G125": "ec214170f2efc974281ae333a5f5d34133ed5c8dfa479fd313c8319b08200945",
+    "G126": "77a6670bb1eb3a5ee7480e6920a96c7817ce51e5be6522b16a53ff9cf75fc2b6",
+    "G127": "b06c139891cf68385b87d476e0d1532bc9c44753767b478c9b207186bb16a4e8",
+    "G128": "cae78ed3e9f7adbad9d9b420ae53da64f1457736c50c642b678d90ea4a539e30",
+    "G129": "5e7bf967ba8b7d0cf23c3d8db1f68a6add5722d40e7bd86d2417dbb83775fd7d",
+    "G130": "417f25d26edb531a0923171fe8fda5f978f7206028e75f4c34d2d76c497b0767",
+    "G131": "d6d66db9e0c7f7dbc7c14fd3a6cd1453f5c6e885074815d736d6af4f580bebb1",
+    "G132": "826cd5e20d8e100c595048db7880f1671f8daa1594c0750295c1e57acda7f222",
+    "G133": "b5e384139e9f73e21d256b3574c2b6b0dba0aa7c79d951290b0a372ebb8c5425",
+    "G134": "8a63ff8662083315dc9c62cef881c14db42dfdb53b2842293150b1571910d566",
+    "G135": "c87bde0fc1840c2f4746fae77f29ded8beb2f84ddff052d15f83edc7579fd745",
+    "G136": "62c8f0a50b41595984b8d166e78bb8e69d797e39bb4fc4c745f2208a6ae56d85"
+  },
+  "not_computed": [],
+  "recorded_cases": [
+    "G001",
+    "G002",
+    "G003",
+    "G004",
+    "G005",
+    "G006",
+    "G007",
+    "G008",
+    "G009",
+    "G010",
+    "G011",
+    "G012",
+    "G013",
+    "G014",
+    "G015",
+    "G016",
+    "G017",
+    "G018",
+    "G019",
+    "G020",
+    "G021",
+    "G022",
+    "G023",
+    "G024",
+    "G025",
+    "G026",
+    "G027",
+    "G028",
+    "G029",
+    "G030",
+    "G031",
+    "G032",
+    "G033",
+    "G034",
+    "G035",
+    "G036",
+    "G037",
+    "G038",
+    "G039",
+    "G040",
+    "G041",
+    "G042",
+    "G043",
+    "G044",
+    "G045",
+    "G046",
+    "G047",
+    "G048",
+    "G049",
+    "G050",
+    "G051",
+    "G052",
+    "G053",
+    "G054",
+    "G055",
+    "G056",
+    "G057",
+    "G058",
+    "G059",
+    "G060",
+    "G061",
+    "G062",
+    "G063",
+    "G064",
+    "G065",
+    "G066",
+    "G067",
+    "G068",
+    "G069",
+    "G070",
+    "G071",
+    "G072",
+    "G073",
+    "G074",
+    "G075",
+    "G076",
+    "G077",
+    "G078",
+    "G079",
+    "G080",
+    "G081",
+    "G082",
+    "G083",
+    "G084",
+    "G085",
+    "G086",
+    "G087",
+    "G088",
+    "G089",
+    "G090",
+    "G091",
+    "G092",
+    "G093",
+    "G094",
+    "G095",
+    "G096",
+    "G097",
+    "G098",
+    "G099",
+    "G100",
+    "G101",
+    "G102",
+    "G104",
+    "G105",
+    "G106",
+    "G107",
+    "G108",
+    "G109",
+    "G110",
+    "G111",
+    "G112",
+    "G113",
+    "G114",
+    "G115",
+    "G116",
+    "G117",
+    "G118",
+    "G119",
+    "G120",
+    "G121",
+    "G122",
+    "G123",
+    "G124",
+    "G125",
+    "G126",
+    "G127",
+    "G128",
+    "G129",
+    "G130",
+    "G131",
+    "G132",
+    "G133",
+    "G134",
+    "G135",
+    "G136"
+  ],
+  "retrieval": {
+    "requests": [
+      {
+        "case_id": "G001",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G002",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G003",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G004",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G005",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G006",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G007",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G008",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G009",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G010",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G011",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G012",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G013",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G014",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G015",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G016",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G043",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G045",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G047",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G052",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G061",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G078",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G078",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G079",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G079",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G080",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G080",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G081",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G081",
+        "position": 1,
+        "rerank": {
+          "excluded": "not_reached_reranker",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": false
+      },
+      {
+        "case_id": "G082",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G082",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G083",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G083",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G084",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G084",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G084",
+        "position": 2,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G085",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G085",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G085",
+        "position": 2,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G086",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G086",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G087",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G088",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G089",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G090",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G091",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G092",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G093",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G095",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G095",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G096",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G096",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G097",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G097",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G098",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G099",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G099",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G100",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G100",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G101",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G101",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G101",
+        "position": 2,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G104",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G105",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G106",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G107",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G108",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G109",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G111",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G112",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G113",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G114",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G115",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G116",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G117",
+        "position": 0,
+        "rerank": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "similarity": {
+          "excluded": "handed_off_turn",
+          "rank": null
+        },
+        "survived_similarity_gate": null
+      },
+      {
+        "case_id": "G118",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G119",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G120",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G121",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G122",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G123",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G124",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G125",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G126",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G127",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G128",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G129",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G130",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G131",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G132",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G133",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G134",
+        "position": 0,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      },
+      {
+        "case_id": "G134",
+        "position": 1,
+        "rerank": {
+          "excluded": null,
+          "rank": 1
+        },
+        "similarity": {
+          "excluded": null,
+          "rank": 1
+        },
+        "survived_similarity_gate": true
+      }
+    ],
+    "rerank_hit_at_1": {
+      "denominator": 86,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6,
+          "not_reached_reranker": 1
+        },
+        "total": 7
+      },
+      "name": "rerank_hit_at_1",
+      "numerator": 86,
+      "value": 1.0
+    },
+    "rerank_hit_at_3": {
+      "denominator": 86,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6,
+          "not_reached_reranker": 1
+        },
+        "total": 7
+      },
+      "name": "rerank_hit_at_3",
+      "numerator": 86,
+      "value": 1.0
+    },
+    "rerank_hit_at_5": {
+      "denominator": 86,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6,
+          "not_reached_reranker": 1
+        },
+        "total": 7
+      },
+      "name": "rerank_hit_at_5",
+      "numerator": 86,
+      "value": 1.0
+    },
+    "rerank_hit_at_5_statement": "rerank_hit_at_5 is 1 by construction while similarity_cap (5) is 5 or less: the reranker is handed at most that many chunks, and the rerank stage scores only requests with a cited chunk among them - so it is not a finding.",
+    "rerank_mrr": {
+      "denominator": 86,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6,
+          "not_reached_reranker": 1
+        },
+        "total": 7
+      },
+      "name": "rerank_mrr",
+      "numerator": 86.0,
+      "value": 1.0
+    },
+    "similarity_gate_survival": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "similarity_gate_survival",
+      "numerator": 86,
+      "value": 0.9885057471264368
+    },
+    "similarity_hit_at_1": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "similarity_hit_at_1",
+      "numerator": 87,
+      "value": 1.0
+    },
+    "similarity_hit_at_3": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "similarity_hit_at_3",
+      "numerator": 87,
+      "value": 1.0
+    },
+    "similarity_hit_at_5": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "similarity_hit_at_5",
+      "numerator": 87,
+      "value": 1.0
+    },
+    "similarity_mrr": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "similarity_mrr",
+      "numerator": 87.0,
+      "value": 1.0
+    },
+    "unaligned_requests": 0
+  },
+  "run_id": "01M2QTG3V38A6WP6P2Y6NY8F8H",
+  "score_seconds": 0.1262046550400555,
+  "selection": {
+    "case_ids": [
+      "G001",
+      "G002",
+      "G003",
+      "G004",
+      "G005",
+      "G006",
+      "G007",
+      "G008",
+      "G009",
+      "G010",
+      "G011",
+      "G012",
+      "G013",
+      "G014",
+      "G015",
+      "G016",
+      "G017",
+      "G018",
+      "G019",
+      "G020",
+      "G021",
+      "G022",
+      "G023",
+      "G024",
+      "G025",
+      "G026",
+      "G027",
+      "G028",
+      "G029",
+      "G030",
+      "G031",
+      "G032",
+      "G033",
+      "G034",
+      "G035",
+      "G036",
+      "G037",
+      "G038",
+      "G039",
+      "G040",
+      "G041",
+      "G042",
+      "G043",
+      "G044",
+      "G045",
+      "G046",
+      "G047",
+      "G048",
+      "G049",
+      "G050",
+      "G051",
+      "G052",
+      "G053",
+      "G054",
+      "G055",
+      "G056",
+      "G057",
+      "G058",
+      "G059",
+      "G060",
+      "G061",
+      "G062",
+      "G063",
+      "G064",
+      "G065",
+      "G066",
+      "G067",
+      "G068",
+      "G069",
+      "G070",
+      "G071",
+      "G072",
+      "G073",
+      "G074",
+      "G075",
+      "G076",
+      "G077",
+      "G078",
+      "G079",
+      "G080",
+      "G081",
+      "G082",
+      "G083",
+      "G084",
+      "G085",
+      "G086",
+      "G087",
+      "G088",
+      "G089",
+      "G090",
+      "G091",
+      "G092",
+      "G093",
+      "G094",
+      "G095",
+      "G096",
+      "G097",
+      "G098",
+      "G099",
+      "G100",
+      "G101",
+      "G102",
+      "G104",
+      "G105",
+      "G106",
+      "G107",
+      "G108",
+      "G109",
+      "G110",
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G115",
+      "G116",
+      "G117",
+      "G118",
+      "G119",
+      "G120",
+      "G121",
+      "G122",
+      "G123",
+      "G124",
+      "G125",
+      "G126",
+      "G127",
+      "G128",
+      "G129",
+      "G130",
+      "G131",
+      "G132",
+      "G133",
+      "G134",
+      "G135",
+      "G136"
+    ],
+    "family": null,
+    "kind": "all"
+  },
+  "serving": {
+    "answers_on_labelled_gaps": [
+      {
+        "case_id": "G020",
+        "position": 0,
+        "question": "Do you accept Blue Cross for dental implants specifically?",
+        "verdict": "answered"
+      },
+      {
+        "case_id": "G024",
+        "position": 0,
+        "question": "Do you do blood tests on Saturdays?",
+        "verdict": "answered"
+      },
+      {
+        "case_id": "G094",
+        "position": 0,
+        "question": "Are you open Sundays?",
+        "verdict": "answered"
+      },
+      {
+        "case_id": "G098",
+        "position": 1,
+        "question": "What should a returning patient bring?",
+        "verdict": "answered"
+      },
+      {
+        "case_id": "G129",
+        "position": 1,
+        "question": "How much is a follow-up visit out of pocket?",
+        "verdict": "answered"
+      }
+    ],
+    "degraded_answers": [],
+    "not_permitted_to_answer": [
+      "G111",
+      "G112",
+      "G113",
+      "G114",
+      "G116",
+      "G117"
+    ],
+    "unserved": [
+      {
+        "case_id": "G016",
+        "cause": "abstained",
+        "gate": "rerank_floor",
+        "position": 0,
+        "question": "Is parking free?"
+      },
+      {
+        "case_id": "G081",
+        "cause": "abstained",
+        "gate": "similarity_floor",
+        "position": 1,
+        "question": "What cards do you take?"
+      },
+      {
+        "case_id": "G096",
+        "cause": "abstained",
+        "gate": "rerank_floor",
+        "position": 1,
+        "question": "Is parking free?"
+      },
+      {
+        "case_id": "G100",
+        "cause": "abstained",
+        "gate": "rerank_floor",
+        "position": 1,
+        "question": "What happens if you do not take Medicare?"
+      }
+    ],
+    "unserved_answerable_share": {
+      "denominator": 87,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 6
+        },
+        "total": 6
+      },
+      "name": "unserved_answerable_share",
+      "numerator": 4,
+      "value": 0.04597701149425287
+    },
+    "unserved_by_cause": {
+      "abstained": 4,
+      "lost_to_count_mismatch": 0,
+      "misclassified": 0
+    },
+    "verdict_distribution": {
+      "counts": {
+        "abstained_empty_corpus": 0,
+        "abstained_empty_pool": 0,
+        "abstained_rerank_floor": 18,
+        "abstained_similarity_floor": 5,
+        "answered": 90,
+        "answered_unreranked": 0
+      },
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 33
+        },
+        "total": 33
+      },
+      "total": 113
+    },
+    "wrong_abstention_share": {
+      "denominator": 23,
+      "excluded": {
+        "counts": {
+          "handed_off_turn": 33
+        },
+        "total": 33
+      },
+      "name": "wrong_abstention_share",
+      "numerator": 4,
+      "value": 0.17391304347826086
+    },
+    "wrong_abstentions": [
+      {
+        "case_id": "G016",
+        "gate": "rerank_floor",
+        "position": 0,
+        "question": "Is parking free?"
+      },
+      {
+        "case_id": "G081",
+        "gate": "similarity_floor",
+        "position": 1,
+        "question": "What cards do you take?"
+      },
+      {
+        "case_id": "G096",
+        "gate": "rerank_floor",
+        "position": 1,
+        "question": "Is parking free?"
+      },
+      {
+        "case_id": "G100",
+        "gate": "rerank_floor",
+        "position": 1,
+        "question": "What happens if you do not take Medicare?"
+      }
+    ]
+  },
+  "session_id": "01M2QTG3990Y5C47MAPTB3V0JE",
+  "unresolvable_fixtures": []
+}

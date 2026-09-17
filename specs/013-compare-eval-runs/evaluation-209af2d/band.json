@@ -1,0 +1,458 @@
+{
+  "band_id": "01M2QVRDGXFN3W7FT21EP4N0KG",
+  "case_ids": [
+    "G001",
+    "G002",
+    "G003",
+    "G004",
+    "G005",
+    "G006",
+    "G007",
+    "G008",
+    "G009",
+    "G010",
+    "G011",
+    "G012",
+    "G013",
+    "G014",
+    "G015",
+    "G016",
+    "G017",
+    "G018",
+    "G019",
+    "G020",
+    "G021",
+    "G022",
+    "G023",
+    "G024",
+    "G025",
+    "G026",
+    "G027",
+    "G028",
+    "G029",
+    "G030",
+    "G031",
+    "G032",
+    "G033",
+    "G034",
+    "G035",
+    "G036",
+    "G037",
+    "G038",
+    "G039",
+    "G040",
+    "G041",
+    "G042",
+    "G043",
+    "G044",
+    "G045",
+    "G046",
+    "G047",
+    "G048",
+    "G049",
+    "G050",
+    "G051",
+    "G052",
+    "G053",
+    "G054",
+    "G055",
+    "G056",
+    "G057",
+    "G058",
+    "G059",
+    "G060",
+    "G061",
+    "G062",
+    "G063",
+    "G064",
+    "G065",
+    "G066",
+    "G067",
+    "G068",
+    "G069",
+    "G070",
+    "G071",
+    "G072",
+    "G073",
+    "G074",
+    "G075",
+    "G076",
+    "G077",
+    "G078",
+    "G079",
+    "G080",
+    "G081",
+    "G082",
+    "G083",
+    "G084",
+    "G085",
+    "G086",
+    "G087",
+    "G088",
+    "G089",
+    "G090",
+    "G091",
+    "G092",
+    "G093",
+    "G094",
+    "G095",
+    "G096",
+    "G097",
+    "G098",
+    "G099",
+    "G100",
+    "G101",
+    "G102",
+    "G104",
+    "G105",
+    "G106",
+    "G107",
+    "G108",
+    "G109",
+    "G110",
+    "G111",
+    "G112",
+    "G113",
+    "G114",
+    "G115",
+    "G116",
+    "G117",
+    "G118",
+    "G119",
+    "G120",
+    "G121",
+    "G122",
+    "G123",
+    "G124",
+    "G125",
+    "G126",
+    "G127",
+    "G128",
+    "G129",
+    "G130",
+    "G131",
+    "G132",
+    "G133",
+    "G134",
+    "G135",
+    "G136"
+  ],
+  "clock": "2026-03-02T08:00:00",
+  "conditions": {
+    "classification_model": "claude-haiku-4-5-20251001",
+    "context_turns": 5,
+    "embedding_model": "voyage-4-lite",
+    "generation_model": "claude-sonnet-5",
+    "max_segments": 3,
+    "rerank_cap": 3,
+    "rerank_floor": 0.58,
+    "rerank_model": "rerank-3",
+    "retrieval_pool_size": 25,
+    "similarity_cap": 5,
+    "similarity_floor": 0.3
+  },
+  "corpus_sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+  "measured_at": "2026-09-17T14:19:02.587300Z",
+  "metrics": {
+    "end_to_end_task_success": {
+      "high": 1.0,
+      "low": 0.9444444444444444,
+      "name": "end_to_end_task_success",
+      "values": [
+        1.0,
+        0.9444444444444444,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "exact_segmentation_match": {
+      "high": 0.9481481481481482,
+      "low": 0.9481481481481482,
+      "name": "exact_segmentation_match",
+      "values": [
+        0.9481481481481482,
+        0.9481481481481482,
+        0.9481481481481482,
+        0.9481481481481482,
+        0.9481481481481482
+      ]
+    },
+    "intent_accuracy": {
+      "high": 0.9731182795698925,
+      "low": 0.9731182795698925,
+      "name": "intent_accuracy",
+      "values": [
+        0.9731182795698925,
+        0.9731182795698925,
+        0.9731182795698925,
+        0.9731182795698925,
+        0.9731182795698925
+      ]
+    },
+    "request_count_accuracy": {
+      "high": 0.9777777777777777,
+      "low": 0.9777777777777777,
+      "name": "request_count_accuracy",
+      "values": [
+        0.9777777777777777,
+        0.9777777777777777,
+        0.9777777777777777,
+        0.9777777777777777,
+        0.9777777777777777
+      ]
+    },
+    "rerank_hit_at_1": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "rerank_hit_at_1",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "rerank_hit_at_3": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "rerank_hit_at_3",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "rerank_hit_at_5": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "rerank_hit_at_5",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "rerank_mrr": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "rerank_mrr",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "similarity_gate_survival": {
+      "high": 0.9885057471264368,
+      "low": 0.9885057471264368,
+      "name": "similarity_gate_survival",
+      "values": [
+        0.9885057471264368,
+        0.9885057471264368,
+        0.9885057471264368,
+        0.9885057471264368,
+        0.9885057471264368
+      ]
+    },
+    "similarity_hit_at_1": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "similarity_hit_at_1",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "similarity_hit_at_3": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "similarity_hit_at_3",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "similarity_hit_at_5": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "similarity_hit_at_5",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "similarity_mrr": {
+      "high": 1.0,
+      "low": 1.0,
+      "name": "similarity_mrr",
+      "values": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "tool_selection_correctness": {
+      "high": 0.7777777777777778,
+      "low": 0.7222222222222222,
+      "name": "tool_selection_correctness",
+      "values": [
+        0.7777777777777778,
+        0.7222222222222222,
+        0.7222222222222222,
+        0.7777777777777778,
+        0.7777777777777778
+      ]
+    },
+    "unserved_answerable_share": {
+      "high": 0.04597701149425287,
+      "low": 0.04597701149425287,
+      "name": "unserved_answerable_share",
+      "values": [
+        0.04597701149425287,
+        0.04597701149425287,
+        0.04597701149425287,
+        0.04597701149425287,
+        0.04597701149425287
+      ]
+    },
+    "verdict_distribution.abstained_empty_corpus": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.abstained_empty_corpus",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "verdict_distribution.abstained_empty_pool": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.abstained_empty_pool",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "verdict_distribution.abstained_rerank_floor": {
+      "high": 0.1592920353982301,
+      "low": 0.1592920353982301,
+      "name": "verdict_distribution.abstained_rerank_floor",
+      "values": [
+        0.1592920353982301,
+        0.1592920353982301,
+        0.1592920353982301,
+        0.1592920353982301,
+        0.1592920353982301
+      ]
+    },
+    "verdict_distribution.abstained_similarity_floor": {
+      "high": 0.04424778761061947,
+      "low": 0.04424778761061947,
+      "name": "verdict_distribution.abstained_similarity_floor",
+      "values": [
+        0.04424778761061947,
+        0.04424778761061947,
+        0.04424778761061947,
+        0.04424778761061947,
+        0.04424778761061947
+      ]
+    },
+    "verdict_distribution.answered": {
+      "high": 0.7964601769911505,
+      "low": 0.7964601769911505,
+      "name": "verdict_distribution.answered",
+      "values": [
+        0.7964601769911505,
+        0.7964601769911505,
+        0.7964601769911505,
+        0.7964601769911505,
+        0.7964601769911505
+      ]
+    },
+    "verdict_distribution.answered_unreranked": {
+      "high": 0.0,
+      "low": 0.0,
+      "name": "verdict_distribution.answered_unreranked",
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "wrong_abstention_share": {
+      "high": 0.17391304347826086,
+      "low": 0.17391304347826086,
+      "name": "wrong_abstention_share",
+      "values": [
+        0.17391304347826086,
+        0.17391304347826086,
+        0.17391304347826086,
+        0.17391304347826086,
+        0.17391304347826086
+      ]
+    }
+  },
+  "run_ids": [
+    "01M2QRMSWMRPE05S35S7P4R0K0",
+    "01M2QS7Z9FCAFZKZFJ4Y67J4XM",
+    "01M2QSVP667YS4A7QEMGWDARHM",
+    "01M2QTG3V38A6WP6P2Y6NY8F8H",
+    "01M2QV47S2PM18W25RGYQM7Q8Z"
+  ],
+  "varying_cases": [
+    {
+      "case_id": "G089",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 4,
+        "missing list_practitioners": 1
+      },
+      "position": null
+    },
+    {
+      "case_id": "G102",
+      "group": "database_state",
+      "outcomes": {
+        "did not match at scheduling_after": 1,
+        "expected appointments found": 4
+      },
+      "position": null
+    },
+    {
+      "case_id": "G102",
+      "group": "tool_selection",
+      "outcomes": {
+        "every labelled tool called": 4,
+        "missing book_appointment": 1
+      },
+      "position": null
+    }
+  ]
+}
