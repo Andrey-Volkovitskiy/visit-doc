@@ -146,6 +146,22 @@ _UNRESOLVED_EXPLANATION = (
     "not offer an alternative - ask the patient to start again."
 )
 
+# What a listing left out, said beside the listing itself. An appointment missing from
+# a standing-only list is most often one this conversation cancelled, and a model that
+# reads the list as the whole record tells the patient it never existed.
+_NOT_LISTED_BY_FILTER = {
+    StatusFilter.STANDING: (
+        "Cancelled appointments are not in this list. An appointment missing from it "
+        "may have been cancelled - list again with status_filter both before saying it "
+        "does not exist."
+    ),
+    StatusFilter.CANCELLED: (
+        "Only cancelled appointments are in this list. An appointment missing from it "
+        "may still be standing - list again with status_filter both before saying it "
+        "does not exist."
+    ),
+}
+
 # `list_my_appointments` cannot be answered at all without a patient record, and an
 # empty list would read as "you have nothing booked" - which is not known here.
 _NO_PATIENT_LIST_EXPLANATION = (
@@ -532,7 +548,9 @@ async def list_my_appointments(
 
     Two empty legs are an explicit "nothing matching", not an error - a patient the
     scheduler cannot resolve is reported as its own result instead, so the model never
-    reads "no appointments" off a lookup that never happened.
+    reads "no appointments" off a lookup that never happened. A listing narrowed to one
+    status says, under `not_listed`, which appointments it leaves out; a listing of both
+    carries no such key.
 
     The registry guarantees a patient record before this runs, so `patient_id` is never
     None here.
@@ -541,6 +559,8 @@ async def list_my_appointments(
 
     time_filter = _optional_enum(arguments, "time_filter", TimeFilter)
     status_filter = _optional_enum(arguments, "status_filter", StatusFilter)
+    if status_filter is None:
+        status_filter = StatusFilter.STANDING
     try:
         listing = await scheduling.list_appointments(
             context.channel,
@@ -549,9 +569,7 @@ async def list_my_appointments(
             patient_id=context.patient_id,
             local_now=context.local_now,
             time_filter=time_filter if time_filter is not None else TimeFilter.FUTURE,
-            status_filter=(
-                status_filter if status_filter is not None else StatusFilter.STANDING
-            ),
+            status_filter=status_filter,
         )
     except SchedulingNotFoundError as exc:
         get_logger().error(
@@ -560,11 +578,15 @@ async def list_my_appointments(
             entity=exc.entity.value if exc.entity else None,
         )
         return {"status": "unavailable", "explanation": _NO_PATIENT_LIST_EXPLANATION}
-    return {
+    result: ToolResult = {
         "future": [_rendered_appointment(a) for a in listing.future],
         "past": [_rendered_appointment(a) for a in listing.past],
         "past_truncated": listing.past_truncated,
     }
+    not_listed = _NOT_LISTED_BY_FILTER.get(status_filter)
+    if not_listed is not None:
+        result["not_listed"] = not_listed
+    return result
 
 
 def _change_result(

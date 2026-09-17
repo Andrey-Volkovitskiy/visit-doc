@@ -470,8 +470,43 @@ def _empty() -> AppointmentListing:
 async def test_no_appointments_is_two_empty_legs_not_an_error() -> None:
     result = await _listed(_empty())
 
-    assert result == {"future": [], "past": [], "past_truncated": False}
+    assert {k: result[k] for k in ("future", "past", "past_truncated")} == {
+        "future": [],
+        "past": [],
+        "past_truncated": False,
+    }
     assert "status" not in result
+
+
+async def _listed_with(arguments: dict[str, Any]) -> dict[str, Any]:
+    with patch(_CLIENT + ".list_appointments", new=AsyncMock(return_value=_empty())):
+        return await _registry().dispatch("list_my_appointments", arguments)
+
+
+async def test_a_standing_only_listing_says_cancelled_appointments_are_left_out() -> (
+    None
+):
+    # An appointment this conversation cancelled is missing from the default listing,
+    # and read as the whole record that absence became "you have no such appointment".
+    for arguments in ({}, {"status_filter": "standing"}):
+        result = await _listed_with(arguments)
+
+        assert result["not_listed"].startswith("Cancelled appointments are not in")
+        assert "status_filter both" in result["not_listed"]
+
+
+async def test_a_cancelled_only_listing_says_standing_appointments_are_left_out() -> (
+    None
+):
+    result = await _listed_with({"status_filter": "cancelled"})
+
+    assert result["not_listed"].startswith("Only cancelled appointments are in")
+
+
+async def test_a_listing_of_both_statuses_leaves_nothing_out() -> None:
+    result = await _listed_with({"status_filter": "both"})
+
+    assert "not_listed" not in result
 
 
 async def test_a_listed_appointment_carries_its_id_and_status() -> None:
