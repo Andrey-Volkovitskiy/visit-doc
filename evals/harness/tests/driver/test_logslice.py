@@ -451,6 +451,44 @@ def test_the_produced_segmentation_is_read_from_the_classification_event(
     assert result.cap_bound is True
 
 
+def test_a_segment_carries_its_query_when_the_event_logs_one(tmp_path: Path) -> None:
+    log = tmp_path / "chat.log"
+    _append(
+        log,
+        _event(
+            "intent.classified",
+            "t1",
+            intents=["faq_question"],
+            segments=[
+                {
+                    "position": 0,
+                    "intent": "faq_question",
+                    "text": "is it free?",
+                    "query": "is parking free?",
+                }
+            ],
+            cap_bound=False,
+        ),
+    )
+
+    result = produced_segmentation(_events(read_slice(log, 0)))
+
+    assert isinstance(result, ProducedSegmentation)
+    assert [(s.text, s.query) for s in result.segments] == [
+        ("is it free?", "is parking free?")
+    ]
+
+
+def test_a_segment_logged_before_queries_existed_has_none(tmp_path: Path) -> None:
+    log = tmp_path / "chat.log"
+    _append(log, _classified("t1", "faq_question"))
+
+    result = produced_segmentation(_events(read_slice(log, 0)))
+
+    assert isinstance(result, ProducedSegmentation)
+    assert [s.query for s in result.segments] == [None]
+
+
 def test_no_classification_event_is_a_typed_missing_slice(tmp_path: Path) -> None:
     log = tmp_path / "chat.log"
     _append(log, _received("t1", "M-CASE"), _event("turn.silenced", "t1"))

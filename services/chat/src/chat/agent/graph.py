@@ -353,6 +353,30 @@ def _select_specialists(
     return [name for name in (_ANSWER_FAQ, _HANDLE_BOOKING) if name in selected]
 
 
+def _in_patient_wording(
+    segments: list[RequestSegment], message: str
+) -> list[RequestSegment]:
+    """Return `segments` with a lone request answered in the patient's own words.
+
+    Args:
+        segments: the requests the classifier found, their restatements in `text`.
+        message: the trailing message this turn answers, verbatim.
+
+    A message carrying one request holds no clause another specialist owns, so handing
+    its specialist a restatement buys nothing and can lose what decides the turn: "the
+    earliest is fine, yes please book it" restated as "book the earliest slot" is a
+    request the booking loop must confirm again, not a confirmation. The restatement
+    stays as the query, because retrieval needs a question that stands on its own and
+    "is it free?" does not. Several requests keep their restatements: those are what
+    keep one specialist from answering another's clause. A blank message keeps the
+    restatement too, since a segment cannot carry blank text.
+    """
+    wording = message.strip()
+    if len(segments) != 1 or not wording:
+        return segments
+    return [segments[0].model_copy(update={"text": wording})]
+
+
 def _record_classification_failure(exc: Exception) -> None:
     """Record a failed classification, raising the outage alert only if it was one.
 
@@ -440,26 +464,31 @@ def _build_graph(
                 # failed turn exactly as it is on a classified one. `cap_bound` keeps
                 # its default: the fallback combined nothing, because it segmented
                 # nothing.
+                # Stripped before the fallback. `ChatRequest` rejects a meaningless
+                # message at the API boundary, but this text comes from stored
+                # history, not from that request - and a segment refuses to carry
+                # blank text, so the raise would come from inside the handler whose
+                # whole job is that this turn does not fail. With no restatement to
+                # search for, the message is its own query.
+                message = trailing_question(bounded_bursts).strip() or _EMPTY_MESSAGE
                 result = IntentClassificationResult(
                     segments=[
                         RequestSegment(
                             intent=IntentLabel.CLASSIFICATION_FAILED,
-                            # Stripped before the fallback. `ChatRequest` rejects a
-                            # meaningless message at the API boundary, but this text
-                            # comes from stored history, not from that request - and a
-                            # segment refuses to carry blank text, so the raise would
-                            # come from inside the handler whose whole job is that this
-                            # turn does not fail.
-                            text=trailing_question(bounded_bursts).strip()
-                            or _EMPTY_MESSAGE,
+                            text=message,
+                            query=message,
                         )
                     ]
                 )
-            segments = result.segments
+            segments = _in_patient_wording(
+                result.segments, trailing_question(bounded_bursts)
+            )
             cap_bound = result.cap_bound
             intents = result.intents
             # The one event carrying a request's text, and the one every per-request
             # retrieval event is read against - they carry its position, not its words.
+            # `text` is what the specialist answered and `query` what was searched for,
+            # so a single request logs both the patient's words and the restatement.
             logger.info(
                 "intent.classified",
                 intents=intents,
@@ -468,6 +497,7 @@ def _build_graph(
                         "position": position,
                         "intent": segment.intent.value,
                         "text": segment.text,
+                        "query": segment.query,
                     }
                     for position, segment in enumerate(segments)
                 ],

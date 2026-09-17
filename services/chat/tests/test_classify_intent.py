@@ -3,7 +3,8 @@
 import pytest
 from chat.agent.classify_intent import ClassificationFailedError, classify_intent
 from chat.domain.models import Message, MessageSender
-from chat.domain.schemas import IntentLabel
+from chat.domain.schemas import IntentLabel, RequestSegment
+from pydantic import ValidationError
 
 from .conftest import fake_classify_intent_client
 
@@ -475,3 +476,26 @@ def test_the_prompt_treats_a_follow_up_clause_as_its_own_request() -> None:
     prompt = _prompt()
     assert "follow-up clause" in prompt
     assert "never leave out something the visitor asked for" in prompt
+
+
+def test_the_request_schema_does_not_ask_the_model_for_a_query() -> None:
+    # The model restates each request once, in `text`; what a specialist reads instead
+    # is orchestration's decision, not a second field the model could disagree with.
+    from chat.agent.classify_intent import _RESPONSE_SCHEMA
+
+    segment = _RESPONSE_SCHEMA["$defs"]["RequestSegment"]
+    assert "query" not in segment["properties"]
+    assert segment["required"] == ["intent", "text"]
+
+
+def test_a_segment_built_without_a_query_searches_for_its_text() -> None:
+    segment = RequestSegment.model_validate(
+        {"intent": "faq_question", "text": "is parking free?"}
+    )
+
+    assert segment.query == "is parking free?"
+
+
+def test_a_segment_refuses_a_blank_query() -> None:
+    with pytest.raises(ValidationError):
+        RequestSegment(intent=IntentLabel.FAQ_QUESTION, text="is it free?", query="  ")

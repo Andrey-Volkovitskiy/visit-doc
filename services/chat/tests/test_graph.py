@@ -328,6 +328,7 @@ def test_a_failed_classification_logs_the_whole_event_it_always_logged(
             "position": 0,
             "intent": IntentLabel.CLASSIFICATION_FAILED.value,
             "text": "when can I visit?",
+            "query": "when can I visit?",
         }
     ]
     assert classified["cap_bound"] is False
@@ -2162,8 +2163,18 @@ def test_the_classification_event_carries_the_segmentation_it_chose(
 
     classified = next(e for e in logs if e["event"] == "intent.classified")
     assert classified["segments"] == [
-        {"position": 0, "intent": "faq_question", "text": "when can I visit?"},
-        {"position": 1, "intent": "booking", "text": "can I book Friday?"},
+        {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "when can I visit?",
+            "query": "when can I visit?",
+        },
+        {
+            "position": 1,
+            "intent": "booking",
+            "text": "can I book Friday?",
+            "query": "can I book Friday?",
+        },
     ]
     assert classified["cap_bound"] is False
 
@@ -2217,6 +2228,110 @@ def test_the_turn_records_each_requests_own_outcome_beside_the_summary(
         {"position": 1, "verdict": "abstained_similarity_floor"},
     ]
     assert _node_result(logs, "answer_faq")["segment_count"] == 2
+
+
+# --- A lone request is answered in the patient's own words --------------------------
+
+
+def test_a_lone_request_logs_the_patients_words_beside_the_restatement(
+    seeded_entry: int,
+) -> None:
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Parking is free."],
+            segments=[(IntentLabel.FAQ_QUESTION, "is parking free?")],
+        )
+        asyncio.run(_run_turn(anthropic_client, "Thanks! Is it free?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert classified["segments"] == [
+        {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Thanks! Is it free?",
+            "query": "is parking free?",
+        }
+    ]
+
+
+def test_a_lone_faq_request_retrieves_for_the_restatement_and_asks_in_own_words(
+    seeded_entry: int,
+) -> None:
+    # "is it free?" cannot be searched for; the restatement can. The question the
+    # generation answers, and the one the outcome records, is what the patient wrote.
+    queries: list[str] = []
+    with patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[(IntentLabel.FAQ_QUESTION, "when are visiting hours?")],
+        )
+        events = asyncio.run(_run_turn(anthropic_client, "and when can I come?"))
+
+    assert queries == ["when are visiting hours?"]
+    sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
+    assert "Question: and when can I come?" in str(sent[-1]["content"])
+    done_event = events[-1]
+    assert isinstance(done_event, ChatDoneEvent)
+    assert done_event.request_outcomes is not None
+    assert [o.question for o in done_event.request_outcomes] == ["and when can I come?"]
+
+
+def test_a_lone_booking_request_reaches_the_loop_as_the_patient_wrote_it(
+    seeded_entry: int,
+) -> None:
+    # The restatement drops the "yes" - and a request to book is not a confirmation.
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        anthropic_client = fake_anthropic_client(
+            segments=[(IntentLabel.BOOKING, "book the 9am slot on Wednesday")],
+        )
+        asyncio.run(
+            _run_turn(anthropic_client, "The earliest is fine, yes please book it.")
+        )
+
+    booking_calls = [
+        call
+        for call in anthropic_client.messages.create.call_args_list
+        if call.kwargs.get("tools") is not None
+    ]
+    assert booking_calls
+    for call in booking_calls:
+        prompt = str(call.kwargs["messages"])
+        assert "The earliest is fine, yes please book it." in prompt
+        assert "book the 9am slot on Wednesday" not in prompt
+
+
+def test_several_requests_keep_their_restatements_for_every_reader(
+    seeded_entry: int,
+) -> None:
+    queries: list[str] = []
+    with (
+        patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[
+                (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+                (IntentLabel.BOOKING, "can I book Friday?"),
+            ],
+        )
+        asyncio.run(_run_turn(anthropic_client, "visit when? and Friday booking?"))
+
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert [(s["text"], s["query"]) for s in classified["segments"]] == [
+        ("when can I visit?", "when can I visit?"),
+        ("can I book Friday?", "can I book Friday?"),
+    ]
+    assert queries == ["when can I visit?"]
+
+
+def test_a_lone_request_keeps_its_restatement_when_the_message_is_blank() -> None:
+    segments = [RequestSegment(intent=IntentLabel.SMALL_TALK, text="hello")]
+
+    assert graph_module._in_patient_wording(segments, "  \n ") == segments
 
 
 def test_a_single_request_turn_records_one_segment(seeded_entry: int) -> None:

@@ -289,7 +289,13 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   survives as a *derived* property, which is what let every routing rule keep reading the value it
   read before. Each specialist is handed only its own segments and substitutes them into the trailing
   conversation entry via `history.replace_trailing_entry`, so isolation is structural: the other
-  half's clause is not in the prompt to be answered. The retrieval pipeline runs once per FAQ
+  half's clause is not in the prompt to be answered. A segment carries two wordings: `query`, the
+  classifier's standalone restatement, which is what retrieval searches for; and `text`, what the
+  specialist answers. They are the same restatement when the message carried several requests, but
+  a message the classifier found **one** request in is answered in the patient's own words
+  (`_in_patient_wording` in `agent/graph.py`) — with no other clause to keep out, a restatement can
+  only lose something, and "yes please book it" restated as "book it" is a new request the booking
+  loop confirms again rather than a confirmation. The retrieval pipeline runs once per FAQ
   segment, concurrently, **never pooled** — a shared shortlist under the 3-chunk cap lets the
   stronger question crowd the other out, which is the defect splitting exists to remove — and each
   segment's answer is generated from its own shortlist alone. The fan-out lives *inside*

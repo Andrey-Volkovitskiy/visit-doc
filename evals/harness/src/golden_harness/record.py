@@ -126,13 +126,20 @@ def turn_settled(
 
 
 class ProducedSegment(BaseModel):
-    """One request as the classifier produced it."""
+    """One request as the classifier produced it.
+
+    `text` is what the specialist answered - the patient's own words when the message
+    carried only this request - and `query` the classifier's restatement, which is what
+    retrieval searched for. `query` is None for a run recorded before the chat service
+    logged it, and for nothing else.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     position: int
     intent: IntentLabel
     text: str
+    query: str | None = None
 
 
 class ProducedSegmentation(BaseModel):

@@ -782,9 +782,10 @@ SCHEDULING_TOOLS = [
         description=(
             "Creates a REAL appointment. Only call this after the patient has "
             "explicitly confirmed both the practitioner and the exact start time. "
-            "There is no way to cancel or change an appointment in this version, so "
-            "never call it to 'check' whether something is possible - use "
-            "check_availability for that."
+            "Never call it to 'check' whether something is possible - use "
+            "check_availability for that. An appointment booked by mistake is not "
+            "undone for free: it holds the slot until the patient confirms a "
+            "cancellation."
         ),
         input_schema={
             "type": "object",

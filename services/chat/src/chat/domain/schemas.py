@@ -69,13 +69,21 @@ MAX_SEGMENTS = 3
 
 
 class RequestSegment(BaseModel):
-    """One thing the visitor asked for, as a request that stands on its own.
+    """One thing the visitor asked for, with the wording each reader of it needs.
 
-    `text` is a restatement, not a substring: "do you have parking, and is it free?"
-    yields a second segment reading "is parking free?", which is a question a corpus can
-    answer where "is it free?" is not. It is what the turn retrieves for and what the
-    specialist is asked to answer, which is why a blank one is rejected rather than
-    carried - it would be searched for as though it were a question.
+    `query` is a restatement that stands on its own: "do you have parking, and is it
+    free?" yields a second segment whose query reads "is parking free?", which a corpus
+    can answer where "is it free?" is not. It is what the turn retrieves for.
+
+    `text` is what the specialist is asked to answer. When the message carries several
+    requests it is the restatement, so no specialist reads a clause another one owns.
+    When it carries one, orchestration sets it to the patient's own words: the
+    restatement can only lose something - a "yes, book it" becomes "book it" - and there
+    is no other clause to keep out. A segment built without a `query` takes `text` as
+    its query, which is how the classifier's response arrives.
+
+    A blank value in either is rejected rather than carried - it would be searched for
+    or answered as though it were a question.
 
     A part of a message that asks for nothing is not a segment: the segments are the
     requests. A message that asks for nothing at all is one segment, labelled
@@ -85,11 +93,20 @@ class RequestSegment(BaseModel):
 
     intent: IntentLabel
     text: str = Field(min_length=1)
+    query: str = Field(min_length=1)
 
-    @field_validator("text")
+    @model_validator(mode="before")
+    @classmethod
+    def _query_defaults_to_text(cls, data: object) -> object:
+        """Take `text` as the query when none was given."""
+        if isinstance(data, dict) and "query" not in data and "text" in data:
+            return {**data, "query": data["text"]}
+        return data
+
+    @field_validator("text", "query")
     @classmethod
     def _reject_blank_text(cls, value: str) -> str:
-        """Reject a segment whose text is whitespace only."""
+        """Reject a segment whose text or query is whitespace only."""
         if not value.strip():
             raise ValueError("a request segment's text must not be blank")
         return value

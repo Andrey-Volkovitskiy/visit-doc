@@ -354,7 +354,7 @@ async def _answer_one_bound(
         context.qdrant_client,
         context.voyage_client,
         context.rerank_client,
-        segment.text,
+        segment.query,
         context.session_id,
         context.live_revisions,
     )
@@ -376,10 +376,11 @@ async def _answer_one_bound(
     survivors = deduplicate_chunks(outcome.survivors)
     retrieved = "\n\n".join(chunk.chunk_text for chunk in survivors)
     # The same three parts it has always had, and the same two when nothing was
-    # silenced. What the question *is* did change: it is this request as the classifier
-    # restated it, not the message verbatim - the same text this run retrieved for, so
-    # the prompt and the shortlist can never be about two different questions. Another
-    # request's chunks and another request's words are not in this prompt at all.
+    # silenced. The question is the request's `text`: the patient's own words when the
+    # message carried only this request, and the classifier's restatement otherwise.
+    # Either way it is the request the shortlist was retrieved for - `query` is only the
+    # same request made to stand on its own. Another request's chunks and another
+    # request's words are not in this prompt at all.
     prompt = "\n\n".join(
         part
         for part in (

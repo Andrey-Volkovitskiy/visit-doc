@@ -125,6 +125,10 @@ _RESPONSE_SCHEMA["$defs"]["IntentLabel"]["enum"] = [
     for label in IntentLabel
     if label is not IntentLabel.CLASSIFICATION_FAILED
 ]
+# `query` is not the model's to write: a segment arrives with its restatement in `text`,
+# which also becomes its query, and orchestration decides afterwards what the
+# specialist reads. Removed before `required` is derived, so it is not demanded either.
+_RESPONSE_SCHEMA["$defs"]["RequestSegment"]["properties"].pop("query")
 for _schema in (_RESPONSE_SCHEMA, _RESPONSE_SCHEMA["$defs"]["RequestSegment"]):
     _schema["additionalProperties"] = False
     _schema["required"] = list(_schema["properties"])
