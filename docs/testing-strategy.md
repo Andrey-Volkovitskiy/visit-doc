@@ -80,6 +80,10 @@ knowing:
 - **`services/chat/tests/test_paid_api_guard.py` asserts the guard is armed.** A renamed SDK
   attribute would make the `patch` target stop resolving, and a guard failing open looks exactly
   like a suite that never calls a paid API — which is the state it exists to distinguish from.
+- **`tests/integration/conftest.py` holds its own copy of the guard**, with the same
+  `_PAID_API_CALLS`, and `tests/integration/test_paid_api_guard.py` checks that copy is armed. It
+  is a copy rather than an import because one tier's `conftest.py` is not a dependency of
+  another's, so a new paid call has to be added to both lists.
 
 The **scheduling gRPC boundary** is faked the same way and for the same reason: no scheduler runs
 alongside chat's unit tests, and the app's channel is bound to the lifespan's event loop rather
@@ -138,9 +142,9 @@ something to apologise for or work around.
 **The unit and integration tiers may never reach either API.** The reasons are in "Mocking
 discipline" above and none of them is about cost alone: a live call makes the test
 non-deterministic, dependent on network access and a valid key, and slow. Both tiers already fake
-the two boundaries — `services/chat/tests/conftest.py`'s `fake_anthropic_client(...)` under the
-autouse `_paid_apis_are_blocked` guard, and `tests/integration/conftest.py`'s own stand-ins for
-`AsyncAnthropic` and Voyage embeddings. These two tiers are the fast gate: they run on every push,
+the two boundaries — `services/chat/tests/conftest.py`'s `fake_anthropic_client(...)` and
+`tests/integration/conftest.py`'s own stand-ins for `AsyncAnthropic` and Voyage embeddings, each
+under its tier's autouse `_paid_apis_are_blocked` guard. These two tiers are the fast gate: they run on every push,
 must pass with no key configured at all, and give the same answer every time.
 
 **The e2e tier may.** `tests/e2e/` drives the whole system as a user does — a browser against

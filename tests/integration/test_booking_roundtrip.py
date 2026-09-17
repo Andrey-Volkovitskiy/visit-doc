@@ -417,5 +417,12 @@ async def test_a_patient_with_nothing_booked_is_told_so_rather_than_erroring(
 
     # Two empty legs, not an error and not one merged empty list: the patient exists
     # and has nothing matching the corner that was asked for.
-    assert result == {"future": [], "past": [], "past_truncated": False}
+    assert {k: result[k] for k in ("future", "past", "past_truncated")} == {
+        "future": [],
+        "past": [],
+        "past_truncated": False,
+    }
     assert "status" not in result
+    # The default listing is standing-only, so it says what it left out: an empty one
+    # is not "nothing was ever booked".
+    assert result["not_listed"].startswith("Cancelled appointments are not in")

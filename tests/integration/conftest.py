@@ -7,9 +7,10 @@ package's own `conftest.py`.
 """
 
 import os
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
+from contextlib import ExitStack
 from pathlib import Path
-from typing import Self
+from typing import Any, NoReturn, Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import grpc
@@ -153,17 +154,73 @@ async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
     await engine.dispose()
 
 
+class PaidAPICallInTestError(BaseException):
+    """Raised when a test in this tier reaches a real paid API instead of its fake.
+
+    A `BaseException` for the reason chat's unit tier gives for its own: production code
+    absorbs every `Exception` from a degradable dependency - `rerank_chunks` converts
+    each to None by requirement - and a guard such a handler can swallow lets the test
+    pass on the degraded path having attempted a live, billed request.
+
+    Declared again rather than imported from `services/chat/tests/conftest.py`, for the
+    same reason as the fakes below: one tier's harness is not a dependency of another's.
+    """
+
+
+# Every call chat makes that costs money, keyed by the SDK attribute it goes through -
+# the same list as the chat unit tier's `_PAID_API_CALLS`. A new paid call belongs in
+# both, in the change that introduces it.
+_PAID_API_CALLS = {
+    "anthropic.resources.messages.AsyncMessages.create": (
+        "Anthropic messages.create (intent classification, or the booking tool loop)"
+    ),
+    "anthropic.resources.messages.AsyncMessages.stream": (
+        "Anthropic messages.stream (answer generation)"
+    ),
+    "voyageai.client_async.AsyncClient.embed": "Voyage embed (embeddings)",
+    "voyageai.client_async.AsyncClient.rerank": "Voyage rerank (reranking)",
+}
+
+_PAID_API_REMEDY = (
+    "Tests must never call a paid API: it bills real money on every run, and both its "
+    "latency and its output vary, so the test is non-deterministic and needs network "
+    "plus a valid key to pass at all. Patch `chat.main.AsyncAnthropic` with this "
+    "tier's `fake_anthropic_client(...)` and `chat.rag.<module>.embed_texts` with "
+    "`fake_embed_texts` - see docs/testing-strategy.md."
+)
+
+
+@pytest.fixture(autouse=True)
+def _paid_apis_are_blocked() -> Iterator[None]:
+    """Fail any test in this tier that reaches Anthropic or Voyage for real.
+
+    Every test here that drives a turn patches `chat.main.AsyncAnthropic` and
+    `embed_texts` by hand, and nothing but this fixture notices one that forgets: the
+    app's lifespan builds a real client, and the call goes out. Blocked on the SDK
+    class rather than on chat's wrappers, so a client built anywhere is covered.
+    """
+
+    def _blocked(api: str) -> Callable[..., NoReturn]:
+        def raise_paid_api_error(*_args: Any, **_kwargs: Any) -> NoReturn:
+            raise PaidAPICallInTestError(f"this test called {api}. {_PAID_API_REMEDY}")
+
+        return raise_paid_api_error
+
+    with ExitStack() as stack:
+        for target, api in _PAID_API_CALLS.items():
+            stack.enter_context(patch(target, new=_blocked(api)))
+        yield
+
+
 @pytest.fixture(autouse=True)
 def _reranking_keeps_what_it_is_given() -> "Iterator[None]":
     """Fake the reranking boundary for every test in this tier.
 
-    Required, not convenient, for two separate reasons. It is a **paid** call, and this
-    tier may never reach one - unlike the chat unit tier there is no `_paid_apis_are_
-    blocked` guard here to catch the omission, so an unfaked reranker bills a live
-    request on every FAQ turn. And `rerank_chunks` converts every failure to None by
-    requirement, so reaching a real client does not fail the test: it quietly answers
-    `answered_unreranked`, and a test asserting a reranked answer fails somewhere else
-    entirely, for a reason that reads as a retrieval bug.
+    Required, not convenient. `_paid_apis_are_blocked` makes reaching the real
+    reranker fail the test rather than bill it - which is why its error is not an
+    `Exception`, since `rerank_chunks` converts every `Exception` to None by
+    requirement. The guard makes the omission loud; this fake is what makes an
+    ordinary FAQ turn in this tier not need one.
 
     The default is a working reranker that keeps the shortlist in the order it was
     given, matching `services/chat/tests/conftest.py`.
