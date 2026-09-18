@@ -1681,17 +1681,19 @@
  {
   "id": "G094",
   "family": "mixed-faq-booking",
-  "message": "Are you open Sundays, and can I book the earliest slot you have with William Osler?",
+  "message": "How much is a GP visit if I'm paying cash, and do you have any slots available on Wednesday morning?",
   "requests": [
    {
     "intent": "faq_question",
-    "gist": "Sunday hours",
-    "answerable": false,
-    "cites": []
+    "gist": "GP out-of-pocket rate",
+    "answerable": true,
+    "cites": [
+     "out-of-pocket-rates"
+    ]
    },
    {
     "intent": "booking",
-    "gist": "earliest available slot",
+    "gist": "GP availability Wednesday morning",
     "tools": [
      "check_availability"
     ]
@@ -1701,8 +1703,8 @@
    "given": [],
    "expect": []
   },
-  "source": "010/mixed#B14",
-  "note": "the partial case that matters most: staff are called for the gap while the booking half is served"
+  "source": "010/mixed#B14 (rebuilt)",
+  "note": "REBUILT 2026-09-18: was 'Are you open Sundays, and can I book the earliest slot you have with William Osler?', whose Sunday half the hours entry answers by exclusion and whose booking half asked to book but expected nothing. The booking half names no practitioner: 'GP' is in the other clause, so the classifier's restatement has to carry it across, and the GP resolves to one practitioner, as G087's 'dentist' does. See PROVENANCE.md."
  },
  {
   "id": "G095",

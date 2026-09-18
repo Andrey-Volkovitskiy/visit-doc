@@ -44,7 +44,8 @@ _BOOKING_CASES = [
     "G102",
 ]
 
-# The contract's G102 example, verbatim.
+# The contract's G102 example, with its Friday appointment moved to Vesalius as the
+# committed case has it since 2026-09-18 (see PROVENANCE.md).
 _G102: dict[str, Any] = {
     "id": "G102",
     "family": "segmentation-edges",
@@ -58,10 +59,10 @@ _G102: dict[str, Any] = {
         },
     ],
     "scheduling": {
-        "given": [{"practitioner": "William Osler", "day": "+4d", "time": "10:00"}],
+        "given": [{"practitioner": "Andreas Vesalius", "day": "+4d", "time": "10:00"}],
         "expect": [
             {
-                "practitioner": "William Osler",
+                "practitioner": "Andreas Vesalius",
                 "day": "+4d",
                 "time": "10:00",
                 "status": "cancelled",
@@ -240,7 +241,8 @@ def test_a_loaded_fixture_is_typed_on_its_case(tmp_path: Path) -> None:
     (case,) = load_cases(_write(tmp_path, [_G102]), _SCHEMA)
 
     assert case.scheduling is not None
-    assert [entry.practitioner for entry in case.scheduling.given] == ["William Osler"]
+    given = [entry.practitioner for entry in case.scheduling.given]
+    assert given == ["Andreas Vesalius"]
     assert [entry.status for entry in case.scheduling.expect] == [
         "cancelled",
         "standing",
@@ -449,7 +451,8 @@ def test_the_contracts_worked_examples_are_labelled_as_the_contract_states() -> 
 # Cases whose booking tool needs a practitioner id the message would otherwise leave
 # the loop to ask for - `check_availability` and `book_appointment` both take one, and
 # the prompt says never to choose for the patient - so each names its practitioner.
-_NAMES_ITS_PRACTITIONER = ["G044", "G062", "G088", "G094", "G095", "G102"]
+# G087 and G094 name a specialty instead, which resolves to one practitioner.
+_NAMES_ITS_PRACTITIONER = ["G044", "G062", "G088", "G095", "G102"]
 
 
 @pytest.mark.parametrize("case_id", _NAMES_ITS_PRACTITIONER)

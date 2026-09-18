@@ -267,7 +267,7 @@ How they were decided:
 | G091 | Where do I park, and what appointments do I have booked? | Vesalius +3d 12:00 | same, standing | A listing needs something to list; it must leave it alone. |
 | G092 | What should I bring, and what does Dr. Vesalius specialize in? | — | — | Listing practitioners is read-only. |
 | G093 | What is your address, and can I reschedule to the same time next week? | Osler +2d 10:00 | Osler +9d 10:00, standing | Presupposes one appointment; its target is fully named. A reschedule keeps the row, so nothing is cancelled. |
-| G094 | Are you open Sundays, and can I book the earliest slot you have with William Osler? | — | — | Read-only by decision: the loop finds the earliest slot and asks to confirm it, and nothing is written in one turn. |
+| G094 | How much is a GP visit if I'm paying cash, and do you have any slots available on Wednesday morning? | — | — | Availability is read-only and presupposes no appointment. Rebuilt 2026-09-18 (below). |
 | G095 | Where are you, how much is a GP visit, and can I book one with William Osler on Friday? | — | Osler +4d, standing, any time | Names practitioner and day; no time is named. |
 | G102 | Can you cancel Friday and book Wednesday with William Osler instead? | Vesalius +4d 10:00 | that one cancelled, plus Osler +2d standing, any time | Contract example; its Friday appointment moved to Vesalius 2026-09-18 (below). |
 
@@ -343,6 +343,20 @@ shipped. The scheduler can still move an appointment to another practitioner in 
 now for a reading the patient would not recognise as theirs. `given` and `expect` are scored
 fields, so scoring refuses every run stored before this change that selected G102.
 
+**G094 rebuilt (2026-09-18, by the reviewer's decision).** "Are you open Sundays, and can I book
+the earliest slot you have with William Osler?" was wrong on both halves from the patient's side.
+The Sunday half was labelled a corpus gap, but "open Monday through Saturday" tells a patient the
+clinic is closed on Sundays, and every stored run answered it that way. The booking half asked to
+*book* and expected nothing booked, where G062 and G095, just as specific, carry a reply and
+expect the booking. The case is now "How much is a GP visit if I'm paying cash, and do you have any
+slots available on Wednesday morning?": an answerable `out-of-pocket-rates` question beside an
+availability check that writes nothing, so `scheduling` stays empty and there is no reply. The
+booking half names a specialty rather than a practitioner, as G087's does, and one that sits in the
+*other* clause, so the classifier's restatement of the booking request has to carry "GP" across.
+G094 therefore leaves the test's list of cases that name William Osler. `mixed-faq-booking` loses
+its only partial case: no request in the family is a gap any more. Every scored field changed, so
+scoring refuses every run stored before this change that selected G094.
+
 **Six messages reworded (2026-09-14, by the reviewer's decision).** Two defects in the drafted
 messages would have measured the labels rather than the loop:
 
@@ -359,7 +373,8 @@ messages would have measured the labels rather than the loop:
    new booking with it.
 
 G094 stays read-only by decision: asked to book the earliest slot, one turn finds it and asks to
-confirm, and it carries no reply. A test guards both rules for the committed set
+confirm, and it carries no reply. (Superseded 2026-09-18: G094 was rebuilt, below, and no longer
+names a practitioner.) A test guards both rules for the committed set
 (`evals/harness/tests/test_fixture_label.py`). The messages are scored fields, so every run taken
 before this change is refused by scoring (spec 012 FR-044a); none had been committed.
 
