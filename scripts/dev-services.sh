@@ -3,6 +3,10 @@
 # Start, stop and inspect the three dev services in the background.
 #
 # Usage: scripts/dev-services.sh {up|down|status} [chat|scheduler|frontend|all]
+#        scripts/dev-services.sh free-ports [chat|scheduler|all]
+#
+# `down` stops what this script started; `free-ports` stops what is on chat's and scheduler's
+# ports however it got there, which is what a lost pid file or a hand-started service needs.
 #
 # Each service records its pid under .run/ and is stopped by that pid. That is the whole point
 # of this script: the obvious alternative, `pkill -f "chat.main"`, also matches the command line
@@ -96,6 +100,75 @@ stop_one() {
   fi
 }
 
+# The pids listening on a port, newline-separated. `ss` reports only sockets this user may see,
+# which is exactly the set this script is allowed to kill anyway.
+listener_pids() {
+  ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u
+}
+
+# The module name a service's own command line must contain before this script will kill its
+# process. Only the two Python services have one: the frontend's command line is node/vite, which
+# names nothing specific to this repo, so `free-ports` does not offer to kill it.
+module_of() {
+  case "$1" in
+    chat) echo "chat.main" ;;
+    scheduler) echo "scheduler.main" ;;
+  esac
+}
+
+# Stop whatever is *listening on a service's port*, rather than whatever this script started.
+# That is the difference from `down`: it recovers the case where the pid file is gone but the
+# service is not - started by hand with `make run-chat-dev`, or left behind when .run/ was wiped.
+# It is still not `pkill -f "chat.main"`: the pid comes from the listening socket, and is killed
+# only once its own command line is confirmed to name that service's module, so an unrelated
+# process on 8000 is reported and left alone.
+free_one() {
+  local name="$1" port pid pgid args module found=0 killed=0
+  port="$(port_of "$name")"
+  module="$(module_of "$name")"
+
+  for pid in $(listener_pids "$port"); do
+    found=1
+    args="$(ps -p "$pid" -o args= 2>/dev/null)"
+    if [[ "$args" != *"$module"* ]]; then
+      echo "  $name port $port held by pid $pid, which is not $name - left alone: $args"
+      continue
+    fi
+    # The listener is usually the `uv`-spawned child rather than the recorded pid, so signal its
+    # whole process group. Never this script's own group, whatever ss reported.
+    pgid="$(ps -p "$pid" -o pgid= 2>/dev/null | tr -d ' ')"
+    if [ -n "$pgid" ] && [ "$pgid" != "$(ps -p $$ -o pgid= | tr -d ' ')" ]; then
+      kill -TERM -- "-$pgid" 2>/dev/null
+    else
+      pgid=""
+      kill -TERM "$pid" 2>/dev/null
+    fi
+    for _ in $(seq 1 20); do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 0.25
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      if [ -n "$pgid" ]; then
+        kill -KILL -- "-$pgid" 2>/dev/null
+      else
+        kill -KILL "$pid" 2>/dev/null
+      fi
+    fi
+    killed=1
+    echo "  $name stopped (pid $pid was holding port $port)"
+  done
+
+  if [ "$found" = 0 ]; then
+    echo "  $name port $port free"
+  fi
+  # A pid file naming a process that no longer exists is stale either way: drop it so the next
+  # `up` starts rather than reporting the service already running.
+  local recorded="$RUN_DIR/$name.pid"
+  if [ "$killed" = 1 ] || { [ -f "$recorded" ] && ! kill -0 "$(cat "$recorded")" 2>/dev/null; }; then
+    rm -f "$recorded"
+  fi
+}
+
 status_one() {
   local name="$1" pidfile="$RUN_DIR/$1.pid" port state
   port="$(port_of "$name")"
@@ -113,7 +186,12 @@ status_one() {
 action="${1:-status}"
 target="${2:-all}"
 if [ "$target" = "all" ]; then
-  targets=("${SERVICES[@]}")
+  # `free-ports` knows how to identify only the two Python services (see module_of).
+  if [ "$action" = "free-ports" ]; then
+    targets=(chat scheduler)
+  else
+    targets=("${SERVICES[@]}")
+  fi
 else
   targets=("$target")
 fi
@@ -122,8 +200,18 @@ case "$action" in
   up)     for s in "${targets[@]}"; do start_one "$s"; done ;;
   down)   for s in "${targets[@]}"; do stop_one "$s"; done ;;
   status) for s in "${targets[@]}"; do status_one "$s"; done ;;
+  free-ports)
+    for s in "${targets[@]}"; do
+      if [ -z "$(module_of "$s")" ]; then
+        echo "  free-ports handles chat and scheduler only, not $s" >&2
+        exit 2
+      fi
+      free_one "$s"
+    done
+    ;;
   *)
     echo "usage: $0 {up|down|status} [chat|scheduler|frontend|all]" >&2
+    echo "       $0 free-ports [chat|scheduler|all]" >&2
     exit 2
     ;;
 esac

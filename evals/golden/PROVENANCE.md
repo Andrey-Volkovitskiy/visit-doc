@@ -181,11 +181,11 @@ How they were decided:
 |---|---|---|---|---|
 | G042 | Hi, I need to cancel tomorrow | Osler +1d 10:00 | same, cancelled | Contract example: the one appointment tomorrow is cancelled. |
 | G044 | Thanks! Any slots with William Osler on Wednesday? | — | — | Availability is read-only and presupposes no appointment. |
-| G048 | Hey, can I move my Thursday appointment? | Osler +3d 11:00 | same, standing | Contract principle: no new time is named, so one turn can only ask which. |
+| G048 | Hey, can I move my Thursday appointment to Friday 12pm? | Osler +3d 11:00 | Osler +4d 12:00, standing | Re-expressed 2026-09-18 (below): the target is fully named. A reschedule keeps the row, so nothing is cancelled. |
 | G049 | Good afternoon, which cardiologists do you have? | — | — | Contract example: read-only; the session has no cardiologist. |
 | G050 | OK thanks, when is my next appointment? | Osler +2d 14:00 | same, standing | Presupposes an appointment; listing it must leave it alone. |
 | G051 | Cheers - cancel the Tuesday one please | Osler +1d 15:00 | same, cancelled | Names the day of the one appointment to cancel. |
-| G053 | Nice one. Can I see a cardiologist next week? | — | — | Contract: read-only; there is no cardiologist to offer. |
+| G053 | Nice one. Can I see a cardiologist next week? | — | — | Contract: read-only; there is no cardiologist to offer. `tools` relabelled 2026-09-18 (below). |
 | G062 | Can I book Wednesday with William Osler, and also get a receipt reissued for last month? | — | Osler +2d, standing, any time | Names practitioner and day but no time: the first turn offers times and asks which, and the reply takes the earliest. |
 | G087 | What are your clinic hours, and what dentist slots are free tomorrow? | — | — | Availability is read-only and presupposes no appointment. |
 | G088 | What should I bring, and can you book me Wednesday at 9 with William Osler? | — | Osler +2d 09:00, standing | Contract example: names practitioner, day and time. |
@@ -214,7 +214,7 @@ reply and now expects one standing Osler booking on Wednesday at any time.
 
 | Case | `reply` |
 |---|---|
-| G042, G051, G090, G093 | Yes, please go ahead. |
+| G042, G048, G051, G090, G093 | Yes, please go ahead. |
 | G088 | Yes, please book it. |
 | G062 | The earliest Wednesday time is fine, yes please book it. |
 | G095 | The earliest time you have on Friday is fine, yes please book it. |
@@ -228,11 +228,32 @@ is a request to act or a question is not something a label should have to settle
 longer does: it reads the appointments after the first turn, and posts the `reply` only when they do
 not already match `expect`. A case is scored on the read after its last driven turn, and the read
 before the reply stops being a pass condition - a first turn that did the task is a success, not a
-write before confirmation. So the eight cases keep their replies - the three plain cancellations
+write before confirmation. So the eight cases (nine since G048's re-expression, below) keep their replies - the three plain cancellations
 (G042, G051, G090) included, where a loop that cancels at once never sees one - and no label changed
 for this: every committed digest stands, but re-scoring an earlier run can move its end-to-end
 success: a case that used to fail on the read before its reply now passes when its last read
 matched.
+
+**G048 re-expressed (2026-09-18, by the reviewer's decision).** "Hey, can I move my Thursday
+appointment?" was labelled `reschedule_appointment` while its fixture expected nothing to change,
+because no new time was named - so the label asked for a tool one correct turn could not call, and
+every run scored it a tool-selection miss while the case itself succeeded. The message now names
+the target, "Hey, can I move my Thursday appointment to Friday 12pm?", and the label follows the
+reading G093 already uses: `tools` is `list_my_appointments` and `reschedule_appointment` (the
+reschedule needs the appointment's id and current start, which only the listing supplies), `expect`
+is the same row moved to Osler `+4d` 12:00, standing, and the reply is "Yes, please go ahead." for
+a loop that confirms before it writes. G048 is the ninth write case. Its message, tools, fixture
+and reply are scored fields, so scoring refuses every run stored before this change that selected
+G048 - the whole run, not only the case (`LabelDigestMismatchError`).
+
+**G053 relabelled (2026-09-18, by the reviewer's decision).** "Nice one. Can I see a cardiologist
+next week?" was labelled `check_availability`, but that tool takes a `practitioner_id`, and nobody
+in the seeded roster is a cardiologist - so a correct turn has nothing to check, and all five runs
+of the 2c noise band answered "we have no cardiologist" from the roster and were scored a miss.
+The fixture already said the case is read-only; `tools` is now `list_practitioners`, the same as
+G049's. The roster the booking node reads into its prompt counts as that call (see the harness's
+`scoring/booking.py`), so a turn that answers from it scores. `tools` is a scored field, so
+scoring refuses every run stored before this change that selected G053.
 
 **Six messages reworded (2026-09-14, by the reviewer's decision).** Two defects in the drafted
 messages would have measured the labels rather than the loop:

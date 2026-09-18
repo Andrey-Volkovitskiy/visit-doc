@@ -123,7 +123,11 @@ uv add --package shared-proto <package>   # add a dep to a shared package
 `make run-chat-dev` / `make run-scheduler-dev` / `make run-frontend-dev` each hold a terminal. To
 put all three in the background instead — which is what manual testing of a whole flow needs —
 `make services-up`, `make services-status`, `make services-down`, with `make migrate` first if the
-dev databases are behind. Each service's pid and log live under `.run/` (gitignored).
+dev databases are behind. When `services-down` has nothing to stop but the ports are still bound —
+a pid file lost, or a service started by hand with `make run-chat-dev` — `make services-free-ports`
+stops whatever holds chat's and scheduler's ports, after confirming from the listener's own command
+line that it is that service; anything else on the port is reported and left running. Each
+service's pid and log live under `.run/` (gitignored).
 
 **Stop them with `make services-down`, never with `pkill -f "chat.main"`.** That pattern also
 matches the command line of the shell running it, so it kills the caller — and anything else whose

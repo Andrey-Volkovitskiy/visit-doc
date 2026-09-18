@@ -73,11 +73,12 @@ _G102: dict[str, Any] = {
     "source": "010/multi#C9",
 }
 
-# The eight cases whose first turn may answer with an offer or a question rather than
+# The nine cases whose first turn may answer with an offer or a question rather than
 # act, and the patient's scripted answer to it - posted only when the first turn did not
 # already leave the expected appointments.
 _REPLIES = {
     "G042": "Yes, please go ahead.",
+    "G048": "Yes, please go ahead.",
     "G051": "Yes, please go ahead.",
     "G062": "The earliest Wednesday time is fine, yes please book it.",
     "G088": "Yes, please book it.",
@@ -397,7 +398,7 @@ def test_the_committed_set_has_a_fixture_on_exactly_the_eighteen_booking_cases()
     assert [case.id for case in cases if case.scheduling is not None] == _BOOKING_CASES
 
 
-def test_the_committed_set_carries_a_reply_on_exactly_the_eight_write_cases() -> None:
+def test_the_committed_set_carries_a_reply_on_exactly_the_nine_write_cases() -> None:
     cases = load_cases(_CASES, _SCHEMA)
 
     replies = {

@@ -7,6 +7,10 @@ run clock Monday 2026-03-02 08:00:
     G941  book           check_availability, book      hit   Fri 14:00 (any)    match
     G942  cancel         list_my_appointments, cancel  hit   Tue 10:00 cxl      match
     G943  list_pract.    list_practitioners, book      hit   Tue 09:00 extra    fail
+
+A `booking.roster_read` event counts as a `list_practitioners` call and a
+`booking.roster_unread` does not; the tests edit G943's events to show both, since no
+fixture case carries either.
     G944  book           check_availability, book x2   hit   Wed 10:00, 11:00   match
     G945  cancel + book  check_availability, book      miss  Fri kept, Mon      fail
     G946  cancel         - (unresolvable_fixture)      excl  -                  excl
@@ -278,6 +282,76 @@ def test_tools_are_read_from_the_booking_tool_called_events(tmp_path: Path) -> N
     scores = score_booking(_labels(), edited, clock=_CLOCK)
 
     assert "G942" in {miss.case_id for miss in scores.tool_selection_misses}
+
+
+def _g943_without_the_models_roster_call(*extra: dict[str, Any]) -> list[CaseRun]:
+    """G943 without its model-made `list_practitioners` call, with `extra` appended."""
+    (g943,) = [run for run in _case_runs() if run.case_id == "G943"]
+    assert g943.events is not None
+    events = [
+        e for e in g943.events if e.get("tool_name") != "list_practitioners"
+    ] + list(extra)
+    return _edited("G943", events=events)
+
+
+def _g943_miss(runs: list[CaseRun]) -> list[str] | None:
+    misses = score_booking(_labels(), runs, clock=_CLOCK).tool_selection_misses
+    found = [m for m in misses if m.case_id == "G943"]
+    return [tool.value for tool in found[0].missing] if found else None
+
+
+def test_without_a_list_practitioners_call_a_roster_case_misses() -> None:
+    assert _g943_miss(_g943_without_the_models_roster_call()) == ["list_practitioners"]
+
+
+def test_the_booking_nodes_roster_read_counts_as_a_list_practitioners_call() -> None:
+    # The node reads the roster into the prompt before the model's first request, so a
+    # model that answers from it never calls the tool itself.
+    runs = _g943_without_the_models_roster_call(
+        {"event": "booking.roster_read", "practitioner_count": 2}
+    )
+
+    assert _g943_miss(runs) is None
+    (g943,) = [r for r in runs if r.case_id == "G943"]
+    assert g943.events is not None
+    assert "list_practitioners" not in [e.get("tool_name") for e in g943.events]
+
+
+def test_a_roster_read_that_failed_is_not_a_list_practitioners_call() -> None:
+    runs = _g943_without_the_models_roster_call(
+        {"event": "booking.roster_unread", "status": "unavailable"}
+    )
+
+    assert _g943_miss(runs) == ["list_practitioners"]
+
+
+def test_a_roster_read_beside_the_models_own_call_is_listed_once() -> None:
+    (g943,) = [run for run in _case_runs() if run.case_id == "G943"]
+    assert g943.events is not None
+    roster_read = {"event": "booking.roster_read", "practitioner_count": 2}
+    runs = _edited("G943", events=[roster_read, *g943.events])
+    # A label G943 cannot meet, so its miss reports what it did call.
+    labels = [
+        case.model_copy(
+            update={
+                "requests": [
+                    r.model_copy(update={"tools": [BookingTool.CANCEL_APPOINTMENT]})
+                    for r in case.requests
+                ]
+            }
+        )
+        if case.id == "G943"
+        else case
+        for case in _labels()
+    ]
+
+    (miss,) = [
+        m
+        for m in score_booking(labels, runs, clock=_CLOCK).tool_selection_misses
+        if m.case_id == "G943"
+    ]
+
+    assert miss.called == ["list_practitioners", "book_appointment"]
 
 
 def test_the_scores_state_that_tool_selection_is_per_booking_half() -> None:

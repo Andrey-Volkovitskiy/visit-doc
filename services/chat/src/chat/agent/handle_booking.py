@@ -374,6 +374,9 @@ async def _read_roster(registry: ToolRegistry) -> list[Any] | None:
         logger.warning("booking.roster_unread", status=result.get("status"))
         return None
 
+    # The event name is a data contract with the golden harness, which scores this read
+    # as the turn's `list_practitioners` call: rename it and every roster question the
+    # model answers from its prompt starts scoring as a tool-selection miss.
     logger.info("booking.roster_read", practitioner_count=len(practitioners))
     return list(practitioners)
 

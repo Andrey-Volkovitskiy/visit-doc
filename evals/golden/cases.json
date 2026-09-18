@@ -722,12 +722,13 @@
  {
   "id": "G048",
   "family": "pleasantry-plus-request",
-  "message": "Hey, can I move my Thursday appointment?",
+  "message": "Hey, can I move my Thursday appointment to Friday 12pm?",
   "requests": [
    {
     "intent": "booking",
-    "gist": "reschedule Thursday",
+    "gist": "reschedule Thursday to Friday 12pm",
     "tools": [
+     "list_my_appointments",
      "reschedule_appointment"
     ]
    }
@@ -743,13 +744,15 @@
    "expect": [
     {
      "practitioner": "William Osler",
-     "day": "+3d",
-     "time": "11:00",
+     "day": "+4d",
+     "time": "12:00",
      "status": "standing"
     }
-   ]
+   ],
+   "reply": "Yes, please go ahead."
   },
-  "source": "009/setB#B7"
+  "source": "009/setB#B7 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: the message now names the new time, so the reschedule it is labelled with can complete; see PROVENANCE.md."
  },
  {
   "id": "G049",
@@ -860,7 +863,7 @@
     "intent": "booking",
     "gist": "cardiologist next week",
     "tools": [
-     "check_availability"
+     "list_practitioners"
     ]
    }
   ],
@@ -868,7 +871,8 @@
    "given": [],
    "expect": []
   },
-  "source": "009/setB2#B16"
+  "source": "009/setB2#B16 (relabelled)",
+  "note": "RELABELLED 2026-09-18: tools check_availability -> list_practitioners; no practitioner is a cardiologist, so there is nothing to check. See PROVENANCE.md."
  },
  {
   "id": "G054",

@@ -1,7 +1,7 @@
 .PHONY: sync lint format typecheck typecheck-python typecheck-frontend \
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
-        services-up services-down services-status migrate \
+        services-up services-down services-status services-free-ports migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band
 
@@ -85,6 +85,12 @@ services-down:
 
 services-status:
 	@./scripts/dev-services.sh status all
+
+# Stop chat and scheduler by what holds their ports, not by a recorded pid - for when
+# `services-down` cannot help because .run/*.pid is gone or the service was started by hand with
+# `run-chat-dev`. A port whose listener is some other program is reported, never killed.
+services-free-ports:
+	@./scripts/dev-services.sh free-ports all
 
 # Bring both dev databases to head. `run-chat-dev`/`run-scheduler-dev` each do their own half;
 # this is for the background services above, which deliberately don't migrate on start.

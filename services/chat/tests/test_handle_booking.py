@@ -1095,6 +1095,20 @@ async def test_the_roster_is_read_once_and_put_in_the_system_prompt() -> None:
     assert _model_dispatched(registry) == []
 
 
+async def test_a_roster_read_logs_the_event_the_golden_harness_scores() -> None:
+    # `booking.roster_read` is what the harness counts as this turn's
+    # `list_practitioners` call, so its name is a data contract, not a log message.
+    registry = _RecordingRegistry({_ROSTER_READ: {"practitioners": []}})
+    client = _client([_text_response("We have no practitioners at the moment.")])
+
+    with capture_logs() as logs:
+        await _run(client, registry, _bursts("who works here?"))
+
+    (read,) = [e for e in logs if e["event"] == "booking.roster_read"]
+    assert read["practitioner_count"] == 0
+    assert not [e for e in logs if e["event"] == "booking.roster_unread"]
+
+
 async def test_a_practitioner_not_taking_appointments_is_marked_as_such() -> None:
     registry = _RecordingRegistry(
         {

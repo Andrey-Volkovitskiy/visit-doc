@@ -8,7 +8,12 @@ aside.
   `booking.tool_called` event belongs to the loop rather than to one request. A turn
   scores when it called every tool in the union of its booking requests' labelled
   tools. A tool no label names is not a miss. For a case whose scripted reply was
-  posted, the calls of both its turns count together, as one booking half.
+  posted, the calls of both its turns count together, as one booking half. A
+  `booking.roster_read` event counts as a `list_practitioners` call: the booking node
+  makes that call itself before the model's first request and puts the roster in the
+  prompt, so a turn that answers "who works here" from it has called the tool without
+  the model calling it again. A `booking.roster_unread` does not count - the read
+  failed, and the prompt said the roster was unknown.
 - **End-to-end task success** (D2) compares the patient's appointments after the case's
   last turn with the fixture's expectation, under a perfect one-to-one matching: every
   expected entry matches exactly one appointment and no appointment is left over. A
@@ -37,6 +42,10 @@ END_TO_END_TASK_SUCCESS: Final = "end_to_end_task_success"
 BOOKING_METRICS: Final = (TOOL_SELECTION_CORRECTNESS, END_TO_END_TASK_SUCCESS)
 
 _TOOL_CALLED_EVENT: Final = "booking.tool_called"
+# The booking node's own `list_practitioners` call, logged only when it returned a
+# roster. Its name is a data contract with `chat.agent.handle_booking._read_roster`.
+_ROSTER_READ_EVENT: Final = "booking.roster_read"
+_ROSTER_READ_TOOL: Final = BookingTool.LIST_PRACTITIONERS.value
 
 TOOL_SELECTION_STATEMENT: Final = (
     "tool_selection_correctness is scored once per turn's booking half, against the "
@@ -47,7 +56,9 @@ TOOL_SELECTION_STATEMENT: Final = (
     "scripted reply was posted, the tools called in both of its turns count together, "
     "as one booking half. The reply is posted only when the first turn did not already "
     "leave the expected appointments, so a case the loop finished in one turn is "
-    "scored on that turn's calls alone."
+    "scored on that turn's calls alone. The roster the booking node reads into its "
+    "prompt before the model's first request counts as a list_practitioners call; a "
+    "roster read that failed does not."
 )
 
 
@@ -263,7 +274,8 @@ def _tool_selection_miss(case: Case, case_run: CaseRun) -> ToolSelectionMiss | N
     """Return the booking half's tool-selection miss, or None when it called every tool.
 
     The booking half of a case whose reply was posted is both turns: their calls are
-    read together, in first-call order.
+    read together, in first-call order. A successful roster read is one of those calls,
+    under `list_practitioners`.
 
     Raises: ValueError when the turn, or a posted reply's turn, has no log events.
     """
@@ -284,10 +296,14 @@ def _tool_selection_miss(case: Case, case_run: CaseRun) -> ToolSelectionMiss | N
                 labelled.append(tool)
     called: list[str] = []
     for event in (event for events in turns for event in events):
-        name = event.get("tool_name")
-        is_call = event.get("event") == _TOOL_CALLED_EVENT and isinstance(name, str)
-        if is_call and name not in called:
-            called.append(str(name))
+        if event.get("event") == _ROSTER_READ_EVENT:
+            name: object = _ROSTER_READ_TOOL
+        elif event.get("event") == _TOOL_CALLED_EVENT:
+            name = event.get("tool_name")
+        else:
+            continue
+        if isinstance(name, str) and name not in called:
+            called.append(name)
     missing = [tool for tool in labelled if tool.value not in called]
     if not missing:
         return None
