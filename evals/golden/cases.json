@@ -848,6 +848,12 @@
   "id": "G052",
   "family": "pleasantry-plus-request",
   "message": "Perfect. What time should I arrive?",
+  "history": [
+   {
+    "role": "assistant",
+    "text": "Your appointment with Dr. Osler has been booked on 21 December 12pm."
+   }
+  ],
   "requests": [
    {
     "intent": "faq_question",
@@ -858,7 +864,8 @@
     ]
    }
   ],
-  "source": "009/setB2#B11"
+  "source": "009/setB2#B11 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: given the clinic's booking confirmation as history, so 'Perfect.' acknowledges something and the question follows from it. See PROVENANCE.md."
  },
  {
   "id": "G053",
@@ -1840,7 +1847,7 @@
  {
   "id": "G100",
   "family": "segmentation-edges",
-  "message": "Do you take Medicare? What if you do not?",
+  "message": "Do you take Medicare? What if a visit can't be covered by my insurance policy?",
   "requests": [
    {
     "intent": "faq_question",
@@ -1859,7 +1866,8 @@
     ]
    }
   ],
-  "source": "010/multi#C19"
+  "source": "010/multi#C19 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: the second question no longer hangs on the first ('what if you do not?'). See PROVENANCE.md."
  },
  {
   "id": "G101",
@@ -1916,14 +1924,14 @@
   "scheduling": {
    "given": [
     {
-     "practitioner": "William Osler",
+     "practitioner": "Andreas Vesalius",
      "day": "+4d",
      "time": "10:00"
     }
    ],
    "expect": [
     {
-     "practitioner": "William Osler",
+     "practitioner": "Andreas Vesalius",
      "day": "+4d",
      "time": "10:00",
      "status": "cancelled"
@@ -1936,7 +1944,8 @@
    ],
    "reply": "Yes, please cancel Friday. The earliest Wednesday time is fine."
   },
-  "source": "010/multi#C9"
+  "source": "010/multi#C9",
+  "note": "RE-EXPRESSED 2026-09-18: the Friday appointment is with the dentist, Andreas Vesalius, not William Osler, so cancelling it and booking the GP is plainly two requests rather than one visit moved. See PROVENANCE.md."
  },
  {
   "id": "G104",
@@ -1957,8 +1966,8 @@
  },
  {
   "id": "G105",
-  "family": "single-request-that-looks-multi",
-  "message": "What time do you open? When can I come in the morning?",
+  "family": "compound-faq",
+  "message": "What time do you open? Do you work on Saturdays?",
   "requests": [
    {
     "intent": "faq_question",
@@ -1967,10 +1976,18 @@
     "cites": [
      "hours-location"
     ]
+   },
+   {
+    "intent": "faq_question",
+    "gist": "open on Saturdays?",
+    "answerable": true,
+    "cites": [
+     "hours-location"
+    ]
    }
   ],
-  "source": "010/single#D4",
-  "note": "one request asked twice"
+  "source": "010/single#D4 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: was one request asked twice; the new wording asks two things with different answers, so it is two requests and moved from single-request-that-looks-multi to compound-faq. See PROVENANCE.md."
  },
  {
   "id": "G106",

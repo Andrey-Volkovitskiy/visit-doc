@@ -42,9 +42,9 @@ def test_the_committed_set_loads_with_its_known_counts() -> None:
 
     requests = [request for case in cases for request in case.requests]
     assert len(cases) == 135
-    assert len(requests) == 190
+    assert len(requests) == 191
     faq = [r for r in requests if r.intent is IntentLabel.FAQ_QUESTION]
-    assert len(faq) == 117
+    assert len(faq) == 118
 
 
 def test_loaded_intents_are_the_chat_services_own_enum() -> None:

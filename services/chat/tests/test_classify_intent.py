@@ -218,7 +218,7 @@ def test_the_prompt_refuses_to_call_a_clinic_question_small_talk() -> None:
     for named in ("the clinic", "an appointment", "a practitioner"):
         assert named in prompt
     # The worked example, which is the part a model actually generalizes from.
-    assert "what time should i arrive?" in prompt
+    assert "is there a number i can call you on?" in prompt
 
 
 def test_the_prompt_binds_a_bare_affirmative_to_the_question_it_answers() -> None:
@@ -438,7 +438,7 @@ def test_the_prompt_requires_each_segment_to_stand_on_its_own() -> None:
     # Rule 2: "is it free?" retrieves nothing on its own (FR-004, FR-004a).
     prompt = _prompt()
     assert "stand on its own" in prompt
-    assert "is parking free?" in prompt
+    assert "is the pharmacy near the clinic open late?" in prompt
 
 
 def test_the_prompt_forbids_inventing_what_the_message_did_not_carry() -> None:
@@ -460,7 +460,7 @@ def test_the_prompt_splits_by_answer() -> None:
     prompt = _prompt()
     assert "split by answer" in prompt
     assert "independently answerable" in prompt
-    assert '"what are your clinic hours and locations?" is two requests' in prompt
+    assert '"what are your email address and fax number?" is two requests' in prompt
 
 
 def test_the_prompt_combines_above_the_cap_rather_than_dropping() -> None:
@@ -518,7 +518,7 @@ def test_the_prompt_puts_a_question_about_what_a_visit_requires_on_the_faq_side(
 ):
     prompt = _prompt()
     assert "faq_question or booking: a question about what a visit requires" in prompt
-    assert '"can i see a cardiologist next week?" is booking' in prompt
+    assert '"is a dermatologist free on the 14th?" is booking' in prompt
 
 
 def test_the_prompt_puts_logistics_near_the_clinic_on_the_faq_side() -> None:
@@ -536,7 +536,7 @@ def test_the_prompt_separates_asking_about_a_policy_from_asking_for_an_action() 
 def test_the_prompt_forbids_a_restatement_that_changes_the_question() -> None:
     prompt = _prompt()
     assert "resolving a reference must keep what is asked" in prompt
-    assert 'never "do you have a dentist?"' in prompt
+    assert 'never "do you have a physiotherapist?"' in prompt
 
 
 def test_the_prompt_keeps_the_segments_in_the_order_the_visitor_asked() -> None:
@@ -546,6 +546,6 @@ def test_the_prompt_keeps_the_segments_in_the_order_the_visitor_asked() -> None:
     prompt = _prompt()
     assert "keep the visitor's order" in prompt
     assert (
-        'gives "do i need a referral?" first and "do i need a referral to see a '
-        'dentist?" second, never the reverse' in prompt
+        'gives "is there a fee for x-rays?" first and "is there a fee to see a '
+        'physiotherapist?" second, never the reverse' in prompt
     )

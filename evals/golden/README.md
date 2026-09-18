@@ -1,7 +1,7 @@
 # The golden set
 
 The labelled dataset Phase 2a exists to produce (`docs/ROADMAP.md`). 135 patient messages carrying
-190 labelled requests, consolidated from the four phases that each shipped labelled data with a
+191 labelled requests, consolidated from the four phases that each shipped labelled data with a
 written procedure and deliberately no runner.
 
 **It is data. There is no runner here, and nothing imports it yet.** Computing metrics over it is
@@ -110,9 +110,9 @@ the entries that moved, the way `PROVENANCE.md` records it being done last time.
 | | |
 |---|---|
 | Cases | 135 |
-| Labelled requests | 190 |
-| One request / two / three | 84 / 47 / 4 |
-| FAQ requests answerable / gap | 93 / 24 |
+| Labelled requests | 191 |
+| One request / two / three | 83 / 48 / 4 |
+| FAQ requests answerable / gap | 94 / 24 |
 | Corpus entries cited | 9 of 9 |
 | Intents covered | 8 of 8 |
 | Escalation causes covered | 6 of 7 (`assistant_failed` is not labelable) |

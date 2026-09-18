@@ -183,6 +183,29 @@ it "vizit"; it is spelled correctly here because it is the clinic's text, not a 
 history is a scored field, so scoring refuses every run stored before this change that selected
 either case.
 
+## G052, G100 and G105 re-expressed (2026-09-18, by the reviewer's decision)
+
+All three were quoted word for word in the classifier's prompt until that day, each beside its own
+label or split. With the quotes replaced, one run of the affected cases failed all three: G052 was
+read as `small_talk`, G105 was split into an FAQ question and a booking request, and G100's second
+half stopped at the rerank floor as it always had. The reviewer reworded the cases rather than the
+rules:
+
+- **G052** keeps "Perfect. What time should I arrive?" and gains the clinic's line before it, "Your
+  appointment with Dr. Osler has been booked on 21 December 12pm." (role `assistant`), so the
+  acknowledgement has something to acknowledge. The reviewer's "dr Osler" is capitalized as the
+  clinic's own text. The date is text only: the case carries no scheduling fixture, so nothing
+  checks it against the run clock or the booking horizon.
+- **G100** is now "Do you take Medicare? What if a visit can't be covered by my insurance policy?".
+  The second question no longer depends on the first to be understood. Labels unchanged.
+- **G105** is now "What time do you open? Do you work on Saturdays?". Unlike the old wording, which
+  asked one thing twice, this asks two things with different answers, so it is labelled as two
+  `faq_question`s, both citing `hours-location`, and moves from `single-request-that-looks-multi`
+  (six cases left) to `compound-faq`. The set now holds 191 labelled requests.
+
+Each change is to a scored field, so scoring refuses every run stored before it that selected any
+of the three.
+
 ## The corpus pin was re-taken (2026-09-14)
 
 `corpus.json` had recorded
@@ -221,7 +244,8 @@ How they were decided:
 - **Read-only tools restate `given`.** Where the message presupposes an appointment ("my next
   appointment", "my Friday appointment"), one plausible appointment is planted then: Vesalius
   when the message implies a dentist, Osler otherwise, at a time inside hours on the grid.
-- **The contract's four worked examples are used as written** (G042, G049, G088, G102), and the
+- **The contract's four worked examples are used as written** (G042, G049, G088, G102 - G102's
+  Friday appointment since moved to Vesalius, below), and the
   same reading is extended to the cases like them: a request that names the appointment, or the
   day to book, is expected to complete. A booking whose practitioner is not implied defaults to
   Osler, as G088's does.
@@ -245,7 +269,7 @@ How they were decided:
 | G093 | What is your address, and can I reschedule to the same time next week? | Osler +2d 10:00 | Osler +9d 10:00, standing | Presupposes one appointment; its target is fully named. A reschedule keeps the row, so nothing is cancelled. |
 | G094 | Are you open Sundays, and can I book the earliest slot you have with William Osler? | — | — | Read-only by decision: the loop finds the earliest slot and asks to confirm it, and nothing is written in one turn. |
 | G095 | Where are you, how much is a GP visit, and can I book one with William Osler on Friday? | — | Osler +4d, standing, any time | Names practitioner and day; no time is named. |
-| G102 | Can you cancel Friday and book Wednesday with William Osler instead? | Osler +4d 10:00 | that one cancelled, plus Osler +2d standing, any time | Contract example, verbatim. |
+| G102 | Can you cancel Friday and book Wednesday with William Osler instead? | Vesalius +4d 10:00 | that one cancelled, plus Osler +2d standing, any time | Contract example; its Friday appointment moved to Vesalius 2026-09-18 (below). |
 
 **The confirmation rule is decided (2026-09-14, spec 012 FR-037b).** `handle_booking.py` tells
 the loop to confirm practitioner and start before `book_appointment`, and never to call
@@ -303,6 +327,21 @@ The fixture already said the case is read-only; `tools` is now `list_practitione
 G049's. The roster the booking node reads into its prompt counts as that call (see the harness's
 `scoring/booking.py`), so a turn that answers from it scores. `tools` is a scored field, so
 scoring refuses every run stored before this change that selected G053.
+
+**G102 re-expressed (2026-09-18, by the reviewer's decision).** "Can you cancel Friday and book
+Wednesday with William Osler instead?" planted its Friday appointment with Osler too, so the
+patient was moving one GP visit from Friday to Wednesday - a reschedule in all but name. A
+`reschedule_appointment` keeps the row and cancels nothing, so a loop that read the message that
+way gave the patient exactly what they asked for and still failed `expect`, which wants a
+cancelled Friday row beside a new Wednesday one. The Friday appointment is now with Andreas
+Vesalius (Dentistry, `+4d` 10:00, inside his 09:00-14:00 hours): cancelling a dental visit and
+booking a GP one are two requests, which is what the label says. The message, `tools` and reply
+are unchanged, and the booking half still expects Osler `+2d`, any time. This departs from spec
+012's `contracts/fixture-label.md`, whose worked example keeps Osler; the contract is left as
+shipped. The scheduler can still move an appointment to another practitioner in one write
+(`new_practitioner_id`), so a loop that turns the dental visit into a GP one still fails the case -
+now for a reading the patient would not recognise as theirs. `given` and `expect` are scored
+fields, so scoring refuses every run stored before this change that selected G102.
 
 **Six messages reworded (2026-09-14, by the reviewer's decision).** Two defects in the drafted
 messages would have measured the labels rather than the loop:

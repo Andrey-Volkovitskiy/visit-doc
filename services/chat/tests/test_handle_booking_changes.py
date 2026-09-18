@@ -336,7 +336,7 @@ async def test_the_prompt_changes_once_the_current_message_picks_one_out() -> No
 async def test_the_prompt_carries_out_a_cancel_instruction_in_the_same_turn() -> None:
     prompt = await _captured_prompt()
 
-    assert '"please cancel my Friday appointment" are instructions' in prompt
+    assert '"please drop my 3pm appointment" are instructions' in prompt
     assert "cancel it in this turn and report it done" in prompt
     assert 'never answer with "would you like me to cancel it?"' in prompt
 
@@ -346,8 +346,9 @@ async def test_the_prompt_answers_a_question_about_a_change_with_an_offer() -> N
 
     assert "A question about a change is not an instruction to make it" in prompt
     assert "offer to make it - but change nothing" in prompt
-    assert '"Can you cancel Friday?" is addressed to you, so it is an instruction' in (
-        prompt
+    assert (
+        '"Can you drop my 3pm one?" is addressed to you, so it is an instruction'
+        in (prompt)
     )
 
 

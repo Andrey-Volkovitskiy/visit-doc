@@ -542,11 +542,13 @@ async def test_the_verdict_event_names_the_gate_for_each_abstention() -> None:
 async def test_the_verdict_event_reports_the_best_similarity_score_seen() -> None:
     # "Nothing was close" and "something was close and the floor was too high" are
     # different problems with different fixes.
-    events = await _logged(pool=[_chunk(0, similarity=0.29)], reranked=None)
+    # Just under the configured floor, whatever it is set to.
+    below_floor = round(get_settings().SIMILARITY_FLOOR - 0.01, 2)
+    events = await _logged(pool=[_chunk(0, similarity=below_floor)], reranked=None)
 
     verdict = events["faq.verdict"]
     assert verdict["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
-    assert verdict["best_similarity_score"] == 0.29
+    assert verdict["best_similarity_score"] == below_floor
     assert verdict["survivor_count"] == 0
 
 
