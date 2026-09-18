@@ -70,8 +70,11 @@ class Settings(BaseSettings):
     # Per-chunk, not per-turn: a chunk below this is not admitted because a better one
     # cleared it. Lower than the 0.5 whole-turn gate it replaces, and stricter in
     # effect, because a chunk admitted here is still only a candidate - the reranker
-    # decides whether it survives.
-    SIMILARITY_FLOOR: float = Field(default=0.3, ge=-1.0, le=1.0)
+    # decides whether it survives. 0.25 rather than 0.3 since G081: "what cards do you
+    # take?" ranks the payment entry first at 0.257, and a short, colloquial question
+    # scoring low against a long entry in the clinic's wording is what this floor
+    # should let through to the reranker, not decide on its own.
+    SIMILARITY_FLOOR: float = Field(default=0.25, ge=-1.0, le=1.0)
     SIMILARITY_CAP: int = Field(default=5, gt=0)
     # The midpoint of the band that scores best on the calibration set. Every floor
     # from 0.520 to 0.636 scores identically there (10/10 answerable, 9/10 not), so

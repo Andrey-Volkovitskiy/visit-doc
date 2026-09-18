@@ -106,7 +106,7 @@ def test_retrieval_pool_is_wider_than_the_similarity_cap(
 
 
 def test_pipeline_gate_defaults(unconfigured: Settings) -> None:
-    assert unconfigured.SIMILARITY_FLOOR == 0.3
+    assert unconfigured.SIMILARITY_FLOOR == 0.25
     assert unconfigured.RERANK_FLOOR == 0.58
     assert unconfigured.RERANK_CAP == 3
 

@@ -234,7 +234,7 @@ Upgrade Phase 0's naive embed-and-top-k retrieval into a pipeline with a defensi
 job: chunking, retrieval, reranking.
 
 - **A gated retrieval stage**, replacing Phase 0's naive top-k. It fetches a wide observation pool
-  (25 by default) and keeps every chunk at or above a **minimum cosine similarity of 0.3**, up to the
+  (25 by default) and keeps every chunk at or above a **minimum cosine similarity of 0.25** (0.3 until G081), up to the
   5 highest. The rest are logged with their scores and ignored, so the cap is a threshold that can be
   argued up or down against candidates something actually recorded. If nothing clears the floor the
   assistant cannot answer: it abstains immediately — no reranking call, no model generation.
