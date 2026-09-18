@@ -162,6 +162,27 @@ G016, G096 and G118 keep their digests. G023's and G128's messages are scored fi
 refuses every run stored before this change that selected either one. Every such run was
 also taken against the old corpus, which scoring reports as a pin mismatch.
 
+## G031 and G033 re-expressed (2026-09-18, by the reviewer's decision)
+
+Both are acknowledgements labelled `small_talk` whose history ended on a patient request nobody had
+answered, and both were read as that request still standing.
+
+**G031** is "Thanks!" after "Can I book Monday at 9am?". All 11 stored runs of it classified it
+`booking`. The history now continues with the clinic's reply, "Your appointment is booked." (role
+`assistant`), so the thanks follows an answer. The history is planted as text only and no
+appointment is planted with it. That is fine for a case with no booking request: it carries no
+scheduling fixture, so no appointments are scored for it.
+
+**G033** is "ok", and its history was the patient asking "What should I do before my visit?" with no
+reply. An unanswered question followed by "ok" can reasonably be read as that question still
+standing, and all 17 stored runs of it read it that way: the classifier produced a `faq_question`
+every time, alone in 13 and beside `small_talk` in 4. That measured the history more than the
+acknowledgement. The history is now the clinic's own line, "Your visit is booked." (role
+`assistant`), which leaves "ok" nothing to be but an acknowledgement. The reviewer's draft spelled
+it "vizit"; it is spelled correctly here because it is the clinic's text, not a patient's. The
+history is a scored field, so scoring refuses every run stored before this change that selected
+either case.
+
 ## The corpus pin was re-taken (2026-09-14)
 
 `corpus.json` had recorded

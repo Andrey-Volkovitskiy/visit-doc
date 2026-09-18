@@ -464,6 +464,10 @@
    {
     "role": "user",
     "text": "Can I book Monday at 9am?"
+   },
+   {
+    "role": "assistant",
+    "text": "Your appointment is booked."
    }
   ],
   "requests": [
@@ -472,7 +476,8 @@
     "gist": "thanks"
    }
   ],
-  "source": "009/setA#A4"
+  "source": "009/setA#A4 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: the patient's booking request now has the clinic's reply after it, so 'Thanks!' thanks the clinic rather than trailing an open request. See PROVENANCE.md."
  },
  {
   "id": "G032",
@@ -492,8 +497,8 @@
   "message": "ok",
   "history": [
    {
-    "role": "user",
-    "text": "What should I do before my visit?"
+    "role": "assistant",
+    "text": "Your visit is booked."
    }
   ],
   "requests": [
@@ -502,7 +507,8 @@
     "gist": "acknowledgement"
    }
   ],
-  "source": "009/setA#A9"
+  "source": "009/setA#A9 (re-expressed)",
+  "note": "RE-EXPRESSED 2026-09-18: the history was the patient asking what to do before a visit, which left 'ok' open to being read as that question again. It is now the clinic confirming a booking, so 'ok' can only be an acknowledgement. See PROVENANCE.md."
  },
  {
   "id": "G034",
