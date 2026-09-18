@@ -72,10 +72,27 @@ from chat.rag.retriever import search_faq
 # One question's answer, not the turn's: a turn carrying several questions spends this
 # per question, and the merge step's own budget is built from this number.
 _MAX_TOKENS = 1024
+# The model echoes whatever the prompt calls its material: told to use "the provided
+# context", it opened about one answer in forty with "Based on the provided context",
+# which tells a patient about the pipeline instead of the clinic. So nothing it is shown
+# uses that word, and it is told to speak as the clinic rather than cite a source.
+# Speaking as the clinic has a cost the last sentence pays: told only that, the model
+# answered "do you do blood tests on Saturdays?" with a flat "we do not" from an hours
+# entry that never mentions blood tests. The rule forbids stating what the entries do
+# not say, not combining what they do: "never infer an answer" also stopped it
+# assembling "what should I do before my visit?" from the arrival and what-to-bring
+# entries, which is exactly what it should do.
 _SYSTEM_PROMPT = (
-    "You are a clinic assistant. Answer the visitor's question using ONLY the provided "
-    "context. Do not use outside knowledge. Be concise."
+    "You are a clinic assistant. Answer the visitor's question using ONLY the clinic "
+    "information given with it. Do not use outside knowledge. Be concise. Speak as the "
+    "clinic, stating the facts directly: never mention where they came from, and never "
+    "refer to context, provided information, documents, excerpts or text you were "
+    "given. Say nothing it does not say - not even a no: when it does not answer the "
+    "question, say plainly that you don't have that information."
 )
+# The heading the retrieved chunks sit under. It names what they are to the patient, so
+# the model repeating it would still read naturally.
+_RETRIEVED_HEADING = "Clinic information:"
 # The abstention and the handoff are one outcome, so they are one sentence: an
 # abstention that then attempted a speculative answer, or that left the patient at a
 # dead end, is the failure this wording exists to prevent. The closing invitation is
@@ -384,7 +401,7 @@ async def _answer_one_bound(
     prompt = "\n\n".join(
         part
         for part in (
-            f"Context:\n{retrieved}",
+            f"{_RETRIEVED_HEADING}\n{retrieved}",
             context.silenced,
             f"Question: {segment.text}",
         )

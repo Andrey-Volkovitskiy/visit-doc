@@ -64,7 +64,7 @@ DEFAULT_FAQ_ENTRIES: tuple[str, ...] = (
     (
         "Question: What are your clinic hours and locations?\n"
         "Answer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a "
-        "Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall "
+        "Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall "
         "parking garage (9 Willson St.)."
     ),
     (

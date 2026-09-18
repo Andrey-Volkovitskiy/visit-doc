@@ -19,6 +19,7 @@ from chat.agent.compose_answer import (
     deduplicate_chunks,
 )
 from chat.agent.escalation import EscalationRequests
+from chat.agent.history import OPENING_CLINIC_NOTE, SILENT_WINDOW_NOTE
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
@@ -1244,9 +1245,34 @@ async def test_one_requests_prompt_keeps_the_shape_it_has_always_had() -> None:
     assert recorder["messages"] == [
         {
             "role": "user",
-            "content": "Context:\nchunk text 0\n\nQuestion: what should I bring?",
+            "content": (
+                "Clinic information:\nchunk text 0\n\nQuestion: what should I bring?"
+            ),
         }
     ]
+
+
+def test_the_generation_prompt_never_calls_its_material_context() -> None:
+    # The model echoes the prompt's name for what it was given, and "Based on the
+    # provided context" tells a patient about the pipeline instead of the clinic. The
+    # system prompt may name the word only to forbid it.
+    from chat.agent.answer_faq import _RETRIEVED_HEADING, _SYSTEM_PROMPT
+
+    assert "context" not in _RETRIEVED_HEADING.lower()
+    assert "provided context" not in _SYSTEM_PROMPT.lower()
+    assert "never refer to context" in _SYSTEM_PROMPT.lower()
+    assert "context" not in SILENT_WINDOW_NOTE.lower()
+    assert "context" not in OPENING_CLINIC_NOTE.lower()
+
+
+def test_the_generation_prompt_forbids_inferring_an_answer_from_a_silence() -> None:
+    # Told to state facts as the clinic, the model turned an hours entry that never
+    # mentions blood tests into "we do not offer blood tests on Saturdays".
+    from chat.agent.answer_faq import _SYSTEM_PROMPT
+
+    prompt = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "don't have that information" in prompt
+    assert "say nothing it does not say - not even a no" in prompt
 
 
 # --- Phase 1g: which request an event belongs to -------------------------------------

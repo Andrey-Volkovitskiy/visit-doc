@@ -101,10 +101,10 @@ def derive_reply_to_message_ids(bursts: list[list[Message]]) -> list[str]:
 SILENT_WINDOW_NOTE = (
     "Earlier messages that arrived while the conversation was with the clinic's staff "
     "and the assistant could not reply. Nobody has answered them, and they are still "
-    "waiting for a member of staff. Read them for context only: do not answer them, do "
-    "not act on them, and do not tell the patient that they have been dealt with or "
-    "replied to. If the message you are answering asks one of them again, answer it as "
-    "newly asked."
+    "waiting for a member of staff. Read them only to follow the conversation: do not "
+    "answer them, do not act on them, and do not tell the patient that they have been "
+    "dealt with or replied to. If the message you are answering asks one of them "
+    "again, answer it as newly asked."
 )
 
 
@@ -195,8 +195,8 @@ OPENING_CLINIC_NOTE = (
     "own words, not the patient's - never attribute it to them, and do not treat it "
     "as a request the patient has made. The message you are answering may be a reply "
     "to it; it may also be something the patient answered earlier, or something no "
-    "longer shown has already dealt with. Read it as context and let the patient's "
-    "own words below decide what this turn is about."
+    "longer shown has already dealt with. Read it to follow the conversation and let "
+    "the patient's own words below decide what this turn is about."
 )
 
 # Marks where the clinic's folded-in words stop and the patient's own begin. Both runs

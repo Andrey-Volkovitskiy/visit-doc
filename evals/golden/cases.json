@@ -258,7 +258,7 @@
    }
   ],
   "source": "009/setB2#B19 (relabelled)",
-  "note": "RELABELLED: answerable only since the hours entry began saying 'fee parking'. See PROVENANCE.md."
+  "note": "RELABELLED: answerable since the hours entry named the parking's price - 'fee parking' (a no) until 2026-09-18, 'free parking' (a yes) since. See PROVENANCE.md."
  },
  {
   "id": "G017",
@@ -353,7 +353,7 @@
  {
   "id": "G023",
   "family": "single-faq-gap",
-  "message": "How much does parking at the Mega Mall garage cost per hour?",
+  "message": "How much does parking at the Zilion Mall garage cost per hour?",
   "requests": [
    {
     "intent": "faq_question",
@@ -362,8 +362,8 @@
     "cites": []
    }
   ],
-  "source": "new",
-  "note": "NEW: the companion to G016. 'Fee parking' says parking is paid; it does not say what it costs."
+  "source": "new (re-expressed)",
+  "note": "NEW: the companion to G016. Re-expressed 2026-09-18: the hours entry now says the Mega Mall garage is free, which answers what that garage costs, so the question names a garage the corpus never mentions. See PROVENANCE.md."
  },
  {
   "id": "G024",
@@ -1756,7 +1756,7 @@
    }
   ],
   "source": "010/multi#C1 (relabelled)",
-  "note": "RELABELLED: the second half was a gap until the hours entry began saying 'fee parking'. The segmentation label is unchanged - the second half must still be restated to stand alone."
+  "note": "RELABELLED: the second half was a gap until the hours entry named the parking's price ('fee parking', since 2026-09-18 'free parking'). The segmentation label is unchanged - the second half must still be restated to stand alone."
  },
  {
   "id": "G097",
@@ -2416,7 +2416,7 @@
  {
   "id": "G128",
   "family": "partial-serving",
-  "message": "Where is the nearest parking, and how much does it cost per hour?",
+  "message": "Where is the nearest parking, and is it possible to get park a 1.9 meter tall car there?",
   "requests": [
    {
     "intent": "faq_question",
@@ -2428,13 +2428,13 @@
    },
    {
     "intent": "faq_question",
-    "gist": "parking price",
+    "gist": "height limit for a 1.9 m car",
     "answerable": false,
     "cites": []
    }
   ],
-  "source": "011/setB#B2",
-  "note": "same subject, split answerability"
+  "source": "011/setB#B2 (re-expressed)",
+  "note": "same subject, split answerability. RE-EXPRESSED 2026-09-18: the second half asked what parking costs, which the hours entry now answers ('free parking'), so it asks about a height limit the corpus never mentions. See PROVENANCE.md."
  },
  {
   "id": "G129",

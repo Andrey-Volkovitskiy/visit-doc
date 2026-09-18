@@ -2,7 +2,7 @@
   "source": "services/chat/src/chat/rag/default_corpus.py :: DEFAULT_FAQ_ENTRIES",
   "entry_count": 9,
   "algorithm": "sha256 over entries[].text in index order, each text UTF-8 encoded and terminated by \"\\n\", with nothing else in the digest",
-  "sha256": "ea83b6c4c0b55657c5fa73bb1b5d1226442b7fa71b6e8f8a8512a6d9a48b20a0",
+  "sha256": "3d94d02192c4cdf385884b0f681e6edfaa3fd9a229c2f0312bf37c64e6c9ec7b",
   "note": "A snapshot, pinned so every `cites` label in cases.json names a fixed text. Re-take it when the corpus changes and re-check the labels the changed entries carry; PROVENANCE.md records how that was done last time.",
   "entries": [
     {
@@ -51,7 +51,7 @@
       "id": "hours-location",
       "index": 7,
       "question": "What are your clinic hours and locations?",
-      "text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest fee parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+      "text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
     },
     {
       "id": "arrival-time",

@@ -134,6 +134,34 @@ ordered list of `{role, text}`, because a conversation is not one message deep.
   a label that says what the answer is *not*. It settled the question 009 was asking; nothing at the
   request level can be derived from it.
 
+## The hours entry made the parking free (2026-09-18)
+
+> `The nearest fee parking is a 3-minute walk away`
+> → `The nearest free parking is a 3-minute walk away`
+
+One letter, and it flips the answer to "is parking free?" from no to yes. It also answers what
+that parking costs, which change 3 above had left unsaid. The pin is re-taken over the new text:
+`3d94d02192c4cdf385884b0f681e6edfaa3fd9a229c2f0312bf37c64e6c9ec7b`, under the same construction.
+
+| Case | Was | Is |
+|---|---|---|
+| **G016** (`Is parking free?`) | answerable, cites `hours-location` (the answer was no) | unchanged label (the answer is yes) |
+| **G096** (`Do you have parking, and is it free?`) | both answerable | unchanged label |
+| **G023** (`How much does parking at the Mega Mall garage cost per hour?`) | gap | re-expressed as `...at the Zilion Mall garage...`, still a gap |
+| **G128** (`Where is the nearest parking, and how much does it cost per hour?`) | first half answerable, price half a gap | re-expressed as `...and is it possible to get park a 1.9 meter tall car there?`, second half still a gap |
+
+G023 and G128 are reworded rather than relabelled, because each exists for its gap and the
+change would have closed it. The Mega Mall garage is now the one the corpus calls free, so G023
+names the Zilion Mall, which the corpus never mentions. G128 is in `partial-serving` to keep one
+subject with split answerability, so its second half now asks about a height limit, which the
+entry says nothing about. Its wording, "get park", is the reviewer's own and is kept verbatim as a
+patient's typo. G118 (`do you validate parking?`) stays a gap: free parking makes validation
+moot, but the entry does not say so.
+
+G016, G096 and G118 keep their digests. G023's and G128's messages are scored fields, so scoring
+refuses every run stored before this change that selected either one. Every such run was
+also taken against the old corpus, which scoring reports as a pin mismatch.
+
 ## The corpus pin was re-taken (2026-09-14)
 
 `corpus.json` had recorded
