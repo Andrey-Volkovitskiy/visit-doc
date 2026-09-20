@@ -50,9 +50,32 @@ def gap(gist: str) -> dict[str, Any]:
     return {"intent": "faq_question", "gist": gist, "answerable": False, "cites": []}
 
 
+# What a tool cannot be called without. `check_availability` and `book_appointment`
+# both take a `practitioner_id`, and the only place one comes from is
+# `list_practitioners`; `reschedule_appointment` and `cancel_appointment` both take an
+# `appointment_id`, which comes from `list_my_appointments`. A label naming the second
+# without the first would expect the loop to have invented an id - and a message naming
+# a practitioner in words does not help, because the tools take the id and not the name.
+PREREQUISITE: Final[dict[str, str]] = {
+    "check_availability": "list_practitioners",
+    "book_appointment": "list_practitioners",
+    "reschedule_appointment": "list_my_appointments",
+    "cancel_appointment": "list_my_appointments",
+}
+
+
 def bk(gist: str, *tools: str) -> dict[str, Any]:
-    """A booking request, with the tools whose absence means it was not served."""
-    return {"intent": "booking", "gist": gist, "tools": list(tools)}
+    """A booking request, with the tools whose absence means it was not served.
+
+    Each named tool's prerequisite is added for it, so a case states the tool it is
+    *about* and the id-fetching call that tool implies is never left off by hand.
+    """
+    required = list(tools)
+    for tool in tools:
+        prerequisite = PREREQUISITE.get(tool)
+        if prerequisite is not None and prerequisite not in required:
+            required.append(prerequisite)
+    return {"intent": "booking", "gist": gist, "tools": required}
 
 
 def req(intent: str, gist: str) -> dict[str, Any]:
@@ -128,7 +151,9 @@ family(
     "free, what this patient already holds, and the three writes. A write is confirmed "
     "before it happens, so those cases carry a scripted second turn - including bare "
     "affirmatives, which must read as the booking they answer and never as small talk. "
-    "Every case states the appointments the patient must hold when it ends.",
+    "One case carries history instead, for the turn that names no practitioner at all "
+    "and is answerable only by carrying one forward from an earlier message. Every "
+    "case states the appointments the patient must hold when it ends.",
     [
         case(
             "G-a-01",
@@ -174,10 +199,19 @@ family(
         case(
             "G-a-07",
             "Is there anything free on Saturday?",
-            [bk("Saturday availability", "check_availability")],
+            [bk("Saturday availability for the dental visit", "check_availability")],
+            history=[
+                turn("user", "I would like to get a tooth filling."),
+                turn("assistant", "Of course - which day would suit you?"),
+            ],
             scheduling=sch([], []),
-            note="only the dentist works Saturday; the GP's week ends Friday, so a "
-            "reply offering the GP a Saturday slot is wrong",
+            note="the message itself names neither a practitioner nor a specialty: "
+            "'tooth filling' is in the history, so the turn is only answerable by "
+            "carrying it forward. Only the dentist works Saturday and the GP's week "
+            "ends Friday, so a reply offering a GP slot is wrong twice over. The "
+            "clinic's own turn names neither the dentist nor dentistry, so the "
+            "resolution has to come from the patient's words rather than from a "
+            "specialty the assistant already said out loud",
         ),
         case(
             "G-a-08",

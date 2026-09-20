@@ -112,6 +112,14 @@ call). Then, per intent:
   true, and every id in it must exist in `corpus.json`.
 - `booking` carries `tools` — the tools whose *absence* means the request went unserved. It is a
   required subset, not a sequence: a `check_availability` before a `book_appointment` is not a miss.
+  The set is **closed under prerequisites**, because the tools take ids and not names:
+  `check_availability` and `book_appointment` need a `practitioner_id`, which only
+  `list_practitioners` yields, and `reschedule_appointment` and `cancel_appointment` need an
+  `appointment_id`, which only `list_my_appointments` yields. So a case about checking a named
+  practitioner's slots still requires the roster read that turns the name into an id — naming the
+  dependent tool alone would expect the loop to have invented one. `golden_set.bk()` adds each
+  prerequisite, so a case states the tool it is *about*; two tests hold the rule, one of them
+  checking its premise against the tools' own schemas.
 - Every other intent carries neither.
 
 `gist` is a human reference and is **never scored**. A segment has many valid restatements, and

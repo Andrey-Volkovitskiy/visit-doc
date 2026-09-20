@@ -3,7 +3,7 @@
   {
    "letter": "a",
    "name": "single-booking",
-   "tests": "One booking request the booking node can serve on its own, across the whole of its range: who the practitioners are and what they specialize in, when one is free, what this patient already holds, and the three writes. A write is confirmed before it happens, so those cases carry a scripted second turn - including bare affirmatives, which must read as the booking they answer and never as small talk. Every case states the appointments the patient must hold when it ends.",
+   "tests": "One booking request the booking node can serve on its own, across the whole of its range: who the practitioners are and what they specialize in, when one is free, what this patient already holds, and the three writes. A write is confirmed before it happens, so those cases carry a scripted second turn - including bare affirmatives, which must read as the booking they answer and never as small talk. One case carries history instead, for the turn that names no practitioner at all and is answerable only by carrying one forward from an earlier message. Every case states the appointments the patient must hold when it ends.",
    "cases": [
     {
      "id": "G-a-01",
@@ -83,7 +83,8 @@
        "intent": "booking",
        "gist": "a named practitioner's Wednesday slots",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -100,7 +101,8 @@
        "intent": "booking",
        "gist": "dentist availability Tuesday morning",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -113,12 +115,23 @@
     {
      "id": "G-a-07",
      "message": "Is there anything free on Saturday?",
+     "history": [
+      {
+       "role": "user",
+       "text": "I would like to get a tooth filling."
+      },
+      {
+       "role": "assistant",
+       "text": "Of course - which day would suit you?"
+      }
+     ],
      "requests": [
       {
        "intent": "booking",
-       "gist": "Saturday availability",
+       "gist": "Saturday availability for the dental visit",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -126,7 +139,7 @@
       "given": [],
       "expect": []
      },
-     "note": "only the dentist works Saturday; the GP's week ends Friday, so a reply offering the GP a Saturday slot is wrong"
+     "note": "the message itself names neither a practitioner nor a specialty: 'tooth filling' is in the history, so the turn is only answerable by carrying it forward. Only the dentist works Saturday and the GP's week ends Friday, so a reply offering a GP slot is wrong twice over. The clinic's own turn names neither the dentist nor dentistry, so the resolution has to come from the patient's words rather than from a specialty the assistant already said out loud"
     },
     {
      "id": "G-a-08",
@@ -136,7 +149,8 @@
        "intent": "booking",
        "gist": "book a named practitioner at a named time",
        "tools": [
-        "book_appointment"
+        "book_appointment",
+        "list_practitioners"
        ]
       }
      ],
@@ -163,7 +177,8 @@
        "gist": "book a dentist Tuesday morning",
        "tools": [
         "check_availability",
-        "book_appointment"
+        "book_appointment",
+        "list_practitioners"
        ]
       }
      ],
@@ -294,7 +309,8 @@
        "intent": "booking",
        "gist": "cancel tomorrow's appointment",
        "tools": [
-        "cancel_appointment"
+        "cancel_appointment",
+        "list_my_appointments"
        ]
       }
      ],
@@ -446,7 +462,8 @@
        "intent": "booking",
        "gist": "book an urgent dental visit",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -601,7 +618,8 @@
        "intent": "booking",
        "gist": "book Tuesday for the patient",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -1947,7 +1965,8 @@
        "intent": "booking",
        "gist": "dentist availability Tuesday morning",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       },
       {
@@ -2094,7 +2113,8 @@
        "intent": "booking",
        "gist": "dentist Saturday availability",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       },
       {
@@ -2169,7 +2189,8 @@
        "intent": "booking",
        "gist": "Wednesday availability",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -2186,7 +2207,8 @@
        "intent": "booking",
        "gist": "cancel tomorrow's appointment",
        "tools": [
-        "cancel_appointment"
+        "cancel_appointment",
+        "list_my_appointments"
        ]
       }
      ],
@@ -2295,7 +2317,8 @@
        "intent": "booking",
        "gist": "dentist availability tomorrow",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],
@@ -2320,7 +2343,8 @@
        "intent": "booking",
        "gist": "book Wednesday 9am",
        "tools": [
-        "book_appointment"
+        "book_appointment",
+        "list_practitioners"
        ]
       }
      ],
@@ -2380,7 +2404,8 @@
        "intent": "booking",
        "gist": "cancel Friday",
        "tools": [
-        "cancel_appointment"
+        "cancel_appointment",
+        "list_my_appointments"
        ]
       }
      ],
@@ -2483,7 +2508,8 @@
        "intent": "booking",
        "gist": "Wednesday morning availability",
        "tools": [
-        "check_availability"
+        "check_availability",
+        "list_practitioners"
        ]
       }
      ],

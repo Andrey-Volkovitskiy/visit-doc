@@ -5,10 +5,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from golden_harness.cases import load_cases
 from golden_harness.golden_set import (
     CASES_JSON,
     EXPECTED_LETTERS,
+    PREREQUISITE,
     DeclarationError,
     build,
     problems,
@@ -122,3 +124,53 @@ def test_build_refuses_an_inconsistent_declaration(
 
     with pytest.raises(DeclarationError, match="G-z-99"):
         build()
+
+
+# --- the prerequisite rule ----------------------------------------------------------
+
+
+def test_a_tools_prerequisite_is_the_tool_that_fetches_the_id_it_needs() -> None:
+    """The premise of `PREREQUISITE`, checked against the tools themselves.
+
+    Each dependent tool takes an id it cannot be told in words, and each prerequisite
+    takes nothing - which is what makes it the only way to obtain one. If a tool were
+    ever changed to accept a practitioner by name, this fails rather than leaving every
+    booking label quietly requiring a call the loop no longer has to make.
+    """
+    required = {
+        tool.name: set(tool.input_schema.get("required", ()))
+        for tool in SCHEDULING_TOOLS
+    }
+    id_needed = {"practitioner_id", "appointment_id"}
+
+    for dependent, prerequisite in PREREQUISITE.items():
+        assert required[dependent] & id_needed, dependent
+        assert required[prerequisite] == set(), prerequisite
+
+
+def test_every_booking_label_names_the_prerequisite_of_every_tool_it_names() -> None:
+    """A label naming a tool without its prerequisite expects an invented id.
+
+    It would then be scored as unserved for a call the loop could never have made, or -
+    worse - read as served on a turn that guessed.
+    """
+    for case in (c for family in build()["families"] for c in family["cases"]):
+        for request in case["requests"]:
+            named = set(request.get("tools", ()))
+            implied = {PREREQUISITE[tool] for tool in named if tool in PREREQUISITE}
+
+            assert implied <= named, f"{case['id']}: missing {sorted(implied - named)}"
+
+
+def test_bk_adds_a_prerequisite_the_declaration_left_off() -> None:
+    from golden_harness.golden_set import bk
+
+    assert bk("x", "check_availability")["tools"] == [
+        "check_availability",
+        "list_practitioners",
+    ]
+    # Already named, so not repeated - and the declaration's own order is kept.
+    assert bk("x", "list_my_appointments", "cancel_appointment")["tools"] == [
+        "list_my_appointments",
+        "cancel_appointment",
+    ]

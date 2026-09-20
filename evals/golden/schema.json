@@ -153,7 +153,7 @@
                             "cancel_appointment"
                           ]
                         },
-                        "description": "booking only. The tools whose absence means the request was not served - a required subset, not a sequence. A check_availability that precedes a book_appointment is not a miss."
+                        "description": "booking only. The tools whose absence means the request was not served - a required subset, not a sequence: a check_availability that precedes a book_appointment is not a miss. It is closed under prerequisites, because the tools take ids rather than names: check_availability and book_appointment need a practitioner_id, which only list_practitioners yields, and reschedule_appointment and cancel_appointment need an appointment_id, which only list_my_appointments yields. A label naming one without the other would expect an invented id."
                       }
                     },
                     "allOf": [
