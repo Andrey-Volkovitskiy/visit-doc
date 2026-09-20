@@ -60,7 +60,8 @@ packages/
 └── shared-proto/  # chat<->scheduler gRPC contract: protos/ source + generated *_pb2*.py (uv member "shared-proto")
 evals/
 ├── golden/        # the golden set (v2): cases.json grouped by family + schema.json, the corpus
-│                  # pin, PROVENANCE.md — data, no code (a generator belongs outside it)
+│                  # pin, PROVENANCE.md — data, no code. cases.json is GENERATED from
+│                  # golden_harness.golden_set; edit that and `make eval-build-set`
 └── harness/       # drives the golden set through the running stack and scores stored runs (uv member "golden-harness")
 ```
 
@@ -111,6 +112,11 @@ scoreable today.** The golden set was reworked into v2, whose case ids are all n
 under `specs/012-golden-set-metrics/evaluation/` selects ids the set no longer holds and both
 `compare` and `score` refuse it. It stays frozen as the record FR-048a made it; a current baseline
 needs a fresh `eval-run`.
+A fifth target, `make eval-build-set`, re-renders `evals/golden/cases.json` from its declaration in
+`golden_harness.golden_set` — the JSON is an artifact, and `tests/test_golden_set.py` fails
+byte-for-byte when the two disagree, so the set is changed by editing the declaration and
+re-rendering, never by editing the JSON. It is offline and spends nothing.
+
 `eval-run` requires the chat service to log JSON, so start the
 stack as `LOG_FORMAT=json make services-up` (the harness reads `.run/chat.log`). Resuming a stopped
 run takes an argument: `uv run --package golden-harness -- python -m golden_harness run --resume

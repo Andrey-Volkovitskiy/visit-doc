@@ -3,7 +3,7 @@
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
-        eval-run eval-score eval-compare eval-band
+        eval-run eval-score eval-compare eval-band eval-build-set
 
 sync:
 	uv sync
@@ -116,7 +116,8 @@ alembic-scheduler-history:
 
 # The golden harness (spec 012; see its quickstart.md). `eval-run` drives the golden set against the
 # running stack, spending live model calls; `CASES=G001,G042` or `FAMILY=<name>` narrows it, and
-# each flag is passed only when set. `eval-score RUN=<run_id>` re-scores a stored run offline.
+# each flag is passed only when set (e.g. `CASES=G-a-01,G-j-03`). `eval-score RUN=<run_id>`
+# re-scores a stored run offline.
 eval-run:
 	uv run --package golden-harness -- python -m golden_harness run \
 		$(if $(CASES),--cases $(CASES)) $(if $(FAMILY),--family $(FAMILY))
@@ -135,3 +136,9 @@ eval-compare:
 
 eval-band:
 	uv run --package golden-harness -- python -m golden_harness band --runs $(RUNS)
+
+# Re-render `evals/golden/cases.json` from its declaration in `golden_harness.golden_set`, which is
+# where the set is actually written - the JSON is an artifact, and `tests/test_golden_set.py` fails
+# when the two disagree. Offline, and it spends nothing.
+eval-build-set:
+	uv run --package golden-harness -- python -m golden_harness build-set

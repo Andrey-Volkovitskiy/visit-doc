@@ -42,6 +42,8 @@ from golden_harness.driver.run import (
 from golden_harness.driver.scheduling import CleanupFailedError
 from golden_harness.driver.session import ChatNotFoundError, SessionError
 from golden_harness.driver.turn import ThreadReadError, TurnProtocolError
+from golden_harness.golden_set import DeclarationError
+from golden_harness.golden_set import write as write_golden_set
 from golden_harness.record import write_atomically
 from golden_harness.report import LabelDigestMismatchError, render_summary, score_run
 from golden_harness.scoring.alignment import ConservationError
@@ -66,6 +68,7 @@ _CORPUS_PIN: Final = _GOLDEN / "corpus.json"
 # the corpus, reading a thread back.
 _REPORTED_FAILURES: Final = (
     BandRefusedError,
+    DeclarationError,
     ChatNotFoundError,
     CleanupFailedError,
     ConditionsMissingError,
@@ -157,6 +160,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     band.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS)
     band.add_argument("--labels", type=Path, default=DEFAULT_LABELS)
 
+    commands.add_parser(
+        "build-set", help="render evals/golden/cases.json from its declaration"
+    )
+
     args = parser.parse_args(argv)
     if args.command == "run" and args.resume is not None and args.clock is not None:
         run.error("--clock cannot be given with --resume, which keeps the run's clock")
@@ -180,6 +187,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "band":
             _band(args)
+            return 0
+        if args.command == "build-set":
+            families, case_count = write_golden_set()
+            print(f"wrote cases.json: {families} families, {case_count} cases")
             return 0
         asyncio.run(_run(args))
         return 0

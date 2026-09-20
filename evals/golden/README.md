@@ -4,8 +4,14 @@ The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 146 patient m
 181 labelled requests, grouped into 16 families that between them cover what a patient actually
 does with this assistant.
 
-**It is data. There is no runner here.** Computing metrics over it is the harness's job
-(`evals/harness/`), and comparing one build's run against another's is `eval-compare`.
+**It is data, and `cases.json` is a generated artifact.** The set is written in
+`golden_harness.golden_set` and rendered here by `make eval-build-set`; a hand edit to the JSON puts
+the two out of step and `evals/harness/tests/test_golden_set.py` fails byte-for-byte. The
+declaration lives in the harness because this directory holds data and no code, and because the
+invariants a JSON Schema cannot state — a `cites` id that exists in the corpus pin, a fixture start
+inside the named practitioner's own working hours — are checked as the set is built, naming the case
+at fault. Computing metrics over it is the harness's job, and comparing one build's run against
+another's is `eval-compare`.
 
 ## v2, and what it does not descend from
 
@@ -32,7 +38,7 @@ The consequences worth knowing:
 
 | File | What it is |
 |---|---|
-| `cases.json` | The set, grouped by family. `schema.json` is authoritative for the shape. |
+| `cases.json` | The set, grouped by family — generated; see above. `schema.json` is authoritative for the shape. |
 | `schema.json` | JSON Schema for the file. All 146 cases validate against it. |
 | `corpus.json` | The pinned FAQ corpus every `cites` label names, with a `sha256` over the entry texts. |
 | `PROVENANCE.md` | Where v2 came from, and what has to be re-checked when the corpus moves. |

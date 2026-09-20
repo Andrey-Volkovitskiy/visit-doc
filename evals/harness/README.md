@@ -56,9 +56,10 @@ asked to obey in prose (011's composer rules, for one) is still read by a person
 
 ```bash
 make eval-run                          # drive the whole set, then score it and print the report
-make eval-run CASES=G001,G042          # only those cases
-make eval-run FAMILY=partial-serving   # only one family
+make eval-run CASES=G-a-01,G-j-03      # only those cases
+make eval-run FAMILY=single-faq-gap    # only one family
 make eval-score RUN=<run_id>           # re-score a stored run; spends nothing, needs no stack
+make eval-build-set                    # re-render evals/golden/cases.json from its declaration
 ```
 
 `RUN` is a run id under `.run/evals/` or a path to a run directory. Two invocations have no
@@ -109,6 +110,15 @@ interrupted and resumed run reports the time actually spent.
 
 ## Driver, scorer, reporter
 
+- **The declaration** (`golden_set.py`) *is* the golden set: `evals/golden/cases.json` is rendered
+  from it by `make eval-build-set`, and `tests/test_golden_set.py` fails byte-for-byte when the two
+  disagree, so the set is changed here and re-rendered rather than edited as JSON. It lives in this
+  package because `evals/golden/` holds data and no code, and because the invariants JSON Schema
+  cannot state — a `cites` id that exists in the corpus pin, a fixture start inside the named
+  practitioner's own working hours, an id that agrees with its family — are checked as the set is
+  built, naming the case at fault. It is the one module here that no run reads: the driver and the
+  scorer both go through `cases.load_cases` against the rendered file, exactly as an outside caller
+  would.
 - **The driver** (`driver/`) takes a run: it opens one session, verifies the corpus, and for each
   case makes a fresh chat, plants its history and its scheduling fixture, posts the turn, reads back
   what the turn stored and takes the turn's slice of the log — and, for a case with a scripted
