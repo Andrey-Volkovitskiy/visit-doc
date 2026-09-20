@@ -532,8 +532,9 @@ the gate is.
   moved, and a per-case comparison across a re-labelled set is comparing two different questions.
 - **A narrowed run compares only what both runs drove.** `make eval-run CASES=…` during an
   investigation is the cheap loop this tool has to serve, so a 12-case run compares against those 12
-  cases of a 135-case baseline, with the restriction stated in the report. Silently comparing 12
-  cases' aggregate against 135 cases' would be the "one value, two meanings" defect in numeric form.
+  cases of a full-set baseline, with the restriction stated in the report. Silently comparing 12
+  cases' aggregate against the whole set's would be the "one value, two meanings" defect in numeric
+  form.
 - **The noise band is measured before any movement is called a regression.** The first task of the
   phase is the one 2b deliberately did not do: run the set several times against an unchanged build
   and record the per-metric spread. Until that exists the tool reports *movement* and says so

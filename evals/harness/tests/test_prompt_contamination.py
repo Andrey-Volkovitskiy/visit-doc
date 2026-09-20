@@ -55,7 +55,8 @@ def _patient_texts() -> list[tuple[str, str]]:
     not a prompt being shown the case.
     """
     texts: list[tuple[str, str]] = []
-    for case in json.loads(_CASES.read_text(encoding="utf-8")):
+    families = json.loads(_CASES.read_text(encoding="utf-8"))["families"]
+    for case in (case for family in families for case in family["cases"]):
         texts.append((case["id"], case["message"]))
         texts.extend(
             (case["id"], turn["text"])

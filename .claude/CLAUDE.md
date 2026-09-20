@@ -59,7 +59,8 @@ packages/
 ├── shared-models/ # cross-service Pydantic schemas (uv member "shared-models")
 └── shared-proto/  # chat<->scheduler gRPC contract: protos/ source + generated *_pb2*.py (uv member "shared-proto")
 evals/
-├── golden/        # the golden set (2a): cases.json + schema.json, the corpus pin, PROVENANCE.md — data, no code
+├── golden/        # the golden set (v2): cases.json grouped by family + schema.json, the corpus
+│                  # pin, PROVENANCE.md — data, no code (a generator belongs outside it)
 └── harness/       # drives the golden set through the running stack and scores stored runs (uv member "golden-harness")
 ```
 
@@ -98,18 +99,18 @@ a second Node project ever appears, extract it then.
 [`Makefile`](../Makefile): `make sync`, `make lint`, `make format`, `make typecheck`,
 `make precommit`, `make install-hooks`, `make run-chat`, `make run-scheduler`.
 
-The golden harness has its own four: `make eval-run` (optionally `CASES=G001,G042` or
+The golden harness has its own four: `make eval-run` (optionally `CASES=G-a-01,G-j-03` or
 `FAMILY=<name>`) drives cases against the running stack, **spending live Claude and Voyage calls**,
 then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a stored run under
 `.run/evals/` and needs no stack. `make eval-compare BASE=<run> NEW=<run>` (optionally
 `BAND=<band>`) reports what moved between two stored runs, and `make eval-band
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
-directory path, so a committed run can be named as a baseline where it sits. Note that the 2b run
-under `specs/012-golden-set-metrics/evaluation/` no longer re-scores: 24 of its 135 label digests
-disagree with `evals/golden/cases.json`, so `compare` and `score` both refuse it. Eleven of those
-are the 2a relabelling commits and thirteen are the `unknown` → `not_authorized` rename; the run
-stays frozen as the record FR-048a made it, and a current baseline needs a fresh `eval-run`.
+directory path, so a committed run can be named as a baseline where it sits. **No stored run is
+scoreable today.** The golden set was reworked into v2, whose case ids are all new, so the 2b record
+under `specs/012-golden-set-metrics/evaluation/` selects ids the set no longer holds and both
+`compare` and `score` refuse it. It stays frozen as the record FR-048a made it; a current baseline
+needs a fresh `eval-run`.
 `eval-run` requires the chat service to log JSON, so start the
 stack as `LOG_FORMAT=json make services-up` (the harness reads `.run/chat.log`). Resuming a stopped
 run takes an argument: `uv run --package golden-harness -- python -m golden_harness run --resume

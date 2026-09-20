@@ -84,8 +84,8 @@ _SYSTEM_PROMPT = (
     'records, not the terms those acts are subject to, so "what is your cancellation '
     'policy?" and "how late may I reschedule?" are faq_question while "cancel my '
     'Friday appointment" is booking. One specialty can likewise fall on both sides: '
-    '"is a dermatologist free on the 14th?" is booking, and "do I need a referral to '
-    'see a dermatologist?" is faq_question. '
+    '"is a dermatologist free on the 14th?" is booking, and "what does a '
+    'dermatologist charge?" is faq_question. '
     "(b) faq_question or small_talk: parking, directions, transport, opening hours and "
     "prices at or near the clinic are the clinic's business and faq_question - "
     "including a garage, stop or shop its visitors use. "

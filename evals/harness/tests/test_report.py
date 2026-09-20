@@ -61,7 +61,7 @@ def _labels(path: Path | None = None) -> list[Case]:
 
 def _edited_labels(tmp_path: Path, case_id: str, field: str, value: object) -> Path:
     raw = json.loads((_FIXTURE / "labels.json").read_text(encoding="utf-8"))
-    for case in raw:
+    for case in (c for family in raw["families"] for c in family["cases"]):
         if case["id"] != case_id:
             continue
         if field == "note":

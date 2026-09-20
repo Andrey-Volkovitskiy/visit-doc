@@ -1,109 +1,123 @@
-[
+{
+ "families": [
   {
-    "id": "G801",
-    "family": "faq-single",
-    "message": "Do I need a referral to see a specialist?",
-    "requests": [
+   "name": "faq-single",
+   "tests": "Synthetic faq-single cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G801",
+     "message": "Do I need a referral to see a specialist?",
+     "requests": [
       {
-        "intent": "faq_question",
-        "gist": "referral needed",
-        "answerable": true,
-        "cites": [
-          "referral"
-        ]
+       "intent": "faq_question",
+       "gist": "referral needed",
+       "answerable": true,
+       "cites": [
+        "referral"
+       ]
       }
-    ],
-    "source": "new"
+     ]
+    },
+    {
+     "id": "G802",
+     "message": "What should I bring to my first visit?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what to bring",
+       "answerable": true,
+       "cites": [
+        "what-to-bring"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G805",
+     "message": "Where do I park?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "parking",
+       "answerable": true,
+       "cites": [
+        "parking"
+       ]
+      }
+     ]
+    }
+   ]
   },
   {
-    "id": "G802",
-    "family": "faq-single",
-    "message": "What should I bring to my first visit?",
-    "requests": [
+   "name": "pleasantry-plus-request",
+   "tests": "Synthetic pleasantry-plus-request cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G803",
+     "message": "Hi there! Do you do video visits?",
+     "requests": [
       {
-        "intent": "faq_question",
-        "gist": "what to bring",
-        "answerable": true,
-        "cites": [
-          "what-to-bring"
-        ]
-      }
-    ],
-    "source": "new"
-  },
-  {
-    "id": "G803",
-    "family": "pleasantry-plus-request",
-    "message": "Hi there! Do you do video visits?",
-    "requests": [
-      {
-        "intent": "faq_question",
-        "gist": "telehealth offered",
-        "answerable": true,
-        "cites": [
-          "telehealth"
-        ]
+       "intent": "faq_question",
+       "gist": "telehealth offered",
+       "answerable": true,
+       "cites": [
+        "telehealth"
+       ]
       },
       {
-        "intent": "small_talk",
-        "gist": "greeting"
+       "intent": "small_talk",
+       "gist": "greeting"
       }
-    ],
-    "source": "new"
+     ]
+    }
+   ]
   },
   {
-    "id": "G804",
-    "family": "booking",
-    "message": "Can I book a GP visit on Friday?",
-    "requests": [
+   "name": "booking",
+   "tests": "Synthetic booking cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G804",
+     "message": "Can I book a GP visit on Friday?",
+     "requests": [
       {
-        "intent": "booking",
-        "gist": "book a GP Friday",
-        "tools": [
-          "book_appointment"
-        ]
+       "intent": "booking",
+       "gist": "book a GP Friday",
+       "tools": [
+        "book_appointment"
+       ]
       }
-    ],
-    "scheduling": {
+     ],
+     "scheduling": {
       "given": [],
       "expect": [
-        {
-          "practitioner": "William Osler",
-          "day": "+4d",
-          "status": "standing"
-        }
+       {
+        "practitioner": "William Osler",
+        "day": "+4d",
+        "status": "standing"
+       }
       ]
-    },
-    "source": "new"
+     }
+    }
+   ]
   },
   {
-    "id": "G805",
-    "family": "faq-single",
-    "message": "Where do I park?",
-    "requests": [
+   "name": "faq-gap",
+   "tests": "Synthetic faq-gap cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G806",
+     "message": "Do you treat horses?",
+     "requests": [
       {
-        "intent": "faq_question",
-        "gist": "parking",
-        "answerable": true,
-        "cites": [
-          "parking"
-        ]
+       "intent": "faq_question",
+       "gist": "veterinary care",
+       "answerable": false,
+       "cites": []
       }
-    ],
-    "source": "new"
-  },
-  {
-    "id": "G806",
-    "family": "faq-gap",
-    "message": "Do you treat horses?",
-    "requests": [
-      {
-        "intent": "faq_question",
-        "gist": "veterinary care",
-        "answerable": false,
-        "cites": []
-      }
-    ],
-    "source": "new"
+     ]
+    }
+   ]
   }
-]
+ ]
+}

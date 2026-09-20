@@ -1,85 +1,119 @@
-# The golden set
+# The golden set (v2)
 
-The labelled dataset Phase 2a exists to produce (`docs/ROADMAP.md`). 135 patient messages carrying
-191 labelled requests, consolidated from the four phases that each shipped labelled data with a
-written procedure and deliberately no runner.
+The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 146 patient messages carrying
+181 labelled requests, grouped into 16 families that between them cover what a patient actually
+does with this assistant.
 
-**It is data. There is no runner here, and nothing imports it yet.** Computing metrics over it is
-Phase 2b and comparing one build's run against another's is 2c; building either inside 2a would
-start the next phase inside this one, which is the mistake 1e, 1f, 1g and 1h each declined to make.
+**It is data. There is no runner here.** Computing metrics over it is the harness's job
+(`evals/harness/`), and comparing one build's run against another's is `eval-compare`.
 
-## Why it lives here and not under `specs/`
+## v2, and what it does not descend from
 
-The four seed sets belong to `specs/` and should stay there: they are frozen records of a shipped
-phase, excluded from ruff and mypy along with the rest of `specs/**`. This set is the opposite kind
-of thing. 2b reads it, 2c compares runs over it, and it is re-labelled whenever the corpus moves —
-it is living, checked, and outlives the spec that introduces it. `.claude/CLAUDE.md` already draws
-that line for code ("Do not put application code under `specs/`"); the same reasoning puts a living
-dataset outside it.
+v1 was a consolidation: 135 cases assembled from the labelled sets that specs 008, 009, 010 and 011
+each shipped with their own manual procedure. That gave it good coverage of the *defects those
+phases fixed*, and a shape that mirrored the specs' own sections rather than the assistant's use.
+
+v2 is written from the use cases instead. It descends from no spec's set and quotes no case from one.
+The consequences worth knowing:
+
+- **Booking is tested on its own.** v1 reached all six scheduling tools and carried nine confirmed
+  writes, but it had no family dedicated to booking: every booking request sat inside
+  `pleasantry-plus-request`, `mixed-faq-booking` or `segmentation-edges`, so booking was always
+  measured beside something else. v2's family `a` walks the node's range by itself — roster,
+  specialty, slots, the patient's own appointments, and the three writes — which is also what lets a
+  failure there be attributed to booking rather than to the segmentation around it.
+- **No stored run re-scores.** Every case id changed, so `eval-score` and `eval-compare` refuse
+  every run taken against v1, including the 2b record under
+  `specs/012-golden-set-metrics/evaluation/`. That record stays frozen as evidence of what the build
+  did on 2026-09-15; it is not a baseline, and a current baseline needs a fresh `make eval-run`.
+- **v1 is not deleted, it is superseded.** Its cases and the provenance of each are in git history.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `cases.json` | The set. One array of cases; `schema.json` is authoritative for the shape. |
-| `schema.json` | JSON Schema for a case. All 135 cases validate against it. |
+| `cases.json` | The set, grouped by family. `schema.json` is authoritative for the shape. |
+| `schema.json` | JSON Schema for the file. All 146 cases validate against it. |
 | `corpus.json` | The pinned FAQ corpus every `cites` label names, with a `sha256` over the entry texts. |
-| `PROVENANCE.md` | Where each case came from, what re-labelling the corpus changes forced, and what did not survive consolidation. |
+| `PROVENANCE.md` | Where v2 came from, and what has to be re-checked when the corpus moves. |
 
-## The case shape
+## The file shape
+
+Families carry the description of what they test, so the grouping is data rather than a comment the
+format cannot hold:
 
 ```json
 {
-  "id": "G120",
-  "family": "partial-serving",
-  "message": "What are your clinic hours, and do you validate parking?",
-  "requests": [
-    {"intent": "faq_question", "gist": "clinic hours", "answerable": true, "cites": ["hours-location"]},
-    {"intent": "faq_question", "gist": "parking validation", "answerable": false, "cites": []}
-  ],
-  "source": "011/setA#A1"
+  "families": [
+    {
+      "letter": "j",
+      "name": "single-faq-answered",
+      "tests": "One FAQ question the pinned corpus answers. The whole RAG path has to work...",
+      "cases": [
+        {
+          "id": "G-j-01",
+          "message": "What should I bring to my first appointment?",
+          "requests": [
+            {"intent": "faq_question", "gist": "what to bring",
+             "answerable": true, "cites": ["what-to-bring"]}
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```
 
-**The label attaches to a request.** `requests` is the expected segmentation: how many, in what
-order, and each one's intent. Array order *is* position — there is no `position` field, because a
-second way of saying the same thing is a second thing that can be wrong. One latitude is scored as
-correct: a labelled `faq_question` the classifier split into consecutive `faq_question`s, since the
-reply still carries every half. A question split into a `faq_question` and anything else is not.
+A case id is `G-<family letter>-<nn>`, where the letter is its family's and `nn` is its position in
+that family. The loader checks that agreement, which a JSON Schema pattern cannot: an id that
+disagrees with the group it sits in is refused by name.
 
-What is scored and what is not:
+There is no `family` key on a case and no `source` key at all. The family is the group the case sits
+in — one copy, which cannot disagree with itself — and the loader carries the family's name onto each
+case as it flattens the file. `source` is gone because v2 has one source, described above, rather
+than a per-case citation of another spec's set.
 
-- **`intent` is scored.** It must be one of `chat.domain.schemas.IntentLabel`'s eight values.
-- **`gist` is not scored.** A segment has many valid restatements; exact-matching the classifier's
-  wording would measure phrasing rather than segmentation. It is there so a human reading the file
-  knows which request is which.
-- **`answerable` is two-valued, not six.** `FaqVerdict` has four abstentions, but they are
-  identical in behaviour and the schema's own docstring forbids branching on which one it is — and
-  no hand-labeller can tell a similarity-floor stop from a rerank-floor stop without running the
-  pipeline. So the label is `FaqVerdict.answered` and nothing finer.
-- **`cites` is a set, not a ranking.** It names the corpus entries the answer must rest on.
-  Non-empty exactly when `answerable` is true, which is the same invariant `RequestOutcome`
-  enforces in code.
-- **`tools` is a required subset, not a sequence.** A `check_availability` that precedes a
-  `book_appointment` is not a miss; a `book_appointment` that never happens is.
-- **`scheduling` is scored, and present exactly on the 18 cases with a booking request.** `given`
-  is planted before the turn, `expect` is the complete set of the patient's appointments after
-  the case's last turn — practitioner, `day` offset from the run clock, optional `time`, `status`
-  — and a case expected to change nothing restates `given`. `PROVENANCE.md` gives each fixture its
-  reason.
-- **`reply` is optional, and part of `scheduling`**, so a changed reply changes the case's label
-  digest. It is the patient's scripted answer to an offer, posted verbatim as a second full turn
-  in the same chat, and it is on the nine cases whose message asks for a write - every
-  cancellation among them - since a first turn may reasonably answer with an offer or a question
-  rather than act. It is **optional to the case**: the harness posts it only when the appointments
-  after the first turn do not already match `expect`, and scores the case on the read after its
-  last driven turn. Tool selection counts every driven turn's calls, while classification and
-  retrieval read the first turn only.
+## The families, in file order
 
-## Derived, not stored
+| | Family | n | What it tests |
+|---|---|---|---|
+| a | `single-booking` | 14 | One booking request the booking node serves alone, across its whole range. Writes carry a scripted second turn, so a bare "OK" has to read as the booking it answers. |
+| b | `urgent_condition` | 9 | Something an emergency department exists for. Takes the whole turn; ends it. Carries the hyperbole counter-case. |
+| c | `distress` | 7 | Real fear or acute upset. Carries the brief-exclamation counter-case. |
+| d | `booking_for_another` | 7 | The appointment is plainly for someone else. Nothing may be written. |
+| e | `not_authorized` | 9 | A request the assistant may never serve, whatever the corpus grows to hold. |
+| f | `call_staff` | 6 | An explicit request for a human — the one cause that owes the patient silence. |
+| g | `small-talk` | 12 | Messages asking for nothing. None may page a person or search the corpus. |
+| i | `out-of-topic` | 5 | Clearly outside the clinic's domain: nothing to retrieve and nobody to page. |
+| j | `single-faq-answered` | 16 | One answerable FAQ question: both gates cleared, answer generated, right entry cited. |
+| k | `single-faq-gap` | 14 | One question the corpus cannot answer, most overlapping an entry heavily. Must abstain. |
+| l | `single-faq-that-looks-multi` | 7 | One request wearing the clothes of several. Must not be over-split. |
+| m | `compound-faq-answered` | 8 | Two or three answerable questions, each retrieved on its own and cited on its own. |
+| n | `compound-faq-mixed` | 9 | One answerable, one a gap. Answer the half you can; name the half you cannot. |
+| o | `request-segmentation` | 7 | A request that cannot be searched as written and must be restated without adding. |
+| p | `pleasantry-plus-request` | 8 | A greeting in front of a real request, drawn from every route. |
+| q | `mixed-faq-booking` | 8 | An FAQ half and a booking half; each specialist sees only its own. |
 
-Nothing in a case says which escalation a turn should raise, because the requests already say it.
-Deriving it at read time is what keeps the two from disagreeing:
+There is no family `h`: the letters follow the order the set was specified in, and `h` was not used.
+
+## What a request label carries
+
+`intent` must be one of `chat.domain.schemas.IntentLabel`'s values (bar
+`classification_failed`, which no label may claim — it is assigned by orchestration on a failed
+call). Then, per intent:
+
+- `faq_question` carries `answerable` and `cites`. `cites` is non-empty exactly when `answerable` is
+  true, and every id in it must exist in `corpus.json`.
+- `booking` carries `tools` — the tools whose *absence* means the request went unserved. It is a
+  required subset, not a sequence: a `check_availability` before a `book_appointment` is not a miss.
+- Every other intent carries neither.
+
+`gist` is a human reference and is **never scored**. A segment has many valid restatements, and
+exact-matching the classifier's wording would measure phrasing rather than segmentation.
+
+## The intent a request contributes to escalation
+
+Derived at read time rather than labelled, so the two cannot disagree:
 
 | A request with this intent | contributes this `EscalationReason` |
 |---|---|
@@ -94,43 +128,35 @@ Deriving it at read time is what keeps the two from disagreeing:
 A turn raises **every** cause its requests contribute; the *mark* is the first of them in
 `escalation._PRECEDENCE` order, and whether the assistant falls silent is `_SILENCING`'s separate
 question. `ASSISTANT_FAILED` is the one cause no case can carry: it is a property of a broken run,
-not of a message, and a golden set cannot label it.
+not of a message.
 
-## The corpus pin
+## The scheduling fixture
 
-Every `cites` label is meaningless without the text it names, and the corpus is editable —
-`DEFAULT_FAQ_ENTRIES` changed three times between 1h shipping and this set being written, and two
-of those changes moved labels (see `PROVENANCE.md`). `corpus.json` therefore pins a snapshot with a
-`sha256` over the entry texts. **When that hash stops matching `DEFAULT_FAQ_ENTRIES`, the labels on
-the changed entries are stale until someone re-checks them** — re-take the snapshot and work through
-the entries that moved, the way `PROVENANCE.md` records it being done last time.
+Present on exactly the cases carrying a booking request — the loader refuses the file otherwise.
 
-## What is in it
+- `given` — planted standing before the turn, each entry naming a practitioner, a day and a time.
+- `expect` — the **complete** set of the patient's appointments after the case's last turn, standing
+  or cancelled, matched one to one. An appointment no entry accounts for is a failure, and a case
+  expected to change nothing restates `given`.
+- `reply` — the patient's scripted answer, posted as a second full turn once the first has replied.
+  It is present on exactly the cases whose tools include a write, because a write is confirmed
+  before it happens and a read has nothing to confirm.
 
-| | |
-|---|---|
-| Cases | 135 |
-| Labelled requests | 191 |
-| One request / two / three | 83 / 48 / 4 |
-| FAQ requests answerable / gap | 94 / 24 |
-| Corpus entries cited | 9 of 9 |
-| Intents covered | 8 of 8 |
-| Escalation causes covered | 6 of 7 (`assistant_failed` is not labelable) |
+Days are signed offsets from the run clock, which is a **Monday**: `+2d` is Wednesday, `+5d`
+Saturday. The two seeded practitioners differ in both specialty and hours, and a fixture outside
+them would never plant:
 
-Fourteen families, each a thing that can go wrong: `single-faq-answered`, `single-faq-gap`,
-`off-topic-and-clinical`, `small-talk`, `pleasantry-plus-request`, `not-authorized`,
-`safety-and-authority`, `compound-faq`, `mixed-faq-booking`, `segmentation-edges`,
-`single-request-that-looks-multi`, `overriding-segment`, `partial-serving`, `changed-corpus`.
+| Practitioner | Specialty | Days | Hours |
+|---|---|---|---|
+| `William Osler` | General Practice | Mon–Fri | 09:00–17:00 |
+| `Andreas Vesalius` | Dentistry | Mon–Sat | 09:00–14:00 |
 
-The count exceeds the 50–100 the roadmap names. That band was written before the seed was counted;
-consolidating four phases' data produced 136, and one was then dropped by decision (see
-PROVENANCE.md), leaving 135. Either the band moves or the set is trimmed further — it is a decision,
-not an accident, and it is recorded here rather than resolved silently.
+With 60-minute slots, the last legal start is 16:00 for the GP and 13:00 for the dentist. No booking
+case may name the clock's own weekday, because "Monday" on a Monday clock reads as either today or a
+week out and a label can only mean one of them.
 
-## A label that needs a measurement, not a reading
+## What the file deliberately does not hold
 
-- **G020** (`Do you accept Blue Cross for dental implants specifically?`) is labelled a gap, and it
-  is one of the three cases 1e's calibration relied on to prove the *rerank* floor does work: it
-  clears the similarity floor and must be stopped later. The plans entry's text changed since that
-  was measured, so this label is the most likely of any in the set to be wrong. Re-measure it before
-  trusting it.
+Anything derivable from `requests`. There is no turn-level expected outcome, no expected reply text,
+no count of expected segments, no `expected_verdict`. Each would be a second copy of something the
+request list already says, free to disagree with it.

@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 from golden_harness.cases import (
     SEEDED_PRACTITIONER_NAMES,
+    BookingTool,
     Case,
     LabelError,
     SchedulingFixture,
@@ -18,45 +19,22 @@ from golden_harness.cases import (
 )
 from golden_harness.driver.run import DEFAULT_CLOCK
 from jsonschema import Draft202012Validator
+from shared_models.scheduling import AppointmentStatus
 
 _GOLDEN = Path(__file__).resolve().parents[2] / "golden"
 _CASES = _GOLDEN / "cases.json"
 _SCHEMA = _GOLDEN / "schema.json"
 
-_BOOKING_CASES = [
-    "G042",
-    "G044",
-    "G048",
-    "G049",
-    "G050",
-    "G051",
-    "G053",
-    "G062",
-    "G087",
-    "G088",
-    "G089",
-    "G090",
-    "G091",
-    "G092",
-    "G093",
-    "G094",
-    "G095",
-    "G102",
-]
-
-# The contract's G102 example, with its Friday appointment moved to Vesalius as the
-# committed case has it since 2026-09-18 (see PROVENANCE.md).
-_G102: dict[str, Any] = {
-    "id": "G102",
-    "family": "segmentation-edges",
+# A valid case, used wherever these tests need one to bend out of shape. Deliberately
+# not a case from the committed set and deliberately not in any family - the id shape
+# the golden set uses is checked by the loader against the family it sits in, and these
+# tests are about the fixture schema rather than about any one case.
+_EXAMPLE: dict[str, Any] = {
+    "id": "G901",
     "message": "Can you cancel Friday and book Wednesday with William Osler instead?",
     "requests": [
         {"intent": "booking", "gist": "cancel Friday", "tools": ["cancel_appointment"]},
-        {
-            "intent": "booking",
-            "gist": "book Wednesday",
-            "tools": ["book_appointment"],
-        },
+        {"intent": "booking", "gist": "book Wednesday", "tools": ["book_appointment"]},
     ],
     "scheduling": {
         "given": [{"practitioner": "Andreas Vesalius", "day": "+4d", "time": "10:00"}],
@@ -71,39 +49,42 @@ _G102: dict[str, Any] = {
         ],
         "reply": "Yes, please cancel Friday. The earliest Wednesday time is fine.",
     },
-    "source": "010/multi#C9",
 }
 
-# The nine cases whose first turn may answer with an offer or a question rather than
-# act, and the patient's scripted answer to it - posted only when the first turn did not
-# already leave the expected appointments.
-_REPLIES = {
-    "G042": "Yes, please go ahead.",
-    "G048": "Yes, please go ahead.",
-    "G051": "Yes, please go ahead.",
-    "G062": "The earliest Wednesday time is fine, yes please book it.",
-    "G088": "Yes, please book it.",
-    "G090": "Yes, please go ahead.",
-    "G093": "Yes, please go ahead.",
-    "G095": "The earliest time you have on Friday is fine, yes please book it.",
-    "G102": "Yes, please cancel Friday. The earliest Wednesday time is fine.",
-}
+
+def _grouped(raw: list[dict[str, Any]]) -> dict[str, Any]:
+    """Wrap loose cases as the one family the file format requires.
+
+    No `letter`, so the loader's id-to-family rule does not apply - these cases are
+    made to bend the fixture schema, not to belong to the golden set.
+    """
+    return {
+        "families": [
+            {"name": "under test", "tests": "Cases built by this test.", "cases": raw}
+        ]
+    }
 
 
 def _schema_errors(case: dict[str, Any]) -> list[str]:
     schema = json.loads(_SCHEMA.read_text(encoding="utf-8"))
-    return [error.message for error in Draft202012Validator(schema).iter_errors([case])]
+    validator = Draft202012Validator(schema)
+    return [error.message for error in validator.iter_errors(_grouped([case]))]
 
 
-def _g102(**scheduling: Any) -> dict[str, Any]:
-    case = copy.deepcopy(_G102)
+def _as_case(raw: dict[str, Any]) -> Case:
+    """Type one raw case as the loader would, injecting the family it would carry."""
+    return Case.model_validate({**raw, "family": "under test"})
+
+
+def _example(**scheduling: Any) -> dict[str, Any]:
+    case = copy.deepcopy(_EXAMPLE)
     case["scheduling"].update(scheduling)
     return case
 
 
 def _write(tmp_path: Path, raw: list[dict[str, Any]]) -> Path:
     path = tmp_path / "cases.json"
-    path.write_text(json.dumps(raw), encoding="utf-8")
+    path.write_text(json.dumps(_grouped(raw)), encoding="utf-8")
     return path
 
 
@@ -123,33 +104,33 @@ def _vesalius(day: str, time: str) -> dict[str, Any]:
 # --- the schema ---------------------------------------------------------------------
 
 
-def test_the_schema_accepts_the_contracts_g102_example_verbatim() -> None:
-    assert _schema_errors(_G102) == []
+def test_the_schema_accepts_a_fixture_carrying_a_cancel_and_a_booking() -> None:
+    assert _schema_errors(_EXAMPLE) == []
 
 
 def test_the_schema_rejects_a_status_on_a_given_entry() -> None:
-    given = [{**_G102["scheduling"]["given"][0], "status": "standing"}]
+    given = [{**_EXAMPLE["scheduling"]["given"][0], "status": "standing"}]
 
-    assert _schema_errors(_g102(given=given)) != []
+    assert _schema_errors(_example(given=given)) != []
 
 
 def test_the_schema_rejects_an_expect_entry_without_a_status() -> None:
     expect = [{"practitioner": "William Osler", "day": "+7d"}]
 
-    assert _schema_errors(_g102(expect=expect)) != []
+    assert _schema_errors(_example(expect=expect)) != []
 
 
 def test_the_schema_rejects_a_given_entry_without_a_time() -> None:
     given = [{"practitioner": "William Osler", "day": "+4d"}]
 
-    assert _schema_errors(_g102(given=given)) != []
+    assert _schema_errors(_example(given=given)) != []
 
 
 @pytest.mark.parametrize("day", ["4d", "+4", "+d", "tomorrow", "+4days", " +4d"])
 def test_the_schema_rejects_a_day_not_written_as_a_signed_offset(day: str) -> None:
     given = [{"practitioner": "William Osler", "day": day, "time": "10:00"}]
 
-    assert _schema_errors(_g102(given=given)) != []
+    assert _schema_errors(_example(given=given)) != []
 
 
 # "24:00", "25:99" and "10:60" have the HH:MM shape but name no clock time, so a
@@ -167,14 +148,14 @@ def test_the_schema_rejects_a_time_not_written_as_hh_mm(time: str) -> None:
         }
     ]
 
-    assert _schema_errors(_g102(expect=expect)) != []
+    assert _schema_errors(_example(expect=expect)) != []
 
 
 @pytest.mark.parametrize(
     "location", ["scheduling", "given", "expect", "fixture"], ids=lambda x: x
 )
 def test_the_schema_rejects_an_unknown_key(location: str) -> None:
-    case = copy.deepcopy(_G102)
+    case = copy.deepcopy(_EXAMPLE)
     if location == "scheduling":
         case["scheduling"]["surprise"] = True
     elif location == "given":
@@ -188,7 +169,7 @@ def test_the_schema_rejects_an_unknown_key(location: str) -> None:
 
 
 def test_the_schema_accepts_a_fixture_with_no_reply() -> None:
-    case = copy.deepcopy(_G102)
+    case = copy.deepcopy(_EXAMPLE)
     del case["scheduling"]["reply"]
 
     assert _schema_errors(case) == []
@@ -200,36 +181,36 @@ def test_the_schema_accepts_a_fixture_with_no_reply() -> None:
 def test_the_schema_rejects_a_reply_that_is_not_a_non_empty_string(
     reply: object,
 ) -> None:
-    assert _schema_errors(_g102(reply=reply)) != []
+    assert _schema_errors(_example(reply=reply)) != []
 
 
 def test_the_schema_rejects_a_reply_on_an_appointment_rather_than_the_fixture() -> None:
-    given = [{**_G102["scheduling"]["given"][0], "reply": "Yes."}]
+    given = [{**_EXAMPLE["scheduling"]["given"][0], "reply": "Yes."}]
 
-    assert _schema_errors(_g102(given=given)) != []
+    assert _schema_errors(_example(given=given)) != []
 
 
 def test_the_schema_rejects_an_unknown_status() -> None:
     expect = [{"practitioner": "William Osler", "day": "+7d", "status": "moved"}]
 
-    assert _schema_errors(_g102(expect=expect)) != []
+    assert _schema_errors(_example(expect=expect)) != []
 
 
 # --- a fixture exactly on the booking cases -----------------------------------------
 
 
 def test_a_booking_case_with_no_fixture_is_refused_by_name(tmp_path: Path) -> None:
-    case = copy.deepcopy(_G102)
+    case = copy.deepcopy(_EXAMPLE)
     del case["scheduling"]
 
-    with pytest.raises(LabelError, match="G102"):
+    with pytest.raises(LabelError, match=_EXAMPLE["id"]):
         load_cases(_write(tmp_path, [case]), _SCHEMA)
 
 
 def test_a_fixture_on_a_case_with_no_booking_request_is_refused_by_name(
     tmp_path: Path,
 ) -> None:
-    case = copy.deepcopy(_G102)
+    case = copy.deepcopy(_EXAMPLE)
     case["id"] = "G103"
     case["requests"] = [{"intent": "small_talk", "gist": "thanks"}]
 
@@ -238,7 +219,7 @@ def test_a_fixture_on_a_case_with_no_booking_request_is_refused_by_name(
 
 
 def test_a_loaded_fixture_is_typed_on_its_case(tmp_path: Path) -> None:
-    (case,) = load_cases(_write(tmp_path, [_G102]), _SCHEMA)
+    (case,) = load_cases(_write(tmp_path, [_EXAMPLE]), _SCHEMA)
 
     assert case.scheduling is not None
     given = [entry.practitioner for entry in case.scheduling.given]
@@ -248,11 +229,11 @@ def test_a_loaded_fixture_is_typed_on_its_case(tmp_path: Path) -> None:
         "standing",
     ]
     assert case.scheduling.expect[1].time is None
-    assert case.scheduling.reply == _G102["scheduling"]["reply"]
+    assert case.scheduling.reply == _EXAMPLE["scheduling"]["reply"]
 
 
 def test_a_loaded_fixture_with_no_reply_carries_none(tmp_path: Path) -> None:
-    case = copy.deepcopy(_G102)
+    case = copy.deepcopy(_EXAMPLE)
     del case["scheduling"]["reply"]
 
     (loaded,) = load_cases(_write(tmp_path, [case]), _SCHEMA)
@@ -269,17 +250,18 @@ def test_the_fixture_model_refuses_an_empty_reply() -> None:
 
 
 def test_a_reply_is_a_scored_field_so_changing_it_changes_the_label_digest() -> None:
-    with_reply = Case.model_validate(_G102)
-    without = copy.deepcopy(_G102)
+    with_reply = _as_case(_EXAMPLE)
+    without = copy.deepcopy(_EXAMPLE)
     del without["scheduling"]["reply"]
-    reworded = _g102(reply="Yes, cancel Friday and book Wednesday.")
+    reworded = _example(reply="Yes, cancel Friday and book Wednesday.")
+    example_id = _EXAMPLE["id"]
 
     digests = [
-        label_digests([Case.model_validate(raw)])["G102"]
-        for raw in (_G102, without, reworded)
+        label_digests([_as_case(raw)])[example_id]
+        for raw in (_EXAMPLE, without, reworded)
     ]
 
-    assert label_digests([with_reply])["G102"] == digests[0]
+    assert label_digests([with_reply])[example_id] == digests[0]
     assert len(set(digests)) == 3
 
 
@@ -390,85 +372,95 @@ def test_an_expectation_naming_a_practitioner_the_seed_does_not_hold_is_refused(
 
 
 # --- the committed set --------------------------------------------------------------
+#
+# Every expectation below is derived from the set as loaded, never from a restated list
+# of ids: a hand-written list stops failing when the set changes and silently keeps
+# testing a set that no longer exists.
 
 
-def test_the_committed_set_has_a_fixture_on_exactly_the_eighteen_booking_cases() -> (
-    None
-):
-    cases = load_cases(_CASES, _SCHEMA)
-
-    assert [case.id for case in cases if case.scheduling is not None] == _BOOKING_CASES
+def _committed() -> list[Case]:
+    return load_cases(_CASES, _SCHEMA)
 
 
-def test_the_committed_set_carries_a_reply_on_exactly_the_nine_write_cases() -> None:
-    cases = load_cases(_CASES, _SCHEMA)
+def _booking_case_ids() -> list[str]:
+    return [case.id for case in _committed() if case.scheduling is not None]
 
-    replies = {
-        case.id: case.scheduling.reply
-        for case in cases
-        if case.scheduling is not None and case.scheduling.reply is not None
+
+def _tools_of(case: Case) -> set[BookingTool]:
+    return {
+        tool for request in case.requests if request.tools for tool in request.tools
     }
-    assert replies == _REPLIES
 
 
-@pytest.mark.parametrize("case_id", _BOOKING_CASES)
+_WRITE_TOOLS = frozenset(
+    {
+        BookingTool.BOOK_APPOINTMENT,
+        BookingTool.RESCHEDULE_APPOINTMENT,
+        BookingTool.CANCEL_APPOINTMENT,
+    }
+)
+# How a message may name the practitioner a new booking needs. A specialty counts
+# because each of these resolves to exactly one of the two seeded practitioners.
+_SPECIALTY_WORDS = ("dentist", "dental", "GP", "specialist")
+
+
+def test_a_fixture_sits_on_exactly_the_cases_with_a_booking_request() -> None:
+    cases = _committed()
+
+    assert [c.id for c in cases if c.scheduling is not None] == [
+        c.id for c in cases if c.has_booking_request
+    ]
+
+
+def test_a_reply_sits_on_exactly_the_cases_whose_booking_writes() -> None:
+    """A write is confirmed before it happens; a read has nothing to confirm."""
+    for case in _committed():
+        if case.scheduling is None:
+            continue
+        writes = bool(_tools_of(case) & _WRITE_TOOLS)
+        assert (case.scheduling.reply is not None) is writes, case.id
+
+
+def test_a_case_that_writes_nothing_leaves_every_planted_appointment_standing() -> None:
+    for case in _committed():
+        if case.scheduling is None or _tools_of(case) & _WRITE_TOOLS:
+            continue
+        assert [
+            (a.practitioner, a.day, a.time, AppointmentStatus.STANDING)
+            for a in case.scheduling.given
+        ] == [
+            (a.practitioner, a.day, a.time, a.status) for a in case.scheduling.expect
+        ], case.id
+
+
+def test_a_new_booking_names_its_practitioner_or_a_specialty() -> None:
+    """`book_appointment` takes a practitioner and the loop may not choose one.
+
+    A reschedule is exempt: it inherits the practitioner from the appointment it moves.
+    """
+    for case in _committed():
+        if BookingTool.BOOK_APPOINTMENT not in _tools_of(case):
+            continue
+        named = any(name in case.message for name in SEEDED_PRACTITIONER_NAMES)
+        by_specialty = any(word in case.message for word in _SPECIALTY_WORDS)
+        assert named or by_specialty, case.id
+
+
+@pytest.mark.parametrize("case_id", _booking_case_ids())
 def test_every_committed_fixture_plants_against_the_default_clock(case_id: str) -> None:
-    (case,) = [c for c in load_cases(_CASES, _SCHEMA) if c.id == case_id]
+    (case,) = [c for c in _committed() if c.id == case_id]
 
     assert case.scheduling is not None
     validate_plantable(case.scheduling, DEFAULT_CLOCK)
 
 
-def test_the_contracts_worked_examples_are_labelled_as_the_contract_states() -> None:
-    by_id = {case.id: case for case in load_cases(_CASES, _SCHEMA)}
-
-    def dumped(case_id: str) -> dict[str, Any]:
-        fixture = by_id[case_id].scheduling
-        assert fixture is not None
-        return fixture.model_dump(mode="json", exclude_none=True)
-
-    assert dumped("G049") == {"given": [], "expect": []}
-    assert dumped("G053") == {"given": [], "expect": []}
-    assert dumped("G102") == _G102["scheduling"]
-    g042 = dumped("G042")
-    assert [e["day"] for e in g042["given"]] == ["+1d"]
-    assert g042["expect"] == [{**g042["given"][0], "status": "cancelled"}]
-    g088 = dumped("G088")
-    assert g088["given"] == []
-    assert [(e["day"], e.get("time"), e["status"]) for e in g088["expect"]] == [
-        ("+2d", "09:00", "standing")
-    ]
-    # G062 names no time, so its reply takes the earliest Wednesday slot: any time.
-    assert dumped("G062") == {
-        "given": [],
-        "expect": [
-            {"practitioner": "William Osler", "day": "+2d", "status": "standing"}
-        ],
-        "reply": "The earliest Wednesday time is fine, yes please book it.",
-    }
-
-
-# Cases whose booking tool needs a practitioner id the message would otherwise leave
-# the loop to ask for - `check_availability` and `book_appointment` both take one, and
-# the prompt says never to choose for the patient - so each names its practitioner.
-# G087 and G094 name a specialty instead, which resolves to one practitioner.
-_NAMES_ITS_PRACTITIONER = ["G044", "G062", "G088", "G095", "G102"]
-
-
-@pytest.mark.parametrize("case_id", _NAMES_ITS_PRACTITIONER)
-def test_a_committed_case_that_needs_a_practitioner_names_one(case_id: str) -> None:
-    (case,) = [c for c in load_cases(_CASES, _SCHEMA) if c.id == case_id]
-
-    assert "William Osler" in case.message
-
-
-@pytest.mark.parametrize("case_id", _BOOKING_CASES)
+@pytest.mark.parametrize("case_id", _booking_case_ids())
 def test_no_committed_booking_case_names_the_run_clocks_own_weekday(
     case_id: str,
 ) -> None:
     # On a Monday-08:00 clock, "Monday" reads as today or as a week out; a label can
     # only mean one of them, so no booking message or reply may use the clock's weekday.
-    (case,) = [c for c in load_cases(_CASES, _SCHEMA) if c.id == case_id]
+    (case,) = [c for c in _committed() if c.id == case_id]
     assert case.scheduling is not None
     weekday = DEFAULT_CLOCK.strftime("%A")
 

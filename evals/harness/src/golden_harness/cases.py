@@ -158,7 +158,6 @@ class Case(BaseModel):
     family: str
     message: str
     requests: list[LabelledRequest]
-    source: str
     note: str | None = None
     history: list[HistoryEntry] | None = None
     scheduling: SchedulingFixture | None = None
@@ -200,13 +199,20 @@ class Selection(BaseModel):
 def load_cases(path: Path, schema_path: Path | None = None) -> list[Case]:
     """Load the golden set, validating it against its JSON schema first.
 
+    Returns: every case of every family, flattened in file order, each carrying its
+        family's name as `family`.
+
     Args:
         schema_path: the schema to validate against; `schema.json` beside `path` when
             omitted.
 
-    Raises: LabelError when the file breaks the schema, repeats a case id, or carries a
-        scheduling fixture on a case other than exactly those with a booking request;
-        the message names every offending case.
+    Raises: LabelError when the file breaks the schema, repeats a case id, carries a
+        scheduling fixture on a case other than exactly those with a booking request,
+        or - in a family declaring a letter - holds an id that does not read
+        `G-<letter>-<position>`; the message names every offending case.
+
+    The family's `tests` description is not carried onto a case: it describes the group,
+    and a copy on every member is a copy that can disagree with the group it came from.
     """
     schema_file = (
         schema_path if schema_path is not None else path.with_name("schema.json")
@@ -227,7 +233,22 @@ def load_cases(path: Path, schema_path: Path | None = None) -> list[Case]:
             "cases.json does not match its schema:\n" + "\n".join(problems)
         )
 
-    cases = [Case.model_validate(entry) for entry in raw]
+    cases: list[Case] = []
+    misnumbered: list[str] = []
+    for group in raw["families"]:
+        letter = group.get("letter")
+        for position, entry in enumerate(group["cases"], start=1):
+            cases.append(Case.model_validate({**entry, "family": group["name"]}))
+            if letter is not None and entry["id"] != f"G-{letter}-{position:02d}":
+                misnumbered.append(
+                    f"{entry['id']} (expected G-{letter}-{position:02d})"
+                )
+    if misnumbered:
+        raise LabelError(
+            "these ids disagree with their family's letter or their position in it: "
+            + ", ".join(misnumbered)
+        )
+
     repeated = sorted(
         case_id
         for case_id, count in Counter(case.id for case in cases).items()
@@ -301,13 +322,29 @@ def validate_plantable(fixture: SchedulingFixture, clock: datetime) -> None:
 
 
 def _case_named_by(raw: Any, path: list[str | int]) -> str:
-    """Return the id of the case a validation error's path points into."""
-    if not path or not isinstance(raw, list) or not isinstance(path[0], int):
+    """Return the id of the case a validation error's path points into.
+
+    An error above any one case - a family missing its description, or the root not
+    being an object at all - names the file rather than guessing at a case.
+    """
+    if not isinstance(raw, dict) or len(path) < 4:
         return "<file>"
-    entry = raw[path[0]]
+    families, family_index, cases, case_index = path[:4]
+    if (families, cases) != ("families", "cases"):
+        return "<file>"
+    if not isinstance(family_index, int) or not isinstance(case_index, int):
+        return "<file>"
+    groups = raw.get("families")
+    if not isinstance(groups, list) or family_index >= len(groups):
+        return "<file>"
+    group = groups[family_index]
+    entries = group.get("cases") if isinstance(group, dict) else None
+    if not isinstance(entries, list) or case_index >= len(entries):
+        return "<file>"
+    entry = entries[case_index]
     if isinstance(entry, dict) and isinstance(entry.get("id"), str):
         return str(entry["id"])
-    return f"<case at index {path[0]}>"
+    return f"<case at families/{family_index}/cases/{case_index}>"
 
 
 def select(
@@ -363,8 +400,8 @@ def label_digests(cases: Sequence[Case]) -> dict[str, str]:
     return {case.id: _digest(_scored_fields(case)) for case in cases}
 
 
-# The fields no scorer reads: a human reference, provenance and grouping.
-_UNSCORED_CASE_FIELDS: Final = frozenset({"note", "source", "family"})
+# The fields no scorer reads: a human reference and grouping.
+_UNSCORED_CASE_FIELDS: Final = frozenset({"note", "family"})
 _UNSCORED_REQUEST_FIELDS: Final = frozenset({"gist"})
 
 

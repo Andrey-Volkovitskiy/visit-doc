@@ -1,97 +1,199 @@
-[
+{
+ "families": [
   {
-    "id": "G901",
-    "family": "compound-faq",
-    "message": "What are your hours, and do you take Aetna?",
-    "requests": [
-      {"intent": "faq_question", "gist": "clinic hours", "answerable": true, "cites": ["hours-location"]},
-      {"intent": "faq_question", "gist": "is Aetna accepted?", "answerable": true, "cites": ["insurance-plans"]}
-    ],
-    "source": "new",
-    "note": "AS1: two requests, produced in the labelled order with the labelled intents"
+   "name": "compound-faq",
+   "tests": "Synthetic compound-faq cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G901",
+     "message": "What are your hours, and do you take Aetna?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "clinic hours",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      },
+      {
+       "intent": "faq_question",
+       "gist": "is Aetna accepted?",
+       "answerable": true,
+       "cites": [
+        "insurance-plans"
+       ]
+      }
+     ],
+     "note": "AS1: two requests, produced in the labelled order with the labelled intents"
+    }
+   ]
   },
   {
-    "id": "G902",
-    "family": "pleasantry-plus-request",
-    "message": "Hi there! What should I bring to my first appointment?",
-    "requests": [
-      {"intent": "small_talk", "gist": "greeting"},
-      {"intent": "faq_question", "gist": "what to bring", "answerable": true, "cites": ["what-to-bring"]}
-    ],
-    "source": "new",
-    "note": "AS2: two labelled requests, one produced"
+   "name": "pleasantry-plus-request",
+   "tests": "Synthetic pleasantry-plus-request cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G902",
+     "message": "Hi there! What should I bring to my first appointment?",
+     "requests": [
+      {
+       "intent": "small_talk",
+       "gist": "greeting"
+      },
+      {
+       "intent": "faq_question",
+       "gist": "what to bring",
+       "answerable": true,
+       "cites": [
+        "what-to-bring"
+       ]
+      }
+     ],
+     "note": "AS2: two labelled requests, one produced"
+    }
+   ]
   },
   {
-    "id": "G903",
-    "family": "single-faq-answered",
-    "message": "Do I need a referral?",
-    "requests": [
-      {"intent": "faq_question", "gist": "referral needed?", "answerable": true, "cites": ["referral"]}
-    ],
-    "source": "new",
-    "note": "AS3: the classifier call failed, so the produced intent is classification_failed"
+   "name": "single-faq-answered",
+   "tests": "Synthetic single-faq-answered cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G903",
+     "message": "Do I need a referral?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "referral needed?",
+       "answerable": true,
+       "cites": [
+        "referral"
+       ]
+      }
+     ],
+     "note": "AS3: the classifier call failed, so the produced intent is classification_failed"
+    },
+    {
+     "id": "G905",
+     "message": "Can I have a video visit?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "telehealth",
+       "answerable": true,
+       "cites": [
+        "telehealth"
+       ]
+      }
+     ],
+     "note": "the conversation was already silenced, so the turn ended silent"
+    },
+    {
+     "id": "G906",
+     "message": "How early should I arrive?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "arrival time",
+       "answerable": true,
+       "cites": [
+        "arrival-time"
+       ]
+      }
+     ],
+     "note": "the turn ended cancelled"
+    },
+    {
+     "id": "G909",
+     "message": "What does a visit cost without insurance?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay rates",
+       "answerable": true,
+       "cites": [
+        "out-of-pocket-rates"
+       ]
+      }
+     ],
+     "note": "the patient message carries assistant_failed beside a stored reply"
+    }
+   ]
   },
   {
-    "id": "G904",
-    "family": "overriding-segment",
-    "message": "What are your hours? Also my chest hurts and I feel faint.",
-    "requests": [
-      {"intent": "faq_question", "gist": "clinic hours", "answerable": true, "cites": ["hours-location"]},
-      {"intent": "urgent_condition", "gist": "chest pain and faintness"}
-    ],
-    "source": "new",
-    "note": "handed off, with both intents produced correctly"
+   "name": "overriding-segment",
+   "tests": "Synthetic overriding-segment cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G904",
+     "message": "What are your hours? Also my chest hurts and I feel faint.",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "clinic hours",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      },
+      {
+       "intent": "urgent_condition",
+       "gist": "chest pain and faintness"
+      }
+     ],
+     "note": "handed off, with both intents produced correctly"
+    }
+   ]
   },
   {
-    "id": "G905",
-    "family": "single-faq-answered",
-    "message": "Can I have a video visit?",
-    "requests": [
-      {"intent": "faq_question", "gist": "telehealth", "answerable": true, "cites": ["telehealth"]}
-    ],
-    "source": "new",
-    "note": "the conversation was already silenced, so the turn ended silent"
+   "name": "segmentation-edges",
+   "tests": "Synthetic segmentation-edges cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G907",
+     "message": "Where are you, how do I pay, and can you write me a sick note?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "clinic location",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      },
+      {
+       "intent": "faq_question",
+       "gist": "payment methods",
+       "answerable": true,
+       "cites": [
+        "payment"
+       ]
+      },
+      {
+       "intent": "not_authorized",
+       "gist": "sick note"
+      }
+     ],
+     "note": "cap_bound turn whose third produced intent disagrees with the label"
+    }
+   ]
   },
   {
-    "id": "G906",
-    "family": "single-faq-answered",
-    "message": "How early should I arrive?",
-    "requests": [
-      {"intent": "faq_question", "gist": "arrival time", "answerable": true, "cites": ["arrival-time"]}
-    ],
-    "source": "new",
-    "note": "the turn ended cancelled"
-  },
-  {
-    "id": "G907",
-    "family": "segmentation-edges",
-    "message": "Where are you, how do I pay, and can you write me a sick note?",
-    "requests": [
-      {"intent": "faq_question", "gist": "clinic location", "answerable": true, "cites": ["hours-location"]},
-      {"intent": "faq_question", "gist": "payment methods", "answerable": true, "cites": ["payment"]},
-      {"intent": "not_authorized", "gist": "sick note"}
-    ],
-    "source": "new",
-    "note": "cap_bound turn whose third produced intent disagrees with the label"
-  },
-  {
-    "id": "G908",
-    "family": "small-talk",
-    "message": "Thanks!",
-    "requests": [
-      {"intent": "small_talk", "gist": "thanks"}
-    ],
-    "source": "new",
-    "note": "the first attempt never reached the service, so it took two"
-  },
-  {
-    "id": "G909",
-    "family": "single-faq-answered",
-    "message": "What does a visit cost without insurance?",
-    "requests": [
-      {"intent": "faq_question", "gist": "self-pay rates", "answerable": true, "cites": ["out-of-pocket-rates"]}
-    ],
-    "source": "new",
-    "note": "the patient message carries assistant_failed beside a stored reply"
+   "name": "small-talk",
+   "tests": "Synthetic small-talk cases driving the harness's own tests. Not part of the golden set, so they declare no family letter and keep their G9nn ids.",
+   "cases": [
+    {
+     "id": "G908",
+     "message": "Thanks!",
+     "requests": [
+      {
+       "intent": "small_talk",
+       "gist": "thanks"
+      }
+     ],
+     "note": "the first attempt never reached the service, so it took two"
+    }
+   ]
   }
-]
+ ]
+}

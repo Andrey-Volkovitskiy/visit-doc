@@ -1,138 +1,329 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://visitdoc.local/evals/golden/schema.json",
-  "title": "VisitDoc golden-set case",
-  "description": "One labelled patient message. The label attaches to a request, not to a message: `requests` is the expected segmentation, in order. Anything derivable from `requests` is deliberately absent - see README.md.",
-  "type": "array",
+  "title": "VisitDoc golden set",
+  "description": "The golden set, grouped by family. A family carries the description of what it tests, so the grouping is data rather than a comment the format cannot hold. The label attaches to a request, not to a message: `requests` is the expected segmentation, in order. Anything derivable from `requests` is deliberately absent - see README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "families"
+  ],
   "$defs": {
-    "practitioner": {"type": "string", "minLength": 1, "description": "A pool name the scheduler seeds a fresh session with: `William Osler` (General Practice, Mon-Fri 09:00-17:00) or `Andreas Vesalius` (Dentistry, Mon-Sat 09:00-14:00)."},
-    "day": {"type": "string", "pattern": "^[+-][0-9]+d$", "description": "Days from the run clock's date: `+3d` on the default Monday clock is Thursday."},
-    "time": {"type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$", "description": "Local start time, HH:MM."}
+    "practitioner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A pool name the scheduler seeds a fresh session with: `William Osler` (General Practice, Mon-Fri 09:00-17:00) or `Andreas Vesalius` (Dentistry, Mon-Sat 09:00-14:00)."
+    },
+    "day": {
+      "type": "string",
+      "pattern": "^[+-][0-9]+d$",
+      "description": "Days from the run clock's date: `+3d` on the default Monday clock is Thursday."
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+      "description": "Local start time, HH:MM."
+    }
   },
-  "items": {
-    "type": "object",
-    "additionalProperties": false,
-    "required": ["id", "family", "message", "requests", "source"],
-    "properties": {
-      "id": {"type": "string", "pattern": "^G[0-9]{3}$"},
-      "family": {"type": "string", "description": "What this case is here to exercise. Grouping only - not scored."},
-      "message": {"type": "string", "minLength": 1, "description": "The patient's message, verbatim, as one turn."},
-      "history": {
-        "type": "array",
-        "description": "Prior turns, oldest first. Present only where the label depends on them.",
-        "items": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["role", "text"],
-          "properties": {
-            "role": {"enum": ["user", "assistant"]},
-            "text": {"type": "string", "minLength": 1}
-          }
-        }
-      },
-      "requests": {
-        "type": "array",
-        "minItems": 1,
-        "description": "The expected segmentation. Array order IS the expected order; position is not stored separately.",
-        "items": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["intent", "gist"],
-          "properties": {
-            "intent": {
-              "enum": ["faq_question", "booking", "small_talk", "urgent_condition",
-                       "distress", "booking_for_another", "call_staff", "not_authorized"],
-              "description": "Must match chat.domain.schemas.IntentLabel."
-            },
-            "gist": {
-              "type": "string",
-              "description": "A human reference for what this request asks. NOT SCORED - a segment has many valid restatements, and exact-matching the classifier's wording would measure phrasing, not segmentation."
-            },
-            "answerable": {
-              "type": "boolean",
-              "description": "faq_question only. true when the pinned corpus answers this request, false when it is a gap. Two-valued on purpose: FaqVerdict's four abstentions are identical in behaviour and nothing may branch on which one it is, so only `FaqVerdict.answered` is labelable by hand."
-            },
-            "cites": {
-              "type": "array",
-              "items": {"type": "string"},
-              "description": "faq_question only. Corpus entry ids from corpus.json the answer must rest on. Non-empty exactly when answerable is true."
-            },
-            "tools": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "enum": ["list_practitioners", "check_availability", "book_appointment",
-                         "list_my_appointments", "reschedule_appointment", "cancel_appointment"]
-              },
-              "description": "booking only. The tools whose absence means the request was not served - a required subset, not a sequence. A check_availability that precedes a book_appointment is not a miss."
-            }
-          },
-          "allOf": [
-            {
-              "if": {"properties": {"intent": {"const": "faq_question"}}},
-              "then": {"required": ["answerable", "cites"]},
-              "else": {"not": {"anyOf": [{"required": ["answerable"]}, {"required": ["cites"]}]}}
-            },
-            {
-              "if": {"properties": {"intent": {"const": "booking"}}},
-              "then": {"required": ["tools"]},
-              "else": {"not": {"required": ["tools"]}}
-            },
-            {
-              "if": {"properties": {"answerable": {"const": false}}},
-              "then": {"properties": {"cites": {"maxItems": 0}}}
-            },
-            {
-              "if": {"properties": {"answerable": {"const": true}}},
-              "then": {"properties": {"cites": {"minItems": 1}}}
-            }
-          ]
-        }
-      },
-      "scheduling": {
+  "properties": {
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The families, in the order the set is meant to be read.",
+      "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["given", "expect"],
-        "description": "Present exactly on a case carrying a booking request. What the case should leave behind in the scheduler: `given` is planted before the turn, `expect` is the COMPLETE set of the patient's appointments after the case's last turn - the reply's, when `reply` is present. A case expected to change nothing restates `given`.",
+        "required": [
+          "name",
+          "tests",
+          "cases"
+        ],
         "properties": {
-          "given": {
-            "type": "array",
-            "description": "The standing appointments planted before the turn, through the scheduler's own contract. May be empty.",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["practitioner", "day", "time"],
-              "properties": {
-                "practitioner": {"$ref": "#/$defs/practitioner"},
-                "day": {"$ref": "#/$defs/day"},
-                "time": {"$ref": "#/$defs/time"}
-              }
-            }
+          "letter": {
+            "type": "string",
+            "pattern": "^[a-z]$",
+            "description": "The family's letter, which every case id in it must carry. Omitted by the harness's own fixtures, which are not a family of the golden set."
           },
-          "expect": {
-            "type": "array",
-            "description": "Every appointment the patient holds after the turn, standing or cancelled. Matched one-to-one; an appointment no entry accounts for is a failure.",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["practitioner", "day", "status"],
-              "properties": {
-                "practitioner": {"$ref": "#/$defs/practitioner"},
-                "day": {"$ref": "#/$defs/day"},
-                "time": {"$ref": "#/$defs/time", "description": "Omitted means any start that day - how a message that names no time is labelled."},
-                "status": {"enum": ["standing", "cancelled"]}
-              }
-            }
-          },
-          "reply": {
+          "name": {
             "type": "string",
             "minLength": 1,
-            "description": "The patient's scripted answer to what the first turn asked, posted verbatim as a second full turn in the same chat once the first turn has replied (FR-037b). Present on a case whose write the booking loop has to confirm first; with it, the appointments after the first turn must still be `given`, all standing, and `expect` is read after the reply."
+            "description": "What this family is here to exercise. Grouping only - not scored."
+          },
+          "tests": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What it tests: prose for a human, carried as data so it sits with the cases it describes."
+          },
+          "cases": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "message",
+                "requests"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^G(-[a-z]-[0-9]{2}|[0-9]{3})$",
+                  "description": "`G-<family letter>-<nn>` in the golden set, where the letter is the family's own and nn is the case's position in it - the loader checks that agreement, which a pattern cannot. `G<nnn>` is admitted for the harness's own test fixtures, which are synthetic and belong to no family."
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The patient's message, verbatim, as one turn."
+                },
+                "history": {
+                  "type": "array",
+                  "description": "Prior turns, oldest first. Present only where the label depends on them.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "role",
+                      "text"
+                    ],
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "user",
+                          "assistant"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "requests": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "The expected segmentation. Array order IS the expected order; position is not stored separately.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "intent",
+                      "gist"
+                    ],
+                    "properties": {
+                      "intent": {
+                        "enum": [
+                          "faq_question",
+                          "booking",
+                          "small_talk",
+                          "urgent_condition",
+                          "distress",
+                          "booking_for_another",
+                          "call_staff",
+                          "not_authorized"
+                        ],
+                        "description": "Must match chat.domain.schemas.IntentLabel."
+                      },
+                      "gist": {
+                        "type": "string",
+                        "description": "A human reference for what this request asks. NOT SCORED - a segment has many valid restatements, and exact-matching the classifier's wording would measure phrasing, not segmentation."
+                      },
+                      "answerable": {
+                        "type": "boolean",
+                        "description": "faq_question only. true when the pinned corpus answers this request, false when it is a gap. Two-valued on purpose: FaqVerdict's four abstentions are identical in behaviour and nothing may branch on which one it is, so only `FaqVerdict.answered` is labelable by hand."
+                      },
+                      "cites": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "faq_question only. Corpus entry ids from corpus.json the answer must rest on. Non-empty exactly when answerable is true."
+                      },
+                      "tools": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "enum": [
+                            "list_practitioners",
+                            "check_availability",
+                            "book_appointment",
+                            "list_my_appointments",
+                            "reschedule_appointment",
+                            "cancel_appointment"
+                          ]
+                        },
+                        "description": "booking only. The tools whose absence means the request was not served - a required subset, not a sequence. A check_availability that precedes a book_appointment is not a miss."
+                      }
+                    },
+                    "allOf": [
+                      {
+                        "if": {
+                          "properties": {
+                            "intent": {
+                              "const": "faq_question"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "answerable",
+                            "cites"
+                          ]
+                        },
+                        "else": {
+                          "not": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "answerable"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "cites"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "intent": {
+                              "const": "booking"
+                            }
+                          }
+                        },
+                        "then": {
+                          "required": [
+                            "tools"
+                          ]
+                        },
+                        "else": {
+                          "not": {
+                            "required": [
+                              "tools"
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "answerable": {
+                              "const": false
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "cites": {
+                              "maxItems": 0
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": {
+                          "properties": {
+                            "answerable": {
+                              "const": true
+                            }
+                          }
+                        },
+                        "then": {
+                          "properties": {
+                            "cites": {
+                              "minItems": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "scheduling": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "given",
+                    "expect"
+                  ],
+                  "description": "Present exactly on a case carrying a booking request. What the case should leave behind in the scheduler: `given` is planted before the turn, `expect` is the COMPLETE set of the patient's appointments after the case's last turn - the reply's, when `reply` is present. A case expected to change nothing restates `given`.",
+                  "properties": {
+                    "given": {
+                      "type": "array",
+                      "description": "The standing appointments planted before the turn, through the scheduler's own contract. May be empty.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "practitioner",
+                          "day",
+                          "time"
+                        ],
+                        "properties": {
+                          "practitioner": {
+                            "$ref": "#/$defs/practitioner"
+                          },
+                          "day": {
+                            "$ref": "#/$defs/day"
+                          },
+                          "time": {
+                            "$ref": "#/$defs/time"
+                          }
+                        }
+                      }
+                    },
+                    "expect": {
+                      "type": "array",
+                      "description": "Every appointment the patient holds after the turn, standing or cancelled. Matched one-to-one; an appointment no entry accounts for is a failure.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "practitioner",
+                          "day",
+                          "status"
+                        ],
+                        "properties": {
+                          "practitioner": {
+                            "$ref": "#/$defs/practitioner"
+                          },
+                          "day": {
+                            "$ref": "#/$defs/day"
+                          },
+                          "time": {
+                            "$ref": "#/$defs/time",
+                            "description": "Omitted means any start that day - how a message that names no time is labelled."
+                          },
+                          "status": {
+                            "enum": [
+                              "standing",
+                              "cancelled"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "reply": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The patient's scripted answer to what the first turn asked, posted verbatim as a second full turn in the same chat once the first turn has replied (FR-037b). Present on a case whose write the booking loop has to confirm first; with it, the appointments after the first turn must still be `given`, all standing, and `expect` is read after the reply."
+                    }
+                  }
+                },
+                "note": {
+                  "type": "string",
+                  "description": "Why the case is here, or what is fragile about its label."
+                }
+              }
+            }
           }
         }
-      },
-      "source": {"type": "string", "description": "Where the case came from: `<spec>/<set>#<id>`, or `new`. A `(relabelled)` or `(re-expressed)` suffix means PROVENANCE.md records what changed."},
-      "note": {"type": "string", "description": "Why the case is here, or what is fragile about its label."}
+      }
     }
   }
 }

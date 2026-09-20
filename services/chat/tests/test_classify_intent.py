@@ -563,7 +563,7 @@ def test_the_prompt_puts_a_question_about_what_a_visit_requires_on_the_faq_side(
     prompt = " ".join(_prompt().split())
     assert "a question about what a visit requires or costs" in prompt
     assert '"is a dermatologist free on the 14th?" is booking' in prompt
-    assert '"do i need a referral to see a dermatologist?" is faq_question' in prompt
+    assert '"what does a dermatologist charge?" is faq_question' in prompt
 
 
 def test_the_prompt_keeps_the_rules_governing_a_booking_act_on_the_faq_side() -> None:
