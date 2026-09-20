@@ -308,8 +308,8 @@ nothing, and today each one takes the FAQ path, abstains, and calls a human — 
 - **Escalation is narrowed to its three real causes** — the patient asked for a person, the patient
   asked for something the assistant cannot provide (an out-of-scope request, or a corpus that cannot
   answer), or something failed. A message that requests nothing is none of those and calls nobody.
-  `unknown` stops meaning "try the FAQ path and see": a request the assistant has no path for is
-  escalated deliberately — told in fixed text that a person now has it, without silencing the
+  `not_authorized` stops meaning "try the FAQ path and see": a request the assistant has no path
+  for is escalated deliberately — told in fixed text that a person now has it, without silencing the
   assistant — and a non-request is answered. The middle cause is recorded as two, a corpus gap and a
   request the assistant is not authorized to serve, because one is fixed by writing an FAQ entry and
   the other by nothing.
@@ -364,8 +364,8 @@ of nothing.
   original defect, with the stronger question's chunks crowding the other out under the 3-chunk
   cap. Citations are derived per segment and deduplicated at the merge.
 - **The routing rules of 1c and 1f survive as they are**, now read per segment: `call_staff` still
-  takes the whole turn, small talk is still dropped whenever any segment is a real request, and an
-  `unknown` segment is still escalated deliberately.
+  takes the whole turn, small talk is still dropped whenever any segment is a real request, and a
+  `not_authorized` segment is still escalated deliberately.
 - **A single-request message pays nothing.** One segment means one specialist, no merge and no
   composing call — the existing path, byte for byte. *(The routing-time flag that used to answer
   both "do the specialists stream?" and "does the composer merge?" was split in two: the second is

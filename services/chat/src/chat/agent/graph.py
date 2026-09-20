@@ -88,9 +88,9 @@ _HAND_OFF = "hand_off"
 _COMPOSE_ANSWER = "compose_answer"
 
 # Which specialist each classified intent implies. A label with no specialist either
-# calls a person - every key of `_HANDOFF_REASON_BY_INTENT`, `unknown` included, which
-# is not a specialist's job at all - or is `classification_failed`, the one label left
-# that falls back to the FAQ path. See `_select_specialists`.
+# calls a person - every key of `_HANDOFF_REASON_BY_INTENT`, `not_authorized` included,
+# which is not a specialist's job at all - or is `classification_failed`, the one label
+# left that falls back to the FAQ path. See `_select_specialists`.
 _SPECIALIST_BY_INTENT = {
     IntentLabel.FAQ_QUESTION: _ANSWER_FAQ,
     IntentLabel.BOOKING: _HANDLE_BOOKING,
@@ -188,7 +188,7 @@ _HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
     IntentLabel.DISTRESS: EscalationReason.DISTRESS,
     IntentLabel.CALL_STAFF: EscalationReason.PATIENT_ASKED_FOR_PERSON,
     IntentLabel.BOOKING_FOR_ANOTHER: EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
-    IntentLabel.UNKNOWN: EscalationReason.NOT_AUTHORIZED,
+    IntentLabel.NOT_AUTHORIZED: EscalationReason.NOT_AUTHORIZED,
 }
 
 
@@ -515,10 +515,10 @@ def _build_graph(
             # owed, and those three must be the same answer.
             stopping = reasons[0] if reasons else None
             specialists = _select_specialists(intents, stopping)
-            # `unknown` alongside something servable is a notice owed, not a hand-off:
-            # the servable half still runs, and the composer says the rest went to
-            # staff (FR-022d). Alone - which is what "the strongest cause is this one"
-            # means for the weakest cause there is - it is the whole turn.
+            # `not_authorized` alongside something servable is a notice owed, not a
+            # hand-off: the servable half still runs, and the composer says the rest
+            # went to staff (FR-022d). Alone - which is what "the strongest cause is
+            # this one" means for the weakest cause there is - it is the whole turn.
             #
             # `_HAND_OFF not in`, not `!= [_HAND_OFF]`: a route that ever carried the
             # hand-off node beside something else must not read here as a notice owed,

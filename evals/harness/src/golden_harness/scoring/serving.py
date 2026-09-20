@@ -6,13 +6,13 @@ Two zero-target shares that share part of a numerator and differ in denominator.
   denominator comes from the label: every `faq_question` labelled answerable in a case
   whose turn was permitted to answer. A turn that was handed off or silenced was not -
   not answering there is the specified behaviour - so those cases leave the denominator
-  and are listed by id. An `unknown` request escalates without silencing, so a case
-  pairing one with a question stays. Its numerator is every such request that did not
-  get an answered verdict, by cause: the turn abstained on it, the case was unaligned so
-  it never became an outcome, or it aligned but was produced under another intent. A
-  request the classifier split into several `faq_question`s is served only when every
-  half was answered - the reply is then whole - and is otherwise unserved at the first
-  half that abstained.
+  and are listed by id. A `not_authorized` request escalates without silencing, so a
+  case pairing one with a question stays. Its numerator is every such request that did
+  not get an answered verdict, by cause: the turn abstained on it, the case was
+  unaligned so it never became an outcome, or it aligned but was produced under another
+  intent. A request the classifier split into several `faq_question`s is served only
+  when every half was answered - the reply is then whole - and is otherwise unserved at
+  the first half that abstained.
 - **Wrong-abstention share** (C2) asks how often an abstention was wrong: of every
   abstention the run produced, those aligned to a labelled-answerable request - each
   half of a split request counted as the abstention it is.

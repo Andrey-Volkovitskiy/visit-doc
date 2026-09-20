@@ -69,7 +69,7 @@
     "requests": [
       {"intent": "faq_question", "gist": "clinic location", "answerable": true, "cites": ["hours-location"]},
       {"intent": "faq_question", "gist": "payment methods", "answerable": true, "cites": ["payment"]},
-      {"intent": "unknown", "gist": "sick note"}
+      {"intent": "not_authorized", "gist": "sick note"}
     ],
     "source": "new",
     "note": "cap_bound turn whose third produced intent disagrees with the label"

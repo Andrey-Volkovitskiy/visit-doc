@@ -26,12 +26,14 @@ _SYSTEM_PROMPT = (
     "Split the visitor's most recent message into the requests it contains, given the "
     "conversation so far, and label each one. Return one segment per request, in the "
     "order the requests appear in the message. The labels are: "
-    "faq_question (a clinic policy/FAQ question), booking "
-    "(anything only the clinic's live appointment records can answer - booking, "
-    "rescheduling, cancelling, or listing appointments, and equally asking which "
-    "practitioners this clinic has, what is the name or specialization of a particular "
-    "practitioner, what a named practitioner specializes in, or which practitioners "
-    " has a particular specialization, or when one of them has a free appointment), "
+    "faq_question (any question about the clinic that is not one of the five booking "
+    "requests below), "
+    "booking (exactly five requests, which are everything the clinic's live "
+    "appointment records can answer and nothing else: (i) which practitioners the "
+    "clinic has, what a named one specializes in, or who has a given specialty; "
+    "(ii) when a practitioner has a free slot; (iii) making an appointment; "
+    "(iv) rescheduling or cancelling one; (v) which appointments this patient already "
+    "has), "
     "small_talk (the message asks for nothing the clinic could act on - a greeting, an "
     "acknowledgement, a thank-you, a farewell, a reaction, a note that they are "
     "thinking it over, a message that is unintelligible, or a question about something "
@@ -63,23 +65,33 @@ _SYSTEM_PROMPT = (
     'appointment is FOR: "book me in with whoever my daughter saw" books for the '
     "patient and is booking. Merely mentioning another person is not this, and neither "
     "is an unclear case - both of those are booking), "
-    "call_staff (the patient explicitly asks to speak to a human), unknown "
+    "call_staff (the patient explicitly asks to speak to a human), not_authorized "
     "(a request the assistant is not authorized to serve, such as a sick note, a "
     "prescription, a records transfer or a billing correction). "
     "A message may carry more than one intent at once. "
     "Three boundaries decide most borderline messages. "
-    "(a) faq_question or booking: a question about what a visit requires - whether a "
-    "referral is needed, whether a specialist can be seen without one, what the "
-    'patient must have first - is faq_question even when it is phrased "can I see '
-    'a specialist if...". booking is a request for, or about, a particular '
-    'appointment, time or practitioner in the live records: "is a dermatologist '
-    'free on the 14th?" is booking. '
+    "(a) faq_question or booking: the five booking requests are a closed list - the "
+    "live records answer those and nothing else - while the FAQ corpus is open, "
+    "gaining entries over time, so no list of its subjects would stay complete. So "
+    "test the message against booking, not against FAQ: if what is asked is not one "
+    "of the five, it is faq_question, whatever its subject. A question about what a "
+    "visit requires or costs is the usual case - whether a referral is needed, whether "
+    "a specialist can be seen without one, what the patient must bring first, what a "
+    'visit is priced at - and stays faq_question even when phrased "can I see a '
+    'specialist if...", because it asks a policy rather than the records. '
+    "Asking the rules governing one "
+    "of the five is a policy question too: the five are acts on this patient's "
+    'records, not the terms those acts are subject to, so "what is your cancellation '
+    'policy?" and "how late may I reschedule?" are faq_question while "cancel my '
+    'Friday appointment" is booking. One specialty can likewise fall on both sides: '
+    '"is a dermatologist free on the 14th?" is booking, and "do I need a referral to '
+    'see a dermatologist?" is faq_question. '
     "(b) faq_question or small_talk: parking, directions, transport, opening hours and "
     "prices at or near the clinic are the clinic's business and faq_question - "
     "including a garage, stop or shop its visitors use. "
-    "(c) faq_question or unknown: asking whether something is possible or how a "
+    "(c) faq_question or not_authorized: asking whether something is possible or how a "
     "policy works - is a deposit required, how long a refund takes, does a copy of an "
-    "invoice cost extra - is faq_question. unknown is asking the clinic to do "
+    "invoice cost extra - is faq_question. not_authorized is asking the clinic to do "
     "something for the "
     "patient that the assistant may not do: issue a sick note, correct or reissue a "
     "bill, transfer records. "

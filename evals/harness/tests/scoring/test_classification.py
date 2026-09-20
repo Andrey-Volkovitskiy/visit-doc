@@ -9,7 +9,7 @@ Expected values, counted by hand from the fixture's case files and `labels.json`
     G904  faq, urgent_condition   faq, urgent_condition       handed_off_turn
     G905  faq                     (silent: not classified)    silenced_turn
     G906  faq                     faq                         cancelled_turn
-    G907  faq, faq, unknown       faq, faq, faq (cap_bound)   -
+    G907  faq, faq, not_authorized faq, faq, faq (cap_bound)   -
     G908  small_talk              small_talk (attempts: 2)    -
     G909  faq                     faq (assistant_failed+reply) -
 
@@ -156,7 +156,7 @@ def test_the_disagreement_list_names_each_case_with_both_intent_sequences() -> N
     assert disagreements["G907"].labelled == [
         IntentLabel.FAQ_QUESTION,
         IntentLabel.FAQ_QUESTION,
-        IntentLabel.UNKNOWN,
+        IntentLabel.NOT_AUTHORIZED,
     ]
     assert disagreements["G907"].produced == [IntentLabel.FAQ_QUESTION] * 3
 

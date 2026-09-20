@@ -10,7 +10,7 @@ Expected values, counted by hand from the fixture's case files and `labels.json`
     G925  answerable             abstained_empty_corpus       abstained    wrong
     G926  small_talk, answerable 1 produced, answered         count mismatch
     G927  answerable, call_staff handed off                   not permitted (FR-031a)
-    G928  answerable, unknown    answered                     served       -
+    G928  answerable, not_authorized answered                  served       -
     G929  gap                    answered                     -            -  (SC-010)
     G930  answerable             answered                     served       -
     G931  answerable             abstained_rerank_floor       abstained    wrong

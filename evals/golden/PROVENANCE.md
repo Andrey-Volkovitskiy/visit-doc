@@ -92,13 +92,14 @@ does not mean one thing at the request level.
    certificate for work* (**G133**) — are not corpus gaps at all. No entry will ever make the
    assistant able to write a sick note, which is `NOT_AUTHORIZED`, not `CORPUS_COULD_NOT_ANSWER`.
    One is fixed by writing an FAQ entry and the other by nothing, which is precisely why 009 split
-   the cause in two. Re-expressed with `unknown` as the second request's intent.
+   the cause in two. Re-expressed with `not_authorized` as the second request's intent.
 
 2. **`009` labelled a whole message with one intent, and two of its messages carry two requests.**
    `C15` (*opening hours, and a sick note*) and `C16` (*book Monday, and reissue a receipt*) were
-   both filed as `unknown` — correct as a turn-level routing answer, wrong as a description of the
-   message. Each is now two requests (**G061**, **G062**), which is also what 009's own `retest`
-   recorded for C16 when it wrote `unknown+booking` into the expected field.
+   both filed as `not_authorized` — correct as a turn-level routing answer, wrong as a
+   description of the message. Each is now two requests (**G061**, **G062**), which is also what 009's own `retest`
+   recorded for C16 when it wrote `unknown+booking` into the expected field — `unknown` being
+   what this label was called then.
 
 3. **`010` labelled segment counts, not segment intents.** Every `compound`/`mixed`/`multi` case
    carries `"expected": 2` and nothing about what the two requests *are*. The per-request shape
@@ -133,6 +134,24 @@ ordered list of `{role, text}`, because a conversation is not one message deep.
 - **The `no-stop` / `not_small_talk` labels** (`009/setE#E4`, and `E2`/`E4`/`E9` in `009/retest`) —
   a label that says what the answer is *not*. It settled the question 009 was asking; nothing at the
   request level can be derived from it.
+
+## The `unknown` intent was renamed `not_authorized` (2026-09-20)
+
+`IntentLabel.UNKNOWN` was named for the classifier being unsure and used for the opposite: a request
+the assistant is not authorized to serve. Since 009 gave it a route of its own — no retrieval, no
+generation, a fixed notice and an escalation under `NOT_AUTHORIZED` — the name said the least
+informative thing about the only label whose whole point is *why* a person is called. It is now
+`not_authorized`, matching the `EscalationReason` and `AttentionMark` it has always mapped to.
+
+The rename reaches the classifier's prompt, `schema.json`'s enum and the 13 cases that carry the
+label: G026, G054–G060, G061, G062, G115, G132, G133. Nothing about what any case asks for, or what
+the assistant is expected to do with it, changed — only the spelling of the label.
+
+`intent` is a scored field, so scoring refuses every run stored before this change that selected any
+of those 13 cases. That includes the 2b run under `specs/012-golden-set-metrics/evaluation/`, which
+is left exactly as the harness wrote it (FR-048a): it already refused to re-score before this rename,
+because the 2a relabelling commits had moved 11 other cases' digests since it was taken. It is a
+record of what happened on 2026-09-15, not a baseline a later run can be compared against.
 
 ## The hours entry made the parking free (2026-09-18)
 

@@ -191,7 +191,7 @@ def test_a_case_whose_both_turns_failed_yet_replied_is_listed_once_naming_both(
 def test_a_changed_intent_stops_scoring_and_names_the_case(
     run_dir: Path, tmp_path: Path
 ) -> None:
-    labels = _labels(_edited_labels(tmp_path, "G908", "intent", "unknown"))
+    labels = _labels(_edited_labels(tmp_path, "G908", "intent", "not_authorized"))
 
     with pytest.raises(LabelDigestMismatchError, match="G908"):
         score_run(run_dir, labels)

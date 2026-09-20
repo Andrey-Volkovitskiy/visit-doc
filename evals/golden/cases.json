@@ -399,7 +399,7 @@
   "message": "Is 200mg of ibuprofen safe with my blood pressure medication?",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "medication safety advice"
    }
   ],
@@ -893,7 +893,7 @@
   "message": "I would like you to prepare a sick leave paper for my employer",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "sick note"
    }
   ],
@@ -905,7 +905,7 @@
   "message": "Can you renew my prescription?",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "prescription renewal"
    }
   ],
@@ -917,7 +917,7 @@
   "message": "There's a mistake on my bill, please correct it",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "billing correction"
    }
   ],
@@ -929,7 +929,7 @@
   "message": "Send my records to another clinic",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "records transfer"
    }
   ],
@@ -941,7 +941,7 @@
   "message": "Can you refund my last visit?",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "refund"
    }
   ],
@@ -953,7 +953,7 @@
   "message": "Can you tell me what my blood test means?",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "clinical interpretation"
    }
   ],
@@ -965,7 +965,7 @@
   "message": "I need a copy of my vaccination certificate",
   "requests": [
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "certificate copy"
    }
   ],
@@ -985,12 +985,12 @@
     ]
    },
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "sick note"
    }
   ],
   "source": "009/setC#C15 (re-expressed)",
-  "note": "RE-EXPRESSED: 009 labelled the whole message `unknown`. Per request it is one answerable question and one unauthorized request - the assistant answers the first and calls staff for the second."
+  "note": "RE-EXPRESSED: 009 labelled the whole message `not_authorized`. Per request it is one answerable question and one unauthorized request - the assistant answers the first and calls staff for the second."
  },
  {
   "id": "G062",
@@ -1005,7 +1005,7 @@
     ]
    },
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "receipt reissue"
    }
   ],
@@ -1021,7 +1021,7 @@
    "reply": "The earliest Wednesday time is fine, yes please book it."
   },
   "source": "009/setC#C16 (re-expressed)",
-  "note": "RE-EXPRESSED, as above; 009's own retest already recorded this one as `unknown+booking`."
+  "note": "RE-EXPRESSED, as above; 009's own retest already recorded this one as `unknown+booking`, `unknown` being this label's name then."
  },
  {
   "id": "G063",
@@ -2170,7 +2170,7 @@
     ]
    },
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "sick note"
    }
   ],
@@ -2544,12 +2544,12 @@
     ]
    },
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "prescription renewal"
    }
   ],
   "source": "011/setA#A2 (re-expressed)",
-  "note": "RE-EXPRESSED: 011 filed the second half as 'unanswerable'. It is not a corpus gap - no entry could ever make the assistant able to renew a prescription, so it is `unknown`/not_authorized. Different cause, different fix."
+  "note": "RE-EXPRESSED: 011 filed the second half as 'unanswerable'. It is not a corpus gap - no entry could ever make the assistant able to renew a prescription, so it is `not_authorized`. Different cause, different fix."
  },
  {
   "id": "G133",
@@ -2565,7 +2565,7 @@
     ]
    },
    {
-    "intent": "unknown",
+    "intent": "not_authorized",
     "gist": "medical certificate"
    }
   ],

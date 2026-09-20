@@ -41,7 +41,7 @@
           "properties": {
             "intent": {
               "enum": ["faq_question", "booking", "small_talk", "urgent_condition",
-                       "distress", "booking_for_another", "call_staff", "unknown"],
+                       "distress", "booking_for_another", "call_staff", "not_authorized"],
               "description": "Must match chat.domain.schemas.IntentLabel."
             },
             "gist": {

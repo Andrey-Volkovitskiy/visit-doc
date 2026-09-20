@@ -105,7 +105,12 @@ then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a st
 `BAND=<band>`) reports what moved between two stored runs, and `make eval-band
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
-directory path, so the committed 2b run is usable as a baseline where it sits. `eval-run` requires the chat service to log JSON, so start the
+directory path, so a committed run can be named as a baseline where it sits. Note that the 2b run
+under `specs/012-golden-set-metrics/evaluation/` no longer re-scores: 24 of its 135 label digests
+disagree with `evals/golden/cases.json`, so `compare` and `score` both refuse it. Eleven of those
+are the 2a relabelling commits and thirteen are the `unknown` → `not_authorized` rename; the run
+stays frozen as the record FR-048a made it, and a current baseline needs a fresh `eval-run`.
+`eval-run` requires the chat service to log JSON, so start the
 stack as `LOG_FORMAT=json make services-up` (the harness reads `.run/chat.log`). Resuming a stopped
 run takes an argument: `uv run --package golden-harness -- python -m golden_harness run --resume
 <run_id>`.
@@ -254,8 +259,22 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   reserve the stronger model for generation. Since 009 the label set says what a message *is*
   before anything decides who handles it: `faq_question`, `booking`, `small_talk` (asks for nothing
   that can be acted on), `urgent_condition`, `distress`, `booking_for_another`, `call_staff` (an
-  explicit request for a human, and nothing else), `unknown` (a request the assistant is not
-  authorized to serve). `unknown` no longer falls through to the FAQ path.
+  explicit request for a human, and nothing else), `not_authorized` (a request the assistant is
+  not authorized to serve). `not_authorized` no longer falls through to the FAQ path, and it is
+  named for what it means rather than for the classifier being unsure.
+- **The `booking`/`faq_question` boundary is decided from the booking side, because only that side
+  is enumerable.** The live records answer a closed set of five requests — the roster and its
+  specialties, a practitioner's free slots, making an appointment, changing or cancelling one, and
+  this patient's own appointments — while the FAQ corpus is open and gains entries at runtime, so
+  no list of *its* subjects stays complete. The prompt therefore states the five and makes
+  `faq_question` the residual: not one of the five means `faq_question`, whatever the subject.
+  Two near-misses are named explicitly rather than left to keyword overlap, because both would
+  otherwise route to records that hold no answer — a question about what a visit *requires or
+  costs* (a referral, what to bring, the price), and a question about the *rules governing* one of
+  the five ("what is your cancellation policy?" against "cancel my Friday appointment"). The five
+  are acts on records, not the terms those acts are subject to. `test_classify_intent.py` compares
+  the prompt's list against `SCHEDULING_TOOLS` for **equality**, so a tool added to the booking
+  node fails the suite rather than silently making "exactly five" untrue.
 - Capabilities are exposed to the agent as **MCP tools** (`search_faq`, `check_availability`,
   `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
 - RAG must include defensible chunking, a reranking step, citations to source documents — derived

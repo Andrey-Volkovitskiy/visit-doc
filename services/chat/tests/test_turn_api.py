@@ -275,9 +275,9 @@ def test_a_question_the_corpus_cannot_answer_still_abstains() -> None:
 
     The message carries no "visit"/"hours" keyword, so `fake_embed_texts` routes it to
     abstain - and the reply is exactly the abstention, never a fabricated booking or
-    hand-off confirmation. This test used to run as `unknown`, which fell through to
-    the FAQ path; that label now has a route of its own, and what is being pinned here
-    is the abstention, so it runs as the question it always was.
+    hand-off confirmation. This test used to run as `not_authorized`, which fell through
+    to the FAQ path; that label now has a route of its own, and what is being pinned
+    here is the abstention, so it runs as the question it always was.
     """
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
@@ -2310,7 +2310,7 @@ async def test_an_unauthorized_request_calls_staff_without_stopping_the_chat(
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
         mock_anthropic_cls.return_value = fake_anthropic_client_sequence(
-            [[IntentLabel.UNKNOWN], [IntentLabel.FAQ_QUESTION]],
+            [[IntentLabel.NOT_AUTHORIZED], [IntentLabel.FAQ_QUESTION]],
             ["Visiting hours are 8am to 5pm."],
         )
         with TestClient(app):

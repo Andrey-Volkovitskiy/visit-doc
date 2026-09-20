@@ -272,12 +272,12 @@ def test_catch_all_result_is_logged_as_a_normal_classification(
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
     ):
         anthropic_client = fake_anthropic_client(
-            ["Visiting hours."], intents=[IntentLabel.UNKNOWN]
+            ["Visiting hours."], intents=[IntentLabel.NOT_AUTHORIZED]
         )
         asyncio.run(_run_turn(anthropic_client, "what is the weather today?"))
 
     classified = next(e for e in logs if e["event"] == "intent.classified")
-    assert classified["intents"] == [IntentLabel.UNKNOWN]
+    assert classified["intents"] == [IntentLabel.NOT_AUTHORIZED]
 
 
 def test_classification_failure_is_recorded_and_does_not_block_the_faq_reply(
@@ -600,8 +600,8 @@ def test_an_intent_with_no_specialist_falls_back_to_the_faq_path(
     seeded_entry: int, intents: list[IntentLabel]
 ) -> None:
     """A failure is not evidence about what the message was, so the corpus is still
-    the cheapest guess that can produce the right answer. `unknown` no longer belongs
-    here: spec 009 gives it a route of its own (FR-022)."""
+    the cheapest guess that can produce the right answer. `not_authorized` no longer
+    belongs here: spec 009 gives it a route of its own (FR-022)."""
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
@@ -1278,7 +1278,9 @@ async def test_an_unauthorized_request_retrieves_nothing_and_says_so() -> None:
     from chat.agent.escalation import HANDOFF_TEXT
 
     escalation = EscalationRequests()
-    client = fake_anthropic_client(["never generated"], intents=[IntentLabel.UNKNOWN])
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.NOT_AUTHORIZED]
+    )
 
     with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
         events = await _run_turn(
@@ -1296,7 +1298,9 @@ async def test_an_unauthorized_request_retrieves_nothing_and_says_so() -> None:
 
 async def test_an_unauthorized_request_does_not_silence_the_conversation() -> None:
     escalation = EscalationRequests()
-    client = fake_anthropic_client(["never generated"], intents=[IntentLabel.UNKNOWN])
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.NOT_AUTHORIZED]
+    )
 
     await _run_turn(client, "please renew my prescription", escalation=escalation)
 
@@ -1311,7 +1315,7 @@ async def test_an_unauthorized_request_beside_a_question_answers_and_forwards(
     escalation = EscalationRequests()
     client = fake_anthropic_client(
         ["Visiting hours are 8am to 5pm."],
-        intents=[IntentLabel.UNKNOWN, IntentLabel.FAQ_QUESTION],
+        intents=[IntentLabel.NOT_AUTHORIZED, IntentLabel.FAQ_QUESTION],
     )
 
     with (
@@ -1434,7 +1438,8 @@ async def test_the_phase_two_join_is_computable_from_one_turns_lines() -> None:
 
 
 async def test_small_talk_beside_an_unauthorized_request_is_dropped() -> None:
-    """FR-008 holds for `unknown` too: it is another intent, so the pleasantry goes.
+    """FR-008 holds for `not_authorized` too: it is another intent, so the pleasantry
+    goes.
 
     The combination no earlier test paired. Routed to the small-talk node with a notice
     owed, the turn replied twice - the node streams unconditionally, having no collect
@@ -1446,7 +1451,7 @@ async def test_small_talk_beside_an_unauthorized_request_is_dropped() -> None:
     escalation = EscalationRequests()
     client = fake_anthropic_client(
         ["never generated"],
-        intents=[IntentLabel.SMALL_TALK, IntentLabel.UNKNOWN],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.NOT_AUTHORIZED],
     )
 
     with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
@@ -1472,7 +1477,7 @@ async def test_exactly_one_terminal_event_reaches_the_patient_on_that_turn() -> 
     # directly rather than only through the routing record.
     client = fake_anthropic_client(
         ["never generated"],
-        intents=[IntentLabel.SMALL_TALK, IntentLabel.UNKNOWN],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.NOT_AUTHORIZED],
     )
 
     events = await _run_turn(client, "Thanks! Please renew my prescription")
@@ -1532,7 +1537,7 @@ async def test_an_unauthorized_request_inside_a_stopping_turn_is_recorded_too() 
     escalation = EscalationRequests()
     client = fake_anthropic_client(
         ["never generated"],
-        intents=[IntentLabel.UNKNOWN, IntentLabel.DISTRESS],
+        intents=[IntentLabel.NOT_AUTHORIZED, IntentLabel.DISTRESS],
     )
 
     await _run_turn(
@@ -1555,7 +1560,7 @@ async def test_the_compose_record_says_whether_a_notice_was_merged_in(
 ) -> None:
     client = fake_anthropic_client(
         ["Hours are 8-5, and the sick note has gone to staff."],
-        intents=[IntentLabel.UNKNOWN, IntentLabel.FAQ_QUESTION],
+        intents=[IntentLabel.NOT_AUTHORIZED, IntentLabel.FAQ_QUESTION],
     )
 
     with (
@@ -2084,7 +2089,7 @@ def test_an_unauthorized_request_beside_a_question_is_a_notice(
             ["Visiting hours are 8am to 5pm."],
             segments=[
                 (IntentLabel.FAQ_QUESTION, "when can I visit?"),
-                (IntentLabel.UNKNOWN, "write me a sick note"),
+                (IntentLabel.NOT_AUTHORIZED, "write me a sick note"),
             ],
         )
         events = asyncio.run(
@@ -2105,7 +2110,7 @@ def test_an_unauthorized_request_alone_hands_the_turn_over(seeded_entry: int) ->
     ):
         anthropic_client = fake_anthropic_client(
             ["unused"],
-            segments=[(IntentLabel.UNKNOWN, "write me a sick note")],
+            segments=[(IntentLabel.NOT_AUTHORIZED, "write me a sick note")],
         )
         events = asyncio.run(_run_turn(anthropic_client, "write me a sick note"))
 

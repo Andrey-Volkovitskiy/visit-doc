@@ -2,6 +2,7 @@
 
 import pytest
 from chat.agent.classify_intent import ClassificationFailedError, classify_intent
+from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
 from chat.domain.models import Message, MessageSender
 from chat.domain.schemas import IntentLabel, RequestSegment
 from pydantic import ValidationError
@@ -31,11 +32,11 @@ async def test_classify_intent_returns_multiple_labels() -> None:
 
 
 async def test_classify_intent_returns_catch_all_label() -> None:
-    client = fake_classify_intent_client([IntentLabel.UNKNOWN])
+    client = fake_classify_intent_client([IntentLabel.NOT_AUTHORIZED])
 
     result = await classify_intent(client, _CONTEXT)
 
-    assert result.intents == [IntentLabel.UNKNOWN]
+    assert result.intents == [IntentLabel.NOT_AUTHORIZED]
 
 
 async def test_classify_intent_raises_on_api_error() -> None:
@@ -185,17 +186,21 @@ def test_the_prompt_says_the_same_words_can_mean_different_things() -> None:
 
 def test_the_prompt_narrows_calling_staff_to_asking_for_a_human() -> None:
     # Before 1f this label collected "an urgent or staff-handled issue, e.g. a billing
-    # problem" - which now belongs to `unknown` (no silence) or `urgent_condition`
+    # problem" - which now belongs to `not_authorized` (no silence) or
+    # `urgent_condition`
     # (silence). The label and the cause it sets now say the same thing.
     prompt = _prompt()
     assert "explicitly asks to speak to a human" in prompt
-    assert "billing" in prompt  # still named, but as an example of `unknown`
+    # still named, but as an example of `not_authorized`
+    assert "billing" in prompt
     billing_at = prompt.index("billing")
-    unknown_at = prompt.index("unknown (")
-    assert unknown_at < billing_at
+    not_authorized_at = prompt.index("not_authorized (")
+    assert not_authorized_at < billing_at
 
 
-def test_the_prompt_defines_unknown_as_a_request_that_may_not_be_served() -> None:
+def test_the_prompt_defines_not_authorized_as_a_request_that_may_not_be_served() -> (
+    None
+):
     prompt = _prompt()
     assert "not authorized to serve" in prompt
 
@@ -513,12 +518,64 @@ async def test_the_classification_is_sampled_at_temperature_zero() -> None:
     assert client.messages.create.call_args.kwargs["temperature"] == 0.0
 
 
+# Each booking tool, and the words the prompt's closed list describes it with. Compared
+# for equality against `SCHEDULING_TOOLS`, not inclusion: a tool added to the booking
+# node without a phrase here is a capability the prompt's "exactly five requests" no
+# longer covers, and nothing else catches the closed list quietly becoming untrue.
+_BOOKING_CAPABILITY_IN_PROMPT = {
+    "list_practitioners": "which practitioners the clinic has",
+    "check_availability": "when a practitioner has a free slot",
+    "book_appointment": "making an appointment",
+    "reschedule_appointment": "rescheduling or cancelling one",
+    "cancel_appointment": "rescheduling or cancelling one",
+    "list_my_appointments": "which appointments this patient already has",
+}
+
+
+def test_the_prompt_describes_every_booking_tool_and_no_others() -> None:
+    assert {tool.name for tool in SCHEDULING_TOOLS} == set(
+        _BOOKING_CAPABILITY_IN_PROMPT
+    )
+
+    prompt = " ".join(_prompt().split())
+    for phrase in set(_BOOKING_CAPABILITY_IN_PROMPT.values()):
+        assert phrase in prompt
+
+
+def test_the_prompt_counts_the_closed_booking_list_correctly() -> None:
+    # The six tools group into five requests because one phrase covers rescheduling and
+    # cancelling. If a seventh tool ever adds a sixth phrase, "five" is wrong.
+    assert len(set(_BOOKING_CAPABILITY_IN_PROMPT.values())) == 5
+    assert "exactly five requests" in " ".join(_prompt().split())
+
+
+def test_the_prompt_tests_against_booking_rather_than_against_faq() -> None:
+    """The FAQ corpus gains entries, so only the booking side can be enumerated."""
+    prompt = " ".join(_prompt().split())
+    assert "the five booking requests are a closed list" in prompt
+    assert "test the message against booking, not against faq" in prompt
+    assert "not one of the five, it is faq_question" in prompt
+
+
 def test_the_prompt_puts_a_question_about_what_a_visit_requires_on_the_faq_side() -> (
     None
 ):
-    prompt = _prompt()
-    assert "faq_question or booking: a question about what a visit requires" in prompt
+    prompt = " ".join(_prompt().split())
+    assert "a question about what a visit requires or costs" in prompt
     assert '"is a dermatologist free on the 14th?" is booking' in prompt
+    assert '"do i need a referral to see a dermatologist?" is faq_question' in prompt
+
+
+def test_the_prompt_keeps_the_rules_governing_a_booking_act_on_the_faq_side() -> None:
+    """G018 asks the cancellation policy, which the closed list must not capture.
+
+    "Cancel one" is item (iv), so a rule read only by keyword would route a question
+    about the terms of cancelling to the records, which hold no terms to answer it.
+    """
+    prompt = " ".join(_prompt().split())
+    assert "the five are acts on this patient's records, not the terms" in prompt
+    assert '"what is your cancellation policy?"' in prompt
+    assert 'faq_question while "cancel my friday appointment" is booking' in prompt
 
 
 def test_the_prompt_puts_logistics_near_the_clinic_on_the_faq_side() -> None:
@@ -529,8 +586,12 @@ def test_the_prompt_puts_logistics_near_the_clinic_on_the_faq_side() -> None:
 
 def test_the_prompt_separates_asking_about_a_policy_from_asking_for_an_action() -> None:
     prompt = _prompt()
-    assert "faq_question or unknown: asking whether something is possible" in prompt
-    assert "unknown is asking the clinic to do something for the patient" in prompt
+    assert (
+        "faq_question or not_authorized: asking whether something is possible" in prompt
+    )
+    assert (
+        "not_authorized is asking the clinic to do something for the patient" in prompt
+    )
 
 
 def test_the_prompt_forbids_a_restatement_that_changes_the_question() -> None:

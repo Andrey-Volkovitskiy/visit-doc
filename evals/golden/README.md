@@ -87,7 +87,7 @@ Deriving it at read time is what keeps the two from disagreeing:
 | `distress` | `DISTRESS` |
 | `call_staff` | `PATIENT_ASKED_FOR_PERSON` |
 | `booking_for_another` | `BOOKING_FOR_ANOTHER_PERSON` |
-| `unknown` | `NOT_AUTHORIZED` |
+| `not_authorized` | `NOT_AUTHORIZED` |
 | `faq_question` with `answerable: false` | `CORPUS_COULD_NOT_ANSWER` |
 | anything else | none |
 

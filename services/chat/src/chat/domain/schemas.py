@@ -58,7 +58,7 @@ class IntentLabel(StrEnum):
     DISTRESS = "distress"
     BOOKING_FOR_ANOTHER = "booking_for_another"
     CALL_STAFF = "call_staff"
-    UNKNOWN = "unknown"
+    NOT_AUTHORIZED = "not_authorized"
     CLASSIFICATION_FAILED = "classification_failed"
 
 
