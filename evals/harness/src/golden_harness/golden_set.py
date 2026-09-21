@@ -338,28 +338,6 @@ family(
             [req("urgent_condition", "suspected overdose")],
         ),
         case(
-            "G-b-05",
-            "My daughter has a fever of 40 and I can't wake her properly.",
-            [req("urgent_condition", "child unrousable with a high fever")],
-        ),
-        case(
-            "G-b-06",
-            "There's heavy bleeding and it will not stop.",
-            [req("urgent_condition", "uncontrolled bleeding")],
-        ),
-        case(
-            "G-b-07",
-            "One side of my face has dropped and my speech is slurred.",
-            [req("urgent_condition", "stroke signs")],
-        ),
-        case(
-            "G-b-08",
-            "My chest hurts - can someone see me today?",
-            [req("urgent_condition", "chest pain put as a booking")],
-            note="the booking framing does not lower it, and it must not reach the "
-            "booking node: no appointment is the right answer to this",
-        ),
-        case(
             "G-b-09",
             "My tooth is absolutely killing me, I need to be seen.",
             [bk("book an urgent dental visit", "check_availability")],

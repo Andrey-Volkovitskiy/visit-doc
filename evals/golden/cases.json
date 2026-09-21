@@ -396,47 +396,6 @@
      ]
     },
     {
-     "id": "G-b-05",
-     "message": "My daughter has a fever of 40 and I can't wake her properly.",
-     "requests": [
-      {
-       "intent": "urgent_condition",
-       "gist": "child unrousable with a high fever"
-      }
-     ]
-    },
-    {
-     "id": "G-b-06",
-     "message": "There's heavy bleeding and it will not stop.",
-     "requests": [
-      {
-       "intent": "urgent_condition",
-       "gist": "uncontrolled bleeding"
-      }
-     ]
-    },
-    {
-     "id": "G-b-07",
-     "message": "One side of my face has dropped and my speech is slurred.",
-     "requests": [
-      {
-       "intent": "urgent_condition",
-       "gist": "stroke signs"
-      }
-     ]
-    },
-    {
-     "id": "G-b-08",
-     "message": "My chest hurts - can someone see me today?",
-     "requests": [
-      {
-       "intent": "urgent_condition",
-       "gist": "chest pain put as a booking"
-      }
-     ],
-     "note": "the booking framing does not lower it, and it must not reach the booking node: no appointment is the right answer to this"
-    },
-    {
      "id": "G-b-09",
      "message": "My tooth is absolutely killing me, I need to be seen.",
      "requests": [

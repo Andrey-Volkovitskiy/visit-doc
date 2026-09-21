@@ -51,7 +51,9 @@ _SYSTEM_PROMPT = (
     "or sudden severe pain are this however calmly they are put, and remain this when "
     "the patient also asks for an appointment. Everyday hyperbole about an ordinary "
     "complaint is not this "
-    '("my tooth is killing me", "this headache is brutal"), and neither is '
+    '("my tooth is killing me", "this headache is brutal" - an ordinary complaint '
+    "stated beside a request for an appointment is part of that request, not a "
+    "question of its own), and neither is "
     "anything described in the past tense, as having happened last week or last "
     "month, or as "
     "since resolved - those are ordinary requests, however they are worded), "
