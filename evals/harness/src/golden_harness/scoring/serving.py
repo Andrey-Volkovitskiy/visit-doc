@@ -65,12 +65,21 @@ class UnservedCause(StrEnum):
 
 
 class StoppingGate(StrEnum):
-    """Where an abstention stopped - the values of `faq.verdict`'s `blocked_gate`."""
+    """Where an abstention stopped.
+
+    Four of these are the values of `faq.verdict`'s `blocked_gate`. `GENERATION` is
+    not one of them and never appears in that event: it is decided after the gates,
+    when the generation step reports that evidence which cleared both floors does not
+    answer the request. It is named here because this enum answers "where did this
+    abstention stop", and an abstention that stopped past every gate still stopped
+    somewhere.
+    """
 
     EMPTY_CORPUS = "empty_corpus"
     EMPTY_POOL = "empty_pool"
     SIMILARITY_FLOOR = "similarity_floor"
     RERANK_FLOOR = "rerank_floor"
+    GENERATION = "generation"
 
     @classmethod
     def of(cls, verdict: FaqVerdict) -> "StoppingGate":
@@ -83,6 +92,7 @@ class StoppingGate(StrEnum):
             FaqVerdict.ABSTAINED_EMPTY_POOL: cls.EMPTY_POOL,
             FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: cls.SIMILARITY_FLOOR,
             FaqVerdict.ABSTAINED_RERANK_FLOOR: cls.RERANK_FLOOR,
+            FaqVerdict.ABSTAINED_GENERATION: cls.GENERATION,
         }
         if verdict not in gates:
             raise ValueError(f"{verdict.value} is not an abstention")

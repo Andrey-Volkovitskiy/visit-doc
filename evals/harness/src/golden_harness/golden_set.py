@@ -703,7 +703,12 @@ family(
     "sound like clinic policy and most of them overlap an entry heavily in vocabulary, "
     "so the retrieval will surface something plausible. The system must abstain and "
     "raise a corpus gap rather than stretch a neighbouring entry into an answer - a "
-    "stretched answer is a confident false statement to a patient.",
+    "stretched answer is a confident false statement to a patient. The last two name "
+    "the very things an entry lists and ask about a combination of them, which is the "
+    "wording a gap is likeliest to carry through both gates on - they cover the "
+    "region where generation is the only step left to notice the corpus does not "
+    "answer. Whether a given one is stopped at the rerank floor or reaches generation "
+    "is a property of the build, not of the case.",
     [
         case(
             "G-k-01",
@@ -750,6 +755,29 @@ family(
             [gap("follow-up price")],
             note="same subject as the rates entry, which prices first visits by "
             "practitioner type and never distinguishes a follow-up",
+        ),
+        case(
+            "G-k-15",
+            "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same "
+            "visit, splitting the cost between them?",
+            [gap("splitting a visit's cost between two insurers")],
+            note="the entry lists both insurers among those accepted and says nothing "
+            "about dividing one bill between two of them. It is phrased as the "
+            "entry's own question so it carries through the rerank gate rather than "
+            "being stopped there: the narrative wording this case had first - 'my "
+            "policy will soon be switched to ... is it possible to split the cost?' - "
+            "scored 0.463 against a floor of 0.58 and never reached generation, which "
+            "is not the region the case is for",
+        ),
+        case(
+            "G-k-16",
+            "Can I pay half with my HSA card and half in cash for the same visit?",
+            [gap("splitting one visit's payment across two methods")],
+            note="the same shape against the payment entry, which names cash and HSA "
+            "cards among the methods accepted and says nothing about dividing one "
+            "payment between two of them. It also guards the group-to-member licence "
+            "in the generation prompt: accepting each method separately is not "
+            "accepting them combined",
         ),
     ],
 )

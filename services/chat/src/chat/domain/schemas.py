@@ -153,9 +153,18 @@ class IntentClassificationResult(BaseModel):
 class FaqVerdict(StrEnum):
     """What the FAQ half of a turn did, and for an abstention, where it stopped.
 
-    Six values, each one situation. An abstention names where it stopped, because the
-    four call for four different fixes - add entries, re-index the corpus, rewrite the
-    entry or lower the similarity floor, or lower the rerank floor.
+    Seven values, each one situation. An abstention names where it stopped, because
+    they call for different fixes - add entries, re-index the corpus, rewrite the
+    entry or lower the similarity floor, lower the rerank floor, or write an entry
+    that covers what the nearest one does not.
+
+    `ABSTAINED_GENERATION` is the only one decided after the gates rather than by
+    them: the chunks cleared both floors and the generation step reported that they
+    do not answer the question. It is a real abstention and not a failure - the
+    request produced no answer, so it carries none, cites nothing, and calls a person
+    exactly as the other four do. Before it existed that reply was recorded as
+    `ANSWERED`, carrying a refusal in prose and a citation to a chunk that had not
+    answered, and no one was called.
 
     `ABSTAINED_EMPTY_POOL` is not the similarity floor's doing: the session publishes
     live revisions and the search still matched no chunk of them, which says the index
@@ -165,8 +174,10 @@ class FaqVerdict(StrEnum):
     because the answer rests on different evidence: up to five chunks no cross-encoder
     approved, rather than at most three it did.
 
-    The four abstentions are identical in behaviour - same message, same call to
-    staff, same absence of a generation call. Nothing may branch on which one it is.
+    The five abstentions are identical in what they cause - same message, same call
+    to staff - and nothing may branch on which one it is. They differ in what they
+    cost: `ABSTAINED_GENERATION` is the only one reached after a generation call has
+    been spent, because it is that call's own report.
     """
 
     ANSWERED = "answered"
@@ -175,6 +186,7 @@ class FaqVerdict(StrEnum):
     ABSTAINED_EMPTY_POOL = "abstained_empty_pool"
     ABSTAINED_SIMILARITY_FLOOR = "abstained_similarity_floor"
     ABSTAINED_RERANK_FLOOR = "abstained_rerank_floor"
+    ABSTAINED_GENERATION = "abstained_generation"
 
     @property
     def answered(self) -> bool:

@@ -72,6 +72,23 @@ from chat.rag.retriever import search_faq
 # One question's answer, not the turn's: a turn carrying several questions spends this
 # per question, and the merge step's own budget is built from this number.
 _MAX_TOKENS = 1024
+# The model's way of reporting that evidence which cleared both gates does not answer
+# the question. A signal to this function, never a line for a patient to read: it is
+# withheld from the stream and turned into an abstention, which is what makes the
+# record, the citations and the call to staff agree with what the patient was told.
+# Prose was tried first and cannot work - "I don't have that information" is
+# indistinguishable from an answer to everything downstream, so the turn recorded the
+# request as answered, cited a chunk that had not answered it, and called nobody.
+#
+# Asking for a token rather than a sentence moves how readily the model declines, so
+# the instruction carries a clause about what not to do instead. Without it, "can I
+# pay half by HSA card and half in cash?" - which the payment entry answers for each
+# method and not for the two together - went from declining 5 times in 5 to declining
+# once, the other four listing the methods or answering "yes, you can split your
+# payment between them". The clause returns it to 5 in 5 and leaves the cases that
+# should be answered where they were.
+_NO_ANSWER = "NO_ANSWER"
+
 # The model echoes whatever the prompt calls its material: told to use "the provided
 # context", it opened about one answer in forty with "Based on the provided context",
 # which tells a patient about the pipeline instead of the clinic. So nothing it is shown
@@ -96,10 +113,11 @@ _SYSTEM_PROMPT = (
     "information given with it. Do not use outside knowledge. Be concise. Speak as the "
     "clinic, stating the facts directly: never mention where they came from, and never "
     "refer to context, provided information, documents, excerpts or text you were "
-    "given. Say nothing it does not say - not even a no: when it does not answer the "
-    "question, say plainly that you don't have that information. What it states of "
-    "every member of a group it states of each one, so a question about one of them "
-    "is answered, not missing."
+    "given. Say nothing it does not say - not even a no. What it states of every "
+    "member of a group it states of each one, so a question about one of them is "
+    f"answered, not missing. When it does not answer the question, reply with exactly "
+    f"{_NO_ANSWER} and nothing else. Listing what it does say, or agreeing because "
+    f"the parts are there separately, is worse than replying {_NO_ANSWER}."
 )
 # The heading the retrieved chunks sit under. It names what they are to the patient, so
 # the model repeating it would still read naturally.
@@ -429,6 +447,12 @@ async def _answer_one_bound(
     logger.debug("faq.model_request", messages=to_loggable_messages(messages))
 
     answer_parts: list[str] = []
+    # Nothing reaches the patient until the reply can no longer be the sentinel, which
+    # is a signal to this function and not a sentence to read. The hold is bounded by
+    # the sentinel's own length: the moment the text diverges from it everything held
+    # is flushed in one event and the rest streams token by token, so an answer is
+    # delayed by a few characters and never by the whole generation.
+    withheld = True
     try:
         async with context.anthropic_client.messages.stream(
             model=get_settings().GENERATION_MODEL,
@@ -437,10 +461,16 @@ async def _answer_one_bound(
             messages=messages,
         ) as stream_response:
             async for event in stream_response:
-                if event.type == "text":
-                    answer_parts.append(event.text)
-                    if stream:
-                        yield ChatTokenEvent(text=event.text)
+                if event.type != "text":
+                    continue
+                answer_parts.append(event.text)
+                if not stream:
+                    continue
+                if not withheld:
+                    yield ChatTokenEvent(text=event.text)
+                elif not _may_still_be_sentinel("".join(answer_parts)):
+                    withheld = False
+                    yield ChatTokenEvent(text="".join(answer_parts))
             # Read after the loop, the same way `answer_small_talk` reads it: the SDK
             # accumulates the final message, and this is the documented way to ask why
             # it stopped. Inside the `try` because a failure to obtain it is a failure
@@ -462,6 +492,41 @@ async def _answer_one_bound(
         )
 
     answer_text = "".join(answer_parts)
+    if _NO_ANSWER in answer_text:
+        # The gates passed the evidence and the generation step reports it does not
+        # answer this request. Recorded as the abstention it is, so the outcome carries
+        # no answer, cites nothing, and reaches the same call to staff as any other
+        # gap - rather than an answered verdict whose text declines in prose.
+        #
+        # Anywhere in the reply, not only at its start: the model sometimes writes a
+        # prose decline and appends the sentinel to it. Reading only the start would
+        # take that for an answer and send the patient a reply ending in NO_ANSWER.
+        # `malformed` is what separates the two, because only the bare sentinel is
+        # withheld in full - a trailing one has already streamed by the time it
+        # arrives, so the patient saw a decline in the model's own words while the
+        # record says abstained. That is the safe side of the disagreement and still
+        # worth an operator seeing.
+        logger.info(
+            "faq.no_answer",
+            gates_verdict=outcome.verdict.value,
+            survivor_count=len(survivors),
+            malformed=answer_text.strip() != _NO_ANSWER,
+        )
+        yield FaqSegmentAnswer(
+            position=position,
+            question=segment.text,
+            answer_text="",
+            verdict=FaqVerdict.ABSTAINED_GENERATION,
+            citations=[],
+        )
+        return
+
+    if stream and withheld and answer_text:
+        # Shorter than the sentinel and never ruled out inside the loop, so it is still
+        # held here. Without this the patient would be sent nothing while the turn
+        # reported an answer.
+        yield ChatTokenEvent(text=answer_text)
+
     if not answer_text.strip():
         # A request whose verdict says it was answered has to carry the text it
         # produced - its outcome pairs the two, and "answered, with nothing" is the one
@@ -642,6 +707,19 @@ def _identify(
         }
         for c in chunks
     ]
+
+
+def _may_still_be_sentinel(text: str) -> bool:
+    """Whether `text` could still grow into the sentinel, or already carries it.
+
+    Leading whitespace is ignored, so a reply the model opens with a newline is held
+    on the same terms as one that does not. Text that already begins with the sentinel
+    keeps being held: a sentinel with prose after it is a malformed decline, and
+    sending the patient the prose half of one would be sending them the half the
+    record then contradicts.
+    """
+    seen = text.lstrip()
+    return _NO_ANSWER.startswith(seen) or seen.startswith(_NO_ANSWER)
 
 
 class AbstentionGate(StrEnum):

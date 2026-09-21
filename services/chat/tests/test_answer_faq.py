@@ -82,9 +82,12 @@ class _Stream:
     """Minimal stand-in for `anthropic.messages.stream(...)`."""
 
     def __init__(
-        self, text: str, recorder: dict[str, object], stop_reason: str = "end_turn"
+        self,
+        text: str | list[str],
+        recorder: dict[str, object],
+        stop_reason: str = "end_turn",
     ) -> None:
-        self._text = text
+        self._chunks = [text] if isinstance(text, str) else list(text)
         self._recorder = recorder
         self._stop_reason = stop_reason
 
@@ -97,13 +100,18 @@ class _Stream:
     async def __aiter__(self) -> AsyncIterator[object]:
         from types import SimpleNamespace
 
-        yield SimpleNamespace(type="text", text=self._text)
+        for chunk in self._chunks:
+            yield SimpleNamespace(type="text", text=chunk)
 
     async def get_final_message(self) -> FakeFinalMessage:
         return FakeFinalMessage(self._stop_reason)
 
 
-def _anthropic(recorder: dict[str, object], stop_reason: str = "end_turn") -> AsyncMock:
+def _anthropic(
+    recorder: dict[str, object],
+    stop_reason: str = "end_turn",
+    answer: str | list[str] = "an answer",
+) -> AsyncMock:
     client = AsyncMock()
 
     def stream(**kwargs: object) -> _Stream:
@@ -111,7 +119,7 @@ def _anthropic(recorder: dict[str, object], stop_reason: str = "end_turn") -> As
         recorder["messages"] = kwargs.get("messages")
         recorder.setdefault("prompts", []).append(str(kwargs.get("messages")))
         recorder["max_tokens"] = kwargs.get("max_tokens")
-        return _Stream("an answer", recorder, stop_reason=stop_reason)
+        return _Stream(answer, recorder, stop_reason=stop_reason)
 
     client.messages.stream = stream
     return client
@@ -124,6 +132,7 @@ async def _run(
     live_revisions: list[str] | None = None,
     question: str = "what should I bring?",
     stop_reason: str = "end_turn",
+    answer: str | list[str] = "an answer",
 ) -> tuple[FaqResult, dict[str, object], AsyncMock, EscalationRequests]:
     """Drive one FAQ turn. Returns its result, a call recorder, the rerank mock, and
     the turn's escalation collector."""
@@ -140,7 +149,7 @@ async def _run(
             AsyncMock(),
             AsyncMock(),
             AsyncMock(),
-            _anthropic(recorder, stop_reason=stop_reason),
+            _anthropic(recorder, stop_reason=stop_reason, answer=answer),
             _bursts(question),
             ["p1"],
             _SESSION,
@@ -1273,8 +1282,146 @@ def test_the_generation_prompt_forbids_inferring_an_answer_from_a_silence() -> N
     from chat.agent.answer_faq import _SYSTEM_PROMPT
 
     prompt = " ".join(_SYSTEM_PROMPT.lower().split())
-    assert "don't have that information" in prompt
     assert "say nothing it does not say - not even a no" in prompt
+
+
+def test_the_generation_prompt_asks_for_the_sentinel_and_nothing_else() -> None:
+    # The decline is a signal this module reads, not prose for the patient: read as
+    # prose it is indistinguishable from an answer, and the turn recorded one.
+    from chat.agent.answer_faq import _NO_ANSWER, _SYSTEM_PROMPT
+
+    prompt = " ".join(_SYSTEM_PROMPT.split())
+    assert f"reply with exactly {_NO_ANSWER} and nothing else" in prompt
+
+
+# --- the generation step's own abstention -------------------------------------------
+
+
+async def test_a_sentinel_reply_abstains_at_generation() -> None:
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    result, recorder, _, escalation = await _run(
+        pool=[_chunk(0)], reranked=[_chunk(0, rerank=0.9)], answer=_NO_ANSWER
+    )
+
+    assert _verdict(result) is FaqVerdict.ABSTAINED_GENERATION
+    assert _citations(result) == []
+    assert recorder.get("calls") == 1
+    assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
+
+
+async def test_a_generation_abstention_reads_like_every_other_one() -> None:
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    result, _, _, _ = await _run(
+        pool=[_chunk(0)], reranked=[_chunk(0, rerank=0.9)], answer=_NO_ANSWER
+    )
+
+    assert "knowledge base" in result.answer_text
+
+
+async def test_a_sentinel_with_prose_after_it_is_still_an_abstention() -> None:
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    result, _, _, _ = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        answer=f"{_NO_ANSWER} - but you could ask the front desk.",
+    )
+
+    assert _verdict(result) is FaqVerdict.ABSTAINED_GENERATION
+    assert _citations(result) == []
+
+
+async def test_a_prose_decline_ending_in_the_sentinel_is_an_abstention() -> None:
+    # The model sometimes writes its own decline and appends the sentinel. Read only
+    # at the start, that is an answer, and the patient's reply ends in NO_ANSWER.
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    result, _, _, escalation = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        answer=f"I don't have information on that. {_NO_ANSWER}",
+    )
+
+    assert _verdict(result) is FaqVerdict.ABSTAINED_GENERATION
+    assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
+
+
+async def test_an_answer_opening_like_the_sentinel_is_still_an_answer() -> None:
+    result, _, _, escalation = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        answer="NO, we do not offer that.",
+    )
+
+    assert _verdict(result) is FaqVerdict.ANSWERED
+    assert escalation.recorded == ()
+
+
+async def _streamed(answer: str | list[str]) -> list[object]:
+    """Drive one streaming FAQ turn and return every event it emitted."""
+    recorder: dict[str, object] = {}
+    events: list[object] = []
+    with (
+        patch("chat.agent.answer_faq.search_faq", AsyncMock(return_value=[_chunk(0)])),
+        patch(
+            "chat.agent.answer_faq.rerank_chunks",
+            AsyncMock(return_value=[_chunk(0, rerank=0.9)]),
+        ),
+    ):
+        async for event in answer_faq(
+            AsyncMock(),
+            AsyncMock(),
+            AsyncMock(),
+            _anthropic(recorder, answer=answer),
+            _bursts(),
+            ["p1"],
+            _SESSION,
+            _REVISIONS,
+            segments=_segments("what should I bring?"),
+            escalation=EscalationRequests(),
+            stream=True,
+        ):
+            events.append(event)
+    return events
+
+
+def _streamed_text(events: list[object]) -> str:
+    return "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+
+
+async def test_the_sentinel_never_reaches_the_patient() -> None:
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    events = await _streamed(list(_NO_ANSWER))
+
+    assert _streamed_text(events) == ""
+
+
+async def test_a_sentinel_with_prose_sends_the_patient_neither_half() -> None:
+    from chat.agent.answer_faq import _NO_ANSWER
+
+    events = await _streamed([_NO_ANSWER, " - ask the front desk."])
+
+    assert _streamed_text(events) == ""
+
+
+async def test_a_held_prefix_is_flushed_once_the_reply_diverges() -> None:
+    # "NO_" is a prefix of the sentinel and is held; the rest rules it out, and every
+    # character of the answer has to arrive exactly once.
+    answer = ["NO_", "thing to worry about - bring your ID."]
+
+    events = await _streamed(answer)
+
+    assert _streamed_text(events) == "".join(answer)
+
+
+async def test_a_reply_shorter_than_the_sentinel_still_reaches_the_patient() -> None:
+    # Never ruled out inside the loop, because it ends while still a possible prefix.
+    events = await _streamed("NO")
+
+    assert _streamed_text(events) == "NO"
 
 
 def test_the_generation_prompt_licenses_reading_a_group_down_to_its_members() -> None:

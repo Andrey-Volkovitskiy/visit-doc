@@ -228,7 +228,7 @@ def test_an_answer_on_a_labelled_gap_is_listed() -> None:
     assert gaps[0].question == "Is there parking at the clinic?"
 
 
-def test_the_verdict_distribution_carries_all_six_verdicts_including_zeros() -> None:
+def test_the_verdict_distribution_carries_every_verdict_including_zeros() -> None:
     distribution = _score().verdict_distribution
 
     assert distribution.counts == {
@@ -238,7 +238,11 @@ def test_the_verdict_distribution_carries_all_six_verdicts_including_zeros() -> 
         FaqVerdict.ABSTAINED_EMPTY_POOL: 0,
         FaqVerdict.ABSTAINED_SIMILARITY_FLOOR: 1,
         FaqVerdict.ABSTAINED_RERANK_FLOOR: 3,
+        FaqVerdict.ABSTAINED_GENERATION: 0,
     }
+    # Named rather than counted: a verdict added to the enum and left out of the
+    # distribution would be a row no report ever shows.
+    assert set(distribution.counts) == set(FaqVerdict)
     assert distribution.total == 13
     assert distribution.excluded.counts == {ExclusionReason.HANDED_OFF_TURN: 1}
 
