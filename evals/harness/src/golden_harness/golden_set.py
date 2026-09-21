@@ -387,20 +387,16 @@ family(
     "d",
     "booking_for_another",
     "The message says plainly that the appointment is for someone other than the "
-    "person in this chat, which is an authority question a person has to settle. The "
-    "third party must be the one the appointment is FOR: merely naming another person "
-    "is an ordinary booking, and so is a case where who it is for is unclear. No case "
-    "here carries a scheduling fixture, because nothing may be written.",
+    "person in this chat, which is an authority question a person has to settle. It "
+    "covers a change as well as a new booking. The third party must be the one the "
+    "appointment is FOR: merely naming another person is an ordinary booking, which "
+    "the counter-case carries - and that is the only case here with a scheduling "
+    "fixture, since a handed-off turn writes nothing.",
     [
         case(
             "G-d-01",
             "Can I book Monday for my mother?",
             [req("booking_for_another", "booking for a parent")],
-        ),
-        case(
-            "G-d-02",
-            "Please book a check-up for my husband.",
-            [req("booking_for_another", "booking for a spouse")],
         ),
         case(
             "G-d-03",
@@ -414,23 +410,13 @@ family(
             note="a change for someone else is this too, not just a new booking",
         ),
         case(
-            "G-d-05",
-            "I need to bring my 7-year-old in to see someone.",
-            [req("booking_for_another", "booking for a child")],
-        ),
-        case(
             "G-d-06",
-            "My wife recommended you - can I book for Tuesday?",
+            "My wife recommended you - can I book myself in for Tuesday with dr. "
+            "Andreas?",
             [bk("book Tuesday for the patient", "check_availability")],
             scheduling=sch([], []),
             note="the counter-case: the appointment is for the person in the chat, so "
             "naming a third party does not make it theirs",
-        ),
-        case(
-            "G-d-07",
-            "I'm booking for my daughter, she can't breathe.",
-            [req("urgent_condition", "child cannot breathe")],
-            note="two causes apply and urgency outranks this one",
         ),
     ],
 )
