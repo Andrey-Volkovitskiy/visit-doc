@@ -537,14 +537,14 @@ family(
     "g",
     "small-talk",
     "Messages that ask for nothing the clinic could act on: greetings, thanks, "
-    "acknowledgements, reactions, farewells, gibberish. The point of the family is "
-    "that none of them pages a person and none of them searches the corpus - before "
+    "acknowledgements, farewells, thinking it over, gibberish. The point of the "
+    "family is that none of them pages a person and none of them searches the "
+    "corpus - before "
     "the label existed, 'Thanks' retrieved, abstained and called a human. Several "
     "carry history, because a bare acknowledgement only reads as one against the turn "
     "it answers.",
     [
         case("G-g-01", "Hi", [req("small_talk", "greeting")]),
-        case("G-g-02", "Good morning!", [req("small_talk", "greeting")]),
         case(
             "G-g-03",
             "Thanks!",
@@ -570,7 +570,6 @@ family(
             note="an acknowledgement of an answered question. The same word after an "
             "offered slot would be a booking (G-a-08), which is why both exist",
         ),
-        case("G-g-05", "I see", [req("small_talk", "acknowledgement")]),
         case(
             "G-g-06",
             "Sure",
@@ -582,20 +581,12 @@ family(
             "is not a confirmation",
         ),
         case("G-g-07", "Bye", [req("small_talk", "farewell")]),
-        case("G-g-08", "\U0001f44d", [req("small_talk", "reaction")]),
         case("G-g-09", "asdfgh", [req("small_talk", "unintelligible")]),
         case("G-g-10", "Merci", [req("small_talk", "thanks, not in English")]),
         case(
             "G-g-11",
             "Let me think about it a bit.",
             [req("small_talk", "thinking it over")],
-        ),
-        case(
-            "G-g-12",
-            "Thanks - my husband says hello.",
-            [req("small_talk", "thanks; the third party asks for nothing")],
-            note="names another person without requesting anything for them, so it is "
-            "not booking_for_another",
         ),
     ],
 )

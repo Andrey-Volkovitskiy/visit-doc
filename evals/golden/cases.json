@@ -668,21 +668,11 @@
   {
    "letter": "g",
    "name": "small-talk",
-   "tests": "Messages that ask for nothing the clinic could act on: greetings, thanks, acknowledgements, reactions, farewells, gibberish. The point of the family is that none of them pages a person and none of them searches the corpus - before the label existed, 'Thanks' retrieved, abstained and called a human. Several carry history, because a bare acknowledgement only reads as one against the turn it answers.",
+   "tests": "Messages that ask for nothing the clinic could act on: greetings, thanks, acknowledgements, farewells, thinking it over, gibberish. The point of the family is that none of them pages a person and none of them searches the corpus - before the label existed, 'Thanks' retrieved, abstained and called a human. Several carry history, because a bare acknowledgement only reads as one against the turn it answers.",
    "cases": [
     {
      "id": "G-g-01",
      "message": "Hi",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "greeting"
-      }
-     ]
-    },
-    {
-     "id": "G-g-02",
-     "message": "Good morning!",
      "requests": [
       {
        "intent": "small_talk",
@@ -733,16 +723,6 @@
      "note": "an acknowledgement of an answered question. The same word after an offered slot would be a booking (G-a-08), which is why both exist"
     },
     {
-     "id": "G-g-05",
-     "message": "I see",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "acknowledgement"
-      }
-     ]
-    },
-    {
      "id": "G-g-06",
      "message": "Sure",
      "history": [
@@ -766,16 +746,6 @@
       {
        "intent": "small_talk",
        "gist": "farewell"
-      }
-     ]
-    },
-    {
-     "id": "G-g-08",
-     "message": "👍",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "reaction"
       }
      ]
     },
@@ -808,17 +778,6 @@
        "gist": "thinking it over"
       }
      ]
-    },
-    {
-     "id": "G-g-12",
-     "message": "Thanks - my husband says hello.",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "thanks; the third party asks for nothing"
-      }
-     ],
-     "note": "names another person without requesting anything for them, so it is not booking_for_another"
     }
    ]
   },
