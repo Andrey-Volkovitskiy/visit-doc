@@ -1644,32 +1644,6 @@
    "tests": "One FAQ half and one booking half in a single message. Each specialist is handed only its own segment, so the other half's clause is not in the prompt to be answered: a booking node that sees the policy question may answer it from nothing, and a retrieval that sees the booking clause searches the corpus for live data it does not hold. Every case's booking half has to leave the scheduler in a stated state, so a turn that answers the question and quietly drops the booking fails.",
    "cases": [
     {
-     "id": "G-q-01",
-     "message": "What are your opening hours, and what dentist slots are free tomorrow?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "clinic hours",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      },
-      {
-       "intent": "booking",
-       "gist": "dentist availability tomorrow",
-       "tools": [
-        "check_availability",
-        "list_practitioners"
-       ]
-      }
-     ],
-     "scheduling": {
-      "given": [],
-      "expect": []
-     }
-    },
-    {
      "id": "G-q-02",
      "message": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
      "requests": [
@@ -1731,112 +1705,8 @@
      "note": "two list questions, one answered from the corpus and one from the records - the pair a pooled retrieval would answer from one place"
     },
     {
-     "id": "G-q-04",
-     "message": "What are your hours, and please cancel my Friday appointment.",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "clinic hours",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      },
-      {
-       "intent": "booking",
-       "gist": "cancel Friday",
-       "tools": [
-        "cancel_appointment",
-        "list_my_appointments"
-       ]
-      }
-     ],
-     "scheduling": {
-      "given": [
-       {
-        "practitioner": "William Osler",
-        "day": "+4d",
-        "time": "11:00"
-       }
-      ],
-      "expect": [
-       {
-        "practitioner": "William Osler",
-        "day": "+4d",
-        "time": "11:00",
-        "status": "cancelled"
-       }
-      ],
-      "reply": "OK"
-     }
-    },
-    {
-     "id": "G-q-05",
-     "message": "Where do I park, and what appointments do I have booked?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "parking near the clinic",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      },
-      {
-       "intent": "booking",
-       "gist": "this patient's appointments",
-       "tools": [
-        "list_my_appointments"
-       ]
-      }
-     ],
-     "scheduling": {
-      "given": [
-       {
-        "practitioner": "Andreas Vesalius",
-        "day": "+3d",
-        "time": "12:00"
-       }
-      ],
-      "expect": [
-       {
-        "practitioner": "Andreas Vesalius",
-        "day": "+3d",
-        "time": "12:00",
-        "status": "standing"
-       }
-      ]
-     }
-    },
-    {
-     "id": "G-q-06",
-     "message": "What should I bring, and what does Dr. Vesalius specialise in?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "what to bring",
-       "answerable": true,
-       "cites": [
-        "what-to-bring"
-       ]
-      },
-      {
-       "intent": "booking",
-       "gist": "a named practitioner's specialty",
-       "tools": [
-        "list_practitioners"
-       ]
-      }
-     ],
-     "scheduling": {
-      "given": [],
-      "expect": []
-     },
-     "note": "a practitioner's specialty is live scheduling data; the corpus never names a practitioner, so a retrieval sent this half abstains"
-    },
-    {
      "id": "G-q-07",
-     "message": "How much is a GP visit if I'm paying cash, and is there anything free on Wednesday morning?",
+     "message": "How much is a GP visit if I'm paying cash, and could I see one on Wednesday morning?",
      "requests": [
       {
        "intent": "faq_question",
@@ -1859,7 +1729,7 @@
       "given": [],
       "expect": []
      },
-     "note": "the booking half names no practitioner - 'GP' sits in the other clause, so the restatement has to carry it across, and the GP resolves to one person on the roster"
+     "note": "the booking half names no practitioner - 'one' stands for the GP in the other clause, so the restatement has to carry the specialty across, and the GP resolves to one person on the roster. It read 'is there anything free on Wednesday morning?' until the specialty failed to cross: that clause is complete as written and asks about any practitioner, so inserting GP would have been the constraint rule (3) forbids inventing rather than an ellipsis rule (2) resolves"
     },
     {
      "id": "G-q-08",

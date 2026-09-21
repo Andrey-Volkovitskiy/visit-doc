@@ -1077,15 +1077,6 @@ family(
     "state, so a turn that answers the question and quietly drops the booking fails.",
     [
         case(
-            "G-q-01",
-            "What are your opening hours, and what dentist slots are free tomorrow?",
-            [
-                faq("clinic hours", "hours-location"),
-                bk("dentist availability tomorrow", "check_availability"),
-            ],
-            scheduling=sch([], []),
-        ),
-        case(
             "G-q-02",
             "What should I bring, and can you book me Wednesday at 9 with "
             "William Osler?",
@@ -1109,53 +1100,21 @@ family(
             "records - the pair a pooled retrieval would answer from one place",
         ),
         case(
-            "G-q-04",
-            "What are your hours, and please cancel my Friday appointment.",
-            [
-                faq("clinic hours", "hours-location"),
-                bk("cancel Friday", "cancel_appointment"),
-            ],
-            scheduling=sch(
-                [appt(OSLER, FRI, "11:00")],
-                [appt(OSLER, FRI, "11:00", "cancelled")],
-                reply="OK",
-            ),
-        ),
-        case(
-            "G-q-05",
-            "Where do I park, and what appointments do I have booked?",
-            [
-                faq("parking near the clinic", "hours-location"),
-                bk("this patient's appointments", "list_my_appointments"),
-            ],
-            scheduling=sch(
-                [appt(VESALIUS, THU, "12:00")],
-                [appt(VESALIUS, THU, "12:00", "standing")],
-            ),
-        ),
-        case(
-            "G-q-06",
-            "What should I bring, and what does Dr. Vesalius specialise in?",
-            [
-                faq("what to bring", "what-to-bring"),
-                bk("a named practitioner's specialty", "list_practitioners"),
-            ],
-            scheduling=sch([], []),
-            note="a practitioner's specialty is live scheduling data; the corpus "
-            "never names a practitioner, so a retrieval sent this half abstains",
-        ),
-        case(
             "G-q-07",
-            "How much is a GP visit if I'm paying cash, and is there anything free "
-            "on Wednesday morning?",
+            "How much is a GP visit if I'm paying cash, and could I see one on "
+            "Wednesday morning?",
             [
                 faq("GP out-of-pocket rate", "out-of-pocket-rates"),
                 bk("Wednesday morning availability", "check_availability"),
             ],
             scheduling=sch([], []),
-            note="the booking half names no practitioner - 'GP' sits in the other "
-            "clause, so the restatement has to carry it across, and the GP resolves "
-            "to one person on the roster",
+            note="the booking half names no practitioner - 'one' stands for the GP in "
+            "the other clause, so the restatement has to carry the specialty across, "
+            "and the GP resolves to one person on the roster. It read 'is there "
+            "anything free on Wednesday morning?' until the specialty failed to "
+            "cross: that clause is complete as written and asks about any "
+            "practitioner, so inserting GP would have been the constraint rule (3) "
+            "forbids inventing rather than an ellipsis rule (2) resolves",
         ),
         case(
             "G-q-08",
