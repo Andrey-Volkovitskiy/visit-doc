@@ -7,6 +7,7 @@ result nobody can explain. The schema decides the shape; the models below only t
 
 import hashlib
 import json
+import re
 from collections import Counter
 from collections.abc import Sequence
 from datetime import date, datetime, timedelta
@@ -209,7 +210,13 @@ def load_cases(path: Path, schema_path: Path | None = None) -> list[Case]:
     Raises: LabelError when the file breaks the schema, repeats a case id, carries a
         scheduling fixture on a case other than exactly those with a booking request,
         or - in a family declaring a letter - holds an id that does not read
-        `G-<letter>-<position>`; the message names every offending case.
+        `G-<letter>-<nn>` or whose number does not exceed the one before it; the
+        message names every offending case.
+
+    The numbers ascend but need not be contiguous. A number is a case's identity inside
+    its family, not its position: a removed case leaves its number unused, because
+    renumbering the cases after it would rename labels that did not change and make
+    every stored run that selected them unscoreable.
 
     The family's `tests` description is not carried onto a case: it describes the group,
     and a copy on every member is a copy that can disagree with the group it came from.
@@ -234,19 +241,28 @@ def load_cases(path: Path, schema_path: Path | None = None) -> list[Case]:
         )
 
     cases: list[Case] = []
-    misnumbered: list[str] = []
+    misfiled: list[str] = []
     for group in raw["families"]:
         letter = group.get("letter")
-        for position, entry in enumerate(group["cases"], start=1):
+        numbers: list[int] = []
+        for entry in group["cases"]:
             cases.append(Case.model_validate({**entry, "family": group["name"]}))
-            if letter is not None and entry["id"] != f"G-{letter}-{position:02d}":
-                misnumbered.append(
-                    f"{entry['id']} (expected G-{letter}-{position:02d})"
+            if letter is None:
+                continue
+            match = re.fullmatch(rf"G-{letter}-([0-9]{{2}})", entry["id"])
+            if match is None:
+                misfiled.append(f"{entry['id']} (not G-{letter}-nn)")
+                continue
+            number = int(match.group(1))
+            if numbers and number <= numbers[-1]:
+                misfiled.append(
+                    f"{entry['id']} (out of order after G-{letter}-{numbers[-1]:02d})"
                 )
-    if misnumbered:
+            numbers.append(number)
+    if misfiled:
         raise LabelError(
-            "these ids disagree with their family's letter or their position in it: "
-            + ", ".join(misnumbered)
+            "these ids disagree with the family they are filed under: "
+            + ", ".join(misfiled)
         )
 
     repeated = sorted(

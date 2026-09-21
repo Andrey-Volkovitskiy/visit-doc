@@ -1,7 +1,7 @@
 # The golden set (v2)
 
-The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 146 patient messages carrying
-181 labelled requests, grouped into 16 families that between them cover what a patient actually
+The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 145 patient messages carrying
+180 labelled requests, grouped into 16 families that between them cover what a patient actually
 does with this assistant.
 
 **It is data, and `cases.json` is a generated artifact.** The set is written in
@@ -39,7 +39,7 @@ The consequences worth knowing:
 | File | What it is |
 |---|---|
 | `cases.json` | The set, grouped by family — generated; see above. `schema.json` is authoritative for the shape. |
-| `schema.json` | JSON Schema for the file. All 146 cases validate against it. |
+| `schema.json` | JSON Schema for the file. All 145 cases validate against it. |
 | `corpus.json` | The pinned FAQ corpus every `cites` label names, with a `sha256` over the entry texts. |
 | `PROVENANCE.md` | Where v2 came from, and what has to be re-checked when the corpus moves. |
 
@@ -70,9 +70,13 @@ format cannot hold:
 }
 ```
 
-A case id is `G-<family letter>-<nn>`, where the letter is its family's and `nn` is its position in
-that family. The loader checks that agreement, which a JSON Schema pattern cannot: an id that
-disagrees with the group it sits in is refused by name.
+A case id is `G-<family letter>-<nn>`, where the letter is its family's. `nn` is the case's
+**identity** inside that family, not its index: the numbers ascend but need not be contiguous. A
+removed case leaves its number unused for good, and a number is never reused, because renumbering
+the cases after a removal would rename labels that had not changed and make every stored run that
+selected them unscoreable — v1 left `G103` as a hole for the same reason. Family `a` has no
+`G-a-03`. The loader checks the letter and the ascent, neither of which a JSON Schema pattern can:
+an id filed under the wrong family, repeated, or out of order is refused by name.
 
 There is no `family` key on a case and no `source` key at all. The family is the group the case sits
 in — one copy, which cannot disagree with itself — and the loader carries the family's name onto each
@@ -83,7 +87,7 @@ than a per-case citation of another spec's set.
 
 | | Family | n | What it tests |
 |---|---|---|---|
-| a | `single-booking` | 14 | One booking request the booking node serves alone, across its whole range. Writes carry a scripted second turn, so a bare "OK" has to read as the booking it answers. |
+| a | `single-booking` | 13 | One booking request the booking node serves alone, across its whole range. Writes carry a scripted second turn, so a bare "OK" has to read as the booking it answers. |
 | b | `urgent_condition` | 9 | Something an emergency department exists for. Takes the whole turn; ends it. Carries the hyperbole counter-case. |
 | c | `distress` | 7 | Real fear or acute upset. Carries the brief-exclamation counter-case. |
 | d | `booking_for_another` | 7 | The appointment is plainly for someone else. Nothing may be written. |

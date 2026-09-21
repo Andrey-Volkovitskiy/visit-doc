@@ -30,10 +30,10 @@ _SYSTEM_PROMPT = (
     "requests below), "
     "booking (exactly five requests, which are everything the clinic's live "
     "appointment records can answer and nothing else: (i) which practitioners the "
-    "clinic has, what a named one specializes in, or who has a given specialty; "
-    "(ii) when a practitioner has a free slot; (iii) making an appointment; "
-    "(iv) rescheduling or cancelling one; (v) which appointments this patient already "
-    "has), "
+    "clinic has, what a named one specializes in, or who has a given specialty - this "
+    "one asks for no appointment at all and is still booking; (ii) when a practitioner "
+    "has a free slot; (iii) making an appointment; (iv) rescheduling or cancelling "
+    "one; (v) which appointments this patient already has), "
     "small_talk (the message asks for nothing the clinic could act on - a greeting, an "
     "acknowledgement, a thank-you, a farewell, a reaction, a note that they are "
     "thinking it over, a message that is unintelligible, or a question about something "
@@ -74,14 +74,24 @@ _SYSTEM_PROMPT = (
     "live records answer those and nothing else - while the FAQ corpus is open, "
     "gaining entries over time, so no list of its subjects would stay complete. So "
     "test the message against booking, not against FAQ: if what is asked is not one "
-    "of the five, it is faq_question, whatever its subject. A question about what a "
+    "of the five, it is faq_question, whatever its subject. "
+    "Run that test by asking where the answer is kept, and never by whether the "
+    "message reaches for an appointment. Two of the five ask for no appointment at "
+    "all - the roster, and what this patient already holds - so a message naming no "
+    "time, no slot and no visit is still booking whenever only the records hold its "
+    'answer: "which of your doctors handles skin conditions?" and "is the one I saw '
+    'last time a specialist or a GP?" are both booking, because no clinic document '
+    "names a practitioner or says what any of them treats. Wanting to be seen is not "
+    "what makes a message booking; it is one of the five things that happen to be. "
+    "A question about what a "
     "visit requires or costs is the usual case - whether a referral is needed, whether "
     "a specialist can be seen without one, what the patient must bring first, what a "
     'visit is priced at - and stays faq_question even when phrased "can I see a '
     'specialist if...", because it asks a policy rather than the records. '
     "Asking the rules governing one "
-    "of the five is a policy question too: the five are acts on this patient's "
-    'records, not the terms those acts are subject to, so "what is your cancellation '
+    "of the five is a policy question too: three of the five are acts on this "
+    "patient's records, and the terms those acts are subject to are written in the "
+    "clinic's documents rather than the records, so \"what is your cancellation "
     'policy?" and "how late may I reschedule?" are faq_question while "cancel my '
     'Friday appointment" is booking. One specialty can likewise fall on both sides: '
     '"is a dermatologist free on the 14th?" is booking, and "what does a '

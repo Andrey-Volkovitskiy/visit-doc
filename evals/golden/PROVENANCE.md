@@ -48,6 +48,42 @@ learn:
 - **No case names the run clock's own weekday.** On a Monday clock, "Monday" reads as today or as a
   week out, and a label can only mean one of them.
 
+## G-a-03 removed (2026-09-21, by the reviewer's decision)
+
+The case read *"What does Andreas Vesalius specialise in?"* and was labelled `booking`, because a
+practitioner's specialty is live records data — no corpus entry names a practitioner. The first two
+runs of family `a` both classified it `faq_question`, so it searched the corpus, abstained, and
+called a person under `corpus_could_not_answer`: a cause that says "write an FAQ entry" about
+something no entry should ever assert.
+
+Probing the classifier directly showed the cause was not the routing rule but the wording, and the
+trigger was narrow — the bare full name as the sentence's subject:
+
+| Input | Produced |
+|---|---|
+| *"What does Andreas Vesalius specialise in?"* (the case, ×5) | `faq_question`, 5/5 |
+| *"What does Andreas Vesalius special**ize** in?"* | `small_talk` |
+| *"What does **Dr.** Vesalius specialise in?"* | `booking` |
+| *"What does **William Osler** specialise in?"* | `booking` |
+| *"What does **Sarah Whitfield** specialise in?"* (invented name) | `booking` |
+| *"I have an **appointment with** Andreas Vesalius — what does he specialise in?"* | `booking` |
+
+The `small_talk` result is the tell, since that label means a question the clinic has nothing to do
+with: the model was reading the 16th-century anatomist. Vesalius is bound to anatomy *as a subject*,
+where Osler — equally famous, and the other seeded name — is bound to being a physician. The seed
+pool is deliberately made of recognizable dead figures, and this is the one name where that
+backfires.
+
+So the case measured a name-recognition artifact of the demo seed data rather than the
+`booking`/`faq_question` boundary it was written for. The reviewer removed it rather than re-word it.
+The shape it was meant to cover survives in **G-q-06**, *"What should I bring, and what does Dr.
+Vesalius specialise in?"*, in the wording that classifies correctly.
+
+**Its number is not reused.** Family `a` runs 01, 02, 04 … 14 with no `G-a-03`, because renumbering
+the eleven cases after it would rename labels that had not changed and make every stored run that
+selected them unscoreable. v1 left `G103` as a hole for the same reason. The loader enforces the
+family letter and that the numbers ascend, and deliberately not that they are contiguous.
+
 ## What the set depends on, and what to re-check when each moves
 
 ### The corpus

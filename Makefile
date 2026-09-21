@@ -76,7 +76,12 @@ run-frontend-dev:
 
 # All three services in the background at once, for manual testing. Each records its pid under
 # .run/ and is stopped by that pid - never with `pkill -f "chat.main"`, whose pattern also matches
-# the shell running that very command and kills the caller with it.
+# the shell running that very command and kills the caller with it. chat and scheduler run under
+# `uvicorn --reload`, as `run-chat-dev` does, so an edit under their `src/` reaches the running
+# service: a background service that held the code it started with made `eval-run` measure the old
+# build off the new source. The other side is a reload mid-run: the harness stops the run when the
+# restart states different settings, but cannot see one stating the same - a prompt edit changes no
+# logged setting - so don't save files under a service's `src/` while `make eval-run` is going.
 services-up:
 	@./scripts/dev-services.sh up all
 

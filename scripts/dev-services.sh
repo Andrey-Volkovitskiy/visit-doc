@@ -16,6 +16,19 @@
 #
 # Logs go to .run/<service>.log. Both .run/*.pid and .run/*.log are gitignored.
 #
+# chat and scheduler run under `uvicorn --reload`, watching their own `src/`, so an edit reaches
+# the running service without a restart - the same as `make run-chat-dev`, which this now matches.
+# Two consequences worth knowing:
+#
+#   - A service holds the code it imported at *start*. Before this, a prompt or handler edit was
+#     invisible to a running background service, and a `make eval-run` measured the old build while
+#     reading the new source - a paid run whose result meant nothing. That is the trap this closes.
+#   - The other side of it: an edit *during* a run restarts the service mid-run. The harness checks
+#     for that after every case and stops the run when the restart states *different* settings
+#     (`ServiceRestartedError`). What it cannot see is a restart stating the same ones - a prompt or
+#     handler edit, which changes behaviour and no logged setting - so that run silently spans two
+#     builds. Don't save files under a service's `src/` while `make eval-run` is going.
+#
 # Each service is started from this script's own environment, so a variable exported for the call
 # reaches the service's process: `LOG_FORMAT=json make services-up` starts chat logging one JSON
 # object per line, which is what the golden harness (`make eval-run`) requires - it reads a turn's
@@ -52,10 +65,12 @@ start_one() {
   # is a grandchild and survives both `kill <pid>` and `pkill -P <pid>`.
   case "$name" in
     chat)
-      setsid bash -c "cd '$ROOT' && exec uv run --package chat -- python -m chat.main" > "$log" 2>&1 &
+      setsid bash -c "cd '$ROOT' && exec uv run --package chat -- uvicorn chat.main:app \
+        --reload --reload-dir services/chat/src --host 0.0.0.0 --port 8000" > "$log" 2>&1 &
       ;;
     scheduler)
-      setsid bash -c "cd '$ROOT' && exec uv run --package scheduler -- python -m scheduler.main" > "$log" 2>&1 &
+      setsid bash -c "cd '$ROOT' && exec uv run --package scheduler -- uvicorn scheduler.main:app \
+        --reload --reload-dir services/scheduler/src --host 0.0.0.0 --port 8001" > "$log" 2>&1 &
       ;;
     frontend)
       setsid bash -c "cd '$ROOT/services/frontend' && exec npm run dev" > "$log" 2>&1 &
@@ -130,6 +145,11 @@ free_one() {
   for pid in $(listener_pids "$port"); do
     found=1
     args="$(ps -p "$pid" -o args= 2>/dev/null)"
+    if [ -z "$args" ]; then
+      # Gone already - almost always a reloader child that went with its group in this same
+      # loop. `ss` gave us a snapshot, so a later pid in it can be dead by the time we look.
+      continue
+    fi
     if [[ "$args" != *"$module"* ]]; then
       echo "  $name port $port held by pid $pid, which is not $name - left alone: $args"
       continue

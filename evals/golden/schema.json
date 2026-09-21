@@ -69,7 +69,7 @@
                 "id": {
                   "type": "string",
                   "pattern": "^G(-[a-z]-[0-9]{2}|[0-9]{3})$",
-                  "description": "`G-<family letter>-<nn>` in the golden set, where the letter is the family's own and nn is the case's position in it - the loader checks that agreement, which a pattern cannot. `G<nnn>` is admitted for the harness's own test fixtures, which are synthetic and belong to no family."
+                  "description": "`G-<family letter>-<nn>` in the golden set, where the letter is the family's own. nn is the case's identity inside that family, not its index: it ascends but need not be contiguous, because a removed case leaves its number unused for good - renumbering would rename labels that had not changed and make every stored run that selected them unscoreable. The loader checks the letter and the ascent, neither of which a pattern can. `G<nnn>` is admitted for the harness's own test fixtures, which are synthetic and belong to no family."
                 },
                 "message": {
                   "type": "string",

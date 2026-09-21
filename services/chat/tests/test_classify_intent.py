@@ -573,9 +573,28 @@ def test_the_prompt_keeps_the_rules_governing_a_booking_act_on_the_faq_side() ->
     about the terms of cancelling to the records, which hold no terms to answer it.
     """
     prompt = " ".join(_prompt().split())
-    assert "the five are acts on this patient's records, not the terms" in prompt
+    assert "three of the five are acts on this patient's records" in prompt
+    assert (
+        "the terms those acts are subject to are written in the clinic's documents"
+        in (prompt)
+    )
     assert '"what is your cancellation policy?"' in prompt
     assert 'faq_question while "cancel my friday appointment" is booking' in prompt
+
+
+def test_the_prompt_decides_booking_by_where_the_answer_lives() -> None:
+    """A roster question asks for no appointment and is still booking.
+
+    Measured: with the closed list stated but this test left implicit, the classifier
+    read "does this reach for an appointment?" instead, and sent two roster questions
+    to the corpus - which holds no practitioner and so abstained and paged a person for
+    a question no entry could ever answer.
+    """
+    prompt = " ".join(_prompt().split())
+    assert "asks for no appointment at all and is still booking" in prompt
+    assert "run that test by asking where the answer is kept" in prompt
+    assert "never by whether the message reaches for an appointment" in prompt
+    assert "wanting to be seen is not what makes a message booking" in prompt
 
 
 def test_the_prompt_puts_logistics_near_the_clinic_on_the_faq_side() -> None:

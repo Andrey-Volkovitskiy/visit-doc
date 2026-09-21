@@ -12,6 +12,7 @@ are checked as the set is built, naming the case at fault.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Final
 
@@ -147,8 +148,9 @@ family(
     "a",
     "single-booking",
     "One booking request the booking node can serve on its own, across the whole of "
-    "its range: who the practitioners are and what they specialize in, when one is "
-    "free, what this patient already holds, and the three writes. A write is confirmed "
+    "its range: who the practitioners are and whether one with a given specialty is on "
+    "the roster, when one is free, what this patient already holds, and the three "
+    "writes. A write is confirmed "
     "before it happens, so those cases carry a scripted second turn - including bare "
     "affirmatives, which must read as the booking they answer and never as small talk. "
     "One case carries history instead, for the turn that names no practitioner at all "
@@ -166,13 +168,6 @@ family(
             "Do you have a dentist?",
             [bk("is there a dentist on the roster", "list_practitioners")],
             scheduling=sch([], []),
-        ),
-        case(
-            "G-a-03",
-            "What does Andreas Vesalius specialise in?",
-            [bk("a named practitioner's specialty", "list_practitioners")],
-            scheduling=sch([], []),
-            note="a practitioner's specialty is live scheduling data, not corpus text",
         ),
         case(
             "G-a-04",
@@ -1430,6 +1425,18 @@ class DeclarationError(ValueError):
     """The declared set is not internally consistent; the message names every fault."""
 
 
+def _number_in_family(case_id: str, letter: str) -> int | None:
+    """Return the number `case_id` carries inside family `letter`, or None if malformed.
+
+    The number is the case's identity inside its family, not its position in the list:
+    a removed case leaves its number unused for good. Renumbering the cases after it
+    would rename labels that had not changed and make every stored run that selected
+    them unscoreable, so the numbers ascend without having to be contiguous.
+    """
+    match = re.fullmatch(rf"G-{letter}-([0-9]{{2}})", case_id)
+    return None if match is None else int(match.group(1))
+
+
 def problems() -> list[str]:
     """Return every inconsistency in the declared set, in reading order.
 
@@ -1450,16 +1457,21 @@ def problems() -> list[str]:
         letter, name = family["letter"], family["name"]
         if not family["tests"].strip():
             found.append(f"{name}: empty 'tests' description")
-        for position, case in enumerate(family["cases"], start=1):
+        numbers: list[int] = []
+        for case in family["cases"]:
             case_id = case["id"]
             if case_id in seen:
                 found.append(f"{case_id}: duplicate id")
             seen.add(case_id)
-            if case_id != f"G-{letter}-{position:02d}":
+            number = _number_in_family(case_id, letter)
+            if number is None:
+                found.append(f"{case_id}: is not written G-{letter}-nn")
+            elif numbers and number <= numbers[-1]:
                 found.append(
-                    f"{case_id}: id disagrees with its family letter or its position "
-                    f"(expected G-{letter}-{position:02d})"
+                    f"{case_id}: does not come after G-{letter}-{numbers[-1]:02d}"
                 )
+            else:
+                numbers.append(number)
             found.extend(_faults_in(case, corpus))
     return found
 

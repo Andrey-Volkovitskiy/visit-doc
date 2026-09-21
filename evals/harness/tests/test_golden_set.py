@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
-from golden_harness.cases import load_cases
+from golden_harness.cases import LabelError, load_cases
 from golden_harness.golden_set import (
     CASES_JSON,
     EXPECTED_LETTERS,
@@ -174,3 +174,76 @@ def test_bk_adds_a_prerequisite_the_declaration_left_off() -> None:
         "list_my_appointments",
         "cancel_appointment",
     ]
+
+
+# --- a removed case leaves its number behind ----------------------------------------
+
+
+def test_a_family_may_skip_a_number_a_removed_case_used_to_hold() -> None:
+    """The number is the case's identity, not its index.
+
+    Renumbering after a removal would rename labels that had not changed and make every
+    stored run that selected them unscoreable, so a hole is the correct outcome.
+    """
+    numbers = {
+        family["letter"]: [
+            int(case["id"].rsplit("-", 1)[1]) for case in family["cases"]
+        ]
+        for family in build()["families"]
+    }
+
+    assert all(ns == sorted(ns) for ns in numbers.values())
+    assert all(len(ns) == len(set(ns)) for ns in numbers.values())
+    # The set carries at least one such hole today, so the rule is exercised by real
+    # data rather than only by the synthetic cases below.
+    assert any(ns[-1] > len(ns) for ns in numbers.values())
+
+
+def test_the_loader_accepts_a_family_with_a_hole(tmp_path: Path) -> None:
+    path = tmp_path / "cases.json"
+    path.write_text(json.dumps(_one_family(["G-z-01", "G-z-04"])), encoding="utf-8")
+
+    assert [case.id for case in load_cases(path, _SCHEMA)] == ["G-z-01", "G-z-04"]
+
+
+@pytest.mark.parametrize(
+    "ids",
+    [["G-z-04", "G-z-01"], ["G-z-01", "G-z-01"], ["G-z-01", "G-y-02"]],
+    ids=["descending", "repeated", "another-familys-letter"],
+)
+def test_the_loader_refuses_ids_that_do_not_ascend_within_their_family(
+    tmp_path: Path, ids: list[str]
+) -> None:
+    path = tmp_path / "cases.json"
+    path.write_text(json.dumps(_one_family(ids)), encoding="utf-8")
+
+    with pytest.raises((LabelError, ValueError)):
+        load_cases(path, _SCHEMA)
+
+
+def _one_family(ids: list[str]) -> dict[str, Any]:
+    """A minimal file: one lettered family holding a case per id."""
+    return {
+        "families": [
+            {
+                "letter": "z",
+                "name": "under test",
+                "tests": "Cases built by this test.",
+                "cases": [
+                    {
+                        "id": case_id,
+                        "message": "Are you open?",
+                        "requests": [
+                            {
+                                "intent": "faq_question",
+                                "gist": "hours",
+                                "answerable": True,
+                                "cites": ["hours-location"],
+                            }
+                        ],
+                    }
+                    for case_id in ids
+                ],
+            }
+        ]
+    }

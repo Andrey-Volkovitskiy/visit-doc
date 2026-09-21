@@ -3,7 +3,7 @@
   {
    "letter": "a",
    "name": "single-booking",
-   "tests": "One booking request the booking node can serve on its own, across the whole of its range: who the practitioners are and what they specialize in, when one is free, what this patient already holds, and the three writes. A write is confirmed before it happens, so those cases carry a scripted second turn - including bare affirmatives, which must read as the booking they answer and never as small talk. One case carries history instead, for the turn that names no practitioner at all and is answerable only by carrying one forward from an earlier message. Every case states the appointments the patient must hold when it ends.",
+   "tests": "One booking request the booking node can serve on its own, across the whole of its range: who the practitioners are and whether one with a given specialty is on the roster, when one is free, what this patient already holds, and the three writes. A write is confirmed before it happens, so those cases carry a scripted second turn - including bare affirmatives, which must read as the booking they answer and never as small talk. One case carries history instead, for the turn that names no practitioner at all and is answerable only by carrying one forward from an earlier message. Every case states the appointments the patient must hold when it ends.",
    "cases": [
     {
      "id": "G-a-01",
@@ -38,24 +38,6 @@
       "given": [],
       "expect": []
      }
-    },
-    {
-     "id": "G-a-03",
-     "message": "What does Andreas Vesalius specialise in?",
-     "requests": [
-      {
-       "intent": "booking",
-       "gist": "a named practitioner's specialty",
-       "tools": [
-        "list_practitioners"
-       ]
-      }
-     ],
-     "scheduling": {
-      "given": [],
-      "expect": []
-     },
-     "note": "a practitioner's specialty is live scheduling data, not corpus text"
     },
     {
      "id": "G-a-04",

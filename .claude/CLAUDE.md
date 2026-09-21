@@ -135,7 +135,18 @@ uv add --package shared-proto <package>   # add a dep to a shared package
 `make run-chat-dev` / `make run-scheduler-dev` / `make run-frontend-dev` each hold a terminal. To
 put all three in the background instead — which is what manual testing of a whole flow needs —
 `make services-up`, `make services-status`, `make services-down`, with `make migrate` first if the
-dev databases are behind. When `services-down` has nothing to stop but the ports are still bound —
+dev databases are behind. The background chat and scheduler run under `uvicorn --reload` watching
+their own `src/`, the same as the `-dev` targets, so an edit reaches the running service. They did
+not until 2026-09-20, and the cost of that was a paid `eval-run` measuring the build the service had
+started with while its report read the conditions off the new source — a result that meant nothing
+and looked fine. A run takes its conditions from the *latest* `service.configured` before it starts,
+so a reload before a run is read correctly. The other side is a reload **during** one: the harness
+checks after every case and raises `ServiceRestartedError` when the restart states different
+settings, but a restart stating the same ones is passed over — and a prompt or handler edit changes
+behaviour without changing any logged setting, so that run silently spans two builds with nothing to
+catch it. Don't save files under a service's `src/` while `make eval-run` is going.
+
+When `services-down` has nothing to stop but the ports are still bound —
 a pid file lost, or a service started by hand with `make run-chat-dev` — `make services-free-ports`
 stops whatever holds chat's and scheduler's ports, after confirming from the listener's own command
 line that it is that service; anything else on the port is reported and left running. Each
@@ -278,10 +289,24 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   Two near-misses are named explicitly rather than left to keyword overlap, because both would
   otherwise route to records that hold no answer — a question about what a visit *requires or
   costs* (a referral, what to bring, the price), and a question about the *rules governing* one of
-  the five ("what is your cancellation policy?" against "cancel my Friday appointment"). The five
-  are acts on records, not the terms those acts are subject to. `test_classify_intent.py` compares
-  the prompt's list against `SCHEDULING_TOOLS` for **equality**, so a tool added to the booking
-  node fails the suite rather than silently making "exactly five" untrue.
+  the five ("what is your cancellation policy?" against "cancel my Friday appointment"). Three of
+  the five are acts on records; the terms those acts are subject to are in the clinic's documents.
+  `test_classify_intent.py` compares the prompt's list against `SCHEDULING_TOOLS` for **equality**,
+  so a tool added to the booking node fails the suite rather than silently making "exactly five"
+  untrue.
+- **The membership test is "where is the answer kept", never "does the message reach for an
+  appointment"** — added after measuring, not reasoned in advance. The first run of the
+  `single-booking` family (2026-09-20) scored 12/14 on intent: "do you have a dentist?" and "what
+  does <practitioner> specialise in?" both went to `faq_question`, searched a corpus that names no
+  practitioner, abstained, and paged a person under `corpus_could_not_answer` — a cause that says
+  "write an FAQ entry" about live records data no entry should ever assert. The run isolated the
+  discriminator the model had actually adopted: "do you have a cardiologist **I could see**?" was
+  `booking` while "do you have a dentist?" was not, so four words of appointment-seeking flipped it,
+  and every one of the 12 passes named a time, a slot or an existing appointment. Enumerating the
+  five had quietly invited surface matching, with the residual catching whatever did not look like
+  an appointment. The prompt now says outright that the roster item asks for no appointment and is
+  still `booking`, and that wanting to be seen is not what makes a message `booking` — it is one of
+  the five things that happen to be.
 - Capabilities are exposed to the agent as **MCP tools** (`search_faq`, `check_availability`,
   `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
 - RAG must include defensible chunking, a reranking step, citations to source documents — derived
