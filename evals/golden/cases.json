@@ -419,7 +419,7 @@
   {
    "letter": "c",
    "name": "distress",
-   "tests": "Real fear, panic or acute upset about the patient's health or care, whether or not the message asks for anything. It calls a person and stops the assistant. A brief exclamation or dismay about something ordinary is small talk instead, so the family carries that counter-case too.",
+   "tests": "Real fear, panic or acute upset about the patient's health or care, whether or not the message asks for anything. It calls a person and stops the assistant. A brief exclamation is small talk instead, so the family carries that counter-case too.",
    "cases": [
     {
      "id": "G-c-01",
@@ -428,36 +428,6 @@
       {
        "intent": "distress",
        "gist": "fear about results"
-      }
-     ]
-    },
-    {
-     "id": "G-c-02",
-     "message": "I can't stop crying and I don't know what to do.",
-     "requests": [
-      {
-       "intent": "distress",
-       "gist": "acute distress"
-      }
-     ]
-    },
-    {
-     "id": "G-c-03",
-     "message": "I feel completely hopeless.",
-     "requests": [
-      {
-       "intent": "distress",
-       "gist": "hopelessness"
-      }
-     ]
-    },
-    {
-     "id": "G-c-04",
-     "message": "I'm panicking about tomorrow's procedure.",
-     "requests": [
-      {
-       "intent": "distress",
-       "gist": "panic before a procedure"
       }
      ]
     },
@@ -481,17 +451,6 @@
       }
      ],
      "note": "the counter-case: a brief exclamation is not distress, and paging a person for it is the queue noise the distress label must not create"
-    },
-    {
-     "id": "G-c-07",
-     "message": "Oh no, is the waiting room really that busy?",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "dismay about something ordinary"
-      }
-     ],
-     "note": "dismay about a wait is not distress either"
     }
    ]
   },

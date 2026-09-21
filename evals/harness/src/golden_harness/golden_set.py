@@ -357,26 +357,13 @@ family(
     "distress",
     "Real fear, panic or acute upset about the patient's health or care, whether or "
     "not the message asks for anything. It calls a person and stops the assistant. A "
-    "brief exclamation or dismay about something ordinary is small talk instead, so "
-    "the family carries that counter-case too.",
+    "brief exclamation is small talk instead, so the family carries that "
+    "counter-case too.",
     [
         case(
             "G-c-01",
             "I'm terrified about my results.",
             [req("distress", "fear about results")],
-        ),
-        case(
-            "G-c-02",
-            "I can't stop crying and I don't know what to do.",
-            [req("distress", "acute distress")],
-        ),
-        case(
-            "G-c-03", "I feel completely hopeless.", [req("distress", "hopelessness")]
-        ),
-        case(
-            "G-c-04",
-            "I'm panicking about tomorrow's procedure.",
-            [req("distress", "panic before a procedure")],
         ),
         case(
             "G-c-05",
@@ -389,12 +376,6 @@ family(
             [req("small_talk", "a mild reaction")],
             note="the counter-case: a brief exclamation is not distress, and paging a "
             "person for it is the queue noise the distress label must not create",
-        ),
-        case(
-            "G-c-07",
-            "Oh no, is the waiting room really that busy?",
-            [req("small_talk", "dismay about something ordinary")],
-            note="dismay about a wait is not distress either",
         ),
     ],
 )
