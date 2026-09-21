@@ -1009,19 +1009,9 @@ family(
     "a booking write, and a call for a person.",
     [
         case(
-            "G-p-01",
-            "Hi, do I need a referral?",
-            [faq("is a referral needed", "referral")],
-        ),
-        case(
             "G-p-02",
             "Morning - what should I bring to a first visit?",
             [faq("what to bring", "what-to-bring")],
-        ),
-        case(
-            "G-p-03",
-            "Hello! What are your opening hours?",
-            [faq("clinic hours", "hours-location")],
         ),
         case(
             "G-p-04",

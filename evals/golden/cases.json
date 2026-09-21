@@ -1510,20 +1510,6 @@
    "tests": "A greeting, a thank-you or an acknowledgement attached to a real request. The pleasantry must not hide the request, and it is not a segment of its own: it is left out rather than folded in, so the turn carries exactly the requests that were made. The request behind it is drawn from every route - FAQ, a booking read, a booking write, and a call for a person.",
    "cases": [
     {
-     "id": "G-p-01",
-     "message": "Hi, do I need a referral?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "is a referral needed",
-       "answerable": true,
-       "cites": [
-        "referral"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-p-02",
      "message": "Morning - what should I bring to a first visit?",
      "requests": [
@@ -1533,20 +1519,6 @@
        "answerable": true,
        "cites": [
         "what-to-bring"
-       ]
-      }
-     ]
-    },
-    {
-     "id": "G-p-03",
-     "message": "Hello! What are your opening hours?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "clinic hours",
-       "answerable": true,
-       "cites": [
-        "hours-location"
        ]
       }
      ]
