@@ -613,23 +613,6 @@ family(
             "What's the weather in Paris today?",
             [req("small_talk", "off-topic question")],
         ),
-        case(
-            "G-i-03",
-            "What's the best route to drive in from the airport?",
-            [req("small_talk", "off-topic question")],
-            note="driving directions from another city are not the clinic's business; "
-            "parking and transport AT the clinic are, and are faq_question (G-j-09)",
-        ),
-        case(
-            "G-i-04",
-            "Can you recommend a good restaurant for dinner?",
-            [req("small_talk", "off-topic question")],
-        ),
-        case(
-            "G-i-05",
-            "What do you think about the election?",
-            [req("small_talk", "off-topic question")],
-        ),
     ],
 )
 

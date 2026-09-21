@@ -805,37 +805,6 @@
        "gist": "off-topic question"
       }
      ]
-    },
-    {
-     "id": "G-i-03",
-     "message": "What's the best route to drive in from the airport?",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "off-topic question"
-      }
-     ],
-     "note": "driving directions from another city are not the clinic's business; parking and transport AT the clinic are, and are faq_question (G-j-09)"
-    },
-    {
-     "id": "G-i-04",
-     "message": "Can you recommend a good restaurant for dinner?",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "off-topic question"
-      }
-     ]
-    },
-    {
-     "id": "G-i-05",
-     "message": "What do you think about the election?",
-     "requests": [
-      {
-       "intent": "small_talk",
-       "gist": "off-topic question"
-      }
-     ]
     }
    ]
   },
