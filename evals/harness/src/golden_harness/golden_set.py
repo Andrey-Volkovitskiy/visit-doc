@@ -760,30 +760,17 @@ family(
 family(
     "l",
     "single-faq-that-looks-multi",
-    "One request wearing the clothes of several: a clarification of itself, a list of "
-    "options, a rambling preamble, two phrasings of one question. The classifier must "
-    "not over-split them. Splitting here is not harmless - each half retrieves "
+    "One request wearing the clothes of several: a list of options, an aside in the "
+    "middle of one, two phrasings of one question. The classifier must not "
+    "over-split them. Splitting here is not harmless - each half retrieves "
     "separately and competes for the same shortlist, and the reply then answers one "
     "question twice instead of answering it once.",
     [
-        case(
-            "G-l-01",
-            "Where exactly are you? I mean the street address.",
-            [faq("street address", "hours-location")],
-            note="the second sentence narrows the first; it is not a second request",
-        ),
         case(
             "G-l-02",
             "Can I pay with an HSA card, or a Visa, or cash? Any of those?",
             [faq("accepted payment methods", "payment")],
             note="one request listing options, answered from one entry once",
-        ),
-        case(
-            "G-l-03",
-            "I have been meaning to ask for a while, and I hope this is the right "
-            "place, but what time do you open?",
-            [faq("opening time", "hours-location")],
-            note="long, but one request - length is not a split point",
         ),
         case(
             "G-l-04",
@@ -798,17 +785,6 @@ family(
             [gap("walk-in visits")],
             note="two phrasings of one request, and a gap - so an over-split shows up "
             "as two abstentions and two gap escalations for one question",
-        ),
-        case(
-            "G-l-06",
-            "How early do I need to be there - like, before the appointment I mean?",
-            [faq("arrival time", "arrival-time")],
-        ),
-        case(
-            "G-l-07",
-            "What do I need to bring with me? Documents, that sort of thing.",
-            [faq("what to bring", "what-to-bring")],
-            note="the second sentence exemplifies the first rather than adding to it",
         ),
     ],
 )

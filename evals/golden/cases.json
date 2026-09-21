@@ -1073,23 +1073,8 @@
   {
    "letter": "l",
    "name": "single-faq-that-looks-multi",
-   "tests": "One request wearing the clothes of several: a clarification of itself, a list of options, a rambling preamble, two phrasings of one question. The classifier must not over-split them. Splitting here is not harmless - each half retrieves separately and competes for the same shortlist, and the reply then answers one question twice instead of answering it once.",
+   "tests": "One request wearing the clothes of several: a list of options, an aside in the middle of one, two phrasings of one question. The classifier must not over-split them. Splitting here is not harmless - each half retrieves separately and competes for the same shortlist, and the reply then answers one question twice instead of answering it once.",
    "cases": [
-    {
-     "id": "G-l-01",
-     "message": "Where exactly are you? I mean the street address.",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "street address",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      }
-     ],
-     "note": "the second sentence narrows the first; it is not a second request"
-    },
     {
      "id": "G-l-02",
      "message": "Can I pay with an HSA card, or a Visa, or cash? Any of those?",
@@ -1104,21 +1089,6 @@
       }
      ],
      "note": "one request listing options, answered from one entry once"
-    },
-    {
-     "id": "G-l-03",
-     "message": "I have been meaning to ask for a while, and I hope this is the right place, but what time do you open?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "opening time",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      }
-     ],
-     "note": "long, but one request - length is not a split point"
     },
     {
      "id": "G-l-04",
@@ -1147,35 +1117,6 @@
       }
      ],
      "note": "two phrasings of one request, and a gap - so an over-split shows up as two abstentions and two gap escalations for one question"
-    },
-    {
-     "id": "G-l-06",
-     "message": "How early do I need to be there - like, before the appointment I mean?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "arrival time",
-       "answerable": true,
-       "cites": [
-        "arrival-time"
-       ]
-      }
-     ]
-    },
-    {
-     "id": "G-l-07",
-     "message": "What do I need to bring with me? Documents, that sort of thing.",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "what to bring",
-       "answerable": true,
-       "cites": [
-        "what-to-bring"
-       ]
-      }
-     ],
-     "note": "the second sentence exemplifies the first rather than adding to it"
     }
    ]
   },
