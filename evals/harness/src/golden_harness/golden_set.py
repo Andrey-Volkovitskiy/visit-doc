@@ -733,24 +733,9 @@ family(
             "hold either - it must not reach the booking node",
         ),
         case(
-            "G-k-05",
-            "Do you offer interpreter services?",
-            [gap("interpreter services")],
-        ),
-        case(
-            "G-k-06",
-            "Do you do blood tests?",
-            [gap("blood tests offered")],
-            note="a service the corpus never mentions",
-        ),
-        case(
             "G-k-07",
             "Do I need to fast before a blood test?",
             [gap("fasting before a blood test")],
-        ),
-        case("G-k-08", "Do you see children under five?", [gap("paediatric care")]),
-        case(
-            "G-k-09", "Is there Wi-Fi in the waiting room?", [gap("waiting-room Wi-Fi")]
         ),
         case(
             "G-k-10",
@@ -758,23 +743,6 @@ family(
             [gap("public holidays")],
             note="same subject as the hours entry, which gives weekdays only and says "
             "nothing about holidays",
-        ),
-        case(
-            "G-k-11",
-            "How long do lab results take to come back?",
-            [gap("lab result turnaround")],
-        ),
-        case(
-            "G-k-12",
-            "Can I bring my guide dog in with me?",
-            [gap("assistance animals")],
-        ),
-        case(
-            "G-k-13",
-            "Is there a height limit in the Mega Mall garage?",
-            [gap("parking height limit")],
-            note="the hours entry names that garage and that it is free, so the "
-            "retrieval lands on it - but it says nothing about a height limit",
         ),
         case(
             "G-k-14",

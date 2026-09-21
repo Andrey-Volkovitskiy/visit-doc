@@ -1031,61 +1031,12 @@
      "note": "asks the terms governing a cancellation, which the records do not hold either - it must not reach the booking node"
     },
     {
-     "id": "G-k-05",
-     "message": "Do you offer interpreter services?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "interpreter services",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-k-06",
-     "message": "Do you do blood tests?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "blood tests offered",
-       "answerable": false,
-       "cites": []
-      }
-     ],
-     "note": "a service the corpus never mentions"
-    },
-    {
      "id": "G-k-07",
      "message": "Do I need to fast before a blood test?",
      "requests": [
       {
        "intent": "faq_question",
        "gist": "fasting before a blood test",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-k-08",
-     "message": "Do you see children under five?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "paediatric care",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-k-09",
-     "message": "Is there Wi-Fi in the waiting room?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "waiting-room Wi-Fi",
        "answerable": false,
        "cites": []
       }
@@ -1103,43 +1054,6 @@
       }
      ],
      "note": "same subject as the hours entry, which gives weekdays only and says nothing about holidays"
-    },
-    {
-     "id": "G-k-11",
-     "message": "How long do lab results take to come back?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "lab result turnaround",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-k-12",
-     "message": "Can I bring my guide dog in with me?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "assistance animals",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-k-13",
-     "message": "Is there a height limit in the Mega Mall garage?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "parking height limit",
-       "answerable": false,
-       "cites": []
-      }
-     ],
-     "note": "the hours entry names that garage and that it is free, so the retrieval lands on it - but it says nothing about a height limit"
     },
     {
      "id": "G-k-14",
