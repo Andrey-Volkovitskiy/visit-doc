@@ -1277,6 +1277,18 @@ def test_the_generation_prompt_forbids_inferring_an_answer_from_a_silence() -> N
     assert "say nothing it does not say - not even a no" in prompt
 
 
+def test_the_generation_prompt_licenses_reading_a_group_down_to_its_members() -> None:
+    # The rule above is read at the level of the words present: "any of our
+    # practitioners" answers a question about a dentist, but the chunk never types
+    # "dentist", so the model declined in prose on the chunk that answered it. The
+    # licence is narrow on purpose - dropping the rule to fix this brings back the
+    # invented "we do not offer blood tests on Saturdays".
+    from chat.agent.answer_faq import _SYSTEM_PROMPT
+
+    prompt = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "every member of a group it states of each one" in prompt
+
+
 # --- Phase 1g: which request an event belongs to -------------------------------------
 
 

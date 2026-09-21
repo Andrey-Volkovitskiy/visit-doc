@@ -82,13 +82,24 @@ _MAX_TOKENS = 1024
 # not say, not combining what they do: "never infer an answer" also stopped it
 # assembling "what should I do before my visit?" from the arrival and what-to-bring
 # entries, which is exactly what it should do.
+#
+# That rule is read at the level of the words present, which is what the last sentence
+# is for. "You can book a visit with any of our practitioners without a referral"
+# answers "do I need a referral to see a dentist?", but the chunk never types the word
+# "dentist", so the model called it unanswered: G-o-02's second request abstained in
+# prose on the chunk that answered it, 10 samples out of 10, while the same chunk
+# answered the "specialist" wording every time. Deleting the rule instead was measured
+# and is worse - the invented "we do not offer blood tests on Saturdays" returns at 3
+# samples in 5, and an MRI acquires a $160 price the corpus never states.
 _SYSTEM_PROMPT = (
     "You are a clinic assistant. Answer the visitor's question using ONLY the clinic "
     "information given with it. Do not use outside knowledge. Be concise. Speak as the "
     "clinic, stating the facts directly: never mention where they came from, and never "
     "refer to context, provided information, documents, excerpts or text you were "
     "given. Say nothing it does not say - not even a no: when it does not answer the "
-    "question, say plainly that you don't have that information."
+    "question, say plainly that you don't have that information. What it states of "
+    "every member of a group it states of each one, so a question about one of them "
+    "is answered, not missing."
 )
 # The heading the retrieved chunks sit under. It names what they are to the patient, so
 # the model repeating it would still read naturally.

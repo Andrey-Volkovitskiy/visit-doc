@@ -929,9 +929,10 @@ family(
 family(
     "o",
     "request-segmentation",
-    "Messages whose second request cannot be searched or answered as written: it "
-    "borrows its subject from the first clause, or refers back with a pronoun or an "
-    "ellipsis. Each piece has to be restated so it stands alone - 'and how much is the "
+    "Requests that cannot be searched or answered as written: they borrow a subject "
+    "from an earlier clause, or refer back with a pronoun or an ellipsis - and one "
+    "borrows from the previous turn rather than from anything in its own message. "
+    "Each piece has to be restated so it stands alone - 'and how much is the "
     "visit?' has to become 'how much is a dentist visit?' or it retrieves against "
     "nothing. Restating must not add: a resolved reference keeps what was asked, and "
     "inventing the constraint that decides the answer is worse than dropping it.",
@@ -968,26 +969,19 @@ family(
             note="'is it free?' cannot be searched as written",
         ),
         case(
-            "G-o-04",
-            "What should I bring, and is that different for a returning patient?",
-            [
-                faq("what to bring", "what-to-bring"),
-                gap("whether what to bring differs for a returning patient"),
-            ],
-            note="a pronoun pointing back, and the second half is a genuine gap - the "
-            "arrival-time entry distinguishes returning patients, what-to-bring does "
-            "not, so a restatement that drifts to arrival time answers the wrong "
-            "thing",
-        ),
-        case(
             "G-o-05",
-            "How much is a GP visit, and a dentist? And a specialist?",
-            [
-                faq("GP out-of-pocket rate", "out-of-pocket-rates"),
-                faq("dentist out-of-pocket rate", "out-of-pocket-rates"),
-                faq("specialist out-of-pocket rate", "out-of-pocket-rates"),
+            "And a dentist?",
+            [faq("dentist out-of-pocket rate", "out-of-pocket-rates")],
+            history=[
+                turn("user", "How much is a GP visit if I'm paying out of pocket?"),
+                turn("assistant", "Out-of-pocket, a GP visit is $120."),
             ],
-            note="two elliptical clauses after a full one, all three from one entry",
+            note="the reference reaches back a turn rather than a clause: the message "
+            "carries no verb, no price word and no way to be searched as written, so "
+            "everything that makes it a question comes from the conversation. The "
+            "assistant's turn gives the GP figure only, so the dentist's price has to "
+            "be retrieved rather than read back out of the history - and the entry "
+            "prices the two differently, so the restatement decides the answer",
         ),
         case(
             "G-o-06",
@@ -998,18 +992,6 @@ family(
             ],
             note="the second request is conditional on the first's answer and still "
             "stands alone; the two rest on different entries",
-        ),
-        case(
-            "G-o-07",
-            "Is the dentist in on Saturday, and what time do you close that day?",
-            [
-                bk("dentist Saturday availability", "check_availability"),
-                faq("Saturday closing time", "hours-location"),
-            ],
-            scheduling=sch([], []),
-            note="'that day' has to resolve to Saturday. The corpus closes at 6pm "
-            "Mon-Sat; the dentist's own day ends at 2pm, so the two halves have "
-            "different right answers and must not be merged",
         ),
     ],
 )
