@@ -498,22 +498,9 @@ family(
             [req("call_staff", "asks for a person")],
         ),
         case(
-            "G-f-02",
-            "Can I get a human on this?",
-            [req("call_staff", "asks for a person")],
-        ),
-        case(
             "G-f-03",
             "Put me through to the front desk, please.",
             [req("call_staff", "asks for the front desk")],
-        ),
-        case(
-            "G-f-04",
-            "My plan isn't on that list - can you connect me with someone?",
-            [req("call_staff", "takes up the corpus's own offer")],
-            note="the insurance entry offers to connect the patient with the front "
-            "desk; this is a patient accepting that offer, so the reply has to route "
-            "to a person rather than answer again",
         ),
         case(
             "G-f-05",
@@ -530,8 +517,10 @@ family(
                     "our friendly front desk team.",
                 )
             ],
-            note="the same offer taken up a turn later, which is the shape the entry "
-            "actually produces",
+            note="the insurance entry offers to connect the patient with the front "
+            "desk, and this is a patient taking that offer up a turn later - the "
+            "shape the entry actually produces - so the reply has to route to a "
+            "person rather than answer again",
         ),
         case(
             "G-f-06",

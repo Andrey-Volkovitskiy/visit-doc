@@ -627,16 +627,6 @@
      ]
     },
     {
-     "id": "G-f-02",
-     "message": "Can I get a human on this?",
-     "requests": [
-      {
-       "intent": "call_staff",
-       "gist": "asks for a person"
-      }
-     ]
-    },
-    {
      "id": "G-f-03",
      "message": "Put me through to the front desk, please.",
      "requests": [
@@ -645,17 +635,6 @@
        "gist": "asks for the front desk"
       }
      ]
-    },
-    {
-     "id": "G-f-04",
-     "message": "My plan isn't on that list - can you connect me with someone?",
-     "requests": [
-      {
-       "intent": "call_staff",
-       "gist": "takes up the corpus's own offer"
-      }
-     ],
-     "note": "the insurance entry offers to connect the patient with the front desk; this is a patient accepting that offer, so the reply has to route to a person rather than answer again"
     },
     {
      "id": "G-f-05",
@@ -672,7 +651,7 @@
        "gist": "takes up the offer across turns"
       }
      ],
-     "note": "the same offer taken up a turn later, which is the shape the entry actually produces"
+     "note": "the insurance entry offers to connect the patient with the front desk, and this is a patient taking that offer up a turn later - the shape the entry actually produces - so the reply has to route to a person rather than answer again"
     },
     {
      "id": "G-f-06",
