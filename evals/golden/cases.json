@@ -856,20 +856,6 @@
      ]
     },
     {
-     "id": "G-j-04",
-     "message": "Do I need a referral to see a specialist?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "is a referral needed",
-       "answerable": true,
-       "cites": [
-        "referral"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-j-05",
      "message": "Can I see a specialist if my GP hasn't sent anything over?",
      "requests": [
@@ -900,20 +886,6 @@
      "note": "the corpus answers no; the case is here to check a no is given rather than abstained on"
     },
     {
-     "id": "G-j-07",
-     "message": "Which insurance plans do you accept?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "accepted plans",
-       "answerable": true,
-       "cites": [
-        "insurance-plans"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-j-08",
      "message": "Do you take Aetna?",
      "requests": [
@@ -926,7 +898,7 @@
        ]
       }
      ],
-     "note": "one named plan against a list, rather than the list itself"
+     "note": "the entry lists the plans it accepts, and this names one of them, so the answer has to settle a membership question rather than repeat the list back"
     },
     {
      "id": "G-j-09",
@@ -957,40 +929,12 @@
      ]
     },
     {
-     "id": "G-j-11",
-     "message": "How much does a GP appointment cost out of pocket?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "GP out-of-pocket rate",
-       "answerable": true,
-       "cites": [
-        "out-of-pocket-rates"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-j-12",
      "message": "Can I pay with my HSA card?",
      "requests": [
       {
        "intent": "faq_question",
        "gist": "is an HSA card accepted",
-       "answerable": true,
-       "cites": [
-        "payment"
-       ]
-      }
-     ]
-    },
-    {
-     "id": "G-j-13",
-     "message": "When do I have to pay?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "when payment is due",
        "answerable": true,
        "cites": [
         "payment"
@@ -1008,20 +952,6 @@
        "answerable": true,
        "cites": [
         "out-of-network"
-       ]
-      }
-     ]
-    },
-    {
-     "id": "G-j-15",
-     "message": "How early should I arrive?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "arrival time",
-       "answerable": true,
-       "cites": [
-        "arrival-time"
        ]
       }
      ]

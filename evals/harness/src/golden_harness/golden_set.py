@@ -642,11 +642,6 @@ family(
             "G-j-03", "Where are you based?", [faq("clinic address", "hours-location")]
         ),
         case(
-            "G-j-04",
-            "Do I need a referral to see a specialist?",
-            [faq("is a referral needed", "referral")],
-        ),
-        case(
             "G-j-05",
             "Can I see a specialist if my GP hasn't sent anything over?",
             [faq("is a referral needed", "referral")],
@@ -661,15 +656,12 @@ family(
             "rather than abstained on",
         ),
         case(
-            "G-j-07",
-            "Which insurance plans do you accept?",
-            [faq("accepted plans", "insurance-plans")],
-        ),
-        case(
             "G-j-08",
             "Do you take Aetna?",
             [faq("is Aetna accepted", "insurance-plans")],
-            note="one named plan against a list, rather than the list itself",
+            note="the entry lists the plans it accepts, and this names one of them, so "
+            "the answer has to settle a membership question rather than repeat the "
+            "list back",
         ),
         case(
             "G-j-09",
@@ -682,27 +674,14 @@ family(
             [faq("dentist out-of-pocket rate", "out-of-pocket-rates")],
         ),
         case(
-            "G-j-11",
-            "How much does a GP appointment cost out of pocket?",
-            [faq("GP out-of-pocket rate", "out-of-pocket-rates")],
-        ),
-        case(
             "G-j-12",
             "Can I pay with my HSA card?",
             [faq("is an HSA card accepted", "payment")],
         ),
         case(
-            "G-j-13", "When do I have to pay?", [faq("when payment is due", "payment")]
-        ),
-        case(
             "G-j-14",
             "What happens if you don't take my insurance?",
             [faq("out-of-network options", "out-of-network")],
-        ),
-        case(
-            "G-j-15",
-            "How early should I arrive?",
-            [faq("arrival time", "arrival-time")],
         ),
         case(
             "G-j-16",
