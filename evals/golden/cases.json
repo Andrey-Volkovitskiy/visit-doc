@@ -1170,28 +1170,6 @@
      ]
     },
     {
-     "id": "G-m-03",
-     "message": "Do you do telehealth, and how much is a dentist visit if I pay myself?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "is telehealth offered",
-       "answerable": true,
-       "cites": [
-        "telehealth"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "dentist out-of-pocket rate",
-       "answerable": true,
-       "cites": [
-        "out-of-pocket-rates"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-m-04",
      "message": "When is payment due, and what cards do you take?",
      "requests": [
@@ -1213,28 +1191,6 @@
       }
      ],
      "note": "both answered from one entry, so it is cited once per request - two citations of the same chunk, not one deduplicated across the turn"
-    },
-    {
-     "id": "G-m-05",
-     "message": "Where are you, and is there parking?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "clinic address",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "parking near the clinic",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      }
-     ]
     },
     {
      "id": "G-m-06",
@@ -1268,36 +1224,6 @@
      "note": "three requests, which is the segment cap - nothing may be dropped and cap_bound must stay false, since three that fit is not a message cut short"
     },
     {
-     "id": "G-m-07",
-     "message": "What should I bring, how early should I arrive, and what are your hours?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "what to bring",
-       "answerable": true,
-       "cites": [
-        "what-to-bring"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "arrival time",
-       "answerable": true,
-       "cites": [
-        "arrival-time"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "clinic hours",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-m-08",
      "message": "What if you don't take my insurance, and how much is a GP visit then?",
      "requests": [
@@ -1325,7 +1251,7 @@
   {
    "letter": "n",
    "name": "compound-faq-mixed",
-   "tests": "Two questions in one message, one answerable and one a gap. The reply must answer the half it can and name the half it cannot, without blurring them: never soften the gap into a partial answer, and never stretch the answer to cover it. Each request reports its own verdict, so there is no single value describing the turn. The hardest are the pairs sharing a subject, where the entry retrieved for the answerable half is also the nearest miss for the gap.",
+   "tests": "Two requests in one message, each reporting its own verdict - so there is no single value describing the turn. Most pair an answerable half with a gap, and the reply must answer the half it can and name the half it cannot without blurring them: never soften the gap into a partial answer, never stretch the answer to cover it. One pairs an answerable half with a request the assistant may never serve, a different cause needing a different fix. One is a gap twice over, where every request abstains and the turn collapses to the fixed abstention text with no composing call, still reporting an outcome per request. The hardest are the pairs sharing a subject, where the entry retrieved for the answerable half is also the nearest miss for the gap.",
    "cases": [
     {
      "id": "G-n-01",
@@ -1363,46 +1289,6 @@
       {
        "intent": "faq_question",
        "gist": "wheelchair access",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-n-03",
-     "message": "Which insurance plans do you accept, and how long do lab results take?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "accepted plans",
-       "answerable": true,
-       "cites": [
-        "insurance-plans"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "lab result turnaround",
-       "answerable": false,
-       "cites": []
-      }
-     ]
-    },
-    {
-     "id": "G-n-04",
-     "message": "How much is a GP visit out of pocket, and do you charge a no-show fee?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "GP out-of-pocket rate",
-       "answerable": true,
-       "cites": [
-        "out-of-pocket-rates"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "no-show fee",
        "answerable": false,
        "cites": []
       }
@@ -1451,48 +1337,6 @@
      "note": "one subject, split answerability - the same entry both answers and fails to answer, which is the hardest kind not to blur"
     },
     {
-     "id": "G-n-07",
-     "message": "When is payment due, and can I set up a payment plan?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "when payment is due",
-       "answerable": true,
-       "cites": [
-        "payment"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "payment plans",
-       "answerable": false,
-       "cites": []
-      }
-     ],
-     "note": "one subject, split answerability"
-    },
-    {
-     "id": "G-n-08",
-     "message": "What are your hours, and are you open on public holidays?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "clinic hours",
-       "answerable": true,
-       "cites": [
-        "hours-location"
-       ]
-      },
-      {
-       "intent": "faq_question",
-       "gist": "public holidays",
-       "answerable": false,
-       "cites": []
-      }
-     ],
-     "note": "one subject, split answerability"
-    },
-    {
      "id": "G-n-09",
      "message": "Do I need a referral to see a specialist, and can you renew my prescription?",
      "requests": [
@@ -1510,6 +1354,25 @@
       }
      ],
      "note": "the second half is not a corpus gap - no entry could ever make the assistant able to renew a prescription. Different cause, different fix, and the answered half still runs"
+    },
+    {
+     "id": "G-n-10",
+     "message": "Do you validate parking, and how much does an MRI scan cost if I pay myself?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "parking validation",
+       "answerable": false,
+       "cites": []
+      },
+      {
+       "intent": "faq_question",
+       "gist": "MRI cost",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "neither half is answerable, so every request abstains and the turn takes the collapse path - one fixed abstention text, no composing call, and still one outcome per request. Each half is a near miss on a different entry: the hours entry names the garage, the rates entry prices a GP, a dentist and other consultations but no scan. Both wordings ask what the clinic's policy is rather than asking it to act, which is what keeps them faq_question and off the not_authorized side"
     }
    ]
   },

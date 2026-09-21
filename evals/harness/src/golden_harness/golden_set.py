@@ -818,27 +818,11 @@ family(
             ],
         ),
         case(
-            "G-m-03",
-            "Do you do telehealth, and how much is a dentist visit if I pay myself?",
-            [
-                faq("is telehealth offered", "telehealth"),
-                faq("dentist out-of-pocket rate", "out-of-pocket-rates"),
-            ],
-        ),
-        case(
             "G-m-04",
             "When is payment due, and what cards do you take?",
             [faq("when payment is due", "payment"), faq("accepted cards", "payment")],
             note="both answered from one entry, so it is cited once per request - two "
             "citations of the same chunk, not one deduplicated across the turn",
-        ),
-        case(
-            "G-m-05",
-            "Where are you, and is there parking?",
-            [
-                faq("clinic address", "hours-location"),
-                faq("parking near the clinic", "hours-location"),
-            ],
         ),
         case(
             "G-m-06",
@@ -851,15 +835,6 @@ family(
             note="three requests, which is the segment cap - nothing may be dropped "
             "and cap_bound must stay false, since three that fit is not a message cut "
             "short",
-        ),
-        case(
-            "G-m-07",
-            "What should I bring, how early should I arrive, and what are your hours?",
-            [
-                faq("what to bring", "what-to-bring"),
-                faq("arrival time", "arrival-time"),
-                faq("clinic hours", "hours-location"),
-            ],
         ),
         case(
             "G-m-08",
@@ -880,12 +855,16 @@ family(
 family(
     "n",
     "compound-faq-mixed",
-    "Two questions in one message, one answerable and one a gap. The reply must answer "
-    "the half it can and name the half it cannot, without blurring them: never soften "
-    "the gap into a partial answer, and never stretch the answer to cover it. Each "
-    "request reports its own verdict, so there is no single value describing the turn. "
-    "The hardest are the pairs sharing a subject, where the entry retrieved for the "
-    "answerable half is also the nearest miss for the gap.",
+    "Two requests in one message, each reporting its own verdict - so there is no "
+    "single value describing the turn. Most pair an answerable half with a gap, and "
+    "the reply must answer the half it can and name the half it cannot without "
+    "blurring them: never soften the gap into a partial answer, never stretch the "
+    "answer to cover it. One pairs an answerable half with a request the assistant may "
+    "never serve, a different cause needing a different fix. One is a gap twice over, "
+    "where every request abstains and the turn collapses to the fixed abstention text "
+    "with no composing call, still reporting an outcome per request. The hardest are "
+    "the pairs sharing a subject, where the entry retrieved for the answerable half is "
+    "also the nearest miss for the gap.",
     [
         case(
             "G-n-01",
@@ -898,16 +877,6 @@ family(
             "G-n-02",
             "Do you offer telehealth, and is the clinic wheelchair accessible?",
             [faq("is telehealth offered", "telehealth"), gap("wheelchair access")],
-        ),
-        case(
-            "G-n-03",
-            "Which insurance plans do you accept, and how long do lab results take?",
-            [faq("accepted plans", "insurance-plans"), gap("lab result turnaround")],
-        ),
-        case(
-            "G-n-04",
-            "How much is a GP visit out of pocket, and do you charge a no-show fee?",
-            [faq("GP out-of-pocket rate", "out-of-pocket-rates"), gap("no-show fee")],
         ),
         case(
             "G-n-05",
@@ -927,18 +896,6 @@ family(
             "fails to answer, which is the hardest kind not to blur",
         ),
         case(
-            "G-n-07",
-            "When is payment due, and can I set up a payment plan?",
-            [faq("when payment is due", "payment"), gap("payment plans")],
-            note="one subject, split answerability",
-        ),
-        case(
-            "G-n-08",
-            "What are your hours, and are you open on public holidays?",
-            [faq("clinic hours", "hours-location"), gap("public holidays")],
-            note="one subject, split answerability",
-        ),
-        case(
             "G-n-09",
             "Do I need a referral to see a specialist, and can you renew my "
             "prescription?",
@@ -949,6 +906,19 @@ family(
             note="the second half is not a corpus gap - no entry could ever make the "
             "assistant able to renew a prescription. Different cause, different fix, "
             "and the answered half still runs",
+        ),
+        case(
+            "G-n-10",
+            "Do you validate parking, and how much does an MRI scan cost if I pay "
+            "myself?",
+            [gap("parking validation"), gap("MRI cost")],
+            note="neither half is answerable, so every request abstains and the turn "
+            "takes the collapse path - one fixed abstention text, no composing call, "
+            "and still one outcome per request. Each half is a near miss on a "
+            "different entry: the hours entry names the garage, the rates entry "
+            "prices a GP, a dentist and other consultations but no scan. Both "
+            "wordings ask what the clinic's policy is rather than asking it to act, "
+            "which is what keeps them faq_question and off the not_authorized side",
         ),
     ],
 )
