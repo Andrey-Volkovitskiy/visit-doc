@@ -10,7 +10,6 @@ and behavior byte for byte. Only a mixed-intent turn pays for a composing call.
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import Any
 
 from anthropic import AsyncAnthropic
@@ -381,7 +380,6 @@ async def compose_answer(
     )
 
     answer_parts: list[str] = []
-    first_token_at: datetime | None = None
     model = get_settings().GENERATION_MODEL
     messages: list[MessageParam] = [{"role": "user", "content": prompt}]
     try:
@@ -399,8 +397,7 @@ async def compose_answer(
             ) as stream:
                 async for event in stream:
                     if event.type == "text":
-                        if first_token_at is None:
-                            first_token_at = datetime.now(UTC)
+                        observed.mark_token()
                         answer_parts.append(event.text)
                         yield ChatTokenEvent(text=event.text)
                 # Read after the loop, the same way `answer_small_talk` reads it: the
@@ -409,10 +406,7 @@ async def compose_answer(
                 # a failure of the same call.
                 final = await stream.get_final_message()
             observed.record_completion(
-                "".join(answer_parts),
-                final.usage,
-                final.stop_reason,
-                completion_start_time=first_token_at,
+                "".join(answer_parts), final.usage, final.stop_reason
             )
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc

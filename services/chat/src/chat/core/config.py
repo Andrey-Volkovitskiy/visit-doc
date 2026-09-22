@@ -118,6 +118,17 @@ class Settings(BaseSettings):
         default="development", max_length=40, pattern=r"^[a-z0-9_-]+$"
     )
 
+    @field_validator("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY")
+    @classmethod
+    def _key_without_surrounding_whitespace(cls, value: str) -> str:
+        """Strip a Langfuse key, so a blank one reads as unset.
+
+        Stripped once, here, so the key the exporter authenticates with and the value
+        redaction matches are the same string: a key redacted with a stray space or
+        carriage return attached is not a substring of any text carrying the key.
+        """
+        return value.strip()
+
     @field_validator("LANGFUSE_ENVIRONMENT")
     @classmethod
     def _environment_is_not_reserved(cls, value: str) -> str:
@@ -132,9 +143,7 @@ class Settings(BaseSettings):
     @property
     def tracing_enabled(self) -> bool:
         """Return whether this process exports traces: both Langfuse keys are set."""
-        return bool(
-            self.LANGFUSE_PUBLIC_KEY.strip() and self.LANGFUSE_SECRET_KEY.strip()
-        )
+        return bool(self.LANGFUSE_PUBLIC_KEY and self.LANGFUSE_SECRET_KEY)
 
 
 @lru_cache

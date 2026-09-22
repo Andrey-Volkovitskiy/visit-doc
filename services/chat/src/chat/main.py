@@ -85,9 +85,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     for the duration of each call.
 
     The tracer is built first, so a start that fails later still shuts it down. Its
-    shutdown flushes whatever spans are pending and blocks for at most the exporter's
-    timeout, so it runs on a worker thread; it is registered to run before the bridge
-    that reports its failures is removed, and after observations stop being recorded.
+    shutdown flushes whatever spans are pending and blocks while it does - each export
+    attempt bounded by the exporter's timeout - so it runs on a worker thread; it is
+    registered to run before the bridge that reports its failures is removed, and after
+    observations stop being recorded.
     """
     settings = get_settings()
     _log_configuration(settings)

@@ -13,6 +13,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from chat.agent import generation_registry
 from chat.api.session_cookie import COOKIE_NAME
 from chat.api.turn import ReplyOutcome
 from chat.core.config import Settings
@@ -367,6 +368,36 @@ async def test_a_turn_superseded_by_a_staff_post_is_marked_cancelled_not_failed(
     assert attributes["langfuse.observation.level"] == "WARNING"
     assert attributes["langfuse.observation.status_message"] == "cancelled"
     assert _metadata(root, "turn_outcome") == "cancelled"
+
+
+async def test_a_trace_that_cannot_be_opened_still_ends_the_turn() -> None:
+    # The stream's end and the deregistration are registered before the root opens: a
+    # trace that failed to open would otherwise leave the patient's stream waiting on a
+    # sentinel nothing sends, and the chat's registry holding a finished task.
+    await engine.dispose()
+    with (
+        patch("chat.api.turn.turn_trace", side_effect=RuntimeError("trace refused")),
+        patch("chat.main.AsyncAnthropic", return_value=fake_anthropic_client()),
+        TestClient(app),
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://t"
+        ) as http:
+            chat_id = (await http.post("/chats")).json()["id"]
+            with pytest.raises(RuntimeError, match="trace refused"):
+                await asyncio.wait_for(
+                    http.post(
+                        "/chat",
+                        json={
+                            "chat_id": chat_id,
+                            "message": "thanks!",
+                            "local_now": LOCAL_NOW,
+                        },
+                    ),
+                    timeout=5,
+                )
+
+    assert chat_id not in generation_registry._in_flight
 
 
 @pytest.mark.parametrize(

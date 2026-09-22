@@ -4,6 +4,7 @@ import asyncio
 import contextvars
 import re
 from collections.abc import AsyncIterator, Callable
+from contextlib import ExitStack
 from datetime import datetime
 from enum import StrEnum
 from typing import Annotated
@@ -604,13 +605,27 @@ async def _event_stream(
                     queue.put_nowait(event)
                     reply_delivered = True
 
-                with turn_trace(
-                    turn_id,
-                    chat_id=chat.id,
-                    session_id=chat.session_id,
-                    directive=directive,
-                    input=message_text,
-                ) as root:
+                with ExitStack() as ending:
+                    # Registered before the trace is opened, so the stream is ended and
+                    # this task deregistered however it ends - a trace that could not be
+                    # opened included, which would otherwise leave the patient's stream
+                    # waiting on a sentinel nothing sends. They run last-in first-out,
+                    # after the root has closed: the sentinel, then a second
+                    # deregistration for the paths that never reached the one below - a
+                    # pipeline step that raised, or this task being cancelled mid-graph.
+                    # Harmless after it: the registry has nothing of this task left to
+                    # remove, and a newer turn's entry is not this task's to clear.
+                    ending.callback(clear_if_current, chat.id, task)
+                    ending.callback(queue.put_nowait, None)
+                    root = ending.enter_context(
+                        turn_trace(
+                            turn_id,
+                            chat_id=chat.id,
+                            session_id=chat.session_id,
+                            directive=directive,
+                            input=message_text,
+                        )
+                    )
                     # Only a turn whose root is recorded has a trace to report; the
                     # SDK would name one for any other turn too, and it would never
                     # arrive.
@@ -768,19 +783,12 @@ async def _event_stream(
                             reply_delivered=reply_delivered,
                         )
                         raise
-                    finally:
-                        queue.put_nowait(None)
-                        # A second deregistration, for the paths that never reached the
-                        # one above: a pipeline step that raised, or this task being
-                        # cancelled mid-graph. Harmless after it - the registry has
-                        # nothing of this task left to remove, and a newer turn's entry
-                        # is not this task's to clear.
-                        clear_if_current(chat.id, task)
 
             # The turn runs in a context of its own: a request that asked not to be
             # traced sets the flag there and only there, so every span the turn opens
-            # - on any task or thread it spawns - sees it, while this stream, the next
-            # turn and every other request never do.
+            # - on any task it spawns, or thread it starts through `asyncio.to_thread`
+            # - sees it, while this stream, the next turn and every other request
+            # never do.
             context = contextvars.copy_context()
             if not directive.traced:
                 context.run(UNTRACED.set, True)

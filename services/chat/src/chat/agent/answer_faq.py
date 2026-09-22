@@ -25,7 +25,6 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -464,7 +463,6 @@ async def _answer_one_bound(
     # is flushed in one event and the rest streams token by token, so an answer is
     # delayed by a few characters and never by the whole generation.
     withheld = True
-    first_token_at: datetime | None = None
     model = get_settings().GENERATION_MODEL
     try:
         with generation(
@@ -482,8 +480,7 @@ async def _answer_one_bound(
                 async for event in stream_response:
                     if event.type != "text":
                         continue
-                    if first_token_at is None:
-                        first_token_at = datetime.now(UTC)
+                    observed.mark_token()
                     answer_parts.append(event.text)
                     if not stream:
                         continue
@@ -498,10 +495,7 @@ async def _answer_one_bound(
                 # a failure of the same call.
                 final = await stream_response.get_final_message()
             observed.record_completion(
-                "".join(answer_parts),
-                final.usage,
-                final.stop_reason,
-                completion_start_time=first_token_at,
+                "".join(answer_parts), final.usage, final.stop_reason
             )
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc

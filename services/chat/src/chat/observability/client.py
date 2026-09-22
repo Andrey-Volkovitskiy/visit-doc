@@ -1,8 +1,13 @@
 """The process's one tracer: a Langfuse client over a provider this service owns.
 
-Built once, in the lifespan, from `Settings` alone. Every value the SDK would otherwise
-look up in the process environment is passed explicitly, so what the service exports
-and where is decided in the one place the rest of its configuration is.
+Built once, in the lifespan, from `Settings`: the keys, the host, the timeout, the
+environment, the sampling and the masking are passed explicitly rather than left to the
+SDK's environment lookup. The SDK still reads some variables of its own that no
+argument here overrides: `LANGFUSE_TRACING_ENABLED=false` or `OTEL_SDK_DISABLED=true`
+in the process environment turns export off even with both keys set,
+`LANGFUSE_OTEL_TRACES_EXPORT_PATH` changes the path under the host that spans are sent
+to, and `LANGFUSE_DEBUG`, `LANGFUSE_RELEASE`, `LANGFUSE_FLUSH_AT` and
+`LANGFUSE_FLUSH_INTERVAL` still tune the client.
 """
 
 from langfuse import Langfuse
@@ -71,8 +76,10 @@ class Tracer:
     def shutdown(self) -> None:
         """Flush, then stop the exporter and the SDK's background threads. Blocks.
 
-        Bounded by the exporter's timeout: a destination that does not answer costs
-        at most that long, and whatever it had not accepted is dropped.
+        Each export attempt is bounded by the exporter's timeout, but the flush sends
+        every pending batch and the provider's shutdown flushes once more, so a
+        destination that does not answer can cost several timeouts. Whatever it had not
+        accepted by then is dropped.
         """
         if self._client is not None:
             self._client.shutdown()
@@ -103,8 +110,8 @@ def build_tracer(
         )
     provider = TracerProvider(sampler=UntracedTurnSampler())
     client = Langfuse(
-        public_key=settings.LANGFUSE_PUBLIC_KEY.strip(),
-        secret_key=settings.LANGFUSE_SECRET_KEY.strip(),
+        public_key=settings.LANGFUSE_PUBLIC_KEY,
+        secret_key=settings.LANGFUSE_SECRET_KEY,
         base_url=settings.LANGFUSE_BASE_URL,
         timeout=_EXPORT_TIMEOUT_SECONDS,
         tracing_enabled=settings.tracing_enabled,

@@ -10,11 +10,13 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from anthropic.types import Usage
 from chat import observability
 from chat.observability import (
+    UNTRACED,
     TraceDirective,
     generation,
     record,
@@ -344,6 +346,56 @@ def test_a_streamed_generation_records_when_its_first_token_arrived(
     attributes = _attributes(_only(span_exporter, "compose_answer.model"))
     completion_start = attributes["langfuse.observation.completion_start_time"]
     assert json.loads(completion_start).startswith("2026-09-22T09:00:01")
+
+
+def test_a_streamed_generation_records_its_first_marked_token_not_a_later_one(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    first, later = (
+        datetime(2026, 9, 22, 9, 0, 1, tzinfo=UTC),
+        datetime(2026, 9, 22, 9, 0, 7, tzinfo=UTC),
+    )
+
+    with (
+        generation(
+            "small_talk.model", model="m", input={}, model_parameters={}
+        ) as observed,
+        patch("chat.observability.datetime") as clock,
+    ):
+        clock.now.side_effect = [first, later]
+        observed.mark_token()
+        observed.mark_token()
+        observed.record_completion(
+            output="hello",
+            usage=Usage(input_tokens=3, output_tokens=4),
+            stop_reason="end_turn",
+        )
+
+    attributes = _attributes(_only(span_exporter, "small_talk.model"))
+    completion_start = attributes["langfuse.observation.completion_start_time"]
+    assert json.loads(completion_start).startswith("2026-09-22T09:00:01")
+
+
+def test_an_untraced_observation_never_builds_what_it_would_record(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    # The sampler drops every span of an untraced turn; copying and redacting the
+    # payloads those spans would have carried is work nothing reads.
+    token = UNTRACED.set(True)
+    try:
+        with (
+            patch(
+                "chat.observability._recordable", wraps=observability._recordable
+            ) as recordable,
+            step("faq.search", input={"query": "q"}) as observed,
+        ):
+            observed.set_output({"pool_returned": 0})
+            observed.set_metadata(kept=[])
+    finally:
+        UNTRACED.reset(token)
+
+    recordable.assert_not_called()
+    assert finished_spans(span_exporter) == {}
 
 
 def test_a_tool_call_is_a_tool_observation_with_its_arguments_as_input(

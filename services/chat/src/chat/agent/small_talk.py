@@ -14,7 +14,6 @@ itself - so there is nothing for it to get wrong, and the prompt forbids inventi
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 from anthropic import AsyncAnthropic
 
@@ -113,7 +112,6 @@ async def answer_small_talk(
     )
 
     parts: list[str] = []
-    first_token_at: datetime | None = None
     try:
         with generation(
             "small_talk.model",
@@ -129,8 +127,7 @@ async def answer_small_talk(
             ) as stream_response:
                 async for event in stream_response:
                     if event.type == "text":
-                        if first_token_at is None:
-                            first_token_at = datetime.now(UTC)
+                        observed.mark_token()
                         parts.append(event.text)
                         yield ChatTokenEvent(text=event.text)
                 # Read after the loop rather than from a `message_delta` event: the SDK
@@ -138,12 +135,7 @@ async def answer_small_talk(
                 # why it stopped. Inside the `try` because a failure to obtain it is a
                 # failure of the same call.
                 final = await stream_response.get_final_message()
-            observed.record_completion(
-                "".join(parts),
-                final.usage,
-                final.stop_reason,
-                completion_start_time=first_token_at,
-            )
+            observed.record_completion("".join(parts), final.usage, final.stop_reason)
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 

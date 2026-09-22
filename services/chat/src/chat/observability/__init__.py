@@ -32,7 +32,7 @@ from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, Protocol
 
@@ -171,8 +171,12 @@ class Observation:
     """A handle on one open observation; each call is a no-op if it is not recorded."""
 
     def __init__(self, wrapped: _Wrapped | None, *, recording: bool) -> None:
-        """Hold the SDK's observation, if one was opened."""
-        self._wrapped = wrapped
+        """Hold the SDK's observation, if one was opened and is recorded.
+
+        One that is not recorded is not held: every update to it would be dropped, and
+        only after its payload had been copied and redacted for nothing.
+        """
+        self._wrapped = wrapped if recording else None
         self._recording = recording
 
     @property
@@ -199,6 +203,16 @@ class Observation:
 class Generation(Observation):
     """A handle on one model call's observation."""
 
+    def __init__(self, wrapped: _Wrapped | None, *, recording: bool) -> None:
+        """Hold the SDK's observation, with no streamed token seen yet."""
+        super().__init__(wrapped, recording=recording)
+        self._first_token_at: datetime | None = None
+
+    def mark_token(self) -> None:
+        """Note that a streamed call produced a token; the first one's time is kept."""
+        if self._first_token_at is None:
+            self._first_token_at = datetime.now(UTC)
+
     def record_completion(
         self,
         output: Any,
@@ -211,7 +225,8 @@ class Generation(Observation):
         Args:
             output: The response content, as the call returned it.
             stop_reason: Why the model stopped; a truncated call is marked a warning.
-            completion_start_time: When a streamed call's first token arrived.
+            completion_start_time: When a streamed call's first token arrived; by
+                default, when `mark_token` was first called, if it was.
 
         A cache count the provider did not report is left out rather than recorded as
         zero: zero would be a claim about the call that nobody measured.
@@ -224,7 +239,11 @@ class Generation(Observation):
         self._wrapped.update(
             output=_recordable(output),
             usage_details=usage_details,
-            completion_start_time=completion_start_time,
+            completion_start_time=(
+                completion_start_time
+                if completion_start_time is not None
+                else self._first_token_at
+            ),
         )
         if stop_reason == _TRUNCATED_STOP_REASON:
             self.warn(_TRUNCATED_STOP_REASON)
@@ -500,11 +519,14 @@ def _observed(
         client,
         name,
         as_type=as_type,
-        input=_recordable(input),
         trace_context=trace_context,
         model=model,
         model_parameters=model_parameters,
     ) as wrapped:
+        # Set once the sampler has decided, and only if it recorded the observation: an
+        # untraced turn's payloads would otherwise be copied and redacted for nothing.
+        if input is not None and otel_trace.get_current_span().is_recording():
+            wrapped.update(input=_recordable(input))
         try:
             yield wrapped
         except asyncio.CancelledError as cancelled:
@@ -523,7 +545,6 @@ def _opened(
     name: str,
     *,
     as_type: ObservationType,
-    input: Any,
     trace_context: TraceContext | None,
     model: str | None,
     model_parameters: dict[str, Any] | None,
@@ -540,7 +561,6 @@ def _opened(
                 trace_context=trace_context,
                 name=name,
                 as_type="generation",
-                input=input,
                 level="DEFAULT",
                 model=model,
                 model_parameters=model_parameters,
@@ -550,7 +570,6 @@ def _opened(
                 trace_context=trace_context,
                 name=name,
                 as_type="tool",
-                input=input,
                 level="DEFAULT",
             )
         case ObservationType.RETRIEVER:
@@ -558,7 +577,6 @@ def _opened(
                 trace_context=trace_context,
                 name=name,
                 as_type="retriever",
-                input=input,
                 level="DEFAULT",
             )
         case ObservationType.SPAN:
@@ -566,6 +584,5 @@ def _opened(
                 trace_context=trace_context,
                 name=name,
                 as_type="span",
-                input=input,
                 level="DEFAULT",
             )

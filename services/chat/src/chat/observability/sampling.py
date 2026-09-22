@@ -3,8 +3,9 @@
 A turn sent `X-VisitDoc-Trace: off` must export nothing while the turn beside it, in the
 same process, exports everything. The decision is a flag in the turn's own context,
 set once before the turn's task is created: asyncio copies the context into the task,
-so every span the turn opens - on any task it spawns, or on an executor thread - sees
-the flag, and nothing outside the turn does.
+so every span the turn opens - on any task it spawns, or on a thread started through
+`asyncio.to_thread` - sees the flag, and nothing outside the turn does. A bare
+`loop.run_in_executor` copies no context, so a span opened on its thread would not.
 """
 
 from collections.abc import Sequence

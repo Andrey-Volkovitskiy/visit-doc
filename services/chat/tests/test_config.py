@@ -8,6 +8,7 @@ is declared once instead of repeated.
 
 import pytest
 from chat.core.config import Settings
+from chat.core.logging import known_secret_values
 from pydantic import ValidationError
 from shared_logging import LogFormat
 
@@ -236,6 +237,18 @@ def test_a_blank_key_means_tracing_is_off(public_key: str, secret_key: str) -> N
     settings = _settings(LANGFUSE_PUBLIC_KEY=public_key, LANGFUSE_SECRET_KEY=secret_key)
 
     assert settings.tracing_enabled is False
+
+
+def test_the_secret_key_redacted_is_the_one_the_exporter_sends() -> None:
+    # Stripped once, on the setting: redacting the raw value while authenticating with
+    # a stripped one would match nothing that carries the key actually in use.
+    settings = _settings(
+        LANGFUSE_PUBLIC_KEY=" pk-lf-1 ", LANGFUSE_SECRET_KEY="sk-lf-spaced\r\n"
+    )
+
+    assert settings.LANGFUSE_PUBLIC_KEY == "pk-lf-1"
+    assert settings.LANGFUSE_SECRET_KEY == "sk-lf-spaced"
+    assert "sk-lf-spaced" in known_secret_values(settings)
 
 
 def test_langfuse_destination_and_environment_defaults(untraced: Settings) -> None:
