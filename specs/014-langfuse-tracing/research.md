@@ -121,7 +121,7 @@ sets, before any child starts:
 | Attribute | Value |
 |---|---|
 | `session_id` | the chat id — so a conversation's turns group together (FR-002) |
-| `user_id` | the app session id |
+| `user_id` | a SHA-256 digest of the app session id, first 32 hex characters — never the id itself, which is the session cookie's value and so a credential (found by the post-implementation code review) |
 | `trace_name` | `"turn"` |
 | `environment` | `"eval"` when the request names an eval run, else the configured environment (default `"development"`) |
 | `metadata` | `turn_id`; plus `eval_run_id`, `eval_case_id` for eval turns |

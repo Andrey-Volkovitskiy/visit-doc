@@ -21,7 +21,7 @@ Set on every span of the trace:
 | Attribute | Value |
 |---|---|
 | `session.id` | chat id |
-| `user.id` | app session id |
+| `user.id` | `sha256(app session id)[:32]` — a digest, never the id: the id is the session cookie's value, a bearer credential |
 | `langfuse.trace.name` | `turn` |
 | `langfuse.environment` | `eval` for eval turns, else `LANGFUSE_ENVIRONMENT` |
 | metadata `turn_id` | the turn id |

@@ -54,7 +54,7 @@ turn                                   span        root; trace_id = create_trace
 ```
 
 **Trace-level attributes** (set by `propagate_attributes` before any child starts): `session_id` =
-chat id, `user_id` = app session id, `trace_name` = `"turn"`, `environment`, `metadata` =
+chat id, `user_id` = a SHA-256 digest of the app session id (never the id: it is the session cookie's value), `trace_name` = `"turn"`, `environment`, `metadata` =
 `{turn_id, eval_run_id?, eval_case_id?}`.
 
 **Root observation**: `input` = the patient message(s) the turn answers; `output` = the

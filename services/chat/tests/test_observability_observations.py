@@ -7,6 +7,7 @@ API is a pass-through when no tracer is installed - the body always runs.
 """
 
 import asyncio
+import hashlib
 import json
 from datetime import UTC, datetime
 from typing import Any
@@ -209,7 +210,12 @@ def test_a_turn_trace_is_seeded_from_the_turn_id_and_carries_the_trace_attribute
     for span in (root_span, child):
         attributes = _attributes(span)
         assert attributes["session.id"] == "01K5CHAT0000000000000000AB"
-        assert attributes["user.id"] == "01K5SESS0000000000000000AB"
+        # A digest of the session id, never the id itself: the id is the session's
+        # cookie value, and a trace is read by whoever can open the Langfuse project.
+        assert (
+            attributes["user.id"]
+            == hashlib.sha256(b"01K5SESS0000000000000000AB").hexdigest()[:32]
+        )
         assert attributes["langfuse.trace.name"] == "turn"
         assert attributes["langfuse.environment"] == "development"
         assert attributes["langfuse.trace.metadata.turn_id"] == turn_id

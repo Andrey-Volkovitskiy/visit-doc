@@ -28,6 +28,7 @@ recorded untouched: their keys are counts and settings (`cache_read_input_tokens
 """
 
 import asyncio
+import hashlib
 from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager
 from contextvars import ContextVar
@@ -316,6 +317,18 @@ def installed() -> Tracer | None:
     return _active
 
 
+def _trace_user(session_id: str) -> str:
+    """Return the trace's user id: a digest of `session_id`, never the id itself.
+
+    The session id is the value of the patient's session cookie, so it is a bearer
+    credential - whoever holds it can read the patient's chats, post as them and book or
+    cancel. A trace is read by anyone who can open the Langfuse project. The digest
+    still groups one patient's turns together and cannot be turned back into the
+    cookie; 128 bits of it leave no collision worth considering.
+    """
+    return hashlib.sha256(session_id.encode()).hexdigest()[:32]
+
+
 @contextmanager
 def turn_trace(
     turn_id: str,
@@ -331,7 +344,7 @@ def turn_trace(
         turn_id: Seeds the trace id, so the trace is findable from any log line of the
             turn without a mapping held anywhere.
         chat_id: The trace's session, so a conversation's turns group together.
-        session_id: The trace's user.
+        session_id: The trace's user, sent only as a digest (see `_trace_user`).
         directive: Adds the eval run's ids and environment for an eval turn. Whether
             the turn is traced at all is decided before this is called, not here.
         input: The patient message(s) the turn answers.
@@ -358,7 +371,7 @@ def turn_trace(
         ) as wrapped,
         propagate_attributes(
             session_id=chat_id,
-            user_id=session_id,
+            user_id=_trace_user(session_id),
             trace_name=_TURN,
             environment=directive.environment(tracer.environment),
             metadata=_recordable(directive.trace_metadata(turn_id)),

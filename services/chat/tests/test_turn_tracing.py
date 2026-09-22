@@ -7,6 +7,7 @@ only somewhere inside it.
 """
 
 import asyncio
+import hashlib
 import json
 from collections.abc import AsyncIterator
 from typing import Any
@@ -160,7 +161,15 @@ def test_a_turn_exports_one_trace_seeded_from_its_id(
         for span in named:
             attributes = span_attributes(span)
             assert attributes["session.id"] == chat_id
-            assert attributes["user.id"] == session_id
+            assert (
+                attributes["user.id"]
+                == hashlib.sha256(session_id.encode()).hexdigest()[:32]
+            )
+            # The session id is the patient's cookie value - a credential - so it must
+            # reach no attribute of any span, under any name.
+            assert not [
+                name for name, value in attributes.items() if session_id in str(value)
+            ]
             assert attributes["langfuse.trace.name"] == "turn"
             assert attributes["langfuse.environment"] == "development"
             assert attributes["langfuse.trace.metadata.turn_id"] == turn_id
