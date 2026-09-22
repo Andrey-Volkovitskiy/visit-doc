@@ -53,7 +53,7 @@ single staff member, without logging in as anyone. Operational analytics follow 
 | Vector store | **Qdrant** | Embeddings for retrieval-augmented FAQ answering. |
 | Frontend | **React + Vite SPA**, minimal | A streaming chat UI, kept lean. |
 | Agent framework | **LangGraph** | Real branching and parallel intent handling, not just a linear chain. |
-| Tracing / eval | **Langfuse Cloud** (free Hobby tier) | Trace UI, per-step latency, and token cost with no infrastructure to run. Open source, so self-hosting stays a configuration change rather than a rewrite — see Phase 2d. |
+| Tracing / eval | **Langfuse Cloud** (free Hobby tier) | Trace UI, per-step latency, and token cost with no infrastructure to run. |
 
 **Double-booking is prevented in the Scheduling service at the database level**, using PostgreSQL's
 interval/range types and an exclusion constraint in Scheduling's own database rather than relying on
@@ -563,12 +563,6 @@ where 2b answers how often turns go the right way across a labeled set.
   backend" principle. Hobby's limits fit the use: 50k units a month (a unit is one trace, span,
   generation or score, so roughly 15–25 per turn), 30 days of history, two users. The 30-day window
   costs nothing the eval chain needs, because 2b and 2c read stored runs, never traces.
-- **Self-hosting stays a configuration change.** The destination and keys reach the SDK through
-  `Settings` like every other endpoint, so moving to a self-hosted instance is standing one up and
-  changing three environment variables — no instrumentation code knows which instance it talks to.
-  Traces are treated as disposable and are not migrated; there is no built-in export/import, only
-  a scripted copy over the public API, which is worth doing for prompts or datasets and neither is
-  in this phase.
 - **Traces reach Langfuse over OpenTelemetry, not through the logs.** The Langfuse SDK is an
   OpenTelemetry tracer exporting over OTLP; structlog stays exactly as it is, and the harness keeps
   reading `.run/chat.log`. LangGraph nodes are spanned by Langfuse's callback handler, Claude calls
@@ -578,15 +572,16 @@ where 2b answers how often turns go the right way across a labeled set.
   full messages and prompts to a third party, and the redaction in `shared-logging` is a structlog
   processor that never sees a span. The SDK's mask hook gets the same treatment the log redaction
   did: one declaration, applied to every span.
-- **An eval run sends no Langfuse events unless asked.** `make eval-run` drives turns untraced by
-  default, and `make eval-run TRACE=1` opts in — for the narrowed `CASES=…` run where the question
-  is why a specific case moved. The default follows from the budget and from what a run is for: a full
-  run is roughly 3k units and a noise band is five of them, so tracing every run would spend most
-  of a month's allowance on traces nobody opens, and a run's metrics never come from a trace
-  anyway. The opt-out is per run, not per stack, so a developer tracing the app by hand keeps
-  tracing while a run executes beside it; how the harness's choice reaches the chat service is the
-  spec's to settle. The run records whether it was traced, and tracing must not change what a turn
-  does — a traced and an untraced run of one build compare as the same conditions.
+- **An eval run sends Langfuse events by default, but it can be disabled when needed.** `make
+  eval-run` traces the turns it drives, so a case that surprises in a run's report has a trace to
+  open without re-running it, and `make eval-run TRACE=0` turns tracing off for that run. The case
+  for turning it off is the budget: a full run is roughly 3k units and a noise band is five of
+  them, about 15k of the month's 50k, spent on traces nobody opens — a run's metrics never come
+  from a trace. The switch is per run, not per stack, so a developer tracing the app by hand keeps
+  tracing while an untraced run executes beside it; how the harness's choice reaches the chat
+  service is the spec's to settle. The run records whether it was traced, and tracing must not
+  change what a turn does — a traced and an untraced run of one build compare as the same
+  conditions.
 
 ### Phase 3 — The frontend on its own terms
 Every phase so far treated the frontend as the thinnest surface that made backend work

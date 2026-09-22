@@ -272,7 +272,7 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   mixed-intent messages rather than a linear chain.
 - **Frontend** — a minimal React + Vite streaming chat UI.
 - **Tracing/eval** — Langfuse Cloud (free Hobby tier) for per-step latency, token cost, and decision
-  traces; eval runs send no Langfuse events unless run with `TRACE=1`.
+  traces; eval runs send Langfuse events by default, and `TRACE=0` turns that off for a run.
 
 ### Key design decisions to preserve
 

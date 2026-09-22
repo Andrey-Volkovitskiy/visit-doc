@@ -646,12 +646,10 @@ of [`docs/ROADMAP.md`](docs/ROADMAP.md).
   Qdrant today. Hobby covers the use: 50k units a month, 30 days of history, two users, no card.
   The costs are that patient messages and prompts leave the machine, which is why span masking is
   part of the phase rather than a follow-up, and that traces older than 30 days are gone, which
-  loses nothing the eval chain reads. Lock-in is limited to configuration: Langfuse is open source,
-  the SDK takes its host and keys from settings, and moving to a self-hosted instance means
-  changing three environment variables and starting with no trace history.
-- **Eval runs are untraced by default; `make eval-run TRACE=1` opts in.** Tracing every run would be
-  the zero-configuration choice. A full golden-set run is roughly 3k units and a noise band is five
-  runs, so it would spend most of a month's allowance on traces that answer no question a run
-  asks — its metrics come from the stored run, never from a trace. The cost is that a surprising
-  case in an untraced run has no trace to open, so investigating it means re-running that case
-  with `CASES=… TRACE=1`, which is a few turns rather than 135.
+  loses nothing the eval chain reads.
+- **Eval runs are traced by default; `make eval-run TRACE=0` turns it off.** Tracing every run
+  means a surprising case in a run's report has a trace to open, rather than having to be re-run
+  to get one. The cost is the budget: a full golden-set run is roughly 3k units and a noise band is
+  five runs, about 15k of the month's 50k, spent on traces that answer no question a run asks — its
+  metrics come from the stored run, never from a trace. So the runs where no trace will be opened,
+  a noise band above all, are the ones to run with `TRACE=0`.
