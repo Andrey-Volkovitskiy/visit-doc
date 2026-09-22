@@ -84,6 +84,24 @@ def test_resume_is_exclusive_with_what_a_resumed_run_takes_from_run_json(
         cli.parse_args(["run", "--resume", "01K5ANY", *extra])
 
 
+def test_a_run_is_traced_unless_it_asks_not_to_be() -> None:
+    assert cli.parse_args(["run"]).no_trace is False
+    assert cli.parse_args(["run", "--no-trace"]).no_trace is True
+    assert cli.parse_args(["run", "--family", "small-talk", "--no-trace"]).no_trace
+
+
+def test_a_resumed_run_keeps_its_own_tracing_so_no_trace_is_refused_with_resume(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as exited:
+        cli.parse_args(["run", "--resume", "01K5ANY", "--no-trace"])
+
+    assert exited.value.code == 2
+    err = capsys.readouterr().err
+    assert "--no-trace" in err
+    assert "--resume" in err
+
+
 @pytest.mark.parametrize(
     "clock", ["2026-03-09T08:00+02:00", "2026-03-09T08:00Z", "soon"]
 )
@@ -207,9 +225,30 @@ def test_run_drives_the_selection_and_prints_the_summary(
     assert kwargs["artifacts_dir"] == run_copy.parent
     assert kwargs["log_path"] == Path("/tmp/chat.log")
     assert kwargs["clock"] == DEFAULT_CLOCK
+    assert kwargs["tracing_requested"] is True
     printed = capsys.readouterr().out
     assert "## Conditions" in printed
     assert (run_copy / "report.json").is_file()
+
+
+def test_run_no_trace_asks_the_driver_for_an_untraced_run(
+    recorder: _Recorder, run_copy: Path
+) -> None:
+    status = cli.main(
+        [
+            "run",
+            "--no-trace",
+            "--labels",
+            str(_LABELS),
+            "--artifacts",
+            str(run_copy.parent),
+        ]
+    )
+
+    assert status == 0
+    name, _args, kwargs = recorder.calls[1]
+    assert name == "drive_run"
+    assert kwargs["tracing_requested"] is False
 
 
 def test_run_resume_resolves_the_run_and_resumes_it(

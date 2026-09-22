@@ -20,8 +20,10 @@ from golden_harness.driver.logslice import (
     restarts_since,
     select_turn,
     service_conditions,
+    trace_id,
 )
 from golden_harness.record import ProducedSegmentation
+from pydantic import ValidationError
 
 _UVICORN_STARTUP = (
     "INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)"
@@ -507,6 +509,57 @@ def test_two_classification_events_are_a_typed_missing_slice(tmp_path: Path) -> 
 
     assert isinstance(result, SliceMissing)
     assert result.reason is SliceMissingReason.SEVERAL_CLASSIFICATIONS
+
+
+# --- the turn's trace (014) ----------------------------------------------------------
+
+
+def test_a_turns_trace_id_is_read_from_its_traced_event(tmp_path: Path) -> None:
+    log = tmp_path / "chat.log"
+    _append(
+        log,
+        _received("t1", "M-CASE"),
+        _event("turn.traced", "t1", trace_id="0af7651916cd43dd8448eb211c80319c"),
+        _event("turn.traced", "t2", trace_id="ffffffffffffffffffffffffffffffff"),
+        _classified("t1", "small_talk"),
+    )
+
+    selected = select_turn(_events(read_slice(log, 0)), "M-CASE")
+
+    assert trace_id(_events(selected)) == "0af7651916cd43dd8448eb211c80319c"
+
+
+def test_a_turn_that_logged_no_traced_event_has_no_trace_id(tmp_path: Path) -> None:
+    log = tmp_path / "chat.log"
+    _append(log, _received("t1", "M-CASE"), _classified("t1", "small_talk"))
+
+    selected = select_turn(_events(read_slice(log, 0)), "M-CASE")
+
+    assert trace_id(_events(selected)) is None
+
+
+@pytest.mark.parametrize(
+    "traced",
+    [
+        [{"trace_id": 7}],
+        [{}],
+        [{"trace_id": "a" * 32}, {"trace_id": "b" * 32}],
+    ],
+)
+def test_a_traced_event_breaking_the_log_contract_is_refused(
+    tmp_path: Path, traced: list[dict[str, Any]]
+) -> None:
+    # Logged once per turn, carrying a string: anything else is the log contract
+    # broken, reported like a segmentation that breaks the record's shape.
+    log = tmp_path / "chat.log"
+    _append(
+        log,
+        _received("t1", "M-CASE"),
+        *(_event("turn.traced", "t1", **fields) for fields in traced),
+    )
+
+    with pytest.raises(ValidationError):
+        trace_id(_events(read_slice(log, 0)))
 
 
 # --- a log truncated in place and grown back past an offset (FR-047c) ----------------

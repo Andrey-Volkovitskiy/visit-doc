@@ -9,6 +9,7 @@ dependencies = [
     "anthropic>=0.120.2",
     "asyncpg>=0.31.0",
     "fastapi>=0.141.1",
+    "langfuse>=4.15.4,<5",
     "langgraph>=1.2.10",
     "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.14.2",

@@ -58,6 +58,7 @@ asked to obey in prose (011's composer rules, for one) is still read by a person
 make eval-run                          # drive the whole set, then score it and print the report
 make eval-run CASES=G-a-01,G-j-03      # only those cases
 make eval-run FAMILY=single-faq-gap    # only one family
+make eval-run TRACE=0                  # send every turn untraced, exporting nothing to Langfuse
 make eval-score RUN=<run_id>           # re-score a stored run; spends nothing, needs no stack
 make eval-build-set                    # re-render evals/golden/cases.json from its declaration
 ```
@@ -74,9 +75,14 @@ uv run --package golden-harness -- python -m golden_harness score --run <run_id>
 ```
 
 `run` also takes `--clock` (the local time every turn is sent; default Monday 2026-03-02 08:00, so
-the whole working week lies ahead of every fixture), `--artifacts`, `--log` and `--base-url`.
-`--resume` refuses `--cases`, `--family` and `--clock`, since a resumed run takes all three from its
-`run.json`. A failure the harness has a name for — a run that does not exist, a label that
+the whole working week lies ahead of every fixture), `--no-trace`, `--artifacts`, `--log` and
+`--base-url`. A run is traced by default: every turn is posted with `X-VisitDoc-Eval-Run` and
+`X-VisitDoc-Eval-Case`, which file its trace under the run and the case, and a chat service holding
+its Langfuse keys exports it. `--no-trace` — which `make eval-run TRACE=0` passes — sends every turn
+with `X-VisitDoc-Trace: off` as well, so the run exports nothing whatever the service is configured
+with. `TRACE=1`, or no `TRACE`, passes nothing; any other value stops Make with an error rather than
+guess. `--resume` refuses `--cases`, `--family`, `--clock` and `--no-trace`, since a resumed run
+takes all four from its `run.json`: an untraced run goes on sending every turn untraced. A failure the harness has a name for — a run that does not exist, a label that
 changed, a run that stopped, a chat service that could not be reached — exits non-zero with its type
 and message on stderr rather than a traceback.
 
@@ -85,7 +91,8 @@ and message on stderr rather than a traceback.
 ```text
 .run/evals/<run_id>/          # run_id is a ULID; .run/ is gitignored
 ├── run.json                  # the conditions: session, clock, selection, corpus check,
-│                             #   slug -> entry id map, label digests, the service's settings
+│                             #   slug -> entry id map, label digests, the service's settings,
+│                             #   and whether the run was traced
 ├── cases/<case_id>.json      # one per driven case, written whole before the next case begins
 ├── report.json               # scoring's output, sorted keys
 └── report.md                 # the same report, in the order it should be read
@@ -95,7 +102,7 @@ A case file holds everything a metric could need: the terminal event, the stored
 reply with their `request_outcomes`, the produced segmentation, the turn's own log events, the
 patient's appointments after the turn, what the cleanup cancelled, the attempt count, the elapsed
 time, the turn-level exclusion if there is one, and — for an `unresolvable_fixture` — why the fixture
-would not plant. Every file is written atomically, so an
+would not plant, and `traces` (below). Every file is written atomically, so an
 interrupted write leaves the previous file whole rather than half of a new one. A field left out of
 the case file would be a re-run later, at full cost.
 
@@ -104,6 +111,22 @@ terminal event, stored patient message and answer, and log events, each on the s
 first turn's fields — and `scheduling_before_reply`, the patient's appointments read after the first
 turn and before the reply was posted. `scheduling_after` is then read after the reply. The first
 turn's own fields stay the first turn's.
+
+`run.json`'s `tracing` says whether the run's turns were traced, and when not, why not: `traced`
+(the run asked for tracing and the service stated `tracing_enabled` true), `untraced_by_request`
+(the run was taken with `--no-trace`, whatever the service does) or `untraced_service_off` (the run
+asked for tracing and the service stated it does not trace, or stated nothing about it). A
+`run.json` without the field reads as `untraced_service_off` — every run taken before the service
+could trace. It is set once, at the run's start, and is not a run condition: scoring ignores it, and
+a comparison prints it beside each run's id but never puts it in the condition delta.
+
+A case file's `traces` maps the id of each of the case's patient messages — the first turn's, and a
+scripted reply's — to the trace id its turn logged in `turn.traced`, read from the turn's own log
+slice. In a traced run, a posted turn with no entry ran no pipeline (a silenced conversation), with
+three exceptions where the turn cannot be named: its thread could not be read, so its message id is
+unknown; its log slice could not be read or selected; or, on a case already recorded as a run error
+or outcome unknown, its `turn.traced` line broke the log contract. Only the attempt the case records
+is named, and a case recorded before tracing holds `{}`.
 
 `drive_seconds` is the sum of the cases' own elapsed times, not the span from start to finish, so an
 interrupted and resumed run reports the time actually spent.
@@ -163,6 +186,13 @@ the process running its turn, so nothing of it can land later, and the resume sw
 chat's patient, cancelling whatever the turn did book, before any case is driven. This is the one
 stop after which a posted fixture case is driven again. A resumed run reads the conditions again and
 stops if they differ from `run.json`'s.
+
+Whether the service traces is held to the run the same way, though it is not a condition. A restart
+whose `service.configured` states a different `tracing_enabled` than the service the run began with
+stops a `traced` or `untraced_service_off` run with `ServiceRestartedError`, naming the field, and a
+resume refuses such a run with `ConditionsChangedError` when the running service disagrees with it.
+Neither applies to an `untraced_by_request` run, which the service's state cannot affect: it resumes,
+and keeps sending every turn untraced.
 
 `make services-up` restarts the chat service with `> "$log"`, which empties the log file in place
 rather than replacing it, so after a restart the log can grow back past the byte the harness last

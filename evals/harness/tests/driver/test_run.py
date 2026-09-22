@@ -65,12 +65,14 @@ from golden_harness.driver.turn import (
     TurnRefused,
     TurnResult,
     TurnSent,
+    TurnTracing,
     read_thread,
 )
 from golden_harness.record import (
     AppointmentState,
     CaseRun,
     ExclusionReason,
+    RunTracing,
     StoredMessage,
     TerminalKind,
     UnplantableSituation,
@@ -155,6 +157,11 @@ def _append(log: Path, *lines: dict[str, Any] | str) -> None:
             handle.write((line if isinstance(line, str) else json.dumps(line)) + "\n")
 
 
+def _trace_of(message_id: str) -> str:
+    """The trace id the stub service logs for the turn that stored `message_id`."""
+    return f"TRACE-{message_id}"
+
+
 @dataclass
 class Attempt:
     """What one attempt at a case does, as the stub stack plays it."""
@@ -184,6 +191,9 @@ class Attempt:
     # The `outcome` of each `turn.completed` the turn logs, in order: none, or several,
     # break the service's once-per-turn rule.
     completed: tuple[str, ...] = ("faq",)
+    # The `trace_id` of each `turn.traced` the turn logs in place of the stub service's
+    # own one, when set: several, or one that is no string, break the log contract.
+    traced_as: tuple[Any, ...] | None = None
 
 
 @dataclass
@@ -218,6 +228,10 @@ class FakeStack:
     calls: list[tuple[Any, ...]] = field(default_factory=list)
     # Every posted message, with the chat it was posted to, in order.
     messages: list[tuple[str, str]] = field(default_factory=list)
+    # What each posted turn asked of its trace, in posting order.
+    tracings: list[TurnTracing] = field(default_factory=list)
+    # Whether the service exports traces: each logged turn then logs `turn.traced`.
+    tracing_enabled: bool = False
     timeline: list[tuple[Any, ...]] = field(default_factory=list)
     elapsed: float = 0.0
     _chats: int = 0
@@ -317,7 +331,7 @@ class FakeStack:
         return [f"PLANTED-{chat_id}-{i}" for i in range(len(history))]
 
     async def post_turn(
-        self, chat_id: str, message: str, local_now: datetime
+        self, chat_id: str, message: str, local_now: datetime, tracing: TurnTracing
     ) -> TurnResult:
         # A case's own message names it; a scripted reply is posted in the chat the
         # case's message was.
@@ -328,6 +342,7 @@ class FakeStack:
             case_id = self._chat_case[chat_id]
         self.calls.append(("post_turn", case_id, chat_id, local_now))
         self.messages.append((chat_id, message))
+        self.tracings.append(tracing)
         self.timeline.append(("post_turn", case_id, chat_id))
         self._maybe_restart("post_turn")
         self._patient_case[f"PAT-{chat_id}"] = case_id
@@ -363,7 +378,7 @@ class FakeStack:
         if attempt.restart is not None:
             _append(self.log, attempt.restart)
         if attempt.logged and attempt.outcome != "silent":
-            self._log_turn(message_id, message, attempt)
+            self._log_turn(message_id, message, attempt, traced=tracing.traced)
 
         terminal: dict[str, Any]
         thread = ThreadRead(patient_message=patient, assistant_message=reply)
@@ -540,7 +555,9 @@ class FakeStack:
     def names(self) -> list[str]:
         return [entry[0] for entry in self.timeline]
 
-    def _log_turn(self, message_id: str, message: str, attempt: Attempt) -> None:
+    def _log_turn(
+        self, message_id: str, message: str, attempt: Attempt, *, traced: bool
+    ) -> None:
         # A browser user's turn interleaves with the case's, as the spec permits.
         other = {"turn_id": "SOMEONE-ELSE", "level": "info"}
         _append(
@@ -564,6 +581,15 @@ class FakeStack:
             'INFO:     127.0.0.1:1 - "POST /chat HTTP/1.1" 200 OK',
             {**other, "event": "intent.classified", "segments": [], "cap_bound": False},
             *(
+                {"event": "turn.traced", "turn_id": message_id, "trace_id": traced}
+                for traced in self._traced_as(message_id, attempt, traced)
+            ),
+            *(
+                [{**other, "event": "turn.traced", "trace_id": "SOMEONE-ELSES"}]
+                if self.tracing_enabled
+                else []
+            ),
+            *(
                 {
                     "event": "booking.tool_called",
                     "turn_id": message_id,
@@ -576,6 +602,14 @@ class FakeStack:
                 for outcome in attempt.completed
             ),
         )
+
+    def _traced_as(
+        self, message_id: str, attempt: Attempt, requested: bool
+    ) -> tuple[Any, ...]:
+        if attempt.traced_as is not None:
+            return attempt.traced_as
+        exported = self.tracing_enabled and requested
+        return (_trace_of(message_id),) if exported else ()
 
     def _recorded(self) -> list[str]:
         runs = [path for path in self.artifacts.iterdir() if path.is_dir()]
@@ -1006,6 +1040,365 @@ async def test_the_run_never_deletes_its_session(log: Path, artifacts: Path) -> 
         "post_turn",
         "read_thread",
     }
+
+
+# --- traces (014) --------------------------------------------------------------------
+
+
+async def test_every_turn_names_its_run_and_its_case(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts, scripts={"G042": _confirmed_cancel()})
+
+    run_dir = await _drive(stack, [_case("G001"), _reply_case("G042")])
+
+    run_id = read_run(run_dir).run_id
+    # The reply turn is the case's too, so it names the same case.
+    assert [(t.run_id, t.case_id) for t in stack.tracings] == [
+        (run_id, "G001"),
+        (run_id, "G042"),
+        (run_id, "G042"),
+    ]
+
+
+async def test_a_driven_case_names_the_trace_of_its_turn(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts, tracing_enabled=True)
+
+    run_dir = await _drive(stack, [_case("G001"), _case("G002")])
+
+    for case_id in ("G001", "G002"):
+        case_run = _case_run(run_dir, case_id)
+        assert case_run.patient_message is not None
+        message_id = case_run.patient_message.id
+        assert case_run.traces == {message_id: _trace_of(message_id)}
+
+
+async def test_a_reply_case_names_the_trace_of_each_of_its_turns(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(
+        log, artifacts, scripts={"G042": _confirmed_cancel()}, tracing_enabled=True
+    )
+
+    run_dir = await _drive(stack, [_reply_case("G042")])
+
+    case_run = _case_run(run_dir, "G042")
+    chat = case_run.chat_id
+    assert case_run.traces == {
+        f"MSG-{chat}": _trace_of(f"MSG-{chat}"),
+        f"MSG-{chat}-2": _trace_of(f"MSG-{chat}-2"),
+    }
+
+
+async def test_a_turn_the_service_did_not_trace_names_no_trace(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts)
+
+    run_dir = await _drive(stack, [_case("G001")])
+
+    assert _case_run(run_dir, "G001").traces == {}
+
+
+async def test_a_case_re_driven_on_resume_names_only_the_traces_it_drove(
+    log: Path, artifacts: Path
+) -> None:
+    # G002's first attempt is posted and traced, then a restart under other settings
+    # stops the run before its case is written; the resumed run drives it again.
+    changed = _configured(similarity_floor=0.4)
+    stack = _stack(
+        log,
+        artifacts,
+        scripts={"G002": [Attempt(restart=changed)]},
+        tracing_enabled=True,
+    )
+    with pytest.raises(ServiceRestartedError):
+        await _drive(stack, _THREE)
+    (run_dir,) = artifacts.iterdir()
+    (abandoned,) = [chat for case_id, chat, _now in stack.posted() if case_id == "G002"]
+    _append(log, _configured())
+
+    resumed = _stack(log, artifacts, tracing_enabled=True, _chats=10)
+    await _resume(resumed, run_dir, _THREE)
+
+    case_run = _case_run(run_dir, "G002")
+    assert case_run.chat_id != abandoned
+    assert case_run.patient_message is not None
+    message_id = case_run.patient_message.id
+    assert case_run.traces == {message_id: _trace_of(message_id)}
+
+
+async def test_a_trace_breaking_the_log_contract_stops_a_case_with_no_fixture(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts, scripts={"G001": [Attempt(traced_as=("a", "b"))]})
+
+    with pytest.raises(ValidationError):
+        await _drive(stack, [_case("G001"), _case("G002")])
+
+    assert [p[0] for p in stack.posted()] == ["G001"]
+    (run_dir,) = artifacts.iterdir()
+    assert recorded_case_ids(run_dir) == []
+
+
+async def test_a_fixture_case_whose_trace_breaks_the_record_is_outcome_unknown(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts, scripts={"G042": [Attempt(traced_as=(7,))]})
+
+    with pytest.raises(ValidationError):
+        await _drive(stack, [_booking_case("G042"), _case("G043")])
+
+    (run_dir,) = artifacts.iterdir()
+    assert recorded_case_ids(run_dir) == ["G042"]
+    case_run = _case_run(run_dir, "G042")
+    assert case_run.excluded is ExclusionReason.OUTCOME_UNKNOWN
+    assert case_run.traces == {}
+
+
+@pytest.mark.parametrize("shape", ["fixture", "no-fixture", "reply-turn"])
+async def test_a_turn_whose_outcome_is_unknown_still_names_its_trace(
+    log: Path, artifacts: Path, shape: str
+) -> None:
+    never_settles = Attempt(outcome="no_answer", settles_after=None)
+    case, script = {
+        "fixture": (_booking_case("G042"), [never_settles]),
+        "no-fixture": (_case("G042"), [never_settles]),
+        "reply-turn": (_reply_case("G042"), [Attempt(), never_settles]),
+    }[shape]
+    turns = len(script)
+    stack = _stack(log, artifacts, scripts={"G042": script}, tracing_enabled=True)
+    settle = SettleWait(timeout_seconds=20.0, interval_seconds=5.0, sleep=stack.sleep)
+
+    with pytest.raises(TurnUnsettledError):
+        await _drive(stack, [case, _case("G043")], settle=settle)
+
+    (run_dir,) = artifacts.iterdir()
+    case_run = _case_run(run_dir, "G042")
+    assert case_run.excluded is ExclusionReason.OUTCOME_UNKNOWN
+    posted = [f"MSG-{case_run.chat_id}", f"MSG-{case_run.chat_id}-2"][:turns]
+    assert case_run.traces == {
+        message_id: _trace_of(message_id) for message_id in posted
+    }
+
+
+@pytest.mark.parametrize("reply", [False, True])
+async def test_a_turn_whose_segmentation_breaks_the_record_still_names_its_trace(
+    log: Path, artifacts: Path, reply: bool
+) -> None:
+    broken = Attempt(intents=("no_such_intent",))
+    case = _reply_case("G042") if reply else _booking_case("G042")
+    script = [Attempt(), broken] if reply else [broken]
+    turns = len(script)
+    stack = _stack(log, artifacts, scripts={"G042": script}, tracing_enabled=True)
+
+    with pytest.raises(ValidationError):
+        await _drive(stack, [case, _case("G043")])
+
+    (run_dir,) = artifacts.iterdir()
+    case_run = _case_run(run_dir, "G042")
+    assert case_run.excluded is ExclusionReason.OUTCOME_UNKNOWN
+    posted = [f"MSG-{case_run.chat_id}", f"MSG-{case_run.chat_id}-2"][:turns]
+    assert case_run.traces == {
+        message_id: _trace_of(message_id) for message_id in posted
+    }
+
+
+@pytest.mark.parametrize(
+    "never_sent",
+    [Attempt(outcome="not_sent"), Attempt(outcome="refused", status=503)],
+    ids=["not-connected", "refused-before-a-stream"],
+)
+async def test_a_case_whose_every_attempt_was_never_sent_names_no_trace(
+    log: Path, artifacts: Path, never_sent: Attempt
+) -> None:
+    # Nothing reached the pipeline, so no turn ran and no thread names one to select.
+    stack = _stack(
+        log,
+        artifacts,
+        scripts={"G001": [never_sent] * MAX_ATTEMPTS},
+        tracing_enabled=True,
+    )
+
+    run_dir = await _drive(stack, [_case("G001")])
+
+    case_run = _case_run(run_dir, "G001")
+    assert case_run.excluded is ExclusionReason.RUN_ERROR
+    assert case_run.traces == {}
+
+
+# --- whether a run was traced (014, US3) --------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("stated", "requested", "expected"),
+    [
+        ({"tracing_enabled": True}, True, RunTracing.TRACED),
+        ({"tracing_enabled": False}, True, RunTracing.UNTRACED_SERVICE_OFF),
+        ({}, True, RunTracing.UNTRACED_SERVICE_OFF),
+        ({"tracing_enabled": True}, False, RunTracing.UNTRACED_BY_REQUEST),
+        ({"tracing_enabled": False}, False, RunTracing.UNTRACED_BY_REQUEST),
+        ({}, False, RunTracing.UNTRACED_BY_REQUEST),
+    ],
+)
+async def test_a_run_records_whether_it_was_traced_and_why_not(
+    log: Path,
+    artifacts: Path,
+    stated: dict[str, Any],
+    requested: bool,
+    expected: RunTracing,
+) -> None:
+    _append(log, _configured(**stated))
+    stack = _stack(log, artifacts)
+
+    run_dir = await _drive(stack, [_case("G001")], tracing_requested=requested)
+
+    assert read_run(run_dir).tracing is expected
+
+
+async def test_a_run_is_traced_unless_it_asks_not_to_be(
+    log: Path, artifacts: Path
+) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    stack = _stack(log, artifacts)
+
+    run_dir = await _drive(stack, [_case("G001")])
+
+    assert read_run(run_dir).tracing is RunTracing.TRACED
+    assert [t.traced for t in stack.tracings] == [True]
+
+
+async def test_an_untraced_run_sends_every_turn_off(log: Path, artifacts: Path) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    stack = _stack(
+        log, artifacts, scripts={"G042": _confirmed_cancel()}, tracing_enabled=True
+    )
+
+    run_dir = await _drive(
+        stack, [_case("G001"), _reply_case("G042")], tracing_requested=False
+    )
+
+    assert [t.traced for t in stack.tracings] == [False, False, False]
+    # Still filed under the run and the case: harmless when nothing is exported.
+    run_id = read_run(run_dir).run_id
+    assert {(t.run_id, t.case_id) for t in stack.tracings} == {
+        (run_id, "G001"),
+        (run_id, "G042"),
+    }
+    assert _case_run(run_dir, "G001").traces == {}
+    assert _case_run(run_dir, "G042").traces == {}
+
+
+@pytest.mark.parametrize(
+    ("started", "restarted"),
+    [(True, False), (False, True), (None, True)],
+)
+async def test_a_restart_changing_whether_the_service_traces_stops_the_run(
+    log: Path, artifacts: Path, started: bool | None, restarted: bool
+) -> None:
+    if started is not None:
+        _append(log, _configured(tracing_enabled=started))
+    stack = _stack(
+        log,
+        artifacts,
+        restarts_during={("new_chat", 2): _configured(tracing_enabled=restarted)},
+    )
+
+    with pytest.raises(ServiceRestartedError, match="tracing_enabled"):
+        await _drive(stack, _THREE)
+
+    (run_dir,) = artifacts.iterdir()
+    assert recorded_case_ids(run_dir) == ["G001"]
+
+
+async def test_a_restart_changing_whether_the_service_traces_spares_an_untraced_run(
+    log: Path, artifacts: Path
+) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    stack = _stack(
+        log,
+        artifacts,
+        restarts_during={("new_chat", 2): _configured(tracing_enabled=False)},
+    )
+
+    run_dir = await _drive(stack, _THREE, tracing_requested=False)
+
+    assert recorded_case_ids(run_dir) == ["G001", "G002", "G003"]
+
+
+async def test_a_restart_stating_the_same_settings_and_tracing_is_passed_over(
+    log: Path, artifacts: Path
+) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    stack = _stack(
+        log,
+        artifacts,
+        restarts_during={("new_chat", 2): _configured(tracing_enabled=True)},
+    )
+
+    run_dir = await _drive(stack, _THREE)
+
+    assert recorded_case_ids(run_dir) == ["G001", "G002", "G003"]
+    assert read_run(run_dir).tracing is RunTracing.TRACED
+
+
+async def test_a_restart_with_other_settings_still_stops_an_untraced_run(
+    log: Path, artifacts: Path
+) -> None:
+    stack = _stack(log, artifacts, restarts_during={("new_chat", 2): _OTHER_SETTINGS})
+
+    with pytest.raises(ServiceRestartedError, match="similarity_floor"):
+        await _drive(stack, _THREE, tracing_requested=False)
+
+
+@pytest.mark.parametrize(
+    ("started", "now"),
+    [(True, False), (True, None), (False, True), (None, True)],
+)
+async def test_a_resumed_run_refuses_a_service_that_now_traces_otherwise(
+    log: Path, artifacts: Path, started: bool | None, now: bool | None
+) -> None:
+    if started is not None:
+        _append(log, _configured(tracing_enabled=started))
+    run_dir = await _interrupted_run(log, artifacts)
+    _append(log, _configured() if now is None else _configured(tracing_enabled=now))
+    stack = _stack(log, artifacts)
+
+    with pytest.raises(ConditionsChangedError, match="tracing_enabled"):
+        await _resume(stack, run_dir, _THREE)
+
+    assert stack.posted() == []
+
+
+async def test_a_resumed_traced_run_goes_on_tracing(log: Path, artifacts: Path) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    run_dir = await _interrupted_run(log, artifacts)
+    _append(log, _configured(tracing_enabled=True))
+    stack = _stack(log, artifacts)
+
+    await _resume(stack, run_dir, _THREE)
+
+    assert recorded_case_ids(run_dir) == ["G001", "G002", "G003"]
+    assert [t.traced for t in stack.tracings] == [True, True]
+    assert read_run(run_dir).tracing is RunTracing.TRACED
+
+
+@pytest.mark.parametrize("now", [True, False, None])
+async def test_a_resumed_untraced_run_resumes_and_still_sends_every_turn_off(
+    log: Path, artifacts: Path, now: bool | None
+) -> None:
+    _append(log, _configured(tracing_enabled=True))
+    run_dir = await _interrupted_run(log, artifacts, tracing_requested=False)
+    _append(log, _configured() if now is None else _configured(tracing_enabled=now))
+    stack = _stack(log, artifacts)
+
+    await _resume(stack, run_dir, _THREE)
+
+    assert recorded_case_ids(run_dir) == ["G001", "G002", "G003"]
+    assert [t.traced for t in stack.tracings] == [False, False]
+    assert read_run(run_dir).tracing is RunTracing.UNTRACED_BY_REQUEST
 
 
 # --- resume -------------------------------------------------------------------------

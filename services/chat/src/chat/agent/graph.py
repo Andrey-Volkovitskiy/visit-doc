@@ -74,6 +74,7 @@ from chat.domain.schemas import (
     IntentLabel,
     RequestSegment,
 )
+from chat.observability import turn_root
 
 # What a synthesized segment carries when the message it stands for is empty. A
 # segment's text is what the turn retrieves for, and a blank one would be searched for
@@ -489,10 +490,12 @@ def _build_graph(
             # retrieval event is read against - they carry its position, not its words.
             # `text` is what the specialist answered and `query` what was searched for,
             # so a single request logs both the patient's words and the restatement.
-            logger.info(
-                "intent.classified",
-                intents=intents,
-                segments=[
+            #
+            # The same payload goes onto the trace's root, so the trace and the log
+            # cannot come to disagree about how the turn was classified.
+            classified: dict[str, object] = {
+                "intents": intents,
+                "segments": [
                     {
                         "position": position,
                         "intent": segment.intent.value,
@@ -501,8 +504,10 @@ def _build_graph(
                     }
                     for position, segment in enumerate(segments)
                 ],
-                cap_bound=cap_bound,
-            )
+                "cap_bound": cap_bound,
+            }
+            logger.info("intent.classified", **classified)
+            turn_root().set_metadata(intent_classified=classified)
             # The label *is* the decision, so nothing is asked to make it again: no
             # model call, and no dependence on whether the corpus happens to ground the
             # sentence the patient used. Recorded like every other call to staff, and

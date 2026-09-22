@@ -637,19 +637,98 @@ model call or needs anything running. How to run them is in
 
 ## Tracing with Langfuse: technology choices
 
-*Decided ahead of ROADMAP Phase 2d; nothing is built yet.* The full reasoning is in the 2d section
-of [`docs/ROADMAP.md`](docs/ROADMAP.md).
+`specs/014-langfuse-tracing/` (ROADMAP Phase 2d) gives every chat turn one trace in Langfuse: the
+graph's nodes, each FAQ request's retrieval steps, every Claude call as a generation with its
+prompt, output and token usage, and every tool call. Only the chat service is traced, and only
+turns. The code is one package, `chat.observability`, the only module allowed to import the
+Langfuse or OpenTelemetry SDK (a test enforces it). The full reasoning is in the 2d section of
+[`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+To turn it on, set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in `.env` from a Langfuse Cloud
+project. `LANGFUSE_BASE_URL` (default `https://cloud.langfuse.com`) and `LANGFUSE_ENVIRONMENT`
+(default `development`; eval turns are always filed as `eval`) are optional. Leaving either key
+blank means tracing is off; the startup `service.configured` event states which with
+`tracing_enabled`.
 
 - **Langfuse Cloud's free Hobby tier, not self-hosted Langfuse.** Self-hosting is the choice with no
   third party in the loop, and it costs six containers — web, worker, PostgreSQL, ClickHouse, Redis
   and S3-compatible storage — for a debugging view, tripling a local stack that is Postgres and
   Qdrant today. Hobby covers the use: 50k units a month, 30 days of history, two users, no card.
-  The costs are that patient messages and prompts leave the machine, which is why span masking is
-  part of the phase rather than a follow-up, and that traces older than 30 days are gone, which
-  loses nothing the eval chain reads.
+  The costs are that patient messages and prompts leave the machine, and that traces older than
+  30 days are gone, which loses nothing the eval chain reads.
+- **Graph nodes are spanned by `node_span`, not by Langfuse's callback handler.** The roadmap first
+  named the handler, and it was measured before it was dropped: it runs on an executor thread
+  under a copied context, so a retrieval step, generation or tool call opened inside a node cannot
+  nest under the node's span, and the trace comes out flat. It also records nothing about the
+  direct Anthropic calls, which are all of this agent's calls, and it would bring `langchain` in as
+  a dependency. `node_span` already bounds every node for its `node.started`/`node.completed` log
+  events, so it opens the node's observation too, with the `node.completed` payload as its output.
+  The cost is that a node is traced only because it uses `node_span` — nothing picks up a new node
+  automatically — and that LangGraph's own machinery between nodes does not appear in a trace.
+- **Untraced is a sampling decision made per turn, from a request header.** A request carrying
+  `X-VisitDoc-Trace: off` exports nothing for its turn while the turn beside it, in the same
+  process, exports everything. The service owns an isolated `TracerProvider` whose sampler drops
+  every span opened in a context carrying an untraced flag, and that flag is set in exactly one
+  place: `launch` in `services/chat/src/chat/api/turn.py` sets it on a copied context that is
+  passed only to the turn's own task, so every span the turn opens sees it and nothing else does.
+  Tests read the package's syntax trees to pin that single setter and where it sits. The headers are read from the request rather
+  than declared as parameters, so the published OpenAPI schema is unchanged, and a malformed one
+  is refused with 422 before anything is stored. Four simpler mechanisms were tried and each fails
+  a requirement: not opening a root turns strays into root traces, suppressing instrumentation is
+  ignored by the SDK's tracer, a second disabled client collides with the SDK's per-key singleton,
+  and `sample_rate` is process-wide; filtering at export works but builds, masks and serializes
+  every span it then throws away. The cost is a custom sampler — a new mechanism whose
+  invariant (set once, before the task, never later and never outside it) has to hold by
+  discipline and the tests that pin it.
+- **Masking is the log's own redaction, applied in two halves: the key-name rule where a value is
+  recorded, the secret-value pass at export over every attribute.** It uses the redaction
+  `shared-logging` already owns, made public there rather than copied, so the log and the trace
+  cannot disagree about what a secret is. It masks secrets only — API keys, credential parts of
+  connection URLs, the admin secret, the Langfuse keys — and not patient text, prompts or model
+  output, which are what a trace exists to show (every message in this deployment is synthetic).
+  The SDK's older `mask` hook sees only input, output and metadata; an exception's text lands in
+  the status message, which it never reaches. So the export-time hook (`mask_otel_spans`), which
+  sees every attribute of every span and runs on the exporter thread rather than the event loop,
+  replaces every occurrence of a configured secret value in every string attribute — and decodes
+  nothing. The key-name rule (a value under a secret-sounding key replaced whole, at any depth) is
+  applied by `chat.observability` when an input, an output or metadata is recorded, to structured
+  values only — dicts, lists, tuples and pydantic models — because the SDK exports a structure as
+  one serialized JSON string, and past that point a payload the code recorded as a dict cannot be
+  told from a patient message that happens to read as JSON. A string is recorded as it is, so such
+  a message reaches the trace verbatim, as it reaches the log. Usage and model parameters skip the
+  key-name rule, since `cache_read_input_tokens` and `max_tokens` are counts it would take for
+  tokens. The costs: two places to read to know what is masked, where there was one; and a mask
+  that raises drops the whole batch, losing a trace rather than exporting it unmasked.
+- **Blank keys build no client at all, and the keys are handed to the SDK explicitly.** The SDK
+  would otherwise read `LANGFUSE_*` from the process environment itself, and it treats an empty key
+  as a real one — `.env.example` ships the keys blank, so a copied file would build an exporter
+  that fails to authenticate on every batch. `Settings` decides `tracing_enabled` from stripped
+  values, and a disabled tracer holds no Langfuse client, so it certainly sends nothing. The unit
+  tests blank both keys in their `conftest.py`, because the repo's own `.env` may hold real ones,
+  and no test reaches Langfuse. The cost is that anyone who sets the keys traces every hand-driven
+  turn, spending units whether or not a trace is opened.
+- **A lost export is logged, never raised.** Export is batched on a background thread, so a
+  Langfuse outage cannot fail or slow a turn. Its only trace is a warning on a stdlib logger, which
+  this service would otherwise never read; a bridge re-emits the SDK's and OpenTelemetry's
+  warnings as `tracing.export_failed` through the structlog chain, redaction included. (Alembic's
+  `fileConfig` disables loggers that already exist when it runs, so the bridge re-enables the ones
+  it listens to.) The cost is that the count of these lines is not a count of lost exports: an
+  exporter that raises is reported by OpenTelemetry's batch processor, whose logger drops a repeat
+  of an identical record within the same 20-second window, while a rejected or timed-out request is
+  logged by the exporter itself, retry warnings included.
 - **Eval runs are traced by default; `make eval-run TRACE=0` turns it off.** Tracing every run
   means a surprising case in a run's report has a trace to open, rather than having to be re-run
-  to get one. The cost is the budget: a full golden-set run is roughly 3k units and a noise band is
-  five runs, about 15k of the month's 50k, spent on traces that answer no question a run asks — its
-  metrics come from the stored run, never from a trace. So the runs where no trace will be opened,
-  a noise band above all, are the ones to run with `TRACE=0`.
+  to get one: each case file maps its patient messages' ids to the trace ids their turns logged
+  in `turn.traced`, and every eval trace carries the run id and case id (`X-VisitDoc-Eval-Run`/
+  `X-VisitDoc-Eval-Case`) and the `eval` environment. `TRACE=0` sends every turn with
+  `X-VisitDoc-Trace: off` — the choice travels on the run's requests, so the service is not
+  reconfigured and a developer tracing by hand keeps tracing beside it. `run.json` records
+  `tracing` as `traced`, `untraced_by_request` or `untraced_service_off` (runs from before this
+  phase read as the last); it is deliberately not a run condition, so a comparison shows it beside
+  each run's id and never in its condition delta or band. The cost is the budget: a full
+  golden-set run is expected to cost ~1.3k units (6–23 per turn, measured per turn shape in
+  `specs/014-langfuse-tracing/evaluation/units.md`; the full-run figure is weighted from those, not
+  yet observed) and a noise band is five runs, ~6.3k of the month's 50k, spent on traces that answer
+  no question a run asks — its metrics come from the stored run, never
+  from a trace. So the runs where no trace will be opened, a noise band above all, are the ones to
+  run with `TRACE=0`.

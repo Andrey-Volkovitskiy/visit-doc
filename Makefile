@@ -120,12 +120,17 @@ alembic-scheduler-history:
 	uv run --directory services/scheduler alembic history
 
 # The golden harness (spec 012; see its quickstart.md). `eval-run` drives the golden set against the
-# running stack, spending live model calls; `CASES=G001,G042` or `FAMILY=<name>` narrows it, and
-# each flag is passed only when set (e.g. `CASES=G-a-01,G-j-03`). `eval-score RUN=<run_id>`
-# re-scores a stored run offline.
+# running stack, spending live model calls; `CASES=G-a-01,G-j-03` or `FAMILY=<name>` narrows it,
+# and each flag is passed only when set. Every turn is traced to Langfuse when the chat service has
+# its keys (spec 014); `TRACE=0` passes `--no-trace`, which sends every turn with
+# `X-VisitDoc-Trace: off` instead, and run.json's `tracing` records which it was. `TRACE=1`, or no
+# TRACE, passes nothing and is traced; any other value stops Make rather than guess, so a typo
+# cannot trace a run that asked not to be. `eval-score RUN=<run_id>` re-scores a stored run offline.
+eval_trace_flag = $(if $(filter-out 0 1,$(TRACE))$(word 2,$(TRACE)),$(error TRACE must be 0 (untraced) or 1 (traced), not '$(TRACE)'),$(if $(filter 0,$(TRACE)),--no-trace))
+
 eval-run:
 	uv run --package golden-harness -- python -m golden_harness run \
-		$(if $(CASES),--cases $(CASES)) $(if $(FAMILY),--family $(FAMILY))
+		$(if $(CASES),--cases $(CASES)) $(if $(FAMILY),--family $(FAMILY)) $(eval_trace_flag)
 
 eval-score:
 	uv run --package golden-harness -- python -m golden_harness score --run $(RUN)

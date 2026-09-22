@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 import structlog
+from shared_logging import is_secret_key, known_secret_values, redact_value
 from shared_logging.logging import (
     LogFormat,
     LogLevel,
@@ -393,3 +394,59 @@ def test_json_truncates_a_long_string(capsys: pytest.CaptureFixture[str]) -> Non
     get_logger().info("faq.retrieval_completed", chunk_text="a" * 2500)
 
     assert _json_line(capsys)["chunk_text"] == "a" * 2000 + "..."
+
+
+# The redaction rule, as its own API: the chat service's trace masking applies exactly
+# this rule to exported spans, so the log and the trace cannot come to disagree about
+# what a secret is.
+
+
+def test_redact_value_replaces_a_known_secret_inside_nested_values() -> None:
+    value = {
+        "detail": "key=sk-ant-test-key failed",
+        "attempts": [{"note": "retry with sk-ant-test-key"}, "plain", 3],
+    }
+
+    result = redact_value(value, ["sk-ant-test-key"])
+
+    assert "sk-ant-test-key" not in json.dumps(result)
+    assert result["detail"] == "key=***REDACTED*** failed"
+    assert result["attempts"][1:] == ["plain", 3]
+
+
+def test_redact_value_replaces_the_value_under_a_secret_named_key() -> None:
+    result = redact_value({"api_key": "not-a-known-value"}, [])
+
+    assert result == {"api_key": "***REDACTED***"}
+
+
+def test_redact_value_leaves_a_string_with_no_secret_unchanged() -> None:
+    assert redact_value("hello Dr. Adams", ["sk-ant-test-key"]) == "hello Dr. Adams"
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["password", "DB_PASSWORD", "api_key", "apikey", "Authorization", "auth_token"],
+)
+def test_is_secret_key_matches_the_key_pattern(name: str) -> None:
+    assert is_secret_key(name)
+
+
+@pytest.mark.parametrize("name", ["message", "chunk_text", "similarity_score"])
+def test_is_secret_key_leaves_ordinary_names_alone(name: str) -> None:
+    assert not is_secret_key(name)
+
+
+def test_known_secret_values_are_the_plain_secrets_and_url_passwords() -> None:
+    values = known_secret_values(_settings(), _SECRET_FIELDS, _SECRET_URL_FIELDS)
+
+    # QDRANT_URL embeds no password, so it contributes nothing.
+    assert sorted(values) == ["s3cr3t-pass", "sk-ant-test-key", "voyage-test-key"]
+
+
+def test_known_secret_values_skip_an_empty_secret() -> None:
+    @dataclass(frozen=True)
+    class _Unset:
+        ADMIN_SECRET: str = ""
+
+    assert known_secret_values(_Unset(), ("ADMIN_SECRET",), ()) == []

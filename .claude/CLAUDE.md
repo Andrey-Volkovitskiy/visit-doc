@@ -102,7 +102,9 @@ a second Node project ever appears, extract it then.
 
 The golden harness has its own four: `make eval-run` (optionally `CASES=G-a-01,G-j-03` or
 `FAMILY=<name>`) drives cases against the running stack, **spending live Claude and Voyage calls**,
-then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a stored run under
+then scores and prints the report. When the chat service has Langfuse keys every turn it drives is
+traced, spending Langfuse units too; `TRACE=0` sends every turn untraced (`--no-trace`), and any
+value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stored run under
 `.run/evals/` and needs no stack. `make eval-compare BASE=<run> NEW=<run>` (optionally
 `BAND=<band>`) reports what moved between two stored runs, and `make eval-band
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
@@ -448,6 +450,27 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   The field names of `chat`'s startup `service.configured` event are a data contract with the
   harness, which takes a run's conditions from it — rename one and runs stop rather than silently
   recording less.
+- **A turn is traced through `chat.observability` and nothing else** (014). It is the only module
+  that may import `langfuse` or `opentelemetry` (`test_tracing_boundary.py` checks, and the harness's
+  `scoring/` and `comparison/` purity tests forbid both), so call sites speak in turns, steps,
+  generations and tool calls. Every Anthropic call sits inside `generation(...)`, every tool call
+  inside `ToolRegistry.dispatch`'s `tool_call(...)`, and each graph node inside `node_span`, which
+  opens the node's observation — not Langfuse's callback handler, which runs on an executor thread
+  and cannot parent anything a node opens. A retrieval decision that is also a log event goes
+  through `record(...)`, which logs the payload and sets it as the span's output: **one dict, two
+  sinks**, so building a second dict "with the same fields" for the trace is the defect it
+  prevents. Untraced is a per-turn sampling decision: the `UNTRACED` flag is set in exactly one
+  place, `launch` in `api/turn.py`, on the copied context handed to the turn's own
+  `create_task(..., context=)` — later misses spans, earlier or elsewhere leaks into other turns,
+  and `test_tracing_headers.py` pins the single setter. Masking is the log's redaction, not a second
+  rule, in two stages: the key-name rule runs on structured values as they are recorded, and the
+  export-time mask replaces configured secret values in every string attribute. Strings are
+  recorded verbatim, so a patient message that happens to read as JSON is never re-encoded. Blank
+  keys build no client at all, and the test `conftest.py` blanks them because `.env` holds real
+  ones. On the harness side, `run.json`'s `tracing` lives on `Run`, **never on `RunConditions`**:
+  a traced and an untraced run measure the same thing, so it must not enter a condition delta or a
+  band. A restart that changes `tracing_enabled` stops a traced or service-off run and a resume
+  refuses it; neither applies to a run that asked to be untraced.
 - Scheduling failure handling (timeouts, retries, agent behavior when Scheduling is unreachable) is
   part of the design, not an afterthought.
 - Each significant technology choice should be documented with its tradeoff in the README, so later

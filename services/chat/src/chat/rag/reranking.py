@@ -12,11 +12,13 @@ floor" two different answers - the first falls back and answers, the second abst
 import asyncio
 import time
 from enum import StrEnum
+from typing import Any
 
+from shared_logging import LogLevel
 from voyageai import error as voyage_error
 from voyageai.client_async import AsyncClient
 
-from chat.core.logging import get_logger
+from chat.observability import Observation, record, step
 from chat.rag.pipeline import ScoredChunk
 
 
@@ -65,14 +67,39 @@ async def rerank_chunks(
 
     A late answer is discarded rather than applied: the turn has already moved on, and
     reordering a shortlist mid-generation would change what its citations mean.
+
+    Recorded as the turn's `faq.rerank` step, whose output is the event this logs; a
+    failure marks the step degraded, naming its reason, since the turn goes on.
     """
-    logger = get_logger()
+    with step("faq.rerank") as observed:
+        return await _rerank(
+            observed,
+            client,
+            query,
+            chunks,
+            model=model,
+            top_k=top_k,
+            timeout_seconds=timeout_seconds,
+        )
+
+
+async def _rerank(
+    observed: Observation,
+    client: AsyncClient,
+    query: str,
+    chunks: list[ScoredChunk],
+    *,
+    model: str,
+    top_k: int,
+    timeout_seconds: float,
+) -> list[ScoredChunk] | None:
+    """`rerank_chunks`' body, recording what it logs onto `observed` as well."""
     if not chunks:
         # Unreachable from the pipeline, which only calls this with a non-empty
         # shortlist. Reported rather than returned as an empty list, which the gate
         # already owns, and never sent to the provider as a zero-document request.
-        logger.error(
-            "faq.reranking_unavailable",
+        _unavailable(
+            observed,
             reason=RerankFailureReason.UNEXPECTED,
             error="rerank_chunks was called with an empty shortlist",
             timeout_seconds=timeout_seconds,
@@ -89,16 +116,16 @@ async def rerank_chunks(
             timeout=timeout_seconds,
         )
     except TimeoutError:
-        logger.error(
-            "faq.reranking_unavailable",
+        _unavailable(
+            observed,
             reason=RerankFailureReason.TIMEOUT,
             timeout_seconds=timeout_seconds,
             candidate_count=len(chunks),
         )
         return None
     except Exception as exc:  # noqa: BLE001 - degrades the answer, never the turn
-        logger.error(
-            "faq.reranking_unavailable",
+        _unavailable(
+            observed,
             reason=_reason_for(exc),
             error=str(exc),
             timeout_seconds=timeout_seconds,
@@ -108,8 +135,8 @@ async def rerank_chunks(
 
     scored = _apply_scores(chunks, response)
     if scored is None:
-        logger.error(
-            "faq.reranking_unavailable",
+        _unavailable(
+            observed,
             reason=RerankFailureReason.UNUSABLE_RESPONSE,
             error="response was unreadable or did not score every candidate once",
             timeout_seconds=timeout_seconds,
@@ -117,22 +144,42 @@ async def rerank_chunks(
         )
         return None
 
-    logger.info(
+    record(
+        observed,
         "faq.reranking_completed",
-        model=model,
-        candidate_count=len(chunks),
-        duration_ms=round((time.perf_counter() - started) * 1000, 2),
-        scores=[
-            {
-                "entry_id": c.faq_entry_id,
-                "chunk_index": c.chunk_index,
-                "similarity_score": c.similarity_score,
-                "rerank_score": c.rerank_score,
-            }
-            for c in scored
-        ],
+        {
+            "model": model,
+            "candidate_count": len(chunks),
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+            "scores": [
+                {
+                    "entry_id": c.faq_entry_id,
+                    "chunk_index": c.chunk_index,
+                    "similarity_score": c.similarity_score,
+                    "rerank_score": c.rerank_score,
+                }
+                for c in scored
+            ],
+        },
     )
     return scored
+
+
+def _unavailable(
+    observed: Observation, *, reason: RerankFailureReason, **fields: Any
+) -> None:
+    """Log `faq.reranking_unavailable`, and mark the step degraded for `reason`.
+
+    Logged at error, as it always has been; the step is only a warning, because the
+    turn does not fail over it - it answers from the similarity survivors.
+    """
+    record(
+        observed,
+        "faq.reranking_unavailable",
+        {"reason": reason, **fields},
+        level=LogLevel.ERROR,
+    )
+    observed.warn(reason.value)
 
 
 def _reason_for(exc: Exception) -> RerankFailureReason:

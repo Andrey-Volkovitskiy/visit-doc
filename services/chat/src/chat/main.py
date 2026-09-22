@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack, asynccontextmanager
 
@@ -9,6 +10,7 @@ from anthropic import AsyncAnthropic
 from fastapi import FastAPI
 from voyageai.client_async import AsyncClient
 
+from chat import observability
 from chat.agent.graph import clear_graph_cache
 from chat.api.admin import router as admin_router
 from chat.api.chats import router as chats_router
@@ -19,6 +21,8 @@ from chat.clients.scheduling import create_channel
 from chat.core.config import Settings, get_settings
 from chat.core.logging import configure_logging, get_logger
 from chat.domain.schemas import MAX_SEGMENTS
+from chat.observability.client import build_tracer
+from chat.observability.log_bridge import install_log_bridge, uninstall_log_bridge
 from chat.rag.embeddings import EMBEDDING_MODEL
 from chat.repositories.qdrant_repository import (
     CollectionVectorSizeMismatchError,
@@ -34,7 +38,9 @@ def _log_configuration(settings: Settings) -> None:
     dependency says what it was configured with. The golden harness takes a run's
     conditions from this event rather than from its own environment, which describes
     the harness and not the process that answered. The field names are a contract with
-    that reader. No secret-bearing setting belongs on the list.
+    that reader. No secret-bearing setting belongs on the list: `tracing_enabled` says
+    whether both Langfuse keys are set, never what they are, and it is not a condition -
+    a traced and an untraced turn are answered the same way.
     """
     get_logger().info(
         "service.configured",
@@ -49,6 +55,7 @@ def _log_configuration(settings: Settings) -> None:
         rerank_cap=settings.RERANK_CAP,
         max_segments=MAX_SEGMENTS,
         context_turns=settings.CONTEXT_TURNS,
+        tracing_enabled=settings.tracing_enabled,
     )
 
 
@@ -76,10 +83,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     shutdown, can never leave an earlier one's connections unclosed. The two Voyage
     clients are not among them: they own nothing to close, borrowing that shared session
     for the duration of each call.
+
+    The tracer is built first, so a start that fails later still shuts it down. Its
+    shutdown flushes whatever spans are pending and blocks for at most the exporter's
+    timeout, so it runs on a worker thread; it is registered to run before the bridge
+    that reports its failures is removed, and after observations stop being recorded.
     """
     settings = get_settings()
     _log_configuration(settings)
     async with AsyncExitStack() as stack:
+        install_log_bridge()
+        stack.callback(uninstall_log_bridge)
+        tracer = build_tracer(settings)
+        stack.push_async_callback(asyncio.to_thread, tracer.shutdown)
+        observability.install(tracer)
+        stack.callback(observability.uninstall)
+
         qdrant_client = create_client(settings)
         stack.push_async_callback(qdrant_client.close)
         try:

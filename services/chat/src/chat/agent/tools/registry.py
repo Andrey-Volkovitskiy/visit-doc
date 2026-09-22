@@ -18,10 +18,15 @@ from anthropic.types import ToolParam
 
 from chat.agent.escalation import EscalationRequests
 from chat.core.config import Settings
+from chat.observability import tool_call
 
 # What a handler returns: a small JSON-serializable object the model reads back as a
 # `tool_result`. Always carries its own `status`, never prose the caller must parse.
 ToolResult = dict[str, Any]
+
+# Result statuses that answer nothing: whether the call took effect is unknown, or
+# the capability could not be reached. A trace marks a call ending in one a warning.
+_NO_ANSWER_STATUSES = frozenset({"unknown", "unavailable"})
 
 # Returned for a tool whose ambient precondition is unmet, in place of running it. Says
 # only what is true at this layer - there is no patient to act for - and leaves what
@@ -217,6 +222,26 @@ class ToolRegistry:
         A tool declaring `requires_patient` is answered as unavailable, without being
         run, when the turn has no patient record - the same result its handler would
         have produced, decided in one place instead of in each of them.
+
+        Every call is an observation `tool:<name>` in the turn's trace, whatever its
+        caller: the arguments in, the result out. A result that is no answer - its
+        outcome unknown, or the capability unavailable - is marked a warning naming its
+        status; a raise is recorded as an error by the observation itself.
+        """
+        with tool_call(name, arguments) as observed:
+            result = await self._run(name, arguments)
+            observed.set_output(result)
+            status = result.get("status")
+            if status in _NO_ANSWER_STATUSES:
+                observed.warn(str(status))
+            return result
+
+    async def _run(self, name: str, arguments: dict[str, Any]) -> ToolResult:
+        """Run the named tool, or answer for it when it cannot run.
+
+        Raises:
+            UnknownToolError: `name` is not registered.
+            ToolArgumentError: propagated from the handler.
         """
         tool = self._tools.get(name)
         if tool is None:

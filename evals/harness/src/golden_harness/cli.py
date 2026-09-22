@@ -121,6 +121,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help=f"local time sent with every turn (default {DEFAULT_CLOCK.isoformat()})",
     )
+    run.add_argument(
+        "--no-trace",
+        action="store_true",
+        help="send every turn untraced, so the run exports no trace to Langfuse",
+    )
     run.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS)
     run.add_argument("--log", type=Path, default=DEFAULT_LOG)
     run.add_argument("--base-url", default=DEFAULT_BASE_URL)
@@ -167,6 +172,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.command == "run" and args.resume is not None and args.clock is not None:
         run.error("--clock cannot be given with --resume, which keeps the run's clock")
+    if args.command == "run" and args.resume is not None and args.no_trace:
+        run.error(
+            "--no-trace cannot be given with --resume, which keeps the run's tracing"
+        )
     return args
 
 
@@ -239,6 +248,7 @@ async def _run(args: argparse.Namespace) -> None:
                 pin=pin,
                 artifacts_dir=args.artifacts,
                 clock=args.clock if args.clock is not None else DEFAULT_CLOCK,
+                tracing_requested=not args.no_trace,
             )
     print(render_summary(score_run(run_dir, cases)))
 

@@ -25,7 +25,9 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
@@ -59,6 +61,7 @@ from chat.domain.schemas import (
     FaqVerdict,
     RequestSegment,
 )
+from chat.observability import generation, record, step
 from chat.rag.pipeline import (
     PipelineOutcome,
     ScoredChunk,
@@ -375,8 +378,16 @@ async def _answer_one(
     it would be a lie about the corpus, and a clipped answer otherwise reads as a short
     complete one.
     """
-    with bound_contextvars(segment=position):
+    with (
+        bound_contextvars(segment=position),
+        step(
+            f"request[{position}]",
+            input={"query": segment.query, "text": segment.text},
+        ) as observed,
+    ):
         async for event in _answer_one_bound(position, segment, context, stream=stream):
+            if isinstance(event, FaqSegmentAnswer):
+                observed.set_output(event.request_outcome().model_dump(mode="json"))
             yield event
 
 
@@ -453,29 +464,45 @@ async def _answer_one_bound(
     # is flushed in one event and the rest streams token by token, so an answer is
     # delayed by a few characters and never by the whole generation.
     withheld = True
+    first_token_at: datetime | None = None
+    model = get_settings().GENERATION_MODEL
     try:
-        async with context.anthropic_client.messages.stream(
-            model=get_settings().GENERATION_MODEL,
-            max_tokens=_MAX_TOKENS,
-            system=_SYSTEM_PROMPT,
-            messages=messages,
-        ) as stream_response:
-            async for event in stream_response:
-                if event.type != "text":
-                    continue
-                answer_parts.append(event.text)
-                if not stream:
-                    continue
-                if not withheld:
-                    yield ChatTokenEvent(text=event.text)
-                elif not _may_still_be_sentinel("".join(answer_parts)):
-                    withheld = False
-                    yield ChatTokenEvent(text="".join(answer_parts))
-            # Read after the loop, the same way `answer_small_talk` reads it: the SDK
-            # accumulates the final message, and this is the documented way to ask why
-            # it stopped. Inside the `try` because a failure to obtain it is a failure
-            # of the same call.
-            final = await stream_response.get_final_message()
+        with generation(
+            "answer_faq.model",
+            model=model,
+            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            model_parameters={"max_tokens": _MAX_TOKENS},
+        ) as observed:
+            async with context.anthropic_client.messages.stream(
+                model=model,
+                max_tokens=_MAX_TOKENS,
+                system=_SYSTEM_PROMPT,
+                messages=messages,
+            ) as stream_response:
+                async for event in stream_response:
+                    if event.type != "text":
+                        continue
+                    if first_token_at is None:
+                        first_token_at = datetime.now(UTC)
+                    answer_parts.append(event.text)
+                    if not stream:
+                        continue
+                    if not withheld:
+                        yield ChatTokenEvent(text=event.text)
+                    elif not _may_still_be_sentinel("".join(answer_parts)):
+                        withheld = False
+                        yield ChatTokenEvent(text="".join(answer_parts))
+                # Read after the loop, the same way `answer_small_talk` reads it: the
+                # SDK accumulates the final message, and this is the documented way to
+                # ask why it stopped. Inside the `try` because a failure to obtain it is
+                # a failure of the same call.
+                final = await stream_response.get_final_message()
+            observed.record_completion(
+                "".join(answer_parts),
+                final.usage,
+                final.stop_reason,
+                completion_start_time=first_token_at,
+            )
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 
@@ -570,7 +597,6 @@ async def _run_pipeline(
 
     Raises: TurnPipelineError from retrieval or embedding. Never from reranking.
     """
-    logger = get_logger()
     settings = get_settings()
 
     pool = await search_faq(
@@ -585,20 +611,29 @@ async def _run_pipeline(
     # decided anything, so "retrieval completed" and "the gate ran" would both be false.
     # `turn.retrieval_skipped_empty_corpus` is what records that case, and conflating it
     # with a search that found nothing is what the empty-corpus verdict exists to undo.
+    # No step is recorded for it either, for the same reason.
     if not corpus_empty:
-        _log_retrieval(pool, kept=similarity.kept)
-        logger.info(
-            "faq.similarity_gate",
-            floor=settings.SIMILARITY_FLOOR,
-            cap=settings.SIMILARITY_CAP,
-            # `pool_returned`, not `pool_size`: the gate saw what the search actually
-            # returned, and `pool_size` already names the configured ceiling on the
-            # retrieval event beside this one.
-            pool_returned=len(pool),
-            kept=_identify(similarity.kept),
-            dropped_by_floor=_identify(similarity.dropped_by_floor),
-            dropped_by_cap=_identify(similarity.dropped_by_cap),
-        )
+        with step("faq.similarity_gate") as gated:
+            # On the gate's step, not the search's: each candidate's `considered` is
+            # this gate's decision, so the event cannot exist until the gate has run.
+            gated.set_metadata(
+                retrieval_completed=_log_retrieval(pool, kept=similarity.kept)
+            )
+            record(
+                gated,
+                "faq.similarity_gate",
+                {
+                    "floor": settings.SIMILARITY_FLOOR,
+                    "cap": settings.SIMILARITY_CAP,
+                    # `pool_returned`, not `pool_size`: the gate saw what the search
+                    # actually returned, and `pool_size` already names the configured
+                    # ceiling on the retrieval event beside this one.
+                    "pool_returned": len(pool),
+                    "kept": _identify(similarity.kept),
+                    "dropped_by_floor": _identify(similarity.dropped_by_floor),
+                    "dropped_by_cap": _identify(similarity.dropped_by_cap),
+                },
+            )
 
     reranked: list[ScoredChunk] | None = None
     # Every candidate the reranker scored, not just the survivors: the verdict's
@@ -619,39 +654,56 @@ async def _run_pipeline(
             timeout_seconds=settings.RERANK_TIMEOUT_SECONDS,
         )
         if scored is not None:
-            gate = apply_rerank_gate(
-                scored, floor=settings.RERANK_FLOOR, cap=settings.RERANK_CAP
-            )
-            logger.info(
-                "faq.rerank_gate",
-                floor=settings.RERANK_FLOOR,
-                cap=settings.RERANK_CAP,
-                kept=_identify(gate.kept, rerank=True),
-                dropped_by_floor=_identify(gate.dropped_by_floor, rerank=True),
-                dropped_by_cap=_identify(gate.dropped_by_cap, rerank=True),
-            )
+            with step("faq.rerank_gate") as gated:
+                gate = apply_rerank_gate(
+                    scored, floor=settings.RERANK_FLOOR, cap=settings.RERANK_CAP
+                )
+                record(
+                    gated,
+                    "faq.rerank_gate",
+                    {
+                        "floor": settings.RERANK_FLOOR,
+                        "cap": settings.RERANK_CAP,
+                        "kept": _identify(gate.kept, rerank=True),
+                        "dropped_by_floor": _identify(
+                            gate.dropped_by_floor, rerank=True
+                        ),
+                        "dropped_by_cap": _identify(gate.dropped_by_cap, rerank=True),
+                    },
+                )
             reranked = gate.kept
 
-    outcome = decide(pool, similarity.kept, reranked, corpus_empty=corpus_empty)
-    logger.info(
-        "faq.verdict",
-        verdict=outcome.verdict.value,
-        survivor_count=len(outcome.survivors),
-        blocked_gate=_gate_of(outcome.verdict),
-        # One best score per floor, because the two floors are tuned separately and a
-        # single number could not say which bar was too high. Each is the best its whole
-        # stage saw - the pool before the similarity floor, every scored candidate
-        # before the rerank floor - which is what separates "nothing was close" from
-        # "something was close and the floor was too high".
-        best_similarity_score=max((c.similarity_score for c in pool), default=None),
-        # None means no chunk carries a rerank score at all: the reranker did not run,
-        # or it failed. Never 0.0, which is the cross-encoder judging a chunk
-        # irrelevant - a judgement it did make.
-        best_rerank_score=max(
-            (c.rerank_score for c in scored or () if c.rerank_score is not None),
-            default=None,
-        ),
-    )
+    with step("faq.verdict") as decided:
+        outcome = decide(pool, similarity.kept, reranked, corpus_empty=corpus_empty)
+        record(
+            decided,
+            "faq.verdict",
+            {
+                "verdict": outcome.verdict.value,
+                "survivor_count": len(outcome.survivors),
+                "blocked_gate": _gate_of(outcome.verdict),
+                # One best score per floor, because the two floors are tuned separately
+                # and a single number could not say which bar was too high. Each is the
+                # best its whole stage saw - the pool before the similarity floor, every
+                # scored candidate before the rerank floor - which is what separates
+                # "nothing was close" from "something was close and the floor was too
+                # high".
+                "best_similarity_score": max(
+                    (c.similarity_score for c in pool), default=None
+                ),
+                # None means no chunk carries a rerank score at all: the reranker did
+                # not run, or it failed. Never 0.0, which is the cross-encoder judging a
+                # chunk irrelevant - a judgement it did make.
+                "best_rerank_score": max(
+                    (
+                        c.rerank_score
+                        for c in scored or ()
+                        if c.rerank_score is not None
+                    ),
+                    default=None,
+                ),
+            },
+        )
     return outcome
 
 
@@ -660,8 +712,12 @@ async def _run_pipeline(
 _PREVIEW_CHARS = 200
 
 
-def _log_retrieval(pool: list[ScoredChunk], *, kept: list[ScoredChunk]) -> None:
+def _log_retrieval(
+    pool: list[ScoredChunk], *, kept: list[ScoredChunk]
+) -> dict[str, Any]:
     """Record the whole observation pool, marking what the gate actually kept.
+
+    Returns: the payload `faq.retrieval_completed` was logged with.
 
     Args:
         kept: the similarity gate's survivors. `considered` is read from this rather
@@ -686,12 +742,13 @@ def _log_retrieval(pool: list[ScoredChunk], *, kept: list[ScoredChunk]) -> None:
                 and len(chunk.chunk_text) > _PREVIEW_CHARS,
             }
         )
-    get_logger().info(
-        "faq.retrieval_completed",
-        pool_size=get_settings().RETRIEVAL_POOL_SIZE,
-        pool_returned=len(pool),
-        candidates=candidates,
-    )
+    payload: dict[str, Any] = {
+        "pool_size": get_settings().RETRIEVAL_POOL_SIZE,
+        "pool_returned": len(pool),
+        "candidates": candidates,
+    }
+    get_logger().info("faq.retrieval_completed", **payload)
+    return payload
 
 
 def _identify(

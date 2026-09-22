@@ -17,6 +17,7 @@ from golden_harness.driver.turn import (
     TurnProtocolError,
     TurnRefused,
     TurnSent,
+    TurnTracing,
     classify_attempt,
     post_turn,
     read_thread,
@@ -28,6 +29,8 @@ _BASE_URL = "http://localhost:8000"
 _CHAT_ID = "01K5CHATTURN00000000000000"
 _CLOCK = datetime(2026, 3, 2, 8, 0, 0)
 _MESSAGE = "What should I bring?"
+_RUN_ID = "01K5RUNTURN000000000000000"
+_TRACING = TurnTracing(run_id=_RUN_ID, case_id="G-a-01")
 
 _DONE: dict[str, Any] = {
     "type": "done",
@@ -71,7 +74,7 @@ def _client(handler: Callable[[httpx.Request], httpx.Response]) -> httpx.AsyncCl
 
 async def _post(handler: Callable[[httpx.Request], httpx.Response]) -> Any:
     async with _client(handler) as client:
-        return await post_turn(client, _CHAT_ID, _MESSAGE, _CLOCK)
+        return await post_turn(client, _CHAT_ID, _MESSAGE, _CLOCK, _TRACING)
 
 
 async def test_post_turn_sends_the_chat_the_message_and_the_run_clock() -> None:
@@ -89,6 +92,39 @@ async def test_post_turn_sends_the_chat_the_message_and_the_run_clock() -> None:
         "message": _MESSAGE,
         "local_now": "2026-03-02T08:00:00",
     }
+
+
+async def test_post_turn_names_the_run_and_the_case_and_leaves_tracing_on() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, stream=_Stream([_ndjson(_DONE)]))
+
+    await _post(handler)
+    await _post(handler)
+
+    for request in seen:
+        assert request.headers["X-VisitDoc-Eval-Run"] == _RUN_ID
+        assert request.headers["X-VisitDoc-Eval-Case"] == "G-a-01"
+        assert "X-VisitDoc-Trace" not in request.headers
+
+
+async def test_post_turn_asks_an_untraced_turn_to_export_nothing() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, stream=_Stream([_ndjson(_DONE)]))
+
+    untraced = TurnTracing(run_id=_RUN_ID, case_id="G-a-01", traced=False)
+    async with _client(handler) as client:
+        await post_turn(client, _CHAT_ID, _MESSAGE, _CLOCK, untraced)
+
+    (request,) = seen
+    assert request.headers["X-VisitDoc-Trace"] == "off"
+    assert request.headers["X-VisitDoc-Eval-Run"] == _RUN_ID
+    assert request.headers["X-VisitDoc-Eval-Case"] == "G-a-01"
 
 
 async def test_post_turn_parses_the_stream_to_its_done_event() -> None:

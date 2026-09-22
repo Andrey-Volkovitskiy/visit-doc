@@ -18,6 +18,7 @@ from typing import Any
 from structlog.contextvars import bound_contextvars
 
 from chat.core.logging import get_logger
+from chat.observability import step
 
 
 class NodeResult:
@@ -44,7 +45,7 @@ class NodeResult:
 
 @asynccontextmanager
 async def node_span(node: str) -> AsyncGenerator[NodeResult]:
-    """Bind `node`, time the body, and emit its lifecycle event on every exit path.
+    """Bind `node`, time the body, and record its lifecycle on every exit path.
 
     Yields: a `NodeResult` the node fills in with whatever `node.completed` should
         report.
@@ -56,11 +57,14 @@ async def node_span(node: str) -> AsyncGenerator[NodeResult]:
     A cancelled node emits `node.cancelled` rather than `node.failed`: a turn
     superseded by a newer message is a normal outcome, not an error, and the two must
     stay distinguishable in the log.
+
+    The node is also an observation named `node` in the turn's trace, so everything the
+    body opens nests under it; its output is the very payload `node.completed` logs.
     """
     logger = get_logger()
     result = NodeResult()
     started = time.monotonic()
-    with bound_contextvars(node=node):
+    with bound_contextvars(node=node), step(node) as observed:
         logger.info("node.started", node=node)
         try:
             yield result
@@ -76,12 +80,14 @@ async def node_span(node: str) -> AsyncGenerator[NodeResult]:
                 error_detail=str(exc),
             )
             raise
+        payload = result.payload
         logger.info(
             "node.completed",
             node=node,
             duration_ms=_elapsed_ms(started),
-            result=result.payload,
+            result=payload,
         )
+        observed.set_output(payload)
 
 
 def _elapsed_ms(started: float) -> float:

@@ -10,9 +10,11 @@ and behavior byte for byte. Only a mixed-intent turn pays for a composing call.
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from anthropic import AsyncAnthropic
+from anthropic.types import MessageParam
 
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.config import get_settings
@@ -29,6 +31,7 @@ from chat.domain.schemas import (
     RequestOutcome,
     RequestSegment,
 )
+from chat.observability import generation, record, turn_root
 from chat.rag.pipeline import ScoredChunk
 
 # What one half's part of the merge was itself written under - the FAQ path's and the
@@ -112,14 +115,18 @@ class TurnCompletion:
         `duration_ms` covers the whole turn the patient waited through - the history
         read and message insert included, not just the graph - and is left off
         entirely when the emission happens outside a bound turn.
+
+        The same payload becomes the output of the turn's trace root.
         """
         if self._fields is None:
             raise RuntimeError("turn.completed was emitted with no fields recorded")
         duration_ms = turn_elapsed_ms()
-        if duration_ms is None:
-            get_logger().info("turn.completed", **self._fields)
-            return
-        get_logger().info("turn.completed", duration_ms=duration_ms, **self._fields)
+        payload = (
+            dict(self._fields)
+            if duration_ms is None
+            else {"duration_ms": duration_ms, **self._fields}
+        )
+        record(turn_root(), "turn.completed", payload)
 
 
 def deduplicate_chunks(chunks: list[ScoredChunk]) -> list[ScoredChunk]:
@@ -374,22 +381,39 @@ async def compose_answer(
     )
 
     answer_parts: list[str] = []
+    first_token_at: datetime | None = None
+    model = get_settings().GENERATION_MODEL
+    messages: list[MessageParam] = [{"role": "user", "content": prompt}]
     try:
-        async with anthropic_client.messages.stream(
-            model=get_settings().GENERATION_MODEL,
-            max_tokens=_MAX_TOKENS,
-            system=_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-        ) as stream:
-            async for event in stream:
-                if event.type == "text":
-                    answer_parts.append(event.text)
-                    yield ChatTokenEvent(text=event.text)
-            # Read after the loop, the same way `answer_small_talk` reads it: the SDK
-            # accumulates the final message, and this is the documented way to ask why
-            # it stopped. Inside the `try` because a failure to obtain it is a failure
-            # of the same call.
-            final = await stream.get_final_message()
+        with generation(
+            "compose_answer.model",
+            model=model,
+            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            model_parameters={"max_tokens": _MAX_TOKENS},
+        ) as observed:
+            async with anthropic_client.messages.stream(
+                model=model,
+                max_tokens=_MAX_TOKENS,
+                system=_SYSTEM_PROMPT,
+                messages=messages,
+            ) as stream:
+                async for event in stream:
+                    if event.type == "text":
+                        if first_token_at is None:
+                            first_token_at = datetime.now(UTC)
+                        answer_parts.append(event.text)
+                        yield ChatTokenEvent(text=event.text)
+                # Read after the loop, the same way `answer_small_talk` reads it: the
+                # SDK accumulates the final message, and this is the documented way to
+                # ask why it stopped. Inside the `try` because a failure to obtain it is
+                # a failure of the same call.
+                final = await stream.get_final_message()
+            observed.record_completion(
+                "".join(answer_parts),
+                final.usage,
+                final.stop_reason,
+                completion_start_time=first_token_at,
+            )
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 

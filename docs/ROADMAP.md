@@ -561,27 +561,40 @@ where 2b answers how often turns go the right way across a labeled set.
   container but six — web, worker, PostgreSQL, ClickHouse, Redis and S3-compatible storage — which
   would triple the local stack for a phase whose output is a debugging view, against the "thinnest
   backend" principle. Hobby's limits fit the use: 50k units a month (a unit is one trace, span,
-  generation or score, so roughly 15–25 per turn), 30 days of history, two users. The 30-day window
+  generation or score, so 6–23 per turn as measured in `specs/014-langfuse-tracing/evaluation/`),
+  30 days of history, two users. The 30-day window
   costs nothing the eval chain needs, because 2b and 2c read stored runs, never traces.
 - **Traces reach Langfuse over OpenTelemetry, not through the logs.** The Langfuse SDK is an
   OpenTelemetry tracer exporting over OTLP; structlog stays exactly as it is, and the harness keeps
-  reading `.run/chat.log`. LangGraph nodes are spanned by Langfuse's callback handler, Claude calls
-  are recorded as generations carrying model id and token usage, and the retrieval steps — embed,
-  search, both gates, rerank — get explicit spans carrying what each one decided.
+  reading `.run/chat.log`. Each graph node is spanned by the graph's own `node_span`, which already
+  bounds the node for its lifecycle log events, rather than by Langfuse's LangChain callback handler.
+  The handler was the first plan and was measured before it was dropped: it runs on an executor
+  thread under a copied context, so nothing opened inside a node can nest under the node's span and
+  the trace comes out flat; it sees none of the direct Anthropic calls, which is every call this
+  agent makes; and it would add `langchain` as a dependency only to produce a span `node_span`
+  already has. Beneath the nodes, Claude calls are recorded as generations carrying model id and
+  token usage, each tool call as its own observation, and each FAQ request's retrieval steps —
+  embed, search, both gates, rerank, verdict — as spans. Where a step's decision is also a log
+  event, the span's output is the very payload that event was logged with, so the trace and the
+  log cannot disagree about it.
 - **Patient text leaves the machine, so masking is designed in, not added later.** A trace carries
   full messages and prompts to a third party, and the redaction in `shared-logging` is a structlog
-  processor that never sees a span. The SDK's mask hook gets the same treatment the log redaction
-  did: one declaration, applied to every span.
+  processor that never sees a span. So that same redaction, made public in `shared-logging`
+  rather than copied, is applied to every span: its key-name rule to each structured value as it
+  is recorded, and its secret-value pass by the SDK's export-time hook to every attribute - the
+  same rule as the log, with no per-span opt-in. It masks secrets, not patient text: a trace exists to
+  show what the model saw and said, and every message in this deployment is synthetic.
 - **An eval run sends Langfuse events by default, but it can be disabled when needed.** `make
   eval-run` traces the turns it drives, so a case that surprises in a run's report has a trace to
   open without re-running it, and `make eval-run TRACE=0` turns tracing off for that run. The case
-  for turning it off is the budget: a full run is roughly 3k units and a noise band is five of
-  them, about 15k of the month's 50k, spent on traces nobody opens — a run's metrics never come
+  for turning it off is the budget: a full run is expected to cost ~1.3k units and a noise band is
+  five of them, ~6.3k of the month's 50k, spent on traces nobody opens — a run's metrics never come
   from a trace. The switch is per run, not per stack, so a developer tracing the app by hand keeps
-  tracing while an untraced run executes beside it; how the harness's choice reaches the chat
-  service is the spec's to settle. The run records whether it was traced, and tracing must not
-  change what a turn does — a traced and an untraced run of one build compare as the same
-  conditions.
+  tracing while an untraced run executes beside it. The choice travels on the run's own requests,
+  as an `X-VisitDoc-Trace: off` header on each turn, never as a setting of the service, so the
+  service is not restarted or reconfigured for it. The run records whether it was traced, and
+  tracing must not change what a turn does — a traced and an untraced run of one build compare as
+  the same conditions.
 
 ### Phase 3 — The frontend on its own terms
 Every phase so far treated the frontend as the thinnest surface that made backend work

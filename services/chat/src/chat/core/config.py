@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from shared_logging import LogFormat, LogLevel
 
@@ -103,6 +103,38 @@ class Settings(BaseSettings):
     # events back out of the log as data. The console format is for people, and carries
     # no guarantee a program could parse it, so it stays the default.
     LOG_FORMAT: LogFormat = LogFormat.CONSOLE
+    # Langfuse tracing: one trace per turn, exported to the project these keys belong
+    # to. Blank by default, and blank means off - both keys have to be set for anything
+    # to leave the process. Read here and handed to the SDK explicitly, never left to
+    # its own environment lookup, which would treat an empty key as a real one and
+    # build an exporter that fails to authenticate on every batch.
+    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_SECRET_KEY: str = ""
+    LANGFUSE_BASE_URL: str = "https://cloud.langfuse.com"
+    # The environment a non-eval turn's trace is filed under. Langfuse drops a value it
+    # does not accept with only a warning, and the trace then files under its default -
+    # so the same rule it applies is enforced here, where a wrong value fails startup.
+    LANGFUSE_ENVIRONMENT: str = Field(
+        default="development", max_length=40, pattern=r"^[a-z0-9_-]+$"
+    )
+
+    @field_validator("LANGFUSE_ENVIRONMENT")
+    @classmethod
+    def _environment_is_not_reserved(cls, value: str) -> str:
+        """Refuse an environment in the prefix Langfuse reserves for its own.
+
+        Raises: ValueError when `value` starts with `langfuse`.
+        """
+        if value.startswith("langfuse"):
+            raise ValueError("must not start with 'langfuse', which Langfuse reserves")
+        return value
+
+    @property
+    def tracing_enabled(self) -> bool:
+        """Return whether this process exports traces: both Langfuse keys are set."""
+        return bool(
+            self.LANGFUSE_PUBLIC_KEY.strip() and self.LANGFUSE_SECRET_KEY.strip()
+        )
 
 
 @lru_cache

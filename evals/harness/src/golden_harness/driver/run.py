@@ -21,8 +21,9 @@ cancelled before its file is written, so no case's appointments stand in a later
 way. A cleanup that cannot complete stops the run once the case is written. Each stop
 named in `_drive_case` that comes once a chat's patient has been read releases that
 patient first; for a fixture case whose turn was posted before its thread could not be
-read back, or its logged segmentation broke the record's shape, the case is also written
-as outcome unknown before the run stops, so a resumed run does not post it again.
+read back, or its logged segmentation or trace broke the record's shape, the case is
+also written as outcome unknown before the run stops, so a resumed run does not post it
+again.
 
 A turn whose answer did not arrive whole - its stream broke off, timed out or broke the
 service's contract - is polled every `SETTLE_INTERVAL_SECONDS`, within
@@ -80,6 +81,7 @@ from golden_harness.driver.logslice import (
     restarts_since,
     select_turn,
     service_conditions,
+    trace_id,
 )
 from golden_harness.driver.scheduling import CleanupFailedError, SchedulingCallError
 from golden_harness.driver.session import (
@@ -95,6 +97,7 @@ from golden_harness.driver.turn import (
     TurnRefused,
     TurnResult,
     TurnSent,
+    TurnTracing,
     classify_attempt,
 )
 from golden_harness.record import (
@@ -106,6 +109,7 @@ from golden_harness.record import (
     ReplyTurn,
     Run,
     RunConditions,
+    RunTracing,
     Terminal,
     TerminalKind,
     Unplantable,
@@ -138,6 +142,9 @@ SETTLE_INTERVAL_SECONDS: Final = 5.0
 # The event a turn's shape is logged in. The shape a hand-off is logged as is the chat
 # service's own public `HANDED_OFF_OUTCOME`, so the two cannot drift apart (FR-041d).
 _COMPLETED_EVENT: Final = "turn.completed"
+# The `service.configured` field stating whether the service exports traces. Not a
+# run condition: it decides only whether a run is traced, never what it measures.
+_TRACING_ENABLED: Final = "tracing_enabled"
 
 
 @dataclass(frozen=True)
@@ -243,9 +250,9 @@ class Stack(Protocol):
         ...
 
     async def post_turn(
-        self, chat_id: str, message: str, local_now: datetime
+        self, chat_id: str, message: str, local_now: datetime, tracing: TurnTracing
     ) -> TurnResult:
-        """Post one turn and read its stream to the end."""
+        """Post one turn, filing its trace as `tracing` says, and read its stream."""
         ...
 
     async def read_thread(
@@ -340,10 +347,10 @@ class LiveStack:
             )
 
     async def post_turn(
-        self, chat_id: str, message: str, local_now: datetime
+        self, chat_id: str, message: str, local_now: datetime, tracing: TurnTracing
     ) -> TurnResult:
-        """Post one turn and read its stream to the end."""
-        return await turn.post_turn(self._client, chat_id, message, local_now)
+        """Post one turn, filing its trace as `tracing` says, and read its stream."""
+        return await turn.post_turn(self._client, chat_id, message, local_now, tracing)
 
     async def read_thread(
         self, chat_id: str, message: str, planted_ids: Sequence[str]
@@ -421,6 +428,7 @@ async def drive_run(
     clock: datetime = DEFAULT_CLOCK,
     timer: Callable[[], float] = time.monotonic,
     settle: SettleWait = DEFAULT_SETTLE,
+    tracing_requested: bool = True,
 ) -> Path:
     """Start a run over `selection` and drive every case of it.
 
@@ -432,6 +440,8 @@ async def drive_run(
             and the settle bound.
         settle: how a turn whose answer did not arrive is waited for before its patient
             is released (FR-041c).
+        tracing_requested: False sends every turn of the run untraced, whatever the
+            service does.
 
     Returns: the run's directory under `artifacts_dir`
 
@@ -446,9 +456,9 @@ async def drive_run(
         restarted with other settings before the first turn; and HarnessFaultError,
         ServiceRestartedError, PostStateUnreadableError, CleanupFailedError,
         SessionError, ChatNotFoundError, ThreadReadError, TurnProtocolError,
-        httpx.HTTPError or pydantic.ValidationError (a turn's logged segmentation
-        breaking the record's shape), or TurnUnsettledError, which stop the run between
-        cases.
+        httpx.HTTPError or pydantic.ValidationError (a turn's logged segmentation or
+        trace breaking the record's shape), or TurnUnsettledError, which stop the run
+        between cases.
     """
     selected, missing = _selected(cases, selection)
     if missing:
@@ -463,7 +473,9 @@ async def drive_run(
 
     started = log_offset(log_path)
     started_preceding = preceding_bytes(log_path, started)
-    conditions = RunConditions.from_event(service_conditions(log_path, started))
+    stated = service_conditions(log_path, started)
+    conditions = RunConditions.from_event(stated)
+    tracing = _run_tracing(tracing_requested, stated)
     opened = await stack.open_session()
     require_json_log(log_path, started)
     check, entry_ids = _verified_corpus(await stack.live_corpus(), pin)
@@ -482,10 +494,11 @@ async def drive_run(
         entry_ids=entry_ids,
         conditions=conditions,
         labels=label_digests(selected),
+        tracing=tracing,
     )
     run_dir = artifacts_dir / run.run_id
     write_run(run_dir, run)
-    watch = _RestartWatch(log_path, conditions, started, started_preceding)
+    watch = _RestartWatch(log_path, conditions, tracing, started, started_preceding)
     await _drive_cases(run_dir, run, selected, stack, log_path, timer, settle, watch)
     return run_dir
 
@@ -507,7 +520,9 @@ async def resume_run(
     Raises: LabelsChangedError when a selected case is missing from `cases` or its
         digest changed; ConditionsMissingError when the log states no settings;
         ConditionsChangedError when the service states other settings than `run.json`,
-        or states them in a shape the run's conditions cannot be read from;
+        or states them in a shape the run's conditions cannot be read from, or - unless
+        the run asked not to be traced - now traces where the run was not, or does not
+        where it was;
         CorpusMismatchError or EntryIdsChangedError when the corpus is not the one the
         run verified; CleanupFailedError when a recorded case's patient, or any other
         patient of the session's chats, cannot be released, before any case is driven;
@@ -515,6 +530,7 @@ async def resume_run(
 
     A stopped attempt's patient is released before the run stops, but that release can
     itself fail, so every patient of the run session's chats is released again here.
+    The run keeps its own tracing: an untraced one goes on sending every turn untraced.
     """
     run = read_run(run_dir)
     selected, missing = _selected(cases, run.selection)
@@ -547,6 +563,12 @@ async def resume_run(
             "the service now states other settings than the run was measured under: "
             f"{_differences(run.conditions, conditions)}"
         )
+    traces_otherwise = _tracing_difference(run.tracing, stated)
+    if traces_otherwise is not None:
+        raise ConditionsChangedError(
+            "the service now traces otherwise than the run recorded: "
+            f"{traces_otherwise}"
+        )
 
     stack.restore_session(run.session_id)
     _check, entry_ids = _verified_corpus(await stack.live_corpus(), pin)
@@ -562,7 +584,7 @@ async def resume_run(
         if patient_id is not None:
             await stack.release(run.session_id, patient_id, run.clock)
 
-    watch = _RestartWatch(log_path, conditions, offset, preceding)
+    watch = _RestartWatch(log_path, conditions, run.tracing, offset, preceding)
     await _drive_cases(
         run_dir, reconciled, selected, stack, log_path, timer, settle, watch
     )
@@ -592,29 +614,33 @@ class _RestartWatch:
         self,
         log_path: Path,
         conditions: RunConditions,
+        tracing: RunTracing,
         offset: int,
         preceding: bytes,
     ) -> None:
-        """Watch `log_path` from `offset` against the run's `conditions`.
+        """Watch `log_path` from `offset` against the run's `conditions` and `tracing`.
 
         Args:
             preceding: the bytes the log held just before `offset` when it was taken.
         """
         self._log_path = log_path
         self._conditions = conditions
+        self._tracing = tracing
         self.offset = offset
         self._preceding = preceding
 
     def check(self, case_id: str) -> None:
         """Check every complete line logged since the last check.
 
-        A restart stating the run's own settings is not a change, and is passed over.
+        A restart stating the run's own settings, and tracing as the run's service did,
+        is not a change, and is passed over.
 
         Raises: ServiceRestartedError naming `case_id` and each differing setting when a
             `service.configured` event states other settings than the run's - or states
             them in a shape the run's conditions cannot be read from, which a build that
             renamed or dropped one of their fields logs, and which is no less a restart
-            under other settings.
+            under other settings - or, unless the run asked not to be traced, states
+            `tracing_enabled` otherwise than the service the run began with.
         """
         restarts, self.offset = restarts_since(
             self._log_path, self.offset, preceding=self._preceding
@@ -632,6 +658,12 @@ class _RestartWatch:
                 raise ServiceRestartedError(
                     f"{case_id}: the service restarted with other settings: "
                     f"{_differences(self._conditions, restarted)}"
+                )
+            traces_otherwise = _tracing_difference(self._tracing, restart)
+            if traces_otherwise is not None:
+                raise ServiceRestartedError(
+                    f"{case_id}: the service restarted tracing otherwise than the run "
+                    f"began: {traces_otherwise}"
                 )
 
 
@@ -795,10 +827,10 @@ async def _drive_case(
     chat, once its patient is released. For a fixture carrying a reply, the attempt is
     the whole exchange: a reply that was never sent drives both turns again. A fixture
     case whose turn was posted and then could not be read back, or logged a segmentation
-    breaking the record's shape, is recorded as outcome unknown: its appointments are
-    read and released, and the error is returned to stop the run once it is written. A
-    cleanup failing between two attempts records the case as a run error, since it
-    cannot be driven again.
+    or a trace breaking the record's shape, is recorded as outcome unknown: its
+    appointments are read and released, and the error is returned to stop the run once
+    it is written. A cleanup failing between two attempts records the case as a run
+    error, since it cannot be driven again.
 
     A turn whose answer did not arrive whole (`SENT_NO_ANSWER`: a stream that broke off,
     timed out or broke the service's contract, first turn or reply) is not released or
@@ -825,7 +857,8 @@ async def _drive_case(
         PostStateUnreadableError when a completed turn's appointments
         cannot be read - after the case's last turn, or after the first turn of a case
         with a reply, which is then not posted; pydantic.ValidationError when a turn's
-        logged segmentation breaks the record's shape and the case has no fixture;
+        logged segmentation or trace breaks the record's shape and the case has no
+        fixture;
         ChatNotFoundError, TurnProtocolError, ThreadReadError or httpx.HTTPError when an
         attempt's thread read or chat raised it and the case has no fixture or its turn
         was not posted - with the patient not released when the turn's answer did not
@@ -923,7 +956,9 @@ async def _drive_case(
                     if case.scheduling is not None
                     else None
                 )
-                unknown = _unmeasured(case, attempt, number, timer() - started)
+                unknown = _unmeasured(
+                    case, attempt, number, timer() - started, log_path
+                )
                 return await finish(
                     unknown.model_copy(
                         update={
@@ -950,7 +985,9 @@ async def _drive_case(
                 # it again: it is written as outcome unknown before the error stops it.
                 after = await _post_state(stack, run, attempt.identity)
                 return await finish(
-                    _unsegmented(case, attempt, number, timer() - started, after),
+                    _unsegmented(
+                        case, attempt, number, timer() - started, after, log_path
+                    ),
                     attempt.identity,
                     exc,
                 )
@@ -1006,7 +1043,7 @@ async def _drive_case(
             )
 
         # What is left provably never reached the pipeline.
-        unmeasured = _unmeasured(case, attempt, number, timer() - started)
+        unmeasured = _unmeasured(case, attempt, number, timer() - started, log_path)
         if number == MAX_ATTEMPTS:
             return await finish(unmeasured, attempt.identity)
         # Driven again in a fresh chat: the failed attempt's stored message would
@@ -1097,7 +1134,16 @@ async def _turn(
         await _release_then_stop(stack, run, chat_id, identity, exc)
     result: TurnResult | TurnProtocolError
     try:
-        result = await stack.post_turn(chat_id, message, run.clock)
+        result = await stack.post_turn(
+            chat_id,
+            message,
+            run.clock,
+            TurnTracing(
+                run_id=run.run_id,
+                case_id=case_id,
+                traced=run.tracing is not RunTracing.UNTRACED_BY_REQUEST,
+            ),
+        )
     except TurnProtocolError as exc:
         # The stream began and broke mid-answer, so the turn may still be running: it is
         # read back and judged like a stream that broke off (FR-041c).
@@ -1316,7 +1362,10 @@ async def _drive_reply(
             await _release_then_stop(stack, run, attempt.chat_id, attempt.identity, exc)
         if not isinstance(settled, _Attempt):
             return _Replied(
-                unknown, AttemptClass.SENT_NO_ANSWER, settled, keep_patient=True
+                _naming_reply_trace(unknown, second, log_path),
+                AttemptClass.SENT_NO_ANSWER,
+                settled,
+                keep_patient=True,
             )
         second, reply_thread = settled, settled.thread
         assert reply_thread is not None
@@ -1328,15 +1377,20 @@ async def _drive_reply(
         )
         unknown = unknown.model_copy(update={"reply_turn": reply_turn})
     try:
-        events, segments = _turn_slice(second, log_path)
+        events, segments, traced = _turn_slice(second, log_path)
     except ValidationError as exc:
-        return _Replied(unknown, AttemptClass.SENT_NO_ANSWER, exc)
+        return _Replied(
+            _naming_reply_trace(unknown, second, log_path),
+            AttemptClass.SENT_NO_ANSWER,
+            exc,
+        )
     reason = _turn_exclusion(_terminal(second.result), reply_thread, segments, events)
     return _Replied(
         recorded.model_copy(
             update={
                 "reply_turn": reply_turn.model_copy(update={"events": events}),
                 "excluded": first.excluded if first.excluded is not None else reason,
+                "traces": {**first.traces, **_traces(reply_thread, traced)},
             }
         ),
         AttemptClass.MEASURED,
@@ -1554,11 +1608,13 @@ def _unsegmented(
     attempts: int,
     elapsed: float,
     after: list[AppointmentState] | None,
+    log_path: Path,
 ) -> CaseRun:
     """Record a fixture case whose logged segmentation broke the record, as unknown.
 
     What was read before the error is kept: how the stream ended, what the thread
-    stored, and the patient's appointments, when they could be read.
+    stored, the patient's appointments, when they could be read, and the trace the
+    turn logged (`_logged_traces`).
     """
     thread = attempt.thread
     assert thread is not None
@@ -1574,6 +1630,7 @@ def _unsegmented(
         assistant_message=thread.assistant_message,
         scheduling_after=after,
         excluded=ExclusionReason.OUTCOME_UNKNOWN,
+        traces=_logged_traces(attempt, log_path),
     )
 
 
@@ -1592,7 +1649,7 @@ def _measured(
     thread = attempt.thread
     assert thread is not None
     terminal = _terminal(attempt.result)
-    events, segments = _turn_slice(attempt, log_path)
+    events, segments, traced = _turn_slice(attempt, log_path)
     return CaseRun.model_validate(
         {
             "case_id": case.id,
@@ -1607,44 +1664,97 @@ def _measured(
             "segments": segments,
             "events": events,
             "excluded": _turn_exclusion(terminal, thread, segments, events),
+            "traces": _traces(thread, traced),
         }
     )
 
 
 def _turn_slice(
     attempt: _Attempt, log_path: Path
-) -> tuple[list[LogEvent] | None, ProducedSegmentation | None]:
-    """Read one turn's own events out of the log, and the segmentation they record.
+) -> tuple[list[LogEvent] | None, ProducedSegmentation | None, str | None]:
+    """Read one turn's own events out of the log, what they record, and its trace.
 
     Returns: the events of the one turn that received the attempt's patient message,
-        None when no slice could be read or selected; and that turn's segmentation,
-        None when it has no events or they hold no single classification
+        None when no slice could be read or selected; that turn's segmentation, None
+        when it has no events or they hold no single classification; and the id of the
+        trace it exported, None when it has no events or they name no trace
 
-    Raises: pydantic.ValidationError when the logged segmentation breaks the record's
-        shape.
+    Raises: pydantic.ValidationError when the logged segmentation, or the logged trace,
+        breaks the record's shape.
+    """
+    selected = _selected_events(attempt, log_path)
+    if selected is None:
+        return None, None, None
+    traced = trace_id(selected)
+    segmentation = produced_segmentation(selected)
+    if isinstance(segmentation, SliceMissing):
+        return list(selected), None, traced
+    return list(selected), segmentation, traced
+
+
+def _selected_events(attempt: _Attempt, log_path: Path) -> list[LogEvent] | None:
+    """Return the events of the one turn that received the attempt's patient message.
+
+    None when the attempt's thread holds no patient message, or when no slice could be
+    read or selected.
     """
     thread = attempt.thread
     patient = thread.patient_message if thread is not None else None
     if patient is None:
-        return None, None
+        return None
     slice_events = read_slice(
         log_path, attempt.slice_offset, preceding=attempt.slice_preceding
     )
     if isinstance(slice_events, SliceMissing):
-        return None, None
+        return None
     selected = select_turn(slice_events, patient.id)
     if isinstance(selected, SliceMissing):
-        return None, None
-    segmentation = produced_segmentation(selected)
-    if isinstance(segmentation, SliceMissing):
-        return list(selected), None
-    return list(selected), segmentation
+        return None
+    return selected
+
+
+def _logged_traces(attempt: _Attempt, log_path: Path) -> dict[str, str]:
+    """Name the trace a posted turn logged, for a record the turn is not measured into.
+
+    Read from the turn's own slice as a measured turn's is, but asking nothing else of
+    it: a record already written as a run error or outcome unknown is not stopped over
+    a slice it does not score. So a `turn.traced` breaking the log contract - logged
+    twice, or with no string id - names no trace here rather than raising.
+    """
+    thread = attempt.thread
+    selected = _selected_events(attempt, log_path)
+    if thread is None or selected is None:
+        return {}
+    try:
+        traced = trace_id(selected)
+    except ValidationError:
+        return {}
+    return _traces(thread, traced)
+
+
+def _naming_reply_trace(recorded: CaseRun, reply: _Attempt, log_path: Path) -> CaseRun:
+    """Return `recorded` naming, beside its first turn's trace, the reply's own."""
+    return recorded.model_copy(
+        update={"traces": {**recorded.traces, **_logged_traces(reply, log_path)}}
+    )
+
+
+def _traces(thread: ThreadRead, traced: str | None) -> dict[str, str]:
+    """Name the trace a turn exported under its patient message's id, if it did."""
+    patient = thread.patient_message
+    if patient is None or traced is None:
+        return {}
+    return {patient.id: traced}
 
 
 def _unmeasured(
-    case: Case, attempt: _Attempt, attempts: int, elapsed: float
+    case: Case, attempt: _Attempt, attempts: int, elapsed: float, log_path: Path
 ) -> CaseRun:
-    """Record a case whose every attempt measured nothing, as a run error."""
+    """Record a case whose every attempt measured nothing, as a run error.
+
+    The trace its last attempt logged is named (`_logged_traces`): an attempt never
+    sent, or refused before a stream, read no thread and so names none.
+    """
     thread = attempt.thread
     return CaseRun(
         case_id=case.id,
@@ -1657,6 +1767,7 @@ def _unmeasured(
         patient_message=thread.patient_message if thread is not None else None,
         assistant_message=thread.assistant_message if thread is not None else None,
         excluded=ExclusionReason.RUN_ERROR,
+        traces=_logged_traces(attempt, log_path),
     )
 
 
@@ -1743,6 +1854,43 @@ def _reconciled(run_dir: Path, run: Run) -> tuple[Run, list[CaseRun]]:
         }
     )
     return rebuilt, recorded
+
+
+def _run_tracing(requested: bool, stated: LogEvent) -> RunTracing:
+    """Decide whether a run is traced from what it asked and what the service stated.
+
+    The run's own choice wins: a run that asked not to be traced is untraced whatever
+    the service does.
+    """
+    if not requested:
+        return RunTracing.UNTRACED_BY_REQUEST
+    if _states_tracing(stated):
+        return RunTracing.TRACED
+    return RunTracing.UNTRACED_SERVICE_OFF
+
+
+def _states_tracing(stated: LogEvent) -> bool:
+    """Whether a `service.configured` event states that the service traces.
+
+    An event without the field is a service from before tracing, which never traced.
+    """
+    return stated.get(_TRACING_ENABLED) is True
+
+
+def _tracing_difference(tracing: RunTracing, stated: LogEvent) -> dict[str, str] | None:
+    """Name how a service's stated tracing departs from what a run recorded.
+
+    Returns: `tracing_enabled` with the value the run's service stated and the value
+        now stated, or None when they agree - or when the run asked not to be traced,
+        which no state of the service can change.
+    """
+    if tracing is RunTracing.UNTRACED_BY_REQUEST:
+        return None
+    was = tracing is RunTracing.TRACED
+    now = _states_tracing(stated)
+    if was == now:
+        return None
+    return {_TRACING_ENABLED: f"{was!r} -> {now!r}"}
 
 
 def _differences(recorded: RunConditions, stated: RunConditions) -> dict[str, str]:

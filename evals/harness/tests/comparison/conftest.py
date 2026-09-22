@@ -5,6 +5,8 @@ comparison can report, each the baseline with exactly one edit (spec 013 T010). 
 naming a movement therefore cannot be reading two changes at once.
 """
 
+import json
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 
@@ -56,3 +58,23 @@ def case_runs(run_dir: Callable[[str], Path]) -> Callable[[str], list[CaseRun]]:
         ]
 
     return of
+
+
+@pytest.fixture
+def retraced(tmp_path: Path) -> Callable[[Path, str], Path]:
+    """Copy a run under `tmp_path`, stating `tracing` in its `run.json`.
+
+    Everything else - the conditions, the cases, the run id - is the source's own, so
+    the copy differs from it in whether it was traced and in nothing else.
+    """
+
+    def copy(source: Path, tracing: str) -> Path:
+        destination = tmp_path / f"{source.name}-{tracing}"
+        shutil.copytree(source, destination)
+        run_json = destination / "run.json"
+        raw = json.loads(run_json.read_text())
+        raw["tracing"] = tracing
+        run_json.write_text(json.dumps(raw))
+        return destination
+
+    return copy

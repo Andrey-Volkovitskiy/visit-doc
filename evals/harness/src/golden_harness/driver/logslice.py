@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, ConfigDict, JsonValue, TypeAdapter
 
 from golden_harness.record import ProducedSegmentation
 
@@ -31,6 +31,9 @@ _SETTINGS_EVENT = "service.configured"
 _SETTINGS_EVENT_BYTES = _SETTINGS_EVENT.encode()
 _RECEIVED_EVENT = "turn.message_received"
 _CLASSIFIED_EVENT = "intent.classified"
+_TRACED_EVENT = "turn.traced"
+# A turn logs `turn.traced` once, naming its trace id as a string.
+_ONE_TRACE_ID: TypeAdapter[tuple[str]] = TypeAdapter(tuple[str])
 _PRECEDING_BYTES = 256
 # Every event the harness reads is logged at INFO, so a level above it empties the log
 # of them as surely as the console format does.
@@ -287,6 +290,25 @@ def produced_segmentation(
     return ProducedSegmentation.model_validate(
         {"segments": event.get("segments"), "cap_bound": event.get("cap_bound")}
     )
+
+
+def trace_id(events: list[LogEvent]) -> str | None:
+    """Read the id of the trace the turn exported from its `turn.traced` event.
+
+    Returns: the trace id, or None when the turn logged no `turn.traced` - which is
+        what a turn that exported no trace looks like, and nothing else does.
+
+    Raises: pydantic.ValidationError when the turn logged the event more than once, or
+        without a string `trace_id` - a disagreement with the log contract, reported
+        as a segmentation breaking the record's shape is.
+    """
+    traced = [
+        event.get("trace_id") for event in events if event["event"] == _TRACED_EVENT
+    ]
+    if not traced:
+        return None
+    (only,) = _ONE_TRACE_ID.validate_python(traced)
+    return only
 
 
 def _complete_lines(path: Path, start: int, end: int | None) -> Iterator[bytes]:

@@ -412,3 +412,33 @@ def test_a_movement_on_a_case_neither_run_set_aside_says_nothing_about_it(
     summary = render_comparison(compare(run_dir("base"), run_dir("verdict"), labels))
 
     assert "set aside in" not in summary
+
+
+def test_each_run_is_named_with_whether_it_was_traced(
+    run_dir: Runs, labels: list[Case], retraced: Callable[[Path, str], Path]
+) -> None:
+    traced = retraced(run_dir("base"), "traced")
+
+    comparison = compare(run_dir("base"), traced, labels)
+    summary = render_comparison(comparison)
+
+    (base_line,) = [line for line in summary.splitlines() if line.startswith("- Base:")]
+    (new_line,) = [line for line in summary.splitlines() if line.startswith("- New:")]
+    assert "untraced_service_off" in base_line
+    assert "traced" in new_line and "untraced" not in new_line
+    # Beside the ids, not among the conditions.
+    conditions = summary[summary.index("## Conditions") : summary.index("## Coverage")]
+    assert "traced" not in conditions
+
+
+def test_a_stored_comparison_from_before_tracing_still_reads(
+    run_dir: Runs, labels: list[Case]
+) -> None:
+    comparison = compare(run_dir("base"), run_dir("verdict"), labels)
+    raw = comparison.model_dump(mode="json")
+    for side in ("base", "new"):
+        del raw[side]["tracing"]
+
+    reread = Comparison.model_validate(raw)
+
+    assert reread.base.tracing.value == "untraced_service_off"

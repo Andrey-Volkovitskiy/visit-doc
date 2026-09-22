@@ -304,12 +304,30 @@ class RunConditions(BaseModel):
         )
 
 
+class RunTracing(StrEnum):
+    """Whether a run's turns were traced, and when not, why not.
+
+    `TRACED`: the run asked for tracing and the service stated it traces.
+    `UNTRACED_BY_REQUEST`: the run asked every turn not to be traced - whatever the
+    service does, since a request can only turn its own tracing off.
+    `UNTRACED_SERVICE_OFF`: the run asked for tracing and the service stated it does not
+    trace, or stated nothing about it - every run taken before the service could.
+    Never a run condition: a traced and an untraced run of one build measure the same
+    thing.
+    """
+
+    TRACED = "traced"
+    UNTRACED_BY_REQUEST = "untraced_by_request"
+    UNTRACED_SERVICE_OFF = "untraced_service_off"
+
+
 class Run(BaseModel):
     """`run.json`: the conditions a run was measured under, and the cases recorded.
 
     `started_at` and `finished_at` are the host's wall clock, for orientation only;
     `drive_seconds` - the sum of the cases' own elapsed times - is the run's duration.
-    `clock` is the local time every turn was sent as `local_now`.
+    `clock` is the local time every turn was sent as `local_now`. `tracing` is true of
+    every turn the run drove, since the driver stops rather than let it change.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -326,6 +344,7 @@ class Run(BaseModel):
     conditions: RunConditions
     labels: dict[str, str]
     cases: list[str] = Field(default_factory=list)
+    tracing: RunTracing = RunTracing.UNTRACED_SERVICE_OFF
 
     @model_validator(mode="after")
     def _labels_and_cases_follow_the_selection(self) -> "Run":
@@ -364,6 +383,17 @@ class CaseRun(BaseModel):
     are derived when scoring. `unplantable` says why the fixture would not plant, and is
     set only on a case excluded as `unresolvable_fixture` - None there on a case
     recorded before the harness stored it.
+    `traces` maps the id of each of the case's patient messages - the first turn's, and
+    the reply's - to the trace id its turn logged in `turn.traced`, read from the turn's
+    own log slice whatever the case was recorded as, a run error or outcome unknown
+    included. In a traced run a posted turn without an entry ran no pipeline (silenced),
+    with three exceptions where the turn cannot be named: a turn whose thread could not
+    be read, whose patient message id is therefore unknown; a turn whose slice could not
+    be read or selected; and, for a case already recorded as a run error or outcome
+    unknown, a turn whose `turn.traced` broke the log contract. An attempt never sent,
+    or refused before a stream, ran no turn. Only the attempt the case records is
+    named - never one abandoned for a retry or before a resume - and a case recorded
+    before tracing names none.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -386,6 +416,7 @@ class CaseRun(BaseModel):
     cancelled_after: list[AppointmentState] = Field(default_factory=list)
     excluded: ExclusionReason | None = None
     unplantable: Unplantable | None = None
+    traces: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("excluded")
     @classmethod

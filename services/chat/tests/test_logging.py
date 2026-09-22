@@ -97,3 +97,21 @@ def test_the_configured_log_format_reaches_the_shared_chain() -> None:
         configure_logging(_settings(LOG_FORMAT=LogFormat.JSON))
 
     assert shared.call_args.kwargs["log_format"] is LogFormat.JSON
+
+
+def test_the_langfuse_secret_key_is_a_declared_secret_field() -> None:
+    assert "LANGFUSE_SECRET_KEY" in _SECRET_SETTINGS_FIELDS
+
+
+def test_the_langfuse_secret_key_is_redacted_by_value_under_any_key_name() -> None:
+    # The exporter authenticates with it on every batch, so an export failure's message
+    # is exactly where it could surface - under a key nobody named "secret".
+    configure_logging(_settings(LANGFUSE_SECRET_KEY="sk-lf-v4lu3-0f-th3-k3y"))
+    event: dict[str, object] = {
+        "event": "tracing.export_failed",
+        "message": "401 for sk-lf-v4lu3-0f-th3-k3y",
+    }
+    for processor in structlog.get_config()["processors"][:-1]:
+        event = processor(None, "warning", event)
+
+    assert "sk-lf-v4lu3-0f-th3-k3y" not in str(event["message"])

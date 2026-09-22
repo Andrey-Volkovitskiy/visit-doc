@@ -6,13 +6,14 @@ verdict is recorded, and which calls are never made - rather than about a provid
 """
 
 import asyncio
+import json
 from collections.abc import AsyncIterator
 from typing import Self
 from unittest.mock import AsyncMock, patch
 
 import pytest
 import structlog
-from chat.agent.answer_faq import answer_faq
+from chat.agent.answer_faq import _SYSTEM_PROMPT, answer_faq
 from chat.agent.compose_answer import (
     FaqResult,
     FaqSegmentAnswer,
@@ -20,6 +21,7 @@ from chat.agent.compose_answer import (
 )
 from chat.agent.escalation import EscalationRequests
 from chat.agent.history import OPENING_CLINIC_NOTE, SILENT_WINDOW_NOTE
+from chat.agent.node_logging import node_span
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
@@ -31,11 +33,23 @@ from chat.domain.schemas import (
     IntentLabel,
     RequestSegment,
 )
+from chat.rag.embeddings import EMBEDDING_MODEL
 from chat.rag.pipeline import ScoredChunk
 from chat.rag.reranking import rerank_chunks as real_rerank_chunks
+from chat.repositories.qdrant_repository import RetrievedChunk
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from structlog.testing import capture_logs
 
-from .conftest import FakeFinalMessage
+from .conftest import (
+    FakeFinalMessage,
+    fake_usage,
+    finished_spans,
+    is_child_of,
+    only_span,
+    span_attributes,
+    span_output,
+)
 
 _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
@@ -1619,3 +1633,246 @@ async def test_a_half_entered_with_no_question_is_refused() -> None:
             stream=False,
         ):
             pass
+
+
+# --- the retrieval branch of each request, in the turn's trace -----------------------
+#
+# Driven through the real retriever and the real reranking module, each with only its
+# provider faked: the steps these open are the thing under test, and the autouse
+# reranking fake - which never opens one - would leave `faq.rerank` out of every trace.
+
+_TRACED_POOLS: dict[str, list[RetrievedChunk]] = {
+    "a?": [
+        RetrievedChunk(faq_entry_id=1, chunk_index=0, chunk_text="a one", score=0.9),
+        RetrievedChunk(faq_entry_id=2, chunk_index=0, chunk_text="a two", score=0.6),
+    ],
+    "b?": [
+        RetrievedChunk(faq_entry_id=3, chunk_index=1, chunk_text="b one", score=0.8),
+    ],
+    # Nothing clears the similarity floor, so this request abstains before reranking.
+    "c?": [
+        RetrievedChunk(faq_entry_id=4, chunk_index=0, chunk_text="c one", score=0.01),
+    ],
+}
+_VECTORS = {"a?": [1.0, 0.0, 0.0], "b?": [0.0, 1.0, 0.0], "c?": [0.0, 0.0, 1.0]}
+# Keys a captured entry carries from the bound context rather than from its event.
+_CONTEXT_KEYS = ("event", "log_level", "segment", "node")
+
+
+async def _traced_embed(
+    _client: object, texts: list[str], input_type: str = "document"
+) -> list[list[float]]:
+    return [_VECTORS[text] for text in texts]
+
+
+async def _traced_search(
+    _qdrant: object,
+    _session: str,
+    vector: list[float],
+    _revisions: list[str],
+    *,
+    limit: int,
+) -> list[RetrievedChunk]:
+    (query,) = [q for q, v in _VECTORS.items() if v == vector]
+    return _TRACED_POOLS[query]
+
+
+def _relevant(_query: str, documents: list[str], **_kwargs: object) -> object:
+    """Score every document the reranker is sent well above the floor, in order."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        results=[
+            SimpleNamespace(index=i, relevance_score=0.9) for i in range(len(documents))
+        ]
+    )
+
+
+async def _traced_turn(
+    *questions: str, live_revisions: list[str] | None = None
+) -> list[dict[str, object]]:
+    """Drive one collect-mode FAQ turn under its node; return what it logged."""
+    rerank_client = AsyncMock()
+    rerank_client.rerank = AsyncMock(side_effect=_relevant)
+    with (
+        patch("chat.rag.retriever.embed_texts", _traced_embed),
+        patch("chat.rag.retriever.search", _traced_search),
+        patch("chat.agent.answer_faq.rerank_chunks", real_rerank_chunks),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        async with node_span("answer_faq"):
+            async for _ in answer_faq(
+                AsyncMock(),
+                AsyncMock(),
+                rerank_client,
+                _anthropic({}),
+                _bursts(" ".join(questions)),
+                ["p1"],
+                _SESSION,
+                _REVISIONS if live_revisions is None else live_revisions,
+                segments=_segments(*questions),
+                escalation=EscalationRequests(),
+                stream=False,
+            ):
+                pass
+    return logs
+
+
+def _logged_fields(
+    logs: list[dict[str, object]], event: str, position: int
+) -> dict[str, object]:
+    """Return the fields request `position` logged `event` with."""
+    (entry,) = [e for e in logs if e["event"] == event and e["segment"] == position]
+    return {k: v for k, v in entry.items() if k not in _CONTEXT_KEYS}
+
+
+def _children(
+    spans: dict[str, list[ReadableSpan]], parent: ReadableSpan
+) -> dict[str, ReadableSpan]:
+    """Return the spans opened directly under `parent`, by name."""
+    return {
+        name: span
+        for name, named in spans.items()
+        for span in named
+        if is_child_of(span, parent)
+    }
+
+
+def _jsonable(value: object) -> object:
+    """Return `value` as it reads back from a trace: through JSON and out again."""
+    return json.loads(json.dumps(value, default=str))
+
+
+async def test_each_request_is_a_span_under_the_node_holding_its_retrieval_branch(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _traced_turn("a?", "b?")
+
+    spans = finished_spans(span_exporter)
+    (node,) = spans["answer_faq"]
+    for position, question in enumerate(("a?", "b?")):
+        (request,) = spans[f"request[{position}]"]
+        assert is_child_of(request, node)
+        assert json.loads(span_attributes(request)["langfuse.observation.input"]) == {
+            "query": question,
+            "text": question,
+        }
+        assert set(_children(spans, request)) == {
+            "faq.embed",
+            "faq.search",
+            "faq.similarity_gate",
+            "faq.rerank",
+            "faq.rerank_gate",
+            "faq.verdict",
+            "answer_faq.model",
+        }
+        outcome = span_output(request)
+        assert outcome["position"] == position
+        assert outcome["verdict"] == FaqVerdict.ANSWERED.value
+
+
+async def test_each_retrieval_step_records_exactly_what_its_event_logged(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    logs = await _traced_turn("a?", "b?")
+
+    spans = finished_spans(span_exporter)
+    for position in (0, 1):
+        (request,) = spans[f"request[{position}]"]
+        steps = _children(spans, request)
+        for name in ("faq.similarity_gate", "faq.rerank_gate", "faq.verdict"):
+            assert span_output(steps[name]) == _jsonable(
+                _logged_fields(logs, name, position)
+            )
+        assert span_output(steps["faq.rerank"]) == _jsonable(
+            _logged_fields(logs, "faq.reranking_completed", position)
+        )
+        # Emitted once the similarity gate has decided each candidate's `considered`,
+        # so it belongs to the gate's step rather than to the search's.
+        retrieval = span_attributes(steps["faq.similarity_gate"])[
+            "langfuse.observation.metadata.retrieval_completed"
+        ]
+        assert json.loads(retrieval) == _jsonable(
+            _logged_fields(logs, "faq.retrieval_completed", position)
+        )
+
+
+async def test_the_search_step_is_a_retriever_whose_output_is_the_pool(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _traced_turn("a?")
+
+    search = only_span(span_exporter, "faq.search")
+    attributes = span_attributes(search)
+    assert attributes["langfuse.observation.type"] == "retriever"
+    assert json.loads(attributes["langfuse.observation.input"]) == {
+        "query": "a?",
+        "pool_size": get_settings().RETRIEVAL_POOL_SIZE,
+    }
+    assert span_output(search) == {
+        "pool_returned": 2,
+        "candidates": [
+            {
+                "entry_id": c.faq_entry_id,
+                "chunk_index": c.chunk_index,
+                "similarity_score": c.score,
+            }
+            for c in _TRACED_POOLS["a?"]
+        ],
+    }
+    embed = only_span(span_exporter, "faq.embed")
+    # A plain string is exported as itself, not as a JSON document.
+    assert span_attributes(embed)["langfuse.observation.input"] == "a?"
+    assert span_output(embed) == {"model": EMBEDDING_MODEL, "dimension": 3}
+
+
+async def test_an_answered_request_records_its_generation_under_it(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _traced_turn("a?")
+
+    model = only_span(span_exporter, "answer_faq.model")
+    assert is_child_of(model, only_span(span_exporter, "request[0]"))
+    attributes = span_attributes(model)
+    assert attributes["langfuse.observation.type"] == "generation"
+    assert attributes["langfuse.observation.model.name"] == (
+        get_settings().GENERATION_MODEL
+    )
+    sent = json.loads(attributes["langfuse.observation.input"])
+    assert sent["system"] == _SYSTEM_PROMPT
+    assert "Question: a?" in str(sent["messages"])
+    assert attributes["langfuse.observation.output"] == "an answer"
+    assert json.loads(attributes["langfuse.observation.usage_details"]) == {
+        "input": fake_usage().input_tokens,
+        "output": fake_usage().output_tokens,
+        "cache_read_input_tokens": fake_usage().cache_read_input_tokens,
+    }
+    assert "langfuse.observation.completion_start_time" in attributes
+
+
+async def test_an_abstention_records_no_generation_and_no_rerank(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _traced_turn("c?")
+
+    spans = finished_spans(span_exporter)
+    (request,) = spans["request[0]"]
+    assert set(_children(spans, request)) == {
+        "faq.embed",
+        "faq.search",
+        "faq.similarity_gate",
+        "faq.verdict",
+    }
+    assert span_output(request)["verdict"] == (
+        FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
+    )
+
+
+async def test_an_empty_corpus_records_no_retrieval_steps(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _traced_turn("a?", live_revisions=[])
+
+    spans = finished_spans(span_exporter)
+    (request,) = spans["request[0]"]
+    assert set(_children(spans, request)) == {"faq.verdict"}

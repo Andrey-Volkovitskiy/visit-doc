@@ -4,8 +4,12 @@ import pytest
 import structlog
 from chat.agent.node_logging import node_span
 from chat.core.logging import get_logger
+from chat.observability import step
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from structlog.contextvars import merge_contextvars
 from structlog.testing import capture_logs
+
+from .conftest import is_child_of, only_span, span_attributes, span_output
 
 
 async def test_a_normal_body_emits_started_then_completed() -> None:
@@ -94,3 +98,68 @@ async def test_concurrent_spans_do_not_see_each_others_node_binding() -> None:
         entry["probe_for"]: entry["node"] for entry in logs if "probe_for" in entry
     }
     assert probes == {"answer_faq": "answer_faq", "handle_booking": "handle_booking"}
+
+
+# --- the node's observation in the turn's trace -------------------------------------
+
+
+async def test_a_node_is_an_observation_under_the_current_one(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    with step("turn"):
+        async with node_span("answer_faq"):
+            pass
+
+    node = only_span(span_exporter, "answer_faq")
+    assert is_child_of(node, only_span(span_exporter, "turn"))
+    assert span_attributes(node)["langfuse.observation.type"] == "span"
+    assert span_attributes(node)["langfuse.observation.level"] == "DEFAULT"
+
+
+async def test_a_nodes_output_is_the_result_node_completed_carries(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    with capture_logs() as logs:
+        async with node_span("handle_booking") as result:
+            result.set(outcome="booked", iterations=2)
+
+    completed = next(e for e in logs if e["event"] == "node.completed")
+    node = only_span(span_exporter, "handle_booking")
+    assert span_output(node) == completed["result"]
+
+
+async def test_a_failed_node_is_an_error_observation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    with pytest.raises(RuntimeError):
+        async with node_span("handle_booking"):
+            raise RuntimeError("boom")
+
+    attributes = span_attributes(only_span(span_exporter, "handle_booking"))
+    assert attributes["langfuse.observation.level"] == "ERROR"
+    assert attributes["langfuse.observation.status_message"] == "RuntimeError: boom"
+
+
+async def test_a_cancelled_node_is_a_warning_marked_cancelled(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    with pytest.raises(asyncio.CancelledError):
+        async with node_span("answer_faq"):
+            raise asyncio.CancelledError
+
+    attributes = span_attributes(only_span(span_exporter, "answer_faq"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == "cancelled"
+
+
+async def test_what_a_node_opens_nests_under_it(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    async with node_span("classify_intent"):
+        with step("classify_intent.model"):
+            pass
+
+    assert is_child_of(
+        only_span(span_exporter, "classify_intent.model"),
+        only_span(span_exporter, "classify_intent"),
+    )

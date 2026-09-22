@@ -6,7 +6,8 @@ from voyageai.client_async import AsyncClient
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
-from chat.rag.embeddings import embed_texts
+from chat.observability import ObservationType, step
+from chat.rag.embeddings import EMBEDDING_MODEL, embed_texts
 from chat.rag.pipeline import ScoredChunk
 from chat.repositories.qdrant_repository import search
 
@@ -38,28 +39,53 @@ async def search_faq(
     Returns immediately on an empty `live_revisions`: no filter value could match, so
     embedding the query and searching would spend two dependencies to learn what the
     empty list already said.
+
+    The embedding and the search are each a step of the request's trace; the search's
+    output is the pool exactly as it came back.
     """
     logger = get_logger()
     if not live_revisions:
         logger.info("turn.retrieval_skipped_empty_corpus")
         return []
 
-    try:
-        vectors = await embed_texts(voyage_client, [query], input_type="query")
-    except Exception as exc:
-        raise TurnPipelineError("embedding", exc) from exc
+    with step("faq.embed", input=query) as embedded:
+        try:
+            vectors = await embed_texts(voyage_client, [query], input_type="query")
+        except Exception as exc:
+            raise TurnPipelineError("embedding", exc) from exc
+        embedded.set_output(
+            {
+                "model": EMBEDDING_MODEL,
+                "dimension": len(vectors[0]) if vectors else None,
+            }
+        )
     logger.info("turn.message_embedded")
 
-    try:
-        chunks = await search(
-            qdrant_client,
-            session_id,
-            vectors[0],
-            live_revisions,
-            limit=get_settings().RETRIEVAL_POOL_SIZE,
+    limit = get_settings().RETRIEVAL_POOL_SIZE
+    with step(
+        "faq.search",
+        as_type=ObservationType.RETRIEVER,
+        input={"query": query, "pool_size": limit},
+    ) as searched:
+        try:
+            chunks = await search(
+                qdrant_client, session_id, vectors[0], live_revisions, limit=limit
+            )
+        except Exception as exc:
+            raise TurnPipelineError("retrieval", exc) from exc
+        searched.set_output(
+            {
+                "pool_returned": len(chunks),
+                "candidates": [
+                    {
+                        "entry_id": chunk.faq_entry_id,
+                        "chunk_index": chunk.chunk_index,
+                        "similarity_score": chunk.score,
+                    }
+                    for chunk in chunks
+                ],
+            }
         )
-    except Exception as exc:
-        raise TurnPipelineError("retrieval", exc) from exc
 
     return [
         ScoredChunk(

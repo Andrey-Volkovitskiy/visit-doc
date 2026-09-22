@@ -28,6 +28,7 @@ from chat.agent.history import (
     split_into_bursts,
     to_claude_messages,
 )
+from chat.agent.node_logging import node_span
 from chat.agent.tools.registry import (
     Tool,
     ToolArgumentError,
@@ -44,8 +45,18 @@ from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import EscalationReason, Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent, IntentLabel, RequestSegment
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from shared_models.scheduling import BookingFailureReason, ChangeFailureReason
 from structlog.testing import capture_logs
+
+from .conftest import (
+    fake_usage,
+    finished_spans,
+    is_child_of,
+    only_span,
+    span_attributes,
+    span_output,
+)
 
 _LOCAL_NOW = "2026-08-17T08:00:00"
 _ROSTER_READ = "list_practitioners"
@@ -148,6 +159,7 @@ def _tool_use_response(calls: list[tuple[str, dict[str, Any]]]) -> MagicMock:
         blocks.append(block)
     response = MagicMock()
     response.content = blocks
+    response.usage = fake_usage()
     return response
 
 
@@ -158,6 +170,7 @@ def _text_response(text: str, stop_reason: str = "end_turn") -> MagicMock:
     response = MagicMock()
     response.content = [block]
     response.stop_reason = stop_reason
+    response.usage = fake_usage()
     return response
 
 
@@ -1600,3 +1613,80 @@ def test_the_prompt_says_the_loop_holds_no_clinic_knowledge() -> None:
     prompt = _SYSTEM_PROMPT.lower()
     assert "no clinic knowledge" in prompt
     assert "outside" in prompt
+
+
+# --- the loop's model calls in the turn's trace --------------------------------------
+
+
+async def test_each_iteration_is_a_generation_under_the_booking_node(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    registry = _RecordingRegistry({"list_practitioners": {"practitioners": []}})
+    client = _client(
+        [
+            _tool_use_response([("list_practitioners", {})]),
+            _text_response("Who would you like to see?"),
+        ]
+    )
+
+    with capture_logs() as logs:
+        async with node_span("handle_booking"):
+            await _run(client, registry, _bursts("book me something"))
+
+    spans = finished_spans(span_exporter)
+    (node,) = spans["handle_booking"]
+    # Named by the same iteration number the loop's own log lines carry.
+    iterations = [e["iteration"] for e in logs if e["event"] == "booking.model_call"]
+    assert iterations == [1, 2]
+    for iteration, call in zip(
+        iterations, client.messages.create.await_args_list, strict=True
+    ):
+        (model,) = spans[f"handle_booking.model[{iteration}]"]
+        assert is_child_of(model, node)
+        attributes = span_attributes(model)
+        assert attributes["langfuse.observation.type"] == "generation"
+        assert attributes["langfuse.observation.model.name"] == call.kwargs["model"]
+        sent = json.loads(attributes["langfuse.observation.input"])
+        assert sent["system"] == call.kwargs["system"]
+        assert sent["tools"] == registry.to_anthropic_tools()
+        assert json.loads(attributes["langfuse.observation.usage_details"]) == {
+            "input": fake_usage().input_tokens,
+            "output": fake_usage().output_tokens,
+            "cache_read_input_tokens": fake_usage().cache_read_input_tokens,
+        }
+    first = span_output(spans["handle_booking.model[1]"][0])
+    assert first == [
+        {"type": "tool_use", "id": "toolu_0", "name": "list_practitioners", "input": {}}
+    ]
+    last = span_output(spans["handle_booking.model[2]"][0])
+    assert last == [{"type": "text", "text": "Who would you like to see?"}]
+
+
+async def test_an_iteration_cut_off_at_the_cap_is_a_warning(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    registry = _RecordingRegistry({})
+    client = _client([_text_response("Tuesday at 9 is free - shall I", "max_tokens")])
+
+    await _run(client, registry, _bursts("book me something"))
+
+    attributes = span_attributes(only_span(span_exporter, "handle_booking.model[1]"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == "max_tokens"
+
+
+async def test_a_failed_model_call_is_an_error_generation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    registry = _RecordingRegistry({})
+    client = MagicMock()
+    client.messages.create = AsyncMock(side_effect=RuntimeError("model down"))
+
+    with pytest.raises(TurnPipelineError):
+        await _run(client, registry, _bursts("book me something"))
+
+    attributes = span_attributes(only_span(span_exporter, "handle_booking.model[1]"))
+    assert attributes["langfuse.observation.level"] == "ERROR"
+    assert attributes["langfuse.observation.status_message"] == (
+        "RuntimeError: model down"
+    )

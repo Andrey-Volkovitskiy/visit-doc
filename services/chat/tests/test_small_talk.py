@@ -7,18 +7,27 @@ bounded), the prompt's stated limits, and that a failure behaves like every othe
 generation failure rather than becoming a silent empty reply.
 """
 
+import json
 from unittest.mock import MagicMock
 
 import pytest
 from chat.agent.history import ANSWERING_HEADING, SILENT_WINDOW_NOTE
-from chat.agent.small_talk import SmallTalkResult, answer_small_talk
+from chat.agent.node_logging import node_span
+from chat.agent.small_talk import _SYSTEM_PROMPT, SmallTalkResult, answer_small_talk
 from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import Message, MessageSender
 from chat.domain.schemas import ChatTokenEvent
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from structlog.testing import capture_logs
 
-from .conftest import fake_anthropic_client
+from .conftest import (
+    fake_anthropic_client,
+    fake_usage,
+    is_child_of,
+    only_span,
+    span_attributes,
+)
 
 _TOKENS = ["You're ", "welcome!"]
 
@@ -212,3 +221,58 @@ async def test_a_truncated_reply_is_reported_where_an_operator_will_see_it() -> 
     entry = next(e for e in logs if e["event"] == "small_talk.truncated")
     assert entry["log_level"] == "warning"
     assert entry["max_tokens"] == 150
+
+
+# --- the reply's generation in the turn's trace --------------------------------------
+
+
+async def test_the_reply_is_a_generation_under_its_node(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = fake_anthropic_client(_TOKENS)
+
+    async with node_span("small_talk"):
+        await _run(client, "Thanks!")
+
+    model = only_span(span_exporter, "small_talk.model")
+    assert is_child_of(model, only_span(span_exporter, "small_talk"))
+    attributes = span_attributes(model)
+    sent = client.messages.stream.call_args.kwargs
+    assert attributes["langfuse.observation.type"] == "generation"
+    assert attributes["langfuse.observation.model.name"] == sent["model"]
+    assert json.loads(attributes["langfuse.observation.input"]) == {
+        "system": _SYSTEM_PROMPT,
+        "messages": sent["messages"],
+    }
+    assert json.loads(attributes["langfuse.observation.model.parameters"]) == {
+        "max_tokens": sent["max_tokens"]
+    }
+    assert attributes["langfuse.observation.output"] == "".join(_TOKENS)
+    assert json.loads(attributes["langfuse.observation.usage_details"]) == {
+        "input": fake_usage().input_tokens,
+        "output": fake_usage().output_tokens,
+        "cache_read_input_tokens": fake_usage().cache_read_input_tokens,
+    }
+    assert "langfuse.observation.completion_start_time" in attributes
+
+
+async def test_a_reply_cut_off_at_the_cap_is_a_warning_generation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _run(fake_anthropic_client(_TOKENS, stop_reason="max_tokens"), "Thanks!")
+
+    attributes = span_attributes(only_span(span_exporter, "small_talk.model"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == "max_tokens"
+
+
+async def test_a_failed_reply_is_an_error_generation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = fake_anthropic_client(stream_error=RuntimeError("model down"))
+
+    with pytest.raises(TurnPipelineError):
+        await _run(client, "Thanks!")
+
+    attributes = span_attributes(only_span(span_exporter, "small_talk.model"))
+    assert attributes["langfuse.observation.level"] == "ERROR"

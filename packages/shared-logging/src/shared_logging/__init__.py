@@ -10,6 +10,10 @@ that can silently diverge: a bypass fixed in one service's copy would leave the 
 logging that value in the clear, with nothing to catch the difference. Each service
 supplies only what genuinely varies - the names of its own secret-bearing settings
 fields - and inherits the chain itself.
+
+The redaction rule is exported on its own as well, for anything else that must not
+carry a secret out of the process - the chat service's trace export applies it to every
+span, so the log and the trace cannot come to disagree about what a secret is.
 """
 
 from shared_logging.logging import (
@@ -18,7 +22,10 @@ from shared_logging.logging import (
     SafeLogger,
     configure_logging,
     get_logger,
+    is_secret_key,
+    known_secret_values,
     make_redact_secrets_processor,
+    redact_value,
 )
 
 __all__ = [
@@ -27,5 +34,8 @@ __all__ = [
     "SafeLogger",
     "configure_logging",
     "get_logger",
+    "is_secret_key",
+    "known_secret_values",
     "make_redact_secrets_processor",
+    "redact_value",
 ]

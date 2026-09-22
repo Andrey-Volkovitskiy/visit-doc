@@ -125,7 +125,7 @@ def _sides(comparison: Comparison) -> list[tuple[RunSide, str]]:
 
 
 def _run_line(side: RunSide, name: str) -> str:
-    """Name one run: its id, where it was read from, when it ran, how complete it is."""
+    """Name one run: its id and tracing, where it was read from, when, how complete."""
     recorded, selected = len(side.recorded_cases), len(side.selection.case_ids)
     completeness = (
         "complete"
@@ -133,7 +133,7 @@ def _run_line(side: RunSide, name: str) -> str:
         else f"incomplete: {recorded} of {selected} selected cases recorded"
     )
     return (
-        f"- {name}: {side.run_id} ({side.location}), started "
+        f"- {name}: {side.run_id} [{side.tracing.value}] ({side.location}), started "
         f"{side.started_at.isoformat()}, {completeness}"
     )
 

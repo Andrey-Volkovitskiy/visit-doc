@@ -99,6 +99,33 @@ class TurnSent(BaseModel):
 type TurnResult = TurnNotConnected | TurnRefused | TurnSent
 
 
+class TurnTracing(BaseModel):
+    """What one turn asks of its trace: whether to export one, and where to file it.
+
+    Sent as headers on the turn's request, never in its body, so a traced eval turn is
+    one filter away in Langfuse and the patient-facing request is unchanged. `traced`
+    False asks the service to export nothing for the turn; True asks nothing, since a
+    request can only turn its own tracing off. The run and the case are sent either
+    way.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    run_id: str
+    case_id: str
+    traced: bool = True
+
+    def headers(self) -> dict[str, str]:
+        """Return the request headers that carry this choice to the chat service."""
+        headers = {
+            "X-VisitDoc-Eval-Run": self.run_id,
+            "X-VisitDoc-Eval-Case": self.case_id,
+        }
+        if not self.traced:
+            headers["X-VisitDoc-Trace"] = "off"
+        return headers
+
+
 class ThreadRead(BaseModel):
     """What one turn left in its chat, besides the planted history.
 
@@ -113,12 +140,17 @@ class ThreadRead(BaseModel):
 
 
 async def post_turn(
-    client: httpx.AsyncClient, chat_id: str, message: str, local_now: datetime
+    client: httpx.AsyncClient,
+    chat_id: str,
+    message: str,
+    local_now: datetime,
+    tracing: TurnTracing,
 ) -> TurnResult:
     """Post `message` to `chat_id` as one turn and read its stream to the end.
 
     Args:
         local_now: the run clock, sent as the turn's local time.
+        tracing: the run and case the turn's trace is filed under.
 
     Raises: TurnProtocolError when the stream carries a line the service's contract
         does not allow - unparseable, an unknown event, an invalid terminal event, or
@@ -129,7 +161,9 @@ async def post_turn(
     """
     body = {"chat_id": chat_id, "message": message, "local_now": local_now.isoformat()}
     try:
-        async with client.stream("POST", "/chat", json=body) as response:
+        async with client.stream(
+            "POST", "/chat", json=body, headers=tracing.headers()
+        ) as response:
             if response.status_code != 200:
                 await response.aread()
                 return TurnRefused(

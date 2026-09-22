@@ -496,14 +496,16 @@ async def create_assistant_reply_unless_taken_over(
 async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
     """Return `chat_id`'s messages in chronological order.
 
-    Ordered by `created_at`, not `id` - ULIDs are only monotonic within the
+    Ordered by `created_at` first, not `id` - ULIDs are only monotonic within the
     generating process's clock/randomness and aren't guaranteed to sort in true
-    creation order across concurrent writers.
+    creation order across concurrent writers. `id` breaks a tie: `created_at` is the
+    transaction's start time, so two messages can share one, and without a tie-break
+    Postgres returns them in whatever order it finds them - one thread, two orders.
     """
     result = await session.execute(
         select(Message)
         .where(Message.chat_id == chat_id)
-        .order_by(Message.created_at.asc())
+        .order_by(Message.created_at.asc(), Message.id.asc())
     )
     return list(result.scalars().all())
 

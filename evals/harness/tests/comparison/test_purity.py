@@ -12,7 +12,14 @@ import golden_harness.comparison
 import pytest
 
 _COMPARISON = Path(golden_harness.comparison.__file__).parent
-_FORBIDDEN = ("httpx", "grpc", "sqlalchemy", "golden_harness.driver")
+_FORBIDDEN = (
+    "httpx",
+    "grpc",
+    "sqlalchemy",
+    "golden_harness.driver",
+    "langfuse",
+    "opentelemetry",
+)
 
 
 def _modules() -> list[Path]:

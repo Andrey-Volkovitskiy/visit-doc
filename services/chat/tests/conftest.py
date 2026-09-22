@@ -3,15 +3,16 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Any, Literal, NoReturn, Self
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from anthropic.types import Usage
 from chat.agent.compose_answer import _SYSTEM_PROMPT as COMPOSE_SYSTEM_PROMPT
 from chat.api.session_cookie import COOKIE_NAME
 from chat.core.config import Settings
@@ -28,6 +29,13 @@ from shared_db import ensure_database_exists, isolated_database_url, isolated_na
 from sqlalchemy import text as sql_text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from voyageai.client_async import AsyncClient
+
+if TYPE_CHECKING:
+    from chat.observability.client import Tracer
+    from opentelemetry.sdk.trace import ReadableSpan
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
 
 _CHAT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -54,6 +62,16 @@ def _vector_size() -> int:
 DEFAULT_BOOKING_REPLY = "Which practitioner would you like to see?"
 
 
+def fake_usage() -> Usage:
+    """Return what a faked model call reports it spent.
+
+    The SDK's own type rather than a mock: every real response carries one, and a
+    generation recorded from a MagicMock attribute would claim a token count nobody
+    measured. Fixed numbers, so a test can assert they reached the trace unchanged.
+    """
+    return Usage(input_tokens=120, output_tokens=40, cache_read_input_tokens=0)
+
+
 def _mock_tool_use_response(calls: list[tuple[str, dict[str, object]]]) -> MagicMock:
     """Build a mocked response whose content is `tool_use` blocks, one per call."""
     blocks = []
@@ -66,6 +84,7 @@ def _mock_tool_use_response(calls: list[tuple[str, dict[str, object]]]) -> Magic
         blocks.append(block)
     response = MagicMock()
     response.content = blocks
+    response.usage = fake_usage()
     return response
 
 
@@ -85,6 +104,7 @@ def _mock_text_response(text: str, stop_reason: str = "end_turn") -> MagicMock:
     response = MagicMock()
     response.content = [text_block]
     response.stop_reason = stop_reason
+    response.usage = fake_usage()
     return response
 
 
@@ -97,6 +117,12 @@ os.environ["DATABASE_URL"] = isolated_database_url(_base_settings.DATABASE_URL)
 os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
     _base_settings.QDRANT_COLLECTION_NAME
 )
+# The repo's `.env` carries a developer's real Langfuse keys, and an app built by a test
+# would otherwise export that test's turns to their project. Blank, not unset: an unset
+# variable falls through to `.env`. A test about tracing builds its own tracer over an
+# in-memory exporter - the `span_exporter` fixture below.
+os.environ["LANGFUSE_PUBLIC_KEY"] = ""
+os.environ["LANGFUSE_SECRET_KEY"] = ""
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -416,13 +442,14 @@ def _reranking_keeps_what_it_is_given() -> Iterator[None]:
     given, so an ordinary FAQ test still sees `answered`. A test about degradation
     patches over this with None; a test about ordering patches its own scores in.
 
-    One test opts out entirely and patches the *real* `rerank_chunks` back in:
-    `test_answer_faq.py`'s
-    `test_a_degraded_request_is_named_by_position_not_by_the_turn`, which is about the
-    event that module logs when a rerank call fails, and so cannot be written against a
-    fake that never logs it. It supplies its own failing client rather than a live one,
-    so the paid-API guard is not involved. It is the only opt-out; a second one needs a
-    reason as specific.
+    Two places opt out entirely and patch the *real* `rerank_chunks` back in, each
+    supplying its own fake client rather than a live one, so the paid-API guard is not
+    involved. `test_answer_faq.py`'s
+    `test_a_degraded_request_is_named_by_position_not_by_the_turn` is about the event
+    that module logs when a rerank call fails, and so cannot be written against a fake
+    that never logs it. The same module's `_traced_turn` is about the `faq.rerank` step
+    that module opens in the turn's trace, which a fake never opens either. A third
+    opt-out needs a reason as specific.
     """
     from chat.rag.pipeline import ScoredChunk
 
@@ -452,6 +479,110 @@ async def _reset_engine_pool_between_tests() -> AsyncIterator[None]:
     from chat.db.session import engine
 
     await engine.dispose()
+
+
+# The tracer a test's `span_exporter` fixture installed, for `finished_spans` to flush:
+# spans reach the exporter from a batching processor, not as they end.
+_test_tracer: "Tracer | None" = None
+
+
+def tracing_settings(**overrides: object) -> Settings:
+    """Return settings with tracing enabled under a public key no other test uses.
+
+    The SDK keeps one client per public key for the life of the process, so a second
+    tracer built under a key already used would silently export into the first one's
+    exporter - a test reading another test's spans. A fresh ULID per call is what
+    keeps each test's spans its own.
+    """
+    from ulid import ULID
+
+    fields: dict[str, object] = {
+        "LANGFUSE_PUBLIC_KEY": f"pk-lf-test-{ULID()}",
+        "LANGFUSE_SECRET_KEY": "sk-lf-test-secret",
+        **overrides,
+    }
+    return Settings(**fields)  # type: ignore[arg-type]
+
+
+@contextmanager
+def installed_tracer(
+    settings: Settings, exporter: "InMemorySpanExporter"
+) -> Iterator["Tracer"]:
+    """Build a tracer over `exporter` exactly as the lifespan does, and install it.
+
+    An app started inside is handed this tracer by its lifespan too, rather than the
+    disabled one the test environment's settings would build - which it would install
+    over this one. Flushed, uninstalled and shut down on the way out, whatever the
+    test did; the lifespan's own shutdown of it on the way out is harmless.
+    """
+    global _test_tracer
+    from chat import observability
+    from chat.observability.client import build_tracer
+
+    tracer = build_tracer(settings, span_exporter=exporter)
+    observability.install(tracer)
+    _test_tracer = tracer
+    try:
+        with patch("chat.main.build_tracer", return_value=tracer):
+            yield tracer
+    finally:
+        _test_tracer = None
+        tracer.flush()
+        observability.uninstall()
+        tracer.shutdown()
+
+
+@pytest.fixture
+def span_exporter() -> Iterator["InMemorySpanExporter"]:
+    """Trace this test into an in-memory exporter, and yield it.
+
+    Never reaches Langfuse: with an exporter injected, the SDK builds no HTTP exporter
+    and sends no credentials anywhere.
+    """
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+        InMemorySpanExporter,
+    )
+
+    exporter = InMemorySpanExporter()
+    with installed_tracer(tracing_settings(), exporter):
+        yield exporter
+
+
+def finished_spans(exporter: "InMemorySpanExporter") -> dict[str, list["ReadableSpan"]]:
+    """Flush the test's tracer, then return every exported span grouped by name."""
+    if _test_tracer is not None:
+        _test_tracer.flush()
+    spans: dict[str, list[ReadableSpan]] = {}
+    for span in exporter.get_finished_spans():
+        spans.setdefault(span.name, []).append(span)
+    return spans
+
+
+def span_attributes(span: "ReadableSpan") -> dict[str, Any]:
+    """Return an exported span's attributes as a plain dict."""
+    return dict(span.attributes or {})
+
+
+def only_span(exporter: "InMemorySpanExporter", name: str) -> "ReadableSpan":
+    """Return the one exported span named `name`; fails unless there is exactly one."""
+    (span,) = finished_spans(exporter)[name]
+    return span
+
+
+def span_output(span: "ReadableSpan") -> Any:
+    """Return what an exported observation recorded as its output, decoded."""
+    import json
+
+    return json.loads(span_attributes(span)["langfuse.observation.output"])
+
+
+def is_child_of(child: "ReadableSpan", parent: "ReadableSpan") -> bool:
+    """Whether `child` was opened directly under `parent`."""
+    return (
+        child.parent is not None
+        and parent.context is not None
+        and child.parent.span_id == parent.context.span_id
+    )
 
 
 async def fake_embed_texts(
@@ -487,12 +618,14 @@ class FakeTextEvent:
 class FakeFinalMessage:
     """Stand-in for the `Message` `get_final_message()` resolves to.
 
-    Only `stop_reason` is modelled: it is the one field a caller reads to learn that
-    the model stopped because it ran out of room rather than because it was finished.
+    `stop_reason` is what a caller reads to learn that the model stopped because it
+    ran out of room rather than because it was finished; `usage` is what the call
+    spent, which a generation's trace records.
     """
 
-    def __init__(self, stop_reason: str) -> None:
+    def __init__(self, stop_reason: str, usage: Usage | None = None) -> None:
         self.stop_reason = stop_reason
+        self.usage = usage if usage is not None else fake_usage()
 
 
 class FakeAnthropicStream:

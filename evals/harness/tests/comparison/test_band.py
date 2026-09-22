@@ -419,3 +419,30 @@ def test_a_band_measured_on_another_clock_applies_to_neither_run(
 
     assert band.applies_to(base, new)
     assert not moved.applies_to(base, new)
+
+
+def test_a_band_accepts_five_runs_mixing_traced_and_untraced(
+    band_run: Runs,
+    band_labels: list[Case],
+    retraced: Callable[[Path, str], Path],
+) -> None:
+    # Whether a run was traced changes nothing it measured, so the band's sameness
+    # check does not look at it.
+    tracings = [
+        "traced",
+        "untraced_by_request",
+        "traced",
+        "untraced_service_off",
+        "traced",
+    ]
+    runs = [
+        retraced(band_run(name), tracing)
+        for name, tracing in zip(_FIVE, tracings, strict=True)
+    ]
+
+    mixed = build_band(runs, band_labels)
+
+    assert (
+        mixed.metrics
+        == build_band([band_run(name) for name in _FIVE], band_labels).metrics
+    )

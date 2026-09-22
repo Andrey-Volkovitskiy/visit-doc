@@ -14,7 +14,11 @@ from unittest.mock import AsyncMock
 import pytest
 from chat.rag.pipeline import ScoredChunk
 from chat.rag.reranking import RerankFailureReason, rerank_chunks
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from structlog.testing import capture_logs
 from voyageai import error as voyage_error
+
+from .conftest import only_span, span_attributes, span_output
 
 _MODEL = "rerank-3"
 
@@ -308,3 +312,70 @@ def test_every_reason_the_code_can_emit_is_in_the_documented_set() -> None:
     emitted from a third place, and would go on passing while the contract drifted.
     """
     assert {reason.value for reason in RerankFailureReason} == DOCUMENTED_REASONS
+
+
+# --- the rerank step in the turn's trace ---------------------------------------------
+
+
+def _fields(entry: dict[str, object]) -> dict[str, object]:
+    """Return what a captured log entry carried, without the event and its level."""
+    return {k: v for k, v in entry.items() if k not in ("event", "log_level")}
+
+
+async def test_a_completed_rerank_is_a_step_whose_output_is_its_event(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = AsyncMock()
+    client.rerank.return_value = _response((1, 0.8), (0, 0.4))
+
+    with capture_logs() as logs:
+        await _rerank(client, [_chunk(0), _chunk(1)])
+
+    (completed,) = [e for e in logs if e["event"] == "faq.reranking_completed"]
+    step = only_span(span_exporter, "faq.rerank")
+    assert span_output(step) == _fields(completed)
+    assert span_attributes(step)["langfuse.observation.level"] == "DEFAULT"
+
+
+@pytest.mark.parametrize(
+    ("failure", "reason"),
+    [
+        (RuntimeError("boom"), RerankFailureReason.UNEXPECTED),
+        (voyage_error.RateLimitError("slow down"), RerankFailureReason.RATE_LIMITED),
+    ],
+)
+async def test_an_unavailable_rerank_is_a_warning_naming_its_reason(
+    span_exporter: InMemorySpanExporter,
+    failure: Exception,
+    reason: RerankFailureReason,
+) -> None:
+    client = AsyncMock()
+    client.rerank.side_effect = failure
+
+    with capture_logs() as logs:
+        assert await _rerank(client, [_chunk(0)]) is None
+
+    (unavailable,) = [e for e in logs if e["event"] == "faq.reranking_unavailable"]
+    # The log line keeps its own level: the trace marks a degraded step, not a failed
+    # one, because the turn goes on and answers.
+    assert unavailable["log_level"] == "error"
+    attributes = span_attributes(only_span(span_exporter, "faq.rerank"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == reason.value
+    assert span_output(only_span(span_exporter, "faq.rerank")) == _fields(unavailable)
+
+
+async def test_a_rerank_past_its_deadline_is_a_warning_naming_the_timeout(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    async def _slow(*_args: object, **_kwargs: object) -> None:
+        await asyncio.sleep(1)
+
+    client = AsyncMock()
+    client.rerank.side_effect = _slow
+
+    assert await _rerank(client, [_chunk(0)], timeout=0.01) is None
+
+    attributes = span_attributes(only_span(span_exporter, "faq.rerank"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == "timeout"

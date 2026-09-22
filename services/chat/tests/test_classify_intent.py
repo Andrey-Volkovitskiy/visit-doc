@@ -1,13 +1,28 @@
 """Tests for `classify_intent()` (research.md #3)."""
 
+import json
+
 import pytest
-from chat.agent.classify_intent import ClassificationFailedError, classify_intent
+from chat.agent.classify_intent import (
+    _SYSTEM_PROMPT,
+    ClassificationFailedError,
+    classify_intent,
+)
+from chat.agent.node_logging import node_span
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
+from chat.core.config import get_settings
 from chat.domain.models import Message, MessageSender
 from chat.domain.schemas import IntentLabel, RequestSegment
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 
-from .conftest import fake_classify_intent_client
+from .conftest import (
+    fake_classify_intent_client,
+    fake_usage,
+    is_child_of,
+    only_span,
+    span_attributes,
+)
 
 _CONTEXT: list[list[Message]] = [
     [Message(sender=MessageSender.PATIENT, content="when can I visit?", id="turn-1")]
@@ -629,3 +644,53 @@ def test_the_prompt_keeps_the_segments_in_the_order_the_visitor_asked() -> None:
         'gives "is there a fee for x-rays?" first and "is there a fee to see a '
         'physiotherapist?" second, never the reverse' in prompt
     )
+
+
+# --- the classifier's generation in the turn's trace ---------------------------------
+
+
+async def test_the_classification_call_is_a_generation_under_its_node(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = fake_classify_intent_client([IntentLabel.FAQ_QUESTION])
+
+    async with node_span("classify_intent"):
+        await classify_intent(client, _CONTEXT)
+
+    generation = only_span(span_exporter, "classify_intent.model")
+    assert is_child_of(generation, only_span(span_exporter, "classify_intent"))
+    attributes = span_attributes(generation)
+    sent = client.messages.create.call_args.kwargs
+    assert attributes["langfuse.observation.type"] == "generation"
+    assert attributes["langfuse.observation.model.name"] == (
+        get_settings().CLASSIFICATION_MODEL
+    )
+    assert json.loads(attributes["langfuse.observation.input"]) == {
+        "system": _SYSTEM_PROMPT,
+        "messages": sent["messages"],
+    }
+    assert json.loads(attributes["langfuse.observation.model.parameters"]) == {
+        "max_tokens": sent["max_tokens"],
+        "temperature": sent["temperature"],
+    }
+    assert json.loads(attributes["langfuse.observation.usage_details"]) == {
+        "input": fake_usage().input_tokens,
+        "output": fake_usage().output_tokens,
+        "cache_read_input_tokens": fake_usage().cache_read_input_tokens,
+    }
+    (block,) = json.loads(attributes["langfuse.observation.output"])
+    assert block["type"] == "text"
+    assert json.loads(block["text"])["segments"][0]["intent"] == "faq_question"
+
+
+async def test_a_failed_classification_call_is_an_error_generation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = fake_classify_intent_client(call_error=RuntimeError("boom"))
+
+    with pytest.raises(ClassificationFailedError):
+        await classify_intent(client, _CONTEXT)
+
+    attributes = span_attributes(only_span(span_exporter, "classify_intent.model"))
+    assert attributes["langfuse.observation.level"] == "ERROR"
+    assert attributes["langfuse.observation.status_message"] == "RuntimeError: boom"

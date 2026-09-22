@@ -1,6 +1,7 @@
 """Tests for the merge step: what survives it, and what it is forbidden to invent."""
 
 import asyncio
+import json
 from collections.abc import AsyncIterator
 from typing import Self
 from unittest.mock import MagicMock
@@ -17,6 +18,7 @@ from chat.agent.compose_answer import (
     record_single_specialist_completion,
 )
 from chat.agent.handle_booking import BookingOutcome
+from chat.agent.node_logging import node_span
 from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
 from chat.domain.schemas import (
@@ -31,10 +33,18 @@ from chat.domain.schemas import (
     RequestSegment,
 )
 from chat.rag.pipeline import ScoredChunk
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
 from structlog.testing import capture_logs
 
-from .conftest import FakeAnthropicStream, FakeTextEvent
+from .conftest import (
+    FakeAnthropicStream,
+    FakeTextEvent,
+    fake_usage,
+    is_child_of,
+    only_span,
+    span_attributes,
+)
 
 _CITATION = Citation(entry_id=1, chunk_index=0, chunk_text="Visiting hours are 8-5.")
 _SEGMENTS = [
@@ -1274,3 +1284,56 @@ def test_the_hand_off_outcome_is_published_under_one_public_name() -> None:
     # contract: it has a public name, and the event's table uses that name.
     assert HANDED_OFF_OUTCOME == "handed_off"
     assert _OUTCOME_BY_SOURCE[AnswerSource.HAND_OFF] == HANDED_OFF_OUTCOME
+
+
+# --- the composing call's generation in the turn's trace -----------------------------
+
+
+async def test_the_composing_call_is_a_generation_under_its_node(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    client = _client(["Visiting hours ", "are 8-5."])
+
+    async with node_span("compose_answer"):
+        await _compose(
+            client,
+            faq_result=_answered_faq(),
+            booking_reply="Friday is booked.",
+            booking_outcome="booked",
+        )
+
+    model = only_span(span_exporter, "compose_answer.model")
+    assert is_child_of(model, only_span(span_exporter, "compose_answer"))
+    attributes = span_attributes(model)
+    sent = client.messages.stream.call_args.kwargs
+    assert attributes["langfuse.observation.type"] == "generation"
+    assert attributes["langfuse.observation.model.name"] == sent["model"]
+    assert json.loads(attributes["langfuse.observation.input"]) == {
+        "system": _SYSTEM_PROMPT,
+        "messages": sent["messages"],
+    }
+    assert json.loads(attributes["langfuse.observation.model.parameters"]) == {
+        "max_tokens": sent["max_tokens"]
+    }
+    assert attributes["langfuse.observation.output"] == "Visiting hours are 8-5."
+    assert json.loads(attributes["langfuse.observation.usage_details"]) == {
+        "input": fake_usage().input_tokens,
+        "output": fake_usage().output_tokens,
+        "cache_read_input_tokens": fake_usage().cache_read_input_tokens,
+    }
+    assert "langfuse.observation.completion_start_time" in attributes
+
+
+async def test_a_composed_reply_cut_off_at_the_cap_is_a_warning_generation(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    await _compose(
+        _client(["Visiting hours"], stop_reason="max_tokens"),
+        faq_result=_answered_faq(),
+        booking_reply="Friday is booked.",
+        booking_outcome="booked",
+    )
+
+    attributes = span_attributes(only_span(span_exporter, "compose_answer.model"))
+    assert attributes["langfuse.observation.level"] == "WARNING"
+    assert attributes["langfuse.observation.status_message"] == "max_tokens"

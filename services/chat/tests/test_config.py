@@ -178,3 +178,87 @@ def test_a_gate_number_outside_its_range_fails_at_startup(
     # enforced where the value enters rather than inferred from a week of abstentions.
     with pytest.raises(ValidationError):
         _settings(**{field: value})
+
+
+def test_the_test_environment_runs_untraced() -> None:
+    # Pinned because the repo's `.env` holds a developer's real Langfuse keys: every
+    # test that builds the app would otherwise export its turns to their project. A test
+    # about tracing builds its own tracer over an in-memory exporter instead.
+    assert Settings().tracing_enabled is False
+
+
+_LANGFUSE_FIELDS = (
+    "LANGFUSE_PUBLIC_KEY",
+    "LANGFUSE_SECRET_KEY",
+    "LANGFUSE_BASE_URL",
+    "LANGFUSE_ENVIRONMENT",
+)
+
+
+@pytest.fixture
+def untraced(monkeypatch: pytest.MonkeyPatch) -> Settings:
+    """Settings as a deployment that configured no Langfuse field would see them.
+
+    Both sources shut off, for the reason `unconfigured` gives: the repo's `.env` holds
+    real keys, and the conftest blanks two of them in the environment.
+    """
+    for field in _LANGFUSE_FIELDS:
+        monkeypatch.delenv(field, raising=False)
+    return _settings(_env_file=None)
+
+
+def test_tracing_is_off_when_no_langfuse_key_is_configured(untraced: Settings) -> None:
+    assert untraced.LANGFUSE_PUBLIC_KEY == ""
+    assert untraced.LANGFUSE_SECRET_KEY == ""
+    assert untraced.tracing_enabled is False
+
+
+def test_tracing_is_on_when_both_keys_are_set() -> None:
+    settings = _settings(LANGFUSE_PUBLIC_KEY="pk-lf-1", LANGFUSE_SECRET_KEY="sk-lf-1")
+
+    assert settings.tracing_enabled is True
+
+
+@pytest.mark.parametrize(
+    ("public_key", "secret_key"),
+    [
+        ("pk-lf-1", ""),
+        ("", "sk-lf-1"),
+        ("  ", "sk-lf-1"),
+        ("pk-lf-1", "\t "),
+        ("  ", "  "),
+    ],
+)
+def test_a_blank_key_means_tracing_is_off(public_key: str, secret_key: str) -> None:
+    # A blank key is not a missing one to the SDK: handed "", it would build a live
+    # exporter that fails to authenticate on every batch. So blank means off, decided
+    # here and never left to the SDK.
+    settings = _settings(LANGFUSE_PUBLIC_KEY=public_key, LANGFUSE_SECRET_KEY=secret_key)
+
+    assert settings.tracing_enabled is False
+
+
+def test_langfuse_destination_and_environment_defaults(untraced: Settings) -> None:
+    assert untraced.LANGFUSE_BASE_URL == "https://cloud.langfuse.com"
+    assert untraced.LANGFUSE_ENVIRONMENT == "development"
+
+
+def test_langfuse_environment_is_overridable_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGFUSE_ENVIRONMENT", "staging-2")
+
+    assert _settings(_env_file=None).LANGFUSE_ENVIRONMENT == "staging-2"
+
+
+@pytest.mark.parametrize(
+    "environment", ["Development", "PROD", "langfuse-dev", "langfuse", "has space", ""]
+)
+def test_a_langfuse_environment_langfuse_would_drop_fails_at_startup(
+    environment: str,
+) -> None:
+    # Langfuse drops an environment it does not accept with a warning on its own logger,
+    # and the trace then files under the default - a misconfiguration that reads as
+    # traces going missing rather than as a setting being wrong.
+    with pytest.raises(ValidationError):
+        _settings(LANGFUSE_ENVIRONMENT=environment)

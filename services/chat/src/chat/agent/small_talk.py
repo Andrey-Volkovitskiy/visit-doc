@@ -14,6 +14,7 @@ itself - so there is nothing for it to get wrong, and the prompt forbids inventi
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from anthropic import AsyncAnthropic
 
@@ -27,6 +28,7 @@ from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import Message
 from chat.domain.schemas import ChatTokenEvent
+from chat.observability import generation
 
 # Short by construction: the longest thing this node should ever produce is two
 # sentences, and a cap is cheaper than a prompt asking nicely for brevity.
@@ -111,22 +113,37 @@ async def answer_small_talk(
     )
 
     parts: list[str] = []
+    first_token_at: datetime | None = None
     try:
-        async with anthropic_client.messages.stream(
+        with generation(
+            "small_talk.model",
             model=settings.CLASSIFICATION_MODEL,
-            max_tokens=_MAX_TOKENS,
-            system=_SYSTEM_PROMPT,
-            messages=messages,
-        ) as stream_response:
-            async for event in stream_response:
-                if event.type == "text":
-                    parts.append(event.text)
-                    yield ChatTokenEvent(text=event.text)
-            # Read after the loop rather than from a `message_delta` event: the SDK
-            # accumulates the final message, and this is the documented way to ask why
-            # it stopped. Inside the `try` because a failure to obtain it is a failure
-            # of the same call.
-            final = await stream_response.get_final_message()
+            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            model_parameters={"max_tokens": _MAX_TOKENS},
+        ) as observed:
+            async with anthropic_client.messages.stream(
+                model=settings.CLASSIFICATION_MODEL,
+                max_tokens=_MAX_TOKENS,
+                system=_SYSTEM_PROMPT,
+                messages=messages,
+            ) as stream_response:
+                async for event in stream_response:
+                    if event.type == "text":
+                        if first_token_at is None:
+                            first_token_at = datetime.now(UTC)
+                        parts.append(event.text)
+                        yield ChatTokenEvent(text=event.text)
+                # Read after the loop rather than from a `message_delta` event: the SDK
+                # accumulates the final message, and this is the documented way to ask
+                # why it stopped. Inside the `try` because a failure to obtain it is a
+                # failure of the same call.
+                final = await stream_response.get_final_message()
+            observed.record_completion(
+                "".join(parts),
+                final.usage,
+                final.stop_reason,
+                completion_start_time=first_token_at,
+            )
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 

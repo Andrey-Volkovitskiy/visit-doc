@@ -27,6 +27,7 @@ from golden_harness.record import (
     CorpusRecord,
     ExclusionReason,
     RunConditions,
+    RunTracing,
 )
 from golden_harness.report import MetricFamily
 from golden_harness.scoring.alignment import AlignmentTotals
@@ -82,7 +83,9 @@ class RunSide(BaseModel):
     `location` is the directory as it was given, so a baseline under `specs/` is
     traceable to where it lives (FR-026). `complete` is derived from `recorded_cases`
     against `selection` and stored, since a stored comparison is re-rendered without
-    the runs; an incomplete run is reported, never refused (FR-012).
+    the runs; an incomplete run is reported, never refused (FR-012). `tracing` is the
+    run's own, shown beside its id and never compared: a comparison stored before runs
+    recorded it reads as a run the service could not trace.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -95,6 +98,7 @@ class RunSide(BaseModel):
     selection: Selection
     recorded_cases: list[str]
     complete: bool
+    tracing: RunTracing = RunTracing.UNTRACED_SERVICE_OFF
 
     @model_validator(mode="after")
     def _completeness_follows_the_recorded_cases(self) -> "RunSide":

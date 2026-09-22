@@ -8,7 +8,10 @@ and separately, because a reader scanning a list of eleven fields can miss one r
 """
 
 from collections.abc import Callable
+from pathlib import Path
 
+from golden_harness.cases import Case
+from golden_harness.comparison.compare import compare
 from golden_harness.comparison.conditions import condition_delta, corpus_moved
 from golden_harness.record import RunConditions
 from golden_harness.report import Report
@@ -140,3 +143,18 @@ def test_a_differing_run_clock_is_reported_as_a_condition(
         ("clock", base.clock.isoformat(), later.clock.isoformat())
     ]
     assert not condition_delta(base, later).identical
+
+
+def test_a_traced_and_an_untraced_run_of_one_build_compare_with_an_empty_delta(
+    run_dir: Callable[[str], Path],
+    labels: list[Case],
+    retraced: Callable[[Path, str], Path],
+) -> None:
+    # Whether a run was traced changes nothing it measured, so it is never a condition.
+    traced = retraced(run_dir("base"), "traced")
+    untraced = retraced(run_dir("base"), "untraced_by_request")
+
+    comparison = compare(untraced, traced, labels)
+
+    assert comparison.conditions.changes == []
+    assert comparison.conditions.identical

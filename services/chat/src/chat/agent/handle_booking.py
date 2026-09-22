@@ -31,11 +31,13 @@ from chat.agent.history import (
     to_loggable_messages,
 )
 from chat.agent.tools.registry import ToolArgumentError, ToolRegistry
+from chat.clients.anthropic_content import content_as_output
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.domain.models import EscalationReason, Message
 from chat.domain.schemas import ChatTokenEvent, RequestSegment
+from chat.observability import generation
 
 _MAX_TOKENS = 1024
 # The capability the node reads for itself, before the model gets a turn.
@@ -612,13 +614,24 @@ async def handle_booking(
         )
         started = time.monotonic()
         try:
-            response = await anthropic_client.messages.create(
+            with generation(
+                f"handle_booking.model[{iteration}]",
                 model=settings.GENERATION_MODEL,
-                max_tokens=_MAX_TOKENS,
-                system=system,
-                messages=messages,
-                tools=tools,
-            )
+                input={"system": system, "messages": messages, "tools": tools},
+                model_parameters={"max_tokens": _MAX_TOKENS},
+            ) as model_call:
+                response = await anthropic_client.messages.create(
+                    model=settings.GENERATION_MODEL,
+                    max_tokens=_MAX_TOKENS,
+                    system=system,
+                    messages=messages,
+                    tools=tools,
+                )
+                model_call.record_completion(
+                    content_as_output(response.content),
+                    response.usage,
+                    response.stop_reason,
+                )
         except Exception as exc:
             # Only the model call is inside this - the tool dispatch below reports its
             # own failures to the model and never raises. Widening it to the rest of

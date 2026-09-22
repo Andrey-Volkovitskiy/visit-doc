@@ -7,7 +7,14 @@ import golden_harness.scoring
 import pytest
 
 _SCORING = Path(golden_harness.scoring.__file__).parent
-_FORBIDDEN = ("httpx", "grpc", "sqlalchemy", "golden_harness.driver")
+_FORBIDDEN = (
+    "httpx",
+    "grpc",
+    "sqlalchemy",
+    "golden_harness.driver",
+    "langfuse",
+    "opentelemetry",
+)
 
 
 def _modules() -> list[Path]:

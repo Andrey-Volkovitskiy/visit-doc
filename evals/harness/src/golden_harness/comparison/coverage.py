@@ -46,4 +46,5 @@ def run_side(run_dir: Path, run: Run) -> RunSide:
         selection=run.selection,
         recorded_cases=recorded,
         complete=set(run.selection.case_ids) <= set(recorded),
+        tracing=run.tracing,
     )

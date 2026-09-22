@@ -1,13 +1,16 @@
 """`POST /chat` — the streaming turn endpoint."""
 
 import asyncio
+import contextvars
+import re
 from collections.abc import AsyncIterator, Callable
 from datetime import datetime
 from enum import StrEnum
+from typing import Annotated
 
 import grpc
 from anthropic import AsyncAnthropic
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from qdrant_client import AsyncQdrantClient
 from ulid import ULID
@@ -44,6 +47,7 @@ from chat.domain.schemas import (
     ChatSilentEvent,
     ChatTokenEvent,
 )
+from chat.observability import UNTRACED, TraceDirective, TurnOutcome, turn_trace
 from chat.repositories import chat_repository, faq_repository
 
 router = APIRouter()
@@ -96,6 +100,21 @@ def _unreachable_dependency_of(exc: TurnPipelineError) -> str | None:
 # Used in the booking prompt until a chat has a real patient. The scheduler owns
 # patient names, so this side never invents one that could then disagree with it.
 _PATIENT_PLACEHOLDER_NAME = "the patient"
+
+# The headers an eval run sends to file a turn's trace under the run and the case. They
+# are read off the request rather than declared as parameters, so the published schema
+# of a patient-facing route gains no eval-only fields.
+_TRACE_HEADER = "X-VisitDoc-Trace"
+# The one value `X-VisitDoc-Trace` takes: a request can turn its own turn's tracing off,
+# and never on.
+_TRACE_OFF = "off"
+_EVAL_RUN_HEADER = "X-VisitDoc-Eval-Run"
+_EVAL_CASE_HEADER = "X-VisitDoc-Eval-Case"
+# A run id is a ULID as the harness writes one: 26 upper-case Crockford characters,
+# the first no higher than 7.
+_EVAL_RUN_ID = re.compile(r"[0-7][0-9A-HJKMNP-TV-Z]{25}")
+# A case id of the golden set: `G-<family letter>-<nn>`.
+_EVAL_CASE_ID = re.compile(r"G-[a-z]-[0-9]{2}")
 
 
 class ChatVanishedError(RuntimeError):
@@ -477,6 +496,7 @@ async def _event_stream(
     chat: Chat,
     local_now: datetime,
     live_revisions: list[str],
+    directive: TraceDirective,
 ) -> AsyncIterator[bytes]:
     """Insert `message`, run the pipeline under cancel-and-restart, stream NDJSON lines.
 
@@ -487,6 +507,7 @@ async def _event_stream(
             before streaming begins, so a store that could not be read fails the
             request outright instead of being reported to the patient as a corpus with
             no answer for them.
+        directive: What the request asked of the turn's trace.
 
     Raises: TurnPipelineError propagated from `run_pipeline`'s task, if the pipeline
         failed before this turn's ending was sent.
@@ -528,9 +549,10 @@ async def _event_stream(
             # exists - unlike intent.classified/turn.completed, not gated on the turn
             # completing (research.md #8), and ahead of classification rather than only
             # ahead of generation.
+            message_text = history.trailing_question(bursts)
             get_logger().info(
                 "turn.message_received",
-                message=history.trailing_question(bursts),
+                message=message_text,
                 message_ids_unified=reply_to_message_ids,
             )
 
@@ -558,6 +580,9 @@ async def _event_stream(
                 queued either way: `done` when the reply was stored, `cancelled` for
                 every other ending, so no completed turn leaves the patient's pane
                 waiting on a line that never comes.
+
+                The whole run is the turn's trace, rooted here, and the root records
+                whether the run completed, failed or was cancelled.
                 """
                 answer_parts: list[str] = []
                 done_event: ChatDoneEvent | None = None
@@ -579,151 +604,189 @@ async def _event_stream(
                     queue.put_nowait(event)
                     reply_delivered = True
 
-                try:
-                    async for event in run_turn(
-                        qdrant_client,
-                        voyage_client,
-                        rerank_client,
-                        anthropic_client,
-                        bursts,
-                        reply_to_message_ids,
-                        chat.session_id,
-                        live_revisions,
-                        escalation=escalation,
-                        patient_name=chat.patient_name or _PATIENT_PLACEHOLDER_NAME,
-                        local_now=local_now,
-                        tool_context=tool_context,
-                    ):
-                        if isinstance(event, ChatDoneEvent):
-                            # Held back rather than streamed as it arrives: `done` is
-                            # the patient being shown a finished reply, and whether
-                            # this one is a reply the thread will hold is not settled
-                            # until the registry check and the writes below.
-                            done_event = event
-                            continue
-                        if isinstance(event, ChatTokenEvent):
-                            queue.put_nowait(event)
-                            answer_parts.append(event.text)
-                            continue
-                        # Neither shape this turn's contract declares. `run_turn` casts
-                        # what `graph.astream` yields rather than checking it, so a
-                        # third shape arrives here as an assertion nobody made good.
-                        # Dropped rather than forwarded, because a line the client
-                        # cannot name is read by its parser as a completed turn and
-                        # would end the turn on an empty reply; dropped rather than
-                        # raised, because a reply that generated fine is not worth
-                        # discarding over one event nothing here can interpret. Logged,
-                        # so a drift in what the graph writes is not silent.
-                        get_logger().error(
-                            "turn.unknown_event", event_type=type(event).__name__
-                        )
-
-                    # Stored only once the pipeline completes successfully (abstention
-                    # included), and only if a newer message hasn't already superseded
-                    # this one (FR-015, research.md #3/#9).
-                    #
-                    # Deregistered here rather than after the writes below, because
-                    # those take the chat's lock: a staff post takes that lock first and
-                    # only then asks for a cancellation, so a turn still registered
-                    # while queued on the lock would be a cancellation waiting on the
-                    # very lock its canceller holds - and `pg_advisory_lock` has no
-                    # timeout to end that wait.
-                    #
-                    # Its own statement, and not a term in the expression below: a turn
-                    # that settled no reply queues on the same lock as one that did, so
-                    # it may not be the one turn whose deregistration a short-circuit
-                    # skips. The answer still decides the reply - False means a newer
-                    # turn superseded this one, whose reply is the one the thread is
-                    # owed, not this one's.
-                    still_current = clear_if_current(chat.id, task)
-                    reply = done_event if still_current else None
+                with turn_trace(
+                    turn_id,
+                    chat_id=chat.id,
+                    session_id=chat.session_id,
+                    directive=directive,
+                    input=message_text,
+                ) as root:
+                    # Only a turn whose root is recorded has a trace to report; the
+                    # SDK would name one for any other turn too, and it would never
+                    # arrive.
+                    if root.trace_id is not None:
+                        get_logger().info("turn.traced", trace_id=root.trace_id)
                     try:
-                        outcome = await _persist_outcome(
-                            chat,
-                            patient_message.id,
+                        async for event in run_turn(
+                            qdrant_client,
+                            voyage_client,
+                            rerank_client,
+                            anthropic_client,
+                            bursts,
                             reply_to_message_ids,
-                            escalation,
-                            reply,
-                            "".join(answer_parts),
-                            # `done` goes on the wire from inside the write, the
-                            # instant the reply's insert commits: streamed only once it
-                            # is stored, so the reply on screen and the reply in the
-                            # thread are the same one, and no later failure can leave a
-                            # stored reply undelivered. Through `_deliver_reply`
-                            # rather than straight onto the queue, so the turn knows
-                            # afterwards that the patient was answered.
-                            on_stored=_deliver_reply,
-                        )
-                    except Exception as exc:
-                        # Tagged with the step that actually failed, by the same
-                        # mechanism every pipeline step uses. Untagged, these reached
-                        # the catch-all below as `pipeline_step="unknown"`, which reads
-                        # as a graph node blowing up and sends an operator to the
-                        # pipeline rather than to the store. And once `done` is on the
-                        # wire the stream returns normally, so this entry is the only
-                        # record the writes failed at all.
-                        raise TurnPipelineError("persistence", exc) from exc
-                    if outcome is not ReplyOutcome.STORED:
-                        # The other half of the pair, so exactly one terminal event
-                        # leaves this turn however it ended: `done` above when the reply
-                        # was written, `cancelled` here for every other outcome - a
-                        # person taking the conversation, a supersede, or whatever a
-                        # later member names. To the patient they are the same thing,
-                        # a turn that ends without an answer, and the tokens already
-                        # sent are not one.
-                        queue.put_nowait(ChatCancelledEvent())
-                except TurnPipelineError as exc:
-                    logger = get_logger()
-                    logger.error(
-                        "turn.error",
-                        pipeline_step=exc.pipeline_step,
-                        error_detail=str(exc.cause),
-                    )
-                    dependency = _unreachable_dependency_of(exc)
-                    if dependency is not None:
-                        logger.critical(
-                            "critical.dependency_unreachable",
-                            dependency=dependency,
+                            chat.session_id,
+                            live_revisions,
+                            escalation=escalation,
+                            patient_name=chat.patient_name or _PATIENT_PLACEHOLDER_NAME,
+                            local_now=local_now,
+                            tool_context=tool_context,
+                        ):
+                            if isinstance(event, ChatDoneEvent):
+                                # Held back rather than streamed as it arrives: `done`
+                                # is the patient being shown a finished reply, and
+                                # whether this one is a reply the thread will hold is
+                                # not settled until the registry check and the writes
+                                # below.
+                                done_event = event
+                                continue
+                            if isinstance(event, ChatTokenEvent):
+                                queue.put_nowait(event)
+                                answer_parts.append(event.text)
+                                continue
+                            # Neither shape this turn's contract declares. `run_turn`
+                            # casts what `graph.astream` yields rather than checking it,
+                            # so a third shape arrives here as an assertion nobody made
+                            # good. Dropped rather than forwarded, because a line the
+                            # client cannot name is read by its parser as a completed
+                            # turn and would end the turn on an empty reply; dropped
+                            # rather than raised, because a reply that generated fine is
+                            # not worth discarding over one event nothing here can
+                            # interpret. Logged, so a drift in what the graph writes is
+                            # not silent.
+                            get_logger().error(
+                                "turn.unknown_event", event_type=type(event).__name__
+                            )
+
+                        # Stored only once the pipeline completes successfully
+                        # (abstention included), and only if a newer message hasn't
+                        # already superseded this one (FR-015, research.md #3/#9).
+                        #
+                        # Deregistered here rather than after the writes below, because
+                        # those take the chat's lock: a staff post takes that lock first
+                        # and only then asks for a cancellation, so a turn still
+                        # registered while queued on the lock would be a cancellation
+                        # waiting on the very lock its canceller holds - and
+                        # `pg_advisory_lock` has no timeout to end that wait.
+                        #
+                        # Its own statement, and not a term in the expression below: a
+                        # turn that settled no reply queues on the same lock as one that
+                        # did, so it may not be the one turn whose deregistration a
+                        # short-circuit skips. The answer still decides the reply -
+                        # False means a newer turn superseded this one, whose reply is
+                        # the one the thread is owed, not this one's.
+                        still_current = clear_if_current(chat.id, task)
+                        reply = done_event if still_current else None
+                        try:
+                            outcome = await _persist_outcome(
+                                chat,
+                                patient_message.id,
+                                reply_to_message_ids,
+                                escalation,
+                                reply,
+                                "".join(answer_parts),
+                                # `done` goes on the wire from inside the write, the
+                                # instant the reply's insert commits: streamed only once
+                                # it is stored, so the reply on screen and the reply in
+                                # the thread are the same one, and no later failure can
+                                # leave a stored reply undelivered. Through
+                                # `_deliver_reply` rather than straight onto the queue,
+                                # so the turn knows afterwards that the patient was
+                                # answered.
+                                on_stored=_deliver_reply,
+                            )
+                        except Exception as exc:
+                            # Tagged with the step that actually failed, by the same
+                            # mechanism every pipeline step uses. Untagged, these
+                            # reached the catch-all below as `pipeline_step="unknown"`,
+                            # which reads as a graph node blowing up and sends an
+                            # operator to the pipeline rather than to the store. And
+                            # once `done` is on the wire the stream returns normally, so
+                            # this entry is the only record the writes failed at all.
+                            raise TurnPipelineError("persistence", exc) from exc
+                        if outcome is not ReplyOutcome.STORED:
+                            # The other half of the pair, so exactly one terminal event
+                            # leaves this turn however it ended: `done` above when the
+                            # reply was written, `cancelled` here for every other
+                            # outcome - a person taking the conversation, a supersede,
+                            # or whatever a later member names. To the patient they are
+                            # the same thing, a turn that ends without an answer, and
+                            # the tokens already sent are not one. The trace says what
+                            # the patient was sent: a takeover that landed after the
+                            # deregistration above raises nothing into this turn, and
+                            # is still not a turn that completed.
+                            queue.put_nowait(ChatCancelledEvent())
+                            root.set_outcome(TurnOutcome.CANCELLED)
+                        else:
+                            root.set_outcome(TurnOutcome.COMPLETED)
+                    except asyncio.CancelledError:
+                        # Superseded, not broken: recorded as its own ending, and
+                        # passed on untouched.
+                        root.set_outcome(TurnOutcome.CANCELLED)
+                        raise
+                    except TurnPipelineError as exc:
+                        root.set_outcome(TurnOutcome.FAILED)
+                        logger = get_logger()
+                        logger.error(
+                            "turn.error",
+                            pipeline_step=exc.pipeline_step,
                             error_detail=str(exc.cause),
                         )
-                    # After the log line, so the turn's account of what broke is on the
-                    # wire before the recovery's. A cancellation reaches neither: it is
-                    # a `BaseException`, and a superseded turn is not a failure - the
-                    # newer message is being answered, and marking this one would send a
-                    # staff member to a conversation nothing is wrong with.
-                    await _settle_the_failure(
-                        chat,
-                        patient_message.id,
-                        escalation,
-                        task,
-                        reply_delivered=reply_delivered,
-                    )
-                    raise
-                except Exception as exc:
-                    get_logger().error(
-                        "turn.error", pipeline_step="unknown", error_detail=str(exc)
-                    )
-                    # The same for a failure this build cannot name: what the patient
-                    # is owed does not depend on the code having anticipated the way it
-                    # broke.
-                    await _settle_the_failure(
-                        chat,
-                        patient_message.id,
-                        escalation,
-                        task,
-                        reply_delivered=reply_delivered,
-                    )
-                    raise
-                finally:
-                    queue.put_nowait(None)
-                    # A second deregistration, for the paths that never reached the one
-                    # above: a pipeline step that raised, or this task being cancelled
-                    # mid-graph. Harmless after it - the registry has nothing of this
-                    # task left to remove, and a newer turn's entry is not this task's
-                    # to clear.
-                    clear_if_current(chat.id, task)
+                        dependency = _unreachable_dependency_of(exc)
+                        if dependency is not None:
+                            logger.critical(
+                                "critical.dependency_unreachable",
+                                dependency=dependency,
+                                error_detail=str(exc.cause),
+                            )
+                        # After the log line, so the turn's account of what broke is on
+                        # the wire before the recovery's. A cancellation reaches
+                        # neither: it is a `BaseException`, and a superseded turn is not
+                        # a failure - the newer message is being answered, and marking
+                        # this one would send a staff member to a conversation nothing
+                        # is wrong with.
+                        await _settle_the_failure(
+                            chat,
+                            patient_message.id,
+                            escalation,
+                            task,
+                            reply_delivered=reply_delivered,
+                        )
+                        raise
+                    except Exception as exc:
+                        root.set_outcome(TurnOutcome.FAILED)
+                        get_logger().error(
+                            "turn.error", pipeline_step="unknown", error_detail=str(exc)
+                        )
+                        # The same for a failure this build cannot name: what the
+                        # patient is owed does not depend on the code having anticipated
+                        # the way it broke.
+                        await _settle_the_failure(
+                            chat,
+                            patient_message.id,
+                            escalation,
+                            task,
+                            reply_delivered=reply_delivered,
+                        )
+                        raise
+                    finally:
+                        queue.put_nowait(None)
+                        # A second deregistration, for the paths that never reached the
+                        # one above: a pipeline step that raised, or this task being
+                        # cancelled mid-graph. Harmless after it - the registry has
+                        # nothing of this task left to remove, and a newer turn's entry
+                        # is not this task's to clear.
+                        clear_if_current(chat.id, task)
 
-            task: asyncio.Task[None] = asyncio.create_task(run_pipeline())
+            # The turn runs in a context of its own: a request that asked not to be
+            # traced sets the flag there and only there, so every span the turn opens
+            # - on any task or thread it spawns - sees it, while this stream, the next
+            # turn and every other request never do.
+            context = contextvars.copy_context()
+            if not directive.traced:
+                context.run(UNTRACED.set, True)
+            task: asyncio.Task[None] = asyncio.create_task(
+                run_pipeline(), context=context
+            )
             await register_and_cancel_previous(chat.id, turn_id, task)
             return task
 
@@ -849,12 +912,52 @@ async def _event_stream(
         yield (ChatCancelledEvent().model_dump_json() + "\n").encode()
 
 
+def read_trace_directive(request: Request) -> TraceDirective:
+    """Read what the request asks of its turn's trace from its headers.
+
+    Resolved as a dependency, so a malformed request is refused before the route does
+    anything with it: no message is stored and no turn runs.
+
+    Raises: HTTPException 422 when `X-VisitDoc-Trace` carries anything but `off`
+        (trimmed, in any case), when only one of the eval run and eval case headers is
+        sent, or when either is malformed.
+    """
+    trace = request.headers.get(_TRACE_HEADER)
+    if trace is not None and trace.strip().lower() != _TRACE_OFF:
+        raise HTTPException(
+            status_code=422, detail=f"{_TRACE_HEADER} takes only {_TRACE_OFF!r}"
+        )
+    run_id = request.headers.get(_EVAL_RUN_HEADER)
+    case_id = request.headers.get(_EVAL_CASE_HEADER)
+    if (run_id is None) != (case_id is None):
+        raise HTTPException(
+            status_code=422,
+            detail=f"{_EVAL_RUN_HEADER} and {_EVAL_CASE_HEADER} are sent together",
+        )
+    if run_id is not None and _EVAL_RUN_ID.fullmatch(run_id) is None:
+        raise HTTPException(
+            status_code=422, detail=f"{_EVAL_RUN_HEADER} is not a run id"
+        )
+    if case_id is not None and _EVAL_CASE_ID.fullmatch(case_id) is None:
+        raise HTTPException(
+            status_code=422, detail=f"{_EVAL_CASE_HEADER} is not a case id"
+        )
+    return TraceDirective(
+        traced=trace is None, eval_run_id=run_id, eval_case_id=case_id
+    )
+
+
 @router.post("/chat")
-async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingResponse:
+async def post_chat(
+    chat_request: ChatRequest,
+    request: Request,
+    directive: Annotated[TraceDirective, Depends(read_trace_directive)],
+) -> StreamingResponse:
     """Send a message to one chat and receive the streamed reply.
 
     Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
-        another session.
+        another session; HTTPException 422 when the request's tracing headers are
+        malformed (`read_trace_directive`).
     """
     qdrant_client = request.app.state.qdrant_client
     voyage_client = get_voyage_client(request)
@@ -899,6 +1002,7 @@ async def post_chat(chat_request: ChatRequest, request: Request) -> StreamingRes
             chat,
             chat_request.local_now,
             live_revisions,
+            directive,
         ),
         media_type="application/x-ndjson",
     )

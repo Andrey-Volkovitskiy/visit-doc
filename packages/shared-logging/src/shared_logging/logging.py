@@ -77,6 +77,11 @@ def _truncate_long_strings(
     return {key: _truncate_value(value) for key, value in event_dict.items()}
 
 
+def is_secret_key(name: str) -> bool:
+    """Return whether a field named `name` holds a secret, whatever its value."""
+    return _SECRET_KEY_PATTERN.search(name) is not None
+
+
 def _redact_secrets(event_dict: EventDict, known_secrets: list[str]) -> EventDict:
     """Redact `event_dict` by key name and by known live secret value.
 
@@ -86,27 +91,32 @@ def _redact_secrets(event_dict: EventDict, known_secrets: list[str]) -> EventDic
     """
     result: dict[str, Any] = {}
     for key, value in event_dict.items():
-        if _SECRET_KEY_PATTERN.search(key):
+        if is_secret_key(key):
             result[key] = _REDACTED_PLACEHOLDER
             continue
-        result[key] = _redact_value(value, known_secrets)
+        result[key] = redact_value(value, known_secrets)
     return result
 
 
-def _redact_value(value: Any, known_secrets: list[str]) -> Any:
-    """Recursively replace any occurrence of a known secret value in `value`."""
+def redact_value(value: Any, known_secrets: list[str]) -> Any:
+    """Return `value` with every known secret replaced, at any nesting depth.
+
+    A string has each occurrence of a known secret replaced; a list is redacted item
+    by item; a dict additionally has the value under any secret-named key replaced
+    whole. Anything else is returned unchanged.
+    """
     if isinstance(value, str):
         for secret in known_secrets:
             value = value.replace(secret, _REDACTED_PLACEHOLDER)
         return value
     if isinstance(value, list):
-        return [_redact_value(item, known_secrets) for item in value]
+        return [redact_value(item, known_secrets) for item in value]
     if isinstance(value, dict):
         return _redact_secrets(value, known_secrets)
     return value
 
 
-def _known_secret_values(
+def known_secret_values(
     settings: object,
     secret_fields: Sequence[str],
     secret_url_fields: Sequence[str],
@@ -117,6 +127,8 @@ def _known_secret_values(
         secret_fields: Settings field names whose value is itself a secret.
         secret_url_fields: Settings field names holding a URL whose embedded password
             (if any) is the secret.
+
+    An empty value is left out: replacing "" would match everywhere.
     """
     values = [getattr(settings, field) for field in secret_fields]
     for field in secret_url_fields:
@@ -132,7 +144,7 @@ def make_redact_secrets_processor(
     secret_url_fields: Sequence[str] = (),
 ) -> _LogProcessor:
     """Build a redaction processor bound to `settings`' live secret values."""
-    known_secrets = _known_secret_values(settings, secret_fields, secret_url_fields)
+    known_secrets = known_secret_values(settings, secret_fields, secret_url_fields)
 
     def _processor(
         _logger: WrappedLogger, _method_name: str, event_dict: EventDict

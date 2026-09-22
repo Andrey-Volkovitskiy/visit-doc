@@ -13,6 +13,7 @@ from golden_harness.record import (
     ReplyTurn,
     Run,
     RunConditions,
+    RunTracing,
     TerminalKind,
     Unplantable,
     UnplantableSituation,
@@ -621,6 +622,25 @@ def test_run_conditions_are_built_from_a_settings_event_without_its_envelope() -
     assert conditions.model_dump() == _CONDITIONS
 
 
+@pytest.mark.parametrize("tracing_enabled", [True, False])
+def test_the_services_tracing_state_is_not_a_run_condition(
+    tracing_enabled: bool,
+) -> None:
+    # `service.configured` states whether the service traces, but a traced and an
+    # untraced run of one build answer the same way - so it must never enter a
+    # condition delta, a band's sameness check or a restart comparison.
+    event = {
+        "event": "service.configured",
+        **_CONDITIONS,
+        "tracing_enabled": tracing_enabled,
+    }
+
+    conditions = RunConditions.from_event(event)
+
+    assert conditions.model_dump() == _CONDITIONS
+    assert "tracing_enabled" not in RunConditions.model_fields
+
+
 def test_run_conditions_from_an_event_missing_a_field_are_refused() -> None:
     event = {"event": "service.configured", **_CONDITIONS}
     del event["rerank_floor"]
@@ -763,3 +783,71 @@ def test_a_stream_that_broke_the_contract_beside_a_terminal_is_rejected(
         CaseRun.model_validate(
             _case(reply_turn=_reply_turn(terminal=terminal, stream_broke_contract=True))
         )
+
+
+# --- Tracing (014): the trace of each turn, and whether the run was traced ----------
+
+_BASELINE = (
+    Path(__file__).resolve().parents[2] / "baselines" / "01M321DWRXSVSY7GW9RY3CR9YW"
+)
+
+
+def test_a_case_run_names_no_traces_by_default() -> None:
+    assert CaseRun.model_validate(_case()).traces == {}
+
+
+def test_a_case_runs_traces_round_trip_through_its_file(tmp_path: Path) -> None:
+    traces = {"01K5EEEEEEEEEEEEEEEEEEEEEE": "0af7651916cd43dd8448eb211c80319c"}
+    case_run = CaseRun.model_validate(_case(traces=traces))
+
+    write_case(tmp_path, case_run)
+
+    assert read_case(tmp_path, "G001").traces == traces
+
+
+def test_a_case_file_written_before_tracing_still_reads() -> None:
+    raw = json.loads((_BASELINE / "cases" / "G-a-01.json").read_text())
+    assert "traces" not in raw
+
+    assert CaseRun.model_validate(raw).traces == {}
+
+
+def test_a_case_run_still_refuses_an_unknown_field() -> None:
+    with pytest.raises(ValidationError):
+        CaseRun.model_validate(_case(trace_ids={}))
+
+
+def test_a_runs_tracing_is_one_of_three_states() -> None:
+    assert {state.value for state in RunTracing} == {
+        "traced",
+        "untraced_by_request",
+        "untraced_service_off",
+    }
+
+
+@pytest.mark.parametrize("state", list(RunTracing))
+def test_a_runs_tracing_round_trips_through_run_json(
+    tmp_path: Path, state: RunTracing
+) -> None:
+    write_run(tmp_path, Run.model_validate(_run(tracing=state.value)))
+
+    assert read_run(tmp_path).tracing is state
+
+
+def test_a_run_recorded_before_tracing_reads_as_the_service_not_tracing() -> None:
+    assert Run.model_validate(_run()).tracing is RunTracing.UNTRACED_SERVICE_OFF
+
+
+def test_the_committed_baseline_still_reads_and_was_not_traced() -> None:
+    assert "tracing" not in json.loads((_BASELINE / "run.json").read_text())
+
+    assert read_run(_BASELINE).tracing is RunTracing.UNTRACED_SERVICE_OFF
+
+
+def test_an_unknown_tracing_state_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        Run.model_validate(_run(tracing="traced_sometimes"))
+
+
+def test_a_runs_tracing_is_not_one_of_its_conditions() -> None:
+    assert "tracing" not in RunConditions.model_fields

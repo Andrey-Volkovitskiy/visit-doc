@@ -5,10 +5,12 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from chat.agent.history import to_claude_messages_separating_silence
+from chat.clients.anthropic_content import content_as_output
 from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
 from chat.domain.models import Message
 from chat.domain.schemas import MAX_SEGMENTS, IntentClassificationResult, IntentLabel
+from chat.observability import generation
 
 # Room for the largest legal response and then some. A response is no longer one short
 # label list: it is up to `MAX_SEGMENTS` restated requests, each a sentence of the
@@ -252,16 +254,29 @@ async def classify_intent(
     Uses native JSON Outputs (`output_config.format`), not tool-use.
     """
     try:
-        response = await anthropic_client.messages.create(
-            model=get_settings().CLASSIFICATION_MODEL,
-            max_tokens=_MAX_TOKENS,
-            temperature=_TEMPERATURE,
-            system=_SYSTEM_PROMPT,
-            messages=to_claude_messages_separating_silence(bursts),
-            output_config={
-                "format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}
-            },
-        )
+        model = get_settings().CLASSIFICATION_MODEL
+        messages = to_claude_messages_separating_silence(bursts)
+        with generation(
+            "classify_intent.model",
+            model=model,
+            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            model_parameters={"max_tokens": _MAX_TOKENS, "temperature": _TEMPERATURE},
+        ) as observed:
+            response = await anthropic_client.messages.create(
+                model=model,
+                max_tokens=_MAX_TOKENS,
+                temperature=_TEMPERATURE,
+                system=_SYSTEM_PROMPT,
+                messages=messages,
+                output_config={
+                    "format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}
+                },
+            )
+            observed.record_completion(
+                content_as_output(response.content),
+                response.usage,
+                response.stop_reason,
+            )
         if response.stop_reason == "max_tokens":
             # Named rather than left to the parse below, which would report it as
             # malformed JSON. Both fall back the same way, but they need opposite

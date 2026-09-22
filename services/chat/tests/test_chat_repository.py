@@ -1097,3 +1097,36 @@ async def test_a_message_answering_nothing_stores_a_null_reply_id_list_too() -> 
 
     assert result.scalar_one() == 1
     assert session_id
+
+
+async def test_list_messages_breaks_a_created_at_tie_by_id() -> None:
+    # `created_at` is the transaction's start time, so two messages can share one - and
+    # Postgres returns tied rows in whatever order it finds them. The id breaks the tie:
+    # a thread read twice must come back in one order. Written larger id first, so heap
+    # order and id order disagree and a missing tie-break shows.
+    earlier, later = sorted(str(ULID()) for _ in range(2))
+    async with session_factory() as session:
+        created_session = await chat_repository.create_session(session)
+        chat = await chat_repository.create_chat(session, created_session.id)
+        for message_id in (later, earlier):
+            await chat_repository.create_message(
+                session,
+                id=message_id,
+                chat_id=chat.id,
+                session_id=created_session.id,
+                sender=MessageSender.PATIENT,
+                content=message_id,
+            )
+        await session.execute(
+            sql_text(
+                "UPDATE messages SET created_at = '2026-09-22 10:00:00+00' "
+                "WHERE chat_id = :chat_id"
+            ),
+            {"chat_id": chat.id},
+        )
+        await session.commit()
+
+    async with session_factory() as session:
+        messages = await chat_repository.list_messages(session, chat.id)
+
+    assert [m.id for m in messages] == [earlier, later]
