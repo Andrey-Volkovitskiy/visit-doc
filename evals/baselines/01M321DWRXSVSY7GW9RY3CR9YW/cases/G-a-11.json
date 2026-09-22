@@ -1,0 +1,338 @@
+{
+  "case_id": "G-a-11",
+  "chat_id": "01M321G81T4V7EYJACSZK9XG9Y",
+  "patient_id": "01M321G82BBGV4XDZH2743RFR0",
+  "attempts": 1,
+  "elapsed_seconds": 7.457978099002503,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321G84ZQ3ZEKWRBPPK2M087",
+    "content": "What appointments do I have booked?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321GE14GNZQT4ZHGCNMQVXG",
+    "content": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "What appointments do I have booked?",
+        "query": "What appointments do I have booked?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "chat_id": "01M321G81T4V7EYJACSZK9XG9Y",
+      "sender": "patient",
+      "content": "What appointments do I have booked?",
+      "event": "message.persisted",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:50.699992Z"
+    },
+    {
+      "message": "What appointments do I have booked?",
+      "message_ids_unified": [
+        "01M321G84ZQ3ZEKWRBPPK2M087"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:50.700238Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:50.702372Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "What appointments do I have booked?",
+          "query": "What appointments do I have booked?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:51.736529Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1034.36,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:51.736721Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:51.738383Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:51.747733Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:51.747970Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What appointments do I have booked?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:11:51.748251Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2443.27,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:54.191758Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:54.192236Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:54.205908Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 13.75,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:54.206218Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What appointments do I have booked?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01HtkQzAyoUorkE5mdiqfxzv",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01HtkQzAyoUorkE5mdiqfxzv",
+              "content": "{\"future\": [{\"id\": \"01M321G83Y3NHTT60343W0G70H\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-04T11:00:00\", \"ends_at\": \"2026-03-04T12:00:00\", \"status\": \"standing\"}, {\"id\": \"01M321G84CCA4WX9ZJ4DHTG3J5\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-06T10:00:00\", \"ends_at\": \"2026-03-06T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:11:54.206512Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2495.19,
+      "tool_names": [],
+      "text": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these.",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.701904Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4963.95,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 257,
+        "answer_text": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.702297Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.703559Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.21,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 257,
+        "answer_text": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.703760Z"
+    },
+    {
+      "duration_ms": 6015.93,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these.",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M321G84ZQ3ZEKWRBPPK2M087"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.703975Z"
+    },
+    {
+      "message_id": "01M321GE14GNZQT4ZHGCNMQVXG",
+      "chat_id": "01M321G81T4V7EYJACSZK9XG9Y",
+      "sender": "assistant",
+      "content": "You have two upcoming appointments:\n\n1. **Wednesday, March 4, 2026 at 11:00am** – with William Osler, General Practice\n2. **Friday, March 6, 2026 at 10:00am** – with Andreas Vesalius, Dentistry\n\nLet me know if you'd like to change or cancel either of these.",
+      "event": "message.persisted",
+      "turn_id": "01M321G84ZQ3ZEKWRBPPK2M087",
+      "level": "info",
+      "timestamp": "2026-09-21T13:11:56.717534Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T11:00:00",
+      "status": "standing"
+    },
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-06T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T11:00:00",
+      "status": "cancelled"
+    },
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-06T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null
+}

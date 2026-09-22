@@ -1,0 +1,755 @@
+{
+  "case_id": "G-o-03",
+  "chat_id": "01M321S3PFMXFK19CBV3J8S12S",
+  "patient_id": "01M321S3PZPHWQ88BRR2WNGHXE",
+  "attempts": 1,
+  "elapsed_seconds": 7.114275964908302,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you have parking?",
+          "answer": "We have free parking available at the Mega Mall parking garage (9 Willson St.), a 3-minute walk from our clinic.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1453,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Is the parking free?",
+          "answer": "Yes, the nearest parking, at the Mega Mall parking garage (9 Willson St.), is free.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1453,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321S3RB436BRM87PYM71MVZ",
+    "content": "Do you have parking, and is it free?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321SAKDN7TH307NMTFJPMAX",
+    "content": "Hi there,\n\nThanks for reaching out! Here's the information you asked about:\n\n- **Parking:** Yes, we have parking available at the Mega Mall parking garage (9 Willson St.), which is about a 3-minute walk from our clinic.\n- **Is it free?** Yes, that parking at the Mega Mall garage is free.\n\nLet me know if there's anything else I can help with!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you have parking?",
+        "answer": "We have free parking available at the Mega Mall parking garage (9 Willson St.), a 3-minute walk from our clinic.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1453,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Is the parking free?",
+        "answer": "Yes, the nearest parking, at the Mega Mall parking garage (9 Willson St.), is free.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1453,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you have parking?",
+        "query": "Do you have parking?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Is the parking free?",
+        "query": "Is the parking free?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321S3RB436BRM87PYM71MVZ",
+      "chat_id": "01M321S3PFMXFK19CBV3J8S12S",
+      "sender": "patient",
+      "content": "Do you have parking, and is it free?",
+      "event": "message.persisted",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:41.110111Z"
+    },
+    {
+      "message": "Do you have parking, and is it free?",
+      "message_ids_unified": [
+        "01M321S3RB436BRM87PYM71MVZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:41.110369Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:41.112299Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you have parking?",
+          "query": "Do you have parking?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Is the parking free?",
+          "query": "Is the parking free?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.027100Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 915.04,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.027338Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.029671Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.282725Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.287302Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.43921685,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.24364209,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.22639409,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.21976379,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.21256264,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.20908022,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.20759593,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.17614126,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.1556462,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.295938Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.43921685
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.24364209
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.22639409
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.21976379
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.21256264
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.20908022
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.20759593
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.17614126
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.1556462
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.296339Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.4844325,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2861514,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.25838944,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.24181108,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.23768142,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.22078021,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.21268563,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.18496855,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.16513303,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.297522Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.4844325
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2861514
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.25838944
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.24181108
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.23768142
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.22078021
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.21268563
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.18496855
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.16513303
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.297843Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 3,
+      "duration_ms": 259.55,
+      "scores": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.4844325,
+          "rerank_score": 0.68359375
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2861514,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.25838944,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.557648Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "rerank_score": 0.68359375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.558062Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4844325,
+      "best_rerank_score": 0.68359375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.558351Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Do you have parking?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:16:42.558582Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 1,
+      "duration_ms": 264.31,
+      "scores": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.43921685,
+          "rerank_score": 0.6796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.561025Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "rerank_score": 0.6796875
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.561253Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.43921685,
+      "best_rerank_score": 0.6796875,
+      "event": "faq.verdict",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:42.561392Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Is the parking free?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:16:42.561612Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2681.51,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 195,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you have parking?",
+            "verdict": "answered",
+            "answer_text": "We have free parking available at the Mega Mall parking garage (9 Willson St.), a 3-minute walk from our clinic."
+          },
+          {
+            "position": 1,
+            "question": "Is the parking free?",
+            "verdict": "answered",
+            "answer_text": "Yes, the nearest parking, at the Mega Mall parking garage (9 Willson St.), is free."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:44.711158Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:44.712247Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 3391.95,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 343,
+        "answer_text": "Hi there,\n\nThanks for reaching out! Here's the information you asked about:\n\n- **Parking:** Yes, we have parking available at the Mega Mall parking garage (9 Willson St.), which is about a 3-minute walk from our clinic.\n- **Is it free?** Yes, that parking at the Mega Mall garage is free.\n\nLet me know if there's anything else I can help with!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:48.104206Z"
+    },
+    {
+      "duration_ms": 7004.77,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1453,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.4844325,
+              "rerank_score": 0.68359375
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1453,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.43921685,
+              "rerank_score": 0.6796875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Hi there,\n\nThanks for reaching out! Here's the information you asked about:\n\n- **Parking:** Yes, we have parking available at the Mega Mall parking garage (9 Willson St.), which is about a 3-minute walk from our clinic.\n- **Is it free?** Yes, that parking at the Mega Mall garage is free.\n\nLet me know if there's anything else I can help with!",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M321S3RB436BRM87PYM71MVZ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:48.104643Z"
+    },
+    {
+      "message_id": "01M321SAKDN7TH307NMTFJPMAX",
+      "chat_id": "01M321S3PFMXFK19CBV3J8S12S",
+      "sender": "assistant",
+      "content": "Hi there,\n\nThanks for reaching out! Here's the information you asked about:\n\n- **Parking:** Yes, we have parking available at the Mega Mall parking garage (9 Willson St.), which is about a 3-minute walk from our clinic.\n- **Is it free?** Yes, that parking at the Mega Mall garage is free.\n\nLet me know if there's anything else I can help with!",
+      "event": "message.persisted",
+      "turn_id": "01M321S3RB436BRM87PYM71MVZ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:48.126220Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

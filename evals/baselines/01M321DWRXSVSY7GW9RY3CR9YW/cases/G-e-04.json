@@ -1,0 +1,192 @@
+{
+  "case_id": "G-e-04",
+  "chat_id": "01M321JYHC45YJ1HF862HYB276",
+  "patient_id": "01M321JYJ0ZGR9JSTF1XTHX2RZ",
+  "attempts": 1,
+  "elapsed_seconds": 1.2370456720236689,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321JYK903M3M4BT98E5KE9P",
+    "content": "Send my records over to another clinic.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321JZPKAFX5KBA60BH4RJY9",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Send my records over to another clinic.",
+        "query": "Send my records over to another clinic."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321JYK903M3M4BT98E5KE9P",
+      "chat_id": "01M321JYHC45YJ1HF862HYB276",
+      "sender": "patient",
+      "content": "Send my records over to another clinic.",
+      "event": "message.persisted",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:19.221121Z"
+    },
+    {
+      "message": "Send my records over to another clinic.",
+      "message_ids_unified": [
+        "01M321JYK903M3M4BT98E5KE9P"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:19.221414Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:19.223563Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Send my records over to another clinic.",
+          "query": "Send my records over to another clinic."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.332544Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1109.2,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.332748Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.334021Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.19,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.334203Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.335240Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.16,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.335389Z"
+    },
+    {
+      "duration_ms": 1126.33,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321JYK903M3M4BT98E5KE9P"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.335547Z"
+    },
+    {
+      "message_id": "01M321JZPKAFX5KBA60BH4RJY9",
+      "chat_id": "01M321JYHC45YJ1HF862HYB276",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.345933Z"
+    },
+    {
+      "chat_id": "01M321JYHC45YJ1HF862HYB276",
+      "reason": "not_authorized",
+      "message_id": "01M321JYK903M3M4BT98E5KE9P",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M321JYK903M3M4BT98E5KE9P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.355679Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

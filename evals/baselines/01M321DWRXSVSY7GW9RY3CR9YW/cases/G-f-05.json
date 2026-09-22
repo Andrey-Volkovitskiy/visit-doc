@@ -1,0 +1,192 @@
+{
+  "case_id": "G-f-05",
+  "chat_id": "01M321K85ZHT8XZWV63PR8GB7B",
+  "patient_id": "01M321K86KM4WJB88REW9Y4YWN",
+  "attempts": 1,
+  "elapsed_seconds": 1.3397858180105686,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321K883WQRYNQK9G6JJT318",
+    "content": "You said you could put me through to someone about my coverage - please do that.",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321K9E6VA15457AFVSADBMG",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "call_staff",
+        "text": "You said you could put me through to someone about my coverage - please do that.",
+        "query": "Please put me through to someone about my coverage."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321K883WQRYNQK9G6JJT318",
+      "chat_id": "01M321K85ZHT8XZWV63PR8GB7B",
+      "sender": "patient",
+      "content": "You said you could put me through to someone about my coverage - please do that.",
+      "event": "message.persisted",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:29.101513Z"
+    },
+    {
+      "message": "You said you could put me through to someone about my coverage - please do that.",
+      "message_ids_unified": [
+        "01M321K883WQRYNQK9G6JJT318"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:29.101797Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:29.103832Z"
+    },
+    {
+      "intents": [
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "call_staff",
+          "text": "You said you could put me through to someone about my coverage - please do that.",
+          "query": "Please put me through to someone about my coverage."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.302171Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1198.66,
+      "result": {
+        "intents": [
+          "call_staff"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.302487Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.303918Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.4,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.304306Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.305498Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.26,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.305767Z"
+    },
+    {
+      "duration_ms": 1214.18,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321K883WQRYNQK9G6JJT318"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.305987Z"
+    },
+    {
+      "message_id": "01M321K9E6VA15457AFVSADBMG",
+      "chat_id": "01M321K85ZHT8XZWV63PR8GB7B",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.322934Z"
+    },
+    {
+      "chat_id": "01M321K85ZHT8XZWV63PR8GB7B",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M321K883WQRYNQK9G6JJT318",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M321K883WQRYNQK9G6JJT318",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:30.336000Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

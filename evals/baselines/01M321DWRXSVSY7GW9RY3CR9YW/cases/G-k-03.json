@@ -1,0 +1,476 @@
+{
+  "case_id": "G-k-03",
+  "chat_id": "01M321N99DDN3XMNM6PVN4R2N0",
+  "patient_id": "01M321N99ZZFW1DC4KZBYNJZ59",
+  "attempts": 1,
+  "elapsed_seconds": 1.7287302060285583,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I pay by cheque?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+    "content": "Can I pay by cheque?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321NAXSD9EGZTZJZNPB5SA0",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I pay by cheque?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I pay by cheque?",
+        "query": "Can I pay by cheque?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "chat_id": "01M321N99DDN3XMNM6PVN4R2N0",
+      "sender": "patient",
+      "content": "Can I pay by cheque?",
+      "event": "message.persisted",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:35.774670Z"
+    },
+    {
+      "message": "Can I pay by cheque?",
+      "message_ids_unified": [
+        "01M321N9BJZ7DWEKEFFJ1RXVRG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:35.775090Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:35.778023Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I pay by cheque?",
+          "query": "Can I pay by cheque?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:36.832950Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1055.25,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:36.833152Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:36.834926Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.087017Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.4849598,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33959448,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.29010874,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.26810643,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.25558594,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.25454098,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.21957135,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.20654567,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.16614473,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.096666Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.4849598
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33959448
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.29010874
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.26810643
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.25558594
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.21957135
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.20654567
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.16614473
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.25454098
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.096952Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 262.43,
+      "scores": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.4849598,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33959448,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.29010874,
+          "rerank_score": 0.3671875
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.26810643,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.25558594,
+          "rerank_score": 0.3125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.359691Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.3671875
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.3125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.360314Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.4849598,
+      "best_rerank_score": 0.56640625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.360616Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 526.32,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I pay by cheque?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.361284Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.363373Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.28,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.363607Z"
+    },
+    {
+      "duration_ms": 1601.65,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321N9BJZ7DWEKEFFJ1RXVRG"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.363859Z"
+    },
+    {
+      "message_id": "01M321NAXSD9EGZTZJZNPB5SA0",
+      "chat_id": "01M321N99DDN3XMNM6PVN4R2N0",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.376000Z"
+    },
+    {
+      "chat_id": "01M321N99DDN3XMNM6PVN4R2N0",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M321N9BJZ7DWEKEFFJ1RXVRG",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:37.385766Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

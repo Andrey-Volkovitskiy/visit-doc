@@ -1,0 +1,477 @@
+{
+  "case_id": "G-j-14",
+  "chat_id": "01M321MZ00G9H1S972X4N4QCNN",
+  "patient_id": "01M321MZ0KPKY5ZTYQ6WMFP865",
+  "attempts": 1,
+  "elapsed_seconds": 4.6020498221041635,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What happens if you don't take my insurance?",
+          "answer": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1450,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321MZ20VCSHPN3BKYJFSJ03",
+    "content": "What happens if you don't take my insurance?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321N3E9BATNZFVD3V40TBVY",
+    "content": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What happens if you don't take my insurance?",
+        "answer": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1450,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What happens if you don't take my insurance?",
+        "query": "What happens if you don't take my insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "chat_id": "01M321MZ00G9H1S972X4N4QCNN",
+      "sender": "patient",
+      "content": "What happens if you don't take my insurance?",
+      "event": "message.persisted",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:25.228537Z"
+    },
+    {
+      "message": "What happens if you don't take my insurance?",
+      "message_ids_unified": [
+        "01M321MZ20VCSHPN3BKYJFSJ03"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:25.228794Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:25.231147Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What happens if you don't take my insurance?",
+          "query": "What happens if you don't take my insurance?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.255591Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1024.86,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.256016Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.258363Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.508002Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.40993455,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.3112172,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.29972997,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.1952739,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.1807625,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.17048702,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.16623811,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.13800688,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.120527625,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.516218Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.40993455
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.3112172
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.29972997
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.1952739
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.1807625
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.17048702
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.16623811
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.13800688
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.120527625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:26.516562Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 3,
+      "duration_ms": 833.98,
+      "scores": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.40993455,
+          "rerank_score": 0.63671875
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.3112172,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.29972997,
+          "rerank_score": 0.41015625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:27.350831Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.63671875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "rerank_score": 0.41015625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:27.351440Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.40993455,
+      "best_rerank_score": 0.63671875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:27.351989Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.\n\nQuestion: What happens if you don't take my insurance?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:14:27.352334Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 3438.81,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 178,
+        "answer_text": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What happens if you don't take my insurance?",
+            "verdict": "answered",
+            "answer_text": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:29.697190Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:29.698461Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.21,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 178,
+        "answer_text": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:29.698659Z"
+    },
+    {
+      "duration_ms": 4482.49,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1450,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+              "similarity_score": 0.40993455,
+              "rerank_score": 0.63671875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321MZ20VCSHPN3BKYJFSJ03"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:29.699108Z"
+    },
+    {
+      "message_id": "01M321N3E9BATNZFVD3V40TBVY",
+      "chat_id": "01M321MZ00G9H1S972X4N4QCNN",
+      "sender": "assistant",
+      "content": "If your insurance isn't accepted, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "event": "message.persisted",
+      "turn_id": "01M321MZ20VCSHPN3BKYJFSJ03",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:29.717741Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

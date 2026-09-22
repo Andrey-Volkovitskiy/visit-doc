@@ -1,0 +1,324 @@
+{
+  "case_id": "G-d-06",
+  "chat_id": "01M321JGX4BHAX7DFJ7W2QRVXZ",
+  "patient_id": "01M321JGXVE4XF0SS1060Y7M61",
+  "attempts": 1,
+  "elapsed_seconds": 11.625427167979069,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321JGZFRB6CCBKBY84KSE6V",
+    "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321JTYEPEQB6FMXW8ZYJB3W",
+    "content": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+        "query": "book an appointment for Tuesday with Dr. Andreas"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "chat_id": "01M321JGX4BHAX7DFJ7W2QRVXZ",
+      "sender": "patient",
+      "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+      "event": "message.persisted",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:05.273671Z"
+    },
+    {
+      "message": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+      "message_ids_unified": [
+        "01M321JGZFRB6CCBKBY84KSE6V"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:05.274099Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:05.276987Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+          "query": "book an appointment for Tuesday with Dr. Andreas"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:06.293387Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1016.62,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:06.293579Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:06.295199Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:06.308449Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:06.308914Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:13:06.309242Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 6375.61,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:11.395462Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M321DWQNK48HHCX85YZ5PS7D",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:11.395776Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:11.409430Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 13.82,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:11.409823Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01E9Bqpf3ETDC4sz8pU4HAns",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M321DWQNK48HHCX85YZ5PS7D",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01E9Bqpf3ETDC4sz8pU4HAns",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:13:11.410227Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 4051.9,
+      "tool_names": [],
+      "text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.462588Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 10457.54,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 178,
+        "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.463203Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.465183Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.23,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 178,
+        "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.465395Z"
+    },
+    {
+      "duration_ms": 11491.68,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M321JGZFRB6CCBKBY84KSE6V"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.465625Z"
+    },
+    {
+      "message_id": "01M321JTYEPEQB6FMXW8ZYJB3W",
+      "chat_id": "01M321JGX4BHAX7DFJ7W2QRVXZ",
+      "sender": "assistant",
+      "content": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these openings for a 60-minute appointment: 9:00am, 10:00am, 11:00am, 12:00pm, and 1:00pm.\n\nWhich time would you like?",
+      "event": "message.persisted",
+      "turn_id": "01M321JGZFRB6CCBKBY84KSE6V",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.485289Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

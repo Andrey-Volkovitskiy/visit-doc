@@ -1,0 +1,669 @@
+{
+  "case_id": "G-q-03",
+  "chat_id": "01M321V2TGFKDDDVM8J2HHPEBB",
+  "patient_id": "01M321V2V4DGVT4BSD4GZ8RSH8",
+  "attempts": 1,
+  "elapsed_seconds": 10.087663605925627,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Which insurers do you accept?",
+          "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+    "content": "Which insurers do you accept, and which practitioners do you have?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321VBBM6BE3E05KM2DXDG3X",
+    "content": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team to clarify your coverage.\n\nRegarding scheduling, we currently have two practitioners available: Dr. William Osler (General Practice, 60-minute appointments) and Dr. Andreas Vesalius (Dentistry, 60-minute appointments), both currently accepting new appointments. Let me know if you'd like to book with either of them!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Which insurers do you accept?",
+        "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1449,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Which insurers do you accept?",
+        "query": "Which insurers do you accept?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Which practitioners do you have?",
+        "query": "Which practitioners do you have?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "chat_id": "01M321V2TGFKDDDVM8J2HHPEBB",
+      "sender": "patient",
+      "content": "Which insurers do you accept, and which practitioners do you have?",
+      "event": "message.persisted",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:45.757186Z"
+    },
+    {
+      "message": "Which insurers do you accept, and which practitioners do you have?",
+      "message_ids_unified": [
+        "01M321V2WGNMBT7VVMXXDYZHAJ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:45.757527Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:45.759846Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Which insurers do you accept?",
+          "query": "Which insurers do you accept?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Which practitioners do you have?",
+          "query": "Which practitioners do you have?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.730555Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 970.95,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.730788Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.732418Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.735051Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.749825Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:46.750279Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:46.750524Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.037075Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.51995075,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.3687533,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.31691754,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.27524775,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2516839,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.2198743,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.21204962,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.17411801,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.12016197,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.055805Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.51995075
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.3687533
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.31691754
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.27524775
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2516839
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.2198743
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.21204962
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.17411801
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.12016197
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.056180Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 283.45,
+      "scores": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.51995075,
+          "rerank_score": 0.859375
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.3687533,
+          "rerank_score": 0.4765625
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.31691754,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.27524775,
+          "rerank_score": 0.41796875
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2516839,
+          "rerank_score": 0.3671875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.339895Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "rerank_score": 0.859375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.4765625
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.4375
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "rerank_score": 0.41796875
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.3671875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.340320Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.51995075,
+      "best_rerank_score": 0.859375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:47.340475Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Which insurers do you accept?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:47.340650Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2543.28,
+      "tool_names": [
+        "list_practitioners"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:49.294274Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:49.294639Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:49.304421Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 9.76,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:49.304703Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01JNDLa3623TqS1Po15xGM3d",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_practitioners",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01JNDLa3623TqS1Po15xGM3d",
+              "content": "{\"practitioners\": [{\"id\": \"01M321DWQD4Y1DAF7F84TFDZNA\", \"full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"appointment_duration_minutes\": 60, \"bookable\": true}, {\"id\": \"01M321DWQNK48HHCX85YZ5PS7D\", \"full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"appointment_duration_minutes\": 60, \"bookable\": true}]}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:49.304961Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 3066.46,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 302,
+        "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Which insurers do you accept?",
+            "verdict": "answered",
+            "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:49.798882Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2600.79,
+      "tool_names": [],
+      "text": "We have two practitioners available:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nBoth are currently taking appointments. Let me know if you'd like to book with either of them!",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:51.905959Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5173.0,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 267,
+        "answer_text": "We have two practitioners available:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nBoth are currently taking appointments. Let me know if you'd like to book with either of them!",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:51.906426Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:51.907599Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 3800.46,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "informational",
+        "citation_count": 1,
+        "answer_chars": 558,
+        "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team to clarify your coverage.\n\nRegarding scheduling, we currently have two practitioners available: Dr. William Osler (General Practice, 60-minute appointments) and Dr. Andreas Vesalius (Dentistry, 60-minute appointments), both currently accepting new appointments. Let me know if you'd like to book with either of them!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.414763Z"
+    },
+    {
+      "duration_ms": 9963.36,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.51995075,
+              "rerank_score": 0.859375
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team to clarify your coverage.\n\nRegarding scheduling, we currently have two practitioners available: Dr. William Osler (General Practice, 60-minute appointments) and Dr. Andreas Vesalius (Dentistry, 60-minute appointments), both currently accepting new appointments. Let me know if you'd like to book with either of them!",
+      "booking_outcome": "informational",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M321V2WGNMBT7VVMXXDYZHAJ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.415083Z"
+    },
+    {
+      "message_id": "01M321VBBM6BE3E05KM2DXDG3X",
+      "chat_id": "01M321V2TGFKDDDVM8J2HHPEBB",
+      "sender": "assistant",
+      "content": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team to clarify your coverage.\n\nRegarding scheduling, we currently have two practitioners available: Dr. William Osler (General Practice, 60-minute appointments) and Dr. Andreas Vesalius (Dentistry, 60-minute appointments), both currently accepting new appointments. Let me know if you'd like to book with either of them!",
+      "event": "message.persisted",
+      "turn_id": "01M321V2WGNMBT7VVMXXDYZHAJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.435111Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

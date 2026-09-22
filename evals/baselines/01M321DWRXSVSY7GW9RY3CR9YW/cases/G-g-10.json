@@ -1,0 +1,195 @@
+{
+  "case_id": "G-g-10",
+  "chat_id": "01M321KM1WCRB495SB403NTNAC",
+  "patient_id": "01M321KM3SBZ5K4FX1PVPJ6MG5",
+  "attempts": 1,
+  "elapsed_seconds": 1.7579214329598472,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+    "content": "Merci",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321KNQHVSMS0NW4VQHE0175",
+    "content": "Bonjour! N'hésitez pas si vous avez besoin d'aide.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Merci",
+        "query": "Merci"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "chat_id": "01M321KM1WCRB495SB403NTNAC",
+      "sender": "patient",
+      "content": "Merci",
+      "event": "message.persisted",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.323767Z"
+    },
+    {
+      "message": "Merci",
+      "message_ids_unified": [
+        "01M321KM5Y2N9ZVVC19GYFY5QQ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.323996Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.328856Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Merci",
+          "query": "Merci"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.185713Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 857.1,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.185933Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.187496Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Merci"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:13:42.187710Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 703.62,
+      "result": {
+        "answer_chars": 50,
+        "answer_text": "Bonjour! N'hésitez pas si vous avez besoin d'aide.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.891164Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.892441Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.19,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 50,
+        "answer_text": "Bonjour! N'hésitez pas si vous avez besoin d'aide."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.892620Z"
+    },
+    {
+      "duration_ms": 1582.41,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Bonjour! N'hésitez pas si vous avez besoin d'aide.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321KM5Y2N9ZVVC19GYFY5QQ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.892817Z"
+    },
+    {
+      "message_id": "01M321KNQHVSMS0NW4VQHE0175",
+      "chat_id": "01M321KM1WCRB495SB403NTNAC",
+      "sender": "assistant",
+      "content": "Bonjour! N'hésitez pas si vous avez besoin d'aide.",
+      "event": "message.persisted",
+      "turn_id": "01M321KM5Y2N9ZVVC19GYFY5QQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:42.903595Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

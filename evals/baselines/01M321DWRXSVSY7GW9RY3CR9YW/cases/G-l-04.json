@@ -1,0 +1,499 @@
+{
+  "case_id": "G-l-04",
+  "chat_id": "01M321NWSKBZ3GYHX4HRAXP5HT",
+  "patient_id": "01M321NWT7KDY9ZXWNAGS0KG5V",
+  "attempts": 1,
+  "elapsed_seconds": 5.453809252008796,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+          "answer": "Yes, we accept Blue Cross Blue Shield.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321NWVNZR1E61HCX43DWCNC",
+    "content": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321P22W1YH6QXH1BJM8Z3ZS",
+    "content": "Yes, we accept Blue Cross Blue Shield.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+        "answer": "Yes, we accept Blue Cross Blue Shield.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1449,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+        "query": "Does the clinic accept Blue Cross insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "chat_id": "01M321NWSKBZ3GYHX4HRAXP5HT",
+      "sender": "patient",
+      "content": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+      "event": "message.persisted",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:55.744806Z"
+    },
+    {
+      "message": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+      "message_ids_unified": [
+        "01M321NWVNZR1E61HCX43DWCNC"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:55.745052Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:55.747455Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+          "query": "Does the clinic accept Blue Cross insurance?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:56.806843Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1059.62,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:56.807063Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:56.808559Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:57.061382Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.52227414,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.42705983,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.37386173,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.35151204,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.3482299,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.3421252,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.3419465,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.3159955,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.29884875,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:57.072078Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.52227414
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.42705983
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.37386173
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.35151204
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.3482299
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.3421252
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.3419465
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.3159955
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.29884875
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:57.072397Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 1787.14,
+      "scores": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.52227414,
+          "rerank_score": 0.8671875
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.42705983,
+          "rerank_score": 0.498046875
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.35151204,
+          "rerank_score": 0.4296875
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.37386173,
+          "rerank_score": 0.349609375
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.3482299,
+          "rerank_score": 0.3359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:58.859721Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "rerank_score": 0.8671875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.498046875
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "rerank_score": 0.4296875
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.349609375
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "rerank_score": 0.3359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:58.859979Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.52227414,
+      "best_rerank_score": 0.8671875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:58.860234Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:14:58.860510Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 4263.07,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 38,
+        "answer_text": "Yes, we accept Blue Cross Blue Shield.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "So, my insurance is Blue Cross, and I was wondering, because my last clinic did not take it, whether you do?",
+            "verdict": "answered",
+            "answer_text": "Yes, we accept Blue Cross Blue Shield."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:01.071635Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:01.073812Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 5.78,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 38,
+        "answer_text": "Yes, we accept Blue Cross Blue Shield."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:01.079665Z"
+    },
+    {
+      "duration_ms": 5345.9,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.52227414,
+              "rerank_score": 0.8671875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Yes, we accept Blue Cross Blue Shield.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321NWVNZR1E61HCX43DWCNC"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:01.079910Z"
+    },
+    {
+      "message_id": "01M321P22W1YH6QXH1BJM8Z3ZS",
+      "chat_id": "01M321NWSKBZ3GYHX4HRAXP5HT",
+      "sender": "assistant",
+      "content": "Yes, we accept Blue Cross Blue Shield.",
+      "event": "message.persisted",
+      "turn_id": "01M321NWVNZR1E61HCX43DWCNC",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:01.090978Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

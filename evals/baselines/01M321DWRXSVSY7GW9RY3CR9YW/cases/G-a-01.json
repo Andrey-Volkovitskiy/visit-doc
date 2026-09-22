@@ -1,0 +1,316 @@
+{
+  "case_id": "G-a-01",
+  "chat_id": "01M321DWS981WEFD8V4D0GWPGB",
+  "patient_id": "01M321DWSVZCKDA0Y40CD30HWB",
+  "attempts": 1,
+  "elapsed_seconds": 7.570170428021811,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321DWX0KZ21J9G6115VJKS1",
+    "content": "Which practitioners do you have?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321E4379Z465EV2X7SMCZN4",
+    "content": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Which practitioners do you have?",
+        "query": "Which practitioners do you have?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "chat_id": "01M321DWS981WEFD8V4D0GWPGB",
+      "sender": "patient",
+      "content": "Which practitioners do you have?",
+      "event": "message.persisted",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:33.649046Z"
+    },
+    {
+      "message": "Which practitioners do you have?",
+      "message_ids_unified": [
+        "01M321DWX0KZ21J9G6115VJKS1"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:33.649307Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:33.653300Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Which practitioners do you have?",
+          "query": "Which practitioners do you have?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:35.142154Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1489.13,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:35.142405Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:35.144313Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:35.155512Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:35.155854Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:10:35.156126Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2866.21,
+      "tool_names": [
+        "list_practitioners"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:38.022521Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:38.022894Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:38.032735Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 9.89,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:38.033001Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01F9DV83pLYrut65xuENHt2q",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_practitioners",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01F9DV83pLYrut65xuENHt2q",
+              "content": "{\"practitioners\": [{\"id\": \"01M321DWQD4Y1DAF7F84TFDZNA\", \"full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"appointment_duration_minutes\": 60, \"bookable\": true}, {\"id\": \"01M321DWQNK48HHCX85YZ5PS7D\", \"full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"appointment_duration_minutes\": 60, \"bookable\": true}]}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:10:38.035020Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2957.13,
+      "tool_names": [],
+      "text": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:40.992347Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5848.35,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 279,
+        "answer_text": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:40.992644Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:40.993990Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.22,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 279,
+        "answer_text": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:40.994202Z"
+    },
+    {
+      "duration_ms": 7361.82,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M321DWX0KZ21J9G6115VJKS1"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:40.994385Z"
+    },
+    {
+      "message_id": "01M321E4379Z465EV2X7SMCZN4",
+      "chat_id": "01M321DWS981WEFD8V4D0GWPGB",
+      "sender": "assistant",
+      "content": "We have two practitioners at the clinic:\n\n1. **William Osler** – General Practice (60-minute appointments), currently taking bookings.\n2. **Andreas Vesalius** – Dentistry (60-minute appointments), currently taking bookings.\n\nLet me know if you'd like to book with either of them!",
+      "event": "message.persisted",
+      "turn_id": "01M321DWX0KZ21J9G6115VJKS1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:41.025827Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

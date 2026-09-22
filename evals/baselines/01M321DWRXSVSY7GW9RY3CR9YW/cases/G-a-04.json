@@ -1,0 +1,229 @@
+{
+  "case_id": "G-a-04",
+  "chat_id": "01M321EB1G049QQQ3QNYP5G6RV",
+  "patient_id": "01M321EB2354RQ1G1V1GQW7DQK",
+  "attempts": 1,
+  "elapsed_seconds": 6.661500098998658,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+    "content": "Do you have a cardiologist I could see?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321EHFZR2KQB5GP3703PSVS",
+    "content": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Do you have a cardiologist I could see?",
+        "query": "Do you have a cardiologist?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "chat_id": "01M321EB1G049QQQ3QNYP5G6RV",
+      "sender": "patient",
+      "content": "Do you have a cardiologist I could see?",
+      "event": "message.persisted",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.186035Z"
+    },
+    {
+      "message": "Do you have a cardiologist I could see?",
+      "message_ids_unified": [
+        "01M321EB3FYGQP1PGSMJ3WAAGJ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.186270Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.188282Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Do you have a cardiologist I could see?",
+          "query": "Do you have a cardiologist?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:49.269061Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1081.27,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:49.269581Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:49.273424Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:49.295230Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:49.295687Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a cardiologist I could see?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:10:49.296396Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 5417.33,
+      "tool_names": [],
+      "text": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability.",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.713957Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5440.85,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 220,
+        "answer_text": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.714199Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.715270Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.16,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 220,
+        "answer_text": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.715422Z"
+    },
+    {
+      "duration_ms": 6540.3,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability.",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M321EB3FYGQP1PGSMJ3WAAGJ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.715569Z"
+    },
+    {
+      "message_id": "01M321EHFZR2KQB5GP3703PSVS",
+      "chat_id": "01M321EB1G049QQQ3QNYP5G6RV",
+      "sender": "assistant",
+      "content": "We don't have a cardiologist on staff. Our current practitioners are:\n\n- William Osler – General Practice\n- Andreas Vesalius – Dentistry\n\nIf either of those specialties fits your need, I'd be happy to check availability.",
+      "event": "message.persisted",
+      "turn_id": "01M321EB3FYGQP1PGSMJ3WAAGJ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:54.728247Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

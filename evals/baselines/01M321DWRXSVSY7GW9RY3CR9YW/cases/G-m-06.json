@@ -1,0 +1,1112 @@
+{
+  "case_id": "G-m-06",
+  "chat_id": "01M321PSVW93G0SPFHRKM88ARZ",
+  "patient_id": "01M321PSWGD1PNFZJ62PGY38SR",
+  "attempts": 1,
+  "elapsed_seconds": 8.641078741988167,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do I need a referral to see a specialist?",
+          "answer": "You can book a visit with any of our practitioners without a referral.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1446,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Do you take Cigna insurance?",
+          "answer": "We accept Cigna insurance.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "question": "When do I pay?",
+          "answer": "Payment is due at the time of service.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1452,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321PSXVKS9CJZ49JS465M91",
+    "content": "Do I need a referral, do you take Cigna, and when do I pay?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321Q105YW87AMTYSMH2TK05",
+    "content": "Here's the information you asked about:\n\n- **Referrals:** You can book a visit with any of our practitioners without a referral.\n- **Cigna insurance:** We accept Cigna insurance.\n- **Payment timing:** Payment is due at the time of service.\n\nLet me know if you have any other questions!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do I need a referral to see a specialist?",
+        "answer": "You can book a visit with any of our practitioners without a referral.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1446,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Do you take Cigna insurance?",
+        "answer": "We accept Cigna insurance.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1449,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      },
+      {
+        "position": 2,
+        "question": "When do I pay?",
+        "answer": "Payment is due at the time of service.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1452,
+            "chunk_index": 0,
+            "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do I need a referral to see a specialist?",
+        "query": "Do I need a referral to see a specialist?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Do you take Cigna insurance?",
+        "query": "Do you take Cigna insurance?"
+      },
+      {
+        "position": 2,
+        "intent": "faq_question",
+        "text": "When do I pay?",
+        "query": "When do I pay?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321PSXVKS9CJZ49JS465M91",
+      "chat_id": "01M321PSVW93G0SPFHRKM88ARZ",
+      "sender": "patient",
+      "content": "Do I need a referral, do you take Cigna, and when do I pay?",
+      "event": "message.persisted",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:25.511068Z"
+    },
+    {
+      "message": "Do I need a referral, do you take Cigna, and when do I pay?",
+      "message_ids_unified": [
+        "01M321PSXVKS9CJZ49JS465M91"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:25.511446Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:25.513470Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do I need a referral to see a specialist?",
+          "query": "Do I need a referral to see a specialist?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Do you take Cigna insurance?",
+          "query": "Do you take Cigna insurance?"
+        },
+        {
+          "position": 2,
+          "intent": "faq_question",
+          "text": "When do I pay?",
+          "query": "When do I pay?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:26.850179Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1337.15,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:26.850617Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:26.853161Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.112883Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.115205Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.5916469,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.36070147,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.3290803,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.31156743,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.30513906,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.2511068,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.22874172,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.20888264,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.1835551,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.125085Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.5916469
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.36070147
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.3290803
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.31156743
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.30513906
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.22874172
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.20888264
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.1835551
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.2511068
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.125469Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.46744955,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33247584,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.25965255,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.25844666,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2576965,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2057286,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.2008717,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.19717549,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.15505767,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.126746Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.46744955
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33247584
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.25965255
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.25844666
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2576965
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2057286
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.2008717
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.19717549
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.15505767
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.127015Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.186250Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.45250785,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.2806684,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.23144111,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.22191596,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.21545759,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.16017821,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.14938831,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.135309,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.13234834,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.194082Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.45250785
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.2806684
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.23144111
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.22191596
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.21545759
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.16017821
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.14938831
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.135309
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.13234834
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.194402Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 288.95,
+      "scores": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.5916469,
+          "rerank_score": 0.921875
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.3290803,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.31156743,
+          "rerank_score": 0.43359375
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.36070147,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.30513906,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.414760Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.921875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "rerank_score": 0.43359375
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.415469Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5916469,
+      "best_rerank_score": 0.921875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.415885Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.\n\nQuestion: Do I need a referral to see a specialist?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:15:27.416154Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 294.97,
+      "scores": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.46744955,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.33247584,
+          "rerank_score": 0.470703125
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.25965255,
+          "rerank_score": 0.435546875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.25844666,
+          "rerank_score": 0.384765625
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2576965,
+          "rerank_score": 0.33203125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.422199Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "rerank_score": 0.85546875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.470703125
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "rerank_score": 0.435546875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.384765625
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.33203125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.422454Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.46744955,
+      "best_rerank_score": 0.85546875,
+      "event": "faq.verdict",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.422609Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Do you take Cigna insurance?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:15:27.422720Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 2,
+      "duration_ms": 310.75,
+      "scores": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.45250785,
+          "rerank_score": 0.7890625
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.2806684,
+          "rerank_score": 0.5078125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.505406Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.7890625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.5078125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.505750Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.45250785,
+      "best_rerank_score": 0.7890625,
+      "event": "faq.verdict",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:27.506017Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: When do I pay?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 2,
+      "node": "answer_faq",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:15:27.506219Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2899.67,
+      "result": {
+        "segment_count": 3,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 134,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do I need a referral to see a specialist?",
+            "verdict": "answered",
+            "answer_text": "You can book a visit with any of our practitioners without a referral."
+          },
+          {
+            "position": 1,
+            "question": "Do you take Cigna insurance?",
+            "verdict": "answered",
+            "answer_text": "We accept Cigna insurance."
+          },
+          {
+            "position": 2,
+            "question": "When do I pay?",
+            "verdict": "answered",
+            "answer_text": "Payment is due at the time of service."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:29.752827Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:29.754016Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 4266.74,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 285,
+        "answer_text": "Here's the information you asked about:\n\n- **Referrals:** You can book a visit with any of our practitioners without a referral.\n- **Cigna insurance:** We accept Cigna insurance.\n- **Payment timing:** Payment is due at the time of service.\n\nLet me know if you have any other questions!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:32.734838Z"
+    },
+    {
+      "duration_ms": 8522.13,
+      "segment_count": 3,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1446,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+              "similarity_score": 0.5916469,
+              "rerank_score": 0.921875
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1449,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.46744955,
+              "rerank_score": 0.85546875
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1452,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+              "similarity_score": 0.45250785,
+              "rerank_score": 0.7890625
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Here's the information you asked about:\n\n- **Referrals:** You can book a visit with any of our practitioners without a referral.\n- **Cigna insurance:** We accept Cigna insurance.\n- **Payment timing:** Payment is due at the time of service.\n\nLet me know if you have any other questions!",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M321PSXVKS9CJZ49JS465M91"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:32.735275Z"
+    },
+    {
+      "message_id": "01M321Q105YW87AMTYSMH2TK05",
+      "chat_id": "01M321PSVW93G0SPFHRKM88ARZ",
+      "sender": "assistant",
+      "content": "Here's the information you asked about:\n\n- **Referrals:** You can book a visit with any of our practitioners without a referral.\n- **Cigna insurance:** We accept Cigna insurance.\n- **Payment timing:** Payment is due at the time of service.\n\nLet me know if you have any other questions!",
+      "event": "message.persisted",
+      "turn_id": "01M321PSXVKS9CJZ49JS465M91",
+      "level": "info",
+      "timestamp": "2026-09-21T13:15:32.758873Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

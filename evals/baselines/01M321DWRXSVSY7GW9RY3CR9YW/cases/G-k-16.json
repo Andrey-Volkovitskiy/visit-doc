@@ -1,0 +1,502 @@
+{
+  "case_id": "G-k-16",
+  "chat_id": "01M321NMCJQ66JX9RSVFVGXZVH",
+  "patient_id": "01M321NMD6TC1WTN7RZGE4R3YW",
+  "attempts": 1,
+  "elapsed_seconds": 4.509814662975259,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I pay half with my HSA card and half in cash for the same visit?",
+          "answer": null,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+    "content": "Can I pay half with my HSA card and half in cash for the same visit?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321NRR137PEEJ1WQQHCMM0X",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I pay half with my HSA card and half in cash for the same visit?",
+        "answer": null,
+        "verdict": "abstained_generation",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I pay half with my HSA card and half in cash for the same visit?",
+        "query": "Can I pay half with my HSA card and half in cash for the same visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "chat_id": "01M321NMCJQ66JX9RSVFVGXZVH",
+      "sender": "patient",
+      "content": "Can I pay half with my HSA card and half in cash for the same visit?",
+      "event": "message.persisted",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:47.137156Z"
+    },
+    {
+      "message": "Can I pay half with my HSA card and half in cash for the same visit?",
+      "message_ids_unified": [
+        "01M321NMEPZ6X1FB9TDMTAEHB4"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:47.137558Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:47.139536Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I pay half with my HSA card and half in cash for the same visit?",
+          "query": "Can I pay half with my HSA card and half in cash for the same visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.155106Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1015.9,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.155435Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.157394Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.407536Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.5058272,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.34652916,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.31704324,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2852063,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.27629408,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.25384805,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.22992876,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.21527573,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.21076941,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.422969Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.5058272
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.34652916
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.31704324
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2852063
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.27629408
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.22992876
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.21527573
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.21076941
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.25384805
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.423346Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 272.7,
+      "scores": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.5058272,
+          "rerank_score": 0.62109375
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.34652916,
+          "rerank_score": 0.4296875
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.31704324,
+          "rerank_score": 0.423828125
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.27629408,
+          "rerank_score": 0.318359375
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.2852063,
+          "rerank_score": 0.302734375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.696335Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.62109375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.4296875
+        },
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "rerank_score": 0.423828125
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.318359375
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.302734375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.696827Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5058272,
+      "best_rerank_score": 0.62109375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:48.697295Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: Can I pay half with my HSA card and half in cash for the same visit?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:14:48.697541Z"
+    },
+    {
+      "gates_verdict": "answered",
+      "survivor_count": 1,
+      "malformed": false,
+      "event": "faq.no_answer",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.515661Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 3358.63,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I pay half with my HSA card and half in cash for the same visit?",
+            "verdict": "abstained_generation",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.516005Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.517435Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.16,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.517585Z"
+    },
+    {
+      "duration_ms": 4390.88,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321NMEPZ6X1FB9TDMTAEHB4"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.517767Z"
+    },
+    {
+      "message_id": "01M321NRR137PEEJ1WQQHCMM0X",
+      "chat_id": "01M321NMCJQ66JX9RSVFVGXZVH",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.527860Z"
+    },
+    {
+      "chat_id": "01M321NMCJQ66JX9RSVFVGXZVH",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M321NMEPZ6X1FB9TDMTAEHB4",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:51.536881Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

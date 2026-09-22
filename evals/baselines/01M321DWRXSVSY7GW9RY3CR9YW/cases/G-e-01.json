@@ -1,0 +1,192 @@
+{
+  "case_id": "G-e-01",
+  "chat_id": "01M321JV0AA6Z5CXT193F4Z60K",
+  "patient_id": "01M321JV0YVK3PCJ07N09WWW2J",
+  "attempts": 1,
+  "elapsed_seconds": 1.168624053010717,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321JV282T202N54PZAP02CP",
+    "content": "I'd like you to write me a sick note for my employer.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321JW35CYC4B4N0X9CXSXGJ",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "I'd like you to write me a sick note for my employer.",
+        "query": "Write a sick note for my employer"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321JV282T202N54PZAP02CP",
+      "chat_id": "01M321JV0AA6Z5CXT193F4Z60K",
+      "sender": "patient",
+      "content": "I'd like you to write me a sick note for my employer.",
+      "event": "message.persisted",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.603830Z"
+    },
+    {
+      "message": "I'd like you to write me a sick note for my employer.",
+      "message_ids_unified": [
+        "01M321JV282T202N54PZAP02CP"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.604143Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:15.606419Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "I'd like you to write me a sick note for my employer.",
+          "query": "Write a sick note for my employer"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.633811Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1027.66,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.634073Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.636263Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.29,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.636547Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.638201Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.27,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.638481Z"
+    },
+    {
+      "duration_ms": 1045.6,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321JV282T202N54PZAP02CP"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.638717Z"
+    },
+    {
+      "message_id": "01M321JW35CYC4B4N0X9CXSXGJ",
+      "chat_id": "01M321JV0AA6Z5CXT193F4Z60K",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.653800Z"
+    },
+    {
+      "chat_id": "01M321JV0AA6Z5CXT193F4Z60K",
+      "reason": "not_authorized",
+      "message_id": "01M321JV282T202N54PZAP02CP",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M321JV282T202N54PZAP02CP",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:16.667111Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

@@ -1,0 +1,678 @@
+{
+  "case_id": "G-o-01",
+  "chat_id": "01M321RJBPAB5MJXE3D5BQQMR6",
+  "patient_id": "01M321RJCAB97GT1DN6D7R5J50",
+  "attempts": 1,
+  "elapsed_seconds": 11.034473987994716,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 1,
+          "question": "How much is a dentist visit if I'm paying out of pocket?",
+          "answer": "A dentist visit is $180 out-of-pocket.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321RJDMH24FZW6CJPFN4T9T",
+    "content": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321RVTTXEZC8Y7PGCH6QP3B",
+    "content": "A dentist visit is $180 if you're paying out of pocket.\n\nFor your appointment request, Dr. Andreas Vesalius has openings on Tuesday, March 3rd in the morning at 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm slots, though those are midday/afternoon). Let me know which time works for you and I'll get it booked.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 1,
+        "question": "How much is a dentist visit if I'm paying out of pocket?",
+        "answer": "A dentist visit is $180 out-of-pocket.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1451,
+            "chunk_index": 0,
+            "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "When is a dentist available on Tuesday morning?",
+        "query": "When is a dentist available on Tuesday morning?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "How much is a dentist visit if I'm paying out of pocket?",
+        "query": "How much is a dentist visit if I'm paying out of pocket?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "chat_id": "01M321RJBPAB5MJXE3D5BQQMR6",
+      "sender": "patient",
+      "content": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+      "event": "message.persisted",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:23.359094Z"
+    },
+    {
+      "message": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+      "message_ids_unified": [
+        "01M321RJDMH24FZW6CJPFN4T9T"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:23.359525Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:23.362297Z"
+    },
+    {
+      "intents": [
+        "booking",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "When is a dentist available on Tuesday morning?",
+          "query": "When is a dentist available on Tuesday morning?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "How much is a dentist visit if I'm paying out of pocket?",
+          "query": "How much is a dentist visit if I'm paying out of pocket?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.622362Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1260.59,
+      "result": {
+        "intents": [
+          "booking",
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.622889Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.625648Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.626459Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.635343Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.635597Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is a dentist available on Tuesday morning?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:16:24.635793Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.887864Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.66659737,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.43283325,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.30890992,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.28248435,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2634083,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.25513232,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.24780187,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.24303281,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.20210734,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.895647Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.66659737
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.43283325
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.30890992
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.28248435
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2634083
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.24780187
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.24303281
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.20210734
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.25513232
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:24.896003Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 307.56,
+      "scores": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.66659737,
+          "rerank_score": 0.89453125
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.43283325,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.30890992,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.28248435,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2634083,
+          "rerank_score": 0.3125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:25.203791Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "rerank_score": 0.89453125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.3125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:25.204032Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.66659737,
+      "best_rerank_score": 0.89453125,
+      "event": "faq.verdict",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:25.204173Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.\n\nQuestion: How much is a dentist visit if I'm paying out of pocket?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:16:25.204293Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2716.6,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 38,
+        "answer_text": "A dentist visit is $180 out-of-pocket.",
+        "segment_answers": [
+          {
+            "position": 1,
+            "question": "How much is a dentist visit if I'm paying out of pocket?",
+            "verdict": "answered",
+            "answer_text": "A dentist visit is $180 out-of-pocket."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:27.342242Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 4706.32,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:28.055779Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M321DWQNK48HHCX85YZ5PS7D",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:28.056054Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:28.073055Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 17.13,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:28.073299Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is a dentist available on Tuesday morning?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01W7afUVR9RBnUAxHA3q8DJz",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M321DWQNK48HHCX85YZ5PS7D",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01W7afUVR9RBnUAxHA3q8DJz",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:16:28.073571Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2408.35,
+      "tool_names": [],
+      "text": "Our dentist, Andreas Vesalius, has these openings on Tuesday, March 3rd in the morning: 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm, but those are midday/afternoon). Would you like to book one of these?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:30.482104Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 7142.39,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 219,
+        "answer_text": "Our dentist, Andreas Vesalius, has these openings on Tuesday, March 3rd in the morning: 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm, but those are midday/afternoon). Would you like to book one of these?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:30.482332Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:30.483229Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2497.98,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 1,
+        "answer_chars": 325,
+        "answer_text": "A dentist visit is $180 if you're paying out of pocket.\n\nFor your appointment request, Dr. Andreas Vesalius has openings on Tuesday, March 3rd in the morning at 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm slots, though those are midday/afternoon). Let me know which time works for you and I'll get it booked."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:32.981300Z"
+    },
+    {
+      "duration_ms": 10919.63,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+              "similarity_score": 0.66659737,
+              "rerank_score": 0.89453125
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "A dentist visit is $180 if you're paying out of pocket.\n\nFor your appointment request, Dr. Andreas Vesalius has openings on Tuesday, March 3rd in the morning at 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm slots, though those are midday/afternoon). Let me know which time works for you and I'll get it booked.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M321RJDMH24FZW6CJPFN4T9T"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:32.981810Z"
+    },
+    {
+      "message_id": "01M321RVTTXEZC8Y7PGCH6QP3B",
+      "chat_id": "01M321RJBPAB5MJXE3D5BQQMR6",
+      "sender": "assistant",
+      "content": "A dentist visit is $180 if you're paying out of pocket.\n\nFor your appointment request, Dr. Andreas Vesalius has openings on Tuesday, March 3rd in the morning at 9:00am, 10:00am, and 11:00am (he also has 12:00pm and 1:00pm slots, though those are midday/afternoon). Let me know which time works for you and I'll get it booked.",
+      "event": "message.persisted",
+      "turn_id": "01M321RJDMH24FZW6CJPFN4T9T",
+      "level": "info",
+      "timestamp": "2026-09-21T13:16:32.992374Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

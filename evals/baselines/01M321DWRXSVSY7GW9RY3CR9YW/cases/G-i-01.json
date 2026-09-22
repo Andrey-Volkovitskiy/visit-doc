@@ -1,0 +1,195 @@
+{
+  "case_id": "G-i-01",
+  "chat_id": "01M321KQW9CZV08BXJQYBZ5DJJ",
+  "patient_id": "01M321KQX94GAWC3849QGCSFPE",
+  "attempts": 1,
+  "elapsed_seconds": 2.3891832350054756,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321KQZJFH46SF501WTCRHVQ",
+    "content": "Who won the football last night?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321KT53584NKKH3KHTSEZ1B",
+    "content": "I'm not sure what you're looking for—this is a medical clinic message system. Is there something I can help you with regarding the clinic?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Who won the football last night?",
+        "query": "Who won the football last night?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "chat_id": "01M321KQW9CZV08BXJQYBZ5DJJ",
+      "sender": "patient",
+      "content": "Who won the football last night?",
+      "event": "message.persisted",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:45.213369Z"
+    },
+    {
+      "message": "Who won the football last night?",
+      "message_ids_unified": [
+        "01M321KQZJFH46SF501WTCRHVQ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:45.213605Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:45.216801Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Who won the football last night?",
+          "query": "Who won the football last night?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:46.453231Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1236.65,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:46.453437Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:46.454836Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Who won the football last night?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:13:46.455002Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 961.16,
+      "result": {
+        "answer_chars": 138,
+        "answer_text": "I'm not sure what you're looking for—this is a medical clinic message system. Is there something I can help you with regarding the clinic?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:47.416083Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:47.419097Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.28,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 138,
+        "answer_text": "I'm not sure what you're looking for—this is a medical clinic message system. Is there something I can help you with regarding the clinic?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:47.419361Z"
+    },
+    {
+      "duration_ms": 2216.91,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not sure what you're looking for—this is a medical clinic message system. Is there something I can help you with regarding the clinic?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321KQZJFH46SF501WTCRHVQ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:47.419615Z"
+    },
+    {
+      "message_id": "01M321KT53584NKKH3KHTSEZ1B",
+      "chat_id": "01M321KQW9CZV08BXJQYBZ5DJJ",
+      "sender": "assistant",
+      "content": "I'm not sure what you're looking for—this is a medical clinic message system. Is there something I can help you with regarding the clinic?",
+      "event": "message.persisted",
+      "turn_id": "01M321KQZJFH46SF501WTCRHVQ",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:47.446612Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

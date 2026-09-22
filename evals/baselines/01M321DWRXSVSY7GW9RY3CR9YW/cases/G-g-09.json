@@ -1,0 +1,195 @@
+{
+  "case_id": "G-g-09",
+  "chat_id": "01M321KJ76R5A8KR8FXG9BXMYB",
+  "patient_id": "01M321KJ7R6SHNB92HA32EQ0DE",
+  "attempts": 1,
+  "elapsed_seconds": 1.860187510959804,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321KJ95V3RERHWRJX3C7ZM1",
+    "content": "asdfgh",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321KKZB3CVA8CD833MTBBPA",
+    "content": "I'm not quite sure what you mean by that message. Could you rephrase what you'd like to let us know?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "asdfgh",
+        "query": "asdfgh"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "chat_id": "01M321KJ76R5A8KR8FXG9BXMYB",
+      "sender": "patient",
+      "content": "asdfgh",
+      "event": "message.persisted",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:39.377911Z"
+    },
+    {
+      "message": "asdfgh",
+      "message_ids_unified": [
+        "01M321KJ95V3RERHWRJX3C7ZM1"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:39.378169Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:39.380866Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "asdfgh",
+          "query": "asdfgh"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:40.292123Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 911.53,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:40.292392Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:40.294541Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "asdfgh"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:13:40.294753Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 799.04,
+      "result": {
+        "answer_chars": 100,
+        "answer_text": "I'm not quite sure what you mean by that message. Could you rephrase what you'd like to let us know?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.093572Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.094634Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.17,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 100,
+        "answer_text": "I'm not quite sure what you mean by that message. Could you rephrase what you'd like to let us know?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.094792Z"
+    },
+    {
+      "duration_ms": 1729.5,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not quite sure what you mean by that message. Could you rephrase what you'd like to let us know?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321KJ95V3RERHWRJX3C7ZM1"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.094920Z"
+    },
+    {
+      "message_id": "01M321KKZB3CVA8CD833MTBBPA",
+      "chat_id": "01M321KJ76R5A8KR8FXG9BXMYB",
+      "sender": "assistant",
+      "content": "I'm not quite sure what you mean by that message. Could you rephrase what you'd like to let us know?",
+      "event": "message.persisted",
+      "turn_id": "01M321KJ95V3RERHWRJX3C7ZM1",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:41.115975Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

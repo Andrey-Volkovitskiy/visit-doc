@@ -1,0 +1,316 @@
+{
+  "case_id": "G-a-02",
+  "chat_id": "01M321E465249QZKH3BA26YWP3",
+  "patient_id": "01M321E46RQ9PBTF7GTX5XXNWH",
+  "attempts": 1,
+  "elapsed_seconds": 8.314595267991535,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321E485BJJGGGMJQTNW642M",
+    "content": "Do you have a dentist?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321EAZC5Q65E62AX56GK2HJ",
+    "content": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Do you have a dentist?",
+        "query": "Do you have a dentist?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321E485BJJGGGMJQTNW642M",
+      "chat_id": "01M321E465249QZKH3BA26YWP3",
+      "sender": "patient",
+      "content": "Do you have a dentist?",
+      "event": "message.persisted",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:41.168265Z"
+    },
+    {
+      "message": "Do you have a dentist?",
+      "message_ids_unified": [
+        "01M321E485BJJGGGMJQTNW642M"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:41.168592Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:41.170769Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Do you have a dentist?",
+          "query": "Do you have a dentist?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:42.342527Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1172.0,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:42.342759Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:42.344468Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:42.356353Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:42.356643Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a dentist?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:10:42.356824Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 4710.61,
+      "tool_names": [
+        "list_practitioners"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:45.765334Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:45.766088Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:45.778337Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 12.28,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:45.778592Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a dentist?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01JpsPWWhQ357xvH3W8TxT6A",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_practitioners",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01JpsPWWhQ357xvH3W8TxT6A",
+              "content": "{\"practitioners\": [{\"id\": \"01M321DWQD4Y1DAF7F84TFDZNA\", \"full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"appointment_duration_minutes\": 60, \"bookable\": true}, {\"id\": \"01M321DWQNK48HHCX85YZ5PS7D\", \"full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"appointment_duration_minutes\": 60, \"bookable\": true}]}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:10:45.778814Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2260.1,
+      "tool_names": [],
+      "text": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.039100Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 6997.22,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 160,
+        "answer_text": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.039416Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.040567Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.15,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 160,
+        "answer_text": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.040710Z"
+    },
+    {
+      "duration_ms": 8185.88,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M321E485BJJGGGMJQTNW642M"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.040848Z"
+    },
+    {
+      "message_id": "01M321EAZC5Q65E62AX56GK2HJ",
+      "chat_id": "01M321E465249QZKH3BA26YWP3",
+      "sender": "assistant",
+      "content": "Yes — we have Andreas Vesalius, who specializes in Dentistry, and he's currently taking appointments. Would you like me to check his availability for a booking?",
+      "event": "message.persisted",
+      "turn_id": "01M321E485BJJGGGMJQTNW642M",
+      "level": "info",
+      "timestamp": "2026-09-21T13:10:48.063470Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

@@ -1,0 +1,192 @@
+{
+  "case_id": "G-e-05",
+  "chat_id": "01M321JZR9AXAB1TFWV4GV50Z1",
+  "patient_id": "01M321JZRT035PTNB84TYNT0FP",
+  "attempts": 1,
+  "elapsed_seconds": 1.0500129680149257,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321JZT44JARYWY69JV8XQ4P",
+    "content": "Can you refund my last visit?",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321K0QKZT9XGNM13V3JSYSX",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Can you refund my last visit?",
+        "query": "Can you refund my last visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "chat_id": "01M321JZR9AXAB1TFWV4GV50Z1",
+      "sender": "patient",
+      "content": "Can you refund my last visit?",
+      "event": "message.persisted",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.463986Z"
+    },
+    {
+      "message": "Can you refund my last visit?",
+      "message_ids_unified": [
+        "01M321JZT44JARYWY69JV8XQ4P"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.464273Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:20.466184Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Can you refund my last visit?",
+          "query": "Can you refund my last visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.387725Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 921.81,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.387991Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.389561Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.26,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.389810Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.390824Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.15,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.390963Z"
+    },
+    {
+      "duration_ms": 938.19,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321JZT44JARYWY69JV8XQ4P"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.391225Z"
+    },
+    {
+      "message_id": "01M321K0QKZT9XGNM13V3JSYSX",
+      "chat_id": "01M321JZR9AXAB1TFWV4GV50Z1",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.403657Z"
+    },
+    {
+      "chat_id": "01M321JZR9AXAB1TFWV4GV50Z1",
+      "reason": "not_authorized",
+      "message_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M321JZT44JARYWY69JV8XQ4P",
+      "level": "info",
+      "timestamp": "2026-09-21T13:13:21.412843Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

@@ -1,0 +1,192 @@
+{
+  "case_id": "G-b-04",
+  "chat_id": "01M321HXW8EH5TP8VGVDDCA91M",
+  "patient_id": "01M321HXWTNB5B48BJ004BXB2W",
+  "attempts": 1,
+  "elapsed_seconds": 1.2120954900747165,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321HXY66NG01Y4SVHWTYCJY",
+    "content": "I've taken too many of my tablets.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321HZ03RVDYS1N4P4VMJ43J",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I've taken too many of my tablets.",
+        "query": "I've taken too many of my tablets."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "chat_id": "01M321HXW8EH5TP8VGVDDCA91M",
+      "sender": "patient",
+      "content": "I've taken too many of my tablets.",
+      "event": "message.persisted",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:45.777222Z"
+    },
+    {
+      "message": "I've taken too many of my tablets.",
+      "message_ids_unified": [
+        "01M321HXY66NG01Y4SVHWTYCJY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:45.777463Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:45.779526Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I've taken too many of my tablets.",
+          "query": "I've taken too many of my tablets."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.844316Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1065.07,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.844586Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.845942Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.19,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.846119Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.847044Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.14,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.847180Z"
+    },
+    {
+      "duration_ms": 1080.93,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321HXY66NG01Y4SVHWTYCJY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.847336Z"
+    },
+    {
+      "message_id": "01M321HZ03RVDYS1N4P4VMJ43J",
+      "chat_id": "01M321HXW8EH5TP8VGVDDCA91M",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.867611Z"
+    },
+    {
+      "chat_id": "01M321HXW8EH5TP8VGVDDCA91M",
+      "reason": "urgent_condition",
+      "message_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M321HXY66NG01Y4SVHWTYCJY",
+      "level": "info",
+      "timestamp": "2026-09-21T13:12:46.882553Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null
+}

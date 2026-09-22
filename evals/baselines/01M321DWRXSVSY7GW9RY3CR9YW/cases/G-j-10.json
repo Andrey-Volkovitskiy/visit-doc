@@ -1,0 +1,500 @@
+{
+  "case_id": "G-j-10",
+  "chat_id": "01M321MRMNJA3M5H3QBNB2SR1V",
+  "patient_id": "01M321MRN75XBKFXTHYD5PWPH7",
+  "attempts": 1,
+  "elapsed_seconds": 3.1735596359940246,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "How much is a dentist visit if I'm paying myself?",
+          "answer": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321MRPNKCT87QKDW490WMN9",
+    "content": "How much is a dentist visit if I'm paying myself?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321MVPPQM6DDWBT9WMNFVT7",
+    "content": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "How much is a dentist visit if I'm paying myself?",
+        "answer": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1451,
+            "chunk_index": 0,
+            "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "How much is a dentist visit if I'm paying myself?",
+        "query": "How much does a dentist visit cost if I'm paying myself?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321MRPNKCT87QKDW490WMN9",
+      "chat_id": "01M321MRMNJA3M5H3QBNB2SR1V",
+      "sender": "patient",
+      "content": "How much is a dentist visit if I'm paying myself?",
+      "event": "message.persisted",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:18.720010Z"
+    },
+    {
+      "message": "How much is a dentist visit if I'm paying myself?",
+      "message_ids_unified": [
+        "01M321MRPNKCT87QKDW490WMN9"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:18.720407Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:18.722862Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "How much is a dentist visit if I'm paying myself?",
+          "query": "How much does a dentist visit cost if I'm paying myself?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:19.745218Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1022.58,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:19.745428Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:19.747302Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.002634Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.6455008,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.39658383,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.32952076,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.2808149,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2720708,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.26244527,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.2565593,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.24211507,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.2013661,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.011285Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.6455008
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.39658383
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.32952076
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.2808149
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2720708
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.24211507
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.2013661
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.26244527
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.2565593
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.011726Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 274.62,
+      "scores": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.6455008,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.39658383,
+          "rerank_score": 0.4921875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.32952076,
+          "rerank_score": 0.443359375
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.2808149,
+          "rerank_score": 0.328125
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.2720708,
+          "rerank_score": 0.296875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.286669Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "rerank_score": 0.82421875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.4921875
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.443359375
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "rerank_score": 0.328125
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.296875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.287260Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6455008,
+      "best_rerank_score": 0.82421875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:20.287592Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.\n\nQuestion: How much is a dentist visit if I'm paying myself?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:14:20.287770Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2029.73,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 65,
+        "answer_text": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "How much is a dentist visit if I'm paying myself?",
+            "verdict": "answered",
+            "answer_text": "A dentist appointment costs $180 if you are paying out-of-pocket."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:21.777073Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:21.778136Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.16,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 65,
+        "answer_text": "A dentist appointment costs $180 if you are paying out-of-pocket."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:21.778282Z"
+    },
+    {
+      "duration_ms": 3068.82,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+              "similarity_score": 0.6455008,
+              "rerank_score": 0.82421875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M321MRPNKCT87QKDW490WMN9"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:21.778433Z"
+    },
+    {
+      "message_id": "01M321MVPPQM6DDWBT9WMNFVT7",
+      "chat_id": "01M321MRMNJA3M5H3QBNB2SR1V",
+      "sender": "assistant",
+      "content": "A dentist appointment costs $180 if you are paying out-of-pocket.",
+      "event": "message.persisted",
+      "turn_id": "01M321MRPNKCT87QKDW490WMN9",
+      "level": "info",
+      "timestamp": "2026-09-21T13:14:21.789200Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}

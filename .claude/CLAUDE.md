@@ -107,11 +107,14 @@ then scores and prints the report; `make eval-score RUN=<run_id>` re-scores a st
 `BAND=<band>`) reports what moved between two stored runs, and `make eval-band
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
-directory path, so a committed run can be named as a baseline where it sits. **No stored run is
-scoreable today.** The golden set was reworked into v2, whose case ids are all new, so the 2b record
-under `specs/012-golden-set-metrics/evaluation/` selects ids the set no longer holds and both
-`compare` and `score` refuse it. It stays frozen as the record FR-048a made it; a current baseline
-needs a fresh `eval-run`.
+directory path, so a committed run can be named as a baseline where it sits. **The baseline is
+`evals/baselines/01M321DWRXSVSY7GW9RY3CR9YW`** - the whole set at 97 cases, taken on `12341e1`,
+the first v2 run that is scoreable. The 2b record under `specs/012-golden-set-metrics/evaluation/`
+is not: the set was reworked into v2, whose case ids are all new, so that record selects ids the
+set no longer holds and both `compare` and `score` refuse it. It stays frozen as the record
+FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
+is evidence rather than a threshold - there is still no noise band, so nothing there is a number a
+later run has to beat.
 A fifth target, `make eval-build-set`, re-renders `evals/golden/cases.json` from its declaration in
 `golden_harness.golden_set` — the JSON is an artifact, and `tests/test_golden_set.py` fails
 byte-for-byte when the two disagree, so the set is changed by editing the declaration and

@@ -424,10 +424,12 @@ make eval-compare BASE=<run> NEW=<run> BAND=<band>  # ... and whether it is outs
 make eval-band RUNS=<id>,<id>,<id>,<id>,<id>        # measure the noise from five full runs
 ```
 
-`BASE` and `NEW` each take a run id under `.run/evals/` **or** a directory path, so the run
-committed under `specs/012-golden-set-metrics/evaluation/` is usable as a baseline where it sits.
-It is the *documented* baseline a comparison starts from, and naming it is the caller's job: neither
-command ever defaults to a path under `specs/`.
+`BASE` and `NEW` each take a run id under `.run/evals/` **or** a directory path, so a run
+committed under `evals/baselines/` is usable as a baseline where it sits.
+`evals/baselines/01M321DWRXSVSY7GW9RY3CR9YW` is the *documented* baseline a comparison starts
+from, and naming it is the caller's job: neither command ever defaults to it. The 2b record under
+`specs/012-golden-set-metrics/evaluation/` is not usable as one - its v1 case ids are not in the
+set any more, so `compare` and `score` both refuse it.
 
 ### What a comparison is
 

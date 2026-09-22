@@ -1,0 +1,678 @@
+{
+  "case_id": "G-q-07",
+  "chat_id": "01M321VBDJ38AMTKFPS2R03RQ6",
+  "patient_id": "01M321VBE5Q74CFFWPZ20AFPWK",
+  "attempts": 1,
+  "elapsed_seconds": 10.179721366032027,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "How much is a GP visit if I'm paying cash?",
+          "answer": "A GP visit is $120 out-of-pocket.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M321VBFEB1CGJSM946PX07Y8",
+    "content": "How much is a GP visit if I'm paying cash, and could I see one on Wednesday morning?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M321VNA6TB71DWQVZAA040MD",
+    "content": "A GP visit costs $120 if paying cash.\n\nFor your appointment request, Dr. William Osler (General Practice) has open slots on Wednesday, March 4th at 9:00am, 10:00am, 11:00am, and 12:00pm. Let me know which time works for you and I'll go ahead and book it.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "How much is a GP visit if I'm paying cash?",
+        "answer": "A GP visit is $120 out-of-pocket.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 1451,
+            "chunk_index": 0,
+            "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "How much is a GP visit if I'm paying cash?",
+        "query": "How much is a GP visit if I'm paying cash?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Could I see a GP on Wednesday morning?",
+        "query": "Could I see a GP on Wednesday morning?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "chat_id": "01M321VBDJ38AMTKFPS2R03RQ6",
+      "sender": "patient",
+      "content": "How much is a GP visit if I'm paying cash, and could I see one on Wednesday morning?",
+      "event": "message.persisted",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.553455Z"
+    },
+    {
+      "message": "How much is a GP visit if I'm paying cash, and could I see one on Wednesday morning?",
+      "message_ids_unified": [
+        "01M321VBFEB1CGJSM946PX07Y8"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.553696Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:54.556168Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "How much is a GP visit if I'm paying cash?",
+          "query": "How much is a GP visit if I'm paying cash?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Could I see a GP on Wednesday morning?",
+          "query": "Could I see a GP on Wednesday morning?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.831622Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1275.76,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.831918Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.834057Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.835136Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.844549Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:55.844909Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Could I see a GP on Wednesday morning?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:55.845063Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.094208Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 9,
+      "candidates": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.59414315,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.4200634,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.38741916,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.3541286,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.31170505,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.2946027,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.277264,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.2745149,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.22152866,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.102930Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 9,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.59414315
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.4200634
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.38741916
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.3541286
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.31170505
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1449,
+          "chunk_index": 0,
+          "similarity_score": 0.22152866
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 1453,
+          "chunk_index": 0,
+          "similarity_score": 0.2946027
+        },
+        {
+          "entry_id": 1447,
+          "chunk_index": 0,
+          "similarity_score": 0.277264
+        },
+        {
+          "entry_id": 1454,
+          "chunk_index": 0,
+          "similarity_score": 0.2745149
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.103260Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 370.68,
+      "scores": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "similarity_score": 0.59414315,
+          "rerank_score": 0.796875
+        },
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "similarity_score": 0.4200634,
+          "rerank_score": 0.490234375
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "similarity_score": 0.38741916,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "similarity_score": 0.3541286,
+          "rerank_score": 0.373046875
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "similarity_score": 0.31170505,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.474235Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 1451,
+          "chunk_index": 0,
+          "rerank_score": 0.796875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 1450,
+          "chunk_index": 0,
+          "rerank_score": 0.490234375
+        },
+        {
+          "entry_id": 1452,
+          "chunk_index": 0,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 1446,
+          "chunk_index": 0,
+          "rerank_score": 0.373046875
+        },
+        {
+          "entry_id": 1448,
+          "chunk_index": 0,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.474751Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.59414315,
+      "best_rerank_score": 0.796875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:56.475177Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.\n\nQuestion: How much is a GP visit if I'm paying cash?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:56.475413Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2716.36,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 33,
+        "answer_text": "A GP visit is $120 out-of-pocket.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "How much is a GP visit if I'm paying cash?",
+            "verdict": "answered",
+            "answer_text": "A GP visit is $120 out-of-pocket."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:58.550442Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 3459.89,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:59.305114Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M321DWQD4Y1DAF7F84TFDZNA",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:59.305339Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:59.317968Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 12.77,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:17:59.318244Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Could I see a GP on Wednesday morning?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01VXywtYMuzSQwRqtXq4Cd35",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M321DWQD4Y1DAF7F84TFDZNA",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01VXywtYMuzSQwRqtXq4Cd35",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "debug",
+      "timestamp": "2026-09-21T13:17:59.318450Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2767.24,
+      "tool_names": [],
+      "text": "On Wednesday, March 4th, Dr. William Osler (General Practice) has these morning slots open: 9:00am, 10:00am, 11:00am, and 12:00pm.\n\nWould you like me to book one of these for you?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:02.085901Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 6251.36,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 179,
+        "answer_text": "On Wednesday, March 4th, Dr. William Osler (General Practice) has these morning slots open: 9:00am, 10:00am, 11:00am, and 12:00pm.\n\nWould you like me to book one of these for you?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:02.086178Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:02.087014Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2515.68,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 1,
+        "answer_chars": 254,
+        "answer_text": "A GP visit costs $120 if paying cash.\n\nFor your appointment request, Dr. William Osler (General Practice) has open slots on Wednesday, March 4th at 9:00am, 10:00am, 11:00am, and 12:00pm. Let me know which time works for you and I'll go ahead and book it."
+      },
+      "event": "node.completed",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:04.602709Z"
+    },
+    {
+      "duration_ms": 10060.04,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 1451,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+              "similarity_score": 0.59414315,
+              "rerank_score": 0.796875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "A GP visit costs $120 if paying cash.\n\nFor your appointment request, Dr. William Osler (General Practice) has open slots on Wednesday, March 4th at 9:00am, 10:00am, 11:00am, and 12:00pm. Let me know which time works for you and I'll go ahead and book it.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M321VBFEB1CGJSM946PX07Y8"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:04.603100Z"
+    },
+    {
+      "message_id": "01M321VNA6TB71DWQVZAA040MD",
+      "chat_id": "01M321VBDJ38AMTKFPS2R03RQ6",
+      "sender": "assistant",
+      "content": "A GP visit costs $120 if paying cash.\n\nFor your appointment request, Dr. William Osler (General Practice) has open slots on Wednesday, March 4th at 9:00am, 10:00am, 11:00am, and 12:00pm. Let me know which time works for you and I'll go ahead and book it.",
+      "event": "message.persisted",
+      "turn_id": "01M321VBFEB1CGJSM946PX07Y8",
+      "level": "info",
+      "timestamp": "2026-09-21T13:18:04.621139Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null
+}
