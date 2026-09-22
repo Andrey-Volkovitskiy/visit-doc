@@ -4,9 +4,11 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Identity,
     Index,
     String,
     Text,
@@ -286,9 +288,16 @@ class Message(Base):
             "attention_mark",
             postgresql_where=text("attention_mark IS NOT NULL"),
         ),
+        # A thread is read in `seq` order, one chat at a time.
+        Index("ix_messages_chat_seq", "chat_id", "seq"),
     )
 
     id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)
+    # The order of the writes, assigned by the database at insert and by nothing else.
+    # A thread is ordered by this, never by `created_at`: that is the transaction's
+    # start time, and a clock stepped backwards between two writes stamps the later row
+    # earlier - the thread would come back reply-before-question.
+    seq: Mapped[int] = mapped_column(BigInteger, Identity(always=True), nullable=False)
     chat_id: Mapped[str] = mapped_column(
         String(_ULID_LENGTH), ForeignKey("chats.id", ondelete="CASCADE"), nullable=False
     )

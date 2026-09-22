@@ -494,18 +494,15 @@ async def create_assistant_reply_unless_taken_over(
 
 
 async def list_messages(session: AsyncSession, chat_id: str) -> list[Message]:
-    """Return `chat_id`'s messages in chronological order.
+    """Return `chat_id`'s messages in the order they were written.
 
-    Ordered by `created_at` first, not `id` - ULIDs are only monotonic within the
-    generating process's clock/randomness and aren't guaranteed to sort in true
-    creation order across concurrent writers. `id` breaks a tie: `created_at` is the
-    transaction's start time, so two messages can share one, and without a tie-break
-    Postgres returns them in whatever order it finds them - one thread, two orders.
+    Ordered by `seq`, which the database assigns at insert - not by `created_at` or
+    `id`, both of which come from a clock. A clock stepped backwards between two writes
+    stamps the later row earlier and gives it the smaller ULID, and the thread would
+    come back reply-before-question.
     """
     result = await session.execute(
-        select(Message)
-        .where(Message.chat_id == chat_id)
-        .order_by(Message.created_at.asc(), Message.id.asc())
+        select(Message).where(Message.chat_id == chat_id).order_by(Message.seq.asc())
     )
     return list(result.scalars().all())
 
@@ -636,7 +633,7 @@ def _taken_over_since(message_id: str) -> ColumnElement[bool]:
             anchor.chat_id == Chat.id,
             anchor.id == message_id,
             later.sender == MessageSender.STAFF.value,
-            later.created_at > anchor.created_at,
+            later.seq > anchor.seq,
         )
     )
     return or_(staff_spoke, _PAUSE_IS_RUNNING)

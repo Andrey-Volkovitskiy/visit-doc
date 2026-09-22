@@ -247,3 +247,19 @@ def test_the_session_scoped_faq_index_exists() -> None:
     engine.dispose()
 
     assert "ix_faq_entries_session" in names
+
+
+# --- a thread's order is the order of its writes ------------------------------------
+
+
+def test_messages_carry_a_write_order_sequence() -> None:
+    engine, inspector = _inspector()
+    columns = {col["name"]: col for col in inspector.get_columns("messages")}
+    indexes = {index["name"]: index for index in inspector.get_indexes("messages")}
+    engine.dispose()
+
+    # An identity column, so the database assigns it at insert and nothing else can:
+    # a thread's order comes from the order of its writes, not from any clock.
+    assert columns["seq"]["nullable"] is False
+    assert columns["seq"].get("identity") is not None
+    assert indexes["ix_messages_chat_seq"]["column_names"] == ["chat_id", "seq"]

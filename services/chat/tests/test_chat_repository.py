@@ -1099,16 +1099,36 @@ async def test_a_message_answering_nothing_stores_a_null_reply_id_list_too() -> 
     assert session_id
 
 
-async def test_list_messages_breaks_a_created_at_tie_by_id() -> None:
-    # `created_at` is the transaction's start time, so two messages can share one - and
-    # Postgres returns tied rows in whatever order it finds them. The id breaks the tie:
-    # a thread read twice must come back in one order. Written larger id first, so heap
-    # order and id order disagree and a missing tie-break shows.
-    earlier, later = sorted(str(ULID()) for _ in range(2))
+async def _step_the_clock_back(chat_id: str, message_id: str) -> None:
+    """Give `message_id` a `created_at` an hour before every other message of `chat_id`.
+
+    What a system clock stepped backwards between two writes does to them: the later
+    row carries the earlier timestamp. WSL2 steps its clock, and the Postgres container
+    shares that kernel, so the two clocks step together.
+    """
+    async with session_factory() as session:
+        await session.execute(
+            sql_text(
+                "UPDATE messages SET created_at = ("
+                "  SELECT min(created_at) - interval '1 hour' FROM messages"
+                "  WHERE chat_id = :chat_id"
+                ") WHERE id = :message_id"
+            ),
+            {"chat_id": chat_id, "message_id": message_id},
+        )
+        await session.commit()
+
+
+async def test_a_thread_reads_back_in_the_order_it_was_written_whatever_the_clock() -> (
+    None
+):
+    # The later message is written with a smaller id and an earlier timestamp - both
+    # clocks stepped back between the two writes - and must still come back second.
+    first, second = sorted((str(ULID()) for _ in range(2)), reverse=True)
     async with session_factory() as session:
         created_session = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, created_session.id)
-        for message_id in (later, earlier):
+        for message_id in (first, second):
             await chat_repository.create_message(
                 session,
                 id=message_id,
@@ -1117,16 +1137,32 @@ async def test_list_messages_breaks_a_created_at_tie_by_id() -> None:
                 sender=MessageSender.PATIENT,
                 content=message_id,
             )
-        await session.execute(
-            sql_text(
-                "UPDATE messages SET created_at = '2026-09-22 10:00:00+00' "
-                "WHERE chat_id = :chat_id"
-            ),
-            {"chat_id": chat.id},
-        )
-        await session.commit()
+    await _step_the_clock_back(chat.id, second)
 
     async with session_factory() as session:
         messages = await chat_repository.list_messages(session, chat.id)
 
-    assert [m.id for m in messages] == [earlier, later]
+    assert [m.id for m in messages] == [first, second]
+
+
+async def test_a_staff_post_after_the_message_is_a_takeover_whatever_the_clock() -> (
+    None
+):
+    # The staff post is written after the patient message it answers but stamped before
+    # it; "posted since" is about the order of the writes, so it still takes the turn.
+    session_id, chat_id, message_id = await _answered_chat()
+    staff_id = str(ULID())
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=staff_id,
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.STAFF,
+            content="I've got this one.",
+        )
+    await _step_the_clock_back(chat_id, staff_id)
+
+    write = await _reply_answering(session_id, chat_id, message_id)
+
+    assert write is chat_repository.ReplyWrite.TAKEN_OVER
