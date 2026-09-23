@@ -7,6 +7,7 @@ like a tier that never calls a paid API.
 
 import pytest
 from anthropic import AsyncAnthropic
+from chat.core.config import Settings as ChatSettings
 from chat.rag.pipeline import ScoredChunk
 from chat.rag.reranking import rerank_chunks
 from voyageai.client_async import AsyncClient as VoyageAsyncClient
@@ -66,3 +67,13 @@ async def test_the_block_survives_production_code_that_swallows_every_exception(
         await rerank_chunks(
             client, "a question", [chunk], model="rerank-3", top_k=1, timeout_seconds=5
         )
+
+
+def test_this_tier_traces_nothing() -> None:
+    """No turn this tier drives may reach a developer's Langfuse project.
+
+    The keys live in the repo's `.env`, so an app built here would export its turns to
+    them - and wait on a flush to the network at every lifespan's end. `conftest.py`
+    blanks both; this is what says so out loud.
+    """
+    assert ChatSettings().tracing_enabled is False

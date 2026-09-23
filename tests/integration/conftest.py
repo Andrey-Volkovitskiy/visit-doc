@@ -18,6 +18,7 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
+from anthropic.types import Usage
 from chat.core.config import Settings as ChatSettings
 from chat.domain.schemas import (
     IntentClassificationResult,
@@ -46,6 +47,13 @@ os.environ["DATABASE_URL"] = isolated_database_url(_chat_settings.DATABASE_URL)
 os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
     _chat_settings.QDRANT_COLLECTION_NAME
 )
+# The repo's `.env` carries a developer's real Langfuse keys, and an app this tier
+# builds would otherwise export its turns to their project - and wait on a flush to it
+# at every lifespan's end. Blank, not unset: an unset variable falls through to `.env`.
+# The same rule as the chat suite's `conftest.py`, restated here because one tier's
+# conftest is not a dependency of another's.
+os.environ["LANGFUSE_PUBLIC_KEY"] = ""
+os.environ["LANGFUSE_SECRET_KEY"] = ""
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -326,12 +334,18 @@ class _FakeTextEvent:
 class _FakeFinalMessage:
     """Stand-in for the `Message` `get_final_message()` resolves to.
 
-    Only `stop_reason` is modelled: it is the one field a caller reads, to learn that
-    the model stopped because it ran out of room rather than because it was finished.
+    Two fields, because two are read: `stop_reason`, to learn that the model stopped
+    because it ran out of room rather than because it was finished, and `usage`, what
+    the call spent, which a generation's trace records. The SDK's own `Usage` rather
+    than a mock - a trace built from a `MagicMock` attribute would claim a token count
+    nobody measured.
     """
 
     def __init__(self, stop_reason: str) -> None:
         self.stop_reason = stop_reason
+        self.usage = Usage(
+            input_tokens=120, output_tokens=40, cache_read_input_tokens=0
+        )
 
 
 class _FakeStream:
