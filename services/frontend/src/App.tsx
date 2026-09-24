@@ -291,17 +291,45 @@ function App() {
   // returned (FR-010a): the header, both panes, their headings and the tab set depend
   // on no answer, so waiting for one would leave the visitor looking at nothing.
   return (
-    <>
+    /*
+      Side by side, the page is exactly as tall as the window and the panes take what is
+      left over: the composers sit at the bottom of the screen rather than below it,
+      reachable without scrolling the page (FR-008's layout, now height-aware).
+
+      The floor is what keeps that from turning into a squeeze. Below `min-h`, the page
+      stops shrinking and scrolls instead — a thread and a composer crushed into 300px
+      would be worse than a scrollbar. 680px is measured rather than chosen: a 1080p
+      laptop at 125% leaves about 710px of viewport once the browser's own chrome and
+      the taskbar are out, so that machine and anything roomier fits, and smaller
+      windows scroll exactly as they did before.
+
+      Stacked (below `panes`), the two panes cannot both fill one screen, so nothing
+      here applies: they keep their own height and the page scrolls, as it always has.
+    */
+    <div className="panes:flex panes:h-dvh panes:min-h-[680px] panes:flex-col">
       <header className="bg-surface border-rule border-b">
         <div className="mx-auto flex max-w-[1440px] items-center gap-3 px-6 py-4">
           <Wordmark />
         </div>
       </header>
-      <main className="panes:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] mx-auto grid max-w-[1440px] grid-cols-1 items-start gap-4 p-4 sm:gap-6 sm:p-6">
+      {/*
+        `grid-rows-[minmax(0,1fr)]` is the load-bearing half of the height rule, and it
+        is not interchangeable with `items-stretch`. A grid's implicit row is sized
+        `auto`, which means *by its content*: stretching only fills a row that is already
+        shorter than the container, and a row taller than it simply grows. So a pane
+        asking for `h-full` of an auto row has no definite height to take a percentage
+        of, its own `flex-1 min-h-0` thread stops being bounded, and the thread renders
+        at full length — no scrollbar inside the pane, and a page as tall as the
+        conversation. A short thread hides this completely, which is how it shipped: the
+        row happened to be shorter than the container every time it was measured.
+        `minmax(0,1fr)` makes the row a fraction of a definite height instead, and the
+        `0` floor is what lets it be *smaller* than its content so the thread scrolls.
+      */}
+      <main className="panes:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] panes:grid-rows-[minmax(0,1fr)] panes:min-h-0 panes:flex-1 panes:items-stretch mx-auto grid w-full max-w-[1440px] grid-cols-1 items-start gap-4 p-4 sm:gap-6 sm:p-6">
         <section
           data-testid="patient-pane"
           aria-label="Patient messenger"
-          className="bg-surface border-rule panes:h-[720px] flex h-[640px] min-w-0 flex-col rounded-md border"
+          className="bg-surface border-rule panes:h-full flex h-[640px] min-w-0 flex-col rounded-md border"
         >
           <h2 className="border-rule-soft text-ink-muted border-b px-4 py-3 text-sm font-semibold">
             Patient messenger
@@ -357,7 +385,7 @@ function App() {
         <section
           data-testid="staff-pane"
           aria-label="Staff console"
-          className="bg-surface border-rule panes:h-[720px] flex h-[640px] min-w-0 flex-col rounded-md border"
+          className="bg-surface border-rule panes:h-full flex h-[640px] min-w-0 flex-col rounded-md border"
         >
           <div className="border-rule-soft flex items-center gap-3 border-b px-4 py-3">
             <h2 className="text-ink-muted text-sm font-semibold">Staff console</h2>
@@ -533,7 +561,7 @@ function App() {
           </DiscardDialog>
         </section>
       </main>
-    </>
+    </div>
   );
 }
 

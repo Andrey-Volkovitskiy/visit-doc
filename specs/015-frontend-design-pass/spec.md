@@ -373,6 +373,13 @@ floor the other four stories are built on rather than a journey of its own.
   patient messenger, and the staff console, on one screen with no navigation between them.
 - **FR-008**: At viewport widths of 1100px and above the two panes MUST sit side by side; below
   1100px the console MUST sit beneath the patient messenger, both at full width.
+- **FR-008a** (added after shipping): Side by side, the page MUST be as tall as the window and the
+  panes MUST take the height left over, so that each composer sits at the bottom of the screen
+  rather than below it. Below a floor of 680px of viewport the page MUST stop shrinking and scroll
+  instead: a thread and a composer squeezed into a few hundred pixels are worse than a scrollbar.
+  The floor is measured rather than chosen — a 1080p laptop at 125% leaves about 710px of viewport
+  once the browser's chrome and the taskbar are out. Stacked, below 1100px, two panes cannot both
+  fill one screen, so they keep their own height and the page scrolls as before.
 - **FR-009**: The document MUST NOT scroll horizontally at any viewport width from 375px to 1920px,
   and no single piece of content may widen a pane past its column.
 - **FR-010**: Failures that belong to the page rather than to a pane — loading or changing the chat

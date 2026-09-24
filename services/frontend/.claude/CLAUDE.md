@@ -49,6 +49,8 @@ src/
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
+├── lib/typing.ts        # how fast a streamed reply is *shown*: the arrival timeline,
+│                        #   replayed at half speed, decoupled from reading it
 ├── lib/turns.ts         # which message carries a turn's one evidence marker, and what it
 │                        #   holds — read from the server's own reply_to_message_ids, pure
 ├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads

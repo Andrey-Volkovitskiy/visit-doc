@@ -1,6 +1,7 @@
 import { Bot, SendHorizontal } from "lucide-react";
 import { useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
+import { createTypingPacer } from "../lib/typing";
 import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
@@ -256,15 +257,22 @@ export function ChatWindow({
     ]);
 
     let accumulated = "";
+    // What is *shown* is paced; what is read is not. The loop below consumes the stream
+    // as fast as it arrives and hands the text over, and this decides how much of it is
+    // on screen (`lib/typing.ts`).
+    const pacer = createTypingPacer((text) =>
+      setStreaming((prev) => ({ ...prev, [turnKey]: text })),
+    );
     try {
       const events = await askChat(chatId, messageText, controller.signal);
       for await (const event of events) {
         if (event.type === "token") {
           accumulated += event.text;
-          setStreaming((prev) => ({ ...prev, [turnKey]: accumulated }));
+          pacer.arrived(accumulated);
         } else if (event.type === "silent") {
           // A person is handling this conversation, so nothing was generated and there
           // is nothing to render. The message stays in the thread exactly as sent.
+          pacer.stop();
           clearStreaming(turnKey);
           return;
         } else if (event.type === "cancelled") {
@@ -272,9 +280,15 @@ export function ChatWindow({
           // took the conversation over before it was written. Remove the in-progress
           // bubble and any partial tokens entirely; never shown as final, never as an
           // error. Only this turn's, so a sibling turn still streaming keeps its own.
+          pacer.stop();
           clearStreaming(turnKey);
           return;
         } else {
+          // The reply is complete on the wire; on screen it may still be catching up,
+          // and swapping the bubble for the stored message now would jump the tail of
+          // the text into place. Nothing else waits on this: the turn is over, the
+          // composer is already free, and a cancellation resolves it immediately.
+          await pacer.settled();
           clearStreaming(turnKey);
           setMessages((prev) => [
             ...prev,
@@ -318,6 +332,9 @@ export function ChatWindow({
       clearStreaming(turnKey);
       setInput(messageText);
     } finally {
+      // Whatever ended the turn, nothing is still being revealed for it: a pacer left
+      // running would go on calling `setStreaming` for a bubble the line below removes.
+      pacer.stop();
       activeControllersRef.current.delete(controller);
       // The client half of the server's guarantee that every turn ends in exactly one
       // terminal event: whatever ended this one - a terminal event, an abort, a broken
