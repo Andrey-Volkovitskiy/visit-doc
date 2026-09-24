@@ -1606,9 +1606,35 @@ describe("StaffThread: the assistant explanation (FR-024a)", () => {
     );
   }
 
-  it("is present with the switch on", () => {
+  it("is absent with the switch on and no pause running", () => {
+    // The resting state describes nothing: the assistant is replying and no pause is
+    // counting down. A pause that expired and a conversation that was never paused
+    // report the same two values, so this is also what an exhausted countdown looks
+    // like once the assistant is back on.
     renderThread(true);
-    expect(screen.getByTestId("assistant-explanation")).toBeInTheDocument();
+    expect(screen.queryByTestId("assistant-explanation")).toBeNull();
+  });
+
+  it("leaves the switch describing nothing that is not on screen", () => {
+    // A description pointing at an element that was not rendered is a name a screen
+    // reader cannot resolve — the failure this hiding could otherwise introduce.
+    renderThread(true);
+    const switchControl = screen.getByTestId("assistant-switch");
+
+    expect(switchControl).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("describes the switch by the sentence wherever the sentence is shown", () => {
+    renderThread(false);
+
+    expect(screen.getByTestId("assistant-switch")).toHaveAttribute(
+      "aria-describedby",
+      "assistant-explanation",
+    );
+    expect(screen.getByTestId("assistant-explanation")).toHaveAttribute(
+      "id",
+      "assistant-explanation",
+    );
   });
 
   it("is present with the switch off", () => {
@@ -1623,9 +1649,10 @@ describe("StaffThread: the assistant explanation (FR-024a)", () => {
 
   it("is visible without hover, focus or activation", () => {
     // FR-024a rules out a tooltip, a `?` affordance, or anything else that has to be
-    // discovered. This is the one control whose effect reaches a real patient
-    // immediately, so nothing about its explanation may be hidden.
-    renderThread(true);
+    // discovered. Which states carry the sentence has narrowed; *how* it is carried
+    // where it appears has not, and this is what holds that line: shown or not shown,
+    // never shown-on-demand.
+    renderThread(false);
     const explanation = screen.getByTestId("assistant-explanation");
 
     // Not inside a `title`, and not behind any of the attributes a reveal-on-demand
@@ -1637,13 +1664,24 @@ describe("StaffThread: the assistant explanation (FR-024a)", () => {
     expect(explanation.closest("[aria-hidden='true']")).toBeNull();
   });
 
-  it("says what turning the control off does, and that the pause expires on its own", () => {
-    renderThread(true);
+  it("says what turning the control off does", () => {
+    renderThread(false);
     const text = screen.getByTestId("assistant-explanation").textContent ?? "";
 
     expect(text).toMatch(/stops replying|stop replying/i);
     expect(text).toMatch(/person|staff/i);
-    expect(text).toMatch(/expires|on its own|by itself|automatically/i);
+  });
+
+  it("leaves the running pause to the countdown rather than to prose", () => {
+    // FR-024a asked the sentence to say the pause expires on its own; the countdown
+    // beside it now carries that alone. It is the better witness of the two — it says
+    // how much is left rather than that something is left, and it is read off the
+    // server on every poll instead of being a claim this sentence makes.
+    renderThread(false, 300);
+    const text = screen.getByTestId("assistant-explanation").textContent ?? "";
+
+    expect(text).not.toMatch(/expires|on its own|by itself|automatically/i);
+    expect(screen.getByTestId("pause-countdown")).toHaveTextContent("5:00");
   });
 });
 

@@ -416,8 +416,15 @@ function App() {
               and one pixel of horizontal scroll is still a horizontal scrollbar
               (FR-009). `overflow-x-auto` is the part that holds for a label longer than
               these three.
+
+              `overflow-y-hidden` is not decoration: naming only `overflow-x` makes the
+              computed `overflow-y` `auto` rather than `visible`, and each trigger's
+              `-mb-px` puts its underline one pixel past this box — so the strip scrolled
+              vertically by exactly that pixel, and painted a vertical scrollbar beside
+              three tabs that fit. Measured in a real browser: 40px of box against 41px
+              of content, with no horizontal overflow at all.
             */}
-            <TabsList className="bg-bubble-them border-rule w-full gap-3 overflow-x-auto border-b px-2 sm:gap-6 sm:px-4">
+            <TabsList className="bg-bubble-them border-rule w-full gap-3 overflow-x-auto overflow-y-hidden border-b px-2 sm:gap-6 sm:px-4">
               <TabsTrigger value="chats">Conversations</TabsTrigger>
               <TabsTrigger value="practitioners">Practitioners</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>

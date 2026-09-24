@@ -473,6 +473,22 @@ floor the other four stories are built on rather than a journey of its own.
   patient and a person is expected to — and that the pause expires on its own. This is the one
   control on the page whose effect reaches a real patient immediately, and it MUST NOT be the one
   whose explanation has to be discovered.
+
+  > **Narrowed after shipping, twice.** The sentence no longer says the pause expires on its own:
+  > the countdown beside it says so better, naming how much is left rather than that something is,
+  > and re-read from the server on every poll instead of asserted in prose. What the sentence keeps
+  > is the half nothing else carries — that turning the control off stops the assistant replying to
+  > this patient and puts a person in its place.
+  >
+  > **And "permanently visible" no longer holds:** the sentence is shown when
+  > the assistant is off or a pause is counting down, and not in the resting state — assistant on,
+  > no pause — where it describes nothing. Every other clause stands where it is shown: plain text
+  > beside the control, never revealed on hover, focus or a click. The two states the sentence
+  > distinguishes are all this pane has; a pause that expired and a conversation that was never
+  > paused report the same `assistant_may_reply` and `pause_seconds_remaining`, so "the countdown
+  > ran out" is not a state it could render differently. The cost accepted is that the explanation
+  > is absent immediately before the act it warns about — turning the control off — and it appears
+  > as soon as that act is taken.
 - **FR-025**: Sections that read session-scoped data MUST NOT be rendered before a session exists;
   while none does, the section MUST say so rather than render an empty result.
 - **FR-025a**: A conversation that is open but holds no messages MUST say plainly that it is empty.

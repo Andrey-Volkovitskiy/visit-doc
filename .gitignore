@@ -223,3 +223,6 @@ node_modules/
 
 # Background dev services (pids, logs, cookie jar) - see scripts/dev-services.sh
 .run/
+
+# Linked git worktrees - a second checkout of this repo, not source of it
+.claude/worktrees/

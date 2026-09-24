@@ -290,6 +290,18 @@ export function StaffThread({
       : posting
         ? "Sending…"
         : null;
+  // Whether the header carries the sentence explaining the switch.
+  //
+  // Narrowed from FR-024a's "permanently visible": the sentence is about a conversation
+  // the assistant has stopped replying in, and in the resting state — assistant on, no
+  // pause running — there is nothing it describes. Everything else FR-024a rules out
+  // still holds where it *is* shown: it is plain text beside the control, never a
+  // tooltip, a `?` or anything needing hover, focus or a click.
+  //
+  // The two states are not separable further. A pause that expired and a conversation
+  // that was never paused report the same pair of values, so "the countdown ran out" is
+  // not a state this pane could render differently even if it wanted to.
+  const explainAssistant = !assistantMayReply || pauseSecondsRemaining !== null;
 
   return (
     <div className="flex min-h-0 flex-col">
@@ -328,27 +340,39 @@ export function StaffThread({
             <Switch
               data-testid="assistant-switch"
               aria-labelledby="assistant-switch-label"
-              aria-describedby="assistant-explanation"
+              // Only while the sentence is on screen: a description pointing at an
+              // element that is not rendered is a name a screen reader cannot resolve.
+              aria-describedby={
+                explainAssistant ? "assistant-explanation" : undefined
+              }
+              // The one place `--color-attention` is worn by a control at rest, and it
+              // is worn because FR-005's reserved meaning is literally what the state
+              // says: with the assistant off, this patient is waiting on a person. The
+              // claim is made here rather than in the vendored switch, which knows
+              // nothing about who is expected to reply — an unchecked switch elsewhere
+              // would be summoning nobody.
+              className="data-[state=unchecked]:bg-attention"
               checked={assistantMayReply}
               onCheckedChange={onSetAssistant}
             />
           </span>
         </div>
         {/*
-          A permanently visible sentence, not a tooltip and not a `?` to discover
+          Shown outright wherever it applies — not a tooltip and not a `?` to discover
           (FR-024a). This is the one control on the page whose effect reaches a real
           patient immediately, so its explanation may not be the one that has to be
-          found.
+          found. See `explainAssistant` for which states it applies to.
         */}
-        <p
-          id="assistant-explanation"
-          data-testid="assistant-explanation"
-          className="text-ink-muted mt-1.5 text-sm"
-        >
-          Turned off, the assistant stops replying to this patient and a person is
-          expected to. The pause expires on its own; turning it back on ends it
-          immediately.
-        </p>
+        {explainAssistant && (
+          <p
+            id="assistant-explanation"
+            data-testid="assistant-explanation"
+            className="text-ink-muted mt-1.5 text-sm"
+          >
+            Turned off, the assistant stops replying to this patient and a person is
+            expected to.
+          </p>
+        )}
       </div>
       <div
         data-testid="staff-thread"

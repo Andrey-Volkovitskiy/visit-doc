@@ -134,7 +134,7 @@ export const ATTENTION_MARK_LABEL: Record<AttentionMark, string> = {
   not_authorized: "Not something the assistant may do",
   corpus_could_not_answer: "No answer in the clinic's documents",
   assistant_failed: "The assistant could not complete this",
-  unanswered: "Arrived while the assistant was silent",
+  unanswered: "Arrived while the assistant was paused",
 };
 
 /** What the assistant may do in one conversation, straight after a change to it. */

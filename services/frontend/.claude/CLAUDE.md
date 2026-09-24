@@ -87,7 +87,10 @@ global sheet would give every value two homes.
   not a decorative accent, not a required-field asterisk, not a delete button at rest. shadcn maps
   `--destructive` onto it, so `variant="destructive"` is making that claim; use it only where it is
   true. And colour is never the only carrier of a state: text, weight, shape or position carries it
-  too.
+  too. One control at rest does wear it, and reads as the rule rather than an exception: the staff
+  console's assistant switch, unchecked, because the assistant being off *is* this patient waiting
+  on a person. The claim is made at the call site in `StaffThread`, not in the vendored `Switch` —
+  an unchecked switch somewhere else would be summoning nobody.
 - **Light theme only.** No `dark:` variant and no `prefers-color-scheme` block belongs under
   `src/`; shadcn ships a dark theme by default and it was removed rather than left unreferenced.
 

@@ -365,7 +365,7 @@ export function OutcomeDisclosure({
                 // would claim a half ran and answered nothing. A message with acts has
                 // them to show instead.
                 <p className="text-ink-muted text-sm">
-                  Nothing was retrieved for this message; it is marked for a person.
+                  Nothing was retrieved for this message.
                 </p>
               )}
           {/*

@@ -404,9 +404,13 @@ export function ChatWindow({
               Ask the clinic anything.
             </p>
             <p className="mt-1">
-              I can make, change and cancel appointments, say who practises here and
-              when they are free, and answer questions about the clinic from its own
-              documents. If I cannot help, I will pass you to a member of staff.
+              Hello! I’m your AI clinic receptionist. I can help you book, reschedule,
+              or cancel an appointment, check available appointment slots with our
+              practitioners, and answer questions from the clinic’s FAQ.
+            </p>
+            <p className="mt-2">
+              If I can’t help with your request, I’ll connect you with a member of our
+              staff.
             </p>
           </div>
         )}
