@@ -1808,6 +1808,37 @@ describe("StaffThread scroll behaviour (FR-015b)", () => {
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
     expect(thread().scrollTop).toBe(600);
   });
+
+  it("opens the next conversation at its newest message, after scrolling back in this one", async () => {
+    // The hold-position answer belongs to the conversation it was given about. Carried
+    // into the next one it is not a held position but a refusal to open at the bottom,
+    // and the staff member lands on the oldest message in a thread they have never seen.
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(messages("one", "two", "three"))
+      .mockResolvedValue(messages("four", "five", "six"));
+
+    const { rerender } = renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+
+    thread().scrollTop = 0;
+    fireEvent.scroll(thread());
+
+    rerender(
+      <StaffThread
+        chatId="other-chat"
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        lastMessageAt="2026-09-01T12:05:00"
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText("six")).toBeInTheDocument());
+
+    await waitFor(() => expect(thread().scrollTop).toBe(600));
+  });
 });
 
 describe("StaffThread: staff messages take the reader's own side (FR-023)", () => {

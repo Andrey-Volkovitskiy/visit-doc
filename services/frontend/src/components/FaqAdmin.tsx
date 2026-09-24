@@ -1,5 +1,4 @@
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
-import type { AdminSectionProps } from "./PractitionerAdmin";
 import { useCallback, useEffect, useState } from "react";
 import {
   createFaqEntry,
@@ -9,6 +8,7 @@ import {
   type FaqEntry,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { NO_DIRTY_REPORT, type AdminSectionProps } from "./adminSection";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -214,7 +214,9 @@ function FaqEditor({
  * A refused save changes nothing, so what was typed stays where it was typed: the reply
  * says why, and the text is still there to correct.
  */
-export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps) {
+export function FaqAdmin({
+  onDirtyChange = NO_DIRTY_REPORT,
+}: AdminSectionProps) {
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ mode: "list" });

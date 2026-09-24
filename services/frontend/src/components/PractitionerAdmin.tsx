@@ -1,5 +1,6 @@
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { NO_DIRTY_REPORT, type AdminSectionProps } from "./adminSection";
 import {
   createPractitioner,
   deletePractitioner,
@@ -135,18 +136,6 @@ function unchanged(a: FormState, b: FormState): boolean {
     a.minutes === b.minutes &&
     JSON.stringify(a.schedule) === JSON.stringify(b.schedule)
   );
-}
-
-/** What a console section owes the shell around it. */
-export interface AdminSectionProps {
-  /**
-   * See `EditorProps.onDirtyChange`.
-   *
-   * Optional, and defaulted to a no-op: a section rendered on its own — which is how
-   * every one of its own tests renders it — has nobody to report to, and requiring the
-   * prop would make the guard's shell a precondition for using the section at all.
-   */
-  onDirtyChange?: (dirty: boolean) => void;
 }
 
 interface EditorProps {
@@ -490,7 +479,9 @@ function PractitionerEditor({
  * all: a `type="number"` input hands over a string, and "" and "1e" are not numbers.
  * That is not a rule about practitioners, and it deliberately carries no bound.
  */
-export function PractitionerAdmin({ onDirtyChange = () => undefined }: AdminSectionProps) {
+export function PractitionerAdmin({
+  onDirtyChange = NO_DIRTY_REPORT,
+}: AdminSectionProps) {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   // Fetched, never written out here: see `fetchSpecialties`. Empty until it arrives,
   // which `optionsFor` covers - a row still offers the specialty it already has.

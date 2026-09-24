@@ -1,8 +1,8 @@
 import { SendHorizontal } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
-import { PINNED_THRESHOLD, isPinnedToBottom } from "../lib/scroll";
+import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
@@ -122,37 +122,9 @@ export function StaffThread({
   // and failed are three different situations (FR-010a), and only the middle one gets
   // the empty-thread statement (FR-025a) — so it cannot be inferred from an empty array.
   const [threadLoaded, setThreadLoaded] = useState(false);
-  const threadRef = useRef<HTMLDivElement | null>(null);
-  // Whether the reader was at the bottom before this render's content arrived. FR-015b
-  // puts this thread on FR-015a's exact terms, so the mechanism is the same one
-  // `ChatWindow` uses and reads the same pure predicate.
-  const wasPinnedRef = useRef(true);
-
-  /** Record whether the reader is at the bottom, as they scroll. */
-  function rememberPinned(): void {
-    const el = threadRef.current;
-    if (el === null) return;
-    wasPinnedRef.current = isPinnedToBottom(
-      el.scrollTop,
-      el.scrollHeight,
-      el.clientHeight,
-      PINNED_THRESHOLD,
-    );
-  }
-
-  /**
-   * Follow new content to the bottom, but only for a reader who was already there.
-   *
-   * `useLayoutEffect` so the browser never paints the arrival at the old position
-   * first, and the scroll is an assignment because `scrollIntoView` is `undefined` in
-   * this repository's jsdom.
-   */
-  useLayoutEffect(() => {
-    const el = threadRef.current;
-    if (el === null) return;
-    if (!wasPinnedRef.current) return;
-    el.scrollTop = el.scrollHeight - el.clientHeight;
-  });
+  // FR-015b puts this thread on FR-015a's exact terms, so it is not a second mechanism
+  // that happens to agree: it is the same hook the patient thread uses.
+  const threadScroll = useBottomPin<HTMLDivElement>();
 
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {
@@ -197,6 +169,9 @@ export function StaffThread({
     read: (id, signal) => fetchThread(id, signal),
     onReset: () => {
       setThreadLoaded(false);
+      // A different conversation has no position to hold: it opens at its most recent
+      // message, however far up the previous one had been scrolled.
+      threadScroll.pin();
       setThread([]);
       setReply("");
       setBanner(null);
@@ -248,7 +223,7 @@ export function StaffThread({
         // just cleared, which is why nothing here files the poll value as handled.
         // Posting is not unbidden content: the staff member just acted, so their own
         // reply follows to the bottom whatever they had scrolled back to.
-        wasPinnedRef.current = true;
+        threadScroll.pin();
         showPosted(posted);
         setReply("");
       } catch (err) {
@@ -349,8 +324,8 @@ export function StaffThread({
       </div>
       <div
         data-testid="staff-thread"
-        ref={threadRef}
-        onScroll={rememberPinned}
+        ref={threadScroll.ref}
+        onScroll={threadScroll.onScroll}
         role="log"
         aria-label="Conversation"
         tabIndex={0}

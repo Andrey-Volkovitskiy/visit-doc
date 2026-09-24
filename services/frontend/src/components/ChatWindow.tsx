@@ -1,7 +1,7 @@
 import { Bot, SendHorizontal } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
-import { PINNED_THRESHOLD, isPinnedToBottom } from "../lib/scroll";
+import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
@@ -155,13 +155,10 @@ export function ChatWindow({
   // arrived-empty and failed are three different situations (FR-010a), and only the
   // middle one is greeted (FR-019c).
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const threadRef = useRef<HTMLDivElement | null>(null);
-  // Whether the reader was at the bottom *before* this render's content arrived.
-  // Read at render time rather than stored as state: a reader scrolls without any React
-  // event firing, so a stored flag would go stale on exactly the interaction the rule
-  // exists to detect (data-model.md). It starts true so a freshly opened chat lands at
-  // its most recent message (FR-015).
-  const wasPinnedRef = useRef(true);
+  // Follow new content to the bottom, but only for a reader who was already there
+  // (FR-015a). The rule, and the ref that holds the answer, live in `useBottomPin` —
+  // the staff thread is held to the same terms by FR-015b and reads the same hook.
+  const threadScroll = useBottomPin<HTMLDivElement>();
 
   useThreadReads<Message[]>({
     chatId,
@@ -174,6 +171,9 @@ export function ChatWindow({
     read: (id, signal) => fetchChatHistory(id, signal),
     onReset: () => {
       setHistoryLoaded(false);
+      // A different conversation has no position to hold: it opens at its most recent
+      // message (FR-015), however far up the previous one had been scrolled.
+      threadScroll.pin();
       // Switching chats abandons whatever the previous one had in flight: its reply
       // belongs to a thread that is no longer on screen, and letting it land would
       // append it to the wrong history. The *reads* are the hook's to abort; these are
@@ -211,42 +211,6 @@ export function ChatWindow({
     },
   });
 
-  /**
-   * Record whether the reader is at the bottom, as they scroll.
-   *
-   * Read from the element at the moment of the scroll rather than held as derived
-   * state, and stored in a ref rather than in state, because it must not cause a
-   * render: it is an answer about the view *before* the next content arrives, and a
-   * re-render is the very thing that would change it.
-   */
-  function rememberPinned(): void {
-    const el = threadRef.current;
-    if (el === null) return;
-    wasPinnedRef.current = isPinnedToBottom(
-      el.scrollTop,
-      el.scrollHeight,
-      el.clientHeight,
-      PINNED_THRESHOLD,
-    );
-  }
-
-  /**
-   * Follow new content to the bottom, but only for a reader who was already there
-   * (FR-015a).
-   *
-   * `useLayoutEffect` rather than `useEffect`: the browser must not paint the new
-   * content at the old scroll position first, which is a visible jump. And the scroll
-   * is performed by *assigning* `scrollTop` — `scrollIntoView` is `undefined` in this
-   * repository's jsdom and calling it throws in every test that renders a thread
-   * (`research.md`).
-   */
-  useLayoutEffect(() => {
-    const el = threadRef.current;
-    if (el === null) return;
-    if (!wasPinnedRef.current) return;
-    el.scrollTop = el.scrollHeight - el.clientHeight;
-  });
-
   function clearStreaming(turnKey: string): void {
     setStreaming((prev) => {
       const { [turnKey]: _removed, ...rest } = prev;
@@ -263,7 +227,7 @@ export function ChatWindow({
     setBanner(null);
     // Sending is not unbidden content: the patient just acted, so their own message
     // follows to the bottom whatever they had scrolled to beforehand.
-    wasPinnedRef.current = true;
+    threadScroll.pin();
 
     const turnKey = localId();
     setStreaming((prev) => ({ ...prev, [turnKey]: "" }));
@@ -382,14 +346,14 @@ export function ChatWindow({
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         data-testid="messages"
-        ref={threadRef}
+        ref={threadScroll.ref}
         // A scroll container of its own, so the thread scrolls and the composer and tab
         // strip stay put (FR-015).
         className="min-h-0 flex-1 overflow-y-auto p-4"
         role="log"
         aria-label="Conversation"
         tabIndex={0}
-        onScroll={rememberPinned}
+        onScroll={threadScroll.onScroll}
       >
         {/*
           Rendered only for a thread that has *answered* and holds nothing (FR-019c).
@@ -488,9 +452,12 @@ export function ChatWindow({
                 {input.length}/{MAX_MESSAGE_LENGTH}
               </p>
             )}
-            {empty && (
+            {/* `sendReason` itself, not a second copy of its words: the control's
+                `aria-describedby` is derived from it, so a literal here would be a
+                wording only one of the two could be changed in. */}
+            {sendReason !== null && (
               <p id="composer-reason" className="sr-only">
-                Type a message to send.
+                {sendReason}
               </p>
             )}
           </>

@@ -34,13 +34,15 @@ putting `export const x: number = "nope"` in `src/`: the first form exits 0, the
 src/
 ├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
-│                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components
+│                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components,
+│                        #   plus adminSection.ts, the props the two admin sections share
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
+├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads
 ├── lib/utils.ts         # shadcn's cn() — clsx + tailwind-merge
 ├── styles/app.css       # THE global stylesheet: tailwind, @font-face, @theme, the shadcn mapping
 ├── styles/fonts/        # IBM Plex Sans 400/500/600 woff2, self-hosted, with OFL.txt beside them

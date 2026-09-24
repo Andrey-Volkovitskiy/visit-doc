@@ -1943,6 +1943,39 @@ describe("ChatWindow scroll behaviour (FR-015, FR-015a)", () => {
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
     expect(thread().scrollTop).toBe(600);
   });
+
+  it("opens the next chat at its newest message, after scrolling up in this one", async () => {
+    // The hold-position answer belongs to the conversation it was given about. Carried
+    // into the next one it is not a held position but a refusal to open at the bottom
+    // (FR-015), and the reader lands on the oldest message in a thread they have never
+    // seen.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("one", "two", "three"))
+      .mockResolvedValue(history("four", "five", "six"));
+
+    const { rerender } = render(
+      <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00" />,
+    );
+    measure(
+      thread(),
+      () => 400 + screen.queryAllByTestId("message").length * 200,
+    );
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+
+    thread().scrollTop = 0;
+    fireEvent.scroll(thread());
+
+    rerender(
+      <ChatWindow chatId="other-chat" lastMessageAt="2026-09-01T12:05:00" />,
+    );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.getByText("six")).toBeInTheDocument(),
+    );
+
+    await waitFor(() => expect(thread().scrollTop).toBe(600));
+  });
 });
 
 describe("ChatWindow: the patient's own messages take their side (FR-013)", () => {
