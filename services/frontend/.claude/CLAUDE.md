@@ -35,7 +35,8 @@ src/
 ├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
 │                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components,
-│                        #   plus adminSection.ts, the props the two admin sections share
+│                        #   plus adminSection.ts, the props and the dirty-report hook the two
+│                        #   admin sections share
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
@@ -150,7 +151,7 @@ added.
 
 | Component | Hooks |
 |---|---|
-| `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `attention-total`, `region-loading` |
+| `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `staff-pane-error`, `attention-total`, `region-loading`, `discard-confirm` |
 | `ChatList` | `chat-list`, `chat-list-item`, `chat-overflow`, `chat-overflow-item`, `delete-confirm` |
 | `ChatWindow` | `messages`, `no-chat`, `error`, `length-error`, `char-count`, `working-indicator`, `thread-greeting` |
 | `MessageView` | `message`, `role-label`, `sender-icon`, `attention-mark` |

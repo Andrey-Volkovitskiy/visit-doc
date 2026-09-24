@@ -331,6 +331,9 @@ export function ChatWindow({
     );
   }
 
+  // Who spoke last among the messages already in the thread, which is what decides
+  // whether the first streaming bubble begins a run of its own (FR-014).
+  const lastShownSender = messages[messages.length - 1]?.sender;
   const overLimit = input.length > MAX_MESSAGE_LENGTH;
   const empty = input.trim().length === 0;
   const sendDisabled = empty || overLimit;
@@ -388,12 +391,21 @@ export function ChatWindow({
             startsBurst={i === 0 || messages[i - 1]!.sender !== message.sender}
           />
         ))}
-        {Object.entries(streaming).map(([turnKey, text]) =>
+        {Object.entries(streaming).map(([turnKey, text], i) =>
           text.length > 0 ? (
             // The reply has begun arriving, so the indicator has done its job and the
-            // bubble takes over (FR-018). Always a burst start: it is the first thing
-            // the assistant has said in this run by definition.
-            <MessageView key={turnKey} sender="assistant" content={text} />
+            // bubble takes over (FR-018). It begins a run only when nothing the
+            // assistant has already put on screen stands directly above it: several
+            // turns can stream at once (a burst of quick patient messages), and the
+            // second of them is the *rest* of the assistant's run, which FR-014 says
+            // must not repeat the indicator. Anything earlier in this map — a bubble or
+            // the working indicator — already carries the assistant's icon.
+            <MessageView
+              key={turnKey}
+              sender="assistant"
+              content={text}
+              startsBurst={i === 0 && lastShownSender !== "assistant"}
+            />
           ) : assistantMayReply ? (
             <WorkingIndicator key={turnKey} />
           ) : (

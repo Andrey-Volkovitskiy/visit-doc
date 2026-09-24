@@ -2095,6 +2095,75 @@ describe("ChatWindow: the indicator wears the assistant's own icon (FR-014, FR-0
   });
 });
 
+describe("ChatWindow: concurrent replies are one run, not two (FR-014)", () => {
+  it("puts the sender indicator on the first streaming bubble only", async () => {
+    // Several turns can be genuinely in flight at once — a burst of quick patient
+    // messages — and their bubbles land one under the other. That is one consecutive
+    // run from the assistant, so only the first of them carries the indicator. The
+    // streaming bubble used to claim a burst start unconditionally, on the reasoning
+    // that it is "the first thing the assistant has said in this run", which is exactly
+    // what a second concurrent turn makes untrue.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    // Each turn streams one token and then stops, so both bubbles stay on screen.
+    vi.spyOn(chatStream, "askChat").mockImplementation(async (_id, message) =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        yield { type: "token", text: `reply to ${message}` };
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    await waitFor(() =>
+      expect(screen.getByText("reply to second")).toBeInTheDocument(),
+    );
+    const streamed = screen
+      .getAllByTestId("message")
+      .filter((el) => el.getAttribute("data-sender") === "assistant");
+    expect(streamed).toHaveLength(2);
+    expect(streamed[0]).toHaveAttribute("data-burst-start", "true");
+    expect(streamed[1]).not.toHaveAttribute("data-burst-start");
+  });
+
+  it("still starts a run when the thread's last message is the patient's", async () => {
+    // The ordinary case, and the one the unconditional value was right about: a single
+    // turn's bubble follows the patient's own message, so it does begin a run.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(async () =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        yield { type: "token", text: "one moment" };
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    });
+
+    const bubble = await screen.findByText("one moment");
+    expect(bubble.closest("[data-testid='message']")).toHaveAttribute(
+      "data-burst-start",
+      "true",
+    );
+  });
+});
+
 describe("ChatWindow shows none of the clinic's working notes (FR-019)", () => {
   it("renders no attention mark and no evidence marker, for a message carrying both", async () => {
     // The citations and outcome halves of FR-019 were already pinned. This is the mark

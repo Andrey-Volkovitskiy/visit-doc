@@ -70,7 +70,16 @@ function App() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [staffChatId, setStaffChatId] = useState<string | null>(null);
+  // The patient pane's own failures: loading the chat list, starting a chat, deleting
+  // one. Rendered inside that pane, because that is whose work failed.
   const [error, setError] = useState<string | null>(null);
+  // The staff pane's own, and a separate value rather than the same one. The assistant
+  // switch is a staff gesture, and reporting its failure through `error` put "Could not
+  // change the assistant for this conversation." in the *patient's* messenger — and
+  // cleared whatever the chat list had been unable to do on the way in. One banner
+  // standing for two panes' failures is the "one value, two meanings" defect: neither
+  // reader can tell whether the sentence is about the pane they are looking at.
+  const [staffError, setStaffError] = useState<string | null>(null);
   // Which console section is open (FR-020). Owned here rather than by the console,
   // because the attention count sits in the console header *outside* the tabbed region
   // (FR-021) and both are the header's concern.
@@ -152,9 +161,12 @@ function App() {
   // conversation one of them just took.
   function handleSetAssistant(enabled: boolean): void {
     if (staffChatId === null) return;
-    setError(null);
+    // Only this pane's own banner is cleared and only it is raised: a chat-list failure
+    // the patient is still looking at is not disproved by a staff member flipping a
+    // switch, and a switch that would not flip is not the patient's to read.
+    setStaffError(null);
     void setAssistant(staffChatId, enabled).catch((err: unknown) => {
-      setError(
+      setStaffError(
         err instanceof Error
           ? err.message
           : "Could not change the assistant for this conversation.",
@@ -267,9 +279,10 @@ function App() {
             Patient messenger
           </h2>
           {/*
-            The page-level error: failures that belong to the page rather than to a pane
-            — loading or changing the chat list — reported once, here, and visually
-            distinct from everything around it (FR-010).
+            This pane's error: failures that belong to it rather than to one of its
+            controls — loading the chat list, starting a chat, deleting one — reported
+            once, here, and visually distinct from everything around it (FR-010). The
+            staff pane has its own, below, for the same reason.
           */}
           {error !== null && (
             <p
@@ -339,6 +352,21 @@ function App() {
               </strong>
             </p>
           </div>
+          {/*
+            The staff pane's own error, in the staff pane. The one gesture that raises
+            it today is the assistant switch, whose failure used to be reported in the
+            patient's messenger — a sentence about a control the patient cannot see, in
+            the place the patient reads about their own chats.
+          */}
+          {staffError !== null && (
+            <p
+              data-testid="staff-pane-error"
+              role="alert"
+              className="text-attention bg-attention-wash border-attention/30 m-3 rounded-md border px-3 py-2 text-sm"
+            >
+              {staffError}
+            </p>
+          )}
           <Tabs
             value={staffTab}
             onValueChange={requestStaffTab}
@@ -425,10 +453,15 @@ function App() {
             </TabsContent>
           </Tabs>
           {/*
-            The tab-switch half of FR-035b. Same hook and the same wording as the back
-            control's confirmation, because it is the same question — and the two can
-            never be open at once, since one is raised by the back control and the other
-            only by a switch away from the section that control lives in.
+            The tab-switch half of FR-035b. Same hook and the same question as the back
+            control's confirmation, and the two can never be open at once: one is raised
+            by the back control and the other only by a switch away from the section
+            that control lives in, which a modal dialog already blocks.
+
+            The sentence differs from each section's own, and deliberately — it names
+            what is about to happen here ("Opening another section"), which is not what
+            the back control does. Each section's also names what its own text is for,
+            which this shell does not know.
           */}
           <Dialog
             open={pendingTab !== null}

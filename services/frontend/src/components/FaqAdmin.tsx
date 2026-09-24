@@ -8,7 +8,11 @@ import {
   type FaqEntry,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
-import { NO_DIRTY_REPORT, type AdminSectionProps } from "./adminSection";
+import {
+  NO_DIRTY_REPORT,
+  useDirtyReport,
+  type AdminSectionProps,
+} from "./adminSection";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -95,15 +99,9 @@ function FaqEditor({
   const writing = entry === null;
   const dirty = draft !== initial;
 
-  // Reported up, and **retracted on unmount**. The retraction is the load-bearing half:
-  // this component is destroyed by the very tab switch the flag guards, so a flag that
-  // outlived it would sit in `App` describing a form that no longer exists — and the
-  // next switch, from a section holding nothing, would be blocked by a prompt about work
-  // nobody can see or answer for.
-  useEffect(() => {
-    onDirtyChange(dirty);
-    return () => onDirtyChange(false);
-  }, [dirty, onDirtyChange]);
+  // Reported up, and retracted on unmount. Both halves live in `useDirtyReport`, which
+  // says why the retraction is the load-bearing one.
+  useDirtyReport(dirty, onDirtyChange);
 
   function leave(): void {
     // FR-035b: a box holding work asks before losing it; an untouched one does not

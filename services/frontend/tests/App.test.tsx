@@ -267,6 +267,92 @@ describe("App: the console read model reaches both panes", () => {
   });
 });
 
+// --- each pane reports its own failures ---------------------------------------------
+
+/**
+ * Put one conversation in the console listing. Called *before* `render`, because the
+ * poll reads once immediately and the next tick is two seconds away.
+ */
+function stubOneConversation(): void {
+  vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+    attention_total: 0,
+    conversations: [
+      {
+        chat_id: "01STAFFCHAT",
+        patient_name: "Grace Hopper",
+        last_message_at: null,
+        emphasized: false,
+        escalated: false,
+        escalation_reason: null,
+        attention_since: null,
+        assistant_may_reply: true,
+        pause_seconds_remaining: null,
+      },
+    ],
+  });
+}
+
+/** Open it, so the assistant switch is on screen. */
+async function openStaffConversation(): Promise<void> {
+  fireEvent.click(await screen.findByTestId("staff-conversation"));
+  await screen.findByTestId("assistant-switch");
+}
+
+describe("App: a pane reports its own failures and nobody else's", () => {
+  it("puts a failed assistant switch in the staff pane, not the patient's", async () => {
+    // The switch is a staff gesture. Reported through the patient pane's banner it
+    // became a sentence about a control the patient cannot see, sitting where they read
+    // about their own chats.
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat({ id: "01PATIENTCHAT" })] }),
+    );
+    vi.spyOn(consoleApi, "setAssistant").mockRejectedValue(
+      new Error("the switch would not move"),
+    );
+    stubOneConversation();
+
+    render(<App />);
+    await openStaffConversation();
+
+    press(screen.getByTestId("assistant-switch"));
+
+    const banner = await screen.findByTestId("staff-pane-error");
+    expect(banner).toHaveTextContent("the switch would not move");
+    expect(
+      within(screen.getByTestId("staff-pane")).getByTestId("staff-pane-error"),
+    ).toBe(banner);
+    expect(screen.queryByTestId("chat-list-error")).toBeNull();
+  });
+
+  it("does not clear the patient pane's banner when the switch is flipped", async () => {
+    // Two failures, two banners, and one is not disproved by the other's gesture: a
+    // chat list that would not load is still not loaded after a staff member touches a
+    // switch. One shared value cleared it on the way in.
+    vi.spyOn(chatStream, "fetchChats").mockRejectedValue(
+      new Error("could not reach the chat list"),
+    );
+    const setAssistant = vi
+      .spyOn(consoleApi, "setAssistant")
+      .mockResolvedValue({
+        assistant_may_reply: false,
+        pause_seconds_remaining: 900,
+      });
+    stubOneConversation();
+
+    render(<App />);
+    await screen.findByTestId("chat-list-error");
+    await openStaffConversation();
+
+    press(screen.getByTestId("assistant-switch"));
+
+    await waitFor(() => expect(setAssistant).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("chat-list-error")).toHaveTextContent(
+      "could not reach the chat list",
+    );
+    expect(screen.queryByTestId("staff-pane-error")).toBeNull();
+  });
+});
+
 // --- the panels that can only read a session ----------------------------------------
 
 function practitioner(

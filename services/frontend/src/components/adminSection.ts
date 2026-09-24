@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 /**
  * What every console admin section owes the shell around it.
  *
@@ -32,3 +34,25 @@ export interface AdminSectionProps {
  * setting it again, for no reason but the identity of a function that does nothing.
  */
 export const NO_DIRTY_REPORT = (): void => undefined;
+
+/**
+ * Report an editor's dirtiness up, and **retract it on unmount**.
+ *
+ * The retraction is the load-bearing half: the editor is destroyed by the very tab
+ * switch the flag guards, so a flag that outlived it would sit in `App` describing a
+ * form that no longer exists — and the next switch, from a section holding nothing,
+ * would be blocked by a prompt about work nobody can see or answer for.
+ *
+ * Here rather than written out in each editor. `FaqEditor` and `PractitionerEditor`
+ * held byte-identical copies of it, which is one place for the retraction to be dropped
+ * from and no test able to tell a one-sided fix from a whole one.
+ */
+export function useDirtyReport(
+  dirty: boolean,
+  onDirtyChange: (dirty: boolean) => void,
+): void {
+  useEffect(() => {
+    onDirtyChange(dirty);
+    return () => onDirtyChange(false);
+  }, [dirty, onDirtyChange]);
+}

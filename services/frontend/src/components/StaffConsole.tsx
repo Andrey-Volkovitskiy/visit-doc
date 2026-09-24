@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import type { ConsoleConversation } from "../lib/consoleApi";
 import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
 
@@ -112,7 +112,7 @@ export function StaffConsole({
                       distinguish the hue.
                     */}
                     {conversation.emphasized && (
-                      <AlertTriangle
+                      <TriangleAlert
                         className="text-attention size-3.5 flex-none"
                         aria-hidden="true"
                       />
