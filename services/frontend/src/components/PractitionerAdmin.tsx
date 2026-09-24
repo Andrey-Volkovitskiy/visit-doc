@@ -16,14 +16,9 @@ import {
   type WorkingRange,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { DiscardDialog } from "./DiscardDialog";
+import { ErrorBanner } from "./ErrorBanner";
 import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "./ui/dialog";
 import { Input } from "./ui/input";
 
 // Monday-based and numeric, matching the scheduler's own enum: the wire carries the
@@ -417,44 +412,17 @@ function PractitionerEditor({
         </Button>
       </div>
 
-      {/*
-        Radix renders this into a portal on document.body, so a test reaches it with
-        `screen.*` and never with `within(container)`.
-
-        No `destructive` variant on either button: it maps onto --color-attention, which
-        FR-005 reserves for "a person is needed". Losing what was typed here is not that
-        claim, and a colour that means one thing must not be spent on another.
-      */}
-      <Dialog
+      <DiscardDialog
         open={confirmingDiscard}
-        onOpenChange={(open) => {
-          if (!open) setConfirmingDiscard(false);
+        onKeepEditing={() => setConfirmingDiscard(false)}
+        onDiscard={() => {
+          setConfirmingDiscard(false);
+          onLeave();
         }}
       >
-        <DialogContent data-testid="discard-confirm">
-          <DialogTitle>Leave without saving?</DialogTitle>
-          <DialogDescription>
-            What you typed here has not been sent to the clinic&apos;s records. Going
-            back now discards it.
-          </DialogDescription>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmingDiscard(false)}
-            >
-              Keep editing
-            </Button>
-            <Button
-              onClick={() => {
-                setConfirmingDiscard(false);
-                onLeave();
-              }}
-            >
-              Discard
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        What you typed here has not been sent to the clinic&apos;s records. Going back
+        now discards it.
+      </DiscardDialog>
     </div>
   );
 }
@@ -664,14 +632,7 @@ export function PractitionerAdmin({
           )}
         </>
       )}
-      {error && (
-        <p
-          data-testid="practitioner-error"
-          className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
-        >
-          {error}
-        </p>
-      )}
+      {error && <ErrorBanner testId="practitioner-error" message={error} />}
     </div>
   );
 }

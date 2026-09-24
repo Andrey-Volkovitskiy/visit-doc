@@ -776,7 +776,7 @@ claim that this is a presentation-only change rests on.
   | `clsx` | Conditional class lists, without string concatenation in markup |
   | `tailwind-merge` | Makes a caller's utility win over a component's default *for the same CSS property*, instead of both landing in `class` and source order deciding |
   | `class-variance-authority` | The `variant`/`size` tables on `Button`, so a variant is a named row rather than a ternary |
-  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the seventeen actually imported |
+  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the fifteen actually imported (`X` and `XIcon` are one icon under two names) |
   | `tw-animate-css` | The enter/exit keyframes shadcn v4 expects on dialog and dropdown. Its animations respect `prefers-reduced-motion` through the global block in `app.css` — verified, not assumed, since they arrived with the library |
   | `@types/node` (dev) | `vite.config.ts` and `vitest.config.ts` use `node:path` and `import.meta.dirname` to declare the `@/*` alias |
 

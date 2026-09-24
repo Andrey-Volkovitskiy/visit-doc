@@ -176,17 +176,18 @@
 
 /* -------------------------------------------------------- element defaults */
 
+/*
+ * Only what Tailwind's own Preflight does not already do. `box-sizing: border-box`, the
+ * margin and padding reset on every element, `list-style: none` on lists and
+ * `font`/`color: inherit` on controls all ship in Preflight, which `@import
+ * "tailwindcss"` above pulls into this same layer — restating them here gave each of
+ * those values a second home that could drift from the first while looking authoritative.
+ * `cursor` is the one that genuinely differs: v4's Preflight leaves a button at the
+ * browser's `default`.
+ */
 @layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
   html,
   body {
-    margin: 0;
-    padding: 0;
     max-width: 100%;
   }
 
@@ -199,26 +200,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1,
-  h2,
-  h3,
-  p,
-  ul,
-  ol,
-  figure,
-  blockquote {
-    margin: 0;
-  }
-
-  ul,
-  ol {
-    padding: 0;
-    list-style: none;
-  }
-
   button {
-    font: inherit;
-    color: inherit;
     cursor: pointer;
   }
 

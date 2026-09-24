@@ -6,6 +6,7 @@ import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
+import { ErrorBanner } from "./ErrorBanner";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
@@ -327,7 +328,10 @@ export function StaffThread({
         ref={threadScroll.ref}
         onScroll={threadScroll.onScroll}
         role="log"
-        aria-label="Conversation"
+        // Distinct from the patient pane's live region, which is on screen beside it:
+        // two regions sharing one accessible name leaves a screen-reader user unable to
+        // tell which conversation just announced.
+        aria-label="This patient's conversation"
         tabIndex={0}
         className="min-h-0 flex-1 overflow-y-auto p-4"
       >
@@ -413,14 +417,7 @@ export function StaffThread({
             )}
           </>
         )}
-        {banner && (
-          <p
-            data-testid="staff-error"
-            className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
-          >
-            {banner.text}
-          </p>
-        )}
+        {banner && <ErrorBanner testId="staff-error" message={banner.text} />}
       </div>
     </div>
   );

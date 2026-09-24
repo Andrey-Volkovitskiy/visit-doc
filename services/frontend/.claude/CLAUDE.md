@@ -36,7 +36,10 @@ src/
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
 │                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components,
 │                        #   plus adminSection.ts, the props and the dirty-report hook the two
-│                        #   admin sections share
+│                        #   admin sections share, and two shapes every surface owes the
+│                        #   reader the same way: ErrorBanner (one look and one role for a
+│                        #   failure) and DiscardDialog (the one "leave without saving?"
+│                        #   prompt, asked by the shell and by both admin sections)
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser

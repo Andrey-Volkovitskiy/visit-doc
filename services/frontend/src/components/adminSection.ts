@@ -51,8 +51,17 @@ export function useDirtyReport(
   dirty: boolean,
   onDirtyChange: (dirty: boolean) => void,
 ): void {
+  // Two effects, because they answer to two different things. Reporting follows the
+  // value; retracting follows this component's lifetime. Written as one effect with a
+  // cleanup, the retraction fired on every change of `dirty` as well — so each
+  // transition sent "not dirty" and then the real answer, and a second mounted section
+  // reading the same flag would see it withdrawn and reinstated for a keystroke it had
+  // nothing to do with. The comment above says "on unmount"; this is what makes that
+  // sentence true of the code.
   useEffect(() => {
     onDirtyChange(dirty);
-    return () => onDirtyChange(false);
   }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    return () => onDirtyChange(false);
+  }, [onDirtyChange]);
 }

@@ -2162,6 +2162,72 @@ describe("ChatWindow: concurrent replies are one run, not two (FR-014)", () => {
       "true",
     );
   });
+
+  it("puts the sender icon on the first working indicator only", async () => {
+    // The indicator wears the assistant's own icon, which is the whole point of it
+    // standing where the bubble will stand — so two of them stacked repeat the very
+    // indicator FR-014 says a run shows once. The bubble half of this was fixed on its
+    // own; the indicator drew its icon whatever stood above it.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    const rows = screen
+      .getAllByTestId("working-indicator")
+      .map((el) => el.parentElement!);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.firstElementChild!.querySelector("svg")).not.toBeNull();
+    expect(rows[1]!.firstElementChild!.querySelector("svg")).toBeNull();
+  });
+
+  it("opens the run on the first bubble even when an earlier turn drew nothing", async () => {
+    // A paused conversation draws nothing at all for a turn awaiting a reply (FR-017),
+    // so counting by position in the record — rather than by what rendered — left the
+    // first *visible* bubble believing something above it carried the icon, and it
+    // silently dropped its own.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(async (_id, message) =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        if (message === "second") {
+          yield { type: "token", text: "reply to second" };
+        }
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply={false} />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    const bubble = await screen.findByText("reply to second");
+    // FR-017 still holds: the turn with nothing to show shows nothing.
+    expect(screen.queryByTestId("working-indicator")).toBeNull();
+    expect(bubble.closest("[data-testid='message']")).toHaveAttribute(
+      "data-burst-start",
+      "true",
+    );
+  });
 });
 
 describe("ChatWindow shows none of the clinic's working notes (FR-019)", () => {
