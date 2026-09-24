@@ -224,7 +224,7 @@ bookings**, and see exactly the in-window standing ones, then click **Hide booki
 - [X] T038 [P] Update `docs/ROADMAP.md` Phase 3a: both leftovers are shipped as `specs/016-staff-booking-visibility/`, the week is on the roster behind a show/hide toggle, and it is read over REST rather than `ListAppointments` for the reason in research R1 (FR-024).
 - [X] T039 [P] Add a README section to `README.md` covering the tradeoffs: booking acts anchored on the patient message, write-ahead and settled once, a snapshot, and a table rather than JSONB; and the week as a scheduler REST read with the window computed in chat (FR-024).
 - [X] T040 [P] Add a key-design-decision entry beside 011's `request_outcomes` entry in `.claude/CLAUDE.md`. It covers booking acts as their own shape, write-ahead, NULL read as unknown, agent-blind (FR-021a) and the patient-message anchor.
-- [ ] T041 Run the full gates (`make lint`, `make typecheck`, `make test-unit`, `make test-frontend`, `make test-integration`), then walk `specs/016-staff-booking-visibility/quickstart.md` §3–§5 on a live stack and record the results in `specs/016-staff-booking-visibility/quickstart.md`.
+- [X] T041 Run the full gates (`make lint`, `make typecheck`, `make test-unit`, `make test-frontend`, `make test-integration`), then walk `specs/016-staff-booking-visibility/quickstart.md` §3–§5 on a live stack and record the results in `specs/016-staff-booking-visibility/quickstart.md`.
 
 ---
 
