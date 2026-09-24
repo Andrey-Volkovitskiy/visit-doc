@@ -1958,13 +1958,16 @@ describe("ChatWindow scroll behaviour (FR-015, FR-015a)", () => {
     expect(thread().scrollTop).toBe(600);
   });
 
-  it("lands a chat opened next at its bottom however far up the last one was scrolled", async () => {
-    // The position a reader scrolled to described the thread that was on screen. A
-    // switch empties the container without firing a scroll event, so nothing but the
-    // switch itself can tell the pane that position no longer applies (FR-015).
-    vi.spyOn(chatStream, "fetchChatHistory").mockImplementation(async (id) =>
-      id === CHAT_ID ? history("one", "two") : history("a", "b", "c"),
-    );
+  it("opens the next chat at its newest message, after scrolling up in this one", async () => {
+    // The hold-position answer belongs to the conversation it was given about. Carried
+    // into the next one it is not a held position but a refusal to open at the bottom
+    // (FR-015), and the reader lands on the oldest message in a thread they have never
+    // seen.
+    const fetchChatHistory = vi
+      .spyOn(chatStream, "fetchChatHistory")
+      .mockResolvedValueOnce(history("one", "two", "three"))
+      .mockResolvedValue(history("four", "five", "six"));
+
     const { rerender } = render(
       <ChatWindow chatId={CHAT_ID} lastMessageAt="2026-09-01T12:00:00" />,
     );
@@ -1972,20 +1975,19 @@ describe("ChatWindow scroll behaviour (FR-015, FR-015a)", () => {
       thread(),
       () => 400 + screen.queryAllByTestId("message").length * 200,
     );
-    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
 
     thread().scrollTop = 0;
     fireEvent.scroll(thread());
 
     rerender(
-      <ChatWindow chatId="01OTHERCHAT0000000000000" lastMessageAt="2026-09-01T12:00:00" />,
+      <ChatWindow chatId="other-chat" lastMessageAt="2026-09-01T12:05:00" />,
     );
+    await waitFor(() => expect(fetchChatHistory).toHaveBeenCalledTimes(2));
     await waitFor(() =>
-      expect(screen.getAllByTestId("message")[0]).toHaveTextContent("a"),
+      expect(screen.getByText("six")).toBeInTheDocument(),
     );
-    expect(screen.getAllByTestId("message")).toHaveLength(3);
 
-    // 400 + 3*200 = 1000 of content in a 400 viewport.
     await waitFor(() => expect(thread().scrollTop).toBe(600));
   });
 });
@@ -2107,6 +2109,141 @@ describe("ChatWindow: the indicator wears the assistant's own icon (FR-014, FR-0
     const row = screen.getByTestId("working-indicator").parentElement!;
     const avatar = row.firstElementChild!;
     expect(avatar.querySelector("svg")).not.toBeNull();
+  });
+});
+
+describe("ChatWindow: concurrent replies are one run, not two (FR-014)", () => {
+  it("puts the sender indicator on the first streaming bubble only", async () => {
+    // Several turns can be genuinely in flight at once — a burst of quick patient
+    // messages — and their bubbles land one under the other. That is one consecutive
+    // run from the assistant, so only the first of them carries the indicator. The
+    // streaming bubble used to claim a burst start unconditionally, on the reasoning
+    // that it is "the first thing the assistant has said in this run", which is exactly
+    // what a second concurrent turn makes untrue.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    // Each turn streams one token and then stops, so both bubbles stay on screen.
+    vi.spyOn(chatStream, "askChat").mockImplementation(async (_id, message) =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        yield { type: "token", text: `reply to ${message}` };
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    await waitFor(() =>
+      expect(screen.getByText("reply to second")).toBeInTheDocument(),
+    );
+    const streamed = screen
+      .getAllByTestId("message")
+      .filter((el) => el.getAttribute("data-sender") === "assistant");
+    expect(streamed).toHaveLength(2);
+    expect(streamed[0]).toHaveAttribute("data-burst-start", "true");
+    expect(streamed[1]).not.toHaveAttribute("data-burst-start");
+  });
+
+  it("still starts a run when the thread's last message is the patient's", async () => {
+    // The ordinary case, and the one the unconditional value was right about: a single
+    // turn's bubble follows the patient's own message, so it does begin a run.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(async () =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        yield { type: "token", text: "one moment" };
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText("question"), {
+      target: { value: "when can I visit?" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    });
+
+    const bubble = await screen.findByText("one moment");
+    expect(bubble.closest("[data-testid='message']")).toHaveAttribute(
+      "data-burst-start",
+      "true",
+    );
+  });
+
+  it("puts the sender icon on the first working indicator only", async () => {
+    // The indicator wears the assistant's own icon, which is the whole point of it
+    // standing where the bubble will stand — so two of them stacked repeat the very
+    // indicator FR-014 says a run shows once. The bubble half of this was fixed on its
+    // own; the indicator drew its icon whatever stood above it.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    const rows = screen
+      .getAllByTestId("working-indicator")
+      .map((el) => el.parentElement!);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.firstElementChild!.querySelector("svg")).not.toBeNull();
+    expect(rows[1]!.firstElementChild!.querySelector("svg")).toBeNull();
+  });
+
+  it("opens the run on the first bubble even when an earlier turn drew nothing", async () => {
+    // A paused conversation draws nothing at all for a turn awaiting a reply (FR-017),
+    // so counting by position in the record — rather than by what rendered — left the
+    // first *visible* bubble believing something above it carried the icon, and it
+    // silently dropped its own.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(chatStream, "askChat").mockImplementation(async (_id, message) =>
+      (async function* (): AsyncGenerator<ChatEvent> {
+        if (message === "second") {
+          yield { type: "token", text: "reply to second" };
+        }
+        await new Promise(() => undefined);
+      })(),
+    );
+
+    render(<ChatWindow chatId={CHAT_ID} assistantMayReply={false} />);
+    await waitFor(() => expect(chatStream.fetchChatHistory).toHaveBeenCalled());
+
+    for (const text of ["first", "second"]) {
+      fireEvent.change(screen.getByLabelText("question"), {
+        target: { value: text },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      });
+    }
+
+    const bubble = await screen.findByText("reply to second");
+    // FR-017 still holds: the turn with nothing to show shows nothing.
+    expect(screen.queryByTestId("working-indicator")).toBeNull();
+    expect(bubble.closest("[data-testid='message']")).toHaveAttribute(
+      "data-burst-start",
+      "true",
+    );
   });
 });
 

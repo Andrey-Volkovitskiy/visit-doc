@@ -1925,35 +1925,34 @@ describe("StaffThread scroll behaviour (FR-015b)", () => {
     expect(thread().scrollTop).toBe(600);
   });
 
-  it("lands a conversation opened next at its bottom however far up the last one was", async () => {
-    // A switch empties the container without firing a scroll event, so nothing but the
-    // switch itself can tell the pane that the reader's scrolled-up position described
-    // a thread no longer on screen (FR-015, FR-015b).
-    vi.spyOn(consoleApi, "fetchThread").mockImplementation(async (id) =>
-      id === CHAT_ID ? messages("one", "two") : messages("a", "b", "c"),
-    );
+  it("opens the next conversation at its newest message, after scrolling back in this one", async () => {
+    // The hold-position answer belongs to the conversation it was given about. Carried
+    // into the next one it is not a held position but a refusal to open at the bottom,
+    // and the staff member lands on the oldest message in a thread they have never seen.
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(messages("one", "two", "three"))
+      .mockResolvedValue(messages("four", "five", "six"));
+
     const { rerender } = renderAt("2026-09-01T12:00:00");
     measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
-    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
 
     thread().scrollTop = 0;
     fireEvent.scroll(thread());
 
     rerender(
       <StaffThread
-        chatId="01OTHERCHAT0000000000000"
+        chatId="other-chat"
         assistantMayReply
         pauseSecondsRemaining={null}
-        lastMessageAt="2026-09-01T12:00:00"
+        lastMessageAt="2026-09-01T12:05:00"
         onSetAssistant={vi.fn()}
       />,
     );
-    await waitFor(() =>
-      expect(screen.getAllByTestId("message")[0]).toHaveTextContent("a"),
-    );
-    expect(screen.getAllByTestId("message")).toHaveLength(3);
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText("six")).toBeInTheDocument());
 
-    // 400 + 3*200 = 1000 of content in a 400 viewport.
     await waitFor(() => expect(thread().scrollTop).toBe(600));
   });
 });

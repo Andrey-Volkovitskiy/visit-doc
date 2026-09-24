@@ -1,0 +1,67 @@
+import { useEffect } from "react";
+
+/**
+ * What every console admin section owes the shell around it.
+ *
+ * Its own module rather than a field of whichever section happened to declare it first:
+ * `PractitionerAdmin` and `FaqAdmin` are siblings, and one importing the other's props
+ * to describe itself makes a contract they share look like a detail of one of them.
+ */
+
+/** Reported up, and retracted on unmount, by a section holding unsaved work. */
+export interface AdminSectionProps {
+  /**
+   * Whether this section now holds work that leaving it would lose (FR-035b).
+   *
+   * The *back* control out of an edit view is guarded inside the section that owns the
+   * form. A **tab** switch cannot be: Radix destroys the inactive panel to perform one,
+   * so by the time the section could notice, the typed text is already gone. Only the
+   * shell that performs the switch can hold it back, and this is what tells it to.
+   *
+   * Optional, and defaulted to a no-op: a section rendered on its own — which is how
+   * every one of its own tests renders it — has nobody to report to, and requiring the
+   * prop would make the guard's shell a precondition for using the section at all.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
+}
+
+/**
+ * The default `onDirtyChange`, declared once at module scope.
+ *
+ * A `() => undefined` written in the parameter list is a *new function every render*,
+ * and it is read by an editor's effect dependency list — so the effect that reports
+ * dirtiness would tear down and re-run on every keystroke, retracting the flag and
+ * setting it again, for no reason but the identity of a function that does nothing.
+ */
+export const NO_DIRTY_REPORT = (): void => undefined;
+
+/**
+ * Report an editor's dirtiness up, and **retract it on unmount**.
+ *
+ * The retraction is the load-bearing half: the editor is destroyed by the very tab
+ * switch the flag guards, so a flag that outlived it would sit in `App` describing a
+ * form that no longer exists — and the next switch, from a section holding nothing,
+ * would be blocked by a prompt about work nobody can see or answer for.
+ *
+ * Here rather than written out in each editor. `FaqEditor` and `PractitionerEditor`
+ * held byte-identical copies of it, which is one place for the retraction to be dropped
+ * from and no test able to tell a one-sided fix from a whole one.
+ */
+export function useDirtyReport(
+  dirty: boolean,
+  onDirtyChange: (dirty: boolean) => void,
+): void {
+  // Two effects, because they answer to two different things. Reporting follows the
+  // value; retracting follows this component's lifetime. Written as one effect with a
+  // cleanup, the retraction fired on every change of `dirty` as well — so each
+  // transition sent "not dirty" and then the real answer, and a second mounted section
+  // reading the same flag would see it withdrawn and reinstated for a keystroke it had
+  // nothing to do with. The comment above says "on unmount"; this is what makes that
+  // sentence true of the code.
+  useEffect(() => {
+    onDirtyChange(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => {
+    return () => onDirtyChange(false);
+  }, [onDirtyChange]);
+}

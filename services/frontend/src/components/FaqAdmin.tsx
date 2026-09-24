@@ -1,5 +1,4 @@
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
-import type { AdminSectionProps } from "./PractitionerAdmin";
 import { useCallback, useEffect, useState } from "react";
 import {
   createFaqEntry,
@@ -9,15 +8,14 @@ import {
   type FaqEntry,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
-import { useReportDirty } from "../lib/useReportDirty";
-import { Button } from "./ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "./ui/dialog";
+  NO_DIRTY_REPORT,
+  useDirtyReport,
+  type AdminSectionProps,
+} from "./adminSection";
+import { DiscardDialog } from "./DiscardDialog";
+import { ErrorBanner } from "./ErrorBanner";
+import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 
 /**
@@ -96,7 +94,9 @@ function FaqEditor({
   const writing = entry === null;
   const dirty = draft !== initial;
 
-  useReportDirty(dirty, onDirtyChange);
+  // Reported up, and retracted on unmount. Both halves live in `useDirtyReport`, which
+  // says why the retraction is the load-bearing one.
+  useDirtyReport(dirty, onDirtyChange);
 
   function leave(): void {
     // FR-035b: a box holding work asks before losing it; an untouched one does not
@@ -149,44 +149,17 @@ function FaqEditor({
         </Button>
       </div>
 
-      {/*
-        Radix renders this into a portal on document.body, so a test reaches it with
-        `screen.*` and never with `within(container)`.
-
-        No `destructive` variant on either button: it maps onto --color-attention, which
-        FR-005 reserves for "a person is needed". Losing what was typed here is not that
-        claim, and a colour that means one thing must not be spent on another.
-      */}
-      <Dialog
+      <DiscardDialog
         open={confirmingDiscard}
-        onOpenChange={(open) => {
-          if (!open) setConfirmingDiscard(false);
+        onKeepEditing={() => setConfirmingDiscard(false)}
+        onDiscard={() => {
+          setConfirmingDiscard(false);
+          onLeave();
         }}
       >
-        <DialogContent data-testid="discard-confirm">
-          <DialogTitle>Leave without saving?</DialogTitle>
-          <DialogDescription>
-            What you typed here has not been stored, so the assistant cannot answer from
-            it. Going back now discards it.
-          </DialogDescription>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmingDiscard(false)}
-            >
-              Keep editing
-            </Button>
-            <Button
-              onClick={() => {
-                setConfirmingDiscard(false);
-                onLeave();
-              }}
-            >
-              Discard
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        What you typed here has not been stored, so the assistant cannot answer from it.
+        Going back now discards it.
+      </DiscardDialog>
     </div>
   );
 }
@@ -207,7 +180,9 @@ function FaqEditor({
  * A refused save changes nothing, so what was typed stays where it was typed: the reply
  * says why, and the text is still there to correct.
  */
-export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps) {
+export function FaqAdmin({
+  onDirtyChange = NO_DIRTY_REPORT,
+}: AdminSectionProps) {
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ mode: "list" });
@@ -394,14 +369,7 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
           )}
         </>
       )}
-      {error && (
-        <p
-          data-testid="faq-error"
-          className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
-        >
-          {error}
-        </p>
-      )}
+      {error && <ErrorBanner testId="faq-error" message={error} />}
     </div>
   );
 }

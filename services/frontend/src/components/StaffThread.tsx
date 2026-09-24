@@ -2,11 +2,12 @@ import { SendHorizontal } from "lucide-react";
 import { useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
+import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
-import { usePinnedScroll } from "../lib/usePinnedScroll";
-import { useReportDirty } from "../lib/useReportDirty";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
+import { NO_DIRTY_REPORT, useDirtyReport } from "./adminSection";
+import { ErrorBanner } from "./ErrorBanner";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
@@ -95,9 +96,6 @@ interface StaffThreadProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-/** The default `onDirtyChange`: stable, so the report effect does not re-run per render. */
-const IGNORE_DIRTY = (): void => undefined;
-
 /**
  * One conversation, read and answered by a person.
  *
@@ -115,7 +113,7 @@ export function StaffThread({
   bookingActsVersion,
   pollTick,
   onSetAssistant,
-  onDirtyChange = IGNORE_DIRTY,
+  onDirtyChange = NO_DIRTY_REPORT,
 }: StaffThreadProps) {
   const [thread, setThread] = useState<Message[]>([]);
   const [reply, setReply] = useState("");
@@ -146,12 +144,14 @@ export function StaffThread({
   // and failed are three different situations (FR-010a), and only the middle one gets
   // the empty-thread statement (FR-025a) — so it cannot be inferred from an empty array.
   const [threadLoaded, setThreadLoaded] = useState(false);
-  // FR-015b puts this thread on FR-015a's exact terms, so it follows new content by the
-  // one rule `ChatWindow` uses too.
-  const scroll = usePinnedScroll();
+  // FR-015b puts this thread on FR-015a's exact terms, so it is not a second mechanism
+  // that happens to agree: it is the same hook the patient thread uses.
+  const threadScroll = useBottomPin<HTMLDivElement>();
 
-  // Whitespace alone is nothing a staff member would miss.
-  useReportDirty(reply.trim() !== "", onDirtyChange);
+  // Whitespace alone is nothing a staff member would miss. Reported up and retracted on
+  // unmount by the same hook the admin editors use, since the tab switch that destroys
+  // this pane is the one it guards.
+  useDirtyReport(reply.trim() !== "", onDirtyChange);
 
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {
@@ -197,13 +197,13 @@ export function StaffThread({
     read: (id, signal) => fetchThread(id, signal),
     onReset: () => {
       setThreadLoaded(false);
+      // A different conversation has no position to hold: it opens at its most recent
+      // message, however far up the previous one had been scrolled.
+      threadScroll.pin();
       setThread([]);
       setReply("");
       setBanner(null);
       pendingPostsRef.current = [];
-      // A conversation opened now lands at its most recent message (FR-015) wherever
-      // the last one was scrolled to: that position described a thread no longer here.
-      scroll.pin();
     },
     onLoaded: (messages) => {
       setThreadLoaded(true);
@@ -251,7 +251,7 @@ export function StaffThread({
         // just cleared, which is why nothing here files the poll value as handled.
         // Posting is not unbidden content: the staff member just acted, so their own
         // reply follows to the bottom whatever they had scrolled back to.
-        scroll.pin();
+        threadScroll.pin();
         showPosted(posted);
         setReply("");
       } catch (err) {
@@ -352,10 +352,13 @@ export function StaffThread({
       </div>
       <div
         data-testid="staff-thread"
-        ref={scroll.ref}
-        onScroll={scroll.onScroll}
+        ref={threadScroll.ref}
+        onScroll={threadScroll.onScroll}
         role="log"
-        aria-label="Conversation"
+        // Distinct from the patient pane's live region, which is on screen beside it:
+        // two regions sharing one accessible name leaves a screen-reader user unable to
+        // tell which conversation just announced.
+        aria-label="This patient's conversation"
         tabIndex={0}
         className="min-h-0 flex-1 overflow-y-auto p-4"
       >
@@ -442,14 +445,7 @@ export function StaffThread({
             )}
           </>
         )}
-        {banner && (
-          <p
-            data-testid="staff-error"
-            className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
-          >
-            {banner.text}
-          </p>
-        )}
+        {banner && <ErrorBanner testId="staff-error" message={banner.text} />}
       </div>
     </div>
   );

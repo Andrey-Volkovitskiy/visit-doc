@@ -314,6 +314,146 @@ describe("App: the console read model reaches both panes", () => {
   });
 });
 
+// --- each pane reports its own failures ---------------------------------------------
+
+/**
+ * Put one conversation in the console listing. Called *before* `render`, because the
+ * poll reads once immediately and the next tick is two seconds away.
+ */
+function stubOneConversation(): void {
+  vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+    attention_total: 0,
+    conversations: [
+      {
+        chat_id: "01STAFFCHAT",
+        patient_name: "Grace Hopper",
+        last_message_at: null,
+        emphasized: false,
+        escalated: false,
+        escalation_reason: null,
+        attention_since: null,
+        assistant_may_reply: true,
+        pause_seconds_remaining: null,
+        booking_acts_version: 0,
+      },
+    ],
+  });
+}
+
+/** Open it, so the assistant switch is on screen. */
+async function openStaffConversation(): Promise<void> {
+  fireEvent.click(await screen.findByTestId("staff-conversation"));
+  await screen.findByTestId("assistant-switch");
+}
+
+describe("App: a pane reports its own failures and nobody else's", () => {
+  it("puts a failed assistant switch in the staff pane, not the patient's", async () => {
+    // The switch is a staff gesture. Reported through the patient pane's banner it
+    // became a sentence about a control the patient cannot see, sitting where they read
+    // about their own chats.
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat({ id: "01PATIENTCHAT" })] }),
+    );
+    vi.spyOn(consoleApi, "setAssistant").mockRejectedValue(
+      new Error("the switch would not move"),
+    );
+    stubOneConversation();
+
+    render(<App />);
+    await openStaffConversation();
+
+    press(screen.getByTestId("assistant-switch"));
+
+    const banner = await screen.findByTestId("staff-pane-error");
+    expect(banner).toHaveTextContent("the switch would not move");
+    expect(
+      within(screen.getByTestId("staff-pane")).getByTestId("staff-pane-error"),
+    ).toBe(banner);
+    expect(screen.queryByTestId("chat-list-error")).toBeNull();
+  });
+
+  it("does not clear the patient pane's banner when the switch is flipped", async () => {
+    // Two failures, two banners, and one is not disproved by the other's gesture: a
+    // chat list that would not load is still not loaded after a staff member touches a
+    // switch. One shared value cleared it on the way in.
+    vi.spyOn(chatStream, "fetchChats").mockRejectedValue(
+      new Error("could not reach the chat list"),
+    );
+    const setAssistant = vi
+      .spyOn(consoleApi, "setAssistant")
+      .mockResolvedValue({
+        assistant_may_reply: false,
+        pause_seconds_remaining: 900,
+      });
+    stubOneConversation();
+
+    render(<App />);
+    await screen.findByTestId("chat-list-error");
+    await openStaffConversation();
+
+    press(screen.getByTestId("assistant-switch"));
+
+    await waitFor(() => expect(setAssistant).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("chat-list-error")).toHaveTextContent(
+      "could not reach the chat list",
+    );
+    expect(screen.queryByTestId("staff-pane-error")).toBeNull();
+  });
+
+  it("drops the staff banner when another conversation is opened", async () => {
+    // Its one sentence says "this conversation". Left standing across a switch it names
+    // the wrong one — a failure the staff member cannot see, retry or act on, reported
+    // over a conversation nothing went wrong in.
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat({ id: "01PATIENTCHAT" })] }),
+    );
+    vi.spyOn(consoleApi, "setAssistant").mockRejectedValue(
+      new Error("the switch would not move"),
+    );
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 0,
+      conversations: [
+        {
+          chat_id: "01STAFFCHAT",
+          patient_name: "Grace Hopper",
+          last_message_at: null,
+          emphasized: false,
+          escalated: false,
+          escalation_reason: null,
+          attention_since: null,
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+          booking_acts_version: 0,
+        },
+        {
+          chat_id: "01OTHERCHAT",
+          patient_name: "Alan Turing",
+          last_message_at: null,
+          emphasized: false,
+          escalated: false,
+          escalation_reason: null,
+          attention_since: null,
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+          booking_acts_version: 0,
+        },
+      ],
+    });
+
+    render(<App />);
+    fireEvent.click(await screen.findByText("Grace Hopper"));
+    await screen.findByTestId("assistant-switch");
+
+    press(screen.getByTestId("assistant-switch"));
+    await screen.findByTestId("staff-pane-error");
+
+    fireEvent.click(screen.getByText("Alan Turing"));
+
+    expect(screen.queryByTestId("staff-pane-error")).toBeNull();
+  });
+});
+
 // --- the panels that can only read a session ----------------------------------------
 
 function practitioner(
@@ -585,8 +725,13 @@ describe("App: the attention total in the console header (FR-021)", () => {
       conversations: [],
     });
     render(<App />);
+    // Waited for by its *text*, not its presence: the element is on screen before the
+    // poll answers, holding a placeholder rather than a count, so waiting for it to
+    // exist would let an assertion run against the waiting state.
     await waitFor(() =>
-      expect(screen.getByTestId("attention-total")).toBeInTheDocument(),
+      expect(screen.getByTestId("attention-total")).toHaveTextContent(
+        String(attention_total),
+      ),
     );
   }
 
@@ -663,6 +808,31 @@ describe("App: the attention total in the console header (FR-021)", () => {
   it("renders exactly one total, not one per section", async () => {
     await withTotal(2);
     expect(screen.getAllByTestId("attention-total")).toHaveLength(1);
+  });
+
+  it("does not read as zero before the console has answered (FR-010a)", async () => {
+    // "Nobody needs you" and "nothing is known yet" are the two situations FR-010a
+    // keeps apart everywhere else on this pane — the rail beside this count says in
+    // words that it is still loading. A zero rendered over that rail is the collapse
+    // that requirement exists to prevent, and it is the one a staff member acts on by
+    // looking away.
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    render(<App />);
+
+    const total = screen.getByTestId("attention-total");
+    expect(total).toHaveAttribute("data-counted", "false");
+    expect(total).not.toHaveTextContent("0");
+    expect(total).toHaveAccessibleName(/not counted yet/i);
+  });
+
+  it("marks the total as counted once the console has answered", async () => {
+    await withTotal(0);
+    expect(screen.getByTestId("attention-total")).toHaveAttribute(
+      "data-counted",
+      "true",
+    );
   });
 });
 

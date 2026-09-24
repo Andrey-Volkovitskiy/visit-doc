@@ -1,9 +1,10 @@
 import { Bot, SendHorizontal } from "lucide-react";
 import { useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
+import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
-import { usePinnedScroll } from "../lib/usePinnedScroll";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
+import { ErrorBanner } from "./ErrorBanner";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -155,9 +156,10 @@ export function ChatWindow({
   // arrived-empty and failed are three different situations (FR-010a), and only the
   // middle one is greeted (FR-019c).
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  // Follows new content only for a reader already at the bottom (FR-015a), by the same
-  // rule the staff thread uses.
-  const scroll = usePinnedScroll();
+  // Follow new content to the bottom, but only for a reader who was already there
+  // (FR-015a). The rule, and the ref that holds the answer, live in `useBottomPin` —
+  // the staff thread is held to the same terms by FR-015b and reads the same hook.
+  const threadScroll = useBottomPin<HTMLDivElement>();
 
   useThreadReads<Message[]>({
     chatId,
@@ -170,6 +172,9 @@ export function ChatWindow({
     read: (id, signal) => fetchChatHistory(id, signal),
     onReset: () => {
       setHistoryLoaded(false);
+      // A different conversation has no position to hold: it opens at its most recent
+      // message (FR-015), however far up the previous one had been scrolled.
+      threadScroll.pin();
       // Switching chats abandons whatever the previous one had in flight: its reply
       // belongs to a thread that is no longer on screen, and letting it land would
       // append it to the wrong history. The *reads* are the hook's to abort; these are
@@ -181,9 +186,6 @@ export function ChatWindow({
       setMessages([]);
       setStreaming({});
       setBanner(null);
-      // A chat opened now lands at its most recent message (FR-015) wherever the reader
-      // had scrolled the last one to: that position described a thread no longer here.
-      scroll.pin();
     },
     // Reconciled rather than assigned, on every read: a message sent before this answer
     // was composed is already on screen and is not in it — the patient's own bubble,
@@ -226,7 +228,7 @@ export function ChatWindow({
     setBanner(null);
     // Sending is not unbidden content: the patient just acted, so their own message
     // follows to the bottom whatever they had scrolled to beforehand.
-    scroll.pin();
+    threadScroll.pin();
 
     const turnKey = localId();
     setStreaming((prev) => ({ ...prev, [turnKey]: "" }));
@@ -336,6 +338,29 @@ export function ChatWindow({
     );
   }
 
+  // Who spoke last among the messages already in the thread, which is what decides
+  // whether the first streaming bubble begins a run of its own (FR-014).
+  const lastShownSender = messages[messages.length - 1]?.sender;
+  // The turns in flight, in send order, each paired with whether it *opens* the
+  // assistant's run (FR-014).
+  //
+  // Counted over what actually renders, never over the record's positions. Two things
+  // make those differ, and each produced a wrong answer: a turn the pause suppressed
+  // (FR-017) draws nothing at all, so a later bubble sitting at index 1 had no icon
+  // above it and quietly lost its own; and the working indicator wears the same icon a
+  // bubble does, so an indicator behind a bubble repeated the very indicator FR-014
+  // says a run shows once.
+  const inFlight: { turnKey: string; text: string; startsBurst: boolean }[] = [];
+  let assistantAbove = lastShownSender === "assistant";
+  for (const [turnKey, text] of Object.entries(streaming)) {
+    // Nothing. FR-017 forbids a notice, a placeholder or a countdown in the indicator's
+    // place: the patient's message sits in the thread as sent and the interface makes
+    // no claim about who will reply or when. An empty assistant bubble here would be
+    // exactly such a claim - and a turn that draws nothing opens nothing.
+    if (text.length === 0 && !assistantMayReply) continue;
+    inFlight.push({ turnKey, text, startsBurst: !assistantAbove });
+    assistantAbove = true;
+  }
   const overLimit = input.length > MAX_MESSAGE_LENGTH;
   const empty = input.trim().length === 0;
   const sendDisabled = empty || overLimit;
@@ -351,14 +376,17 @@ export function ChatWindow({
     <div className="flex min-h-0 flex-1 flex-col">
       <div
         data-testid="messages"
-        ref={scroll.ref}
+        ref={threadScroll.ref}
         // A scroll container of its own, so the thread scrolls and the composer and tab
         // strip stay put (FR-015).
         className="min-h-0 flex-1 overflow-y-auto p-4"
         role="log"
-        aria-label="Conversation"
+        // Named for whose conversation it is, not "Conversation": the staff console's
+        // thread is a live region too, and two of them sharing one accessible name
+        // leaves a screen-reader user unable to tell which one just announced.
+        aria-label="Your conversation with the clinic"
         tabIndex={0}
-        onScroll={scroll.onScroll}
+        onScroll={threadScroll.onScroll}
       >
         {/*
           Rendered only for a thread that has *answered* and holds nothing (FR-019c).
@@ -393,20 +421,18 @@ export function ChatWindow({
             startsBurst={i === 0 || messages[i - 1]!.sender !== message.sender}
           />
         ))}
-        {Object.entries(streaming).map(([turnKey, text]) =>
+        {inFlight.map(({ turnKey, text, startsBurst }) =>
           text.length > 0 ? (
             // The reply has begun arriving, so the indicator has done its job and the
-            // bubble takes over (FR-018). Always a burst start: it is the first thing
-            // the assistant has said in this run by definition.
-            <MessageView key={turnKey} sender="assistant" content={text} />
-          ) : assistantMayReply ? (
-            <WorkingIndicator key={turnKey} />
+            // bubble takes over (FR-018).
+            <MessageView
+              key={turnKey}
+              sender="assistant"
+              content={text}
+              startsBurst={startsBurst}
+            />
           ) : (
-            // Nothing. FR-017 forbids a notice, a placeholder or a countdown in the
-            // indicator's place: the patient's message sits in the thread as sent and
-            // the interface makes no claim about who will reply or when. An empty
-            // assistant bubble here would be exactly such a claim.
-            null
+            <WorkingIndicator key={turnKey} startsBurst={startsBurst} />
           ),
         )}
       </div>
@@ -457,21 +483,17 @@ export function ChatWindow({
                 {input.length}/{MAX_MESSAGE_LENGTH}
               </p>
             )}
-            {empty && (
+            {/* `sendReason` itself, not a second copy of its words: the control's
+                `aria-describedby` is derived from it, so a literal here would be a
+                wording only one of the two could be changed in. */}
+            {sendReason !== null && (
               <p id="composer-reason" className="sr-only">
-                Type a message to send.
+                {sendReason}
               </p>
             )}
           </>
         )}
-        {banner && (
-          <p
-            data-testid="error"
-            className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
-          >
-            {banner.text}
-          </p>
-        )}
+        {banner && <ErrorBanner testId="error" message={banner.text} />}
       </div>
     </div>
   );
@@ -484,21 +506,35 @@ export function ChatWindow({
  * only drawn. Under `prefers-reduced-motion` the dots stop moving and keep a visible
  * resting opacity — the animation is suppressed, the state is not (FR-042); the rule
  * for that lives in `app.css` beside the keyframes it disables.
+ *
+ * `startsBurst` is the same question `MessageView` is asked and is answered by the
+ * thread for the same reason: the indicator wears the assistant's own icon, so an
+ * indicator standing behind a bubble is mid-run and must not repeat it (FR-014).
  */
-function WorkingIndicator() {
+function WorkingIndicator({ startsBurst = true }: { startsBurst?: boolean }) {
   return (
-    <div className="mt-4 flex items-end gap-3">
+    <div
+      className={`flex items-end gap-3 ${startsBurst ? "mt-4 first:mt-0" : "mt-1"}`}
+    >
       {/*
         The assistant's own icon, the same one its messages carry. The indicator stands
         exactly where the reply's bubble will stand, so a different glyph here would have
         one turn showing two different assistants a second apart.
+
+        Mid-run it is a spacer instead, exactly as a mid-run message is: not the icon
+        made invisible, because an `aria-hidden` icon and an empty box read the same to
+        everything but the layout and only one of them can be mistaken for an indicator.
       */}
-      <span
-        aria-hidden="true"
-        className="bg-accent text-surface grid size-7 flex-none place-items-center rounded-full"
-      >
-        <Bot className="size-3.5" />
-      </span>
+      {startsBurst ? (
+        <span
+          aria-hidden="true"
+          className="bg-accent text-surface grid size-7 flex-none place-items-center rounded-full"
+        >
+          <Bot className="size-3.5" />
+        </span>
+      ) : (
+        <span aria-hidden="true" className="size-7 flex-none" />
+      )}
       <div
         data-testid="working-indicator"
         role="status"

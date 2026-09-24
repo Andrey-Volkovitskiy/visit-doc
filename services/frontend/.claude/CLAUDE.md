@@ -35,15 +35,19 @@ src/
 ├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
 │                        #   StaffThread, PractitionerAdmin, PractitionerWeek, FaqAdmin — this
-│                        #   app's own components
+│                        #   app's own components, plus adminSection.ts, the props and the
+│                        #   dirty-report hook the two admin sections share (the staff reply
+│                        #   box reports through it too), and two shapes every surface owes the
+│                        #   reader the same way: ErrorBanner (one look and one role for a
+│                        #   failure) and DiscardDialog (the one "leave without saving?"
+│                        #   prompt, asked by the shell and by both admin sections)
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
-├── lib/usePinnedScroll.ts # both threads' follow-only-when-at-the-bottom rule, built on it
-├── lib/useReportDirty.ts # a form's "leaving loses work" flag for App's tab guard, retracted on unmount
+├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads
 ├── lib/localTime.ts     # how the console writes a naive local time (day label, HH:MM), shared
 │                        #   by the practitioner's week and the booking acts on a thread
 ├── lib/utils.ts         # shadcn's cn() — clsx + tailwind-merge
@@ -160,7 +164,7 @@ exists.
 
 | Component | Hooks |
 |---|---|
-| `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `attention-total`, `region-loading` |
+| `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `staff-pane-error`, `attention-total`, `region-loading`, `discard-confirm` |
 | `ChatList` | `chat-list`, `chat-list-item`, `chat-overflow`, `chat-overflow-item`, `delete-confirm` |
 | `ChatWindow` | `messages`, `no-chat`, `error`, `length-error`, `char-count`, `working-indicator`, `thread-greeting` |
 | `MessageView` | `message`, `role-label`, `sender-icon`, `attention-mark` |

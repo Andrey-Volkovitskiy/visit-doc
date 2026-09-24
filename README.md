@@ -759,7 +759,7 @@ extended both for booking acts and the practitioner's week.)
   are real and were accepted: markup in all eight components was rewritten, and shadcn's default
   look is recognizable enough that theming away from it is work — which is why
   `specs/015-frontend-design-pass/contracts/tokens.md` maps every one of shadcn's semantic
-  variables onto a token and why the vendored dialog, dropdown and popover each had their shipped
+  variables onto a token and why the vendored dialog and dropdown each had their shipped
   drop shadow removed. An unmapped default is treated as a defect, not a leftover: it is how a
   themed app quietly reverts to looking like the library's demo.
 - **Every package this feature added, and why each is here.** Thirteen in all — one stack, its
@@ -795,7 +795,7 @@ extended both for booking acts and the practitioner's week.)
   Two dependencies were **not** taken. `@ibm/plex` (see the typeface entry below) and
   `@testing-library/user-event`, which would have made driving the Radix controls in tests a
   one-liner: `tests/press.ts` does the same job in eight lines of `fireEvent`, against a suite
-  whose other 234 tests already use `fireEvent` and would have been inconsistent with it.
+  whose hundred-odd other `fireEvent.click` call sites would have been inconsistent with it.
 
 - **An earlier decision to add no dependencies at all was reversed, and the reversal is kept.**
   The first answer was CSS Modules and zero new packages, resting on a "minimal dependencies"
@@ -819,7 +819,7 @@ extended both for booking acts and the practitioner's week.)
 - **Appearance is verified by a recorded browser procedure, not by tests that cannot fail for the
   right reason.** Every *behavioural* requirement here is test-driven normally — tab set, overflow,
   disabled controls, expansion, the scroll rule, the greeting, the stubs, semantics, focus order —
-  and the suite grew from 234 tests to over 300. Appearance requirements get
+  and the suite grew from 234 tests to over 400. Appearance requirements get
   `specs/015-frontend-design-pass/quickstart.md` instead, run at four widths with the result
   written down. `expect(el).toHaveStyle("color: #0F2E33")` only restates the CSS in a second place:
   it fails when a token is renamed and passes when the colour is wrong for its purpose. Snapshot
@@ -854,7 +854,7 @@ extended both for booking acts and the practitioner's week.)
   components open on `pointerdown`/`mousedown`, which `fireEvent.click` does not dispatch — so a
   tab does not switch and a menu does not open, and it fails in the shape of a missing element
   rather than a missing event. `tests/press.ts` fires the whole pointer sequence and drives all
-  four primitives *and* a plain `<button>` exactly once; the 234 existing `fireEvent.click` call
+  four primitives *and* a plain `<button>` exactly once; the existing `fireEvent.click` call
   sites were left alone, since rewriting passing tests to use a helper they do not need is churn
   with a migration's risk.
 

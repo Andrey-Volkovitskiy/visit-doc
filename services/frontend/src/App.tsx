@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatList } from "./components/ChatList";
 import { ChatWindow } from "./components/ChatWindow";
+import { DiscardDialog } from "./components/DiscardDialog";
+import { ErrorBanner } from "./components/ErrorBanner";
 import { FaqAdmin } from "./components/FaqAdmin";
 import { PractitionerAdmin } from "./components/PractitionerAdmin";
 import { StaffConsole } from "./components/StaffConsole";
 import { StaffThread } from "./components/StaffThread";
-import { Button } from "./components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "./components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { setAssistant } from "./lib/consoleApi";
 import { useConsolePoll } from "./lib/useConsolePoll";
@@ -70,7 +64,16 @@ function App() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [staffChatId, setStaffChatId] = useState<string | null>(null);
+  // The patient pane's own failures: loading the chat list, starting a chat, deleting
+  // one. Rendered inside that pane, because that is whose work failed.
   const [error, setError] = useState<string | null>(null);
+  // The staff pane's own, and a separate value rather than the same one. The assistant
+  // switch is a staff gesture, and reporting its failure through `error` put "Could not
+  // change the assistant for this conversation." in the *patient's* messenger — and
+  // cleared whatever the chat list had been unable to do on the way in. One banner
+  // standing for two panes' failures is the "one value, two meanings" defect: neither
+  // reader can tell whether the sentence is about the pane they are looking at.
+  const [staffError, setStaffError] = useState<string | null>(null);
   // Which console section is open (FR-020). Owned here rather than by the console,
   // because the attention count sits in the console header *outside* the tabbed region
   // (FR-021) and both are the header's concern.
@@ -104,6 +107,11 @@ function App() {
   // makes a staff reply appear in the patient's thread, and a patient message appear in
   // the staff member's, with no channel of its own to keep in step.
   const poll = useConsolePoll();
+  // Whether the console listing has answered at all. One value, read by the rail and by
+  // the attention count beside it, so the two cannot disagree about whether anything is
+  // known yet — a count of 0 rendered over a rail that says it is still loading is the
+  // "waiting" and "arrived empty" collapse FR-010a exists to prevent.
+  const consoleLoaded = poll.tick > 0;
   const activeConversation = poll.conversations.find(
     (c) => c.chat_id === activeChatId,
   );
@@ -153,14 +161,40 @@ function App() {
     setStaffTab(next);
   }
 
+  // The conversation the staff pane has open right now, as an async handler can see it.
+  // A handler captured `staffChatId` when it started; this is what it has moved on to.
+  const staffChatIdRef = useRef<string | null>(staffChatId);
+  staffChatIdRef.current = staffChatId;
+
+  /**
+   * Open a conversation in the staff pane, and drop the banner about the last one.
+   *
+   * The staff banner's one sentence says "this conversation", so it describes whichever
+   * one is on screen — which makes it wrong the instant another is opened. Cleared here
+   * rather than left to expire, for the same reason `StaffThread` clears its own on a
+   * reset: a sentence naming the wrong subject is worse than no sentence.
+   */
+  function openStaffChat(chatId: string): void {
+    setStaffError(null);
+    setStaffChatId(chatId);
+  }
+
   // The poll re-reads the switch's position a moment later anyway, so nothing is
   // cached from the response here - which is what stops two tabs disagreeing about a
   // conversation one of them just took.
   function handleSetAssistant(enabled: boolean): void {
-    if (staffChatId === null) return;
-    setError(null);
-    void setAssistant(staffChatId, enabled).catch((err: unknown) => {
-      setError(
+    const target = staffChatId;
+    if (target === null) return;
+    // Only this pane's own banner is cleared and only it is raised: a chat-list failure
+    // the patient is still looking at is not disproved by a staff member flipping a
+    // switch, and a switch that would not flip is not the patient's to read.
+    setStaffError(null);
+    void setAssistant(target, enabled).catch((err: unknown) => {
+      // And only while that conversation is still the one open. The sentence below says
+      // "this conversation"; raised after a switch it would name the wrong one, about a
+      // switch the staff member can no longer see or retry.
+      if (staffChatIdRef.current !== target) return;
+      setStaffError(
         err instanceof Error
           ? err.message
           : "Could not change the assistant for this conversation.",
@@ -273,18 +307,13 @@ function App() {
             Patient messenger
           </h2>
           {/*
-            The page-level error: failures that belong to the page rather than to a pane
-            — loading or changing the chat list — reported once, here, and visually
-            distinct from everything around it (FR-010).
+            This pane's error: failures that belong to it rather than to one of its
+            controls — loading the chat list, starting a chat, deleting one — reported
+            once, here, and visually distinct from everything around it (FR-010). The
+            staff pane has its own, below, for the same reason.
           */}
           {error !== null && (
-            <p
-              data-testid="chat-list-error"
-              role="alert"
-              className="text-attention bg-attention-wash border-attention/30 m-3 rounded-md border px-3 py-2 text-sm"
-            >
-              {error}
-            </p>
+            <ErrorBanner testId="chat-list-error" message={error} className="m-3" />
           )}
           {chatsLoaded ? (
             <ChatList
@@ -335,16 +364,46 @@ function App() {
             {/*
               Outside the tabbed region on purpose (FR-021): inside it, the count would
               vanish the moment staff opened Practitioners, and a signal you have to
-              navigate back to is not one. Rendered even at zero — a missing badge and a
-              badge reading zero say different things.
+              navigate back to is not one.
+
+              Three states, not two. Rendered even at zero — a missing badge and a badge
+              reading zero say different things — but a zero is only rendered once the
+              console has actually answered. Before that there is no count to show, and
+              printing the initial 0 said "nobody needs you" over a rail stating in words
+              that it was still loading: the waiting/arrived-empty collapse FR-010a
+              keeps apart everywhere else on this pane, in the one place a staff member
+              acts on by looking away.
             */}
             <p className="text-ink-muted ml-auto text-sm">
               Needs a person:{" "}
-              <strong data-testid="attention-total" className="text-ink">
-                {poll.attentionTotal}
+              <strong
+                data-testid="attention-total"
+                // Which of the two things this is — a count the server gave, or nothing
+                // yet — for a test to read instead of the glyph. The glyph carries it
+                // for a sighted reader and the label carries it for everyone else: an
+                // em dash announced as a count of nothing would be the same collapse in
+                // another modality.
+                data-counted={consoleLoaded ? "true" : "false"}
+                aria-label={consoleLoaded ? undefined : "not counted yet"}
+                className="text-ink"
+              >
+                {consoleLoaded ? poll.attentionTotal : "—"}
               </strong>
             </p>
           </div>
+          {/*
+            The staff pane's own error, in the staff pane. The one gesture that raises
+            it today is the assistant switch, whose failure used to be reported in the
+            patient's messenger — a sentence about a control the patient cannot see, in
+            the place the patient reads about their own chats.
+          */}
+          {staffError !== null && (
+            <ErrorBanner
+              testId="staff-pane-error"
+              message={staffError}
+              className="m-3"
+            />
+          )}
           <Tabs
             value={staffTab}
             onValueChange={requestStaffTab}
@@ -370,8 +429,8 @@ function App() {
               <StaffConsole
                 conversations={poll.conversations}
                 activeChatId={staffChatId}
-                onSelect={setStaffChatId}
-                loaded={poll.tick > 0}
+                onSelect={openStaffChat}
+                loaded={consoleLoaded}
               />
               <StaffThread
                 chatId={staffChatId}
@@ -439,43 +498,32 @@ function App() {
             </TabsContent>
           </Tabs>
           {/*
-            The tab-switch half of FR-035b. Same hook and the same wording as the back
-            control's confirmation, because it is the same question — and the two can
-            never be open at once, since one is raised by the back control and the other
-            only by a switch away from the section that control lives in.
+            The tab-switch half of FR-035b. Same hook and the same question as the back
+            control's confirmation, and the two can never be open at once: one is raised
+            by the back control and the other only by a switch away from the section
+            that control lives in, which a modal dialog already blocks.
+
+            The sentence differs from each section's own, and deliberately — it names
+            what is about to happen here ("Opening another section"), which is not what
+            the back control does. Each section's also names what its own text is for,
+            which this shell does not know.
           */}
-          <Dialog
+          <DiscardDialog
             open={pendingTab !== null}
-            onOpenChange={(open) => {
-              if (!open) setPendingTab(null);
+            onKeepEditing={() => setPendingTab(null)}
+            onDiscard={() => {
+              const next = pendingTab;
+              setPendingTab(null);
+              // The flag is not cleared here. The section that set it is about to
+              // unmount and retract it itself, and clearing it from both places would
+              // mean two owners for one value — the second of which cannot see whether
+              // the first still needs it.
+              if (next !== null) setStaffTab(next);
             }}
           >
-            <DialogContent data-testid="discard-confirm">
-              <DialogTitle>Leave without saving?</DialogTitle>
-              <DialogDescription>
-                What you typed has not been sent or saved. Opening another section
-                discards it.
-              </DialogDescription>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setPendingTab(null)}>
-                  Keep editing
-                </Button>
-                <Button
-                  onClick={() => {
-                    const next = pendingTab;
-                    setPendingTab(null);
-                    // The flag is not cleared here. The section that set it is about to
-                    // unmount and retract it itself, and clearing it from both places
-                    // would mean two owners for one value — the second of which cannot
-                    // see whether the first still needs it.
-                    if (next !== null) setStaffTab(next);
-                  }}
-                >
-                  Discard
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            What you typed has not been sent or saved. Opening another section discards
+            it.
+          </DiscardDialog>
         </section>
       </main>
     </>
