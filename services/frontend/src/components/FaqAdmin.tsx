@@ -13,6 +13,7 @@ import {
   useDirtyReport,
   type AdminSectionProps,
 } from "./adminSection";
+import { DeleteDialog } from "./DeleteDialog";
 import { DiscardDialog } from "./DiscardDialog";
 import { ErrorBanner } from "./ErrorBanner";
 import { Button } from "./ui/button";
@@ -186,6 +187,9 @@ export function FaqAdmin({
   const [entries, setEntries] = useState<FaqEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ mode: "list" });
+  // Which entry the list is asking about, held by id rather than by record so that the
+  // question is always about an entry the corpus still holds.
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
   // One latch for every gesture on this pane, keyed by what the gesture is about, so a
   // second click on any of them is refused rather than only on Add. See `useBusyLatch`.
   const latch = useBusyLatch();
@@ -265,6 +269,12 @@ export function FaqAdmin({
       ? (entries.find((e) => e.id === view.id) ?? null)
       : null;
   const editorOpen = view.mode === "create" || editing !== null;
+  // Derived from the corpus for the same reason: an entry deleted from another tab, or
+  // by the delete this prompt was raised for, leaves no question on screen about text
+  // that is already gone.
+  const confirming = entries.find((e) => e.id === confirmingId) ?? null;
+  const confirmingQuestion =
+    confirming === null ? null : splitEntry(confirming.content).question;
 
   return (
     <div data-testid="faq-admin" className="flex min-h-0 flex-col gap-3 p-4">
@@ -338,7 +348,7 @@ export function FaqAdmin({
                         size="icon"
                         aria-label={`Delete entry ${String(entry.id)}`}
                         className="text-ink-muted hover:text-ink"
-                        onClick={() => void handleDelete(entry)}
+                        onClick={() => setConfirmingId(entry.id)}
                         disabled={latch.isBusy(`delete:${String(entry.id)}`)}
                       >
                         <Trash2 aria-hidden="true" />
@@ -351,6 +361,25 @@ export function FaqAdmin({
           )}
         </>
       )}
+      <DeleteDialog
+        open={confirming !== null}
+        subject="this entry"
+        onCancel={() => setConfirmingId(null)}
+        onConfirm={() => {
+          const target = confirming;
+          setConfirmingId(null);
+          if (target !== null) void handleDelete(target);
+        }}
+      >
+        {/* Named by its question where it has one, because "this entry" alone does not
+            tell two entries apart, and the row it was clicked on is behind the overlay.
+            An entry that carries no question is not given one here for the same reason
+            `splitEntry` does not promote its first line: this screen has no grounds to
+            assert a shape the entry does not have. */}
+        {confirmingQuestion === null
+          ? "This deletes the entry, and the assistant can no longer answer from it. Do you agree?"
+          : `This deletes “${confirmingQuestion}” and its answer, and the assistant can no longer answer from it. Do you agree?`}
+      </DeleteDialog>
       {error && <ErrorBanner testId="faq-error" message={error} />}
     </div>
   );

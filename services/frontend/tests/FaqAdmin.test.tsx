@@ -18,6 +18,22 @@ async function openTheEditView(): Promise<HTMLElement> {
   return await screen.findByTestId("faq-edit");
 }
 
+/**
+ * Ask to delete the named entry, and answer the confirmation with Delete.
+ *
+ * By name, not by position: the vendored dialog renders its own close control first, so
+ * "the first button in the dialog" is the X, which would dismiss the prompt and report
+ * nothing — and the test would fail for a reason unrelated to what it protects.
+ */
+async function deleteAndConfirm(label: string): Promise<void> {
+  fireEvent.click(await screen.findByLabelText(label));
+  fireEvent.click(
+    within(await screen.findByTestId("delete-confirm")).getByRole("button", {
+      name: "Delete",
+    }),
+  );
+}
+
 /** Open the create view from the list, and wait for it. */
 async function openTheCreateView(): Promise<HTMLElement> {
   press(await screen.findByText("Add entry"));
@@ -385,13 +401,71 @@ describe("FaqAdmin: writing", () => {
     ).toBeInTheDocument();
   });
 
-  it("deletes an entry", async () => {
+  it("asks before deleting, and deletes nothing until confirmed", async () => {
     const remove = vi
       .spyOn(consoleApi, "deleteFaqEntry")
       .mockResolvedValue(undefined);
 
     render(<FaqAdmin />);
     fireEvent.click(await screen.findByLabelText("Delete entry 1"));
+
+    // What is lost is what the assistant could have answered from, which is the whole
+    // reason this deletion is worth asking about.
+    expect(await screen.findByTestId("delete-confirm")).toHaveTextContent(
+      "the assistant can no longer answer from it",
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByTestId("faq-entry")).toBeInTheDocument();
+  });
+
+  it("names the entry by its question where it has one", async () => {
+    // "This entry" tells two entries apart no better than nothing does, and the row it
+    // was clicked on is behind the overlay. An entry carrying no question is not given
+    // one: `splitEntry` does not invent a shape, and neither does the prompt.
+    vi.spyOn(consoleApi, "fetchFaqEntries").mockResolvedValue([
+      entry({
+        id: 1,
+        content: "Question: Do I need a referral?\nAnswer: You can book without one.",
+      }),
+    ]);
+
+    render(<FaqAdmin />);
+    fireEvent.click(await screen.findByLabelText("Delete entry 1"));
+
+    expect(await screen.findByTestId("delete-confirm")).toHaveTextContent(
+      "Do I need a referral?",
+    );
+  });
+
+  it("cancels a deletion without reporting it", async () => {
+    const remove = vi
+      .spyOn(consoleApi, "deleteFaqEntry")
+      .mockResolvedValue(undefined);
+
+    render(<FaqAdmin />);
+    fireEvent.click(await screen.findByLabelText("Delete entry 1"));
+    fireEvent.click(
+      within(await screen.findByTestId("delete-confirm")).getByRole("button", {
+        name: "Cancel",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("delete-confirm")).toBeNull(),
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Visiting hours are 8am to 5pm."),
+    ).toBeInTheDocument();
+  });
+
+  it("deletes an entry once confirmed", async () => {
+    const remove = vi
+      .spyOn(consoleApi, "deleteFaqEntry")
+      .mockResolvedValue(undefined);
+
+    render(<FaqAdmin />);
+    await deleteAndConfirm("Delete entry 1");
 
     await waitFor(() => expect(remove).toHaveBeenCalledWith(1));
     await waitFor(() =>
@@ -493,11 +567,16 @@ describe("FaqAdmin: writing", () => {
     });
 
     // The save landed, so the view is back on the list the delete is reached from.
+    // The confirmation makes a double-clicked Delete harmless by itself — the second
+    // click only re-opens the same question — so what the latch is still holding is the
+    // gesture *after* a confirmed delete, while that delete is in flight: the control
+    // that would raise the question a second time is refused until it lands.
     const deleteLabel = `Delete entry ${String(entry().id)}`;
-    await screen.findByLabelText(deleteLabel);
-    fireEvent.click(screen.getByLabelText(deleteLabel));
-    fireEvent.click(screen.getByLabelText(deleteLabel));
+    await deleteAndConfirm(deleteLabel);
     expect(remove).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(screen.getByLabelText(deleteLabel)).toBeDisabled(),
+    );
     await act(async () => {
       landDelete();
     });

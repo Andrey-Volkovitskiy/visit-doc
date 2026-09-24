@@ -38,8 +38,10 @@ src/
 │                        #   plus adminSection.ts, the props and the dirty-report hook the two
 │                        #   admin sections share, and two shapes every surface owes the
 │                        #   reader the same way: ErrorBanner (one look and one role for a
-│                        #   failure) and DiscardDialog (the one "leave without saving?"
-│                        #   prompt, asked by the shell and by both admin sections)
+│                        #   failure), DiscardDialog (the one "leave without saving?"
+│                        #   prompt, asked by the shell and by both admin sections) and
+│                        #   DeleteDialog (the one "delete this?" prompt, asked by the chat
+│                        #   strip and by both admin sections before any deletion)
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
@@ -161,8 +163,8 @@ added.
 | `OutcomeDisclosure` | `outcome-marker`, `request-outcome`, `outcome-question`, `outcome-unanswered`, `verdict-mark`, `citations`, `booking-outcome-stub` |
 | `StaffConsole` | `staff-console`, `staff-conversations`, `staff-conversation`, `staff-no-conversations`, `region-loading` |
 | `StaffThread` | `staff-thread`, `staff-no-thread`, `staff-empty-thread`, `staff-error`, `staff-length-error`, `char-count`, `assistant-switch`, `assistant-explanation`, `pause-countdown` |
-| `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `appointments-stub`, `discard-confirm` |
-| `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm` |
+| `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `appointments-stub`, `discard-confirm`, `delete-confirm` |
+| `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm`, `delete-confirm` |
 
 Data attributes carry state a test would otherwise have to read off a colour: `data-sender` and
 `data-mine` on a message, `data-burst-start` on the first of a sender's run, `data-chat-id` on a

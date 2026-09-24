@@ -18,6 +18,22 @@ async function openTheEditView(): Promise<HTMLElement> {
   return await screen.findByTestId("practitioner-edit");
 }
 
+/**
+ * Ask to delete the named practitioner, and answer the confirmation with Delete.
+ *
+ * By name, not by position: the vendored dialog renders its own close control first, so
+ * "the first button in the dialog" is the X, which would dismiss the prompt and report
+ * nothing — and the test would fail for a reason unrelated to what it protects.
+ */
+async function deleteAndConfirm(label: string): Promise<void> {
+  fireEvent.click(await screen.findByLabelText(label));
+  fireEvent.click(
+    within(await screen.findByTestId("delete-confirm")).getByRole("button", {
+      name: "Delete",
+    }),
+  );
+}
+
 /** Open the create view from the roster, and wait for it. */
 async function openTheCreateView(): Promise<HTMLElement> {
   press(await screen.findByText("Add practitioner"));
@@ -524,13 +540,52 @@ describe("PractitionerAdmin: editing", () => {
 });
 
 describe("PractitionerAdmin: deleting", () => {
-  it("removes the practitioner and their appointments", async () => {
+  it("asks before deleting, and deletes nothing until confirmed", async () => {
     const remove = vi
       .spyOn(consoleApi, "deletePractitioner")
       .mockResolvedValue(undefined);
 
     render(<PractitionerAdmin />);
     fireEvent.click(await screen.findByLabelText("Delete Dr. Ada Lovelace"));
+
+    // The practitioner is named in the question, and the appointments that go with
+    // them are what the sentence is there to say.
+    const dialog = await screen.findByTestId("delete-confirm");
+    expect(dialog).toHaveTextContent("Dr. Ada Lovelace");
+    expect(dialog).toHaveTextContent("every appointment booked with them");
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByTestId("practitioner")).toBeInTheDocument();
+  });
+
+  it("cancels a deletion without reporting it", async () => {
+    const remove = vi
+      .spyOn(consoleApi, "deletePractitioner")
+      .mockResolvedValue(undefined);
+
+    render(<PractitionerAdmin />);
+    fireEvent.click(await screen.findByLabelText("Delete Dr. Ada Lovelace"));
+    fireEvent.click(
+      within(await screen.findByTestId("delete-confirm")).getByRole("button", {
+        name: "Cancel",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("delete-confirm")).toBeNull(),
+    );
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByTestId("practitioner")).toHaveTextContent(
+      "Dr. Ada Lovelace",
+    );
+  });
+
+  it("removes the practitioner and their appointments once confirmed", async () => {
+    const remove = vi
+      .spyOn(consoleApi, "deletePractitioner")
+      .mockResolvedValue(undefined);
+
+    render(<PractitionerAdmin />);
+    await deleteAndConfirm("Delete Dr. Ada Lovelace");
 
     await waitFor(() =>
       expect(remove).toHaveBeenCalledWith("01PRACT0000000000000000000"),
@@ -548,7 +603,7 @@ describe("PractitionerAdmin: deleting", () => {
     );
 
     render(<PractitionerAdmin />);
-    fireEvent.click(await screen.findByLabelText("Delete Dr. Ada Lovelace"));
+    await deleteAndConfirm("Delete Dr. Ada Lovelace");
 
     await waitFor(() =>
       expect(screen.getByTestId("practitioner-error")).toHaveTextContent(
@@ -781,10 +836,15 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     });
 
     // The save landed, so the view is back on the roster the delete is reached from.
-    await screen.findByLabelText("Delete Dr. Ada Lovelace");
-    fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
-    fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
+    // The confirmation makes a double-clicked Delete harmless by itself — the second
+    // click only re-opens the same question — so what the latch is still holding is the
+    // gesture *after* a confirmed delete, while that delete is in flight: the control
+    // that would raise the question a second time is refused until it lands.
+    await deleteAndConfirm("Delete Dr. Ada Lovelace");
     expect(remove).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(screen.getByLabelText("Delete Dr. Ada Lovelace")).toBeDisabled(),
+    );
     await act(async () => {
       landDelete();
     });

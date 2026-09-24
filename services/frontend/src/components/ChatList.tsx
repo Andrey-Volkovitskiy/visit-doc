@@ -1,14 +1,8 @@
 import { MoreHorizontal, Plus, X } from "lucide-react";
 import { useState } from "react";
 import type { ChatSummary } from "../lib/chatStream";
+import { DeleteDialog } from "./DeleteDialog";
 import { Button } from "./ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "./ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -177,44 +171,25 @@ export function ChatList({
       >
         <Plus aria-hidden="true" />
       </Button>
-      <Dialog
+      {/* The wording is unchanged from when this screen asked the question in its own
+          markup: `contracts/tokens.md` draws the line at an error banner, "because a
+          failed action is a thing needing a person", and a confirmation the reader
+          asked for is not that. What moved is where it lives — `PractitionerAdmin` and
+          `FaqAdmin` now ask the same question about their own records, and it is one
+          component so the three cannot drift. */}
+      <DeleteDialog
         open={confirming !== null}
-        onOpenChange={(open) => {
-          if (!open) setConfirmingId(null);
+        subject={confirming === null ? "this chat" : chatLabel(confirming)}
+        onCancel={() => setConfirmingId(null)}
+        onConfirm={() => {
+          const target = confirmingId;
+          setConfirmingId(null);
+          if (target !== null) onDelete(target);
         }}
       >
-        <DialogContent data-testid="delete-confirm">
-          <DialogTitle>
-            Delete {confirming === null ? "this chat" : chatLabel(confirming)}?
-          </DialogTitle>
-          <DialogDescription>
-            This deletes the chat, its messages, its patient, and that patient&apos;s
-            appointments. Do you agree?
-          </DialogDescription>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmingId(null)}>
-              Cancel
-            </Button>
-            {/* No `destructive` variant. It maps onto --color-attention, which FR-005
-                reserves for "a person is needed" — and however irreversible this
-                deletion is, nobody is being summoned by it. `contracts/tokens.md` draws
-                the line at an error banner, "because a failed action is a thing needing
-                a person", and a confirmation the reader asked for is not that.
-                `PractitionerAdmin` and `FaqAdmin` decline it for their deletes on the
-                same grounds; the weight here is carried by the sentence above, which
-                names exactly what is lost. */}
-            <Button
-              onClick={() => {
-                const target = confirmingId;
-                setConfirmingId(null);
-                if (target !== null) onDelete(target);
-              }}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        This deletes the chat, its messages, its patient, and that patient&apos;s
+        appointments. Do you agree?
+      </DeleteDialog>
     </nav>
   );
 }

@@ -16,6 +16,7 @@ import {
   type WorkingRange,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { DeleteDialog } from "./DeleteDialog";
 import { DiscardDialog } from "./DiscardDialog";
 import { ErrorBanner } from "./ErrorBanner";
 import { Button } from "./ui/button";
@@ -454,6 +455,9 @@ export function PractitionerAdmin({
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>({ mode: "list" });
+  // Which practitioner the roster is asking about, held by id rather than by record so
+  // that the question is always about a practitioner the roster still holds.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   // One latch for every gesture on this pane, keyed by what the gesture is about, so a
   // second click on any of them is refused rather than only on Add. See `useBusyLatch`.
   const latch = useBusyLatch();
@@ -540,6 +544,10 @@ export function PractitionerAdmin({
       ? (practitioners.find((p) => p.id === view.id) ?? null)
       : null;
   const editorOpen = view.mode === "create" || editing !== null;
+  // Derived from the roster for the same reason: a practitioner deleted from another
+  // tab, or by the delete this prompt was raised for, leaves no question on screen
+  // about a record that is already gone.
+  const confirming = practitioners.find((p) => p.id === confirmingId) ?? null;
 
   return (
     <div
@@ -620,7 +628,7 @@ export function PractitionerAdmin({
                       size="icon"
                       aria-label={`Delete ${practitioner.full_name}`}
                       className="text-ink-muted hover:text-ink"
-                      onClick={() => void handleDelete(practitioner)}
+                      onClick={() => setConfirmingId(practitioner.id)}
                       disabled={latch.isBusy(`delete:${practitioner.id}`)}
                     >
                       <Trash2 aria-hidden="true" />
@@ -632,6 +640,19 @@ export function PractitionerAdmin({
           )}
         </>
       )}
+      <DeleteDialog
+        open={confirming !== null}
+        subject={confirming === null ? "this practitioner" : confirming.full_name}
+        onCancel={() => setConfirmingId(null)}
+        onConfirm={() => {
+          const target = confirming;
+          setConfirmingId(null);
+          if (target !== null) void handleDelete(target);
+        }}
+      >
+        This deletes the practitioner and every appointment booked with them, and the
+        assistant can no longer book with them. Do you agree?
+      </DeleteDialog>
       {error && <ErrorBanner testId="practitioner-error" message={error} />}
     </div>
   );
