@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 26" width="26" height="26">
+  <!--
+    The product's mark: the same speech bubble with a cross in it that sits beside
+    "AI Clinic Receptionist" in the page header.
+
+    The two colours below are the theme's accent and surface tokens, written out as
+    literals because a favicon is fetched before any stylesheet by a browser that will
+    not run CSS against it. They are the only literal colours in this repository, and
+    tests/favicon.test.ts fails if they stop matching app.css.
+
+    Careful with this comment: XML forbids a double hyphen inside one, so the token
+    names cannot be written here in their CSS form. Doing exactly that made this file
+    unparseable, and every browser silently showed no icon at all.
+  -->
+  <rect x="1" y="1" width="24" height="24" rx="6" fill="#0e7c7b"/>
+  <path d="M8 17.5V9.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5.2L8 18.6v-1.1z" fill="#ffffff"/>
+  <path d="M13 10.4v3.2M11.4 12h3.2" stroke="#0e7c7b" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

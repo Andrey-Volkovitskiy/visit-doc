@@ -732,3 +732,126 @@ blank means tracing is off; the startup `service.configured` event states which 
   no question a run asks — its metrics come from the stored run, never
   from a trace. So the runs where no trace will be opened, a noise band above all, are the ones to
   run with `TRACE=0`.
+
+## The Frontend Design Pass: technology choices
+
+`specs/015-frontend-design-pass/` (ROADMAP Phase 3a) gives the SPA its first stylesheet and the
+interaction behaviour a designed product implies — a tab strip with overflow, aligned bubbles with
+sender grouping, bottom-pinned threads that hold a reader's position, a working indicator, disabled
+send controls, an empty-thread greeting, a three-section staff console, and per-request evidence
+behind a click-to-expand marker. **No network contract changed**: `src/lib/chatStream.ts` and
+`src/lib/consoleApi.ts` are byte-identical to what they were before the feature, which is what the
+claim that this is a presentation-only change rests on.
+
+- **Tailwind CSS v4 with shadcn/ui, over the smaller option that was recommended and declined.**
+  Three controls here carry focus management that is genuinely hard to get right — the staff tab
+  set (roving tabindex with arrow keys), the discard confirmation (focus trap with restore-on-close
+  and background inerting) and the chat overflow menu (typeahead and collision-aware positioning) —
+  and the spec states an accessibility floor three times. shadcn vendors its components into the
+  repository *as source*, so they are themed and edited like any other file here and there is no
+  wrapper library to fight; Tailwind v4 is CSS-first, so the token contract lives in `@theme` as
+  custom properties. The alternative actually recommended in `research.md` was unstyled Radix
+  primitives over hand-written scoped CSS: the same accessibility for the same three controls, at
+  about four packages instead of a stack, leaving the chosen design direction untouched. It was
+  **declined by the user** in favour of the stack a reviewer of a portfolio project expects to see,
+  and that is recorded as the reason it is rather than rationalised into a technical one. The costs
+  are real and were accepted: markup in all eight components was rewritten, and shadcn's default
+  look is recognizable enough that theming away from it is work — which is why
+  `specs/015-frontend-design-pass/contracts/tokens.md` maps every one of shadcn's semantic
+  variables onto a token and why the vendored dialog, dropdown and popover each had their shipped
+  drop shadow removed. An unmapped default is treated as a defect, not a leftover: it is how a
+  themed app quietly reverts to looking like the library's demo.
+- **Every package this feature added, and why each is here.** Fourteen in all — one stack, its
+  peer utilities, and one type package. The Radix components are what shadcn vendors *per
+  component*, so the list grows only when a new primitive is vendored.
+
+  | Package | Why |
+  |---|---|
+  | `tailwindcss`, `@tailwindcss/vite` | The utility engine and its Vite plugin. v4 is CSS-first, so the theme is `@theme` custom properties in one stylesheet rather than a JS config |
+  | `@radix-ui/react-tabs` | The staff console's three sections: roving tabindex, arrow keys, correct `aria-selected`/`aria-controls` |
+  | `@radix-ui/react-dialog` | The discard confirmations: focus trap, restore-on-close, background inerting, Escape |
+  | `@radix-ui/react-dropdown-menu` | The chat overflow: typeahead, collision-aware positioning, outside-press |
+  | `@radix-ui/react-switch` | The assistant on/off control, as a real `role="switch"` rather than a styled checkbox |
+  | `@radix-ui/react-slot` | `asChild`, which is how a vendored `Button` lends its styling to a menu or dialog trigger without nesting two buttons |
+  | `clsx` | Conditional class lists, without string concatenation in markup |
+  | `tailwind-merge` | Makes a caller's utility win over a component's default *for the same CSS property*, instead of both landing in `class` and source order deciding |
+  | `class-variance-authority` | The `variant`/`size` tables on `Button`, so a variant is a named row rather than a ternary |
+  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the nine actually used |
+  | `tw-animate-css` | The enter/exit keyframes shadcn v4 expects on dialog and dropdown. Its animations respect `prefers-reduced-motion` through the global block in `app.css` — verified, not assumed, since they arrived with the library |
+  | `@types/node` (dev) | `vite.config.ts` and `vitest.config.ts` use `node:path` and `import.meta.dirname` to declare the `@/*` alias |
+
+  **The shared cost, stated once rather than per row**: twelve runtime packages the frontend did
+  not have, and about 60 more in `node_modules` transitively. Measured from `vite build` in this
+  repository — the JS chunk was **213 KB (66 KB gzipped)** with Tailwind installed but before any
+  Radix component was used, and is **368 KB (116 KB gzipped)** now; Tailwind contributes no runtime
+  JS, so that difference is the primitives, `lucide-react` and `cva`. The stylesheet went from
+  none at all to **32 KB (7 KB gzipped)**, and the three typefaces add 71 KB of `woff2` fetched
+  once and cached immutably. For a portfolio demo served from the same host as its API that is a
+  cost worth paying for three accessible controls; for a latency-sensitive product it would deserve
+  a second look, and the vendored-source model means any one primitive can be replaced in place
+  without touching a call site.
+
+  Two dependencies were **not** taken. `@ibm/plex` (see the typeface entry below) and
+  `@testing-library/user-event`, which would have made driving the Radix controls in tests a
+  one-liner: `tests/press.ts` does the same job in eight lines of `fireEvent`, against a suite
+  whose other 234 tests already use `fireEvent` and would have been inconsistent with it.
+
+- **An earlier decision to add no dependencies at all was reversed, and the reversal is kept.**
+  The first answer was CSS Modules and zero new packages, resting on a "minimal dependencies"
+  convention **this repository does not have** — checked and not found in `.claude/CLAUDE.md`,
+  `README.md` or `docs/ROADMAP.md`, while the chat service alone declares twenty runtime
+  dependencies. The rule this repository actually has is the one these sections demonstrate:
+  record the tradeoff. `research.md` Decision 1 keeps both answers rather than overwriting the
+  first, because the reasoning that produced it is worth more to a later reader than a document
+  that looks as though it always knew.
+- **The typeface is committed asset files, not a package and not a font service.** IBM Plex Sans at
+  weights 400/500/600, latin subset, three `woff2` files under `src/styles/fonts/` with the SIL OFL
+  1.1 text beside them. Self-hosting is a requirement — no third-party request is made at runtime,
+  and the page degrades to a named fallback stack rather than to a browser default. They are
+  imported from `src/` rather than dropped in `public/` so Vite content-hashes them and they cache
+  immutably. `@ibm/plex` was rejected not because a dependency is forbidden but because it ships
+  every weight, style and script of the whole family to deliver three latin files, and a build step
+  to extract them is more machinery than committing three files. The cost is 71 KB of binary in the
+  repository and a manual step if a fourth weight is ever wanted. (The chosen mockup,
+  `specs/015-frontend-design-pass/design/a-front-desk.html`, still loads its font from
+  `fonts.googleapis.com`; that is a recorded defect of the mockup, not a decision.)
+- **Appearance is verified by a recorded browser procedure, not by tests that cannot fail for the
+  right reason.** Every *behavioural* requirement here is test-driven normally — tab set, overflow,
+  disabled controls, expansion, the scroll rule, the greeting, the stubs, semantics, focus order —
+  and the suite grew from 234 tests to over 300. Appearance requirements get
+  `specs/015-frontend-design-pass/quickstart.md` instead, run at four widths with the result
+  written down. `expect(el).toHaveStyle("color: #0F2E33")` only restates the CSS in a second place:
+  it fails when a token is renamed and passes when the colour is wrong for its purpose. Snapshot
+  tests were rejected for the same reason plus churn. The one measurable half of it *is* recorded
+  as data — `specs/015-frontend-design-pass/evaluation/contrast.md` computes WCAG ratios for every
+  foreground/background pair the palette can form, which found two live pairs under AA that a
+  by-eye check would have passed.
+- **One reserved colour, and colour is never the only carrier.** `--color-attention` means "a person
+  is needed" and nothing else may use it — not a decorative accent, not a required-field asterisk,
+  not a delete button. shadcn maps its `destructive` variant onto that colour, so
+  `variant="destructive"` is making that claim; the delete confirmations in `ChatList`,
+  `PractitionerAdmin` and `FaqAdmin` all decline it, and carry their weight in the sentence naming
+  what is lost instead. Every state marked by colour is also marked by text, weight, shape or
+  position, so a greyscale screen and a reader who cannot distinguish the hue both still see it.
+- **Light theme only, by decision rather than omission.** shadcn installs a dark theme by default;
+  it was removed rather than left unreferenced, and no `dark:` variant or `prefers-color-scheme`
+  block survives under `services/frontend/src/`. The token structure is what a later dark theme
+  would redefine, so the decision is reversible without being half-made.
+- **The scroll rule is a pure predicate, because jsdom cannot exercise it any other way.** jsdom
+  reports `scrollHeight` and `clientHeight` as `0` for every element, so a "follow new content only
+  when the reader is at the bottom" rule written inside a component reads `0 - 0 <= threshold` →
+  always pinned: the hold-position branch would never execute while the test covering it passed.
+  `src/lib/scroll.ts` takes four numbers and no element, is unit-tested across its boundary, and
+  two component tests per thread stub the measurements to prove it is actually consulted. The
+  related trap: `scrollIntoView` is `undefined` in this jsdom and throws, so both threads scroll by
+  assigning `scrollTop`.
+- **Radix needs no jsdom polyfill, but it does need the right event.** This was carried into the
+  phase as an open risk — that Radix would demand `ResizeObserver`, `matchMedia` or `DOMRect` and
+  fail tests that have nothing to do with a dialog. Measured first, before anything was built on
+  the stack: nothing throws and `tests/setup.ts` is unchanged. What is true instead is that these
+  components open on `pointerdown`/`mousedown`, which `fireEvent.click` does not dispatch — so a
+  tab does not switch and a menu does not open, and it fails in the shape of a missing element
+  rather than a missing event. `tests/press.ts` fires the whole pointer sequence and drives all
+  four primitives *and* a plain `<button>` exactly once; the 234 existing `fireEvent.click` call
+  sites were left alone, since rewriting passing tests to use a helper they do not need is churn
+  with a migration's risk.

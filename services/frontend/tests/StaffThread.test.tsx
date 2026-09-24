@@ -28,6 +28,19 @@ const CITED = [
 ];
 
 /** One answered request's outcome, the shape a reply now carries per question. */
+/**
+ * Open every evidence marker in the thread.
+ *
+ * The outcome blocks sit behind them now (FR-027), so the five tests below each need
+ * one step before they can read what an outcome says. Each property is unchanged; only
+ * the moment the block exists has moved (FR-038).
+ */
+function expandAllMarkers(): void {
+  for (const marker of screen.getAllByTestId("outcome-marker")) {
+    fireEvent.click(marker);
+  }
+}
+
 function answeredOutcome(
   position: number,
   question: string,
@@ -231,15 +244,22 @@ describe("StaffThread: writing into it", () => {
     expect(screen.getByLabelText("reply as staff")).toHaveValue("On it.");
   });
 
-  it("sends nothing for whitespace alone", async () => {
+  it("sends nothing for whitespace alone, and says so on the control", async () => {
     const post = vi.spyOn(consoleApi, "postStaffMessage");
 
     renderThread();
     fireEvent.change(await screen.findByLabelText("reply as staff"), {
       target: { value: "   " },
     });
-    fireEvent.click(screen.getByText("Send as staff"));
 
+    // The disabled assertion is the load-bearing half now. FR-019b disables the
+    // control for exactly this input, and a click on a disabled button never reaches
+    // the handler — so "not called" became free the moment the control agreed with what
+    // it would do, and would stay true with the guard inside the handler deleted.
+    const send = screen.getByRole("button", { name: /Send as staff/ });
+    expect(send).toBeDisabled();
+
+    fireEvent.click(send);
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -322,7 +342,15 @@ describe("StaffThread: writing into it", () => {
     });
     // And it takes the reply again afterwards - the guard is for the send in flight, not
     // for the rest of the shift.
-    expect(screen.getByText("Send as staff")).toBeEnabled();
+    //
+    // The text goes in first. A landed post clears the box, so an empty composer is now
+    // a second, unrelated reason for Send to be disabled (FR-019b) — asserting straight
+    // away would pin *that* rather than the latch releasing, and would keep failing with
+    // the latch working perfectly.
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "Anything else?" },
+    });
+    expect(screen.getByRole("button", { name: /Send as staff/ })).toBeEnabled();
   });
 
   it("takes the next send after one that failed", async () => {
@@ -1138,8 +1166,17 @@ describe("StaffThread: following the poll", () => {
     rerender(pane(OTHER, "2026-09-01T12:00:00", 2));
     await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
 
-    // Sendable, and still following the poll.
-    expect(screen.getByText("Send as staff")).not.toBeDisabled();
+    // Sendable, and still following the poll. The text goes in *first*: switching
+    // conversations clears the box, so an empty composer is now a second, unrelated
+    // reason for Send to be disabled (FR-019b), and asserting on it before typing would
+    // fail for a reason that has nothing to do with the per-conversation latch this
+    // test exists for.
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "Different patient." },
+    });
+    expect(
+      screen.getByRole("button", { name: /Send as staff/ }),
+    ).not.toBeDisabled();
     rerender(pane(OTHER, "2026-09-01T12:01:00", 3));
     await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(3));
 
@@ -1315,9 +1352,10 @@ describe("StaffThread: following the poll", () => {
 
     renderThread();
 
-    await waitFor(() => {
-      expect(screen.getByTestId("citations")).toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.getByTestId("outcome-marker")).toBeInTheDocument(),
+    );
+    expandAllMarkers();
     expect(screen.getByTestId("citations")).toHaveTextContent(
       "Bring your referral letter.",
     );
@@ -1346,6 +1384,9 @@ describe("StaffThread: following the poll", () => {
     await waitFor(() => {
       expect(screen.getAllByTestId("message").length).toBe(2);
     });
+    // Both are expanded, then counted: with only one open, "exactly one mark" would be
+    // true of a build that marked every block.
+    expandAllMarkers();
     expect(screen.getAllByTestId("verdict-mark").length).toBe(1);
   });
 
@@ -1366,9 +1407,13 @@ describe("StaffThread: following the poll", () => {
 
     renderThread();
 
-    await waitFor(() => {
-      expect(screen.getByTestId("citations")).toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(screen.getByTestId("outcome-marker")).toBeInTheDocument(),
+    );
+    // Expanded first: a scan of a collapsed thread cannot find a score that is only
+    // rendered inside the block, which is the one place it could appear.
+    expandAllMarkers();
+    expect(screen.getByTestId("citations")).toBeInTheDocument();
     expect(screen.getByTestId("staff-thread").textContent).not.toMatch(/0\.\d/);
   });
 });
@@ -1392,9 +1437,11 @@ describe("StaffThread request outcomes", () => {
 
     renderThread();
 
-    await waitFor(() => {
-      expect(screen.getAllByTestId("request-outcome")).toHaveLength(2);
-    });
+    await waitFor(() =>
+      expect(screen.getByTestId("outcome-marker")).toBeInTheDocument(),
+    );
+    expandAllMarkers();
+    expect(screen.getAllByTestId("request-outcome")).toHaveLength(2);
     const blocks = screen.getAllByTestId("request-outcome");
     expect(blocks[0]).toHaveTextContent("where are you?");
     expect(blocks[1]).toHaveTextContent("what should I bring?");
@@ -1415,6 +1462,372 @@ describe("StaffThread request outcomes", () => {
     await waitFor(() => {
       expect(screen.getByTestId("staff-thread")).toHaveTextContent("booked for Friday");
     });
+
+    // Strengthened to assert no *marker* is rendered. The absence of a block became
+    // free the moment blocks lived behind a marker — with nothing to expand, "no block"
+    // would be true of a build that drew a marker on every message and of one that drew
+    // no blocks at all. The marker is the thing FR-026 says must not be there.
+    expect(screen.queryByTestId("outcome-marker")).toBeNull();
     expect(screen.queryByTestId("request-outcome")).toBeNull();
+  });
+});
+
+// --- 015 Phase 5 (US2): the console thread as a designed surface ----------------------
+
+describe("StaffThread: the assistant explanation (FR-024a)", () => {
+  beforeEach(() => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+  });
+
+  function renderThread(assistantMayReply: boolean, pauseSecondsRemaining: number | null = null) {
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply={assistantMayReply}
+        pauseSecondsRemaining={pauseSecondsRemaining}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+  }
+
+  it("is present with the switch on", () => {
+    renderThread(true);
+    expect(screen.getByTestId("assistant-explanation")).toBeInTheDocument();
+  });
+
+  it("is present with the switch off", () => {
+    renderThread(false);
+    expect(screen.getByTestId("assistant-explanation")).toBeInTheDocument();
+  });
+
+  it("is present while a pause is counting down", () => {
+    renderThread(false, 300);
+    expect(screen.getByTestId("assistant-explanation")).toBeInTheDocument();
+  });
+
+  it("is visible without hover, focus or activation", () => {
+    // FR-024a rules out a tooltip, a `?` affordance, or anything else that has to be
+    // discovered. This is the one control whose effect reaches a real patient
+    // immediately, so nothing about its explanation may be hidden.
+    renderThread(true);
+    const explanation = screen.getByTestId("assistant-explanation");
+
+    // Not inside a `title`, and not behind any of the attributes a reveal-on-demand
+    // affordance is built from.
+    expect(explanation).toBeVisible();
+    expect(explanation.closest("[hidden]")).toBeNull();
+    expect(explanation.getAttribute("role")).not.toBe("tooltip");
+    expect(explanation.closest("[role='tooltip']")).toBeNull();
+    expect(explanation.closest("[aria-hidden='true']")).toBeNull();
+  });
+
+  it("says what turning the control off does, and that the pause expires on its own", () => {
+    renderThread(true);
+    const text = screen.getByTestId("assistant-explanation").textContent ?? "";
+
+    expect(text).toMatch(/stops replying|stop replying/i);
+    expect(text).toMatch(/person|staff/i);
+    expect(text).toMatch(/expires|on its own|by itself|automatically/i);
+  });
+});
+
+describe("StaffThread: an open conversation holding nothing (FR-025a)", () => {
+  it("says plainly that the conversation is empty", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByTestId("staff-empty-thread")).toBeInTheDocument();
+  });
+
+  it("is a different statement from no conversation being selected", async () => {
+    // `staff-no-thread` means "pick one"; `staff-empty-thread` means "this one has
+    // nothing in it". Same appearance would make a staff member think their click did
+    // not register.
+    const { unmount } = render(
+      <StaffThread
+        chatId={null}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("staff-no-thread")).toBeInTheDocument();
+    expect(screen.queryByTestId("staff-empty-thread")).toBeNull();
+    const noThread = screen.getByTestId("staff-no-thread").textContent;
+    unmount();
+
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    const empty = await screen.findByTestId("staff-empty-thread");
+    expect(screen.queryByTestId("staff-no-thread")).toBeNull();
+    expect(empty.textContent).not.toBe(noThread);
+  });
+
+  it("does not borrow the patient side's greeting", async () => {
+    // FR-019c's greeting orients a first-time visitor to what the assistant can do.
+    // A staff member needs neither the orientation nor the offer.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    await screen.findByTestId("staff-empty-thread");
+    expect(screen.queryByTestId("thread-greeting")).toBeNull();
+  });
+
+  it("says nothing of the sort while the thread is still loading", async () => {
+    let resolve = (_: Message[]): void => undefined;
+    vi.spyOn(consoleApi, "fetchThread").mockReturnValue(
+      new Promise<Message[]>((r) => {
+        resolve = r;
+      }),
+    );
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(consoleApi.fetchThread).toHaveBeenCalled());
+    expect(screen.queryByTestId("staff-empty-thread")).toBeNull();
+
+    await act(async () => {
+      resolve([]);
+    });
+    expect(screen.getByTestId("staff-empty-thread")).toBeInTheDocument();
+  });
+
+  it("says nothing of the sort for a thread that failed to load", async () => {
+    // A thread that would not load is a third situation again (FR-010a), and the
+    // banner speaks for it.
+    vi.spyOn(consoleApi, "fetchThread").mockRejectedValue(new Error("network blip"));
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-error")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("staff-empty-thread")).toBeNull();
+  });
+
+  it("is gone once the conversation holds a message", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([message()]);
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+    expect(screen.queryByTestId("staff-empty-thread")).toBeNull();
+  });
+});
+
+describe("StaffThread renders no times (FR-010b)", () => {
+  it("shows no time on any message, while the pause countdown still renders", async () => {
+    // The countdown is one of FR-010b's two named exceptions: it is a deadline on a
+    // control, not a record of when anything happened. Asserting both in one test is
+    // what keeps a sweeping "no digits anywhere" fix from deleting it.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({ id: "1", sender: "patient", created_at: "2026-09-01T09:41:00" }),
+      message({
+        id: "2",
+        sender: "staff",
+        content: "I've got this one.",
+        created_at: "2026-09-01T09:41:30",
+      }),
+    ]);
+    render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply={false}
+        pauseSecondsRemaining={300}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    const thread = screen.getByTestId("staff-thread").textContent ?? "";
+    expect(thread).not.toMatch(/\d{1,2}:\d{2}/);
+    expect(thread).not.toMatch(/2026-09-01/);
+    expect(thread).not.toMatch(/\bago\b/i);
+
+    expect(screen.getByTestId("pause-countdown")).toHaveTextContent("5:00");
+  });
+});
+
+describe("StaffThread scroll behaviour (FR-015b)", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function measure(el: HTMLElement, scrollHeight: () => number): void {
+    Object.defineProperty(el, "scrollHeight", { configurable: true, get: scrollHeight });
+    Object.defineProperty(el, "clientHeight", { configurable: true, get: () => 400 });
+  }
+
+  function thread(): HTMLElement {
+    return screen.getByTestId("staff-thread");
+  }
+
+  function messages(...contents: string[]): Message[] {
+    return contents.map((content, i) => message({ id: `m${i}`, content }));
+  }
+
+  function renderAt(lastMessageAt: string) {
+    return render(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        lastMessageAt={lastMessageAt}
+        onSetAssistant={vi.fn()}
+      />,
+    );
+  }
+
+  it("lands at the bottom when a conversation is opened", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue(
+      messages("one", "two", "three"),
+    );
+    renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+    await waitFor(() => expect(thread().scrollTop).toBe(600));
+  });
+
+  it("follows an arriving patient message while the reader is at the bottom", async () => {
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(messages("one"))
+      .mockResolvedValue(messages("one", "two"));
+
+    const { rerender } = renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+    await waitFor(() => expect(thread().scrollTop).toBe(200));
+
+    rerender(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        lastMessageAt="2026-09-01T12:01:00"
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    await waitFor(() => expect(thread().scrollTop).toBe(400));
+  });
+
+  it("holds a staff member's position when they have scrolled back through it", async () => {
+    // FR-015b: a staff member reading back through a conversation is doing the same
+    // thing a patient is, and the poll that repaints their thread arrives just as
+    // unbidden.
+    const fetchThread = vi
+      .spyOn(consoleApi, "fetchThread")
+      .mockResolvedValueOnce(messages("one", "two"))
+      .mockResolvedValue(messages("one", "two", "three"));
+
+    const { rerender } = renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    thread().scrollTop = 120;
+    fireEvent.scroll(thread());
+
+    rerender(
+      <StaffThread
+        chatId={CHAT_ID}
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        lastMessageAt="2026-09-01T12:01:00"
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+
+    expect(thread().scrollTop).toBe(120);
+  });
+
+  it("follows the staff member's own reply however far up they had scrolled", async () => {
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue(messages("one", "two"));
+    vi.spyOn(consoleApi, "postStaffMessage").mockResolvedValue(
+      message({ id: "posted", sender: "staff", content: "I've got this one." }),
+    );
+    renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    thread().scrollTop = 0;
+    fireEvent.scroll(thread());
+
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "I've got this one." },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Send as staff/ }));
+    });
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+    expect(thread().scrollTop).toBe(600);
+  });
+});
+
+describe("StaffThread: staff messages take the reader's own side (FR-023)", () => {
+  it("puts staff messages opposite the patient's and the assistant's", async () => {
+    // The staff console's reader is a staff member, so *their* messages are the ones on
+    // the reader's own side — the mirror of what the patient pane does with the
+    // patient's. Without this the staff member's replies sit among the messages they
+    // are replying to, which is the one distinction a thread has to make.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({ id: "1", sender: "patient", content: "is anyone there?" }),
+      message({ id: "2", sender: "assistant", content: "I can help with that." }),
+      message({ id: "3", sender: "staff", content: "I've got this one." }),
+    ]);
+    renderThread();
+
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
+    const [patient, assistant, staff] = screen.getAllByTestId("message");
+
+    expect(staff).toHaveAttribute("data-mine", "true");
+    expect(patient).not.toHaveAttribute("data-mine");
+    expect(assistant).not.toHaveAttribute("data-mine");
   });
 });

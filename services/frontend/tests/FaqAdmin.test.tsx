@@ -1,8 +1,28 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FaqAdmin } from "../src/components/FaqAdmin";
 import * as consoleApi from "../src/lib/consoleApi";
 import type { FaqEntry } from "../src/lib/consoleApi";
+import { press } from "./press";
+
+/** Open entry 1 for editing, and wait for the edit view. */
+async function openTheEditView(): Promise<HTMLElement> {
+  press(await screen.findByLabelText("Edit entry 1"));
+  return await screen.findByTestId("faq-edit");
+}
+
+/** Open the create view from the list, and wait for it. */
+async function openTheCreateView(): Promise<HTMLElement> {
+  press(await screen.findByText("Add entry"));
+  return await screen.findByTestId("faq-edit");
+}
 
 function entry(overrides: Partial<FaqEntry> = {}): FaqEntry {
   return {
@@ -30,11 +50,13 @@ describe("FaqAdmin: what the corpus holds", () => {
 
     render(<FaqAdmin />);
 
+    // The list is a record now, not a column of boxes (FR-035a), so the text is read
+    // off the entry rather than out of an input.
     expect(
-      await screen.findByDisplayValue("Visiting hours are 8am to 5pm."),
+      await screen.findByText("Visiting hours are 8am to 5pm."),
     ).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue("Parking is free for the first hour."),
+      screen.getByText("Parking is free for the first hour."),
     ).toBeInTheDocument();
   });
 
@@ -55,7 +77,7 @@ describe("FaqAdmin: what the corpus holds", () => {
     // one that would not warn them.
     const { container } = render(<FaqAdmin />);
 
-    await screen.findByDisplayValue("Visiting hours are 8am to 5pm.");
+    await screen.findByText("Visiting hours are 8am to 5pm.");
     expect(
       screen.queryByText(/indexed|indexing|retrievable|searchable|ready|pending/i),
     ).toBeNull();
@@ -78,6 +100,186 @@ describe("FaqAdmin: what the corpus holds", () => {
   });
 });
 
+describe("FaqAdmin: an entry reads as a question and its answer", () => {
+  // FR-034. The seeded corpus labels both halves, and a labelled entry is rendered as
+  // the two things it is - the question a patient's phrasing is matched against, and
+  // the text the assistant is allowed to say.
+  it("distinguishes the question from the answer", async () => {
+    vi.spyOn(consoleApi, "fetchFaqEntries").mockResolvedValue([
+      entry({
+        id: 1,
+        content:
+          "Question: Do I need a referral?\nAnswer: You can book without one.",
+      }),
+    ]);
+
+    render(<FaqAdmin />);
+
+    const row = await screen.findByTestId("faq-entry");
+    const question = within(row).getByRole("heading");
+    expect(question).toHaveTextContent("Do I need a referral?");
+    expect(question).not.toHaveTextContent("You can book without one.");
+    expect(row).toHaveTextContent("You can book without one.");
+    // The labels are what the split reads, not what it shows: an entry rendered with
+    // them still on it is one where nothing was distinguished.
+    expect(row).not.toHaveTextContent("Question:");
+    expect(row).not.toHaveTextContent("Answer:");
+  });
+
+  it("invents no question for an entry that carries none", async () => {
+    // Entry text is free text a staff member typed, so an entry may be a plain
+    // statement. Promoting its first line to a question would be this screen
+    // asserting a shape the entry does not have.
+    render(<FaqAdmin />);
+
+    const row = await screen.findByTestId("faq-entry");
+    expect(within(row).queryByRole("heading")).toBeNull();
+    expect(row).toHaveTextContent("Visiting hours are 8am to 5pm.");
+  });
+
+  it("offers create, edit and delete from the entry each acts on", async () => {
+    render(<FaqAdmin />);
+
+    const row = await screen.findByTestId("faq-entry");
+    expect(screen.getByText("Add entry")).toBeInTheDocument();
+    expect(within(row).getByLabelText("Edit entry 1")).toBeInTheDocument();
+    expect(within(row).getByLabelText("Delete entry 1")).toBeInTheDocument();
+  });
+
+  it("names what a refused save failed at, while the edit view is still open", async () => {
+    // FR-035: the reason is the server's own, and it has to be readable from where the
+    // staff member is standing - which, after a refused save, is the edit view.
+    vi.spyOn(consoleApi, "updateFaqEntry").mockRejectedValue(
+      new Error("That entry was changed by another save. Please try again."),
+    );
+
+    render(<FaqAdmin />);
+    await openTheEditView();
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("faq-error")).toHaveTextContent(
+        "changed by another save",
+      ),
+    );
+    expect(screen.getByTestId("faq-edit")).toBeInTheDocument();
+  });
+});
+
+describe("FaqAdmin: the edit view replaces the tab's content", () => {
+  // FR-035a. Not an overlay and not an expansion in place.
+  it("replaces the list when an entry is opened", async () => {
+    render(<FaqAdmin />);
+    await openTheEditView();
+
+    expect(screen.queryByTestId("faq-entry")).toBeNull();
+    expect(
+      screen.getByDisplayValue("Visiting hours are 8am to 5pm."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("replaces the list when an entry is being written", async () => {
+    render(<FaqAdmin />);
+    await openTheCreateView();
+
+    expect(screen.queryByTestId("faq-entry")).toBeNull();
+    expect(screen.getByLabelText("New entry")).toHaveValue("");
+  });
+
+  it("returns to the list from an untouched edit view, asking nothing", async () => {
+    render(<FaqAdmin />);
+    await openTheEditView();
+
+    press(screen.getByText("Back to the documents"));
+
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+    expect(await screen.findByTestId("faq-entry")).toBeInTheDocument();
+    expect(screen.queryByTestId("faq-edit")).toBeNull();
+  });
+
+  it("asks before abandoning typed changes", async () => {
+    render(<FaqAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Entry 1"), {
+      target: { value: "Visiting hours are 9am to 6pm." },
+    });
+
+    press(screen.getByText("Back to the documents"));
+
+    // Portalled onto document.body, so `screen.*` and never `within(container)`.
+    expect(await screen.findByTestId("discard-confirm")).toBeInTheDocument();
+    expect(screen.getByTestId("faq-edit")).toBeInTheDocument();
+  });
+
+  it("keeps the edit view and the typed text when the discard is refused", async () => {
+    render(<FaqAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Entry 1"), {
+      target: { value: "Visiting hours are 9am to 6pm." },
+    });
+    press(screen.getByText("Back to the documents"));
+
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Keep editing",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("discard-confirm")).toBeNull(),
+    );
+    expect(screen.getByLabelText("Entry 1")).toHaveValue(
+      "Visiting hours are 9am to 6pm.",
+    );
+  });
+
+  it("returns to the list, saving nothing, when the discard is confirmed", async () => {
+    const update = vi.spyOn(consoleApi, "updateFaqEntry");
+
+    render(<FaqAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Entry 1"), {
+      target: { value: "Visiting hours are 9am to 6pm." },
+    });
+    press(screen.getByText("Back to the documents"));
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+
+    expect(await screen.findByTestId("faq-entry")).toBeInTheDocument();
+    // FR-035b: leaving never writes. The entry still answers what it answered.
+    expect(update).not.toHaveBeenCalled();
+    expect(screen.getByTestId("faq-entry")).toHaveTextContent(
+      "Visiting hours are 8am to 5pm.",
+    );
+  });
+
+  it("asks before abandoning a half-written entry", async () => {
+    render(<FaqAdmin />);
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
+      target: { value: "Parking is free." },
+    });
+
+    press(screen.getByText("Back to the documents"));
+
+    expect(await screen.findByTestId("discard-confirm")).toBeInTheDocument();
+  });
+
+  it("returns from an untouched create view, asking nothing", async () => {
+    render(<FaqAdmin />);
+    await openTheCreateView();
+
+    press(screen.getByText("Back to the documents"));
+
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+    expect(await screen.findByTestId("faq-entry")).toBeInTheDocument();
+  });
+});
+
 describe("FaqAdmin: writing", () => {
   it("adds an entry and shows what was stored", async () => {
     const create = vi
@@ -85,7 +287,8 @@ describe("FaqAdmin: writing", () => {
       .mockResolvedValue(entry({ id: 2, content: "Parking is free." }));
 
     render(<FaqAdmin />);
-    fireEvent.change(await screen.findByLabelText("New entry"), {
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
       target: { value: "Parking is free." },
     });
     fireEvent.click(screen.getByText("Add entry"));
@@ -93,7 +296,11 @@ describe("FaqAdmin: writing", () => {
     await waitFor(() =>
       expect(create).toHaveBeenCalledWith("Parking is free."),
     );
-    expect(await screen.findByDisplayValue("Parking is free.")).toBeInTheDocument();
+    expect(await screen.findByText("Parking is free.")).toBeInTheDocument();
+    // The box being cleared is now the create view being left: what was stored is on
+    // the list, and the next entry starts from an empty box rather than from the last
+    // one, which is the property the cleared box protected.
+    await openTheCreateView();
     expect(screen.getByLabelText("New entry")).toHaveValue("");
   });
 
@@ -103,7 +310,8 @@ describe("FaqAdmin: writing", () => {
     );
 
     render(<FaqAdmin />);
-    fireEvent.change(await screen.findByLabelText("New entry"), {
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
       target: { value: "One too many." },
     });
     fireEvent.click(screen.getByText("Add entry"));
@@ -111,10 +319,18 @@ describe("FaqAdmin: writing", () => {
     await waitFor(() =>
       expect(screen.getByTestId("faq-error")).toHaveTextContent("corpus is full"),
     );
-    expect(screen.getAllByTestId("faq-entry")).toHaveLength(1);
     // What was typed is kept: the entry was not saved, and retyping it is the one
     // thing a failed save must not ask for.
     expect(screen.getByLabelText("New entry")).toHaveValue("One too many.");
+    // And nothing was added - which is read off the list, since the refusal left the
+    // create view up rather than returning to it.
+    press(screen.getByText("Back to the documents"));
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+    expect(await screen.findAllByTestId("faq-entry")).toHaveLength(1);
   });
 
   it("saves an edit and shows the text the server stored", async () => {
@@ -123,17 +339,17 @@ describe("FaqAdmin: writing", () => {
       .mockResolvedValue(entry({ id: 1, content: "Visiting hours are 9am to 6pm." }));
 
     render(<FaqAdmin />);
-    fireEvent.change(
-      await screen.findByDisplayValue("Visiting hours are 8am to 5pm."),
-      { target: { value: "Visiting hours are 9am to 6pm." } },
-    );
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Entry 1"), {
+      target: { value: "Visiting hours are 9am to 6pm." },
+    });
     fireEvent.click(screen.getByText("Save"));
 
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith(1, "Visiting hours are 9am to 6pm."),
     );
     expect(
-      await screen.findByDisplayValue("Visiting hours are 9am to 6pm."),
+      await screen.findByText("Visiting hours are 9am to 6pm."),
     ).toBeInTheDocument();
   });
 
@@ -145,7 +361,10 @@ describe("FaqAdmin: writing", () => {
     );
 
     render(<FaqAdmin />);
-    await screen.findByDisplayValue("Visiting hours are 8am to 5pm.");
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Entry 1"), {
+      target: { value: "Visiting hours are 9am to 6pm." },
+    });
     fireEvent.click(screen.getByText("Save"));
 
     await waitFor(() =>
@@ -153,6 +372,17 @@ describe("FaqAdmin: writing", () => {
         "changed by another save",
       ),
     );
+    // The refusal changed nothing, and the screen must not imply otherwise: leaving
+    // shows the entry still answering the text it answered before.
+    press(screen.getByText("Back to the documents"));
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+    expect(
+      await screen.findByText("Visiting hours are 8am to 5pm."),
+    ).toBeInTheDocument();
   });
 
   it("deletes an entry", async () => {
@@ -181,7 +411,8 @@ describe("FaqAdmin: writing", () => {
     );
 
     render(<FaqAdmin />);
-    fireEvent.change(await screen.findByLabelText("New entry"), {
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
       target: { value: "We open at 8am." },
     });
     fireEvent.click(screen.getByText("Add entry"));
@@ -205,7 +436,8 @@ describe("FaqAdmin: writing", () => {
       .mockResolvedValue(entry({ id: 9, content: "We open at 8am." }));
 
     render(<FaqAdmin />);
-    fireEvent.change(await screen.findByLabelText("New entry"), {
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
       target: { value: "We open at 8am." },
     });
     fireEvent.click(screen.getByText("Add entry"));
@@ -220,9 +452,13 @@ describe("FaqAdmin: writing", () => {
     const create = vi.spyOn(consoleApi, "createFaqEntry");
 
     render(<FaqAdmin />);
-    fireEvent.change(await screen.findByLabelText("New entry"), {
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
       target: { value: "   " },
     });
+    // Not disabled: a click that never reaches the handler would make "not called"
+    // free, and prove nothing about the guard this test is here for.
+    expect(screen.getByText("Add entry")).toBeEnabled();
     fireEvent.click(screen.getByText("Add entry"));
 
     expect(create).not.toHaveBeenCalled();
@@ -247,7 +483,7 @@ describe("FaqAdmin: writing", () => {
     );
 
     render(<FaqAdmin />);
-    await screen.findByTestId("faq-entry");
+    await openTheEditView();
 
     fireEvent.click(screen.getByText("Save"));
     fireEvent.click(screen.getByText("Save"));
@@ -256,7 +492,9 @@ describe("FaqAdmin: writing", () => {
       landSave(entry());
     });
 
-    const deleteLabel = `Delete entry ${entry().id}`;
+    // The save landed, so the view is back on the list the delete is reached from.
+    const deleteLabel = `Delete entry ${String(entry().id)}`;
+    await screen.findByLabelText(deleteLabel);
     fireEvent.click(screen.getByLabelText(deleteLabel));
     fireEvent.click(screen.getByLabelText(deleteLabel));
     expect(remove).toHaveBeenCalledTimes(1);

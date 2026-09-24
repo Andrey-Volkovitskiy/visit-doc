@@ -1,8 +1,15 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../src/App";
 import * as chatStream from "../src/lib/chatStream";
 import * as consoleApi from "../src/lib/consoleApi";
+import { press } from "./press";
 import type { ChatListing, ChatSummary } from "../src/lib/chatStream";
 
 function chat(overrides: Partial<ChatSummary> = {}): ChatSummary {
@@ -129,7 +136,13 @@ describe("App: first arrival", () => {
 
     render(<App />);
 
-    await waitFor(() => expect(screen.getByText("New chat")).toBeEnabled());
+    // By accessible name, not by visible text: the control is an icon now, and a test
+    // that could only find it while it read "New chat" was pinning its appearance
+    // rather than the property it exists for — that a failed first arrival leaves a way
+    // to try again.
+    await waitFor(() =>
+      expect(screen.getByLabelText("Start a new chat")).toBeEnabled(),
+    );
     expect(screen.getByTestId("chat-list-error")).toBeInTheDocument();
   });
 });
@@ -292,6 +305,15 @@ describe("App: the panels that can only read a session", () => {
 
     render(<App />);
 
+    // Both panels now live behind a tab, so the read they must not make is only
+    // reachable once the tab is open. Opening it *before* the session is minted is what
+    // keeps this test about the session gate rather than about the tab: with the tab
+    // shut, "no read happened" would be true for a reason that has nothing to do with
+    // the gate, and would stay true with the gate deleted.
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+    openTab("FAQ");
+
     // The POST is in flight and there is still no session, which is exactly the window
     // the old code fetched in.
     await waitFor(() => expect(createChat).toHaveBeenCalledTimes(1));
@@ -300,10 +322,12 @@ describe("App: the panels that can only read a session", () => {
 
     mintSession();
 
+    openTab("Practitioners");
     await waitFor(() =>
       expect(consoleApi.fetchPractitioners).toHaveBeenCalled(),
     );
-    expect(consoleApi.fetchFaqEntries).toHaveBeenCalled();
+    openTab("FAQ");
+    await waitFor(() => expect(consoleApi.fetchFaqEntries).toHaveBeenCalled());
   });
 
   it("shows the provisioned session's roster without a reload", async () => {
@@ -332,6 +356,9 @@ describe("App: the panels that can only read a session", () => {
 
     render(<App />);
 
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+
     // Nothing here reloads the page or remounts anything by hand: the roster arrives
     // because the panel was withheld until the session it reads existed.
     await waitFor(() =>
@@ -351,10 +378,13 @@ describe("App: the panels that can only read a session", () => {
 
     render(<App />);
 
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
     await waitFor(() =>
       expect(consoleApi.fetchPractitioners).toHaveBeenCalled(),
     );
-    expect(consoleApi.fetchFaqEntries).toHaveBeenCalled();
+    openTab("FAQ");
+    await waitFor(() => expect(consoleApi.fetchFaqEntries).toHaveBeenCalled());
     expect(createChat).not.toHaveBeenCalled();
   });
 
@@ -374,9 +404,554 @@ describe("App: the panels that can only read a session", () => {
     await waitFor(() =>
       expect(screen.getByTestId("chat-list-error")).toBeInTheDocument(),
     );
+
+    // The tab is opened *first*, and that is the whole strength of this test. Behind a
+    // shut tab every assertion below is free — the panel is absent because nothing
+    // rendered it, not because the session gate withheld it — and the test would go on
+    // passing with that gate deleted outright, which is the regression it exists for.
+    openTab("Practitioners");
     expect(screen.queryByTestId("practitioner-admin")).toBeNull();
     expect(screen.queryByTestId("no-practitioners")).toBeNull();
-    expect(screen.queryByTestId("faq-admin")).toBeNull();
     expect(consoleApi.fetchPractitioners).not.toHaveBeenCalled();
+
+    openTab("FAQ");
+    expect(screen.queryByTestId("faq-admin")).toBeNull();
+    expect(consoleApi.fetchFaqEntries).not.toHaveBeenCalled();
+
+    // And the section says so rather than rendering an empty result (FR-025).
+    expect(screen.getByTestId("region-loading")).toBeInTheDocument();
+  });
+});
+
+// --- 015 Phase 4: the shell -----------------------------------------------------------
+
+/** Open one of the console's three sections by name. */
+function openTab(name: string): void {
+  press(screen.getByRole("tab", { name }));
+}
+
+describe("App: the console's three sections (FR-020)", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+  });
+
+  it("exposes the three sections as a tab set with accessible names", async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    const names = screen.getAllByRole("tab").map((el) => el.textContent);
+    expect(names).toEqual(["Conversations", "Practitioners", "FAQ"]);
+  });
+
+  it("renders only the open section's panel", async () => {
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-console")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("practitioner-admin")).toBeNull();
+    expect(screen.queryByTestId("faq-admin")).toBeNull();
+
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner-admin")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("staff-console")).toBeNull();
+    expect(screen.queryByTestId("faq-admin")).toBeNull();
+  });
+
+  it("opens the FAQ section on its own", async () => {
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-console")).toBeInTheDocument(),
+    );
+
+    openTab("FAQ");
+
+    await waitFor(() => expect(screen.getByTestId("faq-admin")).toBeInTheDocument());
+    expect(screen.queryByTestId("practitioner-admin")).toBeNull();
+  });
+
+  it("reports which section is open to assistive technology", async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+
+    expect(
+      screen.getByRole("tab", { name: "Conversations" }),
+    ).toHaveAttribute("aria-selected", "true");
+
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
+  });
+});
+
+describe("App: the attention total in the console header (FR-021)", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+  });
+
+  async function withTotal(attention_total: number): Promise<void> {
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total,
+      conversations: [],
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByTestId("attention-total")).toBeInTheDocument(),
+    );
+  }
+
+  it("renders how many conversations need a person", async () => {
+    await withTotal(1);
+    expect(screen.getByTestId("attention-total")).toHaveTextContent("1");
+  });
+
+  it("renders a zero total as plainly zero rather than hiding it", async () => {
+    // A missing badge and a badge reading zero say different things: one is "nothing
+    // needs you", the other is "this may not be working".
+    await withTotal(0);
+    expect(screen.getByTestId("attention-total")).toHaveTextContent("0");
+  });
+
+  it("shows the server's total, not a count of the rows it happens to hold", async () => {
+    // The total counts a conversation once however many marks sit inside it, and the
+    // server is the only thing that can see that. Two rows, a total of five.
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 5,
+      conversations: [
+        {
+          chat_id: "a",
+          patient_name: "Ada",
+          last_message_at: null,
+          emphasized: true,
+          escalated: true,
+          escalation_reason: "patient_asked_for_person",
+          attention_since: "2026-09-01T12:00:00",
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+        },
+        {
+          chat_id: "b",
+          patient_name: "Bram",
+          last_message_at: null,
+          emphasized: true,
+          escalated: true,
+          escalation_reason: "patient_asked_for_person",
+          attention_since: "2026-09-01T12:00:00",
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+        },
+      ],
+    });
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("attention-total")).toHaveTextContent("5"),
+    );
+    expect(screen.getAllByTestId("staff-conversation")).toHaveLength(2);
+  });
+
+  it("sits outside the tabbed region, so it survives opening another section", async () => {
+    // This is the whole reason it moved out of StaffConsole. Inside the tab it would
+    // vanish the moment staff went to look at the roster — and a count you have to
+    // navigate back to is not a signal.
+    await withTotal(3);
+
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner-admin")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("attention-total")).toHaveTextContent("3");
+
+    openTab("FAQ");
+    await waitFor(() => expect(screen.getByTestId("faq-admin")).toBeInTheDocument());
+    expect(screen.getByTestId("attention-total")).toHaveTextContent("3");
+  });
+
+  it("renders exactly one total, not one per section", async () => {
+    await withTotal(2);
+    expect(screen.getAllByTestId("attention-total")).toHaveLength(1);
+  });
+});
+
+describe("App: structure before any answer (FR-010a, SC-011)", () => {
+  /** Hold every read open, so the first paint is the only thing on screen. */
+  function holdEverything(): void {
+    const never = () => new Promise<never>(() => undefined);
+    vi.spyOn(chatStream, "fetchChats").mockImplementation(never);
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockImplementation(never);
+    vi.spyOn(consoleApi, "fetchPractitioners").mockImplementation(never);
+    vi.spyOn(consoleApi, "fetchFaqEntries").mockImplementation(never);
+  }
+
+  it("renders the header and both panes before any request returns", () => {
+    holdEverything();
+    render(<App />);
+
+    expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByTestId("patient-pane")).toBeInTheDocument();
+    expect(screen.getByTestId("staff-pane")).toBeInTheDocument();
+  });
+
+  it("names the product in the header before any request returns", () => {
+    holdEverything();
+    render(<App />);
+
+    expect(
+      screen.getByRole("heading", { name: /AI Clinic Receptionist/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("renders each pane's heading and the tab set before any request returns", () => {
+    holdEverything();
+    render(<App />);
+
+    expect(screen.getByRole("tablist")).toBeInTheDocument();
+    expect(screen.getAllByRole("tab")).toHaveLength(3);
+  });
+
+  it("says in words that a waiting region is waiting, and names which", () => {
+    holdEverything();
+    render(<App />);
+
+    const waiting = screen.getAllByTestId("region-loading");
+    expect(waiting.length).toBeGreaterThan(0);
+    for (const region of waiting) {
+      expect(region.getAttribute("data-region")).toBeTruthy();
+      expect(region.textContent?.trim()).not.toBe("");
+    }
+  });
+
+  it("distinguishes waiting from arrived-empty", async () => {
+    // The two call for different things from the reader, so they must not render the
+    // same (FR-010a). Waiting says so; empty says there is nothing.
+    holdEverything();
+    const { unmount } = render(<App />);
+    const conversationsWaiting = screen
+      .getAllByTestId("region-loading")
+      .some((el) => el.getAttribute("data-region") === "conversations");
+    expect(conversationsWaiting).toBe(true);
+    expect(screen.queryByTestId("staff-no-conversations")).toBeNull();
+    unmount();
+
+    vi.restoreAllMocks();
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(listing());
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([]);
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 0,
+      conversations: [],
+    });
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-no-conversations")).toBeInTheDocument(),
+    );
+    expect(
+      screen
+        .queryAllByTestId("region-loading")
+        .some((el) => el.getAttribute("data-region") === "conversations"),
+    ).toBe(false);
+  });
+
+  it("distinguishes failed from both of them", async () => {
+    vi.spyOn(chatStream, "fetchChats").mockRejectedValue(
+      new Error("network error"),
+    );
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 0,
+      conversations: [],
+    });
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("chat-list-error")).toBeInTheDocument(),
+    );
+    expect(
+      screen
+        .queryAllByTestId("region-loading")
+        .some((el) => el.getAttribute("data-region") === "chats"),
+    ).toBe(false);
+  });
+
+  it("stands in for nothing with a placeholder shape", () => {
+    // FR-010a forbids skeletons outright: they assert a shape the server has not
+    // confirmed, and are wrong precisely when the answer turns out to be nothing.
+    holdEverything();
+    const { container } = render(<App />);
+
+    expect(container.querySelector(".animate-pulse")).toBeNull();
+    expect(container.querySelector("[aria-busy='true'] .rounded-md.bg-rule")).toBeNull();
+  });
+});
+
+describe("App: landmarks and heading structure (FR-040)", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+  });
+
+  it("puts the page's content in named landmarks", async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+    expect(screen.getByRole("main")).toBeInTheDocument();
+
+    // Both panes are regions a screen reader can jump between, each named for what it
+    // holds rather than left as an anonymous div.
+    const regions = screen.getAllByRole("region");
+    const names = regions.map((el) => el.getAttribute("aria-label"));
+    expect(names).toContain("Patient messenger");
+    expect(names).toContain("Staff console");
+  });
+
+  it("has exactly one first-level heading, naming the product", async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+    const h1s = screen.getAllByRole("heading", { level: 1 });
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]).toHaveTextContent(/AI Clinic Receptionist/);
+  });
+
+  it("descends one level at a time, never skipping from h1 to h3", async () => {
+    // A heading level skipped is a level a screen reader reports as missing structure.
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+    const levels = screen
+      .getAllByRole("heading")
+      .map((el) => Number(el.tagName.slice(1)));
+
+    expect(levels[0]).toBe(1);
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]! - levels[i - 1]!).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("names both panes with a heading of their own", async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Patient messenger" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Staff console" }),
+    ).toBeInTheDocument();
+  });
+
+  it("gives every interactive control an accessible name", async () => {
+    // FR-039/FR-040's floor, checked over the whole rendered shell rather than
+    // component by component: an unnamed control is one a screen reader announces as
+    // "button", which is no name at all.
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+
+    const controls = container.querySelectorAll(
+      "button, a[href], input, textarea, select",
+    );
+    expect(controls.length).toBeGreaterThan(0);
+
+    const unnamed: string[] = [];
+    for (const el of controls) {
+      const name =
+        el.getAttribute("aria-label") ??
+        (el.getAttribute("aria-labelledby") !== null
+          ? document.getElementById(el.getAttribute("aria-labelledby")!)?.textContent
+          : null) ??
+        el.textContent;
+      if ((name ?? "").trim() === "") unnamed.push(el.outerHTML.slice(0, 120));
+    }
+    expect(unnamed).toEqual([]);
+  });
+
+  it("uses a real semantic element for every control, never a clickable div", async () => {
+    const { container } = render(<App />);
+    await waitFor(() => expect(screen.getByRole("banner")).toBeInTheDocument());
+
+    // A div with an onClick is unreachable by keyboard and invisible to assistive
+    // technology. React attaches handlers at the root, so this looks for the shape
+    // instead: anything carrying a button/link role that is not one.
+    const faked = container.querySelectorAll(
+      "div[role='button'], span[role='button'], div[role='link'], span[role='link']",
+    );
+    expect(Array.from(faked).map((el) => el.outerHTML.slice(0, 120))).toEqual([]);
+  });
+});
+
+// --- T071 (FR-035b): leaving a dirty edit by choosing another tab --------------------
+//
+// The back control was guarded from the start. This is the *other* route FR-035b names —
+// "by the back control **or by choosing another tab**" — and it was open: Radix destroys
+// the inactive tab panel, so a switch took the typed text with it and asked nothing.
+//
+// The guard is a new mechanism, so it gets one test per invariant rather than one test
+// for the happy path:
+//   1. a switch away from a DIRTY section is intercepted and nothing moves
+//   2. confirming completes the switch the reader asked for
+//   3. cancelling leaves both the tab and the typed text exactly as they were
+//   4. a switch away from a CLEAN section is not intercepted at all
+//   5. the flag does not survive the section that set it — the lock-out invariant
+
+describe("App: leaving a dirty edit by choosing another tab (FR-035b)", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([practitioner()]);
+  });
+
+  /** Open Practitioners, enter the edit view, and type into it. */
+  async function dirtyTheEditView(): Promise<void> {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner")).toBeInTheDocument(),
+    );
+    press(screen.getByRole("button", { name: /edit/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+  }
+
+  it("asks before abandoning typed changes, and moves nothing until answered", async () => {
+    await dirtyTheEditView();
+
+    openTab("FAQ");
+
+    expect(await screen.findByTestId("discard-confirm")).toBeInTheDocument();
+
+    // Still on Practitioners, still in the edit view, text intact.
+    //
+    // Asserted through the DOM rather than through `getByRole`: an open modal inerts
+    // the background, so the tab set is deliberately absent from the accessibility tree
+    // while the prompt is up — which is the dialog working, not the switch having
+    // happened. The FAQ panel never rendered, and that is the thing that matters.
+    expect(
+      document
+        .querySelector('[role="tab"][aria-selected="true"]')
+        ?.textContent?.trim(),
+    ).toBe("Practitioners");
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+    expect(screen.queryByTestId("faq-admin")).toBeNull();
+    expect(screen.getByLabelText("Full name")).toHaveValue("Dr. Grace Hopper");
+  });
+
+  it("completes the switch once the discard is confirmed", async () => {
+    await dirtyTheEditView();
+    openTab("FAQ");
+    await screen.findByTestId("discard-confirm");
+
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /discard/i,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "FAQ" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("practitioner-edit")).toBeNull();
+  });
+
+  it("stays put, with the text untouched, when the discard is refused", async () => {
+    await dirtyTheEditView();
+    openTab("FAQ");
+    await screen.findByTestId("discard-confirm");
+
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /keep editing/i,
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByTestId("discard-confirm")).toBeNull());
+    expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByLabelText("Full name")).toHaveValue("Dr. Grace Hopper");
+  });
+
+  it("does not interrupt a switch away from an untouched edit view", async () => {
+    // FR-035b guards work, not navigation. Opening a practitioner to look at them and
+    // going elsewhere is the common case, and a prompt there is noise.
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner")).toBeInTheDocument(),
+    );
+    press(screen.getByRole("button", { name: /edit/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument(),
+    );
+
+    openTab("FAQ");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "FAQ" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+  });
+
+  it("does not leave the guard armed once the section that armed it is gone", async () => {
+    // The lock-out this mechanism could cause. The flag lives in `App` but is owned by a
+    // component that unmounts on every tab switch — so if it outlived its section, the
+    // *next* switch, from a section holding nothing, would be blocked by a dirty form
+    // that no longer exists, with no way to answer the prompt about it.
+    await dirtyTheEditView();
+    openTab("FAQ");
+    await screen.findByTestId("discard-confirm");
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /discard/i,
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "FAQ" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+
+    // FAQ holds nothing typed, so leaving it must be immediate.
+    openTab("Conversations");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
   });
 });

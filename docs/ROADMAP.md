@@ -603,13 +603,35 @@ screen existed because an escalation nobody can see cannot be exercised. This is
 where the frontend is the subject rather than the instrument, and it holds the two pieces of
 frontend work that were deliberately deferred rather than skipped.
 
-#### Phase 3a — Frontend design pass *(placeholder)*
-**Deliberately unspecified — a stub, to be written when the phase is reached.** What it holds a
-place for is the one part of the product that has never had a pass of its own: the SPA is "minimal,
-kept lean" by the Architecture table's own description, and each screen was shaped by whichever
-backend capability it was added to exercise. Scope, and whether a visual design pass is worth doing
-at all on a portfolio project judged on its AI core, are open questions this stub exists to keep
-visible — not decisions already taken.
+#### Phase 3a — Frontend design pass
+The stub this section used to be asked whether a visual pass was worth doing at all on a project
+judged on its AI core. It is: the SPA ships no stylesheet whatsoever, so "minimal, kept lean" is
+not a restrained aesthetic but the browser's own defaults, and that is the first thing anyone
+opening the product sees. The pass is bounded by what the sketch draws and keeps both audiences on
+one page — the patient messenger and the staff console side by side, as 1d's two-pane screen
+already places them. Splitting them onto separate routes is deliberately *not* done: a single
+screen is what lets one person exercise an escalation from both ends, which is the whole reason the
+second pane exists.
+
+Two capabilities the sketch draws are **not frontend work**, and neither is a styling task
+disguised as one. The design pass renders each as a visible stub rather than omitting it, so the
+screen it belongs on is laid out for the real thing and the gap is legible instead of forgotten:
+
+- **A practitioner's standing appointments for the next 7 days.** The Practitioners tab shows them
+  grouped by day beneath the selected practitioner. Nothing serves them today: `/console/*` proxies
+  practitioner CRUD and `/console/specialties`, and Scheduling's `ListAppointments` is not among
+  what it proxies. Needs a console endpoint over that RPC, scoped to the session the way every
+  other console read is, with the practitioner and the 7-day window as its predicate rather than a
+  filter applied to a wider answer.
+- **A booking outcome a staff member can read.** The sketch's `(i)` marker on a patient message
+  opens what the assistant did with that request — for a booking, the change it actually made
+  ("Appt with dr. Andreas at 9:00 12.01.2027 is cancelled"). `request_outcomes` cannot carry it:
+  011 put the verdict, answer and citations on the request precisely because they describe a *FAQ*
+  answer, and `NULL` there means no FAQ half ran. A booking's outcome is a different thing — a
+  performed act, not a claim the corpus grounded — so it needs its own shape on the message rather
+  than a sixth `FaqVerdict` value or an `answer` string standing in for one. Until it exists the
+  marker carries what the turn already records: the FAQ outcomes, and the attention mark that
+  covers the red case (a corpus gap, an unauthorized request, an urgent condition).
 
 #### Phase 3b — End-to-end tests in a real browser
 The `tests/e2e/` tier, held open since Phase 0, is filled here. Not earlier, for two reasons that

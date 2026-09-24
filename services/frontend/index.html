@@ -3,7 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VisitDoc</title>
+    <!--
+      No font <link> and no other third-party URL anywhere in this file (FR-004): the
+      typeface is self-hosted from src/styles/fonts/ and @font-face'd in app.css, so the
+      running page makes no request off its own origin. The chosen mockup does load its
+      font from a service; that is one of its recorded defects, not a decision.
+
+      The icon is same-origin for the same reason, and it is declared rather than left to
+      the browser's default guess: with no `rel="icon"` a browser asks for /favicon.ico,
+      which this app does not ship, and every first load carried a 404 for it.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>AI Clinic Receptionist</title>
   </head>
   <body>
     <div id="root"></div>

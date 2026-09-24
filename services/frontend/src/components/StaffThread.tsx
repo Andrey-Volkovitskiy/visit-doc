@@ -1,15 +1,30 @@
-import { useRef, useState } from "react";
+import { SendHorizontal } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
+import { PINNED_THRESHOLD, isPinnedToBottom } from "../lib/scroll";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
+import { Button } from "./ui/button";
+import { Switch } from "./ui/switch";
+import { Textarea } from "./ui/textarea";
 
 // Matches `StaffMessageWrite.content`'s `max_length` in
 // services/chat/src/chat/domain/schemas.py - checked here too so a staff member gets
 // immediate feedback instead of a round trip to hit the same 422.
 const MAX_REPLY_LENGTH = 2000;
+
+/**
+ * The length from which the character count is shown (FR-019a).
+ *
+ * Derived from this composer's own limit rather than imported from `ChatWindow`'s:
+ * `MAX_MESSAGE_LENGTH` and `MAX_REPLY_LENGTH` each mirror their own endpoint's
+ * `max_length` and are deliberately not merged (data-model.md), so a shared threshold
+ * would couple two contracts that only happen to agree today.
+ */
+const CHAR_COUNT_FROM = MAX_REPLY_LENGTH - 200;
 
 /**
  * Render a server-computed number of seconds as `m:ss`.
@@ -103,6 +118,41 @@ export function StaffThread({
   // captured `chatId` when it started; this is what it has moved on to.
   const chatIdRef = useRef(chatId);
   chatIdRef.current = chatId;
+  // Whether a read has come back for the conversation on screen. Waiting, arrived-empty
+  // and failed are three different situations (FR-010a), and only the middle one gets
+  // the empty-thread statement (FR-025a) — so it cannot be inferred from an empty array.
+  const [threadLoaded, setThreadLoaded] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  // Whether the reader was at the bottom before this render's content arrived. FR-015b
+  // puts this thread on FR-015a's exact terms, so the mechanism is the same one
+  // `ChatWindow` uses and reads the same pure predicate.
+  const wasPinnedRef = useRef(true);
+
+  /** Record whether the reader is at the bottom, as they scroll. */
+  function rememberPinned(): void {
+    const el = threadRef.current;
+    if (el === null) return;
+    wasPinnedRef.current = isPinnedToBottom(
+      el.scrollTop,
+      el.scrollHeight,
+      el.clientHeight,
+      PINNED_THRESHOLD,
+    );
+  }
+
+  /**
+   * Follow new content to the bottom, but only for a reader who was already there.
+   *
+   * `useLayoutEffect` so the browser never paints the arrival at the old position
+   * first, and the scroll is an assignment because `scrollIntoView` is `undefined` in
+   * this repository's jsdom.
+   */
+  useLayoutEffect(() => {
+    const el = threadRef.current;
+    if (el === null) return;
+    if (!wasPinnedRef.current) return;
+    el.scrollTop = el.scrollHeight - el.clientHeight;
+  });
 
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {
@@ -146,12 +196,14 @@ export function StaffThread({
     // on screen, and no append can express that.
     read: (id, signal) => fetchThread(id, signal),
     onReset: () => {
+      setThreadLoaded(false);
       setThread([]);
       setReply("");
       setBanner(null);
       pendingPostsRef.current = [];
     },
     onLoaded: (messages) => {
+      setThreadLoaded(true);
       applyRead(messages);
       // This is the thread the failed opening read could not load, so the banner it
       // raised goes with it — and only that one. A banner about a reply that would not
@@ -194,6 +246,9 @@ export function StaffThread({
         // publishes it back, so a read still in flight from before the post cannot take
         // it off again. What such a read brings that this cannot is the marks the post
         // just cleared, which is why nothing here files the poll value as handled.
+        // Posting is not unbidden content: the staff member just acted, so their own
+        // reply follows to the bottom whatever they had scrolled back to.
+        wasPinnedRef.current = true;
         showPosted(posted);
         setReply("");
       } catch (err) {
@@ -210,68 +265,188 @@ export function StaffThread({
 
   if (chatId === null) {
     return (
-      <div data-testid="staff-no-thread" style={{ opacity: 0.5 }}>
+      <div
+        data-testid="staff-no-thread"
+        className="text-ink-muted flex min-h-0 flex-1 items-center justify-center p-6 text-sm"
+      >
         <p>Open a conversation to read it.</p>
       </div>
     );
   }
 
+  const overLimit = reply.length > MAX_REPLY_LENGTH;
+  const empty = reply.trim().length === 0;
+  // Three reasons, one control. `posting` is the latch that stops a second copy of the
+  // same sentence reaching a patient; the other two are FR-019b making the control's
+  // appearance agree with what activating it would do.
+  const sendDisabled = posting || empty || overLimit;
+  const sendReason = overLimit
+    ? "Reply is too long to send."
+    : empty
+      ? "Type a reply to send."
+      : posting
+        ? "Sending…"
+        : null;
+
   return (
-    <div>
+    <div className="flex min-h-0 flex-col">
       {/* Always shown, never only while something is wrong: a control that appears
           only in the silenced case makes a staff member infer the ordinary one from
           its absence. */}
-      <label>
-        <input
-          type="checkbox"
-          data-testid="assistant-switch"
-          checked={assistantMayReply}
-          onChange={(e) => onSetAssistant(e.target.checked)}
-        />
-        Assistant {assistantMayReply ? "on" : "off"}
-      </label>
-      {pauseSecondsRemaining !== null && (
-        <p data-testid="pause-countdown" data-seconds={pauseSecondsRemaining}>
-          Quiet for another {formatRemaining(pauseSecondsRemaining)}
+      <div className="border-rule-soft border-b px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium" id="assistant-switch-label">
+            Assistant
+          </span>
+          {pauseSecondsRemaining !== null && (
+            <p
+              data-testid="pause-countdown"
+              data-seconds={pauseSecondsRemaining}
+              // One of FR-010b's two named exceptions: a deadline on a control, not a
+              // record of when anything happened.
+              className="border-rule text-ink-muted border-l pl-2 text-sm tabular-nums"
+            >
+              Quiet for another {formatRemaining(pauseSecondsRemaining)}
+            </p>
+          )}
+          <span className="ml-auto flex items-center gap-2">
+            <span
+              className={`text-sm font-semibold ${
+                assistantMayReply ? "text-accent-dark" : "text-ink-muted"
+              }`}
+            >
+              {assistantMayReply ? "on" : "off"}
+            </span>
+            {/*
+              The rendered position follows the server's answer rather than being set
+              optimistically (FR-024): `checked` is the prop the poll re-reads, so two
+              open tabs cannot disagree about a conversation one of them just took.
+            */}
+            <Switch
+              data-testid="assistant-switch"
+              aria-labelledby="assistant-switch-label"
+              aria-describedby="assistant-explanation"
+              checked={assistantMayReply}
+              onCheckedChange={onSetAssistant}
+            />
+          </span>
+        </div>
+        {/*
+          A permanently visible sentence, not a tooltip and not a `?` to discover
+          (FR-024a). This is the one control on the page whose effect reaches a real
+          patient immediately, so its explanation may not be the one that has to be
+          found.
+        */}
+        <p
+          id="assistant-explanation"
+          data-testid="assistant-explanation"
+          className="text-ink-muted mt-1.5 text-sm"
+        >
+          Turned off, the assistant stops replying to this patient and a person is
+          expected to. The pause expires on its own; turning it back on ends it
+          immediately.
         </p>
-      )}
-      <div data-testid="staff-thread">
-        {thread.map((message) => (
+      </div>
+      <div
+        data-testid="staff-thread"
+        ref={threadRef}
+        onScroll={rememberPinned}
+        role="log"
+        aria-label="Conversation"
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-y-auto p-4"
+      >
+        {/*
+          An open conversation that has answered and holds nothing (FR-025a). Distinct
+          from `staff-no-thread`, which means none is selected, and deliberately not the
+          patient side's greeting — that exists to orient a first-time visitor, and a
+          staff member needs neither the orientation nor the offer.
+        */}
+        {threadLoaded && thread.length === 0 && (
+          <p
+            data-testid="staff-empty-thread"
+            className="text-ink-muted border-rule-soft rounded-md border border-dashed p-4 text-sm"
+          >
+            This conversation has no messages yet.
+          </p>
+        )}
+        {thread.map((message, i) => (
           <MessageView
             key={message.id}
             sender={message.sender}
             content={message.content}
+            startsBurst={i === 0 || thread[i - 1]!.sender !== message.sender}
+            // This pane's reader is a staff member, so their own replies take the
+            // reader's side and their own background (FR-023) — the mirror of what the
+            // patient pane does with the patient's.
+            readerIs="staff"
             requestOutcomes={message.request_outcomes}
             showOutcomes
             mark={message.attention_mark}
           />
         ))}
       </div>
-      <textarea
-        aria-label="reply as staff"
-        value={reply}
-        onChange={(e) => setReply(e.target.value)}
-        onKeyDown={(e) => {
-          if (isSendKey(e)) {
-            e.preventDefault();
-            void handleSend();
-          }
-        }}
-        placeholder="Reply to this patient..."
-      />
-      {/* Disabled while the post is out so the send visibly *is* happening. That is
-          what stops the second click being made at all; the handler's own guard is
-          what stops one made anyway — a repeat click landing before React has
-          repainted, or any call that never went through this button. */}
-      <button disabled={posting} onClick={() => void handleSend()}>
-        Send as staff
-      </button>
-      {reply.length > MAX_REPLY_LENGTH && (
-        <p data-testid="staff-length-error" style={{ color: "red" }}>
-          Reply is too long ({reply.length}/{MAX_REPLY_LENGTH} characters).
-        </p>
-      )}
-      {banner && <p data-testid="staff-error">{banner.text}</p>}
+      <div className="border-rule bg-surface flex flex-col gap-2 border-t px-4 py-3">
+        <div className="flex items-end gap-2">
+          <Textarea
+            aria-label="reply as staff"
+            aria-describedby={sendReason === null ? undefined : "staff-composer-reason"}
+            rows={2}
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            onKeyDown={(e) => {
+              if (isSendKey(e)) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            placeholder="Reply to this patient..."
+            className="min-h-0 resize-none"
+          />
+          {/* Disabled while the post is out so the send visibly *is* happening. That is
+              what stops the second click being made at all; the handler's own guard is
+              what stops one made anyway — a repeat click landing before React has
+              repainted, or any call that never went through this button. */}
+          <Button
+            disabled={sendDisabled}
+            onClick={() => void handleSend()}
+            aria-describedby={sendReason === null ? undefined : "staff-composer-reason"}
+          >
+            Send as staff
+            <SendHorizontal aria-hidden="true" />
+          </Button>
+        </div>
+        {overLimit ? (
+          <p
+            id="staff-composer-reason"
+            data-testid="staff-length-error"
+            className="text-attention text-xs font-medium"
+          >
+            Reply is too long ({reply.length}/{MAX_REPLY_LENGTH} characters).
+          </p>
+        ) : (
+          <>
+            {reply.length >= CHAR_COUNT_FROM && (
+              <p data-testid="char-count" className="text-ink-muted text-xs">
+                {reply.length}/{MAX_REPLY_LENGTH}
+              </p>
+            )}
+            {sendReason !== null && (
+              <p id="staff-composer-reason" className="sr-only">
+                {sendReason}
+              </p>
+            )}
+          </>
+        )}
+        {banner && (
+          <p
+            data-testid="staff-error"
+            className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
+          >
+            {banner.text}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,12 @@
-import { useRef, useState } from "react";
+import { Bot, SendHorizontal } from "lucide-react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { askChat, fetchChatHistory, type Message } from "../lib/chatStream";
+import { PINNED_THRESHOLD, isPinnedToBottom } from "../lib/scroll";
 import { isSendKey } from "../lib/sendKey";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 let nextMessageId = 0;
 
@@ -65,7 +69,17 @@ function reconcile(shown: Message[], history: Message[]): Message[] {
 // Must match `ChatRequest.message`'s `max_length` in
 // services/chat/src/chat/domain/schemas.py - checked client-side too so the
 // patient gets immediate feedback instead of a round trip to hit the same 422.
-const MAX_MESSAGE_LENGTH = 2000;
+export const MAX_MESSAGE_LENGTH = 2000;
+
+/**
+ * The length from which the character count is shown (FR-019a).
+ *
+ * "Approaching the limit" needs a number, and this is it, declared once so the
+ * component and its test cannot disagree about where the approach begins. The counter
+ * must not appear for a message nowhere near the limit, which is almost all of them —
+ * so this is a late warning on purpose, not a running tally.
+ */
+export const CHAR_COUNT_FROM = MAX_MESSAGE_LENGTH - 200;
 
 interface ChatWindowProps {
   /** The chat to show and send to. Null when the session holds no chats at all. */
@@ -93,6 +107,20 @@ interface ChatWindowProps {
    * always did: a refetch per new value, and no retry.
    */
   pollTick?: number;
+  /**
+   * Whether the assistant is permitted to reply in this conversation.
+   *
+   * Read by `App` off the console poll row it already holds, which is where the value
+   * lives — no request of this pane's own, and no second source able to disagree with
+   * the console about a conversation a staff member just took (`research.md` Decision
+   * 3). It decides one thing: whether a turn in flight shows a running indicator
+   * (FR-016) or nothing at all (FR-017).
+   *
+   * Defaults to true. A brand-new chat has no poll row yet, and showing the indicator
+   * for a turn that turns out to be silent is a smaller error than withholding it for
+   * every turn in a chat's first two seconds.
+   */
+  assistantMayReply?: boolean;
 }
 
 export function ChatWindow({
@@ -100,6 +128,7 @@ export function ChatWindow({
   onTurnComplete,
   lastMessageAt,
   pollTick,
+  assistantMayReply = true,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -121,6 +150,18 @@ export function ChatWindow({
   // persisted) would be thrown away client-side, only reappearing on reload.
   const activeControllersRef = useRef<Set<AbortController>>(new Set());
   const streamingCount = Object.keys(streaming).length;
+  // Whether a history read has come back for the chat on screen. Three-valued in
+  // effect, and deliberately not inferred from `messages.length === 0`: waiting,
+  // arrived-empty and failed are three different situations (FR-010a), and only the
+  // middle one is greeted (FR-019c).
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  // Whether the reader was at the bottom *before* this render's content arrived.
+  // Read at render time rather than stored as state: a reader scrolls without any React
+  // event firing, so a stored flag would go stale on exactly the interaction the rule
+  // exists to detect (data-model.md). It starts true so a freshly opened chat lands at
+  // its most recent message (FR-015).
+  const wasPinnedRef = useRef(true);
 
   useThreadReads<Message[]>({
     chatId,
@@ -132,6 +173,7 @@ export function ChatWindow({
     paused: streamingCount > 0,
     read: (id, signal) => fetchChatHistory(id, signal),
     onReset: () => {
+      setHistoryLoaded(false);
       // Switching chats abandons whatever the previous one had in flight: its reply
       // belongs to a thread that is no longer on screen, and letting it land would
       // append it to the wrong history. The *reads* are the hook's to abort; these are
@@ -148,6 +190,7 @@ export function ChatWindow({
     // was composed is already on screen and is not in it — the patient's own bubble,
     // put up the moment they hit send, or a reply that arrived while the read was out.
     onLoaded: (history) => {
+      setHistoryLoaded(true);
       setMessages((shown) => reconcile(shown, history));
       // This is the history the failed opening read could not load, so the banner it
       // raised goes with it — and only that one. A banner about a turn that would not
@@ -168,6 +211,42 @@ export function ChatWindow({
     },
   });
 
+  /**
+   * Record whether the reader is at the bottom, as they scroll.
+   *
+   * Read from the element at the moment of the scroll rather than held as derived
+   * state, and stored in a ref rather than in state, because it must not cause a
+   * render: it is an answer about the view *before* the next content arrives, and a
+   * re-render is the very thing that would change it.
+   */
+  function rememberPinned(): void {
+    const el = threadRef.current;
+    if (el === null) return;
+    wasPinnedRef.current = isPinnedToBottom(
+      el.scrollTop,
+      el.scrollHeight,
+      el.clientHeight,
+      PINNED_THRESHOLD,
+    );
+  }
+
+  /**
+   * Follow new content to the bottom, but only for a reader who was already there
+   * (FR-015a).
+   *
+   * `useLayoutEffect` rather than `useEffect`: the browser must not paint the new
+   * content at the old scroll position first, which is a visible jump. And the scroll
+   * is performed by *assigning* `scrollTop` — `scrollIntoView` is `undefined` in this
+   * repository's jsdom and calling it throws in every test that renders a thread
+   * (`research.md`).
+   */
+  useLayoutEffect(() => {
+    const el = threadRef.current;
+    if (el === null) return;
+    if (!wasPinnedRef.current) return;
+    el.scrollTop = el.scrollHeight - el.clientHeight;
+  });
+
   function clearStreaming(turnKey: string): void {
     setStreaming((prev) => {
       const { [turnKey]: _removed, ...rest } = prev;
@@ -182,6 +261,9 @@ export function ChatWindow({
 
     setInput("");
     setBanner(null);
+    // Sending is not unbidden content: the patient just acted, so their own message
+    // follows to the bottom whatever they had scrolled to beforehand.
+    wasPinnedRef.current = true;
 
     const turnKey = localId();
     setStreaming((prev) => ({ ...prev, [turnKey]: "" }));
@@ -276,16 +358,62 @@ export function ChatWindow({
 
   if (chatId === null) {
     return (
-      <div data-testid="no-chat" style={{ opacity: 0.5 }}>
+      <div
+        data-testid="no-chat"
+        className="text-ink-muted flex flex-1 items-center justify-center p-6 text-base"
+      >
         <p>No chat selected. Create one to start talking.</p>
       </div>
     );
   }
 
+  const overLimit = input.length > MAX_MESSAGE_LENGTH;
+  const empty = input.trim().length === 0;
+  const sendDisabled = empty || overLimit;
+  // The reason the control is disabled, in words, so it reaches assistive technology
+  // rather than being carried by the control's appearance alone (FR-019b).
+  const sendReason = overLimit
+    ? "Message is too long to send."
+    : empty
+      ? "Type a message to send."
+      : null;
+
   return (
-    <div>
-      <div data-testid="messages">
-        {messages.map((message) => (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        data-testid="messages"
+        ref={threadRef}
+        // A scroll container of its own, so the thread scrolls and the composer and tab
+        // strip stay put (FR-015).
+        className="min-h-0 flex-1 overflow-y-auto p-4"
+        role="log"
+        aria-label="Conversation"
+        tabIndex={0}
+        onScroll={rememberPinned}
+      >
+        {/*
+          Rendered only for a thread that has *answered* and holds nothing (FR-019c).
+          Interface copy, not a bubble, and carrying no sender: a greeting inside a
+          message would be something the patient could reasonably believe the assistant
+          said. A thread still loading, and one that failed, each get neither — those
+          are different situations under FR-010a and the banner speaks for the second.
+        */}
+        {historyLoaded && messages.length === 0 && streamingCount === 0 && (
+          <div
+            data-testid="thread-greeting"
+            className="text-ink-muted border-rule-soft bg-surface-sunken rounded-md border border-dashed p-4 text-sm"
+          >
+            <p className="text-ink text-base font-medium">
+              Ask the clinic anything.
+            </p>
+            <p className="mt-1">
+              I can make, change and cancel appointments, say who practises here and
+              when they are free, and answer questions about the clinic from its own
+              documents. If I cannot help, I will pass you to a member of staff.
+            </p>
+          </div>
+        )}
+        {messages.map((message, i) => (
           // No `requestOutcomes`: this pane draws none of it, so passing them would
           // read as a rendering decision made somewhere else. The staff console is the
           // surface that shows how an answer was produced.
@@ -293,31 +421,125 @@ export function ChatWindow({
             key={message.id}
             sender={message.sender}
             content={message.content}
+            startsBurst={i === 0 || messages[i - 1]!.sender !== message.sender}
           />
         ))}
-        {Object.entries(streaming).map(([turnKey, text]) => (
-          <MessageView key={turnKey} sender="assistant" content={text} />
-        ))}
+        {Object.entries(streaming).map(([turnKey, text]) =>
+          text.length > 0 ? (
+            // The reply has begun arriving, so the indicator has done its job and the
+            // bubble takes over (FR-018). Always a burst start: it is the first thing
+            // the assistant has said in this run by definition.
+            <MessageView key={turnKey} sender="assistant" content={text} />
+          ) : assistantMayReply ? (
+            <WorkingIndicator key={turnKey} />
+          ) : (
+            // Nothing. FR-017 forbids a notice, a placeholder or a countdown in the
+            // indicator's place: the patient's message sits in the thread as sent and
+            // the interface makes no claim about who will reply or when. An empty
+            // assistant bubble here would be exactly such a claim.
+            null
+          ),
+        )}
       </div>
-      <textarea
-        aria-label="question"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (isSendKey(e)) {
-            e.preventDefault();
-            void handleSend();
-          }
-        }}
-        placeholder="Ask a question..."
-      />
-      <button onClick={() => void handleSend()}>Send</button>
-      {input.length > MAX_MESSAGE_LENGTH && (
-        <p data-testid="length-error" style={{ color: "red" }}>
-          Message is too long ({input.length}/{MAX_MESSAGE_LENGTH} characters).
-        </p>
-      )}
-      {banner && <p data-testid="error">{banner.text}</p>}
+      <div className="border-rule bg-surface flex flex-col gap-2 rounded-b-md border-t px-4 py-3">
+        <div className="flex items-end gap-2">
+          <Textarea
+            aria-label="question"
+            aria-describedby={sendReason === null ? undefined : "composer-reason"}
+            rows={2}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (isSendKey(e)) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            placeholder="Ask a question..."
+            className="min-h-0 resize-none"
+          />
+          <Button
+            onClick={() => void handleSend()}
+            disabled={sendDisabled}
+            aria-describedby={sendReason === null ? undefined : "composer-reason"}
+          >
+            Send
+            <SendHorizontal aria-hidden="true" />
+          </Button>
+        </div>
+        {/*
+          Two hooks, not one. At exactly the limit the message is sendable, so there is
+          no error — and that is precisely where the counter has to be present. One hook
+          for both would make FR-019a unimplementable without breaking a test that is
+          still right.
+        */}
+        {overLimit ? (
+          <p
+            id="composer-reason"
+            data-testid="length-error"
+            className="text-attention text-xs font-medium"
+          >
+            Message is too long ({input.length}/{MAX_MESSAGE_LENGTH} characters).
+          </p>
+        ) : (
+          <>
+            {input.length >= CHAR_COUNT_FROM && (
+              <p data-testid="char-count" className="text-ink-muted text-xs">
+                {input.length}/{MAX_MESSAGE_LENGTH}
+              </p>
+            )}
+            {empty && (
+              <p id="composer-reason" className="sr-only">
+                Type a message to send.
+              </p>
+            )}
+          </>
+        )}
+        {banner && (
+          <p
+            data-testid="error"
+            className="text-attention bg-attention-wash border-attention/30 rounded-md border px-3 py-2 text-sm"
+          >
+            {banner.text}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The three-dot running indicator: one per turn awaiting a reply (FR-016).
+ *
+ * `role="status"` rather than a bare decoration, so the wait is announced rather than
+ * only drawn. Under `prefers-reduced-motion` the dots stop moving and keep a visible
+ * resting opacity — the animation is suppressed, the state is not (FR-042); the rule
+ * for that lives in `app.css` beside the keyframes it disables.
+ */
+function WorkingIndicator() {
+  return (
+    <div className="mt-4 flex items-end gap-3">
+      {/*
+        The assistant's own icon, the same one its messages carry. The indicator stands
+        exactly where the reply's bubble will stand, so a different glyph here would have
+        one turn showing two different assistants a second apart.
+      */}
+      <span
+        aria-hidden="true"
+        className="bg-accent text-surface grid size-7 flex-none place-items-center rounded-full"
+      >
+        <Bot className="size-3.5" />
+      </span>
+      <div
+        data-testid="working-indicator"
+        role="status"
+        aria-label="The assistant is replying"
+        className="bg-bubble-them border-rule-soft inline-flex items-center gap-1.5 rounded-md border px-3 py-3.5"
+      >
+        <i className="working-dot bg-ink-muted animate-dot size-1.5 rounded-full" />
+        <i className="working-dot bg-ink-muted animate-dot size-1.5 rounded-full [animation-delay:0.18s]" />
+        <i className="working-dot bg-ink-muted animate-dot size-1.5 rounded-full [animation-delay:0.36s]" />
+      </div>
     </div>
   );
 }

@@ -1,0 +1,263 @@
+/*
+ * The one global stylesheet (FR-003). Nothing else in this app declares a colour, a
+ * size or a radius: every value below has exactly one home here, and markup reaches it
+ * through a utility class rather than restating it (`bg-[#0E7C7B]` is a defect).
+ *
+ * Three layers, in the order they have to be read:
+ *   1. @theme          — this app's own tokens, which become Tailwind utilities
+ *   2. :root           — shadcn's semantic names, each mapped onto a token above
+ *   3. @theme inline   — utilities for those semantic names, so vendored components
+ *                        can say `bg-background` and mean `--color-surface`
+ *
+ * Layer 2 is not optional polish. A shadcn variable left at its default introduces a
+ * colour outside this file and is how a themed app quietly reverts to looking like the
+ * library's demo (`specs/015-frontend-design-pass/contracts/tokens.md`).
+ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* ---------------------------------------------------------------- typeface */
+/*
+ * Self-hosted (FR-004): three latin-subset weights under `fonts/`, referenced by
+ * relative URL so Vite fingerprints them, with the SIL OFL 1.1 text shipped beside
+ * them. No font service, no third-party request at runtime.
+ */
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-sans-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2");
+}
+
+/* ------------------------------------------------------------------- theme */
+
+@theme {
+  /* Colour. `--color-attention` is a reserved word: FR-005 makes it mean "a person is
+     needed" and nothing else may use it — not a decorative accent, not a required-field
+     asterisk, not a delete button at rest. */
+  --color-page: #eef2f3;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f7f9f9;
+  --color-ink: #0f2e33;
+  --color-ink-muted: #587177;
+  --color-accent: #0e7c7b;
+  --color-accent-dark: #0a5f5e;
+  --color-accent-wash: #e4f0ef;
+  --color-bubble-me: #dceeec;
+  --color-bubble-them: #f4f6f7;
+  --color-attention: #b4442e;
+  --color-attention-wash: #fbedea;
+  --color-rule: #d3dcdc;
+  --color-rule-soft: #e3e9ea;
+
+  /* Type. One family, with the fallback chain FR-004 requires: a typeface that fails to
+     load degrades to a named stack rather than to the browser's default. */
+  --font-sans:
+    "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* A 1.200 minor third off a 15px base. Tailwind's own 14/16px scale is overridden
+     here rather than worked around at the call site. */
+  --text-xs: 12px;
+  --text-xs--line-height: 1.45;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.5;
+  --text-base: 15px;
+  --text-base--line-height: 1.5;
+  --text-md: 16px;
+  --text-md--line-height: 1.45;
+  --text-lg: 19px;
+  --text-lg--line-height: 1.35;
+  --text-xl: 22px;
+  --text-xl--line-height: 1.3;
+
+  /* Shape. 6px on everything; `rounded-full` is reserved for a genuine pill — the
+     switch's track and thumb, and the small round sender icons. */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Where the panes stop sitting side by side (FR-008). Declared so the number lives in
+     the theme like every other value, rather than as a bare `[1100px]` scattered
+     through markup. */
+  --breakpoint-panes: 1100px;
+
+  /* The one animation in the feature: the three-dot working indicator. */
+  --animate-dot: dot 1.25s infinite ease-in-out;
+
+  @keyframes dot {
+    0%,
+    70%,
+    100% {
+      opacity: 0.28;
+      transform: translateY(0);
+    }
+    35% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+}
+
+/* --------------------------------------------- shadcn's names, mapped onto the above */
+/*
+ * Every semantic variable the vendored components under `src/components/ui/` read.
+ * Each resolves to a token declared above — never to a colour of its own. The list is
+ * checked by the procedure in `quickstart.md`; an unmapped default is a defect.
+ *
+ * `--destructive` maps onto `--color-attention`, which means a `variant="destructive"`
+ * button is making FR-005's claim that a person is needed. Use it only where that is
+ * true.
+ */
+
+:root {
+  --radius: 6px;
+
+  --background: var(--color-surface);
+  --foreground: var(--color-ink);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-surface);
+  --secondary: var(--color-surface-sunken);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-surface-sunken);
+  --muted-foreground: var(--color-ink-muted);
+  --accent-foreground: var(--color-accent-dark);
+  --destructive: var(--color-attention);
+  --destructive-foreground: var(--color-surface);
+  --border: var(--color-rule);
+  --input: var(--color-rule);
+  --ring: var(--color-accent);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+/* -------------------------------------------------------- element defaults */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+  }
+
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  ul,
+  ol,
+  figure,
+  blockquote {
+    margin: 0;
+  }
+
+  ul,
+  ol {
+    padding: 0;
+    list-style: none;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Focus is always visible, on everything, without each component remembering to say
+     so — FR-039's floor rather than a per-control decision. */
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* --------------------------------------------------------- reduced motion */
+/*
+ * FR-042. Global, because the enter/exit animations arrived with `tw-animate-css` on
+ * the vendored dialog and dropdown rather than being written here — a per-component
+ * rule would cover only the animations somebody remembered.
+ *
+ * It suppresses motion, never state: the working indicator's dots keep their visible
+ * resting opacity (see `.working-dot` below) and the indicator keeps saying a reply is
+ * coming. Suppressing the animation must not suppress the message.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .working-dot {
+    animation: none !important;
+    opacity: 0.55;
+  }
+}

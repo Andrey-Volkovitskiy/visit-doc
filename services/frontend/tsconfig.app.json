@@ -3,8 +3,18 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // `tests/` shares this project with `src/` and is run by vitest under Node, so a
+    // test that reads a file off disk needs Node's globals to typecheck. The cost is
+    // that `src/` could reference them too and still pass here — a mistake the browser
+    // reports immediately and loudly, which is why it is accepted rather than split
+    // into a third tsconfig for one directory.
+    "types": ["node"],
     "module": "ESNext",
     "skipLibCheck": true,
+
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

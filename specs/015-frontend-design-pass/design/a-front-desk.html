@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Clinic Receptionist — Front Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --page:        #EEF2F3;
+    --surface:     #FFFFFF;
+    --ink:         #0F2E33;
+    --ink-muted:   #587177;
+    --accent:      #0E7C7B;
+    --accent-dark: #0A5F5E;
+    --accent-wash: #E4F0EF;
+    --bubble-me:   #DCEEEC;
+    --bubble-them: #F4F6F7;
+    --attention:   #B4442E;
+    --attention-wash: #FBEDEA;
+    --rule:        #D3DCDE;
+    --rule-soft:   #E3E9EA;
+
+    --r:      6px;
+    --r-pill: 999px;
+
+    /* Type scale — 1.200 minor third off a 15px base. */
+    --t-xs:   12px;
+    --t-sm:   13px;
+    --t-base: 15px;
+    --t-md:   16px;
+    --t-lg:   19px;
+    --t-xl:   22px;
+
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: var(--t-base);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, p, ul, ol, figure, blockquote { margin: 0; }
+  ul, ol { padding: 0; list-style: none; }
+
+  :where(button, input, a, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--r);
+  }
+
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------- Page frame ---------- */
+
+  .masthead {
+    background: var(--surface);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .masthead__inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--sp-4) var(--sp-5);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--t-lg);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .wordmark svg { display: block; flex: none; }
+
+  .masthead__session {
+    margin-left: auto;
+    font-size: var(--t-sm);
+    color: var(--ink-muted);
+  }
+
+  .workspace {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--sp-5);
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--sp-5);
+    align-items: start;
+  }
+
+  .pane {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 720px;
+  }
+
+  .pane__title {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.01em;
+  }
+
+  /* ---------- Patient: chat tab strip ---------- */
+
+  .tabstrip {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-2) var(--sp-3);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bubble-them);
+    border-radius: var(--r) var(--r) 0 0;
+    min-width: 0;
+  }
+
+  .tabstrip__scroll {
+    display: flex;
+    gap: var(--sp-1);
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .chattab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r);
+    background: transparent;
+    font-size: var(--t-sm);
+    color: var(--ink-muted);
+    white-space: nowrap;
+    max-width: 170px;
+  }
+
+  .chattab span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chattab:hover { background: rgba(15, 46, 51, 0.05); }
+
+  .chattab[aria-current="page"] {
+    background: var(--surface);
+    border-color: var(--rule);
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .chattab__close {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: var(--t-xs);
+    line-height: 1;
+  }
+
+  .chattab__close:hover {
+    background: rgba(15, 46, 51, 0.1);
+    color: var(--ink);
+  }
+
+  .tabstrip__action {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    background: var(--surface);
+    color: var(--ink-muted);
+    font-size: var(--t-md);
+    line-height: 1;
+  }
+
+  .tabstrip__action:hover { color: var(--ink); border-color: var(--ink-muted); }
+
+  .tabstrip__action--new { color: var(--accent); border-color: #B7D6D4; }
+  .tabstrip__action--new:hover { background: var(--accent-wash); color: var(--accent-dark); }
+
+  /* ---------- Thread ---------- */
+
+  .thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    scrollbar-color: var(--rule) transparent;
+  }
+
+  .turn {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--sp-3);
+    align-items: end;
+  }
+
+  .turn + .turn { margin-top: var(--sp-1); }
+  .turn--burst-start { margin-top: var(--sp-4); }
+  .turn--burst-start:first-child { margin-top: 0; }
+
+  .turn--mine {
+    grid-template-columns: minmax(0, 1fr) 28px;
+    justify-items: end;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-pill);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex: none;
+  }
+
+  .avatar--staff     { background: #E2E8EA; color: #3D565C; }
+  .avatar--assistant { background: var(--accent); color: #FFFFFF; }
+  .avatar--patient   { background: #CFE2E0; color: #0A5F5E; }
+
+  .avatar--spacer { visibility: hidden; }
+
+  .bubble {
+    max-width: 82%;
+    padding: 9px 13px;
+    border-radius: var(--r);
+    font-size: var(--t-base);
+    background: var(--bubble-them);
+    border: 1px solid var(--rule-soft);
+  }
+
+  .turn--mine .bubble {
+    background: var(--bubble-me);
+    border-color: #C2DEDB;
+  }
+
+  .bubble__sender {
+    display: block;
+    font-size: var(--t-xs);
+    font-weight: 600;
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+  }
+
+  /* Working indicator */
+
+  .working {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 13px;
+    background: var(--bubble-them);
+    border: 1px solid var(--rule-soft);
+    border-radius: var(--r);
+  }
+
+  .working i {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--r-pill);
+    background: var(--ink-muted);
+    animation: pulse 1.25s infinite ease-in-out;
+  }
+
+  .working i:nth-child(2) { animation-delay: 0.18s; }
+  .working i:nth-child(3) { animation-delay: 0.36s; }
+
+  @keyframes pulse {
+    0%, 70%, 100% { opacity: 0.28; transform: translateY(0); }
+    35%           { opacity: 1;    transform: translateY(-3px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .working i { animation: none; opacity: 0.55; }
+  }
+
+  /* ---------- Composer ---------- */
+
+  .composer {
+    display: flex;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-top: 1px solid var(--rule);
+    background: var(--surface);
+    border-radius: 0 0 var(--r) var(--r);
+  }
+
+  .composer input {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 12px;
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+  }
+
+  .composer input::placeholder { color: #86999D; }
+  .composer input:focus-visible { outline-offset: 0; border-color: var(--accent); }
+
+  .btn {
+    padding: 9px 18px;
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    background: var(--accent);
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+
+  .btn:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+
+  /* ---------- Staff console ---------- */
+
+  .console__tabs {
+    display: flex;
+    gap: var(--sp-5);
+    padding: 0 var(--sp-4);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bubble-them);
+    border-radius: var(--r) var(--r) 0 0;
+  }
+
+  .console__tab {
+    padding: var(--sp-3) 2px;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font-size: var(--t-base);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+
+  .console__tab:hover { color: var(--ink); }
+
+  .console__tab[aria-selected="true"] {
+    color: var(--accent-dark);
+    font-weight: 600;
+    border-bottom-color: var(--accent);
+  }
+
+  .console__body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .roster {
+    border-right: 1px solid var(--rule);
+    overflow-y: auto;
+    padding: var(--sp-2);
+    background: #FBFCFC;
+  }
+
+  .roster__item {
+    width: 100%;
+    display: block;
+    text-align: left;
+    padding: 9px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--r);
+    background: none;
+    font-size: var(--t-sm);
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+
+  .roster__item:hover { background: rgba(15, 46, 51, 0.045); }
+
+  .roster__item[aria-current="true"] {
+    background: var(--accent-wash);
+    border-color: #B7D6D4;
+    font-weight: 500;
+  }
+
+  .roster__name {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .roster__mark {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--r-pill);
+    background: var(--attention);
+  }
+
+  .roster__reason {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-xs);
+    color: var(--attention);
+  }
+
+  .roster__preview {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-xs);
+    color: var(--ink-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .console__thread {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .assistbar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .assistbar__label { font-size: var(--t-sm); font-weight: 500; }
+
+  .help {
+    width: 17px;
+    height: 17px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    color: var(--ink-muted);
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .help:hover { border-color: var(--ink-muted); color: var(--ink); }
+
+  .switch {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    border: 0;
+    background: none;
+    padding: 0;
+    font-size: var(--t-sm);
+    color: var(--ink-muted);
+  }
+
+  .switch__track {
+    width: 38px;
+    height: 21px;
+    border-radius: var(--r-pill);
+    background: var(--accent);
+    position: relative;
+    transition: background 120ms;
+  }
+
+  .switch__track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 19px;
+    width: 17px;
+    height: 17px;
+    border-radius: var(--r-pill);
+    background: #FFFFFF;
+  }
+
+  .switch__state { font-weight: 600; color: var(--accent-dark); }
+
+  .countdown {
+    font-variant-numeric: tabular-nums;
+    font-size: var(--t-sm);
+    color: var(--ink-muted);
+    padding-left: var(--sp-2);
+    border-left: 1px solid var(--rule);
+  }
+
+  /* ---------- (i) marker + popover ---------- */
+
+  .marker-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .turn--mine .marker-row { flex-direction: row-reverse; }
+
+  .marker {
+    flex: none;
+    width: 19px;
+    height: 19px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--accent);
+    background: var(--accent-wash);
+    color: var(--accent-dark);
+    font-size: 12px;
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .marker--failed {
+    border-color: var(--attention);
+    background: var(--attention-wash);
+    color: var(--attention);
+  }
+
+  .popover {
+    margin-top: var(--sp-2);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--r);
+    background: #FBFCFC;
+    padding: var(--sp-3);
+    font-size: var(--t-sm);
+    max-width: 82%;
+  }
+
+  .popover--failed { border-left-color: var(--attention); }
+
+  .popover__heading {
+    font-weight: 600;
+    font-size: var(--t-sm);
+    margin-bottom: var(--sp-2);
+  }
+
+  .popover__request {
+    color: var(--ink);
+    margin-bottom: var(--sp-3);
+  }
+
+  .popover__field {
+    font-size: var(--t-xs);
+    color: var(--ink-muted);
+    margin-bottom: 3px;
+  }
+
+  .citation {
+    border-left: 2px solid var(--rule);
+    padding-left: var(--sp-3);
+    color: var(--ink-muted);
+    margin-bottom: var(--sp-3);
+  }
+
+  .citation strong { color: var(--ink); font-weight: 500; }
+
+  .stub {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    padding-top: var(--sp-2);
+    border-top: 1px dashed var(--rule);
+    color: #86999D;
+    font-size: var(--t-xs);
+  }
+
+  .stub::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border: 1px dashed #A4B4B7;
+    border-radius: var(--r-pill);
+    flex: none;
+  }
+
+  .popover--failed .popover__reason { color: var(--attention); }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 1100px) {
+    .workspace {
+      grid-template-columns: minmax(0, 1fr);
+      padding: var(--sp-4);
+      gap: var(--sp-4);
+    }
+    .pane { height: auto; max-height: 680px; }
+    .thread { max-height: 380px; }
+  }
+
+  @media (max-width: 720px) {
+    .masthead__inner { padding: var(--sp-3) var(--sp-4); }
+    .masthead__session { display: none; }
+    .workspace { padding: var(--sp-3); }
+    .console__body { grid-template-columns: minmax(0, 1fr); }
+    .roster {
+      border-right: 0;
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      gap: var(--sp-2);
+      overflow-x: auto;
+    }
+    .roster__item { width: auto; white-space: nowrap; margin-bottom: 0; }
+    .roster__preview { display: none; }
+    .bubble, .popover { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <div class="wordmark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="6" fill="#0E7C7B"/>
+        <path d="M8 17.5V9.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-5.2L8 18.6v-1.1z" fill="#FFFFFF"/>
+        <path d="M13 10.4v3.2M11.4 12h3.2" stroke="#0E7C7B" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span>AI Clinic Receptionist</span>
+    </div>
+    <p class="masthead__session">Session demo · 15a Willson St.</p>
+  </div>
+</header>
+
+<main class="workspace">
+
+  <!-- ============ PATIENT MESSENGER ============ -->
+  <section class="pane" aria-label="Patient messenger">
+    <h2 class="pane__title">Patient messenger</h2>
+
+    <nav class="tabstrip" aria-label="Your chats">
+      <div class="tabstrip__scroll">
+        <a class="chattab" href="#" aria-current="page">
+          <span>Jane Austen</span>
+          <button class="chattab__close" type="button" aria-label="Delete chat with Jane Austen">✕</button>
+        </a>
+        <a class="chattab" href="#"><span>Charles Dickens</span></a>
+        <a class="chattab" href="#"><span>Leo Tolstoy</span></a>
+      </div>
+      <button class="tabstrip__action" type="button" aria-label="More chats">…</button>
+      <button class="tabstrip__action tabstrip__action--new" type="button" aria-label="Start a new chat">+</button>
+    </nav>
+
+    <div class="thread" tabindex="0" role="log" aria-label="Conversation">
+
+      <article class="turn turn--burst-start">
+        <div class="avatar avatar--staff" aria-hidden="true">JS</div>
+        <div class="bubble">
+          <span class="bubble__sender">Front desk</span>
+          Hello, Jane. Your promo code is activated.
+        </div>
+      </article>
+
+      <article class="turn turn--mine turn--burst-start">
+        <div class="bubble">Hi thanks, do you have a dentist?</div>
+        <div class="avatar avatar--patient" aria-hidden="true">JA</div>
+      </article>
+
+      <article class="turn turn--mine">
+        <div class="bubble">I should like to book the earliest slot tomorrow</div>
+        <div class="avatar avatar--patient avatar--spacer" aria-hidden="true">JA</div>
+      </article>
+
+      <article class="turn turn--burst-start">
+        <div class="avatar avatar--assistant" aria-hidden="true">AI</div>
+        <div class="bubble">
+          <span class="bubble__sender">AI assistant</span>
+          Our dentist Andreas Vesalius is available tomorrow at 9 and 10 am. Should I book?
+        </div>
+      </article>
+
+      <article class="turn turn--mine turn--burst-start">
+        <div class="bubble">Yes</div>
+        <div class="avatar avatar--patient" aria-hidden="true">JA</div>
+      </article>
+
+      <article class="turn turn--burst-start">
+        <div class="avatar avatar--assistant" aria-hidden="true">AI</div>
+        <div class="working" role="status" aria-label="The assistant is replying">
+          <i></i><i></i><i></i>
+        </div>
+      </article>
+
+    </div>
+
+    <form class="composer" onsubmit="return false">
+      <label class="visually-hidden" for="patient-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Type a message</label>
+      <input id="patient-input" type="text" placeholder="Type a message" autocomplete="off" />
+      <button class="btn" type="submit">Send</button>
+    </form>
+  </section>
+
+  <!-- ============ STAFF CONSOLE ============ -->
+  <section class="pane" aria-label="Staff console">
+    <h2 class="pane__title">Staff console</h2>
+
+    <div class="console__tabs" role="tablist" aria-label="Console sections">
+      <button class="console__tab" type="button" role="tab" aria-selected="true">Chats</button>
+      <button class="console__tab" type="button" role="tab" aria-selected="false">Practitioners</button>
+      <button class="console__tab" type="button" role="tab" aria-selected="false">FAQ</button>
+    </div>
+
+    <div class="console__body">
+
+      <aside class="roster" aria-label="Conversations">
+        <button class="roster__item" type="button">
+          <span class="roster__name"><span class="roster__mark" aria-hidden="true"></span>Leo Tolstoy</span>
+          <span class="roster__reason">No answer in the clinic's documents</span>
+        </button>
+        <button class="roster__item" type="button" aria-current="true">
+          <span class="roster__name">Jane Austen</span>
+          <span class="roster__preview">Yes</span>
+        </button>
+        <button class="roster__item" type="button">
+          <span class="roster__name">Charles Dickens</span>
+          <span class="roster__preview">Thanks, that's all for now.</span>
+        </button>
+      </aside>
+
+      <div class="console__thread">
+
+        <div class="assistbar">
+          <span class="assistbar__label">AI assistant</span>
+          <button class="help" type="button" aria-label="What does this switch do?">?</button>
+          <button class="switch" type="button" aria-pressed="true">
+            <span class="switch__state">On</span>
+            <span class="switch__track" aria-hidden="true"></span>
+          </button>
+          <span class="countdown" title="Time until the assistant resumes">1:56</span>
+        </div>
+
+        <div class="thread" tabindex="0" role="log" aria-label="Jane Austen conversation">
+
+          <!-- staff message: right-aligned in the console -->
+          <article class="turn turn--mine turn--burst-start">
+            <div class="bubble">Hello, Jane. Your promo code is activated.</div>
+            <div class="avatar avatar--staff" aria-hidden="true">JS</div>
+          </article>
+
+          <article class="turn turn--burst-start">
+            <div class="avatar avatar--patient" aria-hidden="true">JA</div>
+            <div>
+              <div class="marker-row">
+                <div class="bubble">
+                  <span class="bubble__sender">Jane Austen</span>
+                  Hi thanks, do you have a dentist?
+                </div>
+                <button class="marker" type="button" aria-expanded="true" aria-label="What the assistant did with this message">i</button>
+              </div>
+
+              <div class="popover" role="region" aria-label="Assistant outcome">
+                <p class="popover__heading">The assistant answered this</p>
+                <p class="popover__request">“Does the clinic have a dentist available to book with?”</p>
+
+                <p class="popover__field">Cited from the clinic's FAQ</p>
+                <blockquote class="citation">
+                  <strong>Do I need a referral from a primary care doctor to book with a specialist?</strong><br />
+                  You can book a visit with any of our practitioners without a referral.
+                </blockquote>
+
+                <p class="stub">Booking outcome — not yet recorded</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="turn">
+            <div class="avatar avatar--patient avatar--spacer" aria-hidden="true">JA</div>
+            <div>
+              <div class="marker-row">
+                <div class="bubble">I should like to book the earliest slot tomorrow</div>
+                <button class="marker marker--failed" type="button" aria-expanded="true" aria-label="The assistant could not serve this message">i</button>
+              </div>
+
+              <div class="popover popover--failed" role="region" aria-label="Assistant outcome">
+                <p class="popover__heading popover__reason">The assistant could not serve this</p>
+                <p class="popover__request">“Book the earliest available dentist slot tomorrow.”</p>
+                <p class="popover__field">Reason</p>
+                <p class="popover__reason">Out-of-pocket pricing was asked about mid-request and is not in the clinic's documents. Handle this one manually.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="turn turn--burst-start">
+            <div class="avatar avatar--assistant" aria-hidden="true">AI</div>
+            <div class="bubble">
+              <span class="bubble__sender">AI assistant</span>
+              Our dentist Andreas Vesalius is available tomorrow at 9 and 10 am. Should I book?
+            </div>
+          </article>
+
+          <article class="turn turn--burst-start">
+            <div class="avatar avatar--patient" aria-hidden="true">JA</div>
+            <div class="bubble">
+              <span class="bubble__sender">Jane Austen</span>
+              Yes
+            </div>
+          </article>
+
+        </div>
+
+        <form class="composer" onsubmit="return false">
+          <label for="staff-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Reply as staff</label>
+          <input id="staff-input" type="text" placeholder="Type a message" autocomplete="off" />
+          <button class="btn" type="submit">Send</button>
+        </form>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // The thread is a scroll container pinned to its latest message.
+  document.querySelectorAll(".thread").forEach(function (el) {
+    el.scrollTop = el.scrollHeight;
+  });
+</script>
+
+</body>
+</html>

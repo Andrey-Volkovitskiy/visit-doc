@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { AttentionMark, Citation, RequestOutcome } from "../src/lib/chatStream";
 import { MessageView } from "../src/components/MessageView";
@@ -20,6 +20,17 @@ function answered(
     verdict: "answered",
     citations: [{ entry_id: entryId, chunk_index: 0, chunk_text: `chunk ${entryId}` }],
   };
+}
+
+/**
+ * Open this message's evidence marker.
+ *
+ * The outcome block sits behind it now (FR-027), so every assertion on what an outcome
+ * says needs one step first. The property each test protects is unchanged; only the
+ * moment the block exists has moved (FR-038).
+ */
+function expandOutcomes(): void {
+  fireEvent.click(screen.getByTestId("outcome-marker"));
 }
 
 function abstained(position: number, question: string): RequestOutcome {
@@ -50,6 +61,8 @@ describe("MessageView", () => {
       />,
     );
     expect(screen.getByTestId("message")).toHaveTextContent("Visiting hours are 8am to 5pm.");
+
+    expandOutcomes();
     expect(screen.getByTestId("citations")).toHaveTextContent("chunk 1");
   });
 
@@ -104,6 +117,7 @@ describe("MessageView request outcomes", () => {
       />,
     );
 
+    expandOutcomes();
     const blocks = screen.getAllByTestId("request-outcome");
     expect(blocks).toHaveLength(2);
     expect(blocks[0]).toHaveTextContent("where are you?");
@@ -130,6 +144,7 @@ describe("MessageView request outcomes", () => {
       />,
     );
 
+    expandOutcomes();
     const blocks = screen.getAllByTestId("request-outcome");
     expect(within(blocks[0]).queryByTestId("verdict-mark")).toBeNull();
     expect(within(blocks[1]).getByTestId("verdict-mark")).toHaveAttribute(
@@ -194,6 +209,7 @@ describe("MessageView request outcomes", () => {
       />,
     );
 
+    expandOutcomes();
     expect(screen.getByTestId("verdict-mark")).toBeInTheDocument();
     expect(screen.queryByTestId("attention-mark")).toBeNull();
   });
@@ -213,6 +229,7 @@ describe("MessageView unanswered requests", () => {
       />,
     );
 
+    expandOutcomes();
     const blocks = screen.getAllByTestId("request-outcome");
     // Verbatim: the classifier's restatement, which is what was retrieved for and what
     // a staff member is acting on.
@@ -302,5 +319,82 @@ describe("marks the assistant's new causes leave", () => {
       expect(screen.getByTestId("attention-mark")).toHaveTextContent(label);
       unmount();
     }
+  });
+});
+
+describe("MessageView sender bursts (FR-014)", () => {
+  type Sender = "patient" | "assistant" | "staff";
+
+  /**
+   * Render a run of messages the way a thread does, deriving `startsBurst` from the
+   * previous message's sender — which is the rule itself, and the reason these are
+   * written as a sequence rather than one message at a time.
+   */
+  function renderRun(senders: Sender[]) {
+    return render(
+      <>
+        {senders.map((sender, i) => (
+          <MessageView
+            key={i}
+            sender={sender}
+            content={`message ${i}`}
+            startsBurst={i === 0 || senders[i - 1] !== sender}
+          />
+        ))}
+      </>,
+    );
+  }
+
+  function iconCount(): number {
+    return screen.queryAllByTestId("sender-icon").length;
+  }
+
+  function indicated(): boolean[] {
+    return screen
+      .getAllByTestId("message")
+      .map((el) => within(el).queryByTestId("sender-icon") !== null);
+  }
+
+  it("indicates a run of one", () => {
+    renderRun(["assistant"]);
+    expect(iconCount()).toBe(1);
+  });
+
+  it("indicates only the first of a consecutive run from one sender", () => {
+    renderRun(["patient", "patient", "patient"]);
+    expect(indicated()).toEqual([true, false, false]);
+  });
+
+  it("indicates each of two alternating senders", () => {
+    renderRun(["patient", "assistant", "patient", "assistant"]);
+    expect(indicated()).toEqual([true, true, true, true]);
+  });
+
+  it("starts a new indicator at each change of sender in a mixed thread", () => {
+    renderRun([
+      "staff",
+      "patient",
+      "patient",
+      "assistant",
+      "patient",
+      "patient",
+      "patient",
+    ]);
+    expect(indicated()).toEqual([true, true, false, true, true, false, false]);
+  });
+
+  it("indicates the patient's own messages too", () => {
+    // The patient gets no text *label* — it would tell them nothing they do not know —
+    // but FR-014's indicator is about which run a message belongs to, and a thread that
+    // grouped only the clinic's side would answer that question for one participant.
+    renderRun(["patient"]);
+    expect(iconCount()).toBe(1);
+    expect(screen.queryByTestId("role-label")).toBeNull();
+  });
+
+  it("still names the assistant and staff in words", () => {
+    renderRun(["assistant", "staff"]);
+    const labels = screen.getAllByTestId("role-label").map((el) => el.textContent);
+    expect(labels).toEqual(["AI assistant", "Staff"]);
   });
 });

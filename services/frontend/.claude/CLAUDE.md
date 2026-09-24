@@ -32,15 +32,56 @@ putting `export const x: number = "nope"` in `src/`: the first form exits 0, the
 
 ```
 src/
-├── App.tsx              # owns the two panes, the chat list, the active chat, the error banner
-├── components/          # ChatList, ChatWindow, MessageView, StaffConsole, StaffThread,
-│                        #   PractitionerAdmin, FaqAdmin — presentational + local state
+├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
+├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
+│                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components
+├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
+│                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
+├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
+├── lib/utils.ts         # shadcn's cn() — clsx + tailwind-merge
+├── styles/app.css       # THE global stylesheet: tailwind, @font-face, @theme, the shadcn mapping
+├── styles/fonts/        # IBM Plex Sans 400/500/600 woff2, self-hosted, with OFL.txt beside them
 └── main.tsx             # StrictMode root
 tests/                   # vitest + @testing-library/react, one file per module
 ```
+
+**`src/components/ui/` is library code, `src/components/` is product code**, and the split is not
+cosmetic. Files under `ui/` were vendored from shadcn and are edited for *theming*, never for
+product behaviour; files beside them carry this app's logic. Mixing the two makes it unclear which
+files a behaviour change belongs in.
+
+## Styling
+
+One global stylesheet, `src/styles/app.css`, and no others. It holds the Tailwind import, the
+`@font-face` rules, the `@theme` block that declares every token, the mapping of shadcn's semantic
+variables onto those tokens, the element defaults and the global reduced-motion block. A second
+global sheet would give every value two homes.
+
+- **Utility classes go on the element they style.** That is what keeps one component's appearance
+  from reaching another's, now that there are no scoped module classes to do it.
+- **A theme token is never restated as a literal.** `bg-[#0E7C7B]` is a defect — the token exists
+  so the value has one home, and a literal is a copy that cannot be renamed. Same for `text-[15px]`
+  and a hard-coded radius.
+- **An arbitrary value is for a genuine one-off of *layout*** (`w-[37ch]`, `grid-cols-[208px_1fr]`),
+  never for a value the theme names.
+- **Vendored `ui/` components are themed at source**, not overridden from call sites with
+  `!important` or a long class list. If a primitive looks wrong everywhere, fix the primitive.
+- **No shadows, no gradients, no colour outside the theme.** The direction builds structure from
+  hairline rules and background tint. Several shadcn components ship a drop shadow; each had it
+  removed when it was vendored, and it should not come back.
+- **`--color-attention` is reserved.** It means "a person is needed" and nothing else may use it —
+  not a decorative accent, not a required-field asterisk, not a delete button at rest. shadcn maps
+  `--destructive` onto it, so `variant="destructive"` is making that claim; use it only where it is
+  true. And colour is never the only carrier of a state: text, weight, shape or position carries it
+  too.
+- **Light theme only.** No `dark:` variant and no `prefers-color-scheme` block belongs under
+  `src/`; shadcn ships a dark theme by default and it was removed rather than left unreferenced.
+
+The token contract is `specs/015-frontend-design-pass/contracts/tokens.md`, and the appearance it
+describes comes from `specs/015-frontend-design-pass/design/a-front-desk.html`.
 
 **Every network call goes through a `src/lib/` module — `chatStream.ts` for the patient side,
 `consoleApi.ts` for the console.** No component calls `fetch` directly. That is what keeps the wire
@@ -91,15 +132,58 @@ two audiences; a third surface is a reason for a third module, not for a compone
 ## Tests
 
 `tests/` mirrors `src/`, one file per module, run by vitest with jsdom and
-`@testing-library/react`. Assert through what a user sees — visible text, and the `data-testid`
-hooks components already expose (`chat-list`, `chat-list-item`, `chat-list-error`, `messages`,
-`message`, `role-label`, `attention-mark`, `request-outcome`, `outcome-question`,
-`outcome-unanswered`, `verdict-mark`, `citations`, `error`, `length-error`, `no-chat`,
-`patient-pane`, `staff-pane`, `staff-console`, `staff-conversations`, `staff-conversation`,
-`staff-thread`, `staff-no-thread`, `staff-no-conversations`, `staff-error`, `attention-total`,
-`assistant-switch`, `pause-countdown`, `practitioner-admin`, `practitioner`, `working-range`,
-`no-practitioners`, `practitioner-error`, `faq-admin`, `faq-entry`, `no-faq-entries`,
-`faq-error`) — rather than component internals.
+`@testing-library/react`. Assert through what a user sees — visible text, the accessible role and
+name where an element has one, and otherwise the `data-testid` hooks below — rather than component
+internals.
+
+**Where a role and name already identify an element, use them.** The staff tab set is
+`getByRole("tab", { name: "Practitioners" })`, a composer is `getByLabelText("question")`, an
+evidence marker is `getByRole("button", { expanded })`. A testid for something already addressable
+is a second name for one thing.
+
+**A hook names what a thing is, never what it looks like** — `outcome-marker`, not `blue-icon`. A
+hook named after an appearance breaks when the appearance changes, which in a design pass is the
+one thing guaranteed to happen. **Existing hooks may not be removed or renamed**; new ones may be
+added.
+
+| Component | Hooks |
+|---|---|
+| `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `attention-total`, `region-loading` |
+| `ChatList` | `chat-list`, `chat-list-item`, `chat-overflow`, `chat-overflow-item`, `delete-confirm` |
+| `ChatWindow` | `messages`, `no-chat`, `error`, `length-error`, `char-count`, `working-indicator`, `thread-greeting` |
+| `MessageView` | `message`, `role-label`, `sender-icon`, `attention-mark` |
+| `OutcomeDisclosure` | `outcome-marker`, `request-outcome`, `outcome-question`, `outcome-unanswered`, `verdict-mark`, `citations`, `booking-outcome-stub` |
+| `StaffConsole` | `staff-console`, `staff-conversations`, `staff-conversation`, `staff-no-conversations`, `region-loading` |
+| `StaffThread` | `staff-thread`, `staff-no-thread`, `staff-empty-thread`, `staff-error`, `staff-length-error`, `char-count`, `assistant-switch`, `assistant-explanation`, `pause-countdown` |
+| `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `appointments-stub`, `discard-confirm` |
+| `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm` |
+
+Data attributes carry state a test would otherwise have to read off a colour: `data-sender` and
+`data-mine` on a message, `data-burst-start` on the first of a sender's run, `data-chat-id` on a
+chat tab, `data-emphasized` on a conversation, `data-position` and `data-verdict` on an outcome,
+`data-mark` on an attention mark, `data-outcome-state` (`served` / `needs-person`) on an evidence
+marker, and `data-region` on a `region-loading`.
+
+### Driving the vendored controls
+
+**`fireEvent.click` does not open a Radix tab set or dropdown menu.** They open on
+`pointerdown`/`mousedown`, which a synthetic `click` never dispatches — and it fails in the shape
+of a *missing element*, not a missing event, so it reads as a component that did not render. Use
+`press()` from `tests/press.ts`, which fires the whole pointer sequence and drives the tab set, the
+dropdown, the dialog and the switch, while still activating a plain `<button>` exactly once.
+Measured, not assumed: see `specs/015-frontend-design-pass/research.md` Decision 7. Existing
+`fireEvent.click` call sites work and were left alone.
+
+**Radix renders a dialog and a dropdown menu into a portal on `document.body`**, outside the
+subtree the component returned. So `discard-confirm`, `delete-confirm` and `chat-overflow-item`
+are found with `screen.*` and never with `within(container)`. And a `data-testid` reaches a
+vendored component only if it forwards its props — verify the forwarding rather than assume it,
+since a swallowed testid looks exactly like a missing element.
+
+**A scroll container reports nothing under jsdom.** `scrollHeight` and `clientHeight` are always
+`0`, so the "follow only when the reader is at the bottom" rule is always-true unless a test stubs
+them with `Object.defineProperty`. `scrollIntoView` is `undefined` and throws — scroll by assigning
+`scrollTop`.
 
 - Network is faked at the `chatStream`/`consoleApi` seam: `vi.spyOn(chatStream, "askChat")` and
   friends, so a test exercises the real component against a controlled wire, never a real server.

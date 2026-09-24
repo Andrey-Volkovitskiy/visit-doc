@@ -4,11 +4,25 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PractitionerAdmin } from "../src/components/PractitionerAdmin";
 import * as consoleApi from "../src/lib/consoleApi";
 import type { Practitioner } from "../src/lib/consoleApi";
+import { press } from "./press";
+
+/** Open the roster's one practitioner for editing, and wait for the edit view. */
+async function openTheEditView(): Promise<HTMLElement> {
+  press(await screen.findByLabelText("Edit Dr. Ada Lovelace"));
+  return await screen.findByTestId("practitioner-edit");
+}
+
+/** Open the create view from the roster, and wait for it. */
+async function openTheCreateView(): Promise<HTMLElement> {
+  press(await screen.findByText("Add practitioner"));
+  return await screen.findByTestId("practitioner-edit");
+}
 
 function practitioner(overrides: Partial<Practitioner> = {}): Practitioner {
   return {
@@ -44,12 +58,14 @@ beforeEach(() => {
 });
 
 describe("PractitionerAdmin: the roster", () => {
-  it("lists the clinic's practitioners with what the assistant books from", async () => {
+  it("opens a practitioner on what the assistant books from", async () => {
+    // The roster is a record now and the fields live behind the edit view (FR-035a),
+    // so this is where the editable values are: what opens is what was stored, not a
+    // blank form the staff member would have to fill in again.
     render(<PractitionerAdmin />);
+    await openTheEditView();
 
-    expect(
-      await screen.findByDisplayValue("Dr. Ada Lovelace"),
-    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Dr. Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByDisplayValue("30")).toBeInTheDocument();
     expect(screen.getByDisplayValue("09:00")).toBeInTheDocument();
   });
@@ -79,14 +95,227 @@ describe("PractitionerAdmin: the roster", () => {
   });
 });
 
+describe("PractitionerAdmin: the roster reads as a record", () => {
+  // FR-032. The roster is what a staff member reads; the fields are editable behind a
+  // control rather than by being a form at rest, so nothing here is a half-typed write
+  // waiting for a Save nobody pressed.
+  it("states each practitioner's name, specialty, appointment length and working hours", async () => {
+    render(<PractitionerAdmin />);
+
+    const row = await screen.findByTestId("practitioner");
+    expect(row).toHaveTextContent("Dr. Ada Lovelace");
+    expect(row).toHaveTextContent("General Practice");
+    expect(row).toHaveTextContent("30 minutes");
+    expect(row).toHaveTextContent("Monday");
+    expect(row).toHaveTextContent("09:00");
+    expect(row).toHaveTextContent("17:00");
+  });
+
+  it("offers create, edit and delete from the roster itself", async () => {
+    render(<PractitionerAdmin />);
+
+    await screen.findByTestId("practitioner");
+    expect(screen.getByText("Add practitioner")).toBeInTheDocument();
+    const row = screen.getByTestId("practitioner");
+    expect(
+      within(row).getByLabelText("Edit Dr. Ada Lovelace"),
+    ).toBeInTheDocument();
+    expect(
+      within(row).getByLabelText("Delete Dr. Ada Lovelace"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no edit view until one is asked for", async () => {
+    render(<PractitionerAdmin />);
+
+    await screen.findByTestId("practitioner");
+    expect(screen.queryByTestId("practitioner-edit")).toBeNull();
+  });
+
+  it("names what a refused save failed at, while the edit view is still open", async () => {
+    // FR-035: the reason is the scheduler's own, and it has to be readable from where
+    // the staff member is standing - which, after a refused save, is the edit view.
+    vi.spyOn(consoleApi, "updatePractitioner").mockRejectedValue(
+      new Error("working ranges on one weekday must not overlap"),
+    );
+
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("practitioner-error")).toHaveTextContent(
+        "must not overlap",
+      ),
+    );
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+  });
+});
+
+describe("PractitionerAdmin: the edit view replaces the tab's content", () => {
+  // FR-035a. Not an overlay and not an expansion in place: the list is gone while the
+  // edit view is up, and a control leads back to it.
+  it("replaces the roster when a practitioner is opened", async () => {
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+
+    expect(screen.queryByTestId("practitioner")).toBeNull();
+    expect(screen.getByDisplayValue("Dr. Ada Lovelace")).toBeInTheDocument();
+    // An overlay would leave the list underneath and the dialog role above it.
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("replaces the roster when a practitioner is being created", async () => {
+    render(<PractitionerAdmin />);
+    await openTheCreateView();
+
+    expect(screen.queryByTestId("practitioner")).toBeNull();
+    expect(screen.getByLabelText("Full name")).toHaveValue("");
+  });
+
+  it("returns to the roster from an untouched edit view, asking nothing", async () => {
+    // FR-035b gates the confirmation on there being work to lose: opening a
+    // practitioner to look at them and closing again is the common case.
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+
+    press(screen.getByText("Back to the roster"));
+
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+    expect(await screen.findByTestId("practitioner")).toBeInTheDocument();
+    expect(screen.queryByTestId("practitioner-edit")).toBeNull();
+  });
+
+  it("asks before abandoning typed changes", async () => {
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+
+    press(screen.getByText("Back to the roster"));
+
+    // Radix renders the confirmation into a portal on document.body, so it is reached
+    // with `screen.*` and never with `within(container)`.
+    expect(await screen.findByTestId("discard-confirm")).toBeInTheDocument();
+    // Nothing has been abandoned yet: the edit view is still there behind it.
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+  });
+
+  it("keeps the edit view and the typed text when the discard is refused", async () => {
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+    press(screen.getByText("Back to the roster"));
+
+    const confirm = await screen.findByTestId("discard-confirm");
+    press(within(confirm).getByRole("button", { name: "Keep editing" }));
+
+    await waitFor(() => expect(screen.queryByTestId("discard-confirm")).toBeNull());
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+    expect(screen.getByLabelText("Full name")).toHaveValue("Dr. Grace Hopper");
+  });
+
+  it("returns to the roster, saving nothing, when the discard is confirmed", async () => {
+    const update = vi.spyOn(consoleApi, "updatePractitioner");
+
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+    press(screen.getByText("Back to the roster"));
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+
+    expect(await screen.findByTestId("practitioner")).toBeInTheDocument();
+    // FR-035b: leaving never writes. The roster still reads what the scheduler stored.
+    expect(update).not.toHaveBeenCalled();
+    expect(screen.getByTestId("practitioner")).toHaveTextContent(
+      "Dr. Ada Lovelace",
+    );
+  });
+
+  it("asks before abandoning a half-typed create", async () => {
+    render(<PractitionerAdmin />);
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+
+    press(screen.getByText("Back to the roster"));
+
+    expect(await screen.findByTestId("discard-confirm")).toBeInTheDocument();
+  });
+
+  it("returns from an untouched create view, asking nothing", async () => {
+    render(<PractitionerAdmin />);
+    await openTheCreateView();
+
+    press(screen.getByText("Back to the roster"));
+
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+    expect(await screen.findByTestId("practitioner")).toBeInTheDocument();
+  });
+});
+
+describe("PractitionerAdmin: the appointments that cannot be read yet", () => {
+  // FR-033 and SC-008: a gap the backend cannot fill reads as deliberately absent -
+  // never as an error, and never as an empty result that would assert there are none.
+  it("says the next seven days are not available yet, and what will appear there", async () => {
+    render(<PractitionerAdmin />);
+    const view = await openTheEditView();
+
+    const stub = within(view).getByTestId("appointments-stub");
+    expect(stub).toHaveTextContent(/not yet available/i);
+    expect(stub).toHaveTextContent(/seven days/i);
+    // Naming what will appear there, rather than only that something is missing.
+    expect(stub).toHaveTextContent(/appointment/i);
+  });
+
+  it("renders no appointment list, empty or otherwise", async () => {
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+
+    const stub = screen.getByTestId("appointments-stub");
+    expect(stub.querySelector("ul")).toBeNull();
+    expect(stub.querySelector("ol")).toBeNull();
+    expect(stub.querySelector("table")).toBeNull();
+    expect(stub).not.toHaveTextContent(/no appointments|none booked|nothing/i);
+  });
+
+  it("is not reported as an error", async () => {
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+
+    expect(screen.getByTestId("appointments-stub")).toBeInTheDocument();
+    expect(screen.queryByTestId("practitioner-error")).toBeNull();
+  });
+
+  it("makes no claim about a practitioner who does not exist yet", async () => {
+    // A practitioner being created has no id, so there is nothing whose appointments
+    // this panel could be about.
+    render(<PractitionerAdmin />);
+    await openTheCreateView();
+
+    expect(screen.queryByTestId("appointments-stub")).toBeNull();
+  });
+});
+
 describe("PractitionerAdmin: the specialty chooser", () => {
   it("offers the set the scheduler publishes, rather than a list of its own", async () => {
     // A list written out on this side is one the enum can be extended without, and a
     // value it does not recognise is refused at the write with nothing on screen to
     // explain why.
     render(<PractitionerAdmin />);
+    await openTheEditView();
 
-    const chooser = await screen.findByLabelText("Specialty");
+    const chooser = screen.getByLabelText("Specialty");
     await waitFor(() =>
       expect(
         [...chooser.querySelectorAll("option")].map((o) => o.value),
@@ -107,8 +336,9 @@ describe("PractitionerAdmin: the specialty chooser", () => {
     ]);
 
     render(<PractitionerAdmin />);
+    await openTheEditView();
 
-    const chooser = await screen.findByLabelText("Specialty");
+    const chooser = screen.getByLabelText("Specialty");
     await waitFor(() =>
       expect((chooser as HTMLSelectElement).value).toBe("Dentistry"),
     );
@@ -123,8 +353,9 @@ describe("PractitionerAdmin: the specialty chooser", () => {
     );
 
     render(<PractitionerAdmin />);
+    await openTheEditView();
 
-    const chooser = await screen.findByLabelText("Specialty");
+    const chooser = screen.getByLabelText("Specialty");
     await waitFor(() =>
       expect((chooser as HTMLSelectElement).value).toBe("Dentistry"),
     );
@@ -139,7 +370,8 @@ describe("PractitionerAdmin: the specialty chooser", () => {
       .mockResolvedValue(practitioner({ specialty: "Dentistry" }));
 
     render(<PractitionerAdmin />);
-    const chooser = await screen.findByLabelText("Specialty");
+    await openTheEditView();
+    const chooser = screen.getByLabelText("Specialty");
     await waitFor(() =>
       expect(chooser.querySelectorAll("option")).toHaveLength(
         SPECIALTIES.length,
@@ -169,12 +401,12 @@ describe("PractitionerAdmin: creating", () => {
       );
 
     render(<PractitionerAdmin />);
-    fireEvent.click(await screen.findByText("Add practitioner"));
+    await openTheCreateView();
+    fireEvent.click(screen.getByText("Add practitioner"));
 
     await waitFor(() => expect(create).toHaveBeenCalledWith({}));
-    expect(
-      await screen.findByDisplayValue("Dr. Grace Hopper"),
-    ).toBeInTheDocument();
+    // The roster is what shows the answer back, since a landed create returns to it.
+    expect(await screen.findByText("Dr. Grace Hopper")).toBeInTheDocument();
   });
 
   it("renders a refusal's own reason, and changes nothing", async () => {
@@ -185,7 +417,7 @@ describe("PractitionerAdmin: creating", () => {
     );
 
     render(<PractitionerAdmin />);
-    await screen.findByDisplayValue("Dr. Ada Lovelace");
+    await openTheCreateView();
     fireEvent.click(screen.getByText("Add practitioner"));
 
     await waitFor(() =>
@@ -193,7 +425,10 @@ describe("PractitionerAdmin: creating", () => {
         "already has that name",
       ),
     );
-    expect(screen.getAllByTestId("practitioner")).toHaveLength(1);
+    // Nothing was added, which is read off the roster - the refusal left the create
+    // view up rather than returning to it, and an untouched form leaves without asking.
+    press(screen.getByText("Back to the roster"));
+    expect(await screen.findAllByTestId("practitioner")).toHaveLength(1);
   });
 });
 
@@ -207,10 +442,11 @@ describe("PractitionerAdmin: editing", () => {
     );
 
     render(<PractitionerAdmin />);
-    fireEvent.change(await screen.findByDisplayValue("Dr. Ada Lovelace"), {
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
       target: { value: "Dr. Grace Hopper" },
     });
-    fireEvent.change(screen.getByDisplayValue("09:00"), {
+    fireEvent.change(screen.getByLabelText("Start time"), {
       target: { value: "10:00" },
     });
     fireEvent.click(screen.getByText("Save"));
@@ -231,15 +467,16 @@ describe("PractitionerAdmin: editing", () => {
     );
 
     render(<PractitionerAdmin />);
-    fireEvent.change(await screen.findByDisplayValue("Dr. Ada Lovelace"), {
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
       target: { value: "Dr. Grace Hopper" },
     });
     fireEvent.click(screen.getByText("Save"));
 
     await waitFor(() =>
-      expect(
-        screen.getByDisplayValue("Dr. Grace B. Hopper"),
-      ).toBeInTheDocument(),
+      expect(screen.getByTestId("practitioner")).toHaveTextContent(
+        "Dr. Grace B. Hopper",
+      ),
     );
   });
 
@@ -249,7 +486,10 @@ describe("PractitionerAdmin: editing", () => {
     );
 
     render(<PractitionerAdmin />);
-    await screen.findByDisplayValue("Dr. Ada Lovelace");
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Start time"), {
+      target: { value: "10:00" },
+    });
     fireEvent.click(screen.getByText("Save"));
 
     await waitFor(() =>
@@ -257,13 +497,23 @@ describe("PractitionerAdmin: editing", () => {
         "must not overlap",
       ),
     );
-    // Nothing was changed by a refused request: the row still shows what it had.
-    expect(screen.getByDisplayValue("Dr. Ada Lovelace")).toBeInTheDocument();
+    // Nothing was changed by a refused request: leaving shows the roster still reading
+    // what the scheduler stored, and the form still holds what was typed to correct.
+    expect(screen.getByLabelText("Start time")).toHaveValue("10:00");
+    press(screen.getByText("Back to the roster"));
+    press(
+      within(await screen.findByTestId("discard-confirm")).getByRole("button", {
+        name: "Discard",
+      }),
+    );
+    expect(await screen.findByTestId("practitioner")).toHaveTextContent(
+      "09:00",
+    );
   });
 
   it("adds and removes working ranges", async () => {
     render(<PractitionerAdmin />);
-    await screen.findByDisplayValue("Dr. Ada Lovelace");
+    await openTheEditView();
 
     fireEvent.click(screen.getByText("Add hours"));
     expect(screen.getAllByTestId("working-range")).toHaveLength(2);
@@ -305,7 +555,9 @@ describe("PractitionerAdmin: deleting", () => {
         "may not have been applied",
       ),
     );
-    expect(screen.getByDisplayValue("Dr. Ada Lovelace")).toBeInTheDocument();
+    expect(screen.getByTestId("practitioner")).toHaveTextContent(
+      "Dr. Ada Lovelace",
+    );
   });
 });
 
@@ -354,7 +606,7 @@ describe("PractitionerAdmin: the credential the page never holds", () => {
 
 describe("PractitionerAdmin: writes that must happen once", () => {
   it("adds one practitioner, not two, when the button is clicked again before it lands", async () => {
-    // There is no form to read here, so nothing about a second click looks different
+    // A second click carries the very same form, so nothing about it looks different
     // from the first - it simply creates a second row, with a second pool-assigned name.
     let landCreate: (created: Practitioner) => void = () => undefined;
     const create = vi.spyOn(consoleApi, "createPractitioner").mockReturnValue(
@@ -364,7 +616,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     );
 
     render(<PractitionerAdmin />);
-    fireEvent.click(await screen.findByText("Add practitioner"));
+    await openTheCreateView();
+    fireEvent.click(screen.getByText("Add practitioner"));
     fireEvent.click(screen.getByText("Add practitioner"));
 
     expect(create).toHaveBeenCalledTimes(1);
@@ -378,7 +631,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     // `Number("")` is 0, so writing it into the row repainted the field as a "0" the
     // staff member had to clear before they could type anything.
     render(<PractitionerAdmin />);
-    const minutes = await screen.findByLabelText("Appointment minutes");
+    await openTheEditView();
+    const minutes = screen.getByLabelText("Appointment minutes");
 
     fireEvent.change(minutes, { target: { value: "" } });
 
@@ -395,7 +649,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     const save = vi.spyOn(consoleApi, "updatePractitioner");
 
     render(<PractitionerAdmin />);
-    const minutes = await screen.findByLabelText("Appointment minutes");
+    await openTheEditView();
+    const minutes = screen.getByLabelText("Appointment minutes");
     fireEvent.change(minutes, { target: { value: "" } });
     fireEvent.click(screen.getByText("Save"));
 
@@ -409,7 +664,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       .mockResolvedValue(practitioner({ appointment_duration_minutes: 45 }));
 
     render(<PractitionerAdmin />);
-    const minutes = await screen.findByLabelText("Appointment minutes");
+    await openTheEditView();
+    const minutes = screen.getByLabelText("Appointment minutes");
     fireEvent.change(minutes, { target: { value: "" } });
     fireEvent.change(minutes, { target: { value: "45" } });
     fireEvent.click(screen.getByText("Save"));
@@ -435,7 +691,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       const save = vi.spyOn(consoleApi, "updatePractitioner");
 
       render(<PractitionerAdmin />);
-      const minutes = await screen.findByLabelText("Appointment minutes");
+      await openTheEditView();
+      const minutes = screen.getByLabelText("Appointment minutes");
       fireEvent.change(minutes, { target: { value: typed } });
 
       // What was typed is still on screen, unrewritten, and there is nothing to send.
@@ -455,7 +712,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       .mockResolvedValue(practitioner({ appointment_duration_minutes: 5 }));
 
     render(<PractitionerAdmin />);
-    const minutes = await screen.findByLabelText("Appointment minutes");
+    await openTheEditView();
+    const minutes = screen.getByLabelText("Appointment minutes");
     fireEvent.change(minutes, { target: { value: "05" } });
 
     expect(minutes).toHaveDisplayValue("05");
@@ -479,7 +737,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       );
 
     render(<PractitionerAdmin />);
-    const minutes = await screen.findByLabelText("Appointment minutes");
+    await openTheEditView();
+    const minutes = screen.getByLabelText("Appointment minutes");
     fireEvent.change(minutes, { target: { value: "2" } });
     fireEvent.click(screen.getByText("Save"));
 
@@ -512,7 +771,7 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     );
 
     render(<PractitionerAdmin />);
-    await screen.findByDisplayValue("Dr. Ada Lovelace");
+    await openTheEditView();
 
     fireEvent.click(screen.getByText("Save"));
     fireEvent.click(screen.getByText("Save"));
@@ -521,6 +780,8 @@ describe("PractitionerAdmin: writes that must happen once", () => {
       landSave(practitioner());
     });
 
+    // The save landed, so the view is back on the roster the delete is reached from.
+    await screen.findByLabelText("Delete Dr. Ada Lovelace");
     fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
     fireEvent.click(screen.getByLabelText("Delete Dr. Ada Lovelace"));
     expect(remove).toHaveBeenCalledTimes(1);
