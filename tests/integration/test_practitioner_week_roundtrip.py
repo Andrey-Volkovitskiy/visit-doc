@@ -1,11 +1,15 @@
-"""A practitioner's week, read through the console against the real scheduler.
+"""A practitioner's bookings, read through the console against the real scheduler.
 
 The unit tiers stop at a boundary each: chat's route test fakes the transport, and the
-scheduler's API test never sees the bounds chat computes. This one runs chat's real
-console route, with its real HTTP transport, against the scheduler's real
-`/practitioners` API on a loopback port and the real scheduling database - so the
-window chat derives from `local_now` is the window the scheduler's own `WHERE` applies,
-and a status the scheduler filters on is the status its write paths store.
+scheduler's API test never sees what chat sends. This one runs chat's real console
+route, with its real HTTP transport, against the scheduler's real `/practitioners` API
+on a loopback port and the real scheduling database - so what chat asks for from
+`local_now` is what the scheduler's own `WHERE` applies, and a status the scheduler
+filters on is the status its write paths store.
+
+The read has no far end: everything from `local_now` on, capped at the console's page.
+The seven-day window this file was written for is gone, and the case below that books
+months ahead is what holds that true across both services rather than in one of them.
 
 The bookings are made through the assistant's own gRPC capability rather than inserted,
 so the cancelled one is cancelled the way a patient's would be.
@@ -30,6 +34,9 @@ from .test_booking_roundtrip import _chat_settings, _seed
 _TUESDAY_9AM = datetime(2026, 8, 18, 9, 0)
 _TUESDAY_11AM = datetime(2026, 8, 18, 11, 0)
 _LOCAL_NOW = datetime(2026, 8, 17, 8, 0)
+# A Tuesday two months on: well past the seven days this read used to cover, and inside
+# the scheduler's 90-day booking horizon so the booking itself is accepted.
+_MONTHS_AHEAD = datetime(2026, 10, 20, 9, 0)
 
 
 async def _book(
@@ -116,8 +123,38 @@ async def test_a_standing_booking_is_read_and_a_cancelled_one_is_not(
                 "starts_at": "2026-08-18T09:00:00",
                 "ends_at": "2026-08-18T10:00:00",
             }
-        ]
+        ],
+        # The page held everything there was, and says so rather than leaving the
+        # console to infer it from a count.
+        "has_more": False,
     }
+
+
+async def test_a_booking_months_ahead_is_read_too(
+    scheduler_http: str, scheduling_channel: grpc.aio.Channel
+) -> None:
+    # The whole of the change, across both services: the console used to ask for seven
+    # days and this booking was simply absent, with nothing saying so. Two months out
+    # is far past that window and inside the scheduler's 90-day booking horizon.
+    session_id = new_id()
+    practitioner_id, patient_id = await _seed(session_id)
+    soon = await _book(
+        scheduling_channel, session_id, patient_id, practitioner_id, _TUESDAY_9AM
+    )
+    far = await _book(
+        scheduling_channel, session_id, patient_id, practitioner_id, _MONTHS_AHEAD
+    )
+
+    response = await _read_week(scheduler_http, session_id, practitioner_id)
+
+    assert response.status_code == 200
+    body = response.json()
+    # Both, soonest first — the order the console renders them in.
+    assert [a["id"] for a in body["appointments"]] == [
+        soon.appointment.id,
+        far.appointment.id,
+    ]
+    assert body["has_more"] is False
 
 
 async def test_another_sessions_practitioner_reads_as_not_found(

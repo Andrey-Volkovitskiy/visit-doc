@@ -37,7 +37,7 @@ makes the chosen direction survive the library.
 | `--color-surface-sunken` | `#F7F9F9` | A region set into a surface — a rail, an expanded block. |
 | `--color-ink` | `#0F2E33` | Body text. |
 | `--color-ink-muted` | `#587177` | Secondary text: labels, explanations, empty states. |
-| `--color-accent` | `#0E7C7B` | The interactive colour: active tab, send control, focus ring. |
+| `--color-accent` | `#0E7C7B` | The interactive colour: active tab, send control, focus ring — and, since the panes were given named strips, the fill behind each pane's title, where it carries `--color-surface` as its text at 5.0:1. |
 | `--color-accent-dark` | `#0A5F5E` | Its hover/active state. |
 | `--color-accent-wash` | `#E4F0EF` | A tint of it, for a selected row. |
 | `--color-bubble-me` | `#DCEEEC` | The reader's own messages — the patient's on one side, staff's on the other. |

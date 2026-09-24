@@ -331,7 +331,16 @@ function App() {
           aria-label="Patient messenger"
           className="bg-surface border-rule panes:h-full flex h-[640px] min-w-0 flex-col rounded-md border"
         >
-          <h2 className="border-rule-soft text-ink-muted border-b px-4 py-3 text-sm font-semibold">
+          {/*
+            The one place `--color-accent` is worn as a *surface* rather than as ink or
+            a rule: the strip that names the pane. `rounded-t-md` is not decoration —
+            the section it sits in is rounded, and a square-cornered fill inside it
+            shows its corners poking through the frame.
+
+            White on this teal measures 5.0:1, which clears AA for the size and weight
+            this text is set at (`contracts/tokens.md` keeps the contrast pairs).
+          */}
+          <h2 className="bg-accent text-surface rounded-t-md px-4 py-3 text-sm font-semibold">
             Patient messenger
           </h2>
           {/*
@@ -387,8 +396,9 @@ function App() {
           aria-label="Staff console"
           className="bg-surface border-rule panes:h-full flex h-[640px] min-w-0 flex-col rounded-md border"
         >
-          <div className="border-rule-soft flex items-center gap-3 border-b px-4 py-3">
-            <h2 className="text-ink-muted text-sm font-semibold">Staff console</h2>
+          {/* The patient pane's strip, and the same reasoning — see its comment. */}
+          <div className="bg-accent text-surface flex items-center gap-3 rounded-t-md px-4 py-3">
+            <h2 className="text-sm font-semibold">Staff console</h2>
             {/*
               Outside the tabbed region on purpose (FR-021): inside it, the count would
               vanish the moment staff opened Practitioners, and a signal you have to
@@ -402,7 +412,7 @@ function App() {
               keeps apart everywhere else on this pane, in the one place a staff member
               acts on by looking away.
             */}
-            <p className="text-ink-muted ml-auto text-sm">
+            <p className="ml-auto text-sm">
               Needs a person:{" "}
               <strong
                 data-testid="attention-total"
@@ -413,7 +423,11 @@ function App() {
                 // another modality.
                 data-counted={consoleLoaded ? "true" : "false"}
                 aria-label={consoleLoaded ? undefined : "not counted yet"}
-                className="text-ink"
+                // The count sits on the accent now, so it takes the strip's white
+                // rather than `--color-ink`, which was chosen against a white surface
+                // and measures 1.7:1 against this one. Its weight is what makes it
+                // louder than the label beside it, exactly as before.
+                className="text-surface"
               >
                 {consoleLoaded ? poll.attentionTotal : "—"}
               </strong>
