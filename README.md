@@ -739,9 +739,10 @@ blank means tracing is off; the startup `service.configured` event states which 
 interaction behaviour a designed product implies — a tab strip with overflow, aligned bubbles with
 sender grouping, bottom-pinned threads that hold a reader's position, a working indicator, disabled
 send controls, an empty-thread greeting, a three-section staff console, and per-request evidence
-behind a click-to-expand marker. **No network contract changed**: `src/lib/chatStream.ts` and
-`src/lib/consoleApi.ts` are byte-identical to what they were before the feature, which is what the
-claim that this is a presentation-only change rests on.
+behind a click-to-expand marker. **No network contract changed**: the feature left
+`src/lib/chatStream.ts` and `src/lib/consoleApi.ts` byte-identical to what they were before it,
+which is what the claim that this is a presentation-only change rests on. (016, below, then
+extended both for booking acts and the practitioner's week.)
 
 - **Tailwind CSS v4 with shadcn/ui, over the smaller option that was recommended and declined.**
   Three controls here carry focus management that is genuinely hard to get right — the staff tab
@@ -761,7 +762,7 @@ claim that this is a presentation-only change rests on.
   variables onto a token and why the vendored dialog, dropdown and popover each had their shipped
   drop shadow removed. An unmapped default is treated as a defect, not a leftover: it is how a
   themed app quietly reverts to looking like the library's demo.
-- **Every package this feature added, and why each is here.** Fourteen in all — one stack, its
+- **Every package this feature added, and why each is here.** Thirteen in all — one stack, its
   peer utilities, and one type package. The Radix components are what shadcn vendors *per
   component*, so the list grows only when a new primitive is vendored.
 
@@ -776,7 +777,7 @@ claim that this is a presentation-only change rests on.
   | `clsx` | Conditional class lists, without string concatenation in markup |
   | `tailwind-merge` | Makes a caller's utility win over a component's default *for the same CSS property*, instead of both landing in `class` and source order deciding |
   | `class-variance-authority` | The `variant`/`size` tables on `Button`, so a variant is a named row rather than a ternary |
-  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the nine actually used |
+  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the icons actually imported |
   | `tw-animate-css` | The enter/exit keyframes shadcn v4 expects on dialog and dropdown. Its animations respect `prefers-reduced-motion` through the global block in `app.css` — verified, not assumed, since they arrived with the library |
   | `@types/node` (dev) | `vite.config.ts` and `vitest.config.ts` use `node:path` and `import.meta.dirname` to declare the `@/*` alias |
 
@@ -829,9 +830,10 @@ claim that this is a presentation-only change rests on.
 - **One reserved colour, and colour is never the only carrier.** `--color-attention` means "a person
   is needed" and nothing else may use it — not a decorative accent, not a required-field asterisk,
   not a delete button. shadcn maps its `destructive` variant onto that colour, so
-  `variant="destructive"` is making that claim; the delete confirmations in `ChatList`,
-  `PractitionerAdmin` and `FaqAdmin` all decline it, and carry their weight in the sentence naming
-  what is lost instead. Every state marked by colour is also marked by text, weight, shape or
+  `variant="destructive"` is making that claim; the confirmations — deleting a chat in `ChatList`,
+  discarding an edit in `PractitionerAdmin` and `FaqAdmin` — all decline it, and carry their weight
+  in the sentence naming what is lost instead. (Deleting a practitioner or an FAQ entry asks
+  nothing: the icon deletes on one press.) Every state marked by colour is also marked by text, weight, shape or
   position, so a greyscale screen and a reader who cannot distinguish the hue both still see it.
 - **Light theme only, by decision rather than omission.** shadcn installs a dark theme by default;
   it was removed rather than left unreferenced, and no `dark:` variant or `prefers-color-scheme`

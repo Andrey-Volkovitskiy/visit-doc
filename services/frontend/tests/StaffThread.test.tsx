@@ -1924,6 +1924,38 @@ describe("StaffThread scroll behaviour (FR-015b)", () => {
     await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(3));
     expect(thread().scrollTop).toBe(600);
   });
+
+  it("lands a conversation opened next at its bottom however far up the last one was", async () => {
+    // A switch empties the container without firing a scroll event, so nothing but the
+    // switch itself can tell the pane that the reader's scrolled-up position described
+    // a thread no longer on screen (FR-015, FR-015b).
+    vi.spyOn(consoleApi, "fetchThread").mockImplementation(async (id) =>
+      id === CHAT_ID ? messages("one", "two") : messages("a", "b", "c"),
+    );
+    const { rerender } = renderAt("2026-09-01T12:00:00");
+    measure(thread(), () => 400 + screen.queryAllByTestId("message").length * 200);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(2));
+
+    thread().scrollTop = 0;
+    fireEvent.scroll(thread());
+
+    rerender(
+      <StaffThread
+        chatId="01OTHERCHAT0000000000000"
+        assistantMayReply
+        pauseSecondsRemaining={null}
+        lastMessageAt="2026-09-01T12:00:00"
+        onSetAssistant={vi.fn()}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getAllByTestId("message")[0]).toHaveTextContent("a"),
+    );
+    expect(screen.getAllByTestId("message")).toHaveLength(3);
+
+    // 400 + 3*200 = 1000 of content in a 400 viewport.
+    await waitFor(() => expect(thread().scrollTop).toBe(600));
+  });
 });
 
 describe("StaffThread: staff messages take the reader's own side (FR-023)", () => {

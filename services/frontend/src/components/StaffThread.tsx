@@ -1,10 +1,10 @@
 import { SendHorizontal } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
-import { PINNED_THRESHOLD, isPinnedToBottom } from "../lib/scroll";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { usePinnedScroll } from "../lib/usePinnedScroll";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
@@ -83,7 +83,19 @@ interface StaffThreadProps {
    */
   pollTick?: number;
   onSetAssistant: (enabled: boolean) => void;
+  /**
+   * Report whether the reply box holds text that leaving would lose (015 FR-035b).
+   *
+   * The staff tab set unmounts this pane to show another section, and the unsent reply
+   * goes with it — only `App`, which performs the switch, can hold one back. So the pane
+   * reports, and **retracts on unmount**, exactly as the practitioner and FAQ editors
+   * do. Optional: rendered on its own, the pane has nobody to report to.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
+
+/** The default `onDirtyChange`: stable, so the report effect does not re-run per render. */
+const IGNORE_DIRTY = (): void => undefined;
 
 /**
  * One conversation, read and answered by a person.
@@ -102,6 +114,7 @@ export function StaffThread({
   bookingActsVersion,
   pollTick,
   onSetAssistant,
+  onDirtyChange = IGNORE_DIRTY,
 }: StaffThreadProps) {
   const [thread, setThread] = useState<Message[]>([]);
   const [reply, setReply] = useState("");
@@ -132,37 +145,19 @@ export function StaffThread({
   // and failed are three different situations (FR-010a), and only the middle one gets
   // the empty-thread statement (FR-025a) — so it cannot be inferred from an empty array.
   const [threadLoaded, setThreadLoaded] = useState(false);
-  const threadRef = useRef<HTMLDivElement | null>(null);
-  // Whether the reader was at the bottom before this render's content arrived. FR-015b
-  // puts this thread on FR-015a's exact terms, so the mechanism is the same one
-  // `ChatWindow` uses and reads the same pure predicate.
-  const wasPinnedRef = useRef(true);
+  // FR-015b puts this thread on FR-015a's exact terms, so it follows new content by the
+  // one rule `ChatWindow` uses too.
+  const scroll = usePinnedScroll();
 
-  /** Record whether the reader is at the bottom, as they scroll. */
-  function rememberPinned(): void {
-    const el = threadRef.current;
-    if (el === null) return;
-    wasPinnedRef.current = isPinnedToBottom(
-      el.scrollTop,
-      el.scrollHeight,
-      el.clientHeight,
-      PINNED_THRESHOLD,
-    );
-  }
-
-  /**
-   * Follow new content to the bottom, but only for a reader who was already there.
-   *
-   * `useLayoutEffect` so the browser never paints the arrival at the old position
-   * first, and the scroll is an assignment because `scrollIntoView` is `undefined` in
-   * this repository's jsdom.
-   */
-  useLayoutEffect(() => {
-    const el = threadRef.current;
-    if (el === null) return;
-    if (!wasPinnedRef.current) return;
-    el.scrollTop = el.scrollHeight - el.clientHeight;
-  });
+  // Whitespace alone is nothing a staff member would miss.
+  const dirty = reply.trim() !== "";
+  // Reported up, and retracted on unmount: this pane is destroyed by the very tab switch
+  // the flag guards, and a flag that outlived it would block the next switch with a
+  // prompt about a reply nobody can see.
+  useEffect(() => {
+    onDirtyChange(dirty);
+    return () => onDirtyChange(false);
+  }, [dirty, onDirtyChange]);
 
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {
@@ -212,6 +207,9 @@ export function StaffThread({
       setReply("");
       setBanner(null);
       pendingPostsRef.current = [];
+      // A conversation opened now lands at its most recent message (FR-015) wherever
+      // the last one was scrolled to: that position described a thread no longer here.
+      scroll.pin();
     },
     onLoaded: (messages) => {
       setThreadLoaded(true);
@@ -259,7 +257,7 @@ export function StaffThread({
         // just cleared, which is why nothing here files the poll value as handled.
         // Posting is not unbidden content: the staff member just acted, so their own
         // reply follows to the bottom whatever they had scrolled back to.
-        wasPinnedRef.current = true;
+        scroll.pin();
         showPosted(posted);
         setReply("");
       } catch (err) {
@@ -360,8 +358,8 @@ export function StaffThread({
       </div>
       <div
         data-testid="staff-thread"
-        ref={threadRef}
-        onScroll={rememberPinned}
+        ref={scroll.ref}
+        onScroll={scroll.onScroll}
         role="log"
         aria-label="Conversation"
         tabIndex={0}

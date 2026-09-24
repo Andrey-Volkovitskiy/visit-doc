@@ -200,9 +200,10 @@ export function ChatList({
                 deletion is, nobody is being summoned by it. `contracts/tokens.md` draws
                 the line at an error banner, "because a failed action is a thing needing
                 a person", and a confirmation the reader asked for is not that.
-                `PractitionerAdmin` and `FaqAdmin` decline it for their deletes on the
-                same grounds; the weight here is carried by the sentence above, which
-                names exactly what is lost. */}
+                `PractitionerAdmin` and `FaqAdmin` decline it for their discard
+                confirmations on the same grounds (their deletes ask nothing); the weight
+                here is carried by the sentence above, which names exactly what is
+                lost. */}
             <Button
               onClick={() => {
                 const target = confirmingId;

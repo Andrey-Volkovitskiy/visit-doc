@@ -912,8 +912,9 @@ class ConsoleConversation:
     shown and what a turn acts on cannot disagree.
 
     `booking_acts_version` is the number of the chat's booking acts plus the number of
-    them settled: each record and each settle moves it by one, and nothing else does.
-    A version, not a clock, so it is compared only for equality.
+    them settled: each record and each settle moves it forward - by two at once for an
+    act recorded already settled, as `not_sent` - and nothing else moves it. A version,
+    not a clock, so it is compared only for equality.
     """
 
     chat_id: str

@@ -505,6 +505,26 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     );
   });
 
+  it("names each end of a move separately when the record names neither", () => {
+    // Two absent names say nothing about whether they are one person, and the wire
+    // carries no ids to settle it. Folding them into one would present a move between
+    // two practitioners - a roster that could not be read, say - as a move with one.
+    renderDisclosure(null, null, [
+      moved({
+        outcome: "refused",
+        refusal_reason: "practitioner_busy",
+        practitioner_full_name: null,
+        previous_practitioner_full_name: null,
+      }),
+    ]);
+    expand();
+
+    expect(actLines()[0]).toHaveTextContent(
+      "a practitioner not named in the record, Tuesday 12 January 2027 at 09:00 → " +
+        "a practitioner not named in the record, Tuesday 12 January 2027 at 10:00",
+    );
+  });
+
   it("says a change that was not needed changed nothing", () => {
     renderDisclosure(null, null, [act({ operation: "cancel", outcome: "unchanged" })]);
     expand();

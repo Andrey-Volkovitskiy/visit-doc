@@ -237,6 +237,40 @@ async def test_a_chat_with_no_patient_records_the_attempt_as_not_sent() -> None:
     assert planned.practitioner_full_name == "William Osler"
 
 
+async def test_a_write_not_requiring_a_patient_runs_recorded_without_one() -> None:
+    # The no-patient answer belongs to a tool that declared `requires_patient`, exactly
+    # as it does on the unrecorded path. A write that did not declare it is sent, and
+    # recorded around its handler like any other.
+    recorder = _SpyRecorder()
+    handler = _Handler(recorder, _booked())
+    registry = ToolRegistry(
+        [
+            Tool(
+                name=_WRITE,
+                description="a write",
+                input_schema={"type": "object", "properties": {}},
+                handler=handler,
+                writes=True,
+                plan_act=_plan,
+            )
+        ],
+        ToolContext(
+            channel=MagicMock(),
+            settings=MagicMock(spec=Settings),
+            session_id="01SESSION",
+            patient_id=None,
+            local_now=datetime(2026, 8, 17, 8, 0),
+            acts=recorder,  # type: ignore[arg-type]
+        ),
+    )
+
+    result = await registry.dispatch(_WRITE, _ARGUMENTS)
+
+    assert result == _booked()
+    assert handler.calls == 1
+    assert recorder.names() == ["begin", "settle"]
+
+
 async def test_a_not_sent_record_that_fails_is_logged_and_still_answers() -> None:
     # Nothing reached the scheduler, so no act can be missing: the call still answers
     # exactly as it would have.

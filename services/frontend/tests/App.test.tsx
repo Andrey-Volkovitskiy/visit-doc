@@ -1031,3 +1031,113 @@ describe("App: leaving a dirty edit by choosing another tab (FR-035b)", () => {
     expect(screen.queryByTestId("discard-confirm")).toBeNull();
   });
 });
+
+// The Conversations panel is unmounted by a tab switch exactly as the other two are, so
+// a staff reply typed and not yet sent went with it, unasked. The reply box reports its
+// work through the same guard the editors use.
+describe("App: leaving an unsent staff reply by choosing another tab", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 0,
+      conversations: [
+        {
+          chat_id: "01STAFFCHAT",
+          patient_name: "Grace Hopper",
+          last_message_at: null,
+          emphasized: false,
+          escalated: false,
+          escalation_reason: null,
+          attention_since: null,
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+          booking_acts_version: 0,
+        },
+      ],
+    });
+  });
+
+  /** Open the staff conversation and put `text` in its reply box. */
+  async function typeStaffReply(text: string): Promise<void> {
+    render(<App />);
+    fireEvent.click(await screen.findByTestId("staff-conversation"));
+    const box = await screen.findByLabelText("reply as staff");
+    fireEvent.change(box, { target: { value: text } });
+  }
+
+  it("asks before discarding a typed reply, and keeps it when the discard is refused", async () => {
+    await typeStaffReply("I've got this one.");
+
+    openTab("Practitioners");
+    await screen.findByTestId("discard-confirm");
+    expect(screen.queryByTestId("practitioner-admin")).toBeNull();
+
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /keep editing/i,
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByTestId("discard-confirm")).toBeNull());
+    expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByLabelText("reply as staff")).toHaveValue("I've got this one.");
+  });
+
+  it("does not interrupt once the reply box is empty again", async () => {
+    // The flag follows the box, not the fact that something was once typed in it.
+    await typeStaffReply("I've got this one.");
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "" },
+    });
+
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+  });
+
+  it("does not leave the guard armed once the discarded reply's panel is gone", async () => {
+    await typeStaffReply("I've got this one.");
+    openTab("FAQ");
+    await screen.findByTestId("discard-confirm");
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /discard/i,
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "FAQ" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+
+    // Back to Conversations - where the box is empty now - and away again.
+    openTab("Conversations");
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+  });
+});

@@ -452,7 +452,7 @@ class ConsoleConversationOut(BaseModel):
     Carries no session id: no response on this surface repeats the credential the
     browser is not allowed to read.
 
-    `booking_acts_version` moves by one whenever one of the conversation's booking acts
+    `booking_acts_version` moves forward whenever one of the conversation's booking acts
     is recorded or settled, and never otherwise; 0 for a conversation with none. It is
     not a clock, so a reader compares it only for equality - a change is the open
     thread's cue to re-read, alongside a change in `last_message_at`.

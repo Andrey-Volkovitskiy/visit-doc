@@ -129,6 +129,12 @@ function App() {
     (dirty: boolean) => markDirty("faq", dirty),
     [markDirty],
   );
+  // The staff reply box is the same kind of work: the tab set unmounts the Conversations
+  // panel as surely as the other two, and an unsent reply went with it unasked.
+  const markChatsDirty = useCallback(
+    (dirty: boolean) => markDirty("chats", dirty),
+    [markDirty],
+  );
 
   /**
    * Switch section, unless the one being left is holding unsaved work.
@@ -383,6 +389,7 @@ function App() {
                 bookingActsVersion={staffConversation?.booking_acts_version}
                 pollTick={poll.tick}
                 onSetAssistant={handleSetAssistant}
+                onDirtyChange={markChatsDirty}
               />
             </TabsContent>
             {/*
@@ -446,8 +453,8 @@ function App() {
             <DialogContent data-testid="discard-confirm">
               <DialogTitle>Leave without saving?</DialogTitle>
               <DialogDescription>
-                What you typed has not been sent to the clinic&apos;s records. Opening
-                another section discards it.
+                What you typed has not been sent or saved. Opening another section
+                discards it.
               </DialogDescription>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setPendingTab(null)}>

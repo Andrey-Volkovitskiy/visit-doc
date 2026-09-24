@@ -303,15 +303,16 @@ class ToolRegistry:
     ) -> ToolResult:
         """Run a write tool with its attempt recorded before it is sent.
 
-        Raises: ToolArgumentError from `plan_act` when the chat has a patient record,
-            with nothing recorded, and whatever the handler raised, with its act left
-            unsettled.
+        Raises: ToolArgumentError from `plan_act` unless the tool was answered as having
+            no patient, with nothing recorded, and whatever the handler raised, with its
+            act left unsettled.
 
         The order is the mechanism. Arguments that cannot be read are no attempt, and
-        nothing is written for them. A chat with no patient is answered as having none
-        whatever the arguments - the answer it got before recording existed, since the
-        model may see nothing this feature changed - and a readable call there is
-        recorded as not sent; the handler never runs. Otherwise the act is written with
+        nothing is written for them. A tool declaring `requires_patient`, in a chat
+        with no patient, is answered as having none whatever the arguments - the answer
+        it got before recording existed, since the model may see nothing this feature
+        changed - and a readable call there is recorded as not sent; the handler never
+        runs. Otherwise, whether or not the chat has a patient, the act is written with
         no outcome, and only then is the handler run - so a write that reached the
         scheduler always has a record, and an act that could not be written is never
         sent: the call is answered as unavailable instead.
@@ -323,7 +324,7 @@ class ToolRegistry:
         costs the patient nothing: the answer is returned regardless.
         """
         acts = self._context.acts
-        if self._context.patient_id is None:
+        if tool.requires_patient and self._context.patient_id is None:
             try:
                 planned = plan_act(self._context, arguments)
             except ToolArgumentError:

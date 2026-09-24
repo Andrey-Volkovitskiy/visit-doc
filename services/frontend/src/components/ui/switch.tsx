@@ -1,8 +1,9 @@
 /**
  * Vendored from shadcn/ui, themed for this repository (`contracts/tokens.md`).
  *
- * `rounded-full` survives here and nowhere else in the app: the track and thumb are the
- * one genuine pill the direction allows.
+ * `rounded-full` survives here because the track and thumb are the one genuine pill the
+ * direction allows. Elsewhere it draws only circles — the small round sender icons, the
+ * evidence marker and the working indicator's dots — never a pill-shaped control.
  */
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import * as React from "react";

@@ -123,6 +123,11 @@ function nameAndTime(name: string | null, localDateTime: string): string {
  *
  * A move with one practitioner on both sides names them once; a move between two names
  * both, since which practitioner it now sits with is half of what changed.
+ *
+ * "One practitioner" is decided by a *known* name matching, never by two absences: the
+ * wire carries no ids, and two names the record does not hold say nothing about whether
+ * they are the same person. Folding them into one would present a move between two
+ * practitioners as a move with one, so each side is named for what the record holds.
  */
 function subject(act: BookingAct): string {
   const to = nameAndTime(act.practitioner_full_name, act.starts_at);
@@ -134,8 +139,8 @@ function subject(act: BookingAct): string {
       ? "a time not in the record"
       : dayAndTime(act.previous_starts_at);
   const fromName = act.previous_practitioner_full_name;
-  if (fromName === act.practitioner_full_name) {
-    return `${fromName ?? UNNAMED_PRACTITIONER}, ${fromWhen} → ${dayAndTime(act.starts_at)}`;
+  if (fromName !== null && fromName === act.practitioner_full_name) {
+    return `${fromName}, ${fromWhen} → ${dayAndTime(act.starts_at)}`;
   }
   return `${fromName ?? UNNAMED_PRACTITIONER}, ${fromWhen} → ${to}`;
 }
