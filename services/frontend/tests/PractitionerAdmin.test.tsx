@@ -994,3 +994,34 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     });
   });
 });
+
+describe("PractitionerAdmin: a write that lands after its view was left", () => {
+  it("returns to the roster only from the view the write was submitted from", async () => {
+    // A save outlived its view: the staff member went back and opened the practitioner
+    // again while it was out - a new view about the same record - and started typing.
+    // Landing must not take that view, and what was typed in it, away with no prompt.
+    let landSave!: (saved: Practitioner) => void;
+    vi.spyOn(consoleApi, "updatePractitioner").mockReturnValue(
+      new Promise<Practitioner>((resolve) => {
+        landSave = resolve;
+      }),
+    );
+
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.click(screen.getByText("Save"));
+    // Untouched, so going back asks nothing.
+    press(screen.getByText("Back to the roster"));
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+
+    await act(async () => {
+      landSave(practitioner());
+    });
+
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+    expect(screen.getByLabelText("Full name")).toHaveValue("Dr. Grace Hopper");
+  });
+});

@@ -358,12 +358,18 @@ export async function fetchPractitionerWeek(
       response.status === 404 ? "not_found" : "unreadable",
     );
   }
+  let body: unknown;
   try {
-    const body = (await response.json()) as { appointments: PractitionerAppointment[] };
-    return body.appointments;
+    body = await response.json();
   } catch {
     throw new PractitionerWeekError("unreadable");
   }
+  // A success body is still only trusted as far as its shape is checked: one without an
+  // `appointments` list would put `undefined` into a `.map` during render, and there is
+  // no error boundary to catch it.
+  const appointments = (body as { appointments?: unknown } | null)?.appointments;
+  if (!Array.isArray(appointments)) throw new PractitionerWeekError("unreadable");
+  return appointments as PractitionerAppointment[];
 }
 
 // --- the corpus the assistant answers from ------------------------------------------

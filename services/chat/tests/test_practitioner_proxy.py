@@ -641,6 +641,8 @@ async def test_the_week_forwards_the_window_computed_from_local_now(
         "?local_now=2026-09-24T14:30:00Z",
         "?local_now=2026-09-24T14:30:00%2B02:00",
         "?local_now=2026-09-24T14:30:00-05:00",
+        # Valid as a date-time, but its week ends past the last representable date.
+        "?local_now=9999-12-30T09:00:00",
     ],
 )
 async def test_the_week_refuses_a_local_now_it_cannot_use_and_sends_nothing(

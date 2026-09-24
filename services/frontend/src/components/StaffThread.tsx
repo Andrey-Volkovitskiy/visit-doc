@@ -1,10 +1,11 @@
 import { SendHorizontal } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { usePinnedScroll } from "../lib/usePinnedScroll";
+import { useReportDirty } from "../lib/useReportDirty";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
@@ -150,14 +151,7 @@ export function StaffThread({
   const scroll = usePinnedScroll();
 
   // Whitespace alone is nothing a staff member would miss.
-  const dirty = reply.trim() !== "";
-  // Reported up, and retracted on unmount: this pane is destroyed by the very tab switch
-  // the flag guards, and a flag that outlived it would block the next switch with a
-  // prompt about a reply nobody can see.
-  useEffect(() => {
-    onDirtyChange(dirty);
-    return () => onDirtyChange(false);
-  }, [dirty, onDirtyChange]);
+  useReportDirty(reply.trim() !== "", onDirtyChange);
 
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {

@@ -43,6 +43,7 @@ src/
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
 ├── lib/usePinnedScroll.ts # both threads' follow-only-when-at-the-bottom rule, built on it
+├── lib/useReportDirty.ts # a form's "leaving loses work" flag for App's tab guard, retracted on unmount
 ├── lib/localTime.ts     # how the console writes a naive local time (day label, HH:MM), shared
 │                        #   by the practitioner's week and the booking acts on a thread
 ├── lib/utils.ts         # shadcn's cn() — clsx + tailwind-merge

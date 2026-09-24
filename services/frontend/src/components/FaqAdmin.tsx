@@ -9,6 +9,7 @@ import {
   type FaqEntry,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { useReportDirty } from "../lib/useReportDirty";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -95,15 +96,7 @@ function FaqEditor({
   const writing = entry === null;
   const dirty = draft !== initial;
 
-  // Reported up, and **retracted on unmount**. The retraction is the load-bearing half:
-  // this component is destroyed by the very tab switch the flag guards, so a flag that
-  // outlived it would sit in `App` describing a form that no longer exists — and the
-  // next switch, from a section holding nothing, would be blocked by a prompt about work
-  // nobody can see or answer for.
-  useEffect(() => {
-    onDirtyChange(dirty);
-    return () => onDirtyChange(false);
-  }, [dirty, onDirtyChange]);
+  useReportDirty(dirty, onDirtyChange);
 
   function leave(): void {
     // FR-035b: a box holding work asks before losing it; an untouched one does not
@@ -235,7 +228,21 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
       );
   }, [report]);
 
-  async function handleCreate(content: string): Promise<void> {
+  /**
+   * Return to the list from `from`, the view a write was submitted from - and only from
+   * it.
+   *
+   * A write can land after the staff member has left that view and opened another,
+   * holding text of its own. Leaving *that* one would discard it with no prompt, which
+   * is the loss the discard confirmation exists to prevent. Compared by identity: every
+   * view is a fresh object, so reopening the same entry is a different view from the one
+   * the write came from.
+   */
+  function returnToListFrom(from: View): void {
+    setView((current) => (current === from ? { mode: "list" } : current));
+  }
+
+  async function handleCreate(content: string, from: View): Promise<void> {
     if (!content.trim()) return;
     // A staff member who clicks again because nothing appeared to happen must not add
     // the entry twice. The view is only left once the create lands, so a second call
@@ -247,7 +254,7 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
       try {
         const created = await createFaqEntry(content);
         setEntries((prev) => [...prev, created]);
-        setView({ mode: "list" });
+        returnToListFrom(from);
       } catch (err) {
         // The view is left as it is, holding what was typed: a failed save is the one
         // thing that must not ask for it to be typed again.
@@ -256,7 +263,11 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
     });
   }
 
-  async function handleSave(entry: FaqEntry, content: string): Promise<void> {
+  async function handleSave(
+    entry: FaqEntry,
+    content: string,
+    from: View,
+  ): Promise<void> {
     // Latched for a harder reason than the create's. A save is a whole revision write -
     // the entry is chunked, embedded and indexed again - so a double click does that
     // twice, and the second publish then fails its own staleness guard against the
@@ -269,7 +280,7 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
         // will answer from.
         const saved = await updateFaqEntry(entry.id, content);
         setEntries((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-        setView({ mode: "list" });
+        returnToListFrom(from);
       } catch (err) {
         report(err, "Could not save that entry.");
       }
@@ -311,8 +322,8 @@ export function FaqAdmin({ onDirtyChange = () => undefined }: AdminSectionProps)
             editing === null ? "create" : `save:${String(editing.id)}`,
           )}
           onSubmit={(content) => {
-            if (editing === null) void handleCreate(content);
-            else void handleSave(editing, content);
+            if (editing === null) void handleCreate(content, view);
+            else void handleSave(editing, content, view);
           }}
           onLeave={() => setView({ mode: "list" })}
         />

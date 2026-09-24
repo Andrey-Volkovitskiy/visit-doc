@@ -18,6 +18,7 @@ import {
   type WorkingRange,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { useReportDirty } from "../lib/useReportDirty";
 import { PractitionerWeek } from "./PractitionerWeek";
 import { Button } from "./ui/button";
 import {
@@ -222,15 +223,7 @@ function PractitionerEditor({
     }));
   }
 
-  // Reported up, and **retracted on unmount**. The retraction is the load-bearing half:
-  // this component is destroyed by the very tab switch the flag guards, so a flag that
-  // outlived it would sit in `App` describing a form that no longer exists — and the
-  // next switch, from a section holding nothing, would be blocked by a prompt about work
-  // nobody can see or answer for.
-  useEffect(() => {
-    onDirtyChange(dirty);
-    return () => onDirtyChange(false);
-  }, [dirty, onDirtyChange]);
+  useReportDirty(dirty, onDirtyChange);
 
   function leave(): void {
     // FR-035b: a form holding work asks before losing it; a form holding none does not
@@ -527,7 +520,21 @@ export function PractitionerAdmin({
       .catch((err: unknown) => report(err, "Could not load the specialties."));
   }, [report]);
 
-  async function handleCreate(write: PractitionerWrite): Promise<void> {
+  /**
+   * Return to the roster from `from`, the view a write was submitted from - and only
+   * from it.
+   *
+   * A write can land after the staff member has left that view and opened another,
+   * holding work of its own. Leaving *that* one would discard what they typed with no
+   * prompt, which is the loss the discard confirmation exists to prevent. Compared by
+   * identity: every view is a fresh object, so reopening the same practitioner is a
+   * different view from the one the write came from.
+   */
+  function returnToRosterFrom(from: View): void {
+    setView((current) => (current === from ? { mode: "list" } : current));
+  }
+
+  async function handleCreate(write: PractitionerWrite, from: View): Promise<void> {
     // A staff member who clicks again because nothing appeared to happen must not get
     // two practitioners: the second call carries the very same form, so nothing about
     // it looks different from the first - it simply creates a second row, with a
@@ -537,7 +544,7 @@ export function PractitionerAdmin({
       try {
         const created = await createPractitioner(write);
         setPractitioners((prev) => [...prev, created]);
-        setView({ mode: "list" });
+        returnToRosterFrom(from);
       } catch (err) {
         // A refused create left the view exactly as it is, which is what lets the staff
         // member correct what they typed rather than retype it.
@@ -549,6 +556,7 @@ export function PractitionerAdmin({
   async function handleSave(
     id: string,
     write: PractitionerWrite,
+    from: View,
   ): Promise<void> {
     await latch.run(`save:${id}`, async () => {
       setError(null);
@@ -559,7 +567,7 @@ export function PractitionerAdmin({
         setPractitioners((prev) =>
           prev.map((p) => (p.id === saved.id ? saved : p)),
         );
-        setView({ mode: "list" });
+        returnToRosterFrom(from);
       } catch (err) {
         // A refused save changed nothing, so the form is left exactly as it is.
         report(err, "Could not save that practitioner.");
@@ -623,8 +631,8 @@ export function PractitionerAdmin({
             editing === null ? "create" : `save:${editing.id}`,
           )}
           onSubmit={(write) => {
-            if (editing === null) void handleCreate(write);
-            else void handleSave(editing.id, write);
+            if (editing === null) void handleCreate(write, view);
+            else void handleSave(editing.id, write, view);
           }}
           onInvalid={setError}
           onLeave={() => setView({ mode: "list" })}

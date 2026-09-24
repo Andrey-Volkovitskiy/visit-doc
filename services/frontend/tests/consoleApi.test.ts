@@ -293,6 +293,17 @@ describe("a practitioner's week", () => {
     expect((await failure()).kind).toBe("unreadable");
   });
 
+  it.each([JSON.stringify({}), JSON.stringify({ appointments: null }), "null"])(
+    "never hands a success body without an appointments list back as a week (%s)",
+    async (body) => {
+      // A 200 is not a shape: returning `undefined` here would reach a `.map` during
+      // render exactly as an error body would.
+      answer(body);
+
+      expect((await failure()).kind).toBe("unreadable");
+    },
+  );
+
   it("passes the caller's signal through, so a deadline can end the read", async () => {
     answer(JSON.stringify({ appointments: [] }));
     const controller = new AbortController();
