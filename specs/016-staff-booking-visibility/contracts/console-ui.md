@@ -18,7 +18,12 @@ buttons, and the test scopes each one to its `practitioner` block.
 
 ## Evidence marker (amends 015 FR-026 / FR-026a)
 
-A marker is shown when its own message holds any of:
+A marker is shown once per **turn**, on the message that anchors it — the reply, or the question
+when nothing answered it. A turn is read from the reply's `reply_to_message_ids`; the messages it
+names carry no marker of their own. (015 FR-026's supersession records why, and why this is not the
+neighbour-pairing that requirement rejected.)
+
+A marker is shown when the turn holds any of:
 
 - non-empty `request_outcomes`;
 - an `attention_mark`;
@@ -26,7 +31,7 @@ A marker is shown when its own message holds any of:
 
 Its state is `needs-person` when any of these hold:
 
-- the message has a mark;
+- a message of the turn has a mark;
 - a request is unanswered;
 - **an act's outcome is `unknown` or `null`**.
 

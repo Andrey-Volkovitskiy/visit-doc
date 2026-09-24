@@ -107,15 +107,29 @@ export function StaffConsole({
                   <span className="flex items-center gap-2">
                     {/*
                       Never colour alone (FR-006). A conversation needing a person is
-                      marked by a glyph, by weight, and by the words underneath — each of
-                      which survives a greyscale screen and a reader who cannot
-                      distinguish the hue.
+                      marked by a glyph and by weight, each of which survives a greyscale
+                      screen and a reader who cannot distinguish the hue.
+
+                      The reason is no longer printed under the name: the glyph is what a
+                      staff member reads the list by, and the thread one click away says
+                      what happened in full. It is kept as the row's accessible name
+                      rather than dropped, because the glyph is a picture — take the words
+                      out of the tree as well and a screen-reader user has nothing
+                      distinguishing this row from a quiet one. `sr-only` is presentation
+                      only: with the stylesheet thrown away the words are on screen, which
+                      is what keeps the mark an element and a word rather than a class
+                      that happens to paint something red.
                     */}
                     {conversation.emphasized && (
                       <TriangleAlert
                         className="text-attention size-3.5 flex-none"
                         aria-hidden="true"
                       />
+                    )}
+                    {conversation.escalation_reason !== null && (
+                      <span className="sr-only">
+                        {reasonLabel(conversation.escalation_reason)}
+                      </span>
                     )}
                     <span
                       className={`min-w-0 truncate ${
@@ -125,11 +139,6 @@ export function StaffConsole({
                       {label(conversation)}
                     </span>
                   </span>
-                  {conversation.escalation_reason !== null && (
-                    <span className="text-attention mt-0.5 block text-xs">
-                      {reasonLabel(conversation.escalation_reason)}
-                    </span>
-                  )}
                 </button>
               </li>
             );

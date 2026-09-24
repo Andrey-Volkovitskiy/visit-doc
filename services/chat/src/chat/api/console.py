@@ -29,7 +29,6 @@ from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import Chat, MessageSender
-from chat.domain.practitioner_week import practitioner_week_bounds
 from chat.domain.schemas import (
     AssistantStateOut,
     AssistantSwitchWrite,
@@ -470,38 +469,38 @@ async def delete_practitioner(practitioner_id: str, request: Request) -> Respons
     )
 
 
+# How many of a practitioner's appointments the console shows before saying there are
+# more. A console decision, made here because this is the console's own service: the
+# scheduler is told the number and has no opinion about it, and the browser is told
+# `has_more` rather than counting rows and re-deriving the same rule.
+#
+# There is deliberately no far end. A booking made for next spring is a booking a staff
+# member has to be able to find, and a seven-day window hid it with nothing on screen
+# saying anything had been left out.
+_CONSOLE_PAGE = 20
+
+
 @router.get("/console/practitioners/{practitioner_id}/appointments")
 async def list_practitioner_appointments(
     practitioner_id: str,
     local_now: Annotated[LocalNow, Query()],
     request: Request,
 ) -> Response:
-    """Return the practitioner's standing appointments for the viewer's coming week.
+    """Return the practitioner's next `_CONSOLE_PAGE` standing appointments.
 
-    Raises: HTTPException 422 if `local_now` is so near the end of the calendar that
-        its week cannot be expressed, with nothing sent.
-
-    The week is computed here from `local_now` and sent to the scheduler as two bounds,
-    which it applies in its own query. A practitioner this session cannot see is the
-    scheduler's 404, relayed; an empty list means nobody is booked in the window.
+    Everything from `local_now` onward, however far ahead, capped at the page above and
+    carrying `has_more` when the scheduler had to stop. A practitioner this session
+    cannot see is the scheduler's 404, relayed; an empty list means nobody is booked.
 
     One attempt: the console's next poll is the retry.
     """
-    try:
-        bounds = practitioner_week_bounds(local_now)
-    except OverflowError as exc:
-        # A clock the validator accepts, whose eighth midnight is past the last date
-        # Python can represent: the caller's value, not this service's failure.
-        raise HTTPException(
-            status_code=422, detail="local_now is too far ahead to read a week from"
-        ) from exc
     return await _proxy(
         request,
         "GET",
         f"/practitioners/{scheduler_rest.path_segment(practitioner_id)}/appointments",
         query={
-            "ends_after": format_local_datetime(bounds.ends_after),
-            "starts_before": format_local_datetime(bounds.starts_before),
+            "ends_after": format_local_datetime(local_now),
+            "limit": str(_CONSOLE_PAGE),
         },
         unreachable_detail=_READ_UNREACHABLE_DETAIL,
         timeout_detail=_READ_TIMEOUT_DETAIL,

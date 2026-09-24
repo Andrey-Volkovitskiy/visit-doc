@@ -190,6 +190,35 @@ async def test_get_messages_returns_the_chats_own_history() -> None:
     assert [m["content"] for m in body["messages"]] == ["in the first chat"]
 
 
+async def test_get_messages_names_the_patient_messages_a_reply_answers() -> None:
+    # The console renders one evidence marker per *turn*, and this is what tells it
+    # which messages one turn holds. A burst is the case it exists for: two patient
+    # messages answered by one reply cannot be paired from row order, so nothing may
+    # infer the relation - the reply says it.
+    session_id, chat_ids = await _seed_session_with_chats(1)
+    first = await _add_patient_message(session_id, chat_ids[0], "is anyone there?")
+    second = await _add_patient_message(session_id, chat_ids[0], "hello?")
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat_ids[0],
+            session_id=session_id,
+            sender=MessageSender.ASSISTANT,
+            content="Here now.",
+            reply_to_message_ids=[first, second],
+        )
+
+    async with _api(session_id) as client:
+        body = (await client.get(f"/chats/{chat_ids[0]}/messages")).json()
+
+    by_sender = {m["sender"]: m for m in body["messages"]}
+    assert by_sender["assistant"]["reply_to_message_ids"] == [first, second]
+    # Only ever on the reply: a patient message answers nothing, and a client reading
+    # this field as "the turn" must not find a second row claiming the same turn.
+    assert by_sender["patient"]["reply_to_message_ids"] is None
+
+
 async def test_get_messages_404s_for_another_sessions_chat() -> None:
     _, other_chats = await _seed_session_with_chats(1)
     stranger_session, _ = await _seed_session_with_chats(1)

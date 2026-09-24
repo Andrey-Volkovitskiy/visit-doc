@@ -236,16 +236,44 @@ describe("a practitioner's week", () => {
   it("returns the appointments list, not the envelope around it", async () => {
     answer(JSON.stringify({ appointments: APPOINTMENTS }));
 
-    const week = await fetchPractitionerWeek(PRACTITIONER);
+    const page = await fetchPractitionerWeek(PRACTITIONER);
 
-    expect(Array.isArray(week)).toBe(true);
-    expect(week.map((a) => a.patient_full_name)).toEqual(["Leo Tolstoy"]);
+    expect(page.appointments.map((a) => a.patient_full_name)).toEqual([
+      "Leo Tolstoy",
+    ]);
   });
 
   it("returns an empty list as an answer, not as a failure", async () => {
     answer(JSON.stringify({ appointments: [] }));
 
-    await expect(fetchPractitionerWeek(PRACTITIONER)).resolves.toEqual([]);
+    await expect(fetchPractitionerWeek(PRACTITIONER)).resolves.toEqual({
+      appointments: [],
+      hasMore: false,
+    });
+  });
+
+  it("carries the route's own word on whether more are booked", async () => {
+    answer(JSON.stringify({ appointments: APPOINTMENTS, has_more: true }));
+
+    await expect(fetchPractitionerWeek(PRACTITIONER)).resolves.toMatchObject({
+      hasMore: true,
+    });
+  });
+
+  it("reads anything but a true as that being all of them", async () => {
+    // A body with no `has_more`, or one carrying something that is not a boolean, has
+    // not said there is more — and an ellipsis printed on that would be this layer
+    // inventing a claim about the clinic's schedule.
+    for (const body of [
+      { appointments: APPOINTMENTS },
+      { appointments: APPOINTMENTS, has_more: "yes" },
+      { appointments: APPOINTMENTS, has_more: null },
+    ]) {
+      answer(JSON.stringify(body));
+      await expect(fetchPractitionerWeek(PRACTITIONER)).resolves.toMatchObject({
+        hasMore: false,
+      });
+    }
   });
 
   it("reports a 404 as a practitioner that no longer exists", async () => {

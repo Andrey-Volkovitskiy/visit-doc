@@ -289,6 +289,12 @@ gone.
   read and validated the way a turn's local time is validated (a value carrying a timezone offset is
   rejected). The window is: not yet ended at that moment, and starting before the end of the
   seventh local day, counting today as the first.
+
+  > **Superseded: no far end.** The seven-day bound hid bookings a staff member has to be able to
+  > find — one made for next spring simply was not there, and nothing on screen said the list had
+  > been cut. The read is now everything not yet ended at that moment, however far ahead, capped
+  > at a page of 20 with the cut reported (`contracts/practitioner-week.md`). The near end and its
+  > validation are unchanged.
 - **FR-004**: Only standing appointments MUST be returned. Cancelled appointments MUST NOT be.
 - **FR-005**: Each appointment returned MUST carry its patient's display name, its start and its
   end. The whole answer MUST be ordered by start time.
@@ -472,6 +478,9 @@ gone.
   service.
 - **The seven-day window is small and bounded by working hours.** A practitioner has at most as many
   appointments as their schedule has slots in seven days, so the read needs no paging or cap.
+
+  > **No longer true, and replaced by a cap.** With no far end the calendar grows without bound, so
+  > the read is capped at a page the caller names — 20 for the console — and says when it stopped.
 - **"Within a few seconds" reuses the console's existing rhythm.** The console already re-reads what
   changed every 2 seconds. How an open list learns of a change (reusing that rhythm, or its own) is
   a planning decision, bounded by SC-004 and by not reading the scheduler more often than that

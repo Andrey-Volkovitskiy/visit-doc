@@ -6,6 +6,7 @@ import * as consoleApi from "../src/lib/consoleApi";
 import {
   PractitionerWeekError,
   type PractitionerAppointment,
+  type PractitionerAppointmentPage,
 } from "../src/lib/consoleApi";
 
 const ID = "01PRACT0000000000000000000";
@@ -22,6 +23,14 @@ function appointment(
     starts_at: startsAt,
     ends_at: endsAt,
   };
+}
+
+/** One page as the route answers it: these appointments, and nothing beyond them. */
+function page(
+  appointments: PractitionerAppointment[],
+  hasMore = false,
+): PractitionerAppointmentPage {
+  return { appointments, hasMore };
 }
 
 /** A read the test settles by hand, so the component's in-between states are visible. */
@@ -75,7 +84,7 @@ beforeEach(() => {
 describe("PractitionerWeek: what it shows", () => {
   it("says it is loading until the first answer arrives, and nothing else", async () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek").mockReturnValue(
-      deferred<PractitionerAppointment[]>().promise,
+      deferred<PractitionerAppointmentPage>().promise,
     );
 
     renderWeek();
@@ -90,7 +99,7 @@ describe("PractitionerWeek: what it shows", () => {
   });
 
   it("reads this practitioner's week, sending the browser's local now", async () => {
-    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue([]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(page([]));
 
     renderWeek();
 
@@ -104,11 +113,13 @@ describe("PractitionerWeek: what it shows", () => {
   it("groups appointments under their local day, days in date order, each day in start order", async () => {
     // Handed over out of order, so the grouping is shown to come from the times and not
     // from the order the list happened to arrive in.
-    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue([
-      appointment("Anna Karenina", "2026-09-27T10:00:00", "2026-09-27T10:30:00"),
-      appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
-      appointment("Ivan Ilyich", "2026-09-24T09:30:00", "2026-09-24T10:00:00"),
-    ]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(
+      page([
+        appointment("Anna Karenina", "2026-09-27T10:00:00", "2026-09-27T10:30:00"),
+        appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
+        appointment("Ivan Ilyich", "2026-09-24T09:30:00", "2026-09-24T10:00:00"),
+      ]),
+    );
 
     renderWeek();
 
@@ -137,16 +148,44 @@ describe("PractitionerWeek: what it shows", () => {
   });
 
   it("states plainly that nobody is booked, naming the practitioner, rather than showing an empty list", async () => {
-    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue([]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(page([]));
 
     renderWeek();
 
     const empty = await screen.findByTestId("week-empty");
-    expect(empty).toHaveTextContent(
-      `Nobody is booked with ${NAME} in the next seven days.`,
-    );
+    expect(empty).toHaveTextContent(`Nobody is booked with ${NAME}.`);
     expect(screen.queryByTestId("week-day")).toBeNull();
     expect(screen.queryByTestId("week-error")).toBeNull();
+  });
+
+  it("says so when the route stopped at its page with more still booked", async () => {
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(
+      page(
+        [appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00")],
+        true,
+      ),
+    );
+
+    renderWeek();
+
+    const more = await screen.findByTestId("week-more");
+    // Words as well as the glyph, and no count: the route stopped reading at its page,
+    // so how many more there are is a thing nothing here has counted.
+    expect(more).toHaveTextContent("more are booked");
+    expect(more.textContent).not.toMatch(/\d/);
+  });
+
+  it("says nothing of the kind when the page held all of them", async () => {
+    // The ellipsis is a claim about the clinic's schedule, and it is the route's claim
+    // to make: a full-looking list is not evidence that anything was left out.
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(
+      page([appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00")]),
+    );
+
+    renderWeek();
+
+    await screen.findByTestId("week-appointment");
+    expect(screen.queryByTestId("week-more")).toBeNull();
   });
 
   it("says the appointments could not be read when the scheduler could not answer", async () => {
@@ -189,9 +228,11 @@ describe("PractitionerWeek: what it shows", () => {
 
   it("offers no control of any kind, and the patient's name is plain text", async () => {
     // FR-009: the list is read-only, and a name is not a way into a conversation.
-    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue([
-      appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
-    ]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(
+      page([
+        appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
+      ]),
+    );
 
     renderWeek();
 
@@ -205,7 +246,7 @@ describe("PractitionerWeek: what it shows", () => {
 
 describe("PractitionerWeek: keeping an open list current", () => {
   it("re-reads on every poll tick", async () => {
-    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue([]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockResolvedValue(page([]));
 
     const { tick } = renderWeek(5);
     await screen.findByTestId("week-empty");
@@ -219,10 +260,12 @@ describe("PractitionerWeek: keeping an open list current", () => {
 
   it("shows what a refresh found, replacing what was there", async () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
-      ]);
+      .mockResolvedValueOnce(page([]))
+      .mockResolvedValueOnce(
+          page([
+            appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
+          ]),
+        );
 
     const { tick } = renderWeek();
     await screen.findByTestId("week-empty");
@@ -236,10 +279,10 @@ describe("PractitionerWeek: keeping an open list current", () => {
   });
 
   it("does not stack a second read on one still in flight", async () => {
-    const first = deferred<PractitionerAppointment[]>();
+    const first = deferred<PractitionerAppointmentPage>();
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
       .mockReturnValueOnce(first.promise)
-      .mockResolvedValue([]);
+      .mockResolvedValue(page([]));
 
     const { tick } = renderWeek();
     await waitFor(() => expect(reads()).toHaveBeenCalledTimes(1));
@@ -253,7 +296,7 @@ describe("PractitionerWeek: keeping an open list current", () => {
     expect(reads()).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      first.resolve([]);
+      first.resolve(page([]));
       await first.promise;
     });
     await screen.findByTestId("week-empty");
@@ -267,12 +310,14 @@ describe("PractitionerWeek: keeping an open list current", () => {
     // The first read never settles within its deadline, so the list says it could not
     // be read and the next tick is free to ask again. When that first answer finally
     // turns up, it describes a week older than the one on screen.
-    const late = deferred<PractitionerAppointment[]>();
+    const late = deferred<PractitionerAppointmentPage>();
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
       .mockReturnValueOnce(late.promise)
-      .mockResolvedValueOnce([
-        appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
-      ]);
+      .mockResolvedValueOnce(
+          page([
+            appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
+          ]),
+        );
 
     const { tick } = renderWeek(0, 20);
     expect(await screen.findByTestId("week-error")).toHaveTextContent(
@@ -285,9 +330,11 @@ describe("PractitionerWeek: keeping an open list current", () => {
     );
 
     await act(async () => {
-      late.resolve([
-        appointment("Anna Karenina", "2026-09-25T10:00:00", "2026-09-25T10:30:00"),
-      ]);
+      late.resolve(
+          page([
+            appointment("Anna Karenina", "2026-09-25T10:00:00", "2026-09-25T10:30:00"),
+          ]),
+        );
       await late.promise;
     });
 
@@ -302,9 +349,9 @@ describe("PractitionerWeek: keeping an open list current", () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
       .mockImplementationOnce((_id, _now, s) => {
         signal = s;
-        return deferred<PractitionerAppointment[]>().promise;
+        return deferred<PractitionerAppointmentPage>().promise;
       })
-      .mockResolvedValue([]);
+      .mockResolvedValue(page([]));
 
     const { tick } = renderWeek(0, 20);
     await screen.findByTestId("week-error");
@@ -317,9 +364,11 @@ describe("PractitionerWeek: keeping an open list current", () => {
 
   it("shows the failure when a refresh fails after a good read, not the list it can no longer vouch for", async () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
-      .mockResolvedValueOnce([
-        appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
-      ])
+      .mockResolvedValueOnce(
+          page([
+            appointment("Leo Tolstoy", "2026-09-24T14:00:00", "2026-09-24T15:00:00"),
+          ]),
+        )
       .mockRejectedValueOnce(new PractitionerWeekError("unreadable"));
 
     const { tick } = renderWeek();
@@ -337,7 +386,7 @@ describe("PractitionerWeek: keeping an open list current", () => {
   it("recovers on the next tick after a failure", async () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek")
       .mockRejectedValueOnce(new PractitionerWeekError("unreadable"))
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce(page([]));
 
     const { tick } = renderWeek();
     await screen.findByTestId("week-error");
@@ -352,7 +401,7 @@ describe("PractitionerWeek: keeping an open list current", () => {
     // The first mount's read is aborted by the dev-only unmount, and a real fetch then
     // rejects. That rejection belongs to a mount that no longer exists and must not be
     // shown as "could not be read" over the second mount's good answer.
-    const live = deferred<PractitionerAppointment[]>();
+    const live = deferred<PractitionerAppointmentPage>();
     let aborted = 0;
     vi.spyOn(consoleApi, "fetchPractitionerWeek").mockImplementation(
       (_id, _now, signal) =>
@@ -381,7 +430,7 @@ describe("PractitionerWeek: keeping an open list current", () => {
     expect(screen.getByTestId("region-loading")).toBeInTheDocument();
 
     await act(async () => {
-      live.resolve([]);
+      live.resolve(page([]));
       await live.promise;
     });
     await screen.findByTestId("week-empty");
@@ -392,7 +441,7 @@ describe("PractitionerWeek: keeping an open list current", () => {
     vi.spyOn(consoleApi, "fetchPractitionerWeek").mockImplementation(
       (_id, _now, s) => {
         signal = s;
-        return deferred<PractitionerAppointment[]>().promise;
+        return deferred<PractitionerAppointmentPage>().promise;
       },
     );
 

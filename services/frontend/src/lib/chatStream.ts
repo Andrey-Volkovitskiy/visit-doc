@@ -175,6 +175,14 @@ export interface Message {
    * never sent, because it would read as a booking half that ran and did nothing.
    */
   booking_acts: BookingAct[] | null;
+  /**
+   * Every patient message id this reply answers, in order — null on any other sender.
+   *
+   * The turn's membership as the server recorded it when the reply was written. One
+   * reply answers a whole burst, so the relation is not derivable from row order, and
+   * `lib/turns.ts` reads this rather than pairing a message with whatever follows it.
+   */
+  reply_to_message_ids: string[] | null;
   created_at: string;
 }
 

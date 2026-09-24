@@ -239,6 +239,7 @@ describe("fetchChatHistory", () => {
         content: "move Tuesday to ten, and cancel Thursday",
         request_outcomes: null,
         attention_mark: null,
+        reply_to_message_ids: null,
         booking_acts: acts,
         created_at: "2026-09-01T12:00:00",
       },
@@ -248,6 +249,7 @@ describe("fetchChatHistory", () => {
         content: "Done — Tuesday is now at ten.",
         request_outcomes: null,
         attention_mark: null,
+        reply_to_message_ids: null,
         booking_acts: null,
         created_at: "2026-09-01T12:00:01",
       },
@@ -373,6 +375,7 @@ describe("a message's sender and mark", () => {
       content: "I've got this one.",
       request_outcomes: null,
       attention_mark: null,
+      reply_to_message_ids: null,
       booking_acts: null,
       created_at: "2026-09-01T12:00:00",
     };
@@ -412,6 +415,7 @@ describe("a message's sender and mark", () => {
       content: "I've got this one.",
       request_outcomes: null,
       attention_mark: null,
+      reply_to_message_ids: null,
       booking_acts: null,
       created_at: "2026-09-01T12:00:00",
       // @ts-expect-error - no message carries a staff name

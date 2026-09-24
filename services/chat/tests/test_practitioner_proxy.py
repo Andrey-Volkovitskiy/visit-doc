@@ -145,7 +145,7 @@ async def _call(
 # `_LOCAL_NOW`: from that moment to midnight at the start of the eighth day.
 _WEEK_ROUTE = ("GET", "/console/practitioners/{practitioner_id}/appointments")
 _LOCAL_NOW = "2026-09-24T14:30:00"
-_WEEK_QUERY = "?ends_after=2026-09-24T14:30:00&starts_before=2026-10-01T00:00:00"
+_WEEK_QUERY = "?ends_after=2026-09-24T14:30:00&limit=20"
 
 # Each proxy route as the console router declares it, mapped to the method, the
 # scheduler-side path and the body it must forward. The test below asserts the keys are
@@ -606,17 +606,22 @@ async def test_the_transport_still_refuses_a_query_in_the_path() -> None:
 
 
 @pytest.mark.parametrize(
-    ("local_now", "ends_after", "starts_before"),
+    "local_now",
     [
-        ("2026-09-24T14:30:00", "2026-09-24T14:30:00", "2026-10-01T00:00:00"),
-        ("2026-09-24T23:59:59", "2026-09-24T23:59:59", "2026-10-01T00:00:00"),
-        ("2026-09-25T00:00:00", "2026-09-25T00:00:00", "2026-10-02T00:00:00"),
-        ("2026-12-29T09:00:00", "2026-12-29T09:00:00", "2027-01-05T00:00:00"),
+        "2026-09-24T14:30:00",
+        "2026-09-24T23:59:59",
+        "2026-09-25T00:00:00",
+        "2026-12-29T09:00:00",
+        # Far enough ahead that a seven-day window could not be expressed at all. The
+        # route no longer computes one, so there is nothing here to overflow.
+        "9999-12-30T09:00:00",
     ],
 )
-async def test_the_week_forwards_the_window_computed_from_local_now(
-    local_now: str, ends_after: str, starts_before: str
+async def test_the_listing_reads_forward_from_local_now_with_no_far_end(
+    local_now: str,
 ) -> None:
+    # The whole of the change: a booking made for next spring is one a staff member has
+    # to be able to find, so the only bound sent is the page.
     session_id = await _session_id()
     transport = _FakeHttpSession(status=200, payload={"appointments": []})
 
@@ -626,10 +631,7 @@ async def test_the_week_forwards_the_window_computed_from_local_now(
 
     sent = transport.requests[0].url
     assert sent.raw_path == f"/practitioners/{_PRACTITIONER_ID}/appointments"
-    assert dict(sent.query) == {
-        "ends_after": ends_after,
-        "starts_before": starts_before,
-    }
+    assert dict(sent.query) == {"ends_after": local_now, "limit": "20"}
 
 
 @pytest.mark.parametrize(
@@ -641,8 +643,6 @@ async def test_the_week_forwards_the_window_computed_from_local_now(
         "?local_now=2026-09-24T14:30:00Z",
         "?local_now=2026-09-24T14:30:00%2B02:00",
         "?local_now=2026-09-24T14:30:00-05:00",
-        # Valid as a date-time, but its week ends past the last representable date.
-        "?local_now=9999-12-30T09:00:00",
     ],
 )
 async def test_the_week_refuses_a_local_now_it_cannot_use_and_sends_nothing(

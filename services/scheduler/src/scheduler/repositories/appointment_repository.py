@@ -319,26 +319,46 @@ class PractitionerAppointment:
     ends_at: datetime
 
 
+@dataclass(frozen=True)
+class PractitionerAppointmentPage:
+    """What one capped read of a practitioner's calendar returned.
+
+    `truncated` is read from a row beyond the cap, never from the length: a page exactly
+    `limit` long is the one case a count cannot tell from a complete list.
+    """
+
+    appointments: list[PractitionerAppointment]
+    truncated: bool
+
+
 async def list_for_practitioner(
     session: AsyncSession,
     *,
     session_id: str,
     practitioner_id: str,
     ends_after: datetime,
-    starts_before: datetime,
-) -> list[PractitionerAppointment]:
-    """Return this practitioner's standing appointments overlapping a window, in order.
+    limit: int,
+    starts_before: datetime | None = None,
+) -> PractitionerAppointmentPage:
+    """Return this practitioner's standing appointments from `ends_after` on, in order.
 
     Args:
         ends_after: An appointment ending at or before this is over and left out; one
             already under way at it is kept.
-        starts_before: An appointment starting at or after this is left out.
+        limit: At most this many rows are returned. Required: with no far end this
+            reads a calendar that grows without bound, so every caller caps it.
+        starts_before: An appointment starting at or after this is left out. None means
+            no far end - every appointment from `ends_after` on, however far ahead.
 
-    One statement, with the session, the practitioner, the status and both bounds all
-    in its `WHERE`, so nothing wider is ever read and narrowed afterwards. The join to
-    `patients` carries the session too: an appointment names a patient of its own
+    One statement, with the session, the practitioner, the status and every bound given
+    all in its `WHERE`, so nothing wider is ever read and narrowed afterwards. The join
+    to `patients` carries the session too: an appointment names a patient of its own
     session by construction, and the predicate keeps that true of the read rather than
     assumed by it. Ordered by start, then by id so the order is total.
+
+    One row past the cap is read, exactly as the past leg above does, so a list of
+    `limit` that is complete and one that was cut short are distinguishable. A plain
+    `LIMIT n` reports both identically, and the difference is what the console prints.
     """
     result = await session.execute(
         select(
@@ -359,11 +379,18 @@ async def list_for_practitioner(
             Appointment.practitioner_id == practitioner_id,
             Appointment.status == AppointmentStatus.STANDING,
             Appointment.ends_at > ends_after,
-            Appointment.starts_at < starts_before,
+            *(
+                ()
+                if starts_before is None
+                else (Appointment.starts_at < starts_before,)
+            ),
         )
+        # Total, so a limit takes the same rows every time it is applied: two
+        # appointments starting together are still ordered, by id.
         .order_by(Appointment.starts_at.asc(), Appointment.id.asc())
+        .limit(limit + 1)
     )
-    return [
+    probed = [
         PractitionerAppointment(
             id=row.id,
             patient_full_name=row.full_name,
@@ -372,6 +399,9 @@ async def list_for_practitioner(
         )
         for row in result.all()
     ]
+    return PractitionerAppointmentPage(
+        appointments=probed[:limit], truncated=len(probed) > limit
+    )
 
 
 async def _first_ineligibility(

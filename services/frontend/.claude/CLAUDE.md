@@ -49,6 +49,8 @@ src/
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
+├── lib/turns.ts         # which message carries a turn's one evidence marker, and what it
+│                        #   holds — read from the server's own reply_to_message_ids, pure
 ├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads
 ├── lib/localTime.ts     # how the console writes a naive local time (day label, HH:MM), shared
 │                        #   by the practitioner's week and the booking acts on a thread
@@ -177,7 +179,7 @@ exists.
 | `StaffConsole` | `staff-console`, `staff-conversations`, `staff-conversation`, `staff-no-conversations`, `region-loading` |
 | `StaffThread` | `staff-thread`, `staff-no-thread`, `staff-empty-thread`, `staff-error`, `staff-length-error`, `char-count`, `assistant-switch`, `assistant-explanation`, `pause-countdown` |
 | `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `bookings-toggle`, `discard-confirm`, `delete-confirm` |
-| `PractitionerWeek` | `practitioner-week`, `week-day`, `week-appointment`, `week-empty`, `week-error`, `region-loading` |
+| `PractitionerWeek` | `practitioner-week`, `week-day`, `week-appointment`, `week-more`, `week-empty`, `week-error`, `region-loading` |
 | `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm`, `delete-confirm` |
 
 Data attributes carry state a test would otherwise have to read off a colour: `data-sender` and

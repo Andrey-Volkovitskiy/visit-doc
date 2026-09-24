@@ -696,7 +696,7 @@ describe("App: the console's three sections (FR-020)", () => {
     vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([practitioner()]);
     const week = vi
       .spyOn(consoleApi, "fetchPractitionerWeek")
-      .mockResolvedValue([]);
+      .mockResolvedValue({ appointments: [], hasMore: false });
 
     const { rerender } = render(<App />);
     await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());

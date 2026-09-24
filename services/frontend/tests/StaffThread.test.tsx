@@ -19,6 +19,7 @@ function message(overrides: Partial<Message> = {}): Message {
     content: "is anyone there?",
     request_outcomes: null,
     attention_mark: null,
+    reply_to_message_ids: null,
     booking_acts: null,
     created_at: "2026-09-01T12:00:00",
     ...overrides,
@@ -1152,6 +1153,7 @@ describe("StaffThread: following the poll", () => {
           id: "m0",
           content: "anyone there?",
           attention_mark: null,
+          reply_to_message_ids: null,
           created_at: "2026-09-01T12:00:00",
         }),
         posted,
@@ -1585,6 +1587,81 @@ describe("StaffThread request outcomes", () => {
     // no blocks at all. The marker is the thing FR-026 says must not be there.
     expect(screen.queryByTestId("outcome-marker")).toBeNull();
     expect(screen.queryByTestId("request-outcome")).toBeNull();
+  });
+
+  it("gives a corpus gap one marker, not one per message of the turn", async () => {
+    // The question carries the mark and the reply carries the abstention, because that
+    // is where each is stored. Two markers for that would say two people are needed.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01Q",
+        sender: "patient",
+        content: "What is your late cancellation fee?",
+        attention_mark: "corpus_could_not_answer",
+      }),
+      message({
+        id: "01R",
+        sender: "assistant",
+        content: "I don't have that in the clinic's knowledge base.",
+        request_outcomes: [
+          {
+            position: 0,
+            question: "What is your late cancellation fee?",
+            answer: null,
+            verdict: "abstained_rerank_floor",
+            citations: [],
+          },
+        ],
+        reply_to_message_ids: ["01Q"],
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("outcome-marker")).toBeInTheDocument(),
+    );
+    // getBy throws on a second, which is the whole assertion.
+    expect(screen.getAllByTestId("outcome-marker")).toHaveLength(1);
+    expect(screen.getByTestId("outcome-marker")).toHaveAttribute(
+      "data-outcome-state",
+      "needs-person",
+    );
+    // The reason stays in words on the question it is about — that did not move.
+    expect(screen.getByTestId("attention-mark")).toHaveTextContent(
+      "No answer in the clinic's documents",
+    );
+
+    expandAllMarkers();
+    expect(screen.getByTestId("outcome-question")).toHaveTextContent(
+      "What is your late cancellation fee?",
+    );
+    expect(screen.getByTestId("outcome-unanswered")).toHaveTextContent(
+      "the closer reading found nothing",
+    );
+  });
+
+  it("keeps the marker on a question no reply has answered yet", async () => {
+    // The turn that most needs one: nothing answered it, so there is no reply for its
+    // evidence to be gathered onto, and absorbing it into a neighbour would lose it.
+    vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([
+      message({
+        id: "01Q",
+        sender: "patient",
+        content: "I need help now",
+        attention_mark: "urgent_condition",
+      }),
+    ]);
+
+    renderThread();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("outcome-marker")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("outcome-marker")).toHaveAttribute(
+      "data-outcome-state",
+      "needs-person",
+    );
   });
 });
 

@@ -1,10 +1,11 @@
 import { SendHorizontal } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Message } from "../lib/chatStream";
 import { fetchThread, postStaffMessage } from "../lib/consoleApi";
 import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import { evidenceByAnchor, NO_EVIDENCE } from "../lib/turns";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
 import { NO_DIRTY_REPORT, useDirtyReport } from "./adminSection";
 import { ErrorBanner } from "./ErrorBanner";
@@ -116,6 +117,10 @@ export function StaffThread({
   onDirtyChange = NO_DIRTY_REPORT,
 }: StaffThreadProps) {
   const [thread, setThread] = useState<Message[]>([]);
+  // Recomputed only when the thread itself changes, not on every keystroke in the
+  // composer beneath it — this walks the whole thread twice and the composer's state
+  // lives in this same component.
+  const evidence = useMemo(() => evidenceByAnchor(thread), [thread]);
   const [reply, setReply] = useState("");
   // The banner carries *why* it is up, not just its words. Two things raise one here —
   // a thread that would not load and a reply that would not send — and only the first
@@ -410,10 +415,14 @@ export function StaffThread({
             // reader's side and their own background (FR-023) — the mirror of what the
             // patient pane does with the patient's.
             readerIs="staff"
-            requestOutcomes={message.request_outcomes}
             showOutcomes
+            // Its own, and rendered on it in words: which message a person is needed
+            // for is not a thing the turn's marker can say.
             mark={message.attention_mark}
-            bookingActs={message.booking_acts}
+            // The turn's, and only on the message that anchors it. Every other message
+            // of the turn is handed nothing, which is what makes one event one marker
+            // rather than one per row the evidence happens to be stored on.
+            {...(evidence.get(message.id) ?? NO_EVIDENCE)}
           />
         ))}
       </div>

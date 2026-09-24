@@ -271,7 +271,11 @@ async def test_deleting_a_practitioner_removes_only_their_appointments() -> None
 
 # --- one practitioner's week ---------------------------------------------------------
 
-_WINDOW = {"ends_after": "2026-09-24T14:30:00", "starts_before": "2026-10-01T00:00:00"}
+_WINDOW = {
+    "ends_after": "2026-09-24T14:30:00",
+    "starts_before": "2026-10-01T00:00:00",
+    "limit": "50",
+}
 
 
 async def test_the_week_answers_the_appointments_in_the_window() -> None:
@@ -303,7 +307,8 @@ async def test_the_week_answers_the_appointments_in_the_window() -> None:
                 "starts_at": "2026-09-24T14:00:00",
                 "ends_at": "2026-09-24T15:00:00",
             }
-        ]
+        ],
+        "has_more": False,
     }
 
 
@@ -318,7 +323,54 @@ async def test_a_week_with_nobody_booked_is_an_empty_list() -> None:
         )
 
     assert response.status_code == 200
-    assert response.json() == {"appointments": []}
+    assert response.json() == {"appointments": [], "has_more": False}
+
+
+async def test_the_route_refuses_a_read_with_no_limit() -> None:
+    # An unbounded window with no cap is a whole calendar returned over HTTP. The
+    # caller decides the page; this side will not invent one.
+    session_id = new_id()
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, session_id)
+
+    async with admin_api(session_id) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments",
+            params={"ends_after": "2026-09-24T14:30:00"},
+        )
+
+    assert response.status_code == 422
+
+
+async def test_the_route_answers_without_a_far_end_and_reports_the_cut() -> None:
+    session_id = new_id()
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, session_id)
+        patient = await seed_patient(session, session_id, full_name="Leo Tolstoy")
+        for day in range(3):
+            session.add(
+                make_appointment(
+                    session_id,
+                    patient.id,
+                    practitioner.id,
+                    datetime(2027, 4, 2 + day, 14, 0),
+                    datetime(2027, 4, 2 + day, 15, 0),
+                )
+            )
+        await session.commit()
+
+    async with admin_api(session_id) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments",
+            params={"ends_after": "2026-09-24T14:30:00", "limit": "2"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    # Months past any week, and cut at the page with the cut reported rather than shown
+    # as the whole of what is booked.
+    assert len(body["appointments"]) == 2
+    assert body["has_more"] is True
 
 
 async def test_the_week_of_a_missing_practitioner_is_not_found() -> None:

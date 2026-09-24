@@ -111,15 +111,32 @@ class PatientOut(BaseModel):
     full_name: str
 
 
-class PractitionerWeekQuery(BaseModel):
-    """`GET /practitioners/{id}/appointments` query: the window to read.
+# The largest page this route will answer. Not a product decision - the console asks
+# for far fewer - but a ceiling on what one request may cost, since the far end of the
+# window is now optional and a practitioner's calendar grows without bound.
+_MAX_LIMIT = 500
 
-    The caller computes the window; this side only answers for it, so it has no clock
-    and no notion of how long a week is.
+
+class PractitionerAppointmentsQuery(BaseModel):
+    """`GET /practitioners/{id}/appointments` query: what to read, and how much.
+
+    The caller decides all three; this side only answers, so it has no clock, no notion
+    of how far ahead a console cares to look, and no opinion about how many rows a
+    screen can hold.
+
+    `starts_before` is optional, and omitting it means *no far end* - every standing
+    appointment from `ends_after` onward, however far ahead it sits. That is the
+    ordinary read; a far end is for a caller that genuinely wants a window.
+
+    `limit` is required, and deliberately has no default. A route answering an unbounded
+    future must be told how much of it to send: a default here would be this side
+    inventing the caller's page size, and an uncapped answer is a table scan waiting to
+    be returned over HTTP.
     """
 
     ends_after: datetime
-    starts_before: datetime
+    starts_before: datetime | None = None
+    limit: int = Field(ge=1, le=_MAX_LIMIT)
 
     @field_validator("ends_after", "starts_before", mode="before")
     @classmethod
@@ -131,16 +148,20 @@ class PractitionerWeekQuery(BaseModel):
 
     @field_validator("ends_after", "starts_before")
     @classmethod
-    def _reject_timezone_aware(cls, value: datetime) -> datetime:
+    def _reject_timezone_aware(cls, value: datetime | None) -> datetime | None:
         """Raises: ValueError if `value` carries a timezone offset."""
-        if value.tzinfo is not None:
+        if value is not None and value.tzinfo is not None:
             raise ValueError("date-times must carry no timezone offset")
         return value
 
     @model_validator(mode="after")
-    def _reject_empty_window(self) -> "PractitionerWeekQuery":
-        """Raises: ValueError if the window does not end after it starts."""
-        if self.starts_before <= self.ends_after:
+    def _reject_empty_window(self) -> "PractitionerAppointmentsQuery":
+        """Raises: ValueError if a far end was given that the window never reaches.
+
+        Only when one was given: no far end is not an empty window, it is every
+        appointment from `ends_after` on.
+        """
+        if self.starts_before is not None and self.starts_before <= self.ends_after:
             raise ValueError("starts_before must be after ends_after")
         return self
 
@@ -154,14 +175,19 @@ class PractitionerAppointmentOut(BaseModel):
     ends_at: str
 
 
-class PractitionerWeekOut(BaseModel):
-    """A practitioner's standing appointments in a window, in start order.
+class PractitionerAppointmentsOut(BaseModel):
+    """A practitioner's standing appointments from `ends_after` on, in start order.
 
-    An empty list means nobody is booked in the window, and only that: a practitioner
-    this session cannot see is a 404, never an empty week.
+    An empty list means nobody is booked, and only that: a practitioner this session
+    cannot see is a 404, never an empty list.
+
+    `has_more` says whether the query had to stop at `limit`, and is read from a row
+    beyond it rather than inferred from the count - a list exactly `limit` long is the
+    one case "as many as we asked for" cannot tell apart from "and that was all".
     """
 
     appointments: list[PractitionerAppointmentOut]
+    has_more: bool
 
 
 def to_working_range_out(weekday: Weekday, start: time, end: time) -> WorkingRangeOut:

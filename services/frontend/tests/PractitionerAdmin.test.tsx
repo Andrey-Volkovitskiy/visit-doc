@@ -293,18 +293,20 @@ describe("PractitionerAdmin: a practitioner's bookings on the roster", () => {
     vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([ADA, GRACE]);
     vi.spyOn(consoleApi, "fetchPractitionerWeek").mockImplementation(
       (id: string) =>
-        Promise.resolve(
-          id === ADA.id
-            ? [
-                {
-                  id: "01APPT00000000000000000001",
-                  patient_full_name: "Leo Tolstoy",
-                  starts_at: "2026-09-24T14:00:00",
-                  ends_at: "2026-09-24T15:00:00",
-                },
-              ]
-            : [],
-        ),
+        Promise.resolve({
+          appointments:
+            id === ADA.id
+              ? [
+                  {
+                    id: "01APPT00000000000000000001",
+                    patient_full_name: "Leo Tolstoy",
+                    starts_at: "2026-09-24T14:00:00",
+                    ends_at: "2026-09-24T15:00:00",
+                  },
+                ]
+              : [],
+          hasMore: false,
+        }),
     );
   });
 

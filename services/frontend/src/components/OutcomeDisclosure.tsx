@@ -1,7 +1,6 @@
 import { Info, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import type {
-  AttentionMark,
   BookingAct,
   BookingActOperation,
   BookingActOutcome,
@@ -21,15 +20,16 @@ interface OutcomeDisclosureProps {
    */
   requestOutcomes: RequestOutcome[] | null;
   /**
-   * Why this message needs a person, when something decided one is needed.
+   * Whether anything in the turn this marker stands for called a person (FR-026a).
    *
-   * Read here for the marker's *state* only (FR-026a). The mark's own words stay
-   * rendered on the message by `MessageView`, unexpanded: it is the one thing in this
-   * block a staff member must be able to see while scanning a thread, and putting it
-   * behind a click would mean opening every marker to find the conversation that needs
-   * them.
+   * A boolean rather than the mark itself, because a turn may hold several marked
+   * messages and no single one of them is "the" mark — a value that named one would be
+   * describing a message this marker is not only about. The *reason* is not wanted
+   * here in any case: the mark's own words stay rendered on the message that carries
+   * them by `MessageView`, unexpanded, because that is the one thing a staff member
+   * must see while scanning a thread rather than by opening every marker in it.
    */
-  mark: AttentionMark | null;
+  marked: boolean;
   /**
    * What the assistant tried to do to the schedule for this message, in the order
    * tried — or null when it tried nothing (spec 016).
@@ -273,16 +273,21 @@ function BookingActView({ act }: { act: BookingAct }) {
 /**
  * The evidence marker for one message, and the block it opens.
  *
- * **Its state is derived from the message it sits on, never from a neighbour's**
- * (FR-026). Outcomes are written to the assistant's reply, because they describe what
- * the assistant did; an attention mark is written to the patient's message, because
- * that is the thing a person has to act on. A turn may therefore put a marker on both
- * of its messages, each describing its own. Pairing a message with the reply that
- * follows it was rejected outright: a patient message may have no reply yet, may be
- * superseded, or may be one of a burst, and each of those makes "the reply to this
- * message" ambiguous. Booking acts (spec 016) follow the same rule from the other side:
- * they are written to the patient message the turn was answering and read from it, so
- * a turn that booked and then failed before replying still has somewhere to say so.
+ * **One marker per turn, not per message** — narrowing FR-026, which had it derive from
+ * the message it sits on and nothing else. The two halves of a turn are stored apart:
+ * outcomes on the assistant's reply, because they describe what the assistant did; the
+ * attention mark on the patient's message, because that is the thing a person has to
+ * act on; booking acts there too (spec 016), so a turn that booked and then failed
+ * before replying still has somewhere to say so. Each deriving its own state put two
+ * red markers on one corpus gap, which reads as two problems needing two people.
+ *
+ * FR-026 rejected pairing a message with the reply that follows it, and was right to:
+ * a patient message may have no reply yet, may be superseded, or may be one of a burst,
+ * so "the reply to this message" is not a thing row order can answer. What changed is
+ * that nothing here pairs anything — `lib/turns.ts` reads `reply_to_message_ids`, which
+ * the server writes with the reply and which names its turn's questions outright. This
+ * component still renders only what it is handed; deciding what a turn holds is that
+ * module's job, and it is not row order's.
  *
  * The open/closed boolean is **owned here, not lifted**. Nothing else reads it, and
  * FR-028's "more than one open at once" falls out for free when each instance holds its
@@ -294,15 +299,14 @@ function BookingActView({ act }: { act: BookingAct }) {
  */
 export function OutcomeDisclosure({
   requestOutcomes,
-  mark,
+  marked,
   bookingActs,
 }: OutcomeDisclosureProps) {
   const [expanded, setExpanded] = useState(false);
 
   const outcomes = requestOutcomes ?? [];
   const acts = bookingActs ?? [];
-  const hasMark = mark !== null;
-  if (outcomes.length === 0 && !hasMark && acts.length === 0) return null;
+  if (outcomes.length === 0 && !marked && acts.length === 0) return null;
 
   // Something in this message is still owed to a person when it carries a mark, any
   // request that went unanswered, or any act whose outcome nobody knows. A message
@@ -311,7 +315,7 @@ export function OutcomeDisclosure({
   // was already reported to the patient and the second is known to have changed
   // nothing, whereas an unknown one may have moved the schedule unseen (016 FR-018).
   const needsPerson =
-    hasMark ||
+    marked ||
     outcomes.some((outcome) => outcome.answer === null) ||
     acts.some((act) => settledAs(act) === "unknown");
   const state = needsPerson ? "needs-person" : "served";

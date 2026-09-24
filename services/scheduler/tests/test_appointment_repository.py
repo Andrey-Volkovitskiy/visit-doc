@@ -669,13 +669,16 @@ async def _seed_appointment(
 async def _week(
     session: AsyncSession, session_id: str, practitioner_id: str
 ) -> list["appointment_repository.PractitionerAppointment"]:
-    return await appointment_repository.list_for_practitioner(
+    """The old seven-day window, kept for the tests that are about its predicates."""
+    page = await appointment_repository.list_for_practitioner(
         session,
         session_id=session_id,
         practitioner_id=practitioner_id,
         ends_after=_WEEK_NOW,
         starts_before=_WEEK_END,
+        limit=50,
     )
+    return page.appointments
 
 
 async def test_the_week_lists_standing_appointments_in_start_order_with_names(
@@ -800,3 +803,88 @@ async def test_the_week_is_empty_when_asked_for_from_another_session(
     )
 
     assert await _week(db_session, new_id(), practitioner.id) == []
+
+
+async def test_the_listing_reaches_appointments_far_beyond_a_week(
+    db_session: AsyncSession,
+) -> None:
+    # The seven-day window used to hide these, with nothing on screen saying so.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    next_spring = await _seed_appointment(
+        db_session, session_id, patient.id, practitioner.id, datetime(2027, 4, 2, 9, 0)
+    )
+
+    page = await appointment_repository.list_for_practitioner(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        ends_after=_WEEK_NOW,
+        limit=20,
+    )
+
+    assert [a.id for a in page.appointments] == [next_spring]
+    assert page.truncated is False
+
+
+async def test_the_listing_stops_at_the_limit_and_says_it_did(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    # Four, read three at a time: the fourth is the row that tells a complete page from
+    # one that was cut short, and it is never returned.
+    for day in range(4):
+        await _seed_appointment(
+            db_session,
+            session_id,
+            patient.id,
+            practitioner.id,
+            datetime(2026, 9, 25, 9, 0) + timedelta(days=day),
+        )
+
+    page = await appointment_repository.list_for_practitioner(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        ends_after=_WEEK_NOW,
+        limit=3,
+    )
+
+    assert len(page.appointments) == 3
+    assert page.truncated is True
+    # In start order, so what is cut is the far end and never the next thing due.
+    assert [a.starts_at for a in page.appointments] == sorted(
+        a.starts_at for a in page.appointments
+    )
+
+
+async def test_a_page_exactly_as_long_as_the_limit_is_not_called_truncated(
+    db_session: AsyncSession,
+) -> None:
+    # The case a count cannot answer, and the reason the query reads one row past the
+    # cap: three of three is the whole list, and an ellipsis on it would be a lie.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id, full_name="Ada")
+    for day in range(3):
+        await _seed_appointment(
+            db_session,
+            session_id,
+            patient.id,
+            practitioner.id,
+            datetime(2026, 9, 25, 9, 0) + timedelta(days=day),
+        )
+
+    page = await appointment_repository.list_for_practitioner(
+        db_session,
+        session_id=session_id,
+        practitioner_id=practitioner.id,
+        ends_after=_WEEK_NOW,
+        limit=3,
+    )
+
+    assert len(page.appointments) == 3
+    assert page.truncated is False

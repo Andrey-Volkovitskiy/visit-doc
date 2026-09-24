@@ -398,6 +398,15 @@ class MessageOut(BaseModel):
     this message, in the order attempted - only ever on a patient message. None means
     none was attempted; an empty list is never sent, since it would read as a booking
     half that ran and did nothing.
+
+    `reply_to_message_ids` is the patient message ids this reply answers, in order -
+    only ever on an assistant message, and None on every other sender. It is the turn's
+    membership as the server recorded it when the reply was written, which is the only
+    place that knows it: a burst of several patient messages is answered by exactly one
+    reply, so the relation is not derivable from row order and must not be guessed at.
+    The console reads it to render one evidence marker per turn rather than one per
+    message - the mark on the question and the outcomes on the answer describe a single
+    event, and two markers claim two.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -420,6 +429,7 @@ class MessageOut(BaseModel):
         | None
     ) = None
     booking_acts: list[BookingActOut] | None = None
+    reply_to_message_ids: list[str] | None = None
     created_at: datetime
 
 

@@ -25,7 +25,12 @@ export interface PractitionerWeekProps {
  */
 type WeekState =
   | { status: "loading" }
-  | { status: "loaded"; appointments: PractitionerAppointment[] }
+  | {
+      status: "loaded";
+      appointments: PractitionerAppointment[];
+      /** Whether the route stopped at its cap with more still booked. */
+      hasMore: boolean;
+    }
   | { status: "failed"; error: PractitionerWeekError };
 
 /** One read in flight: the slot an open list holds while it waits for an answer. */
@@ -59,7 +64,12 @@ function byDay(
 }
 
 /**
- * One practitioner's next seven days, shown inside their roster block while it is open.
+ * One practitioner's upcoming bookings, shown inside their roster block while it is open.
+ *
+ * Every one of them, from now on, however far ahead - a booking made for next spring is
+ * one a staff member has to be able to find. What bounds the list is the route's page,
+ * not a window in time, and a page that had to stop says so in a line of its own rather
+ * than ending silently, which is what a seven-day window used to do.
  *
  * Mounted by opening the block and unmounted by closing it, so a closed block reads
  * nothing and every opening starts from a fresh read (FR-007b) - there is no cache to be
@@ -120,7 +130,13 @@ export function PractitionerWeek({
     live.current = { controller, deadline };
 
     fetchPractitionerWeek(practitionerId, localNow(), controller.signal)
-      .then((appointments) => apply({ status: "loaded", appointments }))
+      .then((page) =>
+        apply({
+          status: "loaded",
+          appointments: page.appointments,
+          hasMore: page.hasMore,
+        }),
+      )
       .catch((err: unknown) =>
         apply({
           status: "failed",
@@ -162,7 +178,7 @@ export function PractitionerWeek({
   return (
     <section
       data-testid="practitioner-week"
-      aria-label={`Bookings with ${practitionerName} over the next seven days`}
+      aria-label={`Bookings with ${practitionerName}`}
       className="border-rule-soft bg-surface-sunken rounded-md border p-3 text-sm"
     >
       {state.status === "loading" ? (
@@ -179,7 +195,7 @@ export function PractitionerWeek({
         </p>
       ) : state.appointments.length === 0 ? (
         <p data-testid="week-empty" className="text-ink-muted">
-          Nobody is booked with {practitionerName} in the next seven days.
+          Nobody is booked with {practitionerName}.
         </p>
       ) : (
         <ol className="flex flex-col gap-3">
@@ -202,6 +218,16 @@ export function PractitionerWeek({
               </ul>
             </li>
           ))}
+          {state.hasMore && (
+            // Said in words as well as in the ellipsis: a lone "…" is a glyph a reader
+            // has to interpret, and what it means here — that the clinic's schedule
+            // holds bookings this list is not showing — is not something to leave to
+            // interpretation. No count: the route stopped reading at its page, so the
+            // number of them is a thing nothing here has counted.
+            <li data-testid="week-more" className="text-ink-muted">
+              … more are booked after these.
+            </li>
+          )}
         </ol>
       )}
     </section>

@@ -246,6 +246,7 @@ export function ChatWindow({
         // to carry - null, never `[]`, which would read as a half that ran.
         request_outcomes: null,
         attention_mark: null,
+        reply_to_message_ids: null,
         // Nothing has been attempted for a message not yet sent. Whatever the turn does
         // to the schedule is recorded server-side and arrives with the next history
         // read — though this pane never shows it (FR-021).
@@ -292,6 +293,7 @@ export function ChatWindow({
               content: event.message || accumulated,
               request_outcomes: event.request_outcomes,
               attention_mark: null,
+              reply_to_message_ids: null,
               // Acts are written to the patient message, never to a reply.
               booking_acts: null,
               created_at: new Date().toISOString(),

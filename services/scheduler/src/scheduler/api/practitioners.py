@@ -13,11 +13,11 @@ from scheduler.db.session import session_factory
 from scheduler.domain.models import Practitioner, WorkingRange
 from scheduler.domain.schemas import (
     PractitionerAppointmentOut,
+    PractitionerAppointmentsOut,
+    PractitionerAppointmentsQuery,
     PractitionerCreate,
     PractitionerOut,
     PractitionerUpdate,
-    PractitionerWeekOut,
-    PractitionerWeekQuery,
     WorkingRangeIn,
     to_working_range_out,
 )
@@ -205,15 +205,18 @@ async def delete_practitioner(
 @router.get("/practitioners/{practitioner_id}/appointments")
 async def list_practitioner_appointments(
     practitioner_id: str,
-    window: Annotated[PractitionerWeekQuery, Query()],
+    query: Annotated[PractitionerAppointmentsQuery, Query()],
     session_id: Annotated[str, Depends(require_session_id)],
-) -> PractitionerWeekOut:
-    """Return the practitioner's standing appointments in the window, in start order.
+) -> PractitionerAppointmentsOut:
+    """Return the practitioner's standing appointments from `ends_after` on, in order.
 
     Raises: HTTPException 404 if the practitioner does not exist in this session.
 
     The practitioner is resolved first, so a practitioner this session cannot see is
-    reported as not found rather than as a week with nobody booked in it.
+    reported as not found rather than as a calendar with nobody booked in it.
+
+    How far ahead to read and how much to send are both the caller's (see the query
+    schema); this side applies them and says whether it had to stop.
     """
     async with session_factory() as session:
         practitioner = await practitioner_repository.get(
@@ -221,15 +224,17 @@ async def list_practitioner_appointments(
         )
         if practitioner is None:
             raise HTTPException(status_code=404, detail="practitioner not found")
-        appointments = await appointment_repository.list_for_practitioner(
+        page = await appointment_repository.list_for_practitioner(
             session,
             session_id=session_id,
             practitioner_id=practitioner.id,
-            ends_after=window.ends_after,
-            starts_before=window.starts_before,
+            ends_after=query.ends_after,
+            starts_before=query.starts_before,
+            limit=query.limit,
         )
-    return PractitionerWeekOut(
-        appointments=[_render_appointment(a) for a in appointments]
+    return PractitionerAppointmentsOut(
+        appointments=[_render_appointment(a) for a in page.appointments],
+        has_more=page.truncated,
     )
 
 

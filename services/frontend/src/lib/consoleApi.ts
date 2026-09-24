@@ -301,13 +301,13 @@ export interface PractitionerAppointment {
 }
 
 /**
- * Why a week could not be shown, in the two kinds a staff member must tell apart.
+ * Why the bookings could not be shown, in the two kinds a staff member must tell apart.
  *
  * `not_found` is the practitioner being gone (deleted, or another session's id - the two
  * answer identically). `unreadable` is everything else: the scheduler unreachable or
- * slow, the request never arriving. Neither may read as an empty week, and the two must
- * not read as each other: "no longer exists" is a fact about the roster, "could not be
- * read" says nothing about what is booked.
+ * slow, the request never arriving. Neither may read as nobody being booked, and the two
+ * must not read as each other: "no longer exists" is a fact about the roster, "could not
+ * be read" says nothing about what is booked.
  */
 export type PractitionerWeekFailure = "not_found" | "unreadable";
 
@@ -326,12 +326,25 @@ export class PractitionerWeekError extends Error {
   }
 }
 
+/** One page of a practitioner's bookings, and whether the route had to stop. */
+export interface PractitionerAppointmentPage {
+  appointments: PractitionerAppointment[];
+  /**
+   * Whether more are booked beyond the ones here.
+   *
+   * The route's answer, never a count of the rows: a full page and a page that happens
+   * to be exactly as long as the cap look identical from here, and only the server read
+   * the row that tells them apart.
+   */
+  hasMore: boolean;
+}
+
 /**
  * GET /console/practitioners/{id}/appointments: who is booked with one practitioner from
- * now to the end of the seventh local day, in start order.
+ * now on, in start order, capped by the route.
  *
- * `now` defaults to `localNow()`, the browser's own wall-clock time; the route computes
- * the window from it. `signal` carries the caller's deadline.
+ * `now` defaults to `localNow()`, the browser's own wall-clock time; the route reads
+ * forward from it with no far end. `signal` carries the caller's deadline.
  *
  * Every failure is thrown as a `PractitionerWeekError`, including a request that never
  * reached the server (a `fetch` rejection) and one ended by `signal` - so a caller has
@@ -341,7 +354,7 @@ export async function fetchPractitionerWeek(
   practitionerId: string,
   now: string = localNow(),
   signal?: AbortSignal,
-): Promise<PractitionerAppointment[]> {
+): Promise<PractitionerAppointmentPage> {
   const query = new URLSearchParams({ local_now: now });
   let response: Response;
   try {
@@ -367,9 +380,19 @@ export async function fetchPractitionerWeek(
   // A success body is still only trusted as far as its shape is checked: one without an
   // `appointments` list would put `undefined` into a `.map` during render, and there is
   // no error boundary to catch it.
-  const appointments = (body as { appointments?: unknown } | null)?.appointments;
-  if (!Array.isArray(appointments)) throw new PractitionerWeekError("unreadable");
-  return appointments as PractitionerAppointment[];
+  const parsed = body as
+    | { appointments?: unknown; has_more?: unknown }
+    | null;
+  if (!Array.isArray(parsed?.appointments)) {
+    throw new PractitionerWeekError("unreadable");
+  }
+  return {
+    appointments: parsed.appointments as PractitionerAppointment[],
+    // Anything but a `true` is read as "that was all": a body missing the field, or
+    // carrying something that is not a boolean, has not said there is more, and
+    // printing an ellipsis on that would invent a claim about the schedule.
+    hasMore: parsed.has_more === true,
+  };
 }
 
 // --- the corpus the assistant answers from ------------------------------------------

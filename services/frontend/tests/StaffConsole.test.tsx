@@ -137,7 +137,11 @@ describe("StaffConsole: marking without relying on colour (FR-022, FR-006)", () 
     expect(quiet!.querySelector("svg")).toBeNull();
   });
 
-  it("names the reason a conversation needs a person", () => {
+  it("shows the reason to a screen reader and not on screen", () => {
+    // The list marks a conversation; the thread one click away explains it. So the
+    // reason is carried in the accessibility tree alone — dropping it from there too
+    // would leave a screen-reader user with a row indistinguishable from a quiet one,
+    // since the glyph beside it is a picture with no name.
     renderConsole([
       conversation({
         chat_id: "a",
@@ -148,7 +152,13 @@ describe("StaffConsole: marking without relying on colour (FR-022, FR-006)", () 
       }),
     ]);
 
-    expect(screen.getByTestId("staff-conversation").textContent).not.toBe("Ada");
+    const row = screen.getByTestId("staff-conversation");
+    const reason = screen.getByText("Asked for a person");
+    expect(row).toContainElement(reason);
+    // jsdom loads no stylesheet, so `sr-only` is what says "in the tree, off the
+    // screen" — there is nothing else here that could say it.
+    expect(reason).toHaveClass("sr-only");
+    expect(row.querySelector(".sr-only")).toBe(reason);
   });
 
   it("names a corpus gap, which is a cause no message carries but the labels do cover", () => {

@@ -2,7 +2,6 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { OutcomeDisclosure } from "../src/components/OutcomeDisclosure";
 import type {
-  AttentionMark,
   BookingAct,
   RequestOutcome,
 } from "../src/lib/chatStream";
@@ -35,11 +34,14 @@ function abstained(
 
 function renderDisclosure(
   outcomes: RequestOutcome[] | null,
-  mark: AttentionMark | null = null,
+  // Whether the *turn* this marker stands for called a person, which is what the
+  // marker's state is about. Which message carries the mark, and its words, belong to
+  // the message and are rendered there by `MessageView`.
+  marked = false,
   acts: BookingAct[] | null = null,
 ) {
   return render(
-    <OutcomeDisclosure requestOutcomes={outcomes} mark={mark} bookingActs={acts} />,
+    <OutcomeDisclosure requestOutcomes={outcomes} marked={marked} bookingActs={acts} />,
   );
 }
 
@@ -129,14 +131,14 @@ describe("OutcomeDisclosure: opening and closing (FR-027, FR-028)", () => {
         <div data-testid="first">
           <OutcomeDisclosure
             requestOutcomes={[answered(0, "first question")]}
-            mark={null}
+            marked={false}
             bookingActs={null}
           />
         </div>
         <div data-testid="second">
           <OutcomeDisclosure
             requestOutcomes={[answered(0, "second question")]}
-            mark={null}
+            marked={false}
             bookingActs={null}
           />
         </div>
@@ -171,7 +173,7 @@ describe("OutcomeDisclosure: when a marker exists at all (FR-026, FR-026a)", () 
     // The two conditions fall on different messages, and that is not an inconsistency
     // to smooth over: outcomes describe what the assistant did, a mark is the thing a
     // person has to act on.
-    renderDisclosure(null, "patient_asked_for_person");
+    renderDisclosure(null, true);
 
     expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
   });
@@ -193,14 +195,14 @@ describe("OutcomeDisclosure: when a marker exists at all (FR-026, FR-026a)", () 
   });
 
   it("renders no marker for a message holding neither", () => {
-    const { container } = renderDisclosure(null, null);
+    const { container } = renderDisclosure(null, false);
 
     expect(screen.queryByTestId("outcome-marker")).toBeNull();
     expect(container).toBeEmptyDOMElement();
   });
 
   it("renders a marker for a message holding both", () => {
-    renderDisclosure([answered(0, "do I need a referral?")], "not_authorized");
+    renderDisclosure([answered(0, "do I need a referral?")], true);
 
     expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
   });
@@ -223,7 +225,7 @@ describe("OutcomeDisclosure: what a served marker is named (016 FR-017)", () => 
   it("names a message holding only acts as a booking record, not an answer", () => {
     // Acts ride on the patient's message, which answered nothing; "what this answer
     // drew on" would describe a reply (016 T049).
-    renderDisclosure(null, null, [act()]);
+    renderDisclosure(null, false, [act()]);
 
     expect(
       screen.getByRole("button", { name: "What the assistant did to the schedule" }),
@@ -239,7 +241,7 @@ describe("OutcomeDisclosure: what a served marker is named (016 FR-017)", () => 
   });
 
   it("names a message with an unknown act as needing a person", () => {
-    renderDisclosure(null, null, [act({ outcome: "unknown" })]);
+    renderDisclosure(null, false, [act({ outcome: "unknown" })]);
 
     expect(
       screen.getByRole("button", { name: "Why this message needs a person" }),
@@ -348,13 +350,13 @@ describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030; FR-031
     // 016 FR-020 retires 015's "not yet recorded" stub and forbids a replacement: the
     // absence of a booking section is what says no write was attempted. Checked on
     // each shape of block the stub used to appear in.
-    const shapes: [RequestOutcome[] | null, AttentionMark | null][] = [
-      [[answered(0, "do I need a referral?")], null],
-      [[abstained(0, "what does it cost?")], null],
-      [null, "patient_asked_for_person"],
+    const shapes: [RequestOutcome[] | null, boolean][] = [
+      [[answered(0, "do I need a referral?")], false],
+      [[abstained(0, "what does it cost?")], false],
+      [null, true],
     ];
-    for (const [outcomes, mark] of shapes) {
-      const { unmount } = renderDisclosure(outcomes, mark);
+    for (const [outcomes, marked] of shapes) {
+      const { unmount } = renderDisclosure(outcomes, marked);
       expand();
 
       expect(screen.queryByTestId("booking-outcome-stub")).toBeNull();
@@ -368,7 +370,7 @@ describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030; FR-031
     // The mark stays unexpanded on the message: it is the one thing here a staff member
     // has to see while scanning a thread, and a second copy behind the marker would be
     // two elements carrying one hook.
-    renderDisclosure(null, "urgent_condition");
+    renderDisclosure(null, true);
     expand();
 
     expect(screen.queryByTestId("attention-mark")).toBeNull();
@@ -377,7 +379,7 @@ describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030; FR-031
   it("renders no request list for a message carrying only a mark", () => {
     // Null outcomes mean no FAQ half ran, which is not the same as one that ran and
     // answered nothing. Rendering an empty request list would say the second.
-    renderDisclosure(null, "urgent_condition");
+    renderDisclosure(null, true);
     expand();
 
     expect(screen.queryByTestId("request-outcome")).toBeNull();
@@ -399,7 +401,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     // FR-017. A patient message carries no FAQ outcomes, and a successful booking
     // raises no mark, so without this the one message that says what the assistant did
     // to the schedule would be the one message with nothing to open.
-    renderDisclosure(null, null, [act()]);
+    renderDisclosure(null, false, [act()]);
 
     expect(marker()).toBeInTheDocument();
   });
@@ -409,7 +411,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     (outcome) => {
       // FR-018: a refusal was already reported to the patient, and not-sent is known
       // to have changed nothing, so neither is on its own owed to a person.
-      renderDisclosure(null, null, [
+      renderDisclosure(null, false, [
         act({
           outcome,
           refusal_reason: outcome === "refused" ? "practitioner_busy" : null,
@@ -424,20 +426,20 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     "needs a person when an act's outcome is %s",
     (outcome) => {
       // FR-012b: an act never settled reads exactly as one settled as unknown.
-      renderDisclosure(null, null, [act(), act({ outcome })]);
+      renderDisclosure(null, false, [act(), act({ outcome })]);
 
       expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
     },
   );
 
   it("still needs a person for a mark, whatever the acts say", () => {
-    renderDisclosure(null, "assistant_failed", [act()]);
+    renderDisclosure(null, true, [act()]);
 
     expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
   });
 
   it("lists each act in the order attempted, with its operation and outcome", () => {
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       act({ operation: "cancel" }),
       act({ outcome: "refused", refusal_reason: "off_grid" }),
       moved({ outcome: null }),
@@ -458,7 +460,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("says what a done booking, move and cancellation did, and when", () => {
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       act(),
       moved(),
       act({ operation: "cancel", starts_at: "2027-01-14T09:30:00" }),
@@ -473,7 +475,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("names both practitioners when a move changed who the appointment is with", () => {
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       moved({ previous_practitioner_full_name: "Hildegard of Bingen" }),
     ]);
     expand();
@@ -487,7 +489,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   it("names the year on each side of a move across a new year", () => {
     // The 90-day horizon crosses years, and an act is a permanent record read long
     // after the fact: without the year, which January is meant (016 T048).
-    renderDisclosure(null, null, [moved({ previous_starts_at: "2026-12-29T09:00:00" })]);
+    renderDisclosure(null, false, [moved({ previous_starts_at: "2026-12-29T09:00:00" })]);
     expand();
 
     expect(actLines()[0]).toHaveTextContent(
@@ -497,7 +499,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("says so when the record holds no practitioner name", () => {
-    renderDisclosure(null, null, [act({ practitioner_full_name: null })]);
+    renderDisclosure(null, false, [act({ practitioner_full_name: null })]);
     expand();
 
     expect(actLines()[0]).toHaveTextContent(
@@ -509,7 +511,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     // Two absent names say nothing about whether they are one person, and the wire
     // carries no ids to settle it. Folding them into one would present a move between
     // two practitioners - a roster that could not be read, say - as a move with one.
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       moved({
         outcome: "refused",
         refusal_reason: "practitioner_busy",
@@ -526,7 +528,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("says a change that was not needed changed nothing", () => {
-    renderDisclosure(null, null, [act({ operation: "cancel", outcome: "unchanged" })]);
+    renderDisclosure(null, false, [act({ operation: "cancel", outcome: "unchanged" })]);
     expand();
 
     const line = actLines()[0]!.textContent ?? "";
@@ -535,7 +537,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("gives a refusal's reason in words, and says nothing was changed", () => {
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       act({ outcome: "refused", refusal_reason: "practitioner_busy" }),
     ]);
     expand();
@@ -568,7 +570,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     ];
     const lines = new Set<string>();
     for (const reason of reasons) {
-      const { unmount } = renderDisclosure(null, null, [
+      const { unmount } = renderDisclosure(null, false, [
         act({ outcome: "refused", refusal_reason: reason }),
       ]);
       expand();
@@ -582,7 +584,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("still says it was refused for a reason this build does not know", () => {
-    renderDisclosure(null, null, [
+    renderDisclosure(null, false, [
       act({ outcome: "refused", refusal_reason: "some_future_reason" }),
     ]);
     expand();
@@ -594,7 +596,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   });
 
   it("says a request that was never sent changed nothing", () => {
-    renderDisclosure(null, null, [act({ outcome: "not_sent" })]);
+    renderDisclosure(null, false, [act({ outcome: "not_sent" })]);
     expand();
 
     const line = actLines()[0]!.textContent ?? "";
@@ -607,7 +609,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     (outcome) => {
       // FR-019: "unknown" is in the text, never carried by colour alone, and the line
       // must not claim or imply that nothing changed.
-      renderDisclosure(null, null, [
+      renderDisclosure(null, false, [
         act({ outcome }),
         moved({ outcome }),
         act({ operation: "cancel", outcome }),
@@ -632,7 +634,7 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
   );
 
   it("adds no FAQ lines or retrieval note to a block holding only acts", () => {
-    renderDisclosure(null, null, [act()]);
+    renderDisclosure(null, false, [act()]);
     expand();
 
     expect(screen.queryByTestId("request-outcome")).toBeNull();

@@ -46,8 +46,20 @@ interface MessageViewProps {
    *
    * Passed only by the staff side. The patient sees their own message plainly: a mark
    * is a note for whoever has to act on it, not a status the sender is owed.
+   *
+   * This message's own, and rendered as words on it. Whether the *marker* claims a
+   * person is `marked` below, which is a different question with a different scope.
    */
   mark?: AttentionMark | null;
+  /**
+   * Whether the turn this message anchors called a person.
+   *
+   * Separate from `mark` because the two have different subjects: the words belong to
+   * the message that carries them, the marker to the whole turn — the question, the
+   * reply, and the acts attempted in between. A message that anchors no turn is passed
+   * nothing and draws no marker, which is what keeps one event to one marker.
+   */
+  marked?: boolean;
   /**
    * What the assistant tried to do to the schedule for this message (spec 016).
    *
@@ -117,6 +129,7 @@ export function MessageView({
   requestOutcomes,
   showOutcomes = false,
   mark,
+  marked = false,
   bookingActs,
   readerIs = "patient",
 }: MessageViewProps) {
@@ -212,7 +225,7 @@ export function MessageView({
         {showOutcomes && (
           <OutcomeDisclosure
             requestOutcomes={requestOutcomes ?? null}
-            mark={mark ?? null}
+            marked={marked}
             bookingActs={bookingActs ?? null}
           />
         )}

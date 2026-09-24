@@ -507,10 +507,30 @@ floor the other four stories are built on rather than a journey of its own.
   messages, each describing its own, and the marker is never assembled by pairing a message with
   its neighbour. Pairing was rejected: a patient message may have no reply yet, may be superseded,
   or may be one of a burst, and every one of those makes "the reply to this message" ambiguous.
+
+  > **Superseded: one marker per turn, not per message.** Measured on a live corpus gap: the
+  > question wore a marker for its mark and the reply wore one for its abstention, so a single
+  > unanswerable question showed two red markers — read as two problems needing two people, when
+  > one staff member answering one question settles both. A turn's evidence is now gathered onto
+  > one message by `services/frontend/src/lib/turns.ts`: the reply when the turn has one, the
+  > question when nothing answered it, and the messages absorbed carry no marker at all. What the
+  > *words* say is unchanged — the mark stays rendered on the message that holds it, because which
+  > message a person is needed for is not something a turn-level marker can say.
+  >
+  > The objection above stands and is not being overridden: nothing pairs a message with its
+  > neighbour. The grouping is read from `reply_to_message_ids`, which the server writes with the
+  > reply and which names every patient message that reply answers — a burst is one reply naming
+  > three ids, a question still waiting is named by nothing, and a superseded turn has no reply to
+  > name anything. The field was already stored (`chat/domain/models.py`) and is now serialized on
+  > `MessageOut`. What was ambiguous was row order, and row order is no longer consulted.
 - **FR-026a**: The marker's state MUST be derived from the message it sits on — served, when the
   outcomes it holds were answered; needs-a-person, when it holds an attention mark or an
   abstention. A message holding both an answered and an unanswered request takes the
   needs-a-person state, since something in it is still owed to a person.
+
+  > **Read "turn" for "message"**, per FR-026's supersession above: the state is derived from
+  > everything the turn holds — its marks, its requests and its acts — and the "something is still
+  > owed" rule is unchanged, now applied across the turn rather than within one message.
 - **FR-027**: The marker MUST open on activation — not on hover — expanding a block beneath the
   message, and MUST close on a second activation. Its expanded state MUST be exposed to assistive
   technology.
