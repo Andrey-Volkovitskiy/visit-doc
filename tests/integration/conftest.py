@@ -6,6 +6,7 @@ in for. No service belongs to this tier, so its fixtures live here rather than i
 package's own `conftest.py`.
 """
 
+import asyncio
 import os
 from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import ExitStack
@@ -16,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import grpc
 import pytest
 import pytest_asyncio
+import uvicorn
 from alembic import command
 from alembic.config import Config
 from anthropic.types import Usage
@@ -264,6 +266,33 @@ async def scheduling_channel() -> AsyncIterator[grpc.aio.Channel]:
     async with grpc.aio.insecure_channel(f"127.0.0.1:{port}") as channel:
         yield channel
     await server.stop(0)
+
+
+@pytest_asyncio.fixture
+async def scheduler_http() -> AsyncIterator[str]:
+    """Serve the scheduler's real practitioner API on a loopback port.
+
+    Only that router, without the service's own lifespan: the lifespan starts a gRPC
+    server on a fixed port, and this tier already runs one of those on a port of its
+    own. What is under test is the REST surface chat's proxy speaks to, and this is
+    that surface, unmodified.
+    """
+    from fastapi import FastAPI
+    from scheduler.api.practitioners import router as practitioners_router
+
+    app = FastAPI()
+    app.include_router(practitioners_router)
+    config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning")
+    server = uvicorn.Server(config)
+    serving = asyncio.create_task(server.serve())
+    while not server.started:
+        await asyncio.sleep(0.02)
+    port = server.servers[0].sockets[0].getsockname()[1]
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.should_exit = True
+        await serving
 
 
 def new_id() -> str:

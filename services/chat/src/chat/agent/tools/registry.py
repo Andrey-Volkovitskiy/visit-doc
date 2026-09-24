@@ -16,8 +16,15 @@ from typing import Any, cast
 import grpc
 from anthropic.types import ToolParam
 
+from chat.agent.booking_acts import (
+    BookingActRecorder,
+    DiscardingBookingActRecorder,
+    PlannedAct,
+    settlement_from,
+)
 from chat.agent.escalation import EscalationRequests
 from chat.core.config import Settings
+from chat.core.logging import get_logger
 from chat.observability import tool_call
 
 # What a handler returns: a small JSON-serializable object the model reads back as a
@@ -34,6 +41,18 @@ _NO_ANSWER_STATUSES = frozenset({"unknown", "unavailable"})
 _NO_PATIENT_RESULT: ToolResult = {
     "status": "unavailable",
     "explanation": "This chat has no patient record, so nothing could be done.",
+}
+
+# Returned for a write whose act could not be recorded, in place of sending it. It is
+# the answer a scheduler that could not be reached gets, because it is the same fact:
+# the request never left, so nothing changed. It says nothing about the record, which
+# the agent never sees.
+_NOT_SENT_RESULT: ToolResult = {
+    "status": "unavailable",
+    "explanation": (
+        "This could not be done right now. The request was not sent, so nothing was "
+        "changed."
+    ),
 }
 
 
@@ -53,6 +72,10 @@ class ToolContext:
     other than the one it is in. It always exists, so a handler never has to ask whether
     it may record - a context built without one collects into a throwaway, which is
     what a test wants and what production never does.
+
+    `acts` is where this turn's booking acts are recorded, bound to the patient message
+    the turn is answering. It follows the same pattern as `escalation`: always present,
+    and a context built without a turn records into one that keeps nothing.
     """
 
     channel: grpc.aio.Channel
@@ -61,6 +84,7 @@ class ToolContext:
     patient_id: str | None
     local_now: datetime
     escalation: EscalationRequests = field(default_factory=EscalationRequests)
+    acts: BookingActRecorder = field(default_factory=DiscardingBookingActRecorder)
 
 
 @dataclass(frozen=True)
@@ -76,6 +100,11 @@ class Tool:
     what lets a caller tell "this failed and nothing happened" from "this failed and its
     effect is unknown" without hardcoding a tool name: a read that raised wrote nothing
     by construction, while a write that raised may already have landed.
+
+    `plan_act` marks a tool whose call is an attempt to change the schedule, and says
+    what that attempt is, read from the arguments with the same helpers the handler
+    reads them with. The registry records the attempt around the handler, so a write
+    tool declares it once and none of the handlers records anything itself.
     """
 
     name: str
@@ -84,6 +113,7 @@ class Tool:
     handler: Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]]
     requires_patient: bool = False
     writes: bool = False
+    plan_act: Callable[[ToolContext, dict[str, Any]], PlannedAct] | None = None
 
 
 class UnknownToolError(Exception):
@@ -178,6 +208,15 @@ class ToolRegistry:
         self._context = context
 
     @property
+    def acts(self) -> BookingActRecorder:
+        """Return where this turn's booking acts are recorded.
+
+        For the booking node's roster read, which is what names the practitioners an
+        act records. The recorder offers no way to read an act back.
+        """
+        return self._context.acts
+
+    @property
     def names(self) -> list[str]:
         """Return the registered tool names, in registration order."""
         return list(self._tools)
@@ -223,6 +262,9 @@ class ToolRegistry:
         run, when the turn has no patient record - the same result its handler would
         have produced, decided in one place instead of in each of them.
 
+        A tool declaring `plan_act` has its attempt recorded around the handler, and
+        its result is returned exactly as the handler gave it.
+
         Every call is an observation `tool:<name>` in the turn's trace, whatever its
         caller: the arguments in, the result out. A result that is no answer - its
         outcome unknown, or the capability unavailable - is marked a warning naming its
@@ -241,11 +283,95 @@ class ToolRegistry:
 
         Raises:
             UnknownToolError: `name` is not registered.
-            ToolArgumentError: propagated from the handler.
+            ToolArgumentError: propagated from the handler, or from the tool's
+                `plan_act` before anything is recorded.
         """
         tool = self._tools.get(name)
         if tool is None:
             raise UnknownToolError(name)
+        if tool.plan_act is not None:
+            return await self._run_recorded(tool, tool.plan_act, arguments)
         if tool.requires_patient and self._context.patient_id is None:
             return dict(_NO_PATIENT_RESULT)
         return await tool.handler(self._context, arguments)
+
+    async def _run_recorded(
+        self,
+        tool: Tool,
+        plan_act: Callable[[ToolContext, dict[str, Any]], PlannedAct],
+        arguments: dict[str, Any],
+    ) -> ToolResult:
+        """Run a write tool with its attempt recorded before it is sent.
+
+        Raises: ToolArgumentError from `plan_act` when the chat has a patient record,
+            with nothing recorded, and whatever the handler raised, with its act left
+            unsettled.
+
+        The order is the mechanism. Arguments that cannot be read are no attempt, and
+        nothing is written for them. A chat with no patient is answered as having none
+        whatever the arguments - the answer it got before recording existed, since the
+        model may see nothing this feature changed - and a readable call there is
+        recorded as not sent; the handler never runs. Otherwise the act is written with
+        no outcome, and only then is the handler run - so a write that reached the
+        scheduler always has a record, and an act that could not be written is never
+        sent: the call is answered as unavailable instead.
+
+        Once the handler has answered, its answer settles the act and is returned
+        untouched. A handler that raised, or a turn cancelled while it ran, never gets
+        that far, and the act is left with no outcome - which is read as unknown, the
+        one thing that is true of it. A settle that fails leaves it the same way and
+        costs the patient nothing: the answer is returned regardless.
+        """
+        acts = self._context.acts
+        if self._context.patient_id is None:
+            try:
+                planned = plan_act(self._context, arguments)
+            except ToolArgumentError:
+                return dict(_NO_PATIENT_RESULT)
+            try:
+                await acts.record_not_sent(planned)
+            except Exception as exc:  # noqa: BLE001 - nothing was sent either way
+                _log_record_failed(tool.name, planned, "not_sent", exc)
+            return dict(_NO_PATIENT_RESULT)
+
+        planned = plan_act(self._context, arguments)
+        try:
+            handle = await acts.begin(planned)
+        except Exception as exc:  # noqa: BLE001 - no record, so no request
+            _log_record_failed(tool.name, planned, "begin", exc)
+            return dict(_NOT_SENT_RESULT)
+
+        result = await tool.handler(self._context, arguments)
+        settlement = settlement_from(planned.operation, result)
+        try:
+            await acts.settle(handle, settlement)
+        except Exception as exc:  # noqa: BLE001 - the answer stands without it
+            get_logger().error(
+                "booking_act.settle_failed",
+                tool_name=tool.name,
+                operation=planned.operation,
+                act_id=handle.act_id,
+                outcome=settlement.outcome,
+                error_type=type(exc).__name__,
+                error_detail=str(exc),
+            )
+        return result
+
+
+def _log_record_failed(
+    tool_name: str, planned: PlannedAct, stage: str, exc: Exception
+) -> None:
+    """Record that an act could not be written, at the stage it could not be.
+
+    Args:
+        stage: `begin` for an act about to be sent, which then is not; `not_sent` for
+            one that was never going to be.
+    """
+    get_logger().error(
+        "booking_act.record_failed",
+        tool_name=tool_name,
+        operation=planned.operation,
+        stage=stage,
+        error_type=type(exc).__name__,
+        error_detail=str(exc),
+    )

@@ -9,11 +9,13 @@ outcome, the messages that reached the model - never on canned reply text.
 import asyncio
 import json
 import re
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from chat.agent.booking_acts import DiscardingBookingActRecorder
 from chat.agent.escalation import EscalationRequests
 from chat.agent.handle_booking import (
     _LOOP_EXHAUSTED_REPLY,
@@ -1195,6 +1197,101 @@ async def test_an_empty_roster_is_not_reported_as_an_unreadable_one() -> None:
     system = _system_prompt(client)
     assert "no practitioners" in system
     assert "could not be read" not in system
+
+
+# --- 016: the roster names the practitioners a booking act records ----------------
+
+
+class _LearningRecorder(DiscardingBookingActRecorder):
+    """A recorder that remembers every roster it was handed."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.learned: list[Sequence[object]] = []
+
+    def learn_practitioners(self, roster: Sequence[object]) -> None:
+        self.learned.append(roster)
+        super().learn_practitioners(roster)
+
+
+def _roster_registry(
+    recorder: _LearningRecorder,
+    *,
+    result: dict[str, Any] | None = None,
+    raises: Exception | None = None,
+) -> ToolRegistry:
+    async def read_roster(
+        _context: ToolContext, _arguments: dict[str, Any]
+    ) -> dict[str, Any]:
+        if raises is not None:
+            raise raises
+        assert result is not None
+        return result
+
+    return ToolRegistry(
+        [
+            Tool(
+                name=_ROSTER_READ,
+                description="the roster",
+                input_schema={"type": "object", "properties": {}},
+                handler=read_roster,
+            )
+        ],
+        ToolContext(
+            channel=MagicMock(),
+            settings=MagicMock(spec=Settings),
+            session_id="01SESSION",
+            patient_id="01PATIENT",
+            local_now=datetime(2026, 8, 17, 8, 0),
+            acts=recorder,
+        ),
+    )
+
+
+async def test_a_roster_that_was_read_is_handed_to_the_act_recorder() -> None:
+    roster = [{"id": _PRACTITIONER_ID, "full_name": "William Osler"}]
+    recorder = _LearningRecorder()
+    registry = _roster_registry(recorder, result={"practitioners": roster})
+
+    await _run(_client([_text_response("Which day?")]), registry, _bursts("book me in"))
+
+    assert recorder.learned == [roster]
+    assert recorder.name_of(_PRACTITIONER_ID) == "William Osler"
+
+
+async def test_an_empty_roster_is_handed_over_as_empty() -> None:
+    # A clinic with nobody on it is still a roster that was read.
+    recorder = _LearningRecorder()
+    registry = _roster_registry(recorder, result={"practitioners": []})
+
+    await _run(_client([_text_response("Nobody.")]), registry, _bursts("who works?"))
+
+    assert recorder.learned == [[]]
+
+
+@pytest.mark.parametrize(
+    ("result", "raises"),
+    [
+        ({"status": "unavailable", "explanation": _UNAVAILABLE_EXPLANATION}, None),
+        (None, RuntimeError("roster blew up")),
+    ],
+    ids=["answered_unavailable", "raised"],
+)
+async def test_a_roster_that_was_not_read_teaches_the_recorder_nothing(
+    result: dict[str, Any] | None, raises: Exception | None
+) -> None:
+    recorder = _LearningRecorder()
+    registry = _roster_registry(recorder, result=result, raises=raises)
+
+    with capture_logs() as logs:
+        await _run(
+            _client([_text_response("I can't see the roster.")]),
+            registry,
+            _bursts("book me with Dr. Osler"),
+        )
+
+    assert [e for e in logs if e["event"] == "booking.roster_unread"]
+    assert recorder.learned == []
 
 
 # --- 007 (FR-003a): a failure calls a person; a refusal never does -----------------

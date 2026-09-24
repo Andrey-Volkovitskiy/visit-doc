@@ -1,5 +1,6 @@
 import {
   fetchChatHistory,
+  localNow,
   type AttentionMark,
   type Message,
 } from "./chatStream";
@@ -31,6 +32,13 @@ export interface ConsoleConversation {
   attention_since: string | null;
   assistant_may_reply: boolean;
   pause_seconds_remaining: number | null;
+  /**
+   * Changes whenever a booking act in this conversation is recorded or settled, and on
+   * nothing else; 0 for a conversation with none (016 FR-016a). A version, not a clock:
+   * compare it for equality only. The open staff thread re-reads when it changes, as it
+   * does when `last_message_at` does.
+   */
+  booking_acts_version: number;
 }
 
 /**
@@ -276,6 +284,86 @@ export async function deletePractitioner(
     method: "DELETE",
   });
   if (!response.ok) throw await practitionerError(response);
+}
+
+/**
+ * One standing appointment in a practitioner's week, as the console route relays it.
+ *
+ * The times are naive local wall-clock times (`YYYY-MM-DDTHH:MM:SS`), the same format as
+ * every other scheduling time. There is no timezone anywhere in this system, so they are
+ * read as written and never through `new Date(...)`'s UTC-or-local guess.
+ */
+export interface PractitionerAppointment {
+  id: string;
+  patient_full_name: string;
+  starts_at: string;
+  ends_at: string;
+}
+
+/**
+ * Why a week could not be shown, in the two kinds a staff member must tell apart.
+ *
+ * `not_found` is the practitioner being gone (deleted, or another session's id - the two
+ * answer identically). `unreadable` is everything else: the scheduler unreachable or
+ * slow, the request never arriving. Neither may read as an empty week, and the two must
+ * not read as each other: "no longer exists" is a fact about the roster, "could not be
+ * read" says nothing about what is booked.
+ */
+export type PractitionerWeekFailure = "not_found" | "unreadable";
+
+const WEEK_FAILURE_WORDING: Record<PractitionerWeekFailure, string> = {
+  not_found: "This practitioner no longer exists.",
+  unreadable: "The appointments could not be read.",
+};
+
+export class PractitionerWeekError extends Error {
+  readonly kind: PractitionerWeekFailure;
+
+  constructor(kind: PractitionerWeekFailure) {
+    super(WEEK_FAILURE_WORDING[kind]);
+    this.name = "PractitionerWeekError";
+    this.kind = kind;
+  }
+}
+
+/**
+ * GET /console/practitioners/{id}/appointments: who is booked with one practitioner from
+ * now to the end of the seventh local day, in start order.
+ *
+ * `now` defaults to `localNow()`, the browser's own wall-clock time; the route computes
+ * the window from it. `signal` carries the caller's deadline.
+ *
+ * Every failure is thrown as a `PractitionerWeekError`, including a request that never
+ * reached the server (a `fetch` rejection) and one ended by `signal` - so a caller has
+ * exactly two kinds to render and nothing else to catch.
+ */
+export async function fetchPractitionerWeek(
+  practitionerId: string,
+  now: string = localNow(),
+  signal?: AbortSignal,
+): Promise<PractitionerAppointment[]> {
+  const query = new URLSearchParams({ local_now: now });
+  let response: Response;
+  try {
+    response = await fetch(
+      `/console/practitioners/${practitionerId}/appointments?${query.toString()}`,
+      { signal },
+    );
+  } catch {
+    throw new PractitionerWeekError("unreadable");
+  }
+  // Checked before parsing: an error body is JSON too, and has no `appointments`.
+  if (!response.ok) {
+    throw new PractitionerWeekError(
+      response.status === 404 ? "not_found" : "unreadable",
+    );
+  }
+  try {
+    const body = (await response.json()) as { appointments: PractitionerAppointment[] };
+    return body.appointments;
+  } catch {
+    throw new PractitionerWeekError("unreadable");
+  }
 }
 
 // --- the corpus the assistant answers from ------------------------------------------

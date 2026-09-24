@@ -16,9 +16,16 @@ from unittest.mock import patch
 
 import pytest
 from chat.db.session import engine, session_factory
-from chat.domain.models import AttentionMark, EscalationReason, MessageSender
+from chat.domain.models import (
+    AttentionMark,
+    BookingAct,
+    BookingActOperation,
+    BookingActOutcome,
+    EscalationReason,
+    MessageSender,
+)
 from chat.main import app
-from chat.repositories import chat_repository
+from chat.repositories import booking_act_repository, chat_repository
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 from pydantic import ValidationError
@@ -388,6 +395,156 @@ async def test_a_conversation_with_no_messages_reports_no_message_time() -> None
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert row["last_message_at"] is None
+
+
+# --- 016: the booking-record version (FR-016a, plan invariant 8) --------------------
+
+_PRACTITIONER = "01PRACT0000000000000000000"
+_STARTS_AT = datetime(2027, 1, 12, 10, 0)
+
+
+async def _begin_act(session_id: str, chat_id: str, message_id: str) -> str:
+    async with session_factory() as session:
+        act_id = await booking_act_repository.begin(
+            session,
+            session_id=session_id,
+            chat_id=chat_id,
+            message_id=message_id,
+            operation=BookingActOperation.BOOK,
+            practitioner_id=_PRACTITIONER,
+            practitioner_full_name="William Osler",
+            starts_at=_STARTS_AT,
+        )
+    await engine.dispose()
+    assert act_id is not None
+    return act_id
+
+
+async def _settle_act(session_id: str, act_id: str) -> None:
+    async with session_factory() as session:
+        settled = await booking_act_repository.settle(
+            session,
+            act_id=act_id,
+            session_id=session_id,
+            outcome=BookingActOutcome.DONE,
+        )
+    await engine.dispose()
+    assert settled
+
+
+async def _insert_not_sent(session_id: str, chat_id: str, message_id: str) -> None:
+    async with session_factory() as session:
+        act_id = await booking_act_repository.insert_not_sent(
+            session,
+            session_id=session_id,
+            chat_id=chat_id,
+            message_id=message_id,
+            operation=BookingActOperation.BOOK,
+            practitioner_id=_PRACTITIONER,
+            practitioner_full_name=None,
+            starts_at=_STARTS_AT,
+        )
+    await engine.dispose()
+    assert act_id is not None
+
+
+async def _version(session_id: str, chat_id: str) -> int:
+    version = _by_id((await _get(session_id)).json())[chat_id]["booking_acts_version"]
+    assert isinstance(version, int)
+    return version
+
+
+async def _console_post(
+    session_id: str, chat_id: str, path: str, body: dict[str, Any]
+) -> Response:
+    await engine.dispose()
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                return await http.post(f"/console/chats/{chat_id}/{path}", json=body)
+
+
+async def test_a_conversation_with_no_acts_has_version_zero() -> None:
+    session_id = await _session()
+    chat_id = await _chat(session_id)
+    await _message(session_id, chat_id)
+
+    assert await _version(session_id, chat_id) == 0
+
+
+async def test_the_version_moves_by_one_on_each_record_and_each_settle() -> None:
+    session_id = await _session()
+    chat_id = await _chat(session_id)
+    message_id = await _message(session_id, chat_id)
+    # A second message, so a count taken across the chat's messages joined to its acts
+    # would come out multiplied.
+    await _message(session_id, chat_id)
+
+    act_id = await _begin_act(session_id, chat_id, message_id)
+    after_begin = await _version(session_id, chat_id)
+    await _settle_act(session_id, act_id)
+    after_settle = await _version(session_id, chat_id)
+    await _insert_not_sent(session_id, chat_id, message_id)
+    after_not_sent = await _version(session_id, chat_id)
+
+    assert (after_begin, after_settle, after_not_sent) == (1, 2, 4)
+
+
+async def test_the_version_is_unmoved_by_anything_but_the_record() -> None:
+    # The version is "the record changed", never "the conversation changed": a new
+    # message moves `last_message_at` instead, and the staff actions move neither.
+    session_id = await _session()
+    chat_id = await _chat(session_id)
+    message_id = await _message(session_id, chat_id)
+    act_id = await _begin_act(session_id, chat_id, message_id)
+    await _settle_act(session_id, act_id)
+    before = await _version(session_id, chat_id)
+
+    await _message(session_id, chat_id)
+    after_message = await _version(session_id, chat_id)
+    posted = await _console_post(session_id, chat_id, "messages", {"content": "On it."})
+    after_post = await _version(session_id, chat_id)
+    off = await _console_post(session_id, chat_id, "assistant", {"enabled": False})
+    on = await _console_post(session_id, chat_id, "assistant", {"enabled": True})
+    after_switch = await _version(session_id, chat_id)
+
+    assert [posted.status_code, off.status_code, on.status_code] == [201, 200, 200]
+    assert (before, after_message, after_post, after_switch) == (2, 2, 2, 2)
+
+
+async def test_another_sessions_acts_never_count_toward_the_version() -> None:
+    mine = await _session()
+    theirs = await _session()
+    my_chat = await _chat(mine)
+    my_message = await _message(mine, my_chat)
+    their_chat = await _chat(theirs)
+    their_message = await _message(theirs, their_chat)
+    await _begin_act(theirs, their_chat, their_message)
+    # A row naming my chat under another session - which no write path produces - is
+    # not counted on the strength of the chat id alone.
+    async with session_factory() as session:
+        session.add(
+            BookingAct(
+                id=str(ULID()),
+                session_id=theirs,
+                chat_id=my_chat,
+                message_id=my_message,
+                operation=BookingActOperation.BOOK.value,
+                practitioner_id=_PRACTITIONER,
+                starts_at=_STARTS_AT,
+            )
+        )
+        await session.commit()
+    await engine.dispose()
+
+    listed = _by_id((await _get(mine)).json())
+
+    assert set(listed) == {my_chat}
+    assert listed[my_chat]["booking_acts_version"] == 0
 
 
 # --- Phase 1f: the four added marks on the wire --------------------------------------

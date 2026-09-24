@@ -224,6 +224,14 @@ class Appointment(Base):
             "status",
             "starts_at",
         ),
+        # The same shape for one practitioner's week: filter on practitioner and status,
+        # bound and order by start.
+        Index(
+            "ix_appointments_practitioner_status_starts",
+            "practitioner_id",
+            "status",
+            "starts_at",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)

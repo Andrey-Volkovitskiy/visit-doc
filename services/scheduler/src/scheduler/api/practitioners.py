@@ -1,9 +1,10 @@
-"""`/practitioners` — the admin surface for creating, editing, and deleting them."""
+"""`/practitioners` — the admin surface for them, and a read of one's appointments."""
 
 from datetime import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from shared_models.localtime import format_local_datetime
 from shared_models.scheduling import Specialty, Weekday
 from sqlalchemy.exc import IntegrityError
 
@@ -11,13 +12,17 @@ from scheduler.api.dependencies import require_session_id
 from scheduler.db.session import session_factory
 from scheduler.domain.models import Practitioner, WorkingRange
 from scheduler.domain.schemas import (
+    PractitionerAppointmentOut,
     PractitionerCreate,
     PractitionerOut,
     PractitionerUpdate,
+    PractitionerWeekOut,
+    PractitionerWeekQuery,
     WorkingRangeIn,
     to_working_range_out,
 )
-from scheduler.repositories import practitioner_repository
+from scheduler.repositories import appointment_repository, practitioner_repository
+from scheduler.repositories.appointment_repository import PractitionerAppointment
 
 router = APIRouter()
 
@@ -53,6 +58,18 @@ def _render(
             to_working_range_out(Weekday(r.weekday), r.start_time, r.end_time)
             for r in schedule
         ],
+    )
+
+
+def _render_appointment(
+    appointment: PractitionerAppointment,
+) -> PractitionerAppointmentOut:
+    """Render one appointment of a practitioner's week for the wire."""
+    return PractitionerAppointmentOut(
+        id=appointment.id,
+        patient_full_name=appointment.patient_full_name,
+        starts_at=format_local_datetime(appointment.starts_at),
+        ends_at=format_local_datetime(appointment.ends_at),
     )
 
 
@@ -183,6 +200,37 @@ async def delete_practitioner(
         if practitioner is None:
             raise HTTPException(status_code=404, detail="practitioner not found")
         await practitioner_repository.delete(session, practitioner)
+
+
+@router.get("/practitioners/{practitioner_id}/appointments")
+async def list_practitioner_appointments(
+    practitioner_id: str,
+    window: Annotated[PractitionerWeekQuery, Query()],
+    session_id: Annotated[str, Depends(require_session_id)],
+) -> PractitionerWeekOut:
+    """Return the practitioner's standing appointments in the window, in start order.
+
+    Raises: HTTPException 404 if the practitioner does not exist in this session.
+
+    The practitioner is resolved first, so a practitioner this session cannot see is
+    reported as not found rather than as a week with nobody booked in it.
+    """
+    async with session_factory() as session:
+        practitioner = await practitioner_repository.get(
+            session, practitioner_id, session_id
+        )
+        if practitioner is None:
+            raise HTTPException(status_code=404, detail="practitioner not found")
+        appointments = await appointment_repository.list_for_practitioner(
+            session,
+            session_id=session_id,
+            practitioner_id=practitioner.id,
+            ends_after=window.ends_after,
+            starts_before=window.starts_before,
+        )
+    return PractitionerWeekOut(
+        appointments=[_render_appointment(a) for a in appointments]
+    )
 
 
 def _conflict_or_unprocessable(exc: IntegrityError) -> HTTPException:

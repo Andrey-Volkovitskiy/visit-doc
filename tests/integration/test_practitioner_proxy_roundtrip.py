@@ -7,19 +7,13 @@ FR-037's claim is not that the proxy relayed a request, it is that a schedule ed
 from a screen changes the times the assistant offers.
 """
 
-import asyncio
-from collections.abc import AsyncIterator
 from datetime import date, datetime
 from typing import Any
 
 import aiohttp
 import grpc
-import pytest_asyncio
-import uvicorn
 from chat.agent.tools.scheduling_tools import derive_idempotency_key
 from chat.clients import scheduler_rest, scheduling
-from fastapi import FastAPI
-from scheduler.api.practitioners import router as practitioners_router
 from scheduler.db.session import session_factory
 from scheduler.domain.models import Appointment, Patient
 from shared_models.scheduling import Weekday
@@ -42,30 +36,6 @@ _TUESDAY_WEEKDAY = Weekday.TUESDAY.value
 def _hours(start: str, end: str) -> dict[str, Any]:
     """One Tuesday working range, in the shape the scheduler accepts."""
     return {"weekday": _TUESDAY_WEEKDAY, "start_time": start, "end_time": end}
-
-
-@pytest_asyncio.fixture
-async def scheduler_http() -> AsyncIterator[str]:
-    """Serve the scheduler's real practitioner API on a loopback port.
-
-    Only that router, without the service's own lifespan: the lifespan starts a gRPC
-    server on a fixed port, and this tier already runs one of those on a port of its
-    own. What is under test is the REST surface the proxy speaks to, and this is that
-    surface, unmodified.
-    """
-    app = FastAPI()
-    app.include_router(practitioners_router)
-    config = uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning")
-    server = uvicorn.Server(config)
-    serving = asyncio.create_task(server.serve())
-    while not server.started:
-        await asyncio.sleep(0.02)
-    port = server.servers[0].sockets[0].getsockname()[1]
-    try:
-        yield f"http://127.0.0.1:{port}"
-    finally:
-        server.should_exit = True
-        await serving
 
 
 async def _proxy(

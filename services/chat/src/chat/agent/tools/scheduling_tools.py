@@ -25,6 +25,7 @@ from shared_models.scheduling import (
     TimeFilter,
 )
 
+from chat.agent.booking_acts import PlannedAct
 from chat.agent.tools.registry import (
     Tool,
     ToolArgumentError,
@@ -734,6 +735,53 @@ async def cancel_appointment(
     return _change_result(outcome, change="cancelled")
 
 
+def plan_booking(context: ToolContext, arguments: dict[str, Any]) -> PlannedAct:
+    """Say what a `book_appointment` call is about to attempt.
+
+    Raises: ToolArgumentError on exactly the arguments `book_appointment` rejects,
+        because it reads them with the same helpers.
+    """
+    return PlannedAct.book(
+        practitioner_id=required_id_argument(arguments, "practitioner_id"),
+        starts_at=_required_datetime(arguments, "starts_at"),
+        name_of=context.acts.name_of,
+    )
+
+
+def plan_reschedule(context: ToolContext, arguments: dict[str, Any]) -> PlannedAct:
+    """Say what a `reschedule_appointment` call is about to attempt.
+
+    Raises: ToolArgumentError on exactly the arguments `reschedule_appointment`
+        rejects, because it reads them with the same helpers.
+    """
+    return PlannedAct.reschedule(
+        appointment_id=required_id_argument(arguments, "appointment_id"),
+        new_starts_at=_required_datetime(arguments, "new_starts_at"),
+        new_practitioner_id=optional_id_argument(arguments, "new_practitioner_id"),
+        expected_starts_at=_required_datetime(arguments, "expected_starts_at"),
+        expected_practitioner_id=required_id_argument(
+            arguments, "expected_practitioner_id"
+        ),
+        name_of=context.acts.name_of,
+    )
+
+
+def plan_cancellation(context: ToolContext, arguments: dict[str, Any]) -> PlannedAct:
+    """Say what a `cancel_appointment` call is about to attempt.
+
+    Raises: ToolArgumentError on exactly the arguments `cancel_appointment` rejects,
+        because it reads them with the same helpers.
+    """
+    return PlannedAct.cancel(
+        appointment_id=required_id_argument(arguments, "appointment_id"),
+        expected_starts_at=_required_datetime(arguments, "expected_starts_at"),
+        expected_practitioner_id=required_id_argument(
+            arguments, "expected_practitioner_id"
+        ),
+        name_of=context.acts.name_of,
+    )
+
+
 def _write_failed(exc: SchedulingUnavailableError) -> ToolResult:
     """Render an unreachable scheduler for a change, saying only what is known.
 
@@ -827,6 +875,7 @@ SCHEDULING_TOOLS = [
         handler=book_appointment,
         requires_patient=True,
         writes=True,
+        plan_act=plan_booking,
     ),
     Tool(
         name="list_my_appointments",
@@ -921,6 +970,7 @@ SCHEDULING_TOOLS = [
         handler=reschedule_appointment,
         requires_patient=True,
         writes=True,
+        plan_act=plan_reschedule,
     ),
     Tool(
         name="cancel_appointment",
@@ -970,5 +1020,6 @@ SCHEDULING_TOOLS = [
         handler=cancel_appointment,
         requires_patient=True,
         writes=True,
+        plan_act=plan_cancellation,
     ),
 ]

@@ -377,6 +377,10 @@ function App() {
                 // the patient's: a patient message arriving into the conversation a staff
                 // member is reading appears there without them clicking away and back.
                 lastMessageAt={staffConversation?.last_message_at ?? null}
+                // And an act recorded or settled without a message — a turn that booked
+                // and then failed before replying — re-reads it too (016 FR-016a). The
+                // patient pane is not given it: it shows no acts (FR-021).
+                bookingActsVersion={staffConversation?.booking_acts_version}
                 pollTick={poll.tick}
                 onSetAssistant={handleSetAssistant}
               />
@@ -407,7 +411,10 @@ function App() {
             */}
             <TabsContent value="practitioners" className="min-h-0 overflow-y-auto">
               {sessionExists ? (
-                <PractitionerAdmin onDirtyChange={markPractitionersDirty} />
+                <PractitionerAdmin
+                  onDirtyChange={markPractitionersDirty}
+                  pollTick={poll.tick}
+                />
               ) : (
                 <RegionLoading region="practitioners">
                   Waiting for this browser&apos;s session before reading the roster.

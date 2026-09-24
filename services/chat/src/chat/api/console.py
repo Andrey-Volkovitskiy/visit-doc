@@ -10,10 +10,11 @@ schema.
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
+from shared_models.localtime import format_local_datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from ulid import ULID
 
@@ -28,11 +29,13 @@ from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.db.session import pinned_session, session_factory
 from chat.domain.models import Chat, MessageSender
+from chat.domain.practitioner_week import practitioner_week_bounds
 from chat.domain.schemas import (
     AssistantStateOut,
     AssistantSwitchWrite,
     ConsoleConversationOut,
     ConsoleConversationsResponse,
+    LocalNow,
     MessageOut,
     StaffMessageWrite,
 )
@@ -132,6 +135,7 @@ def _row(conversation: ConsoleConversation) -> ConsoleConversationOut:
         attention_since=conversation.attention_since,
         assistant_may_reply=conversation.may_assistant_reply,
         pause_seconds_remaining=conversation.pause_seconds_remaining,
+        booking_acts_version=conversation.booking_acts_version,
     )
 
 
@@ -339,7 +343,7 @@ async def _resume(
 
 # --- the practitioner proxy ---------------------------------------------------------
 #
-# Five routes that re-implement nothing. Every rule, default and refusal belongs to the
+# Six routes that re-implement nothing. Every rule, default and refusal belongs to the
 # scheduler, which owns practitioners; this side carries the session the browser is not
 # allowed to read and relays the answer exactly as it came back (FR-035, FR-036).
 
@@ -348,9 +352,22 @@ _TIMEOUT_DETAIL = (
     "scheduling did not answer; the change may not have been applied - try again"
 )
 
+# A read that did not arrive changed nothing, so it is not described as a change.
+_READ_UNREACHABLE_DETAIL = (
+    "scheduling is unavailable; the appointments could not be read"
+)
+_READ_TIMEOUT_DETAIL = "scheduling did not answer; the appointments could not be read"
+
 
 async def _proxy(
-    request: Request, method: str, path: str, body: Any | None = None
+    request: Request,
+    method: str,
+    path: str,
+    body: Any | None = None,
+    *,
+    query: dict[str, str] | None = None,
+    unreachable_detail: str = _UNREACHABLE_DETAIL,
+    timeout_detail: str = _TIMEOUT_DETAIL,
 ) -> Response:
     """Forward one practitioner request to the scheduler and relay its answer.
 
@@ -358,13 +375,17 @@ async def _proxy(
         path: The scheduler-side path. Any value a route interpolated into it - an id
             out of this request's own URL - must have come through
             `scheduler_rest.path_segment`, or it is free to choose the endpoint.
+        query: Parameters for the scheduler-side query string, encoded by the
+            transport.
+        unreachable_detail: What a 503 tells the caller. The default describes a
+            change; a read passes wording of its own.
+        timeout_detail: What a 504 tells the caller, likewise.
 
     Raises:
         HTTPException 401: the request carries no session cookie, so there is no
             session to act for. Reported before anything is sent.
         HTTPException 503: the scheduler could not be reached, so nothing was changed.
-        HTTPException 504: the scheduler did not answer, so what it did is unknown -
-            the caller is told to try again rather than told an outcome.
+        HTTPException 504: the scheduler did not answer, so what it did is unknown.
 
     The relayed response keeps the scheduler's status code and its body verbatim,
     including a refusal's own wording: a duplicate name, overlapping working ranges and
@@ -383,11 +404,12 @@ async def _proxy(
             path,
             session_id,
             body,
+            query=query,
         )
     except SchedulerUnreachableError as exc:
-        raise HTTPException(status_code=503, detail=_UNREACHABLE_DETAIL) from exc
+        raise HTTPException(status_code=503, detail=unreachable_detail) from exc
     except SchedulerTimeoutError as exc:
-        raise HTTPException(status_code=504, detail=_TIMEOUT_DETAIL) from exc
+        raise HTTPException(status_code=504, detail=timeout_detail) from exc
 
     if proxied.body is None:
         return Response(status_code=proxied.status_code)
@@ -445,4 +467,32 @@ async def delete_practitioner(practitioner_id: str, request: Request) -> Respons
         request,
         "DELETE",
         f"/practitioners/{scheduler_rest.path_segment(practitioner_id)}",
+    )
+
+
+@router.get("/console/practitioners/{practitioner_id}/appointments")
+async def list_practitioner_appointments(
+    practitioner_id: str,
+    local_now: Annotated[LocalNow, Query()],
+    request: Request,
+) -> Response:
+    """Return the practitioner's standing appointments for the viewer's coming week.
+
+    The week is computed here from `local_now` and sent to the scheduler as two bounds,
+    which it applies in its own query. A practitioner this session cannot see is the
+    scheduler's 404, relayed; an empty list means nobody is booked in the window.
+
+    One attempt: the console's next poll is the retry.
+    """
+    bounds = practitioner_week_bounds(local_now)
+    return await _proxy(
+        request,
+        "GET",
+        f"/practitioners/{scheduler_rest.path_segment(practitioner_id)}/appointments",
+        query={
+            "ends_after": format_local_datetime(bounds.ends_after),
+            "starts_before": format_local_datetime(bounds.starts_before),
+        },
+        unreachable_detail=_READ_UNREACHABLE_DETAIL,
+        timeout_detail=_READ_TIMEOUT_DETAIL,
     )

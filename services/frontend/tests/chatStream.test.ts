@@ -8,6 +8,7 @@ import {
   localNow,
   parseNdjsonStream,
   type AttentionMark,
+  type BookingAct,
   type ChatEvent,
   type Message,
 } from "../src/lib/chatStream";
@@ -204,6 +205,69 @@ describe("fetchChatHistory", () => {
     await expect(fetchChatHistory("01CHAT000000000000000000")).rejects.toThrow();
     fetchSpy.mockRestore();
   });
+
+  it("carries a patient message's booking acts, and null on a message with none", async () => {
+    // Spec 016. The acts ride the patient message the turn was answering, never the
+    // reply, so a thread holds both shapes side by side: a list where a change was
+    // attempted and null everywhere else — never `[]`, which the server does not send.
+    const acts: BookingAct[] = [
+      {
+        operation: "reschedule",
+        outcome: "done",
+        refusal_reason: null,
+        practitioner_full_name: "Andreas Vesalius",
+        starts_at: "2027-01-12T10:00:00",
+        ends_at: "2027-01-12T11:00:00",
+        previous_practitioner_full_name: "Andreas Vesalius",
+        previous_starts_at: "2027-01-12T09:00:00",
+      },
+      {
+        operation: "cancel",
+        outcome: null,
+        refusal_reason: null,
+        practitioner_full_name: null,
+        starts_at: "2027-01-14T09:00:00",
+        ends_at: null,
+        previous_practitioner_full_name: null,
+        previous_starts_at: null,
+      },
+    ];
+    const messages: Message[] = [
+      {
+        id: "01P",
+        sender: "patient",
+        content: "move Tuesday to ten, and cancel Thursday",
+        request_outcomes: null,
+        attention_mark: null,
+        booking_acts: acts,
+        created_at: "2026-09-01T12:00:00",
+      },
+      {
+        id: "01A",
+        sender: "assistant",
+        content: "Done — Tuesday is now at ten.",
+        request_outcomes: null,
+        attention_mark: null,
+        booking_acts: null,
+        created_at: "2026-09-01T12:00:01",
+      },
+    ];
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ messages })));
+
+    const [patient, assistant] = await fetchChatHistory("01CHAT000000000000000000");
+    fetchSpy.mockRestore();
+
+    expect(patient!.booking_acts?.map((act) => act.operation)).toEqual([
+      "reschedule",
+      "cancel",
+    ]);
+    // A null outcome survives the parse as null, for the reader to treat as unknown
+    // (FR-012b) — not coerced to anything here.
+    expect(patient!.booking_acts?.[1]!.outcome).toBeNull();
+    expect(assistant!.booking_acts).toBeNull();
+  });
 });
 
 describe("deleteChat", () => {
@@ -309,6 +373,7 @@ describe("a message's sender and mark", () => {
       content: "I've got this one.",
       request_outcomes: null,
       attention_mark: null,
+      booking_acts: null,
       created_at: "2026-09-01T12:00:00",
     };
 
@@ -329,6 +394,7 @@ describe("a message's sender and mark", () => {
       content: "is anyone there?",
       request_outcomes: null,
       attention_mark,
+      booking_acts: null,
       created_at: "2026-09-01T12:00:00",
     }));
 
@@ -346,6 +412,7 @@ describe("a message's sender and mark", () => {
       content: "I've got this one.",
       request_outcomes: null,
       attention_mark: null,
+      booking_acts: null,
       created_at: "2026-09-01T12:00:00",
       // @ts-expect-error - no message carries a staff name
       staff_name: "Whoever",

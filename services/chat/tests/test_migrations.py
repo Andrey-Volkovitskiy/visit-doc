@@ -263,3 +263,260 @@ def test_messages_carry_a_write_order_sequence() -> None:
     assert columns["seq"]["nullable"] is False
     assert columns["seq"].get("identity") is not None
     assert indexes["ix_messages_chat_seq"]["column_names"] == ["chat_id", "seq"]
+
+
+# --- 016: what the assistant did to the schedule ----------------------------------
+
+_ACT_SESSION = "01ACTSESS10N00000000000000"
+_ACT_CHAT = "01ACTCHAT00000000000000000"
+_ACT_MESSAGE = "01ACTMESSAGE00000000000000"
+_ACT_PRACTITIONER = "01ACTPRACT0000000000000000"
+
+
+def test_booking_acts_has_the_columns_of_one_attempt() -> None:
+    engine, inspector = _inspector()
+    columns = {col["name"]: col for col in inspector.get_columns("booking_acts")}
+    engine.dispose()
+
+    assert set(columns) == {
+        "id",
+        "seq",
+        "session_id",
+        "chat_id",
+        "message_id",
+        "operation",
+        "outcome",
+        "refusal_reason",
+        "appointment_id",
+        "practitioner_id",
+        "practitioner_full_name",
+        "starts_at",
+        "ends_at",
+        "previous_practitioner_id",
+        "previous_practitioner_full_name",
+        "previous_starts_at",
+        "created_at",
+        "settled_at",
+    }
+    required = {
+        "id",
+        "seq",
+        "session_id",
+        "chat_id",
+        "message_id",
+        "operation",
+        "practitioner_id",
+        "starts_at",
+        "created_at",
+    }
+    for name, column in columns.items():
+        assert column["nullable"] is (name not in required), name
+    # Ordered by the order of the writes, like `messages.seq`, never by a clock.
+    assert columns["seq"].get("identity") is not None
+    # The appointment's times are the clinic's local wall clock, offset-free; the two
+    # diagnostic stamps are instants.
+    for name in ("starts_at", "ends_at", "previous_starts_at"):
+        assert columns[name]["type"].timezone is False, name
+    for name in ("created_at", "settled_at"):
+        assert columns[name]["type"].timezone is True, name
+
+
+def test_booking_acts_die_with_their_chat_and_their_message() -> None:
+    engine, inspector = _inspector()
+    keys = inspector.get_foreign_keys("booking_acts")
+    engine.dispose()
+
+    by_column = {tuple(fk["constrained_columns"]): fk for fk in keys}
+    assert set(by_column) == {("chat_id",), ("message_id",)}
+    assert by_column[("chat_id",)]["referred_table"] == "chats"
+    assert by_column[("message_id",)]["referred_table"] == "messages"
+    for fk in by_column.values():
+        assert fk["options"]["ondelete"] == "CASCADE"
+
+
+def test_booking_acts_are_indexed_for_the_thread_read_and_by_message() -> None:
+    engine, inspector = _inspector()
+    indexes = {index["name"]: index for index in inspector.get_indexes("booking_acts")}
+    engine.dispose()
+
+    assert indexes["ix_booking_acts_chat_seq"]["column_names"] == ["chat_id", "seq"]
+    assert indexes["ix_booking_acts_message"]["column_names"] == ["message_id"]
+
+
+def _plant_act_owner(engine: sa.Engine) -> None:
+    """Insert the session, chat and patient message an act row hangs off."""
+    with engine.begin() as connection:
+        connection.execute(
+            sa.text("INSERT INTO sessions (id) VALUES (:s)"), {"s": _ACT_SESSION}
+        )
+        connection.execute(
+            sa.text("INSERT INTO chats (id, session_id) VALUES (:c, :s)"),
+            {"c": _ACT_CHAT, "s": _ACT_SESSION},
+        )
+        connection.execute(
+            sa.text(
+                "INSERT INTO messages (id, chat_id, sender, content) "
+                "VALUES (:m, :c, 'patient', 'book me in')"
+            ),
+            {"m": _ACT_MESSAGE, "c": _ACT_CHAT},
+        )
+
+
+def _remove_act_owner(engine: sa.Engine) -> None:
+    with engine.begin() as connection:
+        connection.execute(
+            sa.text("DELETE FROM sessions WHERE id = :s"), {"s": _ACT_SESSION}
+        )
+
+
+# A well-formed act of each shape, which each case below breaks in exactly one way.
+_VALID_BOOK: dict[str, object] = {
+    "operation": "book",
+    "outcome": None,
+    "refusal_reason": None,
+    "settled_at": None,
+    "previous_practitioner_id": None,
+    "previous_starts_at": None,
+}
+_VALID_RESCHEDULE: dict[str, object] = {
+    **_VALID_BOOK,
+    "operation": "reschedule",
+    "previous_practitioner_id": _ACT_PRACTITIONER,
+    "previous_starts_at": "2027-01-12 09:00:00",
+}
+_SETTLED = "2027-01-01 00:00:00+00"
+
+
+def _insert_act(connection: sa.Connection, id: str, row: dict[str, object]) -> None:
+    connection.execute(
+        sa.text(
+            "INSERT INTO booking_acts (id, session_id, chat_id, message_id, operation, "
+            "outcome, refusal_reason, practitioner_id, starts_at, "
+            "previous_practitioner_id, previous_starts_at, settled_at) "
+            "VALUES (:id, :s, :c, :m, :operation, :outcome, :refusal_reason, :p, "
+            "'2027-01-12 10:00:00', :previous_practitioner_id, "
+            "CAST(:previous_starts_at AS timestamp), "
+            "CAST(:settled_at AS timestamptz))"
+        ),
+        {
+            "id": id,
+            "s": _ACT_SESSION,
+            "c": _ACT_CHAT,
+            "m": _ACT_MESSAGE,
+            "p": _ACT_PRACTITIONER,
+            **row,
+        },
+    )
+
+
+def test_a_well_formed_act_of_each_shape_is_accepted() -> None:
+    # The control for the cases below: each of them fails for the one thing it breaks,
+    # not because the row it starts from was already unwritable.
+    engine, _ = _inspector()
+    _plant_act_owner(engine)
+    try:
+        with engine.begin() as connection:
+            _insert_act(connection, "01ACTVA11D0000000000000001", _VALID_BOOK)
+            _insert_act(connection, "01ACTVA11D0000000000000002", _VALID_RESCHEDULE)
+            _insert_act(
+                connection,
+                "01ACTVA11D0000000000000003",
+                {
+                    **_VALID_BOOK,
+                    "outcome": "refused",
+                    "refusal_reason": "practitioner_busy",
+                    "settled_at": _SETTLED,
+                },
+            )
+    finally:
+        _remove_act_owner(engine)
+        engine.dispose()
+
+
+@pytest.mark.parametrize(
+    ("constraint", "row"),
+    [
+        ("ck_booking_acts_operation", {**_VALID_BOOK, "operation": "rebook"}),
+        (
+            "ck_booking_acts_outcome",
+            {**_VALID_BOOK, "outcome": "maybe", "settled_at": _SETTLED},
+        ),
+        (
+            # A refusal always names its reason ...
+            "ck_booking_acts_refusal_reason_with_refused",
+            {**_VALID_BOOK, "outcome": "refused", "settled_at": _SETTLED},
+        ),
+        (
+            # ... and nothing but a refusal carries one - an unsettled act included.
+            "ck_booking_acts_refusal_reason_with_refused",
+            {**_VALID_BOOK, "refusal_reason": "practitioner_busy"},
+        ),
+        (
+            "ck_booking_acts_refusal_reason_with_refused",
+            {
+                **_VALID_BOOK,
+                "outcome": "done",
+                "refusal_reason": "practitioner_busy",
+                "settled_at": _SETTLED,
+            },
+        ),
+        (
+            # An outcome is written together with the moment it was settled ...
+            "ck_booking_acts_settled_with_outcome",
+            {**_VALID_BOOK, "outcome": "done"},
+        ),
+        (
+            # ... and a settle moment never stands without its outcome.
+            "ck_booking_acts_settled_with_outcome",
+            {**_VALID_BOOK, "settled_at": _SETTLED},
+        ),
+        (
+            # Only a reschedule has somewhere it moved from ...
+            "ck_booking_acts_previous_with_reschedule",
+            {
+                **_VALID_BOOK,
+                "previous_practitioner_id": _ACT_PRACTITIONER,
+                "previous_starts_at": "2027-01-12 09:00:00",
+            },
+        ),
+        (
+            # ... and a reschedule always has both halves of it.
+            "ck_booking_acts_previous_with_reschedule",
+            {**_VALID_RESCHEDULE, "previous_starts_at": None},
+        ),
+        (
+            "ck_booking_acts_previous_with_reschedule",
+            {**_VALID_RESCHEDULE, "previous_practitioner_id": None},
+        ),
+    ],
+)
+def test_each_booking_act_check_rejects_the_row_it_exists_for(
+    constraint: str, row: dict[str, object]
+) -> None:
+    engine, _ = _inspector()
+    _plant_act_owner(engine)
+    try:
+        with pytest.raises(IntegrityError, match=constraint), engine.begin() as conn:
+            _insert_act(conn, "01ACTNVA11D000000000000001", row)
+    finally:
+        _remove_act_owner(engine)
+        engine.dispose()
+
+
+def test_the_booking_acts_revision_downgrades_and_upgrades_cleanly() -> None:
+    alembic_cfg = Config(str(_CHAT_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_CHAT_ROOT / "alembic"))
+    engine = sa.create_engine(_sync_database_url())
+    try:
+        # An explicit revision, not "-1": a later head would otherwise silently change
+        # which revision this round trip exercises.
+        command.downgrade(alembic_cfg, "b7e2a9c41d05")
+        assert "booking_acts" not in sa.inspect(engine).get_table_names()
+
+        command.upgrade(alembic_cfg, "head")
+        assert "booking_acts" in sa.inspect(engine).get_table_names()
+    finally:
+        # Head either way, so a failure mid-round-trip does not leave every later test
+        # in this session running against a half-migrated schema.
+        command.upgrade(alembic_cfg, "head")
+        engine.dispose()

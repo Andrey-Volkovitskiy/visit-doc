@@ -38,6 +38,7 @@ from chat.core.logging import get_logger
 from chat.domain.models import (
     CLEARABLE_MARKS,
     AttentionMark,
+    BookingAct,
     Chat,
     EscalationReason,
     FaqEntry,
@@ -909,6 +910,10 @@ class ConsoleConversation:
     `emphasized`, `may_assistant_reply` and `pause_seconds_remaining` are computed in
     the same statement that reads the columns deciding them, so what a staff member is
     shown and what a turn acts on cannot disagree.
+
+    `booking_acts_version` is the number of the chat's booking acts plus the number of
+    them settled: each record and each settle moves it by one, and nothing else does.
+    A version, not a clock, so it is compared only for equality.
     """
 
     chat_id: str
@@ -920,6 +925,7 @@ class ConsoleConversation:
     emphasized: bool
     may_assistant_reply: bool
     pause_seconds_remaining: int | None
+    booking_acts_version: int
 
 
 async def list_conversations_for_console(
@@ -934,9 +940,19 @@ async def list_conversations_for_console(
     with the newest message first, then chats holding none.
 
     Every conversation appears, emphasized or not: this is a listing, not a queue.
+
+    `booking_acts_version` is a correlated subquery rather than a second join: the
+    statement already joins a chat to its messages, and a count taken over that product
+    would be multiplied by the number of messages.
     """
     last_message_at = func.max(Message.created_at).label("last_message_at")
     emphasized = _EMPHASIZED.label("emphasized")
+    booking_acts_version = (
+        select(func.count() + func.count(BookingAct.settled_at))
+        .where(BookingAct.chat_id == Chat.id, BookingAct.session_id == session_id)
+        .correlate(Chat)
+        .scalar_subquery()
+    )
     result = await session.execute(
         select(
             Chat.id,
@@ -948,6 +964,7 @@ async def list_conversations_for_console(
             emphasized,
             _MAY_ASSISTANT_REPLY,
             _PAUSE_SECONDS_REMAINING,
+            booking_acts_version,
         )
         .outerjoin(Message, Message.chat_id == Chat.id)
         .where(Chat.session_id == session_id)

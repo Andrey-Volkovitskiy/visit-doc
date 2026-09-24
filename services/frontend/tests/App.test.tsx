@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -9,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../src/App";
 import * as chatStream from "../src/lib/chatStream";
 import * as consoleApi from "../src/lib/consoleApi";
+import * as consolePoll from "../src/lib/useConsolePoll";
 import { press } from "./press";
 import type { ChatListing, ChatSummary } from "../src/lib/chatStream";
 
@@ -246,6 +248,7 @@ describe("App: the console read model reaches both panes", () => {
           attention_since: "2026-09-01T12:00:00Z",
           assistant_may_reply: false,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
       ],
     });
@@ -264,6 +267,50 @@ describe("App: the console read model reaches both panes", () => {
       "01PATIENTCHAT",
       expect.any(AbortSignal),
     );
+  });
+
+  it("re-reads the open staff thread when only its booking-record version moves", async () => {
+    // 016 FR-016a, end to end through the one poll: the row's version has to reach the
+    // staff thread, or an act settled by a turn that wrote no message reads "unknown"
+    // until some later message happens to trigger a read.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const row = (booking_acts_version: number) => ({
+        attention_total: 0,
+        conversations: [
+          {
+            chat_id: "01STAFFCHAT",
+            patient_name: "Grace Hopper",
+            last_message_at: "2026-09-01T12:00:00",
+            emphasized: false,
+            escalated: false,
+            escalation_reason: null,
+            attention_since: null,
+            assistant_may_reply: true,
+            pause_seconds_remaining: null,
+            booking_acts_version,
+          },
+        ],
+      });
+      const fetchThread = vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+      const listingSpy = vi
+        .spyOn(consoleApi, "fetchConsoleListing")
+        .mockResolvedValue(row(1));
+
+      render(<App />);
+      fireEvent.click(await screen.findByTestId("staff-conversation"));
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(1));
+
+      listingSpy.mockResolvedValue(row(2));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(consolePoll.POLL_INTERVAL_MS);
+      });
+
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+      expect(fetchThread).toHaveBeenLastCalledWith("01STAFFCHAT", expect.any(AbortSignal));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -496,6 +543,33 @@ describe("App: the console's three sections (FR-020)", () => {
       "false",
     );
   });
+
+  it("refreshes an open practitioner's bookings on the console poll's tick (016 R8)", async () => {
+    // The poll is replaced at its seam so the test can advance it without waiting out
+    // the real interval: what is under test is that App hands the tick through.
+    let tick = 1;
+    vi.spyOn(consolePoll, "useConsolePoll").mockImplementation(() => ({
+      conversations: [],
+      attentionTotal: 0,
+      tick,
+    }));
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([practitioner()]);
+    const week = vi
+      .spyOn(consoleApi, "fetchPractitionerWeek")
+      .mockResolvedValue([]);
+
+    const { rerender } = render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+    press(await screen.findByTestId("bookings-toggle"));
+    await screen.findByTestId("week-empty");
+    expect(week).toHaveBeenCalledTimes(1);
+
+    tick = 2;
+    rerender(<App />);
+
+    await waitFor(() => expect(week).toHaveBeenCalledTimes(2));
+  });
 });
 
 describe("App: the attention total in the console header (FR-021)", () => {
@@ -544,6 +618,7 @@ describe("App: the attention total in the console header (FR-021)", () => {
           attention_since: "2026-09-01T12:00:00",
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
         {
           chat_id: "b",
@@ -555,6 +630,7 @@ describe("App: the attention total in the console header (FR-021)", () => {
           attention_since: "2026-09-01T12:00:00",
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
       ],
     });

@@ -1,13 +1,18 @@
 """Pydantic request/response DTOs for the admin API.
 
-Every time here is a local wall-clock value with no offset: `HH:MM` on the wire, a naive
-`time` in Python. The validators are what stop one arriving with a zone attached.
+Every time here is a local wall-clock value with no offset: `HH:MM` (or
+`YYYY-MM-DDTHH:MM:SS`) on the wire, a naive `time` (or `datetime`) in Python. The
+validators are what stop one arriving with a zone attached.
 """
 
-from datetime import time
+from datetime import datetime, time
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from shared_models.localtime import format_local_time, parse_local_time
+from shared_models.localtime import (
+    format_local_time,
+    parse_local_datetime,
+    parse_local_time,
+)
 from shared_models.scheduling import Specialty, Weekday
 
 from scheduler.domain.models import NAME_LENGTH
@@ -104,6 +109,59 @@ class PatientOut(BaseModel):
     id: str
     chat_id: str
     full_name: str
+
+
+class PractitionerWeekQuery(BaseModel):
+    """`GET /practitioners/{id}/appointments` query: the window to read.
+
+    The caller computes the window; this side only answers for it, so it has no clock
+    and no notion of how long a week is.
+    """
+
+    ends_after: datetime
+    starts_before: datetime
+
+    @field_validator("ends_after", "starts_before", mode="before")
+    @classmethod
+    def _parse_local_datetime(cls, value: object) -> object:
+        """Raises: ValueError if `value` is not an offset-free local date-time."""
+        if isinstance(value, str):
+            return parse_local_datetime(value)
+        return value
+
+    @field_validator("ends_after", "starts_before")
+    @classmethod
+    def _reject_timezone_aware(cls, value: datetime) -> datetime:
+        """Raises: ValueError if `value` carries a timezone offset."""
+        if value.tzinfo is not None:
+            raise ValueError("date-times must carry no timezone offset")
+        return value
+
+    @model_validator(mode="after")
+    def _reject_empty_window(self) -> "PractitionerWeekQuery":
+        """Raises: ValueError if the window does not end after it starts."""
+        if self.starts_before <= self.ends_after:
+            raise ValueError("starts_before must be after ends_after")
+        return self
+
+
+class PractitionerAppointmentOut(BaseModel):
+    """One standing appointment on a practitioner's calendar, with its patient named."""
+
+    id: str
+    patient_full_name: str
+    starts_at: str
+    ends_at: str
+
+
+class PractitionerWeekOut(BaseModel):
+    """A practitioner's standing appointments in a window, in start order.
+
+    An empty list means nobody is booked in the window, and only that: a practitioner
+    this session cannot see is a 404, never an empty week.
+    """
+
+    appointments: list[PractitionerAppointmentOut]
 
 
 def to_working_range_out(weekday: Weekday, start: time, end: time) -> WorkingRangeOut:

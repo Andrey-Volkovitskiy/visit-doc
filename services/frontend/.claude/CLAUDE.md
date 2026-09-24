@@ -34,13 +34,16 @@ putting `export const x: number = "nope"` in `src/`: the first form exits 0, the
 src/
 ├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
-│                        #   StaffThread, PractitionerAdmin, FaqAdmin — this app's own components
+│                        #   StaffThread, PractitionerAdmin, PractitionerWeek, FaqAdmin — this
+│                        #   app's own components
 ├── components/ui/       # vendored shadcn source: tabs, dialog, dropdown-menu, switch,
 │                        #   button, input, textarea — library code this repo owns
 ├── lib/chatStream.ts    # the patient side's network layer: every fetch and the NDJSON parser
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
+├── lib/localTime.ts     # how the console writes a naive local time (day label, HH:MM), shared
+│                        #   by the practitioner's week and the booking acts on a thread
 ├── lib/utils.ts         # shadcn's cn() — clsx + tailwind-merge
 ├── styles/app.css       # THE global stylesheet: tailwind, @font-face, @theme, the shadcn mapping
 ├── styles/fonts/        # IBM Plex Sans 400/500/600 woff2, self-hosted, with OFL.txt beside them
@@ -146,23 +149,37 @@ hook named after an appearance breaks when the appearance changes, which in a de
 one thing guaranteed to happen. **Existing hooks may not be removed or renamed**; new ones may be
 added.
 
+Two hooks were retired despite that rule, deliberately: `booking-outcome-stub` and
+`appointments-stub` each named an *absence* — 015's placeholder for a booking record and an
+appointment list that did not exist yet — and spec 016 (FR-022) built both, so keeping the hooks
+would have kept names pointing at nothing. Their successors are `booking-act` and
+`bookings-toggle`/`practitioner-week`. The rule still stands for any hook naming a thing that
+exists.
+
 | Component | Hooks |
 |---|---|
 | `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `attention-total`, `region-loading` |
 | `ChatList` | `chat-list`, `chat-list-item`, `chat-overflow`, `chat-overflow-item`, `delete-confirm` |
 | `ChatWindow` | `messages`, `no-chat`, `error`, `length-error`, `char-count`, `working-indicator`, `thread-greeting` |
 | `MessageView` | `message`, `role-label`, `sender-icon`, `attention-mark` |
-| `OutcomeDisclosure` | `outcome-marker`, `request-outcome`, `outcome-question`, `outcome-unanswered`, `verdict-mark`, `citations`, `booking-outcome-stub` |
+| `OutcomeDisclosure` | `outcome-marker`, `request-outcome`, `outcome-question`, `outcome-unanswered`, `verdict-mark`, `citations`, `booking-act` |
 | `StaffConsole` | `staff-console`, `staff-conversations`, `staff-conversation`, `staff-no-conversations`, `region-loading` |
 | `StaffThread` | `staff-thread`, `staff-no-thread`, `staff-empty-thread`, `staff-error`, `staff-length-error`, `char-count`, `assistant-switch`, `assistant-explanation`, `pause-countdown` |
-| `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `appointments-stub`, `discard-confirm` |
+| `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `bookings-toggle`, `discard-confirm` |
+| `PractitionerWeek` | `practitioner-week`, `week-day`, `week-appointment`, `week-empty`, `week-error`, `region-loading` |
 | `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm` |
 
 Data attributes carry state a test would otherwise have to read off a colour: `data-sender` and
 `data-mine` on a message, `data-burst-start` on the first of a sender's run, `data-chat-id` on a
 chat tab, `data-emphasized` on a conversation, `data-position` and `data-verdict` on an outcome,
 `data-mark` on an attention mark, `data-outcome-state` (`served` / `needs-person`) on an evidence
-marker, and `data-region` on a `region-loading`.
+marker, `data-region` on a `region-loading` (`practitioner-week` for the week's loading line),
+`data-operation` (`book` / `reschedule` / `cancel`) and `data-outcome` (`done` / `unchanged` /
+`refused` / `not_sent` / `unknown` — an act with no recorded outcome is attributed `unknown`, never
+as a sixth value) on a `booking-act`, and `data-failure` (`not_found` / `unreadable`) on a
+`week-error`. `bookings-toggle` is also addressable as
+`getByRole("button", { name: /show bookings|hide bookings/i, expanded })`; the testid exists because
+a roster holds one per practitioner, so a test scopes it `within` its `practitioner` block.
 
 ### Driving the vendored controls
 

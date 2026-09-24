@@ -2,7 +2,11 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StaffThread } from "../src/components/StaffThread";
 import * as consoleApi from "../src/lib/consoleApi";
-import type { Message, RequestOutcome } from "../src/lib/chatStream";
+import type {
+  BookingActOutcome,
+  Message,
+  RequestOutcome,
+} from "../src/lib/chatStream";
 import {
   READ_TIMEOUT_MESSAGE,
   READ_TIMEOUT_MS,
@@ -15,6 +19,7 @@ function message(overrides: Partial<Message> = {}): Message {
     content: "is anyone there?",
     request_outcomes: null,
     attention_mark: null,
+    booking_acts: null,
     created_at: "2026-09-01T12:00:00",
     ...overrides,
   };
@@ -573,6 +578,117 @@ describe("StaffThread: following the poll", () => {
       />
     );
   }
+
+  describe("when only the booking record changes (016 FR-016a, SC-007)", () => {
+    const AT = "2026-09-01T12:00:00";
+
+    function withActs(bookingActsVersion: number, pollTick: number) {
+      return (
+        <StaffThread
+          chatId={CHAT_ID}
+          assistantMayReply={false}
+          pauseSecondsRemaining={null}
+          lastMessageAt={AT}
+          bookingActsVersion={bookingActsVersion}
+          pollTick={pollTick}
+          onSetAssistant={vi.fn()}
+        />
+      );
+    }
+
+    /** The patient's message with one cancellation on it, settled or not yet. */
+    function cancelling(outcome: BookingActOutcome | null): Message[] {
+      return thread({
+        content: "please cancel my Friday appointment",
+        booking_acts: [
+          {
+            operation: "cancel",
+            outcome,
+            refusal_reason: null,
+            practitioner_full_name: "Andreas Vesalius",
+            starts_at: "2027-01-15T09:00:00",
+            ends_at: null,
+            previous_practitioner_full_name: null,
+            previous_starts_at: null,
+          },
+        ],
+      });
+    }
+
+    it("re-reads once when an act settles, and the outcome replaces unknown", async () => {
+      // The turn cancelled the appointment and then failed before replying, so no
+      // message was written after the act and `last_message_at` never moves. Only the
+      // booking-record version says the act has since settled.
+      const fetchThread = vi
+        .spyOn(consoleApi, "fetchThread")
+        .mockResolvedValueOnce(cancelling(null))
+        .mockResolvedValue(cancelling("done"));
+
+      const { rerender } = render(withActs(1, 1));
+      await screen.findByTestId("outcome-marker");
+      fireEvent.click(screen.getByTestId("outcome-marker"));
+      expect(screen.getByTestId("booking-act")).toHaveAttribute("data-outcome", "unknown");
+      expect(screen.getByTestId("booking-act")).toHaveTextContent("Outcome unknown");
+
+      rerender(withActs(2, 2));
+
+      await waitFor(() =>
+        expect(screen.getByTestId("booking-act")).toHaveAttribute("data-outcome", "done"),
+      );
+      expect(screen.getByTestId("booking-act")).not.toHaveTextContent(/unknown/i);
+      expect(screen.getByTestId("outcome-marker")).toHaveAttribute(
+        "data-outcome-state",
+        "served",
+      );
+      // Once, not once per tick: the pair it re-read for is now the pair it holds.
+      rerender(withActs(2, 3));
+      rerender(withActs(2, 4));
+      await act(async () => undefined);
+      expect(fetchThread).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not re-read while the pair stays the same", async () => {
+      const fetchThread = vi
+        .spyOn(consoleApi, "fetchThread")
+        .mockResolvedValue(cancelling("done"));
+
+      const { rerender } = render(withActs(3, 1));
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(1));
+
+      rerender(withActs(3, 2));
+      rerender(withActs(3, 3));
+      await act(async () => undefined);
+
+      expect(fetchThread).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries a version's re-read that failed, on a later tick reporting the same pair", async () => {
+      // The same "accounted for only on landing" rule as for a message: a failed read
+      // must leave the version owed, or the settled outcome never replaces "unknown".
+      const fetchThread = vi
+        .spyOn(consoleApi, "fetchThread")
+        .mockResolvedValueOnce(cancelling(null))
+        .mockRejectedValueOnce(new Error("network blip"))
+        .mockResolvedValue(cancelling("done"));
+
+      const { rerender } = render(withActs(1, 1));
+      await screen.findByTestId("outcome-marker");
+
+      rerender(withActs(2, 2));
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+      await act(async () => undefined);
+
+      rerender(withActs(2, 3));
+
+      await waitFor(() =>
+        expect(screen.getByTestId("outcome-marker")).toHaveAttribute(
+          "data-outcome-state",
+          "served",
+        ),
+      );
+      expect(fetchThread).toHaveBeenCalledTimes(3);
+    });
+  });
 
   it("loads the thread again when the poll reports a newer message", async () => {
     // A patient wrote into the conversation this staff member is reading. Nothing was

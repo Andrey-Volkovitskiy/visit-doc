@@ -20,12 +20,13 @@ from chat.core.logging import get_logger
 from chat.db.session import session_factory
 from chat.domain.models import Chat
 from chat.domain.schemas import (
+    BookingActOut,
     ChatHistoryResponse,
     ChatListResponse,
     ChatSummary,
     MessageOut,
 )
-from chat.repositories import chat_repository
+from chat.repositories import booking_act_repository, chat_repository
 
 router = APIRouter()
 
@@ -73,10 +74,14 @@ async def list_chats(request: Request) -> ChatListResponse:
 
 @router.get("/chats/{chat_id}/messages")
 async def get_chat_messages(chat_id: str, request: Request) -> ChatHistoryResponse:
-    """Return one chat's messages, oldest first.
+    """Return one chat's messages, oldest first, each with its booking acts.
 
     Raises: HTTPException 404 if there is no session cookie, or `chat_id` belongs to
         another session.
+
+    The chat's acts are read in one scoped query and grouped by the message they hang
+    off, so only a message that holds at least one is given a list - every other
+    message's `booking_acts` stays None, and an empty list is never built.
     """
     session_id = read_session_id(request)
     if session_id is None:
@@ -87,9 +92,22 @@ async def get_chat_messages(chat_id: str, request: Request) -> ChatHistoryRespon
         if chat is None:
             raise HTTPException(status_code=404, detail="chat not found")
         messages = await chat_repository.list_messages(db_session, chat.id)
+        acts = await booking_act_repository.list_for_chat(
+            db_session, chat.id, session_id
+        )
 
+    acts_by_message: dict[str, list[BookingActOut]] = {}
+    for act in acts:
+        acts_by_message.setdefault(act.message_id, []).append(
+            BookingActOut.model_validate(act)
+        )
     return ChatHistoryResponse(
-        messages=[MessageOut.model_validate(m) for m in messages]
+        messages=[
+            MessageOut.model_validate(m).model_copy(
+                update={"booking_acts": acts_by_message.get(m.id)}
+            )
+            for m in messages
+        ]
     )
 
 

@@ -65,6 +65,15 @@ interface StaffThreadProps {
    */
   lastMessageAt?: string | null;
   /**
+   * This conversation's booking-record version, from the same poll row (016 FR-016a).
+   *
+   * It changes when an act is recorded or settled, and the thread is refetched when it
+   * does, exactly as for a new message. That is the only thing that re-reads a turn
+   * which settled an act and then failed before writing a reply: no message moved
+   * `lastMessageAt`, and without this the act would read "unknown" until one did.
+   */
+  bookingActsVersion?: number;
+  /**
    * How many times that poll has answered, which changes on every tick.
    *
    * What makes a *retry* possible: `lastMessageAt` stops changing once the newest
@@ -90,6 +99,7 @@ export function StaffThread({
   assistantMayReply,
   pauseSecondsRemaining,
   lastMessageAt,
+  bookingActsVersion,
   pollTick,
   onSetAssistant,
 }: StaffThreadProps) {
@@ -185,6 +195,7 @@ export function StaffThread({
   useThreadReads<Message[]>({
     chatId,
     lastMessageAt,
+    bookingActsVersion,
     pollTick,
     // Nothing pauses this pane's reads. A refetch answered from before a post was
     // stored used to take the reply back off the screen, which is what the pause was
@@ -383,6 +394,7 @@ export function StaffThread({
             requestOutcomes={message.request_outcomes}
             showOutcomes
             mark={message.attention_mark}
+            bookingActs={message.booking_acts}
           />
         ))}
       </div>

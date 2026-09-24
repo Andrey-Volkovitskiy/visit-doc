@@ -514,3 +514,48 @@ async def test_the_reset_revision_removes_every_session_s_scheduling_data(
     for table in ("practitioners", "patients", "appointments"):
         remaining = await db_session.execute(text(f"SELECT count(*) FROM {table}"))
         assert remaining.scalar_one() == 0, f"{table} survived the reset"
+
+
+# --- 016: one practitioner's week ----------------------------------------------------
+
+
+async def test_the_practitioner_week_index_exists(db_session: AsyncSession) -> None:
+    definition = await _index_def(
+        db_session, "ix_appointments_practitioner_status_starts"
+    )
+    assert definition is not None
+    assert "(practitioner_id, status, starts_at)" in definition
+
+
+def test_the_practitioner_week_revision_downgrades_and_upgrades_cleanly() -> None:
+    """Round-trip the 016 revision, and leave the schema back at head.
+
+    Synchronous and outside `db_session` for the reason the 006 round trip gives.
+    """
+    from shared_db import sync_database_url
+    from sqlalchemy import create_engine as create_sync_engine
+
+    alembic_cfg = Config(str(_SCHEDULER_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_SCHEDULER_ROOT / "alembic"))
+    engine = create_sync_engine(sync_database_url("SCHEDULER_DATABASE_URL"))
+
+    def week_indexes() -> int:
+        with engine.connect() as connection:
+            return int(
+                connection.execute(
+                    text(
+                        "SELECT count(*) FROM pg_indexes WHERE indexname = "
+                        "'ix_appointments_practitioner_status_starts'"
+                    )
+                ).scalar_one()
+            )
+
+    try:
+        command.downgrade(alembic_cfg, "e3c07a5b9d14")
+        assert week_indexes() == 0
+
+        command.upgrade(alembic_cfg, "head")
+        assert week_indexes() == 1
+    finally:
+        command.upgrade(alembic_cfg, "head")
+        engine.dispose()

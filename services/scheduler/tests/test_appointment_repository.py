@@ -9,7 +9,7 @@ from scheduler.repositories.appointment_repository import (
     BookingCreated,
     BookingRefused,
 )
-from shared_models.scheduling import BookingFailureReason
+from shared_models.scheduling import AppointmentStatus, BookingFailureReason
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -633,3 +633,170 @@ async def test_omitting_the_exclusion_leaves_every_appointment_in_place(
     )
 
     assert len(busy) == 1
+
+
+# --- one practitioner's week ---------------------------------------------------------
+
+_WEEK_NOW = datetime(2026, 9, 24, 14, 30)
+_WEEK_END = datetime(2026, 10, 1, 0, 0)
+
+
+async def _seed_appointment(
+    session: AsyncSession,
+    session_id: str,
+    patient_id: str,
+    practitioner_id: str,
+    starts_at: datetime,
+    *,
+    minutes: int = 60,
+    status: AppointmentStatus = AppointmentStatus.STANDING,
+) -> str:
+    from .conftest import make_appointment
+
+    appointment = make_appointment(
+        session_id,
+        patient_id,
+        practitioner_id,
+        starts_at,
+        starts_at + timedelta(minutes=minutes),
+        status=status,
+    )
+    session.add(appointment)
+    await session.commit()
+    return appointment.id
+
+
+async def _week(
+    session: AsyncSession, session_id: str, practitioner_id: str
+) -> list["appointment_repository.PractitionerAppointment"]:
+    return await appointment_repository.list_for_practitioner(
+        session,
+        session_id=session_id,
+        practitioner_id=practitioner_id,
+        ends_after=_WEEK_NOW,
+        starts_before=_WEEK_END,
+    )
+
+
+async def test_the_week_lists_standing_appointments_in_start_order_with_names(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    ada = await seed_patient(db_session, session_id, full_name="Ada")
+    bram = await seed_patient(db_session, session_id, full_name="Bram")
+    # Inserted out of order, so an unordered read cannot pass by accident.
+    later = await _seed_appointment(
+        db_session, session_id, bram.id, practitioner.id, datetime(2026, 9, 28, 9, 0)
+    )
+    under_way = await _seed_appointment(
+        db_session, session_id, ada.id, practitioner.id, datetime(2026, 9, 24, 14, 0)
+    )
+    # The last hour of the seventh day still starts before the bound.
+    last_day = await _seed_appointment(
+        db_session, session_id, ada.id, practitioner.id, datetime(2026, 9, 30, 23, 0)
+    )
+
+    week = await _week(db_session, session_id, practitioner.id)
+
+    assert week == [
+        appointment_repository.PractitionerAppointment(
+            id=under_way,
+            patient_full_name="Ada",
+            starts_at=datetime(2026, 9, 24, 14, 0),
+            ends_at=datetime(2026, 9, 24, 15, 0),
+        ),
+        appointment_repository.PractitionerAppointment(
+            id=later,
+            patient_full_name="Bram",
+            starts_at=datetime(2026, 9, 28, 9, 0),
+            ends_at=datetime(2026, 9, 28, 10, 0),
+        ),
+        appointment_repository.PractitionerAppointment(
+            id=last_day,
+            patient_full_name="Ada",
+            starts_at=datetime(2026, 9, 30, 23, 0),
+            ends_at=datetime(2026, 10, 1, 0, 0),
+        ),
+    ]
+
+
+async def test_the_week_leaves_out_a_cancelled_appointment(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    await _seed_appointment(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 9, 25, 9, 0),
+        status=AppointmentStatus.CANCELLED,
+    )
+
+    assert await _week(db_session, session_id, practitioner.id) == []
+
+
+async def test_the_week_leaves_out_an_appointment_that_has_ended(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    await _seed_appointment(
+        db_session, session_id, patient.id, practitioner.id, datetime(2026, 9, 24, 9, 0)
+    )
+    # Ending at exactly `ends_after` is over: the interval is half-open.
+    await _seed_appointment(
+        db_session,
+        session_id,
+        patient.id,
+        practitioner.id,
+        datetime(2026, 9, 24, 13, 30),
+    )
+
+    assert await _week(db_session, session_id, practitioner.id) == []
+
+
+async def test_the_week_leaves_out_an_appointment_starting_at_the_upper_bound(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    await _seed_appointment(
+        db_session, session_id, patient.id, practitioner.id, _WEEK_END
+    )
+
+    assert await _week(db_session, session_id, practitioner.id) == []
+
+
+async def test_the_week_leaves_out_another_practitioners_appointment(
+    db_session: AsyncSession,
+) -> None:
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id, full_name="Dr A")
+    other = await seed_practitioner(db_session, session_id, full_name="Dr B")
+    patient = await seed_patient(db_session, session_id)
+    await _seed_appointment(
+        db_session, session_id, patient.id, other.id, datetime(2026, 9, 25, 9, 0)
+    )
+
+    assert await _week(db_session, session_id, practitioner.id) == []
+
+
+async def test_the_week_is_empty_when_asked_for_from_another_session(
+    db_session: AsyncSession,
+) -> None:
+    # The session is a predicate of the read itself: the practitioner's own id, asked
+    # for under another session, resolves nothing.
+    session_id = new_id()
+    practitioner = await seed_practitioner(db_session, session_id)
+    patient = await seed_patient(db_session, session_id)
+    await _seed_appointment(
+        db_session, session_id, patient.id, practitioner.id, datetime(2026, 9, 25, 9, 0)
+    )
+
+    assert await _week(db_session, new_id(), practitioner.id) == []

@@ -855,3 +855,77 @@ claim that this is a presentation-only change rests on.
   four primitives *and* a plain `<button>` exactly once; the 234 existing `fireEvent.click` call
   sites were left alone, since rewriting passing tests to use a helper they do not need is churn
   with a migration's risk.
+
+## What Staff Can See of the Schedule: technology choices
+
+`specs/016-staff-booking-visibility/` (ROADMAP Phase 3a's two leftovers) gives staff a record of
+what the assistant did to the schedule on each message — a **booking act** per attempt to book,
+reschedule or cancel — and a practitioner's standing appointments for the coming seven days,
+inside that practitioner's block on the roster behind a Show/Hide bookings toggle. Seven choices
+carried a real tradeoff.
+
+- **An act hangs off the patient message, not the reply.** The reply is the obvious anchor — it is
+  where the assistant says what it did — and it is missing in exactly the turns a person most needs
+  this record for: one that failed after its write, one staff took over, one a newer message
+  cancelled. The patient message the turn was answering always exists, so the record always has
+  somewhere to live. The cost is that the console shows an act under the question rather than
+  under the answer, and the wire says so: `booking_acts` appears only on `sender = "patient"`
+  messages, `null` when nothing was attempted and never `[]`.
+- **Write-ahead, settled once, and NULL read as unknown.** An act is inserted and committed, with
+  no outcome, *before* the request leaves for the scheduler; its answer then settles it with one
+  `UPDATE` whose `WHERE` carries `outcome IS NULL`, so a second settle is a no-op. The alternative
+  — write the act once the answer is back — records nothing for precisely the attempts whose
+  outcome is in doubt: a handler that raised, a turn cancelled mid-call, a settle that failed. With
+  the row written first, each of those leaves an act with no outcome, and the console renders that
+  as "Outcome unknown … may or may not have been …", never as nothing having happened. And an act
+  that could not be written is never sent: the tool answers `unavailable`, so the record cannot be
+  missing a write that reached the scheduler. The cost is a commit before every schedule-changing
+  call, and a row that says "unknown" for an attempt that may in fact have succeeded — which is
+  the honest thing to say about it. NULL (no outcome was ever written) and `unknown` (the tool's
+  own answer was that it could not tell) are kept distinct in storage and on the wire, and rendered
+  with the same words.
+- **Recorded in the tool registry, not in each handler.** A write tool declares what it is about to
+  do (`Tool.plan_act`, reading its arguments with the handler's own helpers) and
+  `ToolRegistry` records around the handler through a write-only `BookingActRecorder` port. Three
+  copies of begin/settle in three handlers would be three places to get the order wrong, and a
+  fourth write tool that forgot them would silently leave its attempts unrecorded. The cost is that
+  arguments are parsed twice per write — deterministically, over the same dict.
+- **A table, not a JSONB column beside `request_outcomes`.** 011 chose JSONB for `request_outcomes`
+  because a turn's outcomes are written once, together. Acts are not: each is inserted and later
+  updated by id, and the booking loop dispatches one model response's tool calls concurrently
+  (`asyncio.gather`), so two settles on one JSONB array would be a read-modify-write race with a
+  lost update waiting in it. Rows have no such race. On the wire it is still its own shape on the
+  message, never an entry in `request_outcomes` and never a `FaqVerdict` value: an act is a
+  performed change, not a claim the corpus grounded. Cascades follow the message, so deleting a
+  chat or a session removes its acts.
+- **A snapshot, not a live view.** An act stores the practitioner's *name* as known when the act
+  ran — from the turn's roster read, overwritten on settle by any name the scheduler's answer
+  carried — and is never touched again after it is settled. Nothing joins it back to scheduler
+  data, and the ids stay in storage and off the wire. So a later reschedule, a renamed or deleted
+  practitioner, or a cancelled appointment does not rewrite what the record says happened at the
+  time. The cost is that the record can disagree with the schedule *as it is now*; that is what the
+  week view is for. A name nobody reported is shown as "a practitioner not named in the record"
+  rather than an id or a guess.
+- **The week is a scheduler REST read, with its window computed in chat from the browser's clock.**
+  `ListAppointments` is the agent's gRPC call and is scoped by patient, never by practitioner, so
+  answering from it would mean listing every patient's appointments and filtering them, or widening
+  the agent's contract to serve a staff screen. The console already speaks REST to the scheduler
+  for practitioner CRUD, so the read is `GET /practitioners/{id}/appointments` beside the
+  practitioner itself, with session, practitioner, standing status and both ends of the window in
+  one `WHERE`. The window is one pure function in chat, `practitioner_week_bounds(local_now)`:
+  from the browser's own offset-free `local_now` to midnight at the start of the eighth day, so the
+  whole seventh day is in it and midnight crossing needs nothing. The scheduler takes both bounds as
+  given and knows nothing of weeks; the browser sends only its clock, so the console exposes the
+  product's read rather than a general range query. An open list re-reads on the console poll's
+  tick with at most one read in flight, and a failed refresh replaces the list with an error rather
+  than leaving the last good one on screen as if it were current.
+- **The staff thread re-reads on a counter, not a clock.** A turn can settle an act without writing
+  a message — the failed turn a person is paged for is exactly that case — so `last_message_at`
+  alone would leave "unknown" on screen after the act had settled. Each console listing row
+  therefore carries `booking_acts_version`: the chat's number of acts plus the number of them
+  settled. Rows are only inserted and settled once, and deleted only with their chat, so every
+  change moves it and nothing else does. It is compared for equality only; `max(settled_at)` was
+  rejected because two settles in one clock tick look like one. It rides the 2-second poll the
+  console already runs, so it costs one correlated aggregate and no new request — rather than a
+  push channel, or bending `last_message_at`, which the list shows and orders by, into meaning
+  "something changed".

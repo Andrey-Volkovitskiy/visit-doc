@@ -18,6 +18,7 @@ from ulid import ULID
 from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
 from chat.agent import history
+from chat.agent.booking_acts import DatabaseBookingActRecorder
 from chat.agent.escalation import EscalationRequests, apply_escalation
 from chat.agent.generation_registry import (
     clear_if_current,
@@ -560,6 +561,12 @@ async def _event_stream(
             # The ambient facts only. Which tools a node may call is that node's own
             # declaration, made beside it in `agent/graph.py` - this side has no
             # business deciding what the booking step is allowed to reach for.
+            #
+            # Every change to the schedule this turn attempts is recorded on the
+            # message it is answering - the newest patient message, the one a merged
+            # burst ends on - so the record does not depend on a reply ever being
+            # stored. Its writes are short transactions of their own, outside the
+            # chat's lock.
             tool_context = ToolContext(
                 channel=scheduling_channel,
                 settings=get_settings(),
@@ -567,6 +574,12 @@ async def _event_stream(
                 patient_id=chat.patient_id,
                 local_now=local_now,
                 escalation=escalation,
+                acts=DatabaseBookingActRecorder(
+                    session_factory,
+                    session_id=chat.session_id,
+                    chat_id=chat.id,
+                    message_id=patient_message.id,
+                ),
             )
 
             async def run_pipeline() -> None:

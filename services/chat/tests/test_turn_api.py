@@ -1,8 +1,9 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from datetime import datetime
 from enum import StrEnum
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
@@ -16,10 +17,14 @@ from chat.agent.escalation import (
 )
 from chat.agent.tools.staff_tools import ESCALATE_TO_STAFF
 from chat.api import turn as turn_api
+from chat.clients.scheduling import AppointmentInfo, BookingSuccess, PractitionerInfo
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
 from chat.domain.models import (
     AttentionMark,
+    BookingAct,
+    BookingActOperation,
+    BookingActOutcome,
     Chat,
     EscalationReason,
     MessageSender,
@@ -33,12 +38,13 @@ from chat.domain.schemas import (
 )
 from chat.main import app
 from chat.rag.indexing import publish_revision, remove_entry_chunks
-from chat.repositories import chat_repository, faq_repository
+from chat.repositories import booking_act_repository, chat_repository, faq_repository
 from chat.repositories.chat_repository import ConversationState
 from chat.repositories.qdrant_repository import create_client, ensure_collection
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+from shared_models.scheduling import AppointmentStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 from structlog.testing import capture_logs
 from ulid import ULID
@@ -2874,3 +2880,210 @@ async def test_a_failed_turn_whose_staff_call_also_fails_reports_the_failure_its
     assert len(failed_call) == 1
     assert "the escalation write went too" in failed_call[0]["error_detail"]
     assert await _marks_in(chat_id) == [None]
+
+
+# --- 016: what the assistant did to the schedule is recorded on the patient message --
+
+_OSLER_ID = "01PRACT0000000000000000000"
+_BOOKED_START = "2026-08-18T09:00:00"
+_BOOK_OSLER = (
+    "book_appointment",
+    {"practitioner_id": _OSLER_ID, "starts_at": _BOOKED_START},
+)
+
+
+def _roster() -> AsyncMock:
+    return AsyncMock(
+        return_value=[
+            PractitionerInfo(
+                id=_OSLER_ID,
+                full_name="William Osler",
+                specialty="General Practice",
+                appointment_duration_minutes=60,
+                schedule=(),
+            )
+        ]
+    )
+
+
+def _booking_success() -> BookingSuccess:
+    return BookingSuccess(
+        appointment=AppointmentInfo(
+            id="01APPT00000000000000000000",
+            patient_id="01PATENT000000000000000000",
+            patient_full_name="Ada",
+            practitioner_id=_OSLER_ID,
+            practitioner_full_name="Sir William Osler",
+            practitioner_specialty="General Practice",
+            starts_at=datetime(2026, 8, 18, 9, 0),
+            ends_at=datetime(2026, 8, 18, 10, 0),
+            status=AppointmentStatus.STANDING,
+        ),
+        idempotent_replay=False,
+    )
+
+
+async def _give_the_chat_a_patient(chat_id: str) -> str:
+    """Record a scheduler-side patient on `chat_id`, as provisioning would have.
+
+    Returns: the chat's session id.
+    """
+    session_id = await _session_of(chat_id)
+    async with session_factory() as db_session:
+        await chat_repository.set_patient(
+            db_session, chat_id, session_id, "01PATENT000000000000000000", "Ada"
+        )
+    return session_id
+
+
+async def _plant_patient_message(chat_id: str, session_id: str, content: str) -> str:
+    """Write an unanswered patient message, the start of a burst the next turn ends."""
+    async with session_factory() as db_session:
+        message = await chat_repository.create_message(
+            db_session,
+            id=str(ULID()),
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content=content,
+        )
+    assert message is not None
+    return message.id
+
+
+async def _acts_of(chat_id: str, session_id: str) -> list[BookingAct]:
+    async with session_factory() as db_session:
+        return await booking_act_repository.list_for_chat(
+            db_session, chat_id, session_id
+        )
+
+
+async def _patient_messages(chat_id: str) -> list[str]:
+    async with session_factory() as db_session:
+        messages = await chat_repository.list_messages(db_session, chat_id)
+    return [m.id for m in messages if m.sender == MessageSender.PATIENT]
+
+
+async def test_a_booking_turn_records_its_write_on_the_message_it_answered() -> None:
+    await engine.dispose()
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.clients.scheduling.list_practitioners", _roster()),
+        patch(
+            "chat.clients.scheduling.book_appointment",
+            AsyncMock(return_value=_booking_success()),
+        ),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING], booking_tool_calls=[[_BOOK_OSLER]]
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                session_id = await _give_the_chat_a_patient(chat_id)
+                earlier = await _plant_patient_message(
+                    chat_id, session_id, "I need to see someone"
+                )
+                response = await async_turn(http, "Dr. Osler on Tuesday at nine")
+
+    assert response.status_code == 200
+    earlier_id, answering_id = await _patient_messages(chat_id)
+    assert earlier_id == earlier
+    (act,) = await _acts_of(chat_id, session_id)
+    # The message the turn answered - the last of the burst it merged - and not the
+    # burst's first message, nor the reply.
+    assert act.message_id == answering_id
+    assert act.operation == BookingActOperation.BOOK
+    assert act.outcome == BookingActOutcome.DONE
+    # The scheduler's own name, which overwrote the roster's on settle.
+    assert act.practitioner_full_name == "Sir William Osler"
+    assert act.appointment_id == "01APPT00000000000000000000"
+    assert act.ends_at == datetime(2026, 8, 18, 10, 0)
+
+
+async def test_a_turn_that_fails_after_its_write_keeps_the_record_of_it() -> None:
+    # The turn a person is paged for is exactly the one whose write they need to see:
+    # the reply never came, but the appointment may well exist.
+    await engine.dispose()
+    client = fake_anthropic_client(
+        intents=[IntentLabel.BOOKING], booking_tool_calls=[[_BOOK_OSLER]]
+    )
+    answer = client.messages.create.side_effect
+    booking_calls = 0
+
+    async def _outage_after_the_write(*args: object, **kwargs: object) -> object:
+        nonlocal booking_calls
+        if kwargs.get("tools") is not None:
+            booking_calls += 1
+            if booking_calls > 1:
+                raise _model_outage()
+        return await answer(*args, **kwargs)
+
+    client.messages.create.side_effect = _outage_after_the_write
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.clients.scheduling.list_practitioners", _roster()),
+        patch(
+            "chat.clients.scheduling.book_appointment",
+            AsyncMock(return_value=_booking_success()),
+        ),
+    ):
+        mock_anthropic_cls.return_value = client
+        with TestClient(app, raise_server_exceptions=False):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                session_id = await _give_the_chat_a_patient(chat_id)
+                await async_turn(http, "Dr. Osler on Tuesday at nine")
+
+    assert booking_calls == 2
+    (answering_id,) = await _patient_messages(chat_id)
+    assert await _marks_in(chat_id) == [AttentionMark.ASSISTANT_FAILED]
+    (act,) = await _acts_of(chat_id, session_id)
+    assert act.message_id == answering_id
+    assert act.outcome == BookingActOutcome.DONE
+
+
+async def test_a_turn_superseded_mid_write_leaves_its_act_unsettled() -> None:
+    # The request may have reached the scheduler, and its answer was never recorded:
+    # the act stays with no outcome, which is read as unknown - never as not sent.
+    await engine.dispose()
+    started = asyncio.Event()
+
+    async def _never_answers(*_args: object, **_kwargs: object) -> BookingSuccess:
+        started.set()
+        await asyncio.Event().wait()
+        raise AssertionError("unreachable")
+
+    with (
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+        patch("chat.clients.scheduling.list_practitioners", _roster()),
+        patch("chat.clients.scheduling.book_appointment", _never_answers),
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client(
+            intents=[IntentLabel.BOOKING], booking_tool_calls=[[_BOOK_OSLER]]
+        )
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app, raise_app_exceptions=False),
+                base_url="http://t",
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                session_id = await _give_the_chat_a_patient(chat_id)
+                first = asyncio.create_task(
+                    async_turn(http, "Dr. Osler on Tuesday at nine")
+                )
+                await asyncio.wait_for(started.wait(), timeout=5)
+                second = await async_turn(http, "actually, never mind")
+                await first
+
+    assert second.status_code == 200
+    superseded_id, _ = await _patient_messages(chat_id)
+    (act,) = await _acts_of(chat_id, session_id)
+    assert act.message_id == superseded_id
+    assert act.outcome is None
+    assert act.settled_at is None

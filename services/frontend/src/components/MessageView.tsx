@@ -1,5 +1,9 @@
 import { Bot, Stethoscope, User } from "lucide-react";
-import type { AttentionMark, RequestOutcome } from "../lib/chatStream";
+import type {
+  AttentionMark,
+  BookingAct,
+  RequestOutcome,
+} from "../lib/chatStream";
 import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
 import { OutcomeDisclosure } from "./OutcomeDisclosure";
 
@@ -44,6 +48,14 @@ interface MessageViewProps {
    * is a note for whoever has to act on it, not a status the sender is owed.
    */
   mark?: AttentionMark | null;
+  /**
+   * What the assistant tried to do to the schedule for this message (spec 016).
+   *
+   * Only a patient message ever carries any, and only the staff side draws them, under
+   * the same `showOutcomes` gate as the FAQ outcomes: the patient pane shows exactly
+   * what it showed before this feature (FR-021).
+   */
+  bookingActs?: BookingAct[] | null;
   /**
    * Which sender counts as the reader's own, for this pane.
    *
@@ -105,6 +117,7 @@ export function MessageView({
   requestOutcomes,
   showOutcomes = false,
   mark,
+  bookingActs,
   readerIs = "patient",
 }: MessageViewProps) {
   const label = ROLE_LABEL[sender];
@@ -200,6 +213,7 @@ export function MessageView({
           <OutcomeDisclosure
             requestOutcomes={requestOutcomes ?? null}
             mark={mark ?? null}
+            bookingActs={bookingActs ?? null}
           />
         )}
       </div>

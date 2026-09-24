@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { AttentionMark, Citation, RequestOutcome } from "../src/lib/chatStream";
+import type {
+  AttentionMark,
+  BookingAct,
+  Citation,
+  RequestOutcome,
+} from "../src/lib/chatStream";
 import { MessageView } from "../src/components/MessageView";
 
 function chunk(entryId: number): Citation {
@@ -396,5 +401,52 @@ describe("MessageView sender bursts (FR-014)", () => {
     renderRun(["assistant", "staff"]);
     const labels = screen.getAllByTestId("role-label").map((el) => el.textContent);
     expect(labels).toEqual(["AI assistant", "Staff"]);
+  });
+});
+
+describe("MessageView booking acts (016 FR-017, FR-021)", () => {
+  const cancelled: BookingAct = {
+    operation: "cancel",
+    outcome: "done",
+    refusal_reason: null,
+    practitioner_full_name: "Andreas Vesalius",
+    starts_at: "2027-01-15T09:00:00",
+    ends_at: "2027-01-15T10:00:00",
+    previous_practitioner_full_name: null,
+    previous_starts_at: null,
+  };
+
+  it("gives a patient message with acts a marker in the staff thread", () => {
+    // The patient message is where an act is recorded, and it carries no outcomes and
+    // — when the act went through — no mark, so the acts alone must raise the marker.
+    render(
+      <MessageView
+        sender="patient"
+        content="please cancel my Friday appointment"
+        readerIs="staff"
+        showOutcomes
+        bookingActs={[cancelled]}
+      />,
+    );
+
+    expandOutcomes();
+    const line = screen.getByTestId("booking-act");
+    expect(line).toHaveAttribute("data-operation", "cancel");
+    expect(line).toHaveAttribute("data-outcome", "done");
+    // Hung under this message, not a neighbour's.
+    expect(within(screen.getByTestId("message")).getByTestId("booking-act")).toBe(line);
+  });
+
+  it("draws no acts unless it is told to draw outcomes", () => {
+    render(
+      <MessageView
+        sender="patient"
+        content="please cancel my Friday appointment"
+        bookingActs={[cancelled]}
+      />,
+    );
+
+    expect(screen.queryByTestId("outcome-marker")).toBeNull();
+    expect(screen.queryByTestId("booking-act")).toBeNull();
   });
 });

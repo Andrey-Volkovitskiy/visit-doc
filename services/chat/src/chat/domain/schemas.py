@@ -2,13 +2,40 @@
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from chat.domain.validation import is_meaningless
 
 _ULID_LENGTH = 26
+
+
+def reject_timezone_aware(value: datetime) -> datetime:
+    """Return `value` unchanged, provided it is a naive local date-time.
+
+    Raises: ValueError if `value` carries a timezone offset.
+
+    There is no timezone anywhere in this system, so a clock carrying one is not a
+    differently-expressed local time: accepting it would assert a zone that does not
+    exist.
+    """
+    if value.tzinfo is not None:
+        raise ValueError("local_now must carry no timezone offset")
+    return value
+
+
+# The viewer's own clock, wherever one is accepted: the body of a turn, and the query
+# of a read whose window is computed from it. One declaration, so the two cannot come
+# to disagree about what a valid clock is.
+LocalNow = Annotated[datetime, AfterValidator(reject_timezone_aware)]
 
 
 class ChatRequest(BaseModel):
@@ -22,7 +49,7 @@ class ChatRequest(BaseModel):
 
     chat_id: str = Field(min_length=_ULID_LENGTH, max_length=_ULID_LENGTH)
     message: str = Field(min_length=1, max_length=2000)
-    local_now: datetime
+    local_now: LocalNow
 
     @field_validator("message")
     @classmethod
@@ -30,14 +57,6 @@ class ChatRequest(BaseModel):
         """Raises: ValueError if `value` has no meaningful text."""
         if is_meaningless(value):
             raise ValueError("message must contain meaningful text")
-        return value
-
-    @field_validator("local_now")
-    @classmethod
-    def _reject_timezone_aware(cls, value: datetime) -> datetime:
-        """Raises: ValueError if `value` carries a timezone offset."""
-        if value.tzinfo is not None:
-            raise ValueError("local_now must carry no timezone offset")
         return value
 
 
@@ -340,6 +359,28 @@ class ChatSilentEvent(BaseModel):
     type: Literal["silent"] = "silent"
 
 
+class BookingActOut(BaseModel):
+    """One attempt to change the schedule, as the thread carries it.
+
+    A snapshot of what was known when the act ran, never re-resolved. `outcome` is None
+    when no outcome was ever written, and a reader presents that exactly as `unknown`.
+    `starts_at`/`ends_at` are naive local times; for a reschedule they are where it
+    moved *to*, and the `previous_*` pair where it moved from. The ids the record keeps
+    are deliberately absent: nothing on this surface may resolve them live.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    operation: Literal["book", "reschedule", "cancel"]
+    outcome: Literal["done", "unchanged", "refused", "not_sent", "unknown"] | None
+    refusal_reason: str | None
+    practitioner_full_name: str | None
+    starts_at: datetime
+    ends_at: datetime | None
+    previous_practitioner_full_name: str | None
+    previous_starts_at: datetime | None
+
+
 class MessageOut(BaseModel):
     """A single message in a chat's history.
 
@@ -352,6 +393,11 @@ class MessageOut(BaseModel):
     is, or None for no mark. There is deliberately no field naming the person who wrote
     a staff message - `sender` carries everything a client's label states, and this
     system has no such person to name.
+
+    `booking_acts` is the assistant's attempts to change the schedule while answering
+    this message, in the order attempted - only ever on a patient message. None means
+    none was attempted; an empty list is never sent, since it would read as a booking
+    half that ran and did nothing.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -373,6 +419,7 @@ class MessageOut(BaseModel):
         ]
         | None
     ) = None
+    booking_acts: list[BookingActOut] | None = None
     created_at: datetime
 
 
@@ -404,6 +451,11 @@ class ConsoleConversationOut(BaseModel):
 
     Carries no session id: no response on this surface repeats the credential the
     browser is not allowed to read.
+
+    `booking_acts_version` moves by one whenever one of the conversation's booking acts
+    is recorded or settled, and never otherwise; 0 for a conversation with none. It is
+    not a clock, so a reader compares it only for equality - a change is the open
+    thread's cue to re-read, alongside a change in `last_message_at`.
     """
 
     chat_id: str
@@ -415,6 +467,7 @@ class ConsoleConversationOut(BaseModel):
     attention_since: datetime | None
     assistant_may_reply: bool
     pause_seconds_remaining: int | None
+    booking_acts_version: int
 
 
 class ConsoleConversationsResponse(BaseModel):

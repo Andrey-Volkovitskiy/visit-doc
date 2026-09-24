@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from scheduler.db.session import session_factory
 from scheduler.domain.models import Appointment
@@ -266,3 +267,121 @@ async def test_deleting_a_practitioner_removes_only_their_appointments() -> None
     async with session_factory() as session:
         remaining = await session.execute(select(func.count()).select_from(Appointment))
         assert remaining.scalar_one() == 1
+
+
+# --- one practitioner's week ---------------------------------------------------------
+
+_WINDOW = {"ends_after": "2026-09-24T14:30:00", "starts_before": "2026-10-01T00:00:00"}
+
+
+async def test_the_week_answers_the_appointments_in_the_window() -> None:
+    session_id = new_id()
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, session_id)
+        patient = await seed_patient(session, session_id, full_name="Leo Tolstoy")
+        booked = make_appointment(
+            session_id,
+            patient.id,
+            practitioner.id,
+            datetime(2026, 9, 24, 14, 0),
+            datetime(2026, 9, 24, 15, 0),
+        )
+        session.add(booked)
+        await session.commit()
+
+    async with admin_api(session_id) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments", params=_WINDOW
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "appointments": [
+            {
+                "id": booked.id,
+                "patient_full_name": "Leo Tolstoy",
+                "starts_at": "2026-09-24T14:00:00",
+                "ends_at": "2026-09-24T15:00:00",
+            }
+        ]
+    }
+
+
+async def test_a_week_with_nobody_booked_is_an_empty_list() -> None:
+    session_id = new_id()
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, session_id)
+
+    async with admin_api(session_id) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments", params=_WINDOW
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"appointments": []}
+
+
+async def test_the_week_of_a_missing_practitioner_is_not_found() -> None:
+    async with admin_api(new_id()) as client:
+        response = await client.get(
+            f"/practitioners/{new_id()}/appointments", params=_WINDOW
+        )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "practitioner not found"}
+
+
+async def test_the_week_of_another_sessions_practitioner_is_not_found() -> None:
+    # Distinct from an empty week: the id names nobody this session can see.
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, new_id())
+
+    async with admin_api(new_id()) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments", params=_WINDOW
+        )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "practitioner not found"}
+
+
+async def test_the_week_without_a_session_header_is_unauthorized() -> None:
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, new_id())
+
+    async with admin_api() as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments", params=_WINDOW
+        )
+
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"starts_before": "2026-10-01T00:00:00"},
+        {"ends_after": "2026-09-24T14:30:00"},
+        {"ends_after": "tomorrow", "starts_before": "2026-10-01T00:00:00"},
+        {"ends_after": "2026-09-24T14:30:00", "starts_before": "2026-10-01"},
+        {"ends_after": "2026-09-24T14:30:00Z", "starts_before": "2026-10-01T00:00:00"},
+        {
+            "ends_after": "2026-09-24T14:30:00",
+            "starts_before": "2026-10-01T00:00:00+02:00",
+        },
+        # An empty window, and a backwards one.
+        {"ends_after": "2026-09-24T14:30:00", "starts_before": "2026-09-24T14:30:00"},
+        {"ends_after": "2026-10-01T00:00:00", "starts_before": "2026-09-24T14:30:00"},
+    ],
+)
+async def test_the_week_refuses_a_window_it_cannot_read(params: dict[str, str]) -> None:
+    session_id = new_id()
+    async with session_factory() as session:
+        practitioner = await seed_practitioner(session, session_id)
+
+    async with admin_api(session_id) as client:
+        response = await client.get(
+            f"/practitioners/{practitioner.id}/appointments", params=params
+        )
+
+    assert response.status_code == 422
