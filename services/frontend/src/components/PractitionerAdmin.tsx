@@ -1,10 +1,12 @@
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import {
-  NO_DIRTY_REPORT,
-  useDirtyReport,
-  type AdminSectionProps,
-} from "./adminSection";
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createPractitioner,
   deletePractitioner,
@@ -16,9 +18,15 @@ import {
   type WorkingRange,
 } from "../lib/consoleApi";
 import { useBusyLatch } from "../lib/useBusyLatch";
+import {
+  NO_DIRTY_REPORT,
+  useDirtyReport,
+  type AdminSectionProps,
+} from "./adminSection";
 import { DeleteDialog } from "./DeleteDialog";
 import { DiscardDialog } from "./DiscardDialog";
 import { ErrorBanner } from "./ErrorBanner";
+import { PractitionerWeek } from "./PractitionerWeek";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -136,6 +144,17 @@ function unchanged(a: FormState, b: FormState): boolean {
     a.minutes === b.minutes &&
     JSON.stringify(a.schedule) === JSON.stringify(b.schedule)
   );
+}
+
+interface PractitionerAdminProps extends AdminSectionProps {
+  /**
+   * The console poll's answer count, passed through to every open week so it re-reads
+   * on each advance (016 R8).
+   *
+   * Optional for the same reason as `onDirtyChange`: rendered on its own, the section
+   * has no poll, and an open week then reads once, on opening.
+   */
+  pollTick?: number;
 }
 
 interface EditorProps {
@@ -385,28 +404,8 @@ function PractitionerEditor({
         </div>
       </div>
 
-      {/*
-        FR-033. The scheduler holds these appointments and there is no console endpoint
-        that reads them, so the panel says that in plain words and names what will stand
-        here. It deliberately renders no list: an empty one would assert this
-        practitioner has nothing booked, which is a claim nothing on this side can make.
-      */}
-      {practitioner !== null && (
-        <section
-          data-testid="appointments-stub"
-          aria-label="Appointments over the next seven days"
-          className="border-rule-soft bg-surface-sunken text-ink-muted rounded-md border p-3 text-sm"
-        >
-          <h5 className="text-ink font-medium">The next seven days</h5>
-          <p>
-            Not yet available. This panel will list every appointment standing with{" "}
-            {practitioner.full_name} over the next seven days — the patient, the day and
-            the time of each. The clinic&apos;s records hold them; this screen cannot
-            read them yet, so it shows none rather than implying there are none.
-          </p>
-        </section>
-      )}
-
+      {/* No appointments here, of any kind (016 FR-007): a practitioner's week lives on
+          the roster, behind that block's own Show bookings toggle. */}
       <div className="flex items-center gap-2">
         <Button onClick={submit} disabled={busy}>
           {creating ? "Add practitioner" : "Save"}
@@ -448,8 +447,14 @@ function PractitionerEditor({
  */
 export function PractitionerAdmin({
   onDirtyChange = NO_DIRTY_REPORT,
-}: AdminSectionProps) {
+  pollTick = 0,
+}: PractitionerAdminProps) {
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  // Which roster blocks have their bookings shown (FR-007d), keyed by practitioner id so
+  // a re-read or re-render of the roster leaves each block as it was. Held here rather
+  // than in the block, and cleared by `leaveRoster`: nothing about shown or hidden is
+  // remembered once the roster is left, so returning finds every block closed.
+  const [openWeeks, setOpenWeeks] = useState<ReadonlySet<string>>(new Set());
   // Fetched, never written out here: see `fetchSpecialties`. Empty until it arrives,
   // which `optionsFor` covers - a row still offers the specialty it already has.
   const [specialties, setSpecialties] = useState<string[]>([]);
@@ -481,7 +486,21 @@ export function PractitionerAdmin({
       .catch((err: unknown) => report(err, "Could not load the specialties."));
   }, [report]);
 
-  async function handleCreate(write: PractitionerWrite): Promise<void> {
+  /**
+   * Return to the roster from `from`, the view a write was submitted from - and only
+   * from it.
+   *
+   * A write can land after the staff member has left that view and opened another,
+   * holding work of its own. Leaving *that* one would discard what they typed with no
+   * prompt, which is the loss the discard confirmation exists to prevent. Compared by
+   * identity: every view is a fresh object, so reopening the same practitioner is a
+   * different view from the one the write came from.
+   */
+  function returnToRosterFrom(from: View): void {
+    setView((current) => (current === from ? { mode: "list" } : current));
+  }
+
+  async function handleCreate(write: PractitionerWrite, from: View): Promise<void> {
     // A staff member who clicks again because nothing appeared to happen must not get
     // two practitioners: the second call carries the very same form, so nothing about
     // it looks different from the first - it simply creates a second row, with a
@@ -491,7 +510,7 @@ export function PractitionerAdmin({
       try {
         const created = await createPractitioner(write);
         setPractitioners((prev) => [...prev, created]);
-        setView({ mode: "list" });
+        returnToRosterFrom(from);
       } catch (err) {
         // A refused create left the view exactly as it is, which is what lets the staff
         // member correct what they typed rather than retype it.
@@ -503,6 +522,7 @@ export function PractitionerAdmin({
   async function handleSave(
     id: string,
     write: PractitionerWrite,
+    from: View,
   ): Promise<void> {
     await latch.run(`save:${id}`, async () => {
       setError(null);
@@ -513,7 +533,7 @@ export function PractitionerAdmin({
         setPractitioners((prev) =>
           prev.map((p) => (p.id === saved.id ? saved : p)),
         );
-        setView({ mode: "list" });
+        returnToRosterFrom(from);
       } catch (err) {
         // A refused save changed nothing, so the form is left exactly as it is.
         report(err, "Could not save that practitioner.");
@@ -534,6 +554,21 @@ export function PractitionerAdmin({
       } catch (err) {
         report(err, "Could not delete that practitioner.");
       }
+    });
+  }
+
+  /** Replace the roster with the edit or create view, closing every block's bookings. */
+  function leaveRoster(next: View): void {
+    setOpenWeeks(new Set());
+    setView(next);
+  }
+
+  function toggleWeek(id: string): void {
+    setOpenWeeks((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }
 
@@ -566,8 +601,8 @@ export function PractitionerAdmin({
             editing === null ? "create" : `save:${editing.id}`,
           )}
           onSubmit={(write) => {
-            if (editing === null) void handleCreate(write);
-            else void handleSave(editing.id, write);
+            if (editing === null) void handleCreate(write, view);
+            else void handleSave(editing.id, write, view);
           }}
           onInvalid={setError}
           onLeave={() => setView({ mode: "list" })}
@@ -578,7 +613,7 @@ export function PractitionerAdmin({
             <h3 className="text-md text-ink font-semibold">Practitioners</h3>
             <Button
               size="sm"
-              onClick={() => setView({ mode: "create" })}
+              onClick={() => leaveRoster({ mode: "create" })}
             >
               <Plus aria-hidden="true" />
               Add practitioner
@@ -590,52 +625,88 @@ export function PractitionerAdmin({
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {practitioners.map((practitioner) => (
-                <li
-                  key={practitioner.id}
-                  data-testid="practitioner"
-                  className="border-rule bg-surface flex items-start justify-between gap-3 rounded-md border p-3"
-                >
-                  <div className="min-w-0">
-                    <h4 className="text-ink text-base font-medium">
-                      {practitioner.full_name}
-                    </h4>
-                    <p className="text-ink-muted text-sm">
-                      {practitioner.specialty} &middot;{" "}
-                      {practitioner.appointment_duration_minutes} minutes
-                    </p>
-                    <p className="text-ink-muted text-sm">
-                      {scheduleSummary(practitioner.schedule)}
-                    </p>
-                  </div>
-                  <div className="flex flex-none items-center gap-1">
+              {practitioners.map((practitioner) => {
+                const weekOpen = openWeeks.has(practitioner.id);
+                const weekId = `practitioner-week-${practitioner.id}`;
+                return (
+                  <li
+                    key={practitioner.id}
+                    data-testid="practitioner"
+                    className="border-rule bg-surface flex flex-col gap-2 rounded-md border p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="text-ink text-base font-medium">
+                          {practitioner.full_name}
+                        </h4>
+                        <p className="text-ink-muted text-sm">
+                          {practitioner.specialty} &middot;{" "}
+                          {practitioner.appointment_duration_minutes} minutes
+                        </p>
+                        <p className="text-ink-muted text-sm">
+                          {scheduleSummary(practitioner.schedule)}
+                        </p>
+                      </div>
+                      <div className="flex flex-none items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${practitioner.full_name}`}
+                          className="text-ink-muted hover:text-ink"
+                          onClick={() =>
+                            leaveRoster({ mode: "edit", id: practitioner.id })
+                          }
+                        >
+                          <Pencil aria-hidden="true" />
+                        </Button>
+                        {/* At rest this is an ordinary control: FR-005 keeps
+                            --color-attention for "a person is needed", and a delete button
+                            sitting in a roster is not making that claim. */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${practitioner.full_name}`}
+                          className="text-ink-muted hover:text-ink"
+                          onClick={() => setConfirmingId(practitioner.id)}
+                          disabled={latch.isBusy(`delete:${practitioner.id}`)}
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </div>
+                    {/* Mounted only while open: a closed block reads nothing, and every
+                        opening is a fresh read with no list kept from the last one
+                        (FR-007b). The block's key is the practitioner's id, so a roster
+                        re-render keeps an open list mounted rather than starting it over. */}
+                    {weekOpen && (
+                      <div id={weekId}>
+                        <PractitionerWeek
+                          practitionerId={practitioner.id}
+                          practitionerName={practitioner.full_name}
+                          pollTick={pollTick}
+                        />
+                      </div>
+                    )}
+                    {/* Last in the block, below everything else (FR-007a). */}
                     <Button
                       variant="ghost"
-                      size="icon"
-                      aria-label={`Edit ${practitioner.full_name}`}
-                      className="text-ink-muted hover:text-ink"
-                      onClick={() =>
-                        setView({ mode: "edit", id: practitioner.id })
-                      }
+                      size="sm"
+                      data-testid="bookings-toggle"
+                      aria-expanded={weekOpen}
+                      aria-controls={weekOpen ? weekId : undefined}
+                      className="text-ink-muted hover:text-ink -ml-2 self-start"
+                      onClick={() => toggleWeek(practitioner.id)}
                     >
-                      <Pencil aria-hidden="true" />
+                      {weekOpen ? (
+                        <ChevronUp aria-hidden="true" />
+                      ) : (
+                        <ChevronDown aria-hidden="true" />
+                      )}
+                      {weekOpen ? "Hide bookings" : "Show bookings"}
                     </Button>
-                    {/* At rest this is an ordinary control: FR-005 keeps
-                        --color-attention for "a person is needed", and a delete button
-                        sitting in a roster is not making that claim. */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Delete ${practitioner.full_name}`}
-                      className="text-ink-muted hover:text-ink"
-                      onClick={() => setConfirmingId(practitioner.id)}
-                      disabled={latch.isBusy(`delete:${practitioner.id}`)}
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>

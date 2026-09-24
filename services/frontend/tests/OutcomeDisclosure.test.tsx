@@ -1,7 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { OutcomeDisclosure } from "../src/components/OutcomeDisclosure";
-import type { AttentionMark, RequestOutcome } from "../src/lib/chatStream";
+import type {
+  AttentionMark,
+  BookingAct,
+  RequestOutcome,
+} from "../src/lib/chatStream";
 
 const CITED = [
   { entry_id: 7, chunk_index: 0, chunk_text: "Bring your referral letter." },
@@ -32,8 +36,36 @@ function abstained(
 function renderDisclosure(
   outcomes: RequestOutcome[] | null,
   mark: AttentionMark | null = null,
+  acts: BookingAct[] | null = null,
 ) {
-  return render(<OutcomeDisclosure requestOutcomes={outcomes} mark={mark} />);
+  return render(
+    <OutcomeDisclosure requestOutcomes={outcomes} mark={mark} bookingActs={acts} />,
+  );
+}
+
+/** One act, as the wire carries it: a booking made with a named practitioner. */
+function act(overrides: Partial<BookingAct> = {}): BookingAct {
+  return {
+    operation: "book",
+    outcome: "done",
+    refusal_reason: null,
+    practitioner_full_name: "Andreas Vesalius",
+    starts_at: "2027-01-12T10:00:00",
+    ends_at: "2027-01-12T11:00:00",
+    previous_practitioner_full_name: null,
+    previous_starts_at: null,
+    ...overrides,
+  };
+}
+
+/** A reschedule from 09:00 to 10:00 on the same day, with the same practitioner. */
+function moved(overrides: Partial<BookingAct> = {}): BookingAct {
+  return act({
+    operation: "reschedule",
+    previous_practitioner_full_name: "Andreas Vesalius",
+    previous_starts_at: "2027-01-12T09:00:00",
+    ...overrides,
+  });
 }
 
 function marker(): HTMLElement {
@@ -98,12 +130,14 @@ describe("OutcomeDisclosure: opening and closing (FR-027, FR-028)", () => {
           <OutcomeDisclosure
             requestOutcomes={[answered(0, "first question")]}
             mark={null}
+            bookingActs={null}
           />
         </div>
         <div data-testid="second">
           <OutcomeDisclosure
             requestOutcomes={[answered(0, "second question")]}
             mark={null}
+            bookingActs={null}
           />
         </div>
       </>,
@@ -185,7 +219,35 @@ describe("OutcomeDisclosure: when a marker exists at all (FR-026, FR-026a)", () 
   });
 });
 
-describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030, FR-031)", () => {
+describe("OutcomeDisclosure: what a served marker is named (016 FR-017)", () => {
+  it("names a message holding only acts as a booking record, not an answer", () => {
+    // Acts ride on the patient's message, which answered nothing; "what this answer
+    // drew on" would describe a reply (016 T049).
+    renderDisclosure(null, null, [act()]);
+
+    expect(
+      screen.getByRole("button", { name: "What the assistant did to the schedule" }),
+    ).toHaveAttribute("data-outcome-state", "served");
+  });
+
+  it("keeps the answer's name for a served reply", () => {
+    renderDisclosure([answered(0, "do I need a referral?")]);
+
+    expect(
+      screen.getByRole("button", { name: "What this answer drew on" }),
+    ).toHaveAttribute("data-outcome-state", "served");
+  });
+
+  it("names a message with an unknown act as needing a person", () => {
+    renderDisclosure(null, null, [act({ outcome: "unknown" })]);
+
+    expect(
+      screen.getByRole("button", { name: "Why this message needs a person" }),
+    ).toHaveAttribute("data-outcome-state", "needs-person");
+  });
+});
+
+describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030; FR-031 retired by 016 FR-020)", () => {
   function expand(): void {
     fireEvent.click(marker());
   }
@@ -282,40 +344,24 @@ describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030, FR-031
     expect(screen.getByTestId("citations")).toBeInTheDocument();
   });
 
-  it("states the booking outcome is not yet recorded, in every expanded block", () => {
-    renderDisclosure([answered(0, "do I need a referral?")]);
-    expand();
+  it("carries no booking line at all on a message without acts", () => {
+    // 016 FR-020 retires 015's "not yet recorded" stub and forbids a replacement: the
+    // absence of a booking section is what says no write was attempted. Checked on
+    // each shape of block the stub used to appear in.
+    const shapes: [RequestOutcome[] | null, AttentionMark | null][] = [
+      [[answered(0, "do I need a referral?")], null],
+      [[abstained(0, "what does it cost?")], null],
+      [null, "patient_asked_for_person"],
+    ];
+    for (const [outcomes, mark] of shapes) {
+      const { unmount } = renderDisclosure(outcomes, mark);
+      expand();
 
-    expect(screen.getByTestId("booking-outcome-stub")).toBeInTheDocument();
-  });
-
-  it("states it for an abstaining block too", () => {
-    renderDisclosure([abstained(0, "what does it cost?")]);
-    expand();
-
-    expect(screen.getByTestId("booking-outcome-stub")).toBeInTheDocument();
-  });
-
-  it("states it for a block that holds only an attention mark", () => {
-    renderDisclosure(null, "patient_asked_for_person");
-    expand();
-
-    expect(screen.getByTestId("booking-outcome-stub")).toBeInTheDocument();
-  });
-
-  it("presents the booking gap as deliberately absent, not as a failure", () => {
-    // SC-008's first half. A gap the backend cannot serve yet must not read as an
-    // error, an empty result or something that went wrong — those would send a staff
-    // member looking for a fault that does not exist.
-    renderDisclosure([answered(0, "do I need a referral?")]);
-    expand();
-
-    const stub = screen.getByTestId("booking-outcome-stub");
-    expect(stub.textContent).toMatch(/not yet/i);
-    expect(stub.textContent).not.toMatch(/error|failed|unavailable|problem|went wrong/i);
-    // And it is not an empty list standing in for one.
-    expect(stub.querySelector("ul")).toBeNull();
-    expect(stub.querySelector("ol")).toBeNull();
+      expect(screen.queryByTestId("booking-outcome-stub")).toBeNull();
+      expect(screen.queryByTestId("booking-act")).toBeNull();
+      expect(document.body.textContent).not.toMatch(/booking|booked|schedule/i);
+      unmount();
+    }
   });
 
   it("leaves the mark's own words to the message, and renders none itself", () => {
@@ -337,5 +383,260 @@ describe("OutcomeDisclosure: what an expanded block says (FR-029, FR-030, FR-031
     expect(screen.queryByTestId("request-outcome")).toBeNull();
     expect(screen.queryByTestId("citations")).toBeNull();
     expect(screen.queryByTestId("outcome-unanswered")).toBeNull();
+  });
+});
+
+describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR-020)", () => {
+  function expand(): void {
+    fireEvent.click(marker());
+  }
+
+  function actLines(): HTMLElement[] {
+    return screen.getAllByTestId("booking-act");
+  }
+
+  it("shows a marker for a message holding acts and nothing else", () => {
+    // FR-017. A patient message carries no FAQ outcomes, and a successful booking
+    // raises no mark, so without this the one message that says what the assistant did
+    // to the schedule would be the one message with nothing to open.
+    renderDisclosure(null, null, [act()]);
+
+    expect(marker()).toBeInTheDocument();
+  });
+
+  it.each(["done", "refused", "unchanged", "not_sent"] as const)(
+    "is served when the only act's outcome is %s",
+    (outcome) => {
+      // FR-018: a refusal was already reported to the patient, and not-sent is known
+      // to have changed nothing, so neither is on its own owed to a person.
+      renderDisclosure(null, null, [
+        act({
+          outcome,
+          refusal_reason: outcome === "refused" ? "practitioner_busy" : null,
+        }),
+      ]);
+
+      expect(marker()).toHaveAttribute("data-outcome-state", "served");
+    },
+  );
+
+  it.each(["unknown", null] as const)(
+    "needs a person when an act's outcome is %s",
+    (outcome) => {
+      // FR-012b: an act never settled reads exactly as one settled as unknown.
+      renderDisclosure(null, null, [act(), act({ outcome })]);
+
+      expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
+    },
+  );
+
+  it("still needs a person for a mark, whatever the acts say", () => {
+    renderDisclosure(null, "assistant_failed", [act()]);
+
+    expect(marker()).toHaveAttribute("data-outcome-state", "needs-person");
+  });
+
+  it("lists each act in the order attempted, with its operation and outcome", () => {
+    renderDisclosure(null, null, [
+      act({ operation: "cancel" }),
+      act({ outcome: "refused", refusal_reason: "off_grid" }),
+      moved({ outcome: null }),
+    ]);
+    expand();
+
+    expect(
+      actLines().map((el) => [
+        el.getAttribute("data-operation"),
+        el.getAttribute("data-outcome"),
+      ]),
+    ).toEqual([
+      ["cancel", "done"],
+      ["book", "refused"],
+      // A null outcome is attributed as unknown, never as a sixth state.
+      ["reschedule", "unknown"],
+    ]);
+  });
+
+  it("says what a done booking, move and cancellation did, and when", () => {
+    renderDisclosure(null, null, [
+      act(),
+      moved(),
+      act({ operation: "cancel", starts_at: "2027-01-14T09:30:00" }),
+    ]);
+    expand();
+
+    expect(actLines().map((el) => el.textContent)).toEqual([
+      "Booked: Andreas Vesalius, Tuesday 12 January 2027 at 10:00",
+      "Moved: Andreas Vesalius, Tuesday 12 January 2027 at 09:00 → Tuesday 12 January 2027 at 10:00",
+      "Cancelled: Andreas Vesalius, Thursday 14 January 2027 at 09:30",
+    ]);
+  });
+
+  it("names both practitioners when a move changed who the appointment is with", () => {
+    renderDisclosure(null, null, [
+      moved({ previous_practitioner_full_name: "Hildegard of Bingen" }),
+    ]);
+    expand();
+
+    expect(actLines()[0]).toHaveTextContent(
+      "Moved: Hildegard of Bingen, Tuesday 12 January 2027 at 09:00 → " +
+        "Andreas Vesalius, Tuesday 12 January 2027 at 10:00",
+    );
+  });
+
+  it("names the year on each side of a move across a new year", () => {
+    // The 90-day horizon crosses years, and an act is a permanent record read long
+    // after the fact: without the year, which January is meant (016 T048).
+    renderDisclosure(null, null, [moved({ previous_starts_at: "2026-12-29T09:00:00" })]);
+    expand();
+
+    expect(actLines()[0]).toHaveTextContent(
+      "Moved: Andreas Vesalius, Tuesday 29 December 2026 at 09:00 → " +
+        "Tuesday 12 January 2027 at 10:00",
+    );
+  });
+
+  it("says so when the record holds no practitioner name", () => {
+    renderDisclosure(null, null, [act({ practitioner_full_name: null })]);
+    expand();
+
+    expect(actLines()[0]).toHaveTextContent(
+      "Booked: a practitioner not named in the record, Tuesday 12 January 2027 at 10:00",
+    );
+  });
+
+  it("names each end of a move separately when the record names neither", () => {
+    // Two absent names say nothing about whether they are one person, and the wire
+    // carries no ids to settle it. Folding them into one would present a move between
+    // two practitioners - a roster that could not be read, say - as a move with one.
+    renderDisclosure(null, null, [
+      moved({
+        outcome: "refused",
+        refusal_reason: "practitioner_busy",
+        practitioner_full_name: null,
+        previous_practitioner_full_name: null,
+      }),
+    ]);
+    expand();
+
+    expect(actLines()[0]).toHaveTextContent(
+      "a practitioner not named in the record, Tuesday 12 January 2027 at 09:00 → " +
+        "a practitioner not named in the record, Tuesday 12 January 2027 at 10:00",
+    );
+  });
+
+  it("says a change that was not needed changed nothing", () => {
+    renderDisclosure(null, null, [act({ operation: "cancel", outcome: "unchanged" })]);
+    expand();
+
+    const line = actLines()[0]!.textContent ?? "";
+    expect(line).toMatch(/^No change needed: /);
+    expect(line).toContain("Andreas Vesalius, Tuesday 12 January 2027 at 10:00");
+  });
+
+  it("gives a refusal's reason in words, and says nothing was changed", () => {
+    renderDisclosure(null, null, [
+      act({ outcome: "refused", refusal_reason: "practitioner_busy" }),
+    ]);
+    expand();
+
+    const line = actLines()[0]!.textContent ?? "";
+    expect(line).toMatch(/^Refused \(.+\): /);
+    expect(line).toMatch(/Nothing was changed\.$/);
+    // The reason is rendered for a person, not left as the scheduler's code.
+    expect(line).not.toContain("practitioner_busy");
+  });
+
+  it("words each refusal reason differently", () => {
+    // Each reason calls for something different — a taken slot is not a closed day —
+    // so a staff member reading the line must be able to tell them apart. The twelve
+    // are the scheduler's closed set (shared_models.scheduling.ChangeFailureReason,
+    // which includes booking's eight).
+    const reasons = [
+      "practitioner_busy",
+      "patient_busy",
+      "outside_schedule",
+      "off_grid",
+      "in_past",
+      "beyond_horizon",
+      "practitioner_not_found",
+      "patient_not_found",
+      "appointment_not_found",
+      "already_cancelled",
+      "already_started",
+      "stale_confirmation",
+    ];
+    const lines = new Set<string>();
+    for (const reason of reasons) {
+      const { unmount } = renderDisclosure(null, null, [
+        act({ outcome: "refused", refusal_reason: reason }),
+      ]);
+      expand();
+      const line = actLines()[0]!.textContent ?? "";
+      expect(line).not.toContain(reason);
+      expect(line).not.toMatch(/undefined/);
+      lines.add(line);
+      unmount();
+    }
+    expect(lines.size).toBe(reasons.length);
+  });
+
+  it("still says it was refused for a reason this build does not know", () => {
+    renderDisclosure(null, null, [
+      act({ outcome: "refused", refusal_reason: "some_future_reason" }),
+    ]);
+    expand();
+
+    const line = actLines()[0]!.textContent ?? "";
+    expect(line).toMatch(/refused by the scheduler/i);
+    expect(line).toMatch(/Nothing was changed\.$/);
+    expect(line).not.toMatch(/undefined/);
+  });
+
+  it("says a request that was never sent changed nothing", () => {
+    renderDisclosure(null, null, [act({ outcome: "not_sent" })]);
+    expand();
+
+    const line = actLines()[0]!.textContent ?? "";
+    expect(line).toMatch(/^Not sent: /);
+    expect(line).toMatch(/Nothing was changed\.$/);
+  });
+
+  it.each(["unknown", null] as const)(
+    "says in words that a %s outcome may or may not have happened",
+    (outcome) => {
+      // FR-019: "unknown" is in the text, never carried by colour alone, and the line
+      // must not claim or imply that nothing changed.
+      renderDisclosure(null, null, [
+        act({ outcome }),
+        moved({ outcome }),
+        act({ operation: "cancel", outcome }),
+      ]);
+      expand();
+
+      const [booked, move, cancelled] = actLines().map((el) => el.textContent ?? "");
+      expect(booked).toBe(
+        "Outcome unknown: Andreas Vesalius, Tuesday 12 January 2027 at 10:00 " +
+          "may or may not have been booked. Check the schedule.",
+      );
+      expect(move).toMatch(
+        /^Outcome unknown: .* may or may not have been moved\. Check the schedule\.$/,
+      );
+      expect(cancelled).toMatch(
+        /may or may not have been cancelled\. Check the schedule\.$/,
+      );
+      for (const line of [booked, move, cancelled]) {
+        expect(line).not.toMatch(/nothing was changed/i);
+      }
+    },
+  );
+
+  it("adds no FAQ lines or retrieval note to a block holding only acts", () => {
+    renderDisclosure(null, null, [act()]);
+    expand();
+
+    expect(screen.queryByTestId("request-outcome")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/retrieved/i);
+    expect(screen.queryByTestId("booking-outcome-stub")).toBeNull();
   });
 });

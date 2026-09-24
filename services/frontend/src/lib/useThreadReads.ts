@@ -49,6 +49,16 @@ export interface ThreadReadsOptions<T> {
   chatId: string | null;
   /** The newest message time the console poll reports for it. */
   lastMessageAt: string | null | undefined;
+  /**
+   * The conversation's booking-record version, as the same poll reports it (016
+   * FR-016a). It changes when an act is recorded or settled and on nothing else, which
+   * is what re-reads a thread when a turn settled an act without writing a message.
+   *
+   * Compared for equality only: it is a version, not a clock, and never ordered.
+   * Undefined for a pane that is not fed one — the patient pane, which shows no acts —
+   * and then only `lastMessageAt` decides.
+   */
+  bookingActsVersion?: number;
   /** How many times that poll has answered — what makes a retry possible. */
   pollTick: number | undefined;
   /**
@@ -71,6 +81,41 @@ export interface ThreadReadsOptions<T> {
   onLoaded: (data: T) => void;
   /** The read that opens a conversation failed, and the pane is empty because of it. */
   onOpenFailed: (error: unknown) => void;
+}
+
+/**
+ * What one poll answer says about a conversation's thread: the pair a read accounts for.
+ *
+ * A pair because either half changing is enough to owe a read (contracts/booking-acts.md,
+ * reader rule): a new message moves the first, an act recorded or settled without one
+ * moves the second. Folding the version into `lastMessageAt` instead would give that
+ * field — which the staff list also shows and orders by — two meanings.
+ */
+interface PollMark {
+  lastMessageAt: string | null;
+  bookingActsVersion: number | undefined;
+}
+
+/**
+ * The pair one poll answer reports, or undefined when the pane is not fed the poll at
+ * all — which only `lastMessageAt` can say, since the version is optional by design.
+ */
+function markOf(
+  lastMessageAt: string | null | undefined,
+  bookingActsVersion: number | undefined,
+): PollMark | undefined {
+  return lastMessageAt === undefined
+    ? undefined
+    : { lastMessageAt, bookingActsVersion };
+}
+
+/** Whether two marks describe the same thread. Both halves by identity, never ordered. */
+function sameMark(a: PollMark | undefined, b: PollMark | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return (
+    a.lastMessageAt === b.lastMessageAt &&
+    a.bookingActsVersion === b.bookingActsVersion
+  );
 }
 
 /**
@@ -105,9 +150,14 @@ export interface ThreadReadsOptions<T> {
  * Every read carries a deadline and an abort, and both are structural rather than
  * defensive: they are what make "a read that hangs is retried" true, and what bounds
  * how much of the origin's socket budget one pane can hold.
+ *
+ * "The poll value" throughout is the *pair* of `lastMessageAt` and
+ * `bookingActsVersion` (`PollMark`). Every rule above holds for it unchanged — filed on
+ * landing, captured at issue, compared by identity — with a change in either half
+ * owing a read.
  */
 export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
-  const { chatId, lastMessageAt, pollTick, paused } = options;
+  const { chatId, lastMessageAt, bookingActsVersion, pollTick, paused } = options;
 
   // The callbacks are read through a ref so a caller need not memoize them: what these
   // effects depend on is the conversation and the poll, never the identity of a
@@ -125,19 +175,18 @@ export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
   // a real answer this pane must be able to record as handled — collapsing the two
   // would make the first message ever written into an open, empty conversation look
   // like the value that described the thread already loaded, and it would never be
-  // fetched.
-  const handledLastMessageAtRef = useRef<string | null | undefined>(undefined);
+  // fetched. That lives in the pair's `lastMessageAt`; the pair itself is `undefined`
+  // only while nothing is accounted for.
+  const handledRef = useRef<PollMark | undefined>(undefined);
   const issuedReadsRef = useRef(0);
   const appliedThroughRef = useRef(0);
   // The read that opens a conversation, while it is still outstanding, and the poll
   // value it will file if it lands — null once it has settled, however it settled. It
   // is what stops the refetch effect asking, on this conversation's very first tick,
   // the question already out. Keyed to the value rather than to "a read is in flight",
-  // so a message arriving while that read runs is still fetched rather than held behind
-  // an answer that may never come.
-  const openingReadRef = useRef<{ accountsFor: string | null | undefined } | null>(
-    null,
-  );
+  // so a message arriving — or an act settling — while that read runs is still fetched
+  // rather than held behind an answer that may never come.
+  const openingReadRef = useRef<{ accountsFor: PollMark | undefined } | null>(null);
   const inFlightRef = useRef<Set<AbortController>>(new Set());
 
   const abortInFlight = (): void => {
@@ -147,7 +196,7 @@ export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
 
   const startRead = (
     chat: string,
-    accountsFor: string | null | undefined,
+    accountsFor: PollMark | undefined,
     opening: boolean,
   ): void => {
     const generation = ++issuedReadsRef.current;
@@ -188,7 +237,7 @@ export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
         settle();
         if (generation <= appliedThroughRef.current) return;
         appliedThroughRef.current = generation;
-        handledLastMessageAtRef.current = accountsFor;
+        handledRef.current = accountsFor;
         latest.current.onLoaded(data);
       })
       .catch((error: unknown) => {
@@ -206,7 +255,7 @@ export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
     // Aborted rather than merely retired: each answers about a thread no longer on
     // screen, and the socket it holds is one this pane wants back within a tick or two.
     abortInFlight();
-    handledLastMessageAtRef.current = undefined;
+    handledRef.current = undefined;
     // Retired here, before the refetch effect below can run for the newly opened
     // conversation, since effects run in the order they are declared.
     appliedThroughRef.current = issuedReadsRef.current;
@@ -217,24 +266,29 @@ export function useThreadReads<T>(options: ThreadReadsOptions<T>): void {
     // read will account for. Deliberately not a dependency of this effect — it is a
     // snapshot of the moment the read went out, and re-running the reset above on every
     // new poll value is the last thing a pane wants.
-    startRead(chatId, latest.current.lastMessageAt, true);
+    startRead(
+      chatId,
+      markOf(latest.current.lastMessageAt, latest.current.bookingActsVersion),
+      true,
+    );
   }, [chatId]);
 
   useEffect(() => {
     // `undefined` here means the caller is not feeding this pane the poll at all, which
     // is a different thing from a conversation the poll says is empty.
-    if (chatId === null || lastMessageAt === undefined) return;
-    if (handledLastMessageAtRef.current === lastMessageAt) return;
+    const mark = markOf(lastMessageAt, bookingActsVersion);
+    if (chatId === null || mark === undefined) return;
+    if (sameMark(handledRef.current, mark)) return;
     const openingRead = openingReadRef.current;
-    if (openingRead !== null && openingRead.accountsFor === lastMessageAt) {
+    if (openingRead !== null && sameMark(openingRead.accountsFor, mark)) {
       // Already out for exactly this value, and it files the value itself when it
       // lands. Asking again would only be the same question twice.
       return;
     }
     if (paused) return;
     if (inFlightRef.current.size >= MAX_IN_FLIGHT_READS) return;
-    startRead(chatId, lastMessageAt, false);
-  }, [chatId, lastMessageAt, pollTick, paused]);
+    startRead(chatId, mark, false);
+  }, [chatId, lastMessageAt, bookingActsVersion, pollTick, paused]);
 
   useEffect(() => {
     return () => {

@@ -582,3 +582,34 @@ describe("FaqAdmin: writing", () => {
     });
   });
 });
+
+describe("FaqAdmin: a write that lands after its view was left", () => {
+  it("returns to the list only from the view the write was submitted from", async () => {
+    // A save outlived its view: the staff member went back and started a new entry
+    // while it was out. Landing must not take that new view - and its unsaved text -
+    // away with no prompt, which is the loss the discard confirmation exists for.
+    let landSave!: (saved: FaqEntry) => void;
+    vi.spyOn(consoleApi, "updateFaqEntry").mockReturnValue(
+      new Promise<FaqEntry>((resolve) => {
+        landSave = resolve;
+      }),
+    );
+
+    render(<FaqAdmin />);
+    await openTheEditView();
+    fireEvent.click(screen.getByText("Save"));
+    // Untouched, so going back asks nothing.
+    press(screen.getByText("Back to the documents"));
+    await openTheCreateView();
+    fireEvent.change(screen.getByLabelText("New entry"), {
+      target: { value: "We open at 8am." },
+    });
+
+    await act(async () => {
+      landSave(entry({ content: "Visiting hours are 9am to 6pm." }));
+    });
+
+    expect(screen.getByTestId("faq-edit")).toBeInTheDocument();
+    expect(screen.getByLabelText("New entry")).toHaveValue("We open at 8am.");
+  });
+});

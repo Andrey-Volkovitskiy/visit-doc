@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -9,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../src/App";
 import * as chatStream from "../src/lib/chatStream";
 import * as consoleApi from "../src/lib/consoleApi";
+import * as consolePoll from "../src/lib/useConsolePoll";
 import { press } from "./press";
 import type { ChatListing, ChatSummary } from "../src/lib/chatStream";
 
@@ -246,6 +248,7 @@ describe("App: the console read model reaches both panes", () => {
           attention_since: "2026-09-01T12:00:00Z",
           assistant_may_reply: false,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
       ],
     });
@@ -264,6 +267,50 @@ describe("App: the console read model reaches both panes", () => {
       "01PATIENTCHAT",
       expect.any(AbortSignal),
     );
+  });
+
+  it("re-reads the open staff thread when only its booking-record version moves", async () => {
+    // 016 FR-016a, end to end through the one poll: the row's version has to reach the
+    // staff thread, or an act settled by a turn that wrote no message reads "unknown"
+    // until some later message happens to trigger a read.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const row = (booking_acts_version: number) => ({
+        attention_total: 0,
+        conversations: [
+          {
+            chat_id: "01STAFFCHAT",
+            patient_name: "Grace Hopper",
+            last_message_at: "2026-09-01T12:00:00",
+            emphasized: false,
+            escalated: false,
+            escalation_reason: null,
+            attention_since: null,
+            assistant_may_reply: true,
+            pause_seconds_remaining: null,
+            booking_acts_version,
+          },
+        ],
+      });
+      const fetchThread = vi.spyOn(consoleApi, "fetchThread").mockResolvedValue([]);
+      const listingSpy = vi
+        .spyOn(consoleApi, "fetchConsoleListing")
+        .mockResolvedValue(row(1));
+
+      render(<App />);
+      fireEvent.click(await screen.findByTestId("staff-conversation"));
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(1));
+
+      listingSpy.mockResolvedValue(row(2));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(consolePoll.POLL_INTERVAL_MS);
+      });
+
+      await waitFor(() => expect(fetchThread).toHaveBeenCalledTimes(2));
+      expect(fetchThread).toHaveBeenLastCalledWith("01STAFFCHAT", expect.any(AbortSignal));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -287,6 +334,7 @@ function stubOneConversation(): void {
         attention_since: null,
         assistant_may_reply: true,
         pause_seconds_remaining: null,
+        booking_acts_version: 0,
       },
     ],
   });
@@ -376,6 +424,7 @@ describe("App: a pane reports its own failures and nobody else's", () => {
           attention_since: null,
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
         {
           chat_id: "01OTHERCHAT",
@@ -387,6 +436,7 @@ describe("App: a pane reports its own failures and nobody else's", () => {
           attention_since: null,
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
       ],
     });
@@ -633,6 +683,33 @@ describe("App: the console's three sections (FR-020)", () => {
       "false",
     );
   });
+
+  it("refreshes an open practitioner's bookings on the console poll's tick (016 R8)", async () => {
+    // The poll is replaced at its seam so the test can advance it without waiting out
+    // the real interval: what is under test is that App hands the tick through.
+    let tick = 1;
+    vi.spyOn(consolePoll, "useConsolePoll").mockImplementation(() => ({
+      conversations: [],
+      attentionTotal: 0,
+      tick,
+    }));
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([practitioner()]);
+    const week = vi
+      .spyOn(consoleApi, "fetchPractitionerWeek")
+      .mockResolvedValue([]);
+
+    const { rerender } = render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+    openTab("Practitioners");
+    press(await screen.findByTestId("bookings-toggle"));
+    await screen.findByTestId("week-empty");
+    expect(week).toHaveBeenCalledTimes(1);
+
+    tick = 2;
+    rerender(<App />);
+
+    await waitFor(() => expect(week).toHaveBeenCalledTimes(2));
+  });
 });
 
 describe("App: the attention total in the console header (FR-021)", () => {
@@ -686,6 +763,7 @@ describe("App: the attention total in the console header (FR-021)", () => {
           attention_since: "2026-09-01T12:00:00",
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
         {
           chat_id: "b",
@@ -697,6 +775,7 @@ describe("App: the attention total in the console header (FR-021)", () => {
           attention_since: "2026-09-01T12:00:00",
           assistant_may_reply: true,
           pause_seconds_remaining: null,
+          booking_acts_version: 0,
         },
       ],
     });
@@ -1115,6 +1194,116 @@ describe("App: leaving a dirty edit by choosing another tab (FR-035b)", () => {
 
     await waitFor(() =>
       expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+  });
+});
+
+// The Conversations panel is unmounted by a tab switch exactly as the other two are, so
+// a staff reply typed and not yet sent went with it, unasked. The reply box reports its
+// work through the same guard the editors use.
+describe("App: leaving an unsent staff reply by choosing another tab", () => {
+  beforeEach(() => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat()] }),
+    );
+    vi.spyOn(consoleApi, "fetchConsoleListing").mockResolvedValue({
+      attention_total: 0,
+      conversations: [
+        {
+          chat_id: "01STAFFCHAT",
+          patient_name: "Grace Hopper",
+          last_message_at: null,
+          emphasized: false,
+          escalated: false,
+          escalation_reason: null,
+          attention_since: null,
+          assistant_may_reply: true,
+          pause_seconds_remaining: null,
+          booking_acts_version: 0,
+        },
+      ],
+    });
+  });
+
+  /** Open the staff conversation and put `text` in its reply box. */
+  async function typeStaffReply(text: string): Promise<void> {
+    render(<App />);
+    fireEvent.click(await screen.findByTestId("staff-conversation"));
+    const box = await screen.findByLabelText("reply as staff");
+    fireEvent.change(box, { target: { value: text } });
+  }
+
+  it("asks before discarding a typed reply, and keeps it when the discard is refused", async () => {
+    await typeStaffReply("I've got this one.");
+
+    openTab("Practitioners");
+    await screen.findByTestId("discard-confirm");
+    expect(screen.queryByTestId("practitioner-admin")).toBeNull();
+
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /keep editing/i,
+      }),
+    );
+
+    await waitFor(() => expect(screen.queryByTestId("discard-confirm")).toBeNull());
+    expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByLabelText("reply as staff")).toHaveValue("I've got this one.");
+  });
+
+  it("does not interrupt once the reply box is empty again", async () => {
+    // The flag follows the box, not the fact that something was once typed in it.
+    await typeStaffReply("I've got this one.");
+    fireEvent.change(screen.getByLabelText("reply as staff"), {
+      target: { value: "" },
+    });
+
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    expect(screen.queryByTestId("discard-confirm")).toBeNull();
+  });
+
+  it("does not leave the guard armed once the discarded reply's panel is gone", async () => {
+    await typeStaffReply("I've got this one.");
+    openTab("FAQ");
+    await screen.findByTestId("discard-confirm");
+    fireEvent.click(
+      within(screen.getByTestId("discard-confirm")).getByRole("button", {
+        name: /discard/i,
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "FAQ" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+
+    // Back to Conversations - where the box is empty now - and away again.
+    openTab("Conversations");
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Conversations" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
+    );
+    openTab("Practitioners");
+
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Practitioners" })).toHaveAttribute(
         "aria-selected",
         "true",
       ),

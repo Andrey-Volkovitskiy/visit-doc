@@ -4,7 +4,9 @@ import asyncio
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from types import ModuleType
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -19,10 +21,17 @@ from chat.clients.scheduling import (
     SchedulingUnavailableError,
 )
 from chat.db.session import session_factory
-from chat.domain.models import Chat, EscalationReason, MessageSender
+from chat.domain.models import (
+    BookingAct,
+    BookingActOperation,
+    BookingActOutcome,
+    Chat,
+    EscalationReason,
+    MessageSender,
+)
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent
 from chat.main import app
-from chat.repositories import chat_repository
+from chat.repositories import booking_act_repository, chat_repository
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient, Response
 from structlog.contextvars import merge_contextvars
@@ -196,6 +205,241 @@ async def test_get_messages_404s_without_a_cookie() -> None:
         response = await client.get(f"/chats/{ULID()}/messages")
 
     assert response.status_code == 404
+
+
+# --- booking acts on the thread (016) -----------------------------------------------
+
+_PRACTITIONER = "01PRACT0000000000000000000"
+_APPOINTMENT = "01APPT00000000000000000000"
+_STARTS_AT = datetime(2027, 1, 12, 10, 0)
+_ACT_FIELDS = {
+    "operation",
+    "outcome",
+    "refusal_reason",
+    "practitioner_full_name",
+    "starts_at",
+    "ends_at",
+    "previous_practitioner_full_name",
+    "previous_starts_at",
+}
+
+
+async def _add_patient_message(session_id: str, chat_id: str, content: str) -> str:
+    message_id = str(ULID())
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id=message_id,
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content=content,
+        )
+    return message_id
+
+
+async def _begin_act(
+    session_id: str,
+    chat_id: str,
+    message_id: str,
+    operation: BookingActOperation = BookingActOperation.BOOK,
+    *,
+    name: str | None = "William Osler",
+) -> str:
+    """Record one unsettled act on `message_id`, shaped as `operation` requires."""
+    moving = operation is BookingActOperation.RESCHEDULE
+    async with session_factory() as session:
+        act_id = await booking_act_repository.begin(
+            session,
+            session_id=session_id,
+            chat_id=chat_id,
+            message_id=message_id,
+            operation=operation,
+            practitioner_id=_PRACTITIONER,
+            practitioner_full_name=name,
+            starts_at=_STARTS_AT,
+            appointment_id=None
+            if operation is BookingActOperation.BOOK
+            else _APPOINTMENT,
+            previous_practitioner_id=_PRACTITIONER if moving else None,
+            previous_practitioner_full_name="William Osler" if moving else None,
+            previous_starts_at=datetime(2027, 1, 12, 9, 0) if moving else None,
+        )
+    assert act_id is not None
+    return act_id
+
+
+async def _settle(
+    act_id: str,
+    session_id: str,
+    outcome: BookingActOutcome,
+    *,
+    refusal_reason: str | None = None,
+) -> None:
+    done = outcome is BookingActOutcome.DONE
+    async with session_factory() as session:
+        settled = await booking_act_repository.settle(
+            session,
+            act_id=act_id,
+            session_id=session_id,
+            outcome=outcome,
+            refusal_reason=refusal_reason,
+            ends_at=datetime(2027, 1, 12, 11, 0) if done else None,
+        )
+    assert settled
+
+
+async def _thread(session_id: str, chat_id: str) -> list[dict[str, Any]]:
+    async with _api(session_id) as client:
+        response = await client.get(f"/chats/{chat_id}/messages")
+    assert response.status_code == 200
+    messages: list[dict[str, Any]] = response.json()["messages"]
+    return messages
+
+
+async def test_a_message_without_acts_carries_null_never_an_empty_list() -> None:
+    # FR-014: "no act was attempted" is `null`. An empty list would read as "a booking
+    # half ran and did nothing", which is a different fact nobody recorded.
+    session_id, chat_id = await _seed_chat_with_patient()
+    await _add_patient_message(session_id, chat_id, "what are your hours?")
+    acted_on = await _add_patient_message(session_id, chat_id, "book me in")
+    await _begin_act(session_id, chat_id, acted_on)
+    await _add_patient_message(session_id, chat_id, "thanks")
+
+    messages = await _thread(session_id, chat_id)
+
+    by_content = {m["content"]: m for m in messages}
+    assert "booking_acts" in by_content["what are your hours?"]
+    assert by_content["what are your hours?"]["booking_acts"] is None
+    assert by_content["thanks"]["booking_acts"] is None
+    assert len(by_content["book me in"]["booking_acts"]) == 1
+    assert all(m["booking_acts"] != [] for m in messages)
+
+
+async def test_a_message_holding_acts_lists_them_in_the_order_attempted() -> None:
+    session_id, chat_id = await _seed_chat_with_patient()
+    message_id = await _add_patient_message(session_id, chat_id, "move it, then book")
+    moved = await _begin_act(
+        session_id, chat_id, message_id, BookingActOperation.RESCHEDULE
+    )
+    booked = await _begin_act(session_id, chat_id, message_id, name="Andreas Vesalius")
+    cancelled = await _begin_act(
+        session_id, chat_id, message_id, BookingActOperation.CANCEL
+    )
+    # Settled in reverse, so an order taken from the settles would show here.
+    await _settle(cancelled, session_id, BookingActOutcome.DONE)
+    await _settle(
+        booked, session_id, BookingActOutcome.REFUSED, refusal_reason="slot_taken"
+    )
+    await _settle(moved, session_id, BookingActOutcome.DONE)
+
+    (message,) = await _thread(session_id, chat_id)
+
+    acts = message["booking_acts"]
+    assert [a["operation"] for a in acts] == ["reschedule", "book", "cancel"]
+    assert acts[0] == {
+        "operation": "reschedule",
+        "outcome": "done",
+        "refusal_reason": None,
+        "practitioner_full_name": "William Osler",
+        "starts_at": "2027-01-12T10:00:00",
+        "ends_at": "2027-01-12T11:00:00",
+        "previous_practitioner_full_name": "William Osler",
+        "previous_starts_at": "2027-01-12T09:00:00",
+    }
+    assert acts[1]["outcome"] == "refused"
+    assert acts[1]["refusal_reason"] == "slot_taken"
+    assert acts[1]["practitioner_full_name"] == "Andreas Vesalius"
+
+
+async def test_an_act_never_settled_is_sent_with_a_null_outcome() -> None:
+    # FR-012b: a reader shows it as unknown, and the wire keeps it apart from a
+    # recorded `unknown` so each value has one meaning.
+    session_id, chat_id = await _seed_chat_with_patient()
+    message_id = await _add_patient_message(session_id, chat_id, "book me in")
+    await _begin_act(session_id, chat_id, message_id, name=None)
+
+    (message,) = await _thread(session_id, chat_id)
+
+    (act,) = message["booking_acts"]
+    assert "outcome" in act
+    assert act["outcome"] is None
+    assert act["practitioner_full_name"] is None
+    assert act["ends_at"] is None
+
+
+async def test_an_act_carries_no_ids_onto_the_wire() -> None:
+    # Ids stay in storage: a console that resolved them live would break the snapshot.
+    session_id, chat_id = await _seed_chat_with_patient()
+    message_id = await _add_patient_message(session_id, chat_id, "move it")
+    act_id = await _begin_act(
+        session_id, chat_id, message_id, BookingActOperation.RESCHEDULE
+    )
+    await _settle(act_id, session_id, BookingActOutcome.DONE)
+
+    (message,) = await _thread(session_id, chat_id)
+
+    (act,) = message["booking_acts"]
+    assert set(act) == _ACT_FIELDS
+    serialized = json.dumps(act)
+    assert act_id not in serialized
+    assert _PRACTITIONER not in serialized
+    assert _APPOINTMENT not in serialized
+
+
+async def test_an_act_recorded_under_another_session_never_reaches_the_thread() -> None:
+    # The read carries the session predicate itself, so a row naming this chat under
+    # another session - which no write path produces - is not attached on the strength
+    # of the chat id alone.
+    session_id, chat_id = await _seed_chat_with_patient()
+    message_id = await _add_patient_message(session_id, chat_id, "book me in")
+    async with session_factory() as session:
+        session.add(
+            BookingAct(
+                id=str(ULID()),
+                session_id=str(ULID()),
+                chat_id=chat_id,
+                message_id=message_id,
+                operation=BookingActOperation.BOOK.value,
+                practitioner_id=_PRACTITIONER,
+                starts_at=_STARTS_AT,
+            )
+        )
+        await session.commit()
+
+    (message,) = await _thread(session_id, chat_id)
+
+    assert message["booking_acts"] is None
+
+
+async def test_staff_actions_leave_the_recorded_acts_as_they_were() -> None:
+    # FR-015: a staff post and the assistant switch change the conversation, never the
+    # record of what the assistant attempted in it.
+    session_id, chat_id = await _seed_chat_with_patient()
+    message_id = await _add_patient_message(session_id, chat_id, "book me in")
+    settled = await _begin_act(session_id, chat_id, message_id)
+    await _settle(settled, session_id, BookingActOutcome.DONE)
+    await _begin_act(session_id, chat_id, message_id, BookingActOperation.CANCEL)
+    before = await _thread(session_id, chat_id)
+
+    async with _api(session_id) as client:
+        posted = await client.post(
+            f"/console/chats/{chat_id}/messages", json={"content": "On it."}
+        )
+        off = await client.post(
+            f"/console/chats/{chat_id}/assistant", json={"enabled": False}
+        )
+        on = await client.post(
+            f"/console/chats/{chat_id}/assistant", json={"enabled": True}
+        )
+    assert [posted.status_code, off.status_code, on.status_code] == [201, 200, 200]
+
+    after = await _thread(session_id, chat_id)
+
+    assert len(before[0]["booking_acts"]) == 2
+    assert after[0]["booking_acts"] == before[0]["booking_acts"]
+    assert [m["sender"] for m in after] == ["patient", "staff"]
+    assert after[1]["booking_acts"] is None
 
 
 # --- provisioning and the degraded path ---------------------------------------

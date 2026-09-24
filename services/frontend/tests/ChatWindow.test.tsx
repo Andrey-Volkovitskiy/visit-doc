@@ -30,6 +30,7 @@ describe("ChatWindow", () => {
         content: "I'm going to come on Tuesday",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T00:00:00Z",
       },
       {
@@ -38,6 +39,7 @@ describe("ChatWindow", () => {
         content: "Noted.",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T00:00:01Z",
       },
     ];
@@ -60,6 +62,7 @@ describe("ChatWindow", () => {
         content: "When can I see",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T00:00:00Z",
       },
       {
@@ -68,6 +71,7 @@ describe("ChatWindow", () => {
         content: "Dr. Josh?",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T00:00:01Z",
       },
       {
@@ -76,6 +80,7 @@ describe("ChatWindow", () => {
         content: "Dr. Josh is available Tuesdays.",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T00:00:02Z",
       },
     ];
@@ -682,6 +687,7 @@ describe("ChatWindow", () => {
           content: "in the first chat",
           request_outcomes: null,
           attention_mark: null,
+          booking_acts: null,
           created_at: "2026-08-06T00:00:00Z",
         },
       ],
@@ -692,6 +698,7 @@ describe("ChatWindow", () => {
           content: "in the other chat",
           request_outcomes: null,
           attention_mark: null,
+          booking_acts: null,
           created_at: "2026-08-06T00:00:00Z",
         },
       ],
@@ -725,6 +732,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
       content,
       request_outcomes: null,
       attention_mark: null,
+      booking_acts: null,
       created_at: `2026-09-01T12:0${index}:00Z`,
     }));
   }
@@ -1244,6 +1252,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         content,
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
       };
     }
@@ -1318,6 +1327,7 @@ describe("ChatWindow: refetching when the poll says the thread moved", () => {
         content,
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: `2026-09-01T12:0${index}:00Z`,
       };
     }
@@ -1647,6 +1657,7 @@ describe("ChatWindow empty-thread greeting (FR-019c)", () => {
       content,
       request_outcomes: null,
       attention_mark: null,
+      booking_acts: null,
       created_at: "2026-09-01T12:00:00",
     }));
   }
@@ -1727,6 +1738,7 @@ describe("ChatWindow renders no times (FR-010b)", () => {
         content: "I'm going to come on Tuesday",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T09:41:00",
       },
       {
@@ -1735,6 +1747,7 @@ describe("ChatWindow renders no times (FR-010b)", () => {
         content: "Noted.",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-08-06T09:41:07",
       },
     ]);
@@ -1791,6 +1804,7 @@ describe("ChatWindow scroll behaviour (FR-015, FR-015a)", () => {
       content,
       request_outcomes: null,
       attention_mark: null,
+      booking_acts: null,
       created_at: "2026-09-01T12:00:00",
     }));
   }
@@ -1987,6 +2001,7 @@ describe("ChatWindow: the patient's own messages take their side (FR-013)", () =
         content: "is anyone there?",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-09-01T12:00:00",
       },
       {
@@ -1995,6 +2010,7 @@ describe("ChatWindow: the patient's own messages take their side (FR-013)", () =
         content: "I can help with that.",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-09-01T12:00:01",
       },
       {
@@ -2003,6 +2019,7 @@ describe("ChatWindow: the patient's own messages take their side (FR-013)", () =
         content: "I've got this one.",
         request_outcomes: null,
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-09-01T12:00:02",
       },
     ]);
@@ -2244,6 +2261,7 @@ describe("ChatWindow shows none of the clinic's working notes (FR-019)", () => {
         content: "I have chest pain.",
         request_outcomes: null,
         attention_mark: "urgent_condition",
+        booking_acts: null,
         created_at: "2026-09-01T12:00:00",
       },
       {
@@ -2260,6 +2278,7 @@ describe("ChatWindow shows none of the clinic's working notes (FR-019)", () => {
           },
         ],
         attention_mark: null,
+        booking_acts: null,
         created_at: "2026-09-01T12:00:01",
       },
     ]);
@@ -2277,5 +2296,42 @@ describe("ChatWindow shows none of the clinic's working notes (FR-019)", () => {
     // hiding the conversation.
     expect(screen.getByText("I have chest pain.")).toBeInTheDocument();
     expect(screen.getByText("Please call 999.")).toBeInTheDocument();
+  });
+
+  it("renders no marker and no booking act for a message carrying acts (016 FR-021)", async () => {
+    // The record of what the assistant did to the schedule is staff-only. The history
+    // read carries it — it is one payload for both panes — so this is what the patient
+    // pane draws, not what it is sent. An unknown outcome is the case most likely to
+    // raise a marker anywhere, so it is the one checked.
+    vi.spyOn(chatStream, "fetchChatHistory").mockResolvedValue([
+      {
+        id: "1",
+        sender: "patient",
+        content: "please cancel my Friday appointment",
+        request_outcomes: null,
+        attention_mark: null,
+        booking_acts: [
+          {
+            operation: "cancel",
+            outcome: null,
+            refusal_reason: null,
+            practitioner_full_name: "Andreas Vesalius",
+            starts_at: "2027-01-15T09:00:00",
+            ends_at: null,
+            previous_practitioner_full_name: null,
+            previous_starts_at: null,
+          },
+        ],
+        created_at: "2026-09-01T12:00:00",
+      },
+    ]);
+
+    render(<ChatWindow chatId={CHAT_ID} />);
+    await waitFor(() => expect(screen.getAllByTestId("message")).toHaveLength(1));
+
+    expect(screen.queryByTestId("outcome-marker")).toBeNull();
+    expect(screen.queryByTestId("booking-act")).toBeNull();
+    expect(screen.queryByText(/Outcome unknown/)).toBeNull();
+    expect(screen.getByText("please cancel my Friday appointment")).toBeInTheDocument();
   });
 });

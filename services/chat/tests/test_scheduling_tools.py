@@ -928,3 +928,212 @@ async def test_a_booking_this_build_cannot_read_is_never_a_flat_denial() -> None
 
     assert result["status"] == "unknown"
     assert "Nothing was booked" not in result["explanation"]
+
+
+# --- 016: each write declares the act it attempts ---------------------------------
+
+_WRITE_TOOLS = ("book_appointment", "reschedule_appointment", "cancel_appointment")
+_APPOINTMENT_ID = "01APPT00000000000000000000"
+_OTHER_PRACTITIONER_ID = "01PRACT0000000000000000001"
+_UNROSTERED_ID = "01PRACT000000000000000000Z"
+
+
+def _tool(name: str) -> Any:
+    return next(t for t in SCHEDULING_TOOLS if t.name == name)
+
+
+def _named_context() -> ToolContext:
+    """A context whose recorder learned a two-practitioner roster."""
+    context = _context()
+    context.acts.learn_practitioners(
+        [
+            {"id": _PRACTITIONER_ID, "full_name": "William Osler"},
+            {"id": _OTHER_PRACTITIONER_ID, "full_name": "Andreas Vesalius"},
+        ]
+    )
+    return context
+
+
+def test_exactly_the_three_writes_declare_an_act() -> None:
+    planning = {tool.name for tool in SCHEDULING_TOOLS if tool.plan_act is not None}
+
+    assert planning == set(_WRITE_TOOLS)
+    # The same three the registry already treats as writes, so no write goes
+    # unrecorded and no read is recorded.
+    assert planning == {tool.name for tool in SCHEDULING_TOOLS if tool.writes}
+
+
+_VALID_WRITE_ARGUMENTS: dict[str, dict[str, Any]] = {
+    "book_appointment": {
+        "practitioner_id": _PRACTITIONER_ID,
+        "starts_at": "2026-08-18T09:00:00",
+    },
+    "reschedule_appointment": {
+        "appointment_id": _APPOINTMENT_ID,
+        "new_starts_at": "2026-08-18T11:00:00",
+        "new_practitioner_id": _OTHER_PRACTITIONER_ID,
+        "expected_starts_at": "2026-08-18T09:00:00",
+        "expected_practitioner_id": _PRACTITIONER_ID,
+    },
+    "cancel_appointment": {
+        "appointment_id": _APPOINTMENT_ID,
+        "expected_starts_at": "2026-08-18T09:00:00",
+        "expected_practitioner_id": _PRACTITIONER_ID,
+    },
+}
+
+
+def _malformed(tool_name: str, **changes: Any) -> dict[str, Any]:
+    """Return the tool's valid arguments with `changes` applied; None drops a key."""
+    arguments = dict(_VALID_WRITE_ARGUMENTS[tool_name])
+    for key, value in changes.items():
+        if value is None:
+            arguments.pop(key, None)
+        else:
+            arguments[key] = value
+    return arguments
+
+
+_MALFORMED_WRITES = [
+    ("book_appointment", _malformed("book_appointment", practitioner_id=None)),
+    ("book_appointment", _malformed("book_appointment", practitioner_id="dr-osler")),
+    ("book_appointment", _malformed("book_appointment", starts_at=None)),
+    ("book_appointment", _malformed("book_appointment", starts_at="2026-08-18")),
+    (
+        "reschedule_appointment",
+        _malformed("reschedule_appointment", appointment_id="appt-1"),
+    ),
+    (
+        "reschedule_appointment",
+        _malformed("reschedule_appointment", new_starts_at=None),
+    ),
+    (
+        "reschedule_appointment",
+        _malformed("reschedule_appointment", new_practitioner_id="dr-vesalius"),
+    ),
+    (
+        "reschedule_appointment",
+        _malformed("reschedule_appointment", expected_starts_at="tomorrow"),
+    ),
+    (
+        "reschedule_appointment",
+        _malformed("reschedule_appointment", expected_practitioner_id=None),
+    ),
+    ("cancel_appointment", _malformed("cancel_appointment", appointment_id=None)),
+    ("cancel_appointment", _malformed("cancel_appointment", expected_starts_at=None)),
+    (
+        "cancel_appointment",
+        _malformed("cancel_appointment", expected_practitioner_id="dr-osler"),
+    ),
+]
+
+
+@pytest.mark.parametrize(("tool_name", "arguments"), _MALFORMED_WRITES)
+async def test_a_plan_rejects_exactly_what_its_handler_rejects(
+    tool_name: str, arguments: dict[str, Any]
+) -> None:
+    tool = _tool(tool_name)
+
+    with pytest.raises(ToolArgumentError):
+        tool.plan_act(_context(), arguments)
+    # The handler, run on its own, refuses the same arguments - so the plan never
+    # accepts a call that could not have been sent, nor refuses one that could.
+    with patch(_CLIENT, autospec=True), pytest.raises(ToolArgumentError):
+        await tool.handler(_context(), arguments)
+
+
+@pytest.mark.parametrize("tool_name", _WRITE_TOOLS)
+def test_a_plan_accepts_the_arguments_its_handler_accepts(tool_name: str) -> None:
+    planned = _tool(tool_name).plan_act(
+        _named_context(), dict(_VALID_WRITE_ARGUMENTS[tool_name])
+    )
+
+    assert (
+        planned.operation.value
+        == {
+            "book_appointment": "book",
+            "reschedule_appointment": "reschedule",
+            "cancel_appointment": "cancel",
+        }[tool_name]
+    )
+
+
+def test_a_booking_is_planned_with_the_roster_s_name() -> None:
+    planned = _tool("book_appointment").plan_act(
+        _named_context(), dict(_VALID_WRITE_ARGUMENTS["book_appointment"])
+    )
+
+    assert planned.practitioner_id == _PRACTITIONER_ID
+    assert planned.practitioner_full_name == "William Osler"
+    assert planned.starts_at == _STARTS_AT
+    assert planned.appointment_id is None
+
+
+def test_a_reschedule_is_planned_with_both_practitioners_named() -> None:
+    planned = _tool("reschedule_appointment").plan_act(
+        _named_context(), dict(_VALID_WRITE_ARGUMENTS["reschedule_appointment"])
+    )
+
+    assert planned.practitioner_id == _OTHER_PRACTITIONER_ID
+    assert planned.practitioner_full_name == "Andreas Vesalius"
+    assert planned.starts_at == datetime(2026, 8, 18, 11, 0)
+    assert planned.appointment_id == _APPOINTMENT_ID
+    assert planned.previous_practitioner_id == _PRACTITIONER_ID
+    assert planned.previous_practitioner_full_name == "William Osler"
+    assert planned.previous_starts_at == _STARTS_AT
+
+
+def test_a_reschedule_keeping_its_practitioner_is_planned_with_the_expected_one() -> (
+    None
+):
+    arguments = _malformed("reschedule_appointment", new_practitioner_id=None)
+
+    planned = _tool("reschedule_appointment").plan_act(_named_context(), arguments)
+
+    assert planned.practitioner_id == _PRACTITIONER_ID
+    assert planned.practitioner_full_name == "William Osler"
+
+
+def test_a_cancellation_is_planned_at_the_appointment_as_described() -> None:
+    planned = _tool("cancel_appointment").plan_act(
+        _named_context(), dict(_VALID_WRITE_ARGUMENTS["cancel_appointment"])
+    )
+
+    assert planned.practitioner_id == _PRACTITIONER_ID
+    assert planned.practitioner_full_name == "William Osler"
+    assert planned.starts_at == _STARTS_AT
+    assert planned.appointment_id == _APPOINTMENT_ID
+
+
+@pytest.mark.parametrize(
+    ("tool_name", "arguments"),
+    [
+        (
+            "book_appointment",
+            _malformed("book_appointment", practitioner_id=_UNROSTERED_ID),
+        ),
+        (
+            "reschedule_appointment",
+            _malformed("reschedule_appointment", new_practitioner_id=_UNROSTERED_ID),
+        ),
+        (
+            "cancel_appointment",
+            _malformed("cancel_appointment", expected_practitioner_id=_UNROSTERED_ID),
+        ),
+    ],
+)
+def test_a_practitioner_the_roster_did_not_name_is_planned_nameless(
+    tool_name: str, arguments: dict[str, Any]
+) -> None:
+    planned = _tool(tool_name).plan_act(_named_context(), arguments)
+
+    assert planned.practitioner_id == _UNROSTERED_ID
+    assert planned.practitioner_full_name is None
+
+
+def test_a_plan_made_before_any_roster_was_read_names_nobody() -> None:
+    planned = _tool("book_appointment").plan_act(
+        _context(), dict(_VALID_WRITE_ARGUMENTS["book_appointment"])
+    )
+
+    assert planned.practitioner_full_name is None

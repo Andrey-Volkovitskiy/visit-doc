@@ -16,6 +16,7 @@ function conversation(
     attention_since: null,
     assistant_may_reply: true,
     pause_seconds_remaining: null,
+    booking_acts_version: 0,
     ...overrides,
   };
 }

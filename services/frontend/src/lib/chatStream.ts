@@ -116,6 +116,46 @@ export type AttentionMark =
   | "assistant_failed"
   | "unanswered";
 
+/** Which change to the schedule an act attempted. */
+export type BookingActOperation = "book" | "reschedule" | "cancel";
+
+/**
+ * What came of one attempted change, as far as it could be established.
+ *
+ * `not_sent` is known to have changed nothing; `unknown` may or may not have. The wire
+ * also sends null — an act stored before its request went out and never settled — and
+ * **a reader treats that exactly as `unknown`** (FR-012b): whether the turn is still
+ * running or ended before the answer came is not something the display may depend on.
+ */
+export type BookingActOutcome =
+  | "done"
+  | "unchanged"
+  | "refused"
+  | "not_sent"
+  | "unknown";
+
+/**
+ * One attempt the assistant made to change the schedule: a snapshot as it stood when
+ * the act ran, never re-read from the appointment since (FR-015).
+ *
+ * Times are naive local `YYYY-MM-DDTHH:MM:SS`, like every other time in this system.
+ * For a reschedule, `practitioner_full_name` and `starts_at` are where it moved *to*
+ * and the two `previous_*` fields where it moved from; both are null on every other
+ * operation. A null name means the name was not known when the act ran.
+ */
+export interface BookingAct {
+  operation: BookingActOperation;
+  outcome: BookingActOutcome | null;
+  /** The scheduler's reason code — set exactly when `outcome` is `refused`. */
+  refusal_reason: string | null;
+  practitioner_full_name: string | null;
+  starts_at: string;
+  /** Null unless the scheduler reported it. */
+  ends_at: string | null;
+  previous_practitioner_full_name: string | null;
+  previous_starts_at: string | null;
+}
+
 /**
  * One message in a chat's history.
  *
@@ -129,6 +169,12 @@ export interface Message {
   /** Only ever set on an assistant message whose turn ran the FAQ half. */
   request_outcomes: RequestOutcome[] | null;
   attention_mark: AttentionMark | null;
+  /**
+   * Only ever set on a patient message on which the assistant attempted a change to
+   * the schedule, in the order attempted. Null means no change was attempted; `[]` is
+   * never sent, because it would read as a booking half that ran and did nothing.
+   */
+  booking_acts: BookingAct[] | null;
   created_at: string;
 }
 

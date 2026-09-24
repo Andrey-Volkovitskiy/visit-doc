@@ -739,9 +739,10 @@ blank means tracing is off; the startup `service.configured` event states which 
 interaction behaviour a designed product implies — a tab strip with overflow, aligned bubbles with
 sender grouping, bottom-pinned threads that hold a reader's position, a working indicator, disabled
 send controls, an empty-thread greeting, a three-section staff console, and per-request evidence
-behind a click-to-expand marker. **No network contract changed**: `src/lib/chatStream.ts` and
-`src/lib/consoleApi.ts` are byte-identical to what they were before the feature, which is what the
-claim that this is a presentation-only change rests on.
+behind a click-to-expand marker. **No network contract changed**: the feature left
+`src/lib/chatStream.ts` and `src/lib/consoleApi.ts` byte-identical to what they were before it,
+which is what the claim that this is a presentation-only change rests on. (016, below, then
+extended both for booking acts and the practitioner's week.)
 
 - **Tailwind CSS v4 with shadcn/ui, over the smaller option that was recommended and declined.**
   Three controls here carry focus management that is genuinely hard to get right — the staff tab
@@ -776,7 +777,7 @@ claim that this is a presentation-only change rests on.
   | `clsx` | Conditional class lists, without string concatenation in markup |
   | `tailwind-merge` | Makes a caller's utility win over a component's default *for the same CSS property*, instead of both landing in `class` and source order deciding |
   | `class-variance-authority` | The `variant`/`size` tables on `Button`, so a variant is a named row rather than a ternary |
-  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the fifteen actually imported (`X` and `XIcon` are one icon under two names) |
+  | `lucide-react` | The icon set. Every icon is a tree-shaken component, so the bundle carries only the icons actually imported |
   | `tw-animate-css` | The enter/exit keyframes shadcn v4 expects on dialog and dropdown. Its animations respect `prefers-reduced-motion` through the global block in `app.css` — verified, not assumed, since they arrived with the library |
   | `@types/node` (dev) | `vite.config.ts` and `vitest.config.ts` use `node:path` and `import.meta.dirname` to declare the `@/*` alias |
 
@@ -829,9 +830,10 @@ claim that this is a presentation-only change rests on.
 - **One reserved colour, and colour is never the only carrier.** `--color-attention` means "a person
   is needed" and nothing else may use it — not a decorative accent, not a required-field asterisk,
   not a delete button. shadcn maps its `destructive` variant onto that colour, so
-  `variant="destructive"` is making that claim; the delete confirmations in `ChatList`,
-  `PractitionerAdmin` and `FaqAdmin` all decline it, and carry their weight in the sentence naming
-  what is lost instead. Every state marked by colour is also marked by text, weight, shape or
+  `variant="destructive"` is making that claim; the confirmations — deleting a chat in `ChatList`,
+  discarding an edit in `PractitionerAdmin` and `FaqAdmin` — all decline it, and carry their weight
+  in the sentence naming what is lost instead. (Deleting a practitioner or an FAQ entry asks
+  nothing: the icon deletes on one press.) Every state marked by colour is also marked by text, weight, shape or
   position, so a greyscale screen and a reader who cannot distinguish the hue both still see it.
 - **Light theme only, by decision rather than omission.** shadcn installs a dark theme by default;
   it was removed rather than left unreferenced, and no `dark:` variant or `prefers-color-scheme`
@@ -855,3 +857,77 @@ claim that this is a presentation-only change rests on.
   four primitives *and* a plain `<button>` exactly once; the existing `fireEvent.click` call
   sites were left alone, since rewriting passing tests to use a helper they do not need is churn
   with a migration's risk.
+
+## What Staff Can See of the Schedule: technology choices
+
+`specs/016-staff-booking-visibility/` (ROADMAP Phase 3a's two leftovers) gives staff a record of
+what the assistant did to the schedule on each message — a **booking act** per attempt to book,
+reschedule or cancel — and a practitioner's standing appointments for the coming seven days,
+inside that practitioner's block on the roster behind a Show/Hide bookings toggle. Seven choices
+carried a real tradeoff.
+
+- **An act hangs off the patient message, not the reply.** The reply is the obvious anchor — it is
+  where the assistant says what it did — and it is missing in exactly the turns a person most needs
+  this record for: one that failed after its write, one staff took over, one a newer message
+  cancelled. The patient message the turn was answering always exists, so the record always has
+  somewhere to live. The cost is that the console shows an act under the question rather than
+  under the answer, and the wire says so: `booking_acts` appears only on `sender = "patient"`
+  messages, `null` when nothing was attempted and never `[]`.
+- **Write-ahead, settled once, and NULL read as unknown.** An act is inserted and committed, with
+  no outcome, *before* the request leaves for the scheduler; its answer then settles it with one
+  `UPDATE` whose `WHERE` carries `outcome IS NULL`, so a second settle is a no-op. The alternative
+  — write the act once the answer is back — records nothing for precisely the attempts whose
+  outcome is in doubt: a handler that raised, a turn cancelled mid-call, a settle that failed. With
+  the row written first, each of those leaves an act with no outcome, and the console renders that
+  as "Outcome unknown … may or may not have been …", never as nothing having happened. And an act
+  that could not be written is never sent: the tool answers `unavailable`, so the record cannot be
+  missing a write that reached the scheduler. The cost is a commit before every schedule-changing
+  call, and a row that says "unknown" for an attempt that may in fact have succeeded — which is
+  the honest thing to say about it. NULL (no outcome was ever written) and `unknown` (the tool's
+  own answer was that it could not tell) are kept distinct in storage and on the wire, and rendered
+  with the same words.
+- **Recorded in the tool registry, not in each handler.** A write tool declares what it is about to
+  do (`Tool.plan_act`, reading its arguments with the handler's own helpers) and
+  `ToolRegistry` records around the handler through a write-only `BookingActRecorder` port. Three
+  copies of begin/settle in three handlers would be three places to get the order wrong, and a
+  fourth write tool that forgot them would silently leave its attempts unrecorded. The cost is that
+  arguments are parsed twice per write — deterministically, over the same dict.
+- **A table, not a JSONB column beside `request_outcomes`.** 011 chose JSONB for `request_outcomes`
+  because a turn's outcomes are written once, together. Acts are not: each is inserted and later
+  updated by id, and the booking loop dispatches one model response's tool calls concurrently
+  (`asyncio.gather`), so two settles on one JSONB array would be a read-modify-write race with a
+  lost update waiting in it. Rows have no such race. On the wire it is still its own shape on the
+  message, never an entry in `request_outcomes` and never a `FaqVerdict` value: an act is a
+  performed change, not a claim the corpus grounded. Cascades follow the message, so deleting a
+  chat or a session removes its acts.
+- **A snapshot, not a live view.** An act stores the practitioner's *name* as known when the act
+  ran — from the turn's roster read, overwritten on settle by any name the scheduler's answer
+  carried — and is never touched again after it is settled. Nothing joins it back to scheduler
+  data, and the ids stay in storage and off the wire. So a later reschedule, a renamed or deleted
+  practitioner, or a cancelled appointment does not rewrite what the record says happened at the
+  time. The cost is that the record can disagree with the schedule *as it is now*; that is what the
+  week view is for. A name nobody reported is shown as "a practitioner not named in the record"
+  rather than an id or a guess.
+- **The week is a scheduler REST read, with its window computed in chat from the browser's clock.**
+  `ListAppointments` is the agent's gRPC call and is scoped by patient, never by practitioner, so
+  answering from it would mean listing every patient's appointments and filtering them, or widening
+  the agent's contract to serve a staff screen. The console already speaks REST to the scheduler
+  for practitioner CRUD, so the read is `GET /practitioners/{id}/appointments` beside the
+  practitioner itself, with session, practitioner, standing status and both ends of the window in
+  one `WHERE`. The window is one pure function in chat, `practitioner_week_bounds(local_now)`:
+  from the browser's own offset-free `local_now` to midnight at the start of the eighth day, so the
+  whole seventh day is in it and midnight crossing needs nothing. The scheduler takes both bounds as
+  given and knows nothing of weeks; the browser sends only its clock, so the console exposes the
+  product's read rather than a general range query. An open list re-reads on the console poll's
+  tick with at most one read in flight, and a failed refresh replaces the list with an error rather
+  than leaving the last good one on screen as if it were current.
+- **The staff thread re-reads on a counter, not a clock.** A turn can settle an act without writing
+  a message — the failed turn a person is paged for is exactly that case — so `last_message_at`
+  alone would leave "unknown" on screen after the act had settled. Each console listing row
+  therefore carries `booking_acts_version`: the chat's number of acts plus the number of them
+  settled. Rows are only inserted and settled once, and deleted only with their chat, so every
+  change moves it and nothing else does. It is compared for equality only; `max(settled_at)` was
+  rejected because two settles in one clock tick look like one. It rides the 2-second poll the
+  console already runs, so it costs one correlated aggregate and no new request — rather than a
+  push channel, or bending `last_message_at`, which the list shows and orders by, into meaning
+  "something changed".

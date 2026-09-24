@@ -6,6 +6,7 @@ import { useBottomPin } from "../lib/useBottomPin";
 import { isSendKey } from "../lib/sendKey";
 import { useBusyLatch } from "../lib/useBusyLatch";
 import { useThreadReads, type Banner } from "../lib/useThreadReads";
+import { NO_DIRTY_REPORT, useDirtyReport } from "./adminSection";
 import { ErrorBanner } from "./ErrorBanner";
 import { MessageView } from "./MessageView";
 import { Button } from "./ui/button";
@@ -66,6 +67,15 @@ interface StaffThreadProps {
    */
   lastMessageAt?: string | null;
   /**
+   * This conversation's booking-record version, from the same poll row (016 FR-016a).
+   *
+   * It changes when an act is recorded or settled, and the thread is refetched when it
+   * does, exactly as for a new message. That is the only thing that re-reads a turn
+   * which settled an act and then failed before writing a reply: no message moved
+   * `lastMessageAt`, and without this the act would read "unknown" until one did.
+   */
+  bookingActsVersion?: number;
+  /**
    * How many times that poll has answered, which changes on every tick.
    *
    * What makes a *retry* possible: `lastMessageAt` stops changing once the newest
@@ -75,6 +85,15 @@ interface StaffThreadProps {
    */
   pollTick?: number;
   onSetAssistant: (enabled: boolean) => void;
+  /**
+   * Report whether the reply box holds text that leaving would lose (015 FR-035b).
+   *
+   * The staff tab set unmounts this pane to show another section, and the unsent reply
+   * goes with it — only `App`, which performs the switch, can hold one back. So the pane
+   * reports, and **retracts on unmount**, exactly as the practitioner and FAQ editors
+   * do. Optional: rendered on its own, the pane has nobody to report to.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /**
@@ -91,8 +110,10 @@ export function StaffThread({
   assistantMayReply,
   pauseSecondsRemaining,
   lastMessageAt,
+  bookingActsVersion,
   pollTick,
   onSetAssistant,
+  onDirtyChange = NO_DIRTY_REPORT,
 }: StaffThreadProps) {
   const [thread, setThread] = useState<Message[]>([]);
   const [reply, setReply] = useState("");
@@ -127,6 +148,11 @@ export function StaffThread({
   // that happens to agree: it is the same hook the patient thread uses.
   const threadScroll = useBottomPin<HTMLDivElement>();
 
+  // Whitespace alone is nothing a staff member would miss. Reported up and retracted on
+  // unmount by the same hook the admin editors use, since the tab switch that destroys
+  // this pane is the one it guards.
+  useDirtyReport(reply.trim() !== "", onDirtyChange);
+
   /** Put a reply this pane just posted on screen, unless a read already brought it. */
   function showPosted(posted: Message): void {
     // Matched by the server's own id, which the post response carries. It can already
@@ -158,6 +184,7 @@ export function StaffThread({
   useThreadReads<Message[]>({
     chatId,
     lastMessageAt,
+    bookingActsVersion,
     pollTick,
     // Nothing pauses this pane's reads. A refetch answered from before a post was
     // stored used to take the reply back off the screen, which is what the pause was
@@ -362,6 +389,7 @@ export function StaffThread({
             requestOutcomes={message.request_outcomes}
             showOutcomes
             mark={message.attention_mark}
+            bookingActs={message.booking_acts}
           />
         ))}
       </div>

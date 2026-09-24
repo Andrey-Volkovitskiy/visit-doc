@@ -623,6 +623,16 @@ screen it belongs on is laid out for the real thing and the gap is legible inste
   what it proxies. Needs a console endpoint over that RPC, scoped to the session the way every
   other console read is, with the practitioner and the 7-day window as its predicate rather than a
   filter applied to a wider answer.
+  *(Shipped in `specs/016-staff-booking-visibility/`. The week lives on the roster itself, inside
+  each practitioner's block behind a Show/Hide bookings toggle, rather than beneath a selected
+  practitioner. It is read over the scheduler's REST admin surface
+  (`GET /practitioners/{id}/appointments`, proxied as `/console/practitioners/{id}/appointments`),
+  not over `ListAppointments`: that RPC is scoped by patient and never by practitioner, so serving
+  this read would have meant either listing every patient's appointments and filtering them — the
+  filter this bullet rules out — or widening the agent's contract to serve a staff screen. The
+  predicate stands as written: session, practitioner, standing status and both ends of the window
+  are all in the scheduler's one `WHERE`, and the window itself is computed in chat from the
+  browser's own `local_now`.)*
 - **A booking outcome a staff member can read.** The sketch's `(i)` marker on a patient message
   opens what the assistant did with that request — for a booking, the change it actually made
   ("Appt with dr. Andreas at 9:00 12.01.2027 is cancelled"). `request_outcomes` cannot carry it:
@@ -632,6 +642,11 @@ screen it belongs on is laid out for the real thing and the gap is legible inste
   than a sixth `FaqVerdict` value or an `answer` string standing in for one. Until it exists the
   marker carries what the turn already records: the FAQ outcomes, and the attention mark that
   covers the red case (a corpus gap, an unauthorized request, an urgent condition).
+  *(Shipped in `specs/016-staff-booking-visibility/` as **booking acts**: their own shape, a
+  `booking_acts` list on the message beside `request_outcomes` and never inside it. An act hangs
+  off the *patient* message the turn answered rather than the reply, is written before the request
+  leaves for the scheduler and settled at most once, and an act that never settled is shown as
+  "Outcome unknown", never as nothing having happened.)*
 
 #### Phase 3b — End-to-end tests in a real browser
 The `tests/e2e/` tier, held open since Phase 0, is filled here. Not earlier, for two reasons that

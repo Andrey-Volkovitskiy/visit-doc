@@ -20,6 +20,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 _ULID_LENGTH = 26
 PATIENT_NAME_LENGTH = 200
+# The scheduler's own bound on a practitioner's `full_name`, so any name it reports
+# fits the snapshot a booking act keeps of it.
+PRACTITIONER_NAME_LENGTH = 200
 
 
 class MessageSender(StrEnum):
@@ -118,6 +121,40 @@ CLEARABLE_MARKS = frozenset(
         AttentionMark.NOT_AUTHORIZED,
     }
 )
+
+
+class BookingActOperation(StrEnum):
+    """What one booking act attempted - a Python-level closed set.
+
+    A plain string column in storage, like `sender`; the database's own CHECK keeps it
+    to these three, and application code passes a member, never a literal.
+    """
+
+    BOOK = "book"
+    RESCHEDULE = "reschedule"
+    CANCEL = "cancel"
+
+
+class BookingActOutcome(StrEnum):
+    """What came of one booking act, once that is known.
+
+    An act with no outcome at all is not a member: it is a NULL `outcome`, meaning no
+    outcome was ever written. `UNKNOWN` is a different fact - the tool's own answer was
+    that whether the change landed is not known. A reader presents the two alike; the
+    record keeps them apart so each value has one meaning.
+    """
+
+    # The change was made.
+    DONE = "done"
+    # The appointment was already in the state asked for, so nothing needed changing.
+    UNCHANGED = "unchanged"
+    # The scheduler evaluated the request and declined it, naming a reason.
+    REFUSED = "refused"
+    # It is known the scheduler changed nothing and gave no reason: the request never
+    # reached it, or it rejected the request before acting on it.
+    NOT_SENT = "not_sent"
+    # The request may have reached the scheduler, and no answer came back.
+    UNKNOWN = "unknown"
 
 
 class Base(DeclarativeBase):
@@ -336,4 +373,108 @@ class Message(Base):
     attention_mark: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class BookingAct(Base):
+    """One attempt by the assistant to change the schedule: book, reschedule or cancel.
+
+    Written before the request leaves for the scheduler, with no outcome, and settled
+    at most once afterwards. A NULL `outcome` therefore means no outcome was ever
+    written - the turn ended, the settle's write failed, or the act is still running -
+    and is read exactly as unknown. Nothing ever rewrites a settled row, so what it says
+    is what was known when the act ran, whatever later happens to the appointment.
+
+    Hangs off the **patient** message the turn was answering, never the reply: a reply
+    is missing in exactly the turns a person most needs this record for - one that
+    failed after its write, one staff took over, one a newer message cancelled.
+
+    `session_id` is carried beside `chat_id` so that every read and every settle scopes
+    itself with a plain predicate on this table rather than through a join.
+
+    Practitioner and appointment ids stay in storage and nowhere else; the names beside
+    them are snapshots taken when the act ran, NULL when no name was known then.
+    """
+
+    __tablename__ = "booking_acts"
+    __table_args__ = (
+        CheckConstraint(
+            "operation IN ('book', 'reschedule', 'cancel')",
+            name="ck_booking_acts_operation",
+        ),
+        CheckConstraint(
+            "outcome IS NULL OR outcome IN "
+            "('done', 'unchanged', 'refused', 'not_sent', 'unknown')",
+            name="ck_booking_acts_outcome",
+        ),
+        # A refusal always names its reason, and nothing else carries one. An unsettled
+        # act counts as not refused.
+        CheckConstraint(
+            "COALESCE(outcome = 'refused', false) = (refusal_reason IS NOT NULL)",
+            name="ck_booking_acts_refusal_reason_with_refused",
+        ),
+        CheckConstraint(
+            "(outcome IS NULL) = (settled_at IS NULL)",
+            name="ck_booking_acts_settled_with_outcome",
+        ),
+        # Only a reschedule moved from somewhere, and it always names both halves of
+        # where - the guard values the request was sent with.
+        CheckConstraint(
+            "(operation = 'reschedule') = "
+            "(previous_starts_at IS NOT NULL AND previous_practitioner_id IS NOT NULL)",
+            name="ck_booking_acts_previous_with_reschedule",
+        ),
+        # A thread's acts are read in `seq` order, one chat at a time.
+        Index("ix_booking_acts_chat_seq", "chat_id", "seq"),
+        Index("ix_booking_acts_message", "message_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)
+    # The order of the attempts, assigned by the database at insert - never a clock,
+    # for the reason `Message.seq` gives.
+    seq: Mapped[int] = mapped_column(BigInteger, Identity(always=True), nullable=False)
+    session_id: Mapped[str] = mapped_column(String(_ULID_LENGTH), nullable=False)
+    chat_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH), ForeignKey("chats.id", ondelete="CASCADE"), nullable=False
+    )
+    message_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH),
+        ForeignKey("messages.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # A `BookingActOperation` value.
+    operation: Mapped[str] = mapped_column(String(16), nullable=False)
+    # A `BookingActOutcome` value, or NULL for never settled.
+    outcome: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # The scheduler's reason code, set exactly when the outcome is a refusal.
+    refusal_reason: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    # Known at insert for a reschedule or a cancellation; for a booking only once done.
+    appointment_id: Mapped[str | None] = mapped_column(
+        String(_ULID_LENGTH), nullable=True
+    )
+    # For a reschedule, the practitioner and start it moved *to*.
+    practitioner_id: Mapped[str] = mapped_column(String(_ULID_LENGTH), nullable=False)
+    practitioner_full_name: Mapped[str | None] = mapped_column(
+        String(PRACTITIONER_NAME_LENGTH), nullable=True
+    )
+    starts_at: Mapped[datetime] = mapped_column(DateTime(), nullable=False)
+    # Known only from the scheduler's answer.
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    # Reschedule only: where the appointment moved from.
+    previous_practitioner_id: Mapped[str | None] = mapped_column(
+        String(_ULID_LENGTH), nullable=True
+    )
+    previous_practitioner_full_name: Mapped[str | None] = mapped_column(
+        String(PRACTITIONER_NAME_LENGTH), nullable=True
+    )
+    previous_starts_at: Mapped[datetime | None] = mapped_column(
+        DateTime(), nullable=True
+    )
+    # Diagnostic only, never used for ordering.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    # Written together with `outcome`, and NULL exactly when it is.
+    settled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )

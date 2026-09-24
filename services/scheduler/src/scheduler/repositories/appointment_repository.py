@@ -309,6 +309,71 @@ async def list_for_patient(
     return AppointmentListing(future=future, past=past, past_truncated=past_truncated)
 
 
+@dataclass(frozen=True)
+class PractitionerAppointment:
+    """One standing appointment on a practitioner's calendar, named for staff."""
+
+    id: str
+    patient_full_name: str
+    starts_at: datetime
+    ends_at: datetime
+
+
+async def list_for_practitioner(
+    session: AsyncSession,
+    *,
+    session_id: str,
+    practitioner_id: str,
+    ends_after: datetime,
+    starts_before: datetime,
+) -> list[PractitionerAppointment]:
+    """Return this practitioner's standing appointments overlapping a window, in order.
+
+    Args:
+        ends_after: An appointment ending at or before this is over and left out; one
+            already under way at it is kept.
+        starts_before: An appointment starting at or after this is left out.
+
+    One statement, with the session, the practitioner, the status and both bounds all
+    in its `WHERE`, so nothing wider is ever read and narrowed afterwards. The join to
+    `patients` carries the session too: an appointment names a patient of its own
+    session by construction, and the predicate keeps that true of the read rather than
+    assumed by it. Ordered by start, then by id so the order is total.
+    """
+    result = await session.execute(
+        select(
+            Appointment.id,
+            Patient.full_name,
+            Appointment.starts_at,
+            Appointment.ends_at,
+        )
+        .join(
+            Patient,
+            and_(
+                Patient.id == Appointment.patient_id,
+                Patient.session_id == session_id,
+            ),
+        )
+        .where(
+            Appointment.session_id == session_id,
+            Appointment.practitioner_id == practitioner_id,
+            Appointment.status == AppointmentStatus.STANDING,
+            Appointment.ends_at > ends_after,
+            Appointment.starts_at < starts_before,
+        )
+        .order_by(Appointment.starts_at.asc(), Appointment.id.asc())
+    )
+    return [
+        PractitionerAppointment(
+            id=row.id,
+            patient_full_name=row.full_name,
+            starts_at=row.starts_at,
+            ends_at=row.ends_at,
+        )
+        for row in result.all()
+    ]
+
+
 async def _first_ineligibility(
     session: AsyncSession,
     *,

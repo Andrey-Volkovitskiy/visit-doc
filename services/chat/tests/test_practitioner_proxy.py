@@ -141,10 +141,16 @@ async def _call(
                 return await http.request(method, path, json=body)
 
 
+# The one read of a practitioner's appointments, and the window it must forward for
+# `_LOCAL_NOW`: from that moment to midnight at the start of the eighth day.
+_WEEK_ROUTE = ("GET", "/console/practitioners/{practitioner_id}/appointments")
+_LOCAL_NOW = "2026-09-24T14:30:00"
+_WEEK_QUERY = "?ends_after=2026-09-24T14:30:00&starts_before=2026-10-01T00:00:00"
+
 # Each proxy route as the console router declares it, mapped to the method, the
 # scheduler-side path and the body it must forward. The test below asserts the keys are
-# exactly the console routes that forward, so a sixth one fails there rather than
-# leaving every parametrized test below quietly covering five of six.
+# exactly the console routes that forward, so a new one fails there rather than
+# leaving every parametrized test below quietly covering all but one.
 _PROXIED = {
     ("GET", "/console/specialties"): ("GET", "/specialties", None),
     ("GET", "/console/practitioners"): ("GET", "/practitioners", None),
@@ -159,19 +165,33 @@ _PROXIED = {
         "/practitioners/{practitioner_id}",
         None,
     ),
+    _WEEK_ROUTE: (
+        "GET",
+        "/practitioners/{practitioner_id}/appointments" + _WEEK_QUERY,
+        None,
+    ),
 }
+
+# The query string a route needs to be a valid request at all.
+_REQUEST_QUERY = {_WEEK_ROUTE: f"?local_now={_LOCAL_NOW}"}
 
 # The same routes as the requests this suite sends, with a real id in place of the path
 # parameter.
 _ROUTES = [
     (
         method,
-        path.format(practitioner_id=_PRACTITIONER_ID),
+        path.format(practitioner_id=_PRACTITIONER_ID)
+        + _REQUEST_QUERY.get((method, path), ""),
         expected_method,
         expected_path.format(practitioner_id=_PRACTITIONER_ID),
         body,
     )
     for (method, path), (expected_method, expected_path, body) in _PROXIED.items()
+]
+
+# Every route but the week, whose transport failures are worded as a read's.
+_CHANGE_WORDED_ROUTES = [
+    route for route, key in zip(_ROUTES, _PROXIED, strict=True) if key != _WEEK_ROUTE
 ]
 
 
@@ -187,7 +207,7 @@ def test_the_listed_routes_are_every_console_route_that_calls_the_proxy() -> Non
     """`_PROXIED` is read off the console router, not maintained beside it.
 
     What is counted is every route whose own handler calls `_proxy`, which is how all
-    five reach the scheduler today; a route that forwarded by some other means would
+    six reach the scheduler today; a route that forwarded by some other means would
     not be seen here. `_proxy` renamed or no longer called empties the set and fails
     this test rather than passing it.
     """
@@ -420,7 +440,8 @@ async def test_the_transport_refuses_a_path_that_is_not_one(path: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("method", "path", "expected_method", "expected_path", "body"), _ROUTES
+    ("method", "path", "expected_method", "expected_path", "body"),
+    _CHANGE_WORDED_ROUTES,
 )
 async def test_an_unreachable_scheduler_is_reported_as_having_changed_nothing(
     method: str,
@@ -439,7 +460,8 @@ async def test_an_unreachable_scheduler_is_reported_as_having_changed_nothing(
 
 
 @pytest.mark.parametrize(
-    ("method", "path", "expected_method", "expected_path", "body"), _ROUTES
+    ("method", "path", "expected_method", "expected_path", "body"),
+    _CHANGE_WORDED_ROUTES,
 )
 async def test_a_timed_out_scheduler_is_reported_as_an_unknown_outcome(
     method: str,
@@ -537,3 +559,169 @@ async def test_a_request_with_no_session_sends_nothing_at_all(
 
     assert response.status_code == 401
     assert transport.requests == []
+
+
+# --- one practitioner's week ----------------------------------------------------------
+
+_WEEK_PATH = f"/console/practitioners/{_PRACTITIONER_ID}/appointments"
+
+
+async def test_the_transport_attaches_a_query_encoded() -> None:
+    # Built from a mapping, never interpolated: a value carrying `&`, `=` or `#` stays
+    # one value rather than becoming a second parameter or a fragment.
+    transport = _FakeHttpSession(status=200, payload={"appointments": []})
+    query = {"ends_after": "2026-09-24T14:30:00", "note": "a&b=c #d"}
+
+    await scheduler_rest.forward(
+        transport,  # type: ignore[arg-type]
+        "http://scheduler:8001",
+        "GET",
+        "/practitioners/abc/appointments",
+        "01SESSION000000000000000000",
+        query=query,
+    )
+
+    sent = transport.requests[0].url
+    assert sent.raw_path == "/practitioners/abc/appointments"
+    assert dict(sent.query) == query
+    assert not sent.fragment
+
+
+async def test_the_transport_still_refuses_a_query_in_the_path() -> None:
+    # The query argument is the one way to send a query; it does not make `?` in the
+    # path legal.
+    transport = _FakeHttpSession(status=200, payload={"appointments": []})
+
+    with pytest.raises(ValueError):
+        await scheduler_rest.forward(
+            transport,  # type: ignore[arg-type]
+            "http://scheduler:8001",
+            "GET",
+            "/practitioners/abc/appointments?admin=1",
+            "01SESSION000000000000000000",
+            query={"ends_after": "2026-09-24T14:30:00"},
+        )
+
+    assert transport.requests == []
+
+
+@pytest.mark.parametrize(
+    ("local_now", "ends_after", "starts_before"),
+    [
+        ("2026-09-24T14:30:00", "2026-09-24T14:30:00", "2026-10-01T00:00:00"),
+        ("2026-09-24T23:59:59", "2026-09-24T23:59:59", "2026-10-01T00:00:00"),
+        ("2026-09-25T00:00:00", "2026-09-25T00:00:00", "2026-10-02T00:00:00"),
+        ("2026-12-29T09:00:00", "2026-12-29T09:00:00", "2027-01-05T00:00:00"),
+    ],
+)
+async def test_the_week_forwards_the_window_computed_from_local_now(
+    local_now: str, ends_after: str, starts_before: str
+) -> None:
+    session_id = await _session_id()
+    transport = _FakeHttpSession(status=200, payload={"appointments": []})
+
+    await _call(
+        transport, "GET", f"{_WEEK_PATH}?local_now={local_now}", session_id=session_id
+    )
+
+    sent = transport.requests[0].url
+    assert sent.raw_path == f"/practitioners/{_PRACTITIONER_ID}/appointments"
+    assert dict(sent.query) == {
+        "ends_after": ends_after,
+        "starts_before": starts_before,
+    }
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "",
+        "?local_now=",
+        "?local_now=tomorrow",
+        "?local_now=2026-09-24T14:30:00Z",
+        "?local_now=2026-09-24T14:30:00%2B02:00",
+        "?local_now=2026-09-24T14:30:00-05:00",
+        # Valid as a date-time, but its week ends past the last representable date.
+        "?local_now=9999-12-30T09:00:00",
+    ],
+)
+async def test_the_week_refuses_a_local_now_it_cannot_use_and_sends_nothing(
+    query: str,
+) -> None:
+    # A clock carrying an offset asserts a zone this system does not have, so it is
+    # refused exactly as a turn's is, before anything crosses the boundary.
+    session_id = await _session_id()
+    transport = _FakeHttpSession(status=200, payload={"appointments": []})
+
+    response = await _call(
+        transport, "GET", f"{_WEEK_PATH}{query}", session_id=session_id
+    )
+
+    assert response.status_code == 422
+    assert transport.requests == []
+
+
+@pytest.mark.parametrize(
+    ("status", "payload"),
+    [
+        (
+            200,
+            {
+                "appointments": [
+                    {
+                        "id": "01APPT00000000000000000000",
+                        "patient_full_name": "Leo Tolstoy",
+                        "starts_at": "2026-09-24T14:00:00",
+                        "ends_at": "2026-09-24T15:00:00",
+                    }
+                ]
+            },
+        ),
+        (200, {"appointments": []}),
+        (404, {"detail": "practitioner not found"}),
+    ],
+)
+async def test_the_week_relays_the_schedulers_answer_verbatim(
+    status: int, payload: Any
+) -> None:
+    session_id = await _session_id()
+    transport = _FakeHttpSession(status=status, payload=payload)
+
+    response = await _call(
+        transport, "GET", f"{_WEEK_PATH}?local_now={_LOCAL_NOW}", session_id=session_id
+    )
+
+    assert response.status_code == status
+    assert response.json() == payload
+
+
+@pytest.mark.parametrize(
+    ("error", "status", "detail"),
+    [
+        (
+            aiohttp.ClientError("connection refused"),
+            503,
+            "scheduling is unavailable; the appointments could not be read",
+        ),
+        (
+            TimeoutError("no answer"),
+            504,
+            "scheduling did not answer; the appointments could not be read",
+        ),
+    ],
+)
+async def test_a_failed_week_is_worded_as_a_read(
+    error: Exception, status: int, detail: str
+) -> None:
+    # A read that did not arrive changed nothing, so telling staff the change may not
+    # have been applied would be a false statement about a list.
+    session_id = await _session_id()
+    transport = _FakeHttpSession(error=error)
+
+    response = await _call(
+        transport, "GET", f"{_WEEK_PATH}?local_now={_LOCAL_NOW}", session_id=session_id
+    )
+
+    assert response.status_code == status
+    assert response.json() == {"detail": detail}
+    assert len(transport.requests) == 1

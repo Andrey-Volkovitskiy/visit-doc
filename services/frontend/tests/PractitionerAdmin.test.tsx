@@ -280,46 +280,250 @@ describe("PractitionerAdmin: the edit view replaces the tab's content", () => {
   });
 });
 
-describe("PractitionerAdmin: the appointments that cannot be read yet", () => {
-  // FR-033 and SC-008: a gap the backend cannot fill reads as deliberately absent -
-  // never as an error, and never as an empty result that would assert there are none.
-  it("says the next seven days are not available yet, and what will appear there", async () => {
+describe("PractitionerAdmin: a practitioner's bookings on the roster", () => {
+  // 016 US2 (FR-007..FR-009). The week lives on the roster, behind a per-block toggle,
+  // and nowhere else: 015's edit-view stub is retired.
+  const ADA = practitioner();
+  const GRACE = practitioner({
+    id: "01PRACT0000000000000000001",
+    full_name: "Dr. Grace Hopper",
+  });
+
+  beforeEach(() => {
+    vi.spyOn(consoleApi, "fetchPractitioners").mockResolvedValue([ADA, GRACE]);
+    vi.spyOn(consoleApi, "fetchPractitionerWeek").mockImplementation(
+      (id: string) =>
+        Promise.resolve(
+          id === ADA.id
+            ? [
+                {
+                  id: "01APPT00000000000000000001",
+                  patient_full_name: "Leo Tolstoy",
+                  starts_at: "2026-09-24T14:00:00",
+                  ends_at: "2026-09-24T15:00:00",
+                },
+              ]
+            : [],
+        ),
+    );
+  });
+
+  /** The roster block for one practitioner, found by name rather than position. */
+  async function blockOf(name: string): Promise<HTMLElement> {
+    const blocks = await screen.findAllByTestId("practitioner");
+    const block = blocks.find((b) => within(b).queryByText(name) !== null);
+    if (block === undefined) throw new Error(`no roster block for ${name}`);
+    return block;
+  }
+
+  function toggleIn(block: HTMLElement): HTMLElement {
+    return within(block).getByTestId("bookings-toggle");
+  }
+
+  function weekReads(): string[] {
+    return vi
+      .mocked(consoleApi.fetchPractitionerWeek)
+      .mock.calls.map(([id]) => id);
+  }
+
+  /** Whether `toggle` is the last thing in `block`: nothing sits after it. */
+  function endsWith(block: HTMLElement, toggle: HTMLElement): boolean {
+    const last = block.lastElementChild;
+    return last === toggle || (last !== null && last.contains(toggle));
+  }
+
+  it("ends every block with a closed Show bookings toggle, and shows no bookings until one is used", async () => {
     render(<PractitionerAdmin />);
+
+    for (const name of [ADA.full_name, GRACE.full_name]) {
+      const block = await blockOf(name);
+      const toggle = toggleIn(block);
+      expect(toggle).toHaveTextContent("Show bookings");
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      expect(
+        within(block).getByRole("button", { name: /show bookings/i, expanded: false }),
+      ).toBe(toggle);
+      expect(endsWith(block, toggle)).toBe(true);
+      expect(within(block).queryByTestId("practitioner-week")).toBeNull();
+    }
+  });
+
+  it("reads nothing for a block that is closed", async () => {
+    render(<PractitionerAdmin pollTick={1} />);
+    await blockOf(ADA.full_name);
+
+    expect(weekReads()).toEqual([]);
+  });
+
+  it("opens that practitioner's week inside their block, reading Hide bookings, and closes it again", async () => {
+    render(<PractitionerAdmin />);
+    const block = await blockOf(ADA.full_name);
+
+    press(toggleIn(block));
+
+    const week = await within(block).findByTestId("practitioner-week");
+    expect(await within(week).findByTestId("week-appointment")).toHaveTextContent(
+      "Leo Tolstoy",
+    );
+    expect(toggleIn(block)).toHaveTextContent("Hide bookings");
+    expect(toggleIn(block)).toHaveAttribute("aria-expanded", "true");
+    // The toggle stays last: the list opens above it, below the details.
+    expect(endsWith(block, toggleIn(block))).toBe(true);
+    expect(weekReads()).toEqual([ADA.id]);
+
+    press(toggleIn(block));
+
+    expect(within(block).queryByTestId("practitioner-week")).toBeNull();
+    expect(toggleIn(block)).toHaveTextContent("Show bookings");
+    expect(toggleIn(block)).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("reads fresh every time a block is opened, never a list kept from before", async () => {
+    render(<PractitionerAdmin />);
+    const block = await blockOf(ADA.full_name);
+
+    press(toggleIn(block));
+    await within(block).findByTestId("week-appointment");
+    press(toggleIn(block));
+    press(toggleIn(block));
+
+    await waitFor(() => expect(weekReads()).toEqual([ADA.id, ADA.id]));
+  });
+
+  it("keeps each block's state its own: two open at once, hiding one leaves the other", async () => {
+    render(<PractitionerAdmin />);
+    const ada = await blockOf(ADA.full_name);
+    const grace = await blockOf(GRACE.full_name);
+
+    press(toggleIn(ada));
+    press(toggleIn(grace));
+
+    // Each block shows its own practitioner's week, not the other's.
+    expect(
+      await within(ada).findByTestId("week-appointment"),
+    ).toHaveTextContent("Leo Tolstoy");
+    expect(await within(grace).findByTestId("week-empty")).toHaveTextContent(
+      GRACE.full_name,
+    );
+    expect(within(grace).queryByTestId("week-appointment")).toBeNull();
+
+    press(toggleIn(grace));
+
+    expect(within(grace).queryByTestId("practitioner-week")).toBeNull();
+    expect(within(ada).getByTestId("practitioner-week")).toBeInTheDocument();
+    expect(toggleIn(ada)).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("keeps an open block open across a re-render, and refreshes it on each poll tick", async () => {
+    const { rerender } = render(<PractitionerAdmin pollTick={1} />);
+    const block = await blockOf(ADA.full_name);
+    press(toggleIn(block));
+    await within(block).findByTestId("week-appointment");
+    expect(weekReads()).toEqual([ADA.id]);
+
+    rerender(<PractitionerAdmin pollTick={2} />);
+
+    await waitFor(() => expect(weekReads()).toEqual([ADA.id, ADA.id]));
+    const after = await blockOf(ADA.full_name);
+    expect(toggleIn(after)).toHaveAttribute("aria-expanded", "true");
+    expect(within(after).getByTestId("practitioner-week")).toBeInTheDocument();
+    // The closed block stayed closed, and read nothing on the tick.
+    expect(toggleIn(await blockOf(GRACE.full_name))).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("keeps an open block open when the roster itself changes around it", async () => {
+    vi.spyOn(consoleApi, "deletePractitioner").mockResolvedValue(undefined);
+    render(<PractitionerAdmin />);
+    const ada = await blockOf(ADA.full_name);
+    press(toggleIn(ada));
+    await within(ada).findByTestId("week-appointment");
+
+    await deleteAndConfirm(`Delete ${GRACE.full_name}`);
+    await waitFor(() => expect(screen.getAllByTestId("practitioner")).toHaveLength(1));
+
+    const after = await blockOf(ADA.full_name);
+    expect(toggleIn(after)).toHaveAttribute("aria-expanded", "true");
+    expect(within(after).getByTestId("week-appointment")).toHaveTextContent(
+      "Leo Tolstoy",
+    );
+  });
+
+  it("starts every block closed again after leaving the roster for the edit view", async () => {
+    render(<PractitionerAdmin />);
+    press(toggleIn(await blockOf(ADA.full_name)));
+    press(toggleIn(await blockOf(GRACE.full_name)));
+    await screen.findAllByTestId("practitioner-week");
+
+    press(screen.getByLabelText(`Edit ${ADA.full_name}`));
+    await screen.findByTestId("practitioner-edit");
+    press(screen.getByText("Back to the roster"));
+
+    for (const name of [ADA.full_name, GRACE.full_name]) {
+      const block = await blockOf(name);
+      expect(toggleIn(block)).toHaveAttribute("aria-expanded", "false");
+      expect(within(block).queryByTestId("practitioner-week")).toBeNull();
+    }
+  });
+
+  it("starts every block closed again after leaving the roster for the create view", async () => {
+    render(<PractitionerAdmin />);
+    press(toggleIn(await blockOf(ADA.full_name)));
+    await screen.findByTestId("practitioner-week");
+
+    await openTheCreateView();
+    press(screen.getByText("Back to the roster"));
+
+    const block = await blockOf(ADA.full_name);
+    expect(toggleIn(block)).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("practitioner-week")).toBeNull();
+  });
+
+  it("shows no appointments of any kind in the edit view", async () => {
+    render(<PractitionerAdmin />);
+    // Even with the practitioner's week open on the roster a moment before.
+    press(toggleIn(await blockOf(ADA.full_name)));
+    await screen.findByTestId("week-appointment");
+
     const view = await openTheEditView();
 
-    const stub = within(view).getByTestId("appointments-stub");
-    expect(stub).toHaveTextContent(/not yet available/i);
-    expect(stub).toHaveTextContent(/seven days/i);
-    // Naming what will appear there, rather than only that something is missing.
-    expect(stub).toHaveTextContent(/appointment/i);
+    for (const hook of [
+      "appointments-stub",
+      "practitioner-week",
+      "week-day",
+      "week-appointment",
+      "week-empty",
+      "week-error",
+      "bookings-toggle",
+    ]) {
+      expect(within(view).queryByTestId(hook)).toBeNull();
+      expect(screen.queryByTestId(hook)).toBeNull();
+    }
+    expect(view).not.toHaveTextContent(/seven days|Leo Tolstoy/i);
   });
 
-  it("renders no appointment list, empty or otherwise", async () => {
+  it("no longer renders the retired appointments stub anywhere", async () => {
     render(<PractitionerAdmin />);
-    await openTheEditView();
-
-    const stub = screen.getByTestId("appointments-stub");
-    expect(stub.querySelector("ul")).toBeNull();
-    expect(stub.querySelector("ol")).toBeNull();
-    expect(stub.querySelector("table")).toBeNull();
-    expect(stub).not.toHaveTextContent(/no appointments|none booked|nothing/i);
-  });
-
-  it("is not reported as an error", async () => {
-    render(<PractitionerAdmin />);
-    await openTheEditView();
-
-    expect(screen.getByTestId("appointments-stub")).toBeInTheDocument();
-    expect(screen.queryByTestId("practitioner-error")).toBeNull();
-  });
-
-  it("makes no claim about a practitioner who does not exist yet", async () => {
-    // A practitioner being created has no id, so there is nothing whose appointments
-    // this panel could be about.
-    render(<PractitionerAdmin />);
-    await openTheCreateView();
-
+    await blockOf(ADA.full_name);
     expect(screen.queryByTestId("appointments-stub")).toBeNull();
+
+    await openTheEditView();
+    expect(screen.queryByTestId("appointments-stub")).toBeNull();
+  });
+
+  it("shows a patient's name as plain text, not a way into their conversation", async () => {
+    // FR-009: the only control near the list is the toggle.
+    render(<PractitionerAdmin />);
+    const block = await blockOf(ADA.full_name);
+    press(toggleIn(block));
+
+    const week = await within(block).findByTestId("practitioner-week");
+    const name = await within(week).findByText("Leo Tolstoy");
+    expect(name.closest("a, button")).toBeNull();
+    expect(within(week).queryAllByRole("link")).toHaveLength(0);
+    expect(within(week).queryAllByRole("button")).toHaveLength(0);
   });
 });
 
@@ -848,5 +1052,36 @@ describe("PractitionerAdmin: writes that must happen once", () => {
     await act(async () => {
       landDelete();
     });
+  });
+});
+
+describe("PractitionerAdmin: a write that lands after its view was left", () => {
+  it("returns to the roster only from the view the write was submitted from", async () => {
+    // A save outlived its view: the staff member went back and opened the practitioner
+    // again while it was out - a new view about the same record - and started typing.
+    // Landing must not take that view, and what was typed in it, away with no prompt.
+    let landSave!: (saved: Practitioner) => void;
+    vi.spyOn(consoleApi, "updatePractitioner").mockReturnValue(
+      new Promise<Practitioner>((resolve) => {
+        landSave = resolve;
+      }),
+    );
+
+    render(<PractitionerAdmin />);
+    await openTheEditView();
+    fireEvent.click(screen.getByText("Save"));
+    // Untouched, so going back asks nothing.
+    press(screen.getByText("Back to the roster"));
+    await openTheEditView();
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "Dr. Grace Hopper" },
+    });
+
+    await act(async () => {
+      landSave(practitioner());
+    });
+
+    expect(screen.getByTestId("practitioner-edit")).toBeInTheDocument();
+    expect(screen.getByLabelText("Full name")).toHaveValue("Dr. Grace Hopper");
   });
 });

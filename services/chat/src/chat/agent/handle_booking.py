@@ -571,7 +571,9 @@ async def handle_booking(
 
     The clinic's roster is read before the first model call and put in the prompt, so
     the model has the ids it would otherwise guess at. A roster that cannot be read
-    leaves the turn running without it, told that it does not know who works here.
+    leaves the turn running without it, told that it does not know who works here. A
+    roster that was read is also handed to the registry's act recorder, which names the
+    practitioners of any booking act this turn attempts.
 
     An iteration whose response ran into `_MAX_TOKENS` is recorded as
     `booking.truncated` and otherwise handled as it stands: whatever the call did
@@ -580,10 +582,16 @@ async def handle_booking(
     """
     logger = get_logger()
     settings = get_settings()
+    roster = await _read_roster(registry)
+    if roster is not None:
+        # The names a booking act records come from here: the one read in the turn
+        # that already holds them. A roster that could not be read teaches nothing,
+        # so an act planned without one records no name rather than a guess.
+        registry.acts.learn_practitioners(roster)
     system = _SYSTEM_PROMPT.format(
         patient_name=patient_name,
         local_now=local_now,
-        practitioners=_practitioners_section(await _read_roster(registry)),
+        practitioners=_practitioners_section(roster),
     )
     if not segments:
         raise RuntimeError("the booking loop was entered with no request")

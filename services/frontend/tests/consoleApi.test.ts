@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { PractitionerAppointment } from "../src/lib/consoleApi";
 import type { AttentionMark } from "../src/lib/chatStream";
 import {
   ATTENTION_MARK_LABEL,
@@ -8,7 +9,9 @@ import {
   deletePractitioner,
   fetchFaqEntries,
   fetchPractitioners,
+  fetchPractitionerWeek,
   fetchSpecialties,
+  PractitionerWeekError,
   updateFaqEntry,
   updatePractitioner,
 } from "../src/lib/consoleApi";
@@ -24,6 +27,7 @@ function refuse(body: BodyInit, status = 409): void {
 // The spy replaces the global `fetch`, so it has to go back before the next file runs.
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 // The practitioner and FAQ writes relay the server's own `detail`, so these cases drive
@@ -170,5 +174,143 @@ describe("attention mark labels", () => {
       ATTENTION_MARK_LABEL.not_authorized,
     ];
     expect(new Set(labels).size).toBe(labels.length);
+  });
+});
+
+describe("a practitioner's week", () => {
+  const PRACTITIONER = "01PRACT0000000000000000000";
+
+  const APPOINTMENTS: PractitionerAppointment[] = [
+    {
+      id: "01APPT00000000000000000001",
+      patient_full_name: "Leo Tolstoy",
+      starts_at: "2026-09-24T14:00:00",
+      ends_at: "2026-09-24T15:00:00",
+    },
+  ];
+
+  function answer(body: BodyInit, status = 200): void {
+    vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(new Response(body, { status })),
+    );
+  }
+
+  /** The URL the one fetch was made to, parsed against a throwaway origin. */
+  function requested(): URL {
+    const [input] = vi.mocked(globalThis.fetch).mock.calls[0];
+    return new URL(String(input), "http://origin.invalid");
+  }
+
+  /** What the read threw, so a test can check the kind and not only the wording. */
+  async function failure(): Promise<PractitionerWeekError> {
+    const error: unknown = await fetchPractitionerWeek(PRACTITIONER).catch(
+      (err: unknown) => err,
+    );
+    expect(error).toBeInstanceOf(PractitionerWeekError);
+    return error as PractitionerWeekError;
+  }
+
+  it("reads the console route for that practitioner, carrying the browser's local now", async () => {
+    // The window is computed server-side from `local_now`, so the value sent is the one
+    // `localNow()` builds - offset-free local wall-clock time, never `toISOString()`'s
+    // UTC, which would move "today" for anyone not sitting on UTC.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 8, 24, 9, 5, 3));
+    answer(JSON.stringify({ appointments: [] }));
+
+    await fetchPractitionerWeek(PRACTITIONER);
+
+    const url = requested();
+    expect(url.pathname).toBe(`/console/practitioners/${PRACTITIONER}/appointments`);
+    expect(url.searchParams.get("local_now")).toBe("2026-09-24T09:05:03");
+  });
+
+  it("sends a local now it is given rather than reading the clock", async () => {
+    answer(JSON.stringify({ appointments: [] }));
+
+    await fetchPractitionerWeek(PRACTITIONER, "2026-09-24T23:59:59");
+
+    expect(requested().searchParams.get("local_now")).toBe("2026-09-24T23:59:59");
+  });
+
+  it("returns the appointments list, not the envelope around it", async () => {
+    answer(JSON.stringify({ appointments: APPOINTMENTS }));
+
+    const week = await fetchPractitionerWeek(PRACTITIONER);
+
+    expect(Array.isArray(week)).toBe(true);
+    expect(week.map((a) => a.patient_full_name)).toEqual(["Leo Tolstoy"]);
+  });
+
+  it("returns an empty list as an answer, not as a failure", async () => {
+    answer(JSON.stringify({ appointments: [] }));
+
+    await expect(fetchPractitionerWeek(PRACTITIONER)).resolves.toEqual([]);
+  });
+
+  it("reports a 404 as a practitioner that no longer exists", async () => {
+    // Deleted, or another session's id - the two answer identically, and neither is a
+    // scheduler that could not be reached.
+    answer(JSON.stringify({ detail: "practitioner not found" }), 404);
+
+    const error = await failure();
+
+    expect(error.kind).toBe("not_found");
+    expect(error.message).toBe("This practitioner no longer exists.");
+  });
+
+  it.each([503, 504])(
+    "reports a %i as appointments that could not be read",
+    async (status) => {
+      answer(
+        JSON.stringify({
+          detail: "scheduling is unavailable; the appointments could not be read",
+        }),
+        status,
+      );
+
+      const error = await failure();
+
+      expect(error.kind).toBe("unreadable");
+      expect(error.message).toBe("The appointments could not be read.");
+    },
+  );
+
+  it("reports a request that never reached the server as unreadable, not as not-found", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const error = await failure();
+
+    expect(error.kind).toBe("unreadable");
+    expect(error.message).toBe("The appointments could not be read.");
+  });
+
+  it("never hands an error body back as a week", async () => {
+    // A 422 body is JSON with no `appointments`; returning it would put `undefined`
+    // into a `.map` during render.
+    answer(JSON.stringify({ detail: [{ msg: "bad local_now" }] }), 422);
+
+    expect((await failure()).kind).toBe("unreadable");
+  });
+
+  it.each([JSON.stringify({}), JSON.stringify({ appointments: null }), "null"])(
+    "never hands a success body without an appointments list back as a week (%s)",
+    async (body) => {
+      // A 200 is not a shape: returning `undefined` here would reach a `.map` during
+      // render exactly as an error body would.
+      answer(body);
+
+      expect((await failure()).kind).toBe("unreadable");
+    },
+  );
+
+  it("passes the caller's signal through, so a deadline can end the read", async () => {
+    answer(JSON.stringify({ appointments: [] }));
+    const controller = new AbortController();
+
+    await fetchPractitionerWeek(PRACTITIONER, "2026-09-24T09:00:00", controller.signal);
+
+    const [, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+    expect(init?.signal).toBe(controller.signal);
   });
 });

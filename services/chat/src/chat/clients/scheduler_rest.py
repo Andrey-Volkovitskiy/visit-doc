@@ -17,6 +17,7 @@ which is the rule a lost write already imposes everywhere else in this system.
 """
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
@@ -111,6 +112,7 @@ async def forward(
     path: str,
     session_id: str,
     body: Any | None = None,
+    query: Mapping[str, str] | None = None,
 ) -> ProxiedResponse:
     """Send one request to the scheduler's practitioner API and relay what came back.
 
@@ -121,6 +123,9 @@ async def forward(
             must have come through `path_segment` first.
         session_id: Read from the request's cookie by the caller. It never reaches the
             browser, and never appears in a response.
+        query: Parameters to send as the query string. They are encoded here, from the
+            mapping, so no value can add a parameter or end the query; this is the only
+            way a query is sent, and `?` in `path` is still refused.
 
     Raises:
         ValueError: `path` is not a path, so nothing was sent. This is a caller bug,
@@ -141,6 +146,10 @@ async def forward(
     # `base_url` is configuration and every caller-supplied part of `path` came through
     # `path_segment`.
     url = yarl.URL(f"{base_url.rstrip('/')}{path}", encoded=True)
+    if query is not None:
+        # Attached after the guard, which has already refused a `?` of the path's own:
+        # `with_query` encodes each value, and leaves the already-encoded path as it is.
+        url = url.with_query(query)
     timeout = aiohttp.ClientTimeout(total=_TIMEOUT_SECONDS)
     try:
         async with http.request(

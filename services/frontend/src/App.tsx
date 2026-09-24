@@ -137,6 +137,12 @@ function App() {
     (dirty: boolean) => markDirty("faq", dirty),
     [markDirty],
   );
+  // The staff reply box is the same kind of work: the tab set unmounts the Conversations
+  // panel as surely as the other two, and an unsent reply went with it unasked.
+  const markChatsDirty = useCallback(
+    (dirty: boolean) => markDirty("chats", dirty),
+    [markDirty],
+  );
 
   /**
    * Switch section, unless the one being left is holding unsaved work.
@@ -436,8 +442,13 @@ function App() {
                 // the patient's: a patient message arriving into the conversation a staff
                 // member is reading appears there without them clicking away and back.
                 lastMessageAt={staffConversation?.last_message_at ?? null}
+                // And an act recorded or settled without a message — a turn that booked
+                // and then failed before replying — re-reads it too (016 FR-016a). The
+                // patient pane is not given it: it shows no acts (FR-021).
+                bookingActsVersion={staffConversation?.booking_acts_version}
                 pollTick={poll.tick}
                 onSetAssistant={handleSetAssistant}
+                onDirtyChange={markChatsDirty}
               />
             </TabsContent>
             {/*
@@ -466,7 +477,10 @@ function App() {
             */}
             <TabsContent value="practitioners" className="min-h-0 overflow-y-auto">
               {sessionExists ? (
-                <PractitionerAdmin onDirtyChange={markPractitionersDirty} />
+                <PractitionerAdmin
+                  onDirtyChange={markPractitionersDirty}
+                  pollTick={poll.tick}
+                />
               ) : (
                 <RegionLoading region="practitioners">
                   Waiting for this browser&apos;s session before reading the roster.
@@ -507,8 +521,8 @@ function App() {
               if (next !== null) setStaffTab(next);
             }}
           >
-            What you typed has not been sent to the clinic&apos;s records. Opening
-            another section discards it.
+            What you typed has not been sent or saved. Opening another section discards
+            it.
           </DiscardDialog>
         </section>
       </main>

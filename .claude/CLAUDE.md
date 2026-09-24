@@ -255,7 +255,8 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 - **Core backend** — FastAPI, hosting the agent, RAG, chat, and auth. Single deployable for
   everything except Scheduling. Beyond `/chat`, `/chats` and `/faq` it publishes `/console/*` (the
   staff side: the polled conversation listing, posting as staff, the assistant switch, and a proxy
-  of the scheduler's practitioner API) and `/admin/*` (the session listing and session
+  of the scheduler's practitioner API, including since 016 a practitioner's standing appointments
+  for the viewer's coming week) and `/admin/*` (the session listing and session
   deletion — guarded by one header secret, and declared `include_in_schema=False` so they
   appear in no published schema). Those two live in separate modules on purpose: a
   maintenance surface sharing a module with a published one is one refactor away from
@@ -409,6 +410,31 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   post takes that lock before it asks for a cancellation, and `pg_advisory_lock` has no timeout.
   If the staff call itself fails it is logged as
   `turn.staff_call_failed` and swallowed: the original error is what the turn has to report.
+- **What the assistant did to the schedule is a booking act, its own shape** (016). One act per
+  attempt to book, reschedule or cancel, in the `booking_acts` table and on the wire as
+  `MessageOut.booking_acts` — beside `request_outcomes`, **never** inside it and never a
+  `FaqVerdict` value: those describe a FAQ answer the corpus grounded, an act is a performed change.
+  `null` means nothing was attempted; `[]` is never sent. An act hangs off the **patient** message
+  the turn answered, never the reply, because a reply is missing in exactly the turns a person
+  needs the record for — failed after its write, taken over by staff, cancelled by a newer message.
+  It is **written before the scheduler is called** and committed, and **settled at most once** by
+  an `UPDATE` whose `WHERE` carries `outcome IS NULL`; an act that could not be written is never
+  sent (the tool answers `unavailable`), so a write that reached the scheduler always has a row. A
+  handler that raised, a cancelled turn or a failed settle leaves `outcome` NULL, and **NULL is read
+  exactly as unknown** — rendered "Outcome unknown", never as nothing having changed — while staying
+  distinct from a stored `unknown` (the tool's own answer). Settled rows are never touched again and
+  store the practitioner's *name* as known at the time, so the record is a snapshot the schedule's
+  later changes do not rewrite. A table rather than a JSONB column because acts are inserted then
+  updated by id, and the booking loop dispatches tool calls under `asyncio.gather`. Recording is
+  enforced in `ToolRegistry` (`_run_recorded`), not in handlers: a write tool declares `plan_act`,
+  which reads its arguments with the handler's own helpers, and the registry records around the
+  handler through `BookingActRecorder` — a port with **no read method**. The agent never reads acts
+  (FR-021a): no prompt, history or tool result carries them, and `test_booking_acts.py` walks
+  `chat/agent/` so that only the recording path may import the port. The console learns of a
+  settle through `booking_acts_version` on the listing — count of acts plus count settled, a
+  version compared for equality, never a clock — and the staff thread re-reads when the pair
+  `(last_message_at, booking_acts_version)` changes, since a turn can settle an act without writing
+  a message.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across
