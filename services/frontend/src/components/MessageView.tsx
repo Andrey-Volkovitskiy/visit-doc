@@ -5,6 +5,7 @@ import type {
   RequestOutcome,
 } from "../lib/chatStream";
 import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
+import { parseEmphasis, type EmphasisNode } from "../lib/emphasis";
 import { OutcomeDisclosure } from "./OutcomeDisclosure";
 
 interface MessageViewProps {
@@ -122,6 +123,33 @@ const ICON_TONE: Record<string, string> = {
  * No derived "unanswered" treatment: a patient message with no reply yet is the
  * normal shape of a mid-burst message, not a failure signal.
  */
+/**
+ * A message's text with its emphasis applied (`lib/emphasis.ts`).
+ *
+ * Bold is `font-semibold` rather than the browser's `bolder`: the self-hosted face
+ * ships 400, 500 and 600 only, and `bolder` from 400 asks for a 700 that is not there.
+ * Italic has no face of its own, so the browser slants the regular one.
+ */
+function EmphasisText({ nodes }: { nodes: EmphasisNode[] }) {
+  return nodes.map((node, index) => {
+    if (typeof node === "string") return node;
+    const inner = <EmphasisText nodes={node.children} />;
+    if (node.style === "italic") return <em key={index}>{inner}</em>;
+    if (node.style === "bold") {
+      return (
+        <strong key={index} className="font-semibold">
+          {inner}
+        </strong>
+      );
+    }
+    return (
+      <strong key={index} className="font-semibold">
+        <em>{inner}</em>
+      </strong>
+    );
+  });
+}
+
 export function MessageView({
   sender,
   content,
@@ -198,7 +226,7 @@ export function MessageView({
             so its existing test would have to be deleted rather than adapted.
           */}
           <p style={{ whiteSpace: "pre-wrap" }} className="break-words">
-            {content}
+            <EmphasisText nodes={parseEmphasis(content)} />
           </p>
         </div>
         {/*

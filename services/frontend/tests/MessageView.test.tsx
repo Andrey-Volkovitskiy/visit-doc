@@ -85,6 +85,52 @@ describe("MessageView", () => {
     expect(paragraph).toHaveStyle({ whiteSpace: "pre-wrap" });
   });
 
+  it("renders emphasis as italic and bold text, without the delimiters", () => {
+    const { container } = render(
+      <MessageView
+        sender="assistant"
+        content={"Your visit is *confirmed*, **Tuesday**, ***bring ID***."}
+      />,
+    );
+
+    expect(container.querySelector("em")).toHaveTextContent(/^confirmed$/);
+    expect(container.querySelector("strong:not(:has(em))")).toHaveTextContent(
+      /^Tuesday$/,
+    );
+    expect(container.querySelector("strong > em")).toHaveTextContent(/^bring ID$/);
+    // The delimiters are consumed, not shown: the paragraph reads as plain prose.
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === "P" &&
+          element.textContent === "Your visit is confirmed, Tuesday, bring ID.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("renders emphasis in a staff and a patient message alike", () => {
+    const { container } = render(
+      <>
+        <MessageView sender="staff" content="**Called** the clinic" />
+        <MessageView sender="patient" content="_thanks_" />
+      </>,
+    );
+
+    expect(container.querySelector("strong")).toHaveTextContent(/^Called$/);
+    expect(container.querySelector("em")).toHaveTextContent(/^thanks$/);
+  });
+
+  it("renders markup in a message as text, never as HTML", () => {
+    const { container } = render(
+      <MessageView sender="patient" content={"**<img src=x onerror=alert(1)>**"} />,
+    );
+
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("strong")).toHaveTextContent(
+      "<img src=x onerror=alert(1)>",
+    );
+  });
+
   it("renders no citations list when there are none", () => {
     render(
       <MessageView sender="assistant" content="I don't have a confident answer to that." />,

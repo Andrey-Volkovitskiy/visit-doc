@@ -51,6 +51,8 @@ src/
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
 ├── lib/typing.ts        # how fast a streamed reply is *shown*: a steady character rate,
 │                        #   raised only to keep a backlog short, decoupled from reading it
+├── lib/emphasis.ts      # the one Markdown a thread renders — *italic*, **bold**, ***both***
+│                        #   — parsed to a tree of strings, never to HTML; pure
 ├── lib/turns.ts         # which message carries a turn's one evidence marker, and what it
 │                        #   holds — read from the server's own reply_to_message_ids, pure
 ├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads
