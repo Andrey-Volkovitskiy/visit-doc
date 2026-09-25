@@ -522,6 +522,19 @@ def test_the_composing_prompt_forbids_claiming_the_request_was_served() -> None:
     assert "never claim" in lowered or "never suggest" in lowered
 
 
+def test_the_prompt_forbids_an_opening_line_before_the_first_answer() -> None:
+    """A merged reply began "Thanks for reaching out! Here's what I can share:".
+
+    Model-obeyed, so this pins only that the instruction is there; whether the model
+    follows it is read off real replies.
+    """
+    from chat.agent.compose_answer import _SYSTEM_PROMPT
+
+    lowered = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "start with the first answer itself" in lowered
+    assert "no greeting" in lowered
+
+
 def test_the_prompt_describes_the_parts_it_is_actually_given() -> None:
     """FR-022d's path supplies one specialist plus a notice, not two halves.
 

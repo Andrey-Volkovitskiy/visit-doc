@@ -84,6 +84,8 @@ Combine them into a single, natural reply. You must:
   about anything else in the meantime. Never claim that request was served, and never
   promise when staff will respond.
 - Do not mention specialists, tools, or internal steps.
+- Start with the first answer itself. No greeting, no thanks, and no line announcing
+  what follows ("Thanks for reaching out!", "Here's what I can share:").
 Be concise."""
 
 
