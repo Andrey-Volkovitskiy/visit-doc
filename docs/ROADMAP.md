@@ -657,15 +657,50 @@ scheduled to change, twice. Then the surface: a browser suite selects by the DOM
 `data-testid` hooks the components expose, which is exactly what 3a would reshape — so a suite
 written before the design pass would be rewritten by it.
 
-Kept deliberately small — three to five journeys aimed at the one class of defect no other tier can
-reach, **frontend state across time**, where a pane, the 2-second poll and a reload disagree: an
-escalation raised in the patient pane and answered from the staff pane, a pause counting down in two
-tabs, a booking that lands in Scheduling's own database. Driven by `pytest-playwright`, so the tier
-stays pytest behind `make test-e2e`. Alone among the test tiers it may spend live model calls (see
-`docs/testing-strategy.md`) — which is exactly what keeps it off the per-push gate the unit tier
-holds, and what forces its assertions onto structure rather than onto the model's wording. The
-13-scenario `quickstart.md` stays a manual walk-through: its value is that a person reads it before
-a demo, which automating it would remove rather than preserve.
+Kept deliberately small: eight journeys, one per feature a demo would be judged on, each driven
+from the patient pane and checked from the staff pane as well as from the reply. Every case plants
+its own prestate in both databases rather than inheriting another case's, so any one of them runs
+alone.
+
+1. **Free slots.** The patient asks for a dentist's available slots today. The prestate books two
+   of that practitioner's slots for today. The reply names every slot still free and neither of
+   the two booked ones.
+2. **The patient's own appointments.** The patient asks which appointments they have. The
+   prestate holds one standing appointment for this patient with a practitioner, other patients'
+   appointments with the same practitioner, and one cancelled appointment of this patient's own.
+   The reply lists exactly the one standing appointment: not the others' and not the cancelled one.
+3. **Booking.** The patient asks to book a GP at a specific time. The reply says it is booked, the
+   appointment appears under that practitioner in Staff console → Practitioners, and the reply
+   carries a blue `(i)` marker in the staff thread whose content describes the booking.
+4. **Rescheduling.** The patient asks to move an existing appointment to another time. The reply
+   says it is rescheduled, Practitioners shows the appointment at its new time and not at its old
+   one, and the reply's blue `(i)` marker describes the reschedule.
+5. **Cancellation.** The patient asks to cancel one of their appointments. The reply says it is
+   cancelled, Practitioners no longer shows it, and the reply's blue `(i)` marker describes the
+   cancellation.
+6. **An FAQ answer.** The patient asks a question the FAQ covers. The reply answers it, and its
+   blue `(i)` marker holds the FAQ chunk the answer was drawn from.
+7. **An FAQ gap.** The patient asks a question the FAQ does not cover. The reply says staff have
+   been called, the conversation carries the attention (exclamation) icon in the staff console's
+   conversation list, and the reply's `(i)` marker is red.
+8. **Asking for a person.** The patient asks to speak to a person. The reply says staff have been
+   called, the conversation carries the attention icon, and the reply's `(i)` marker is red.
+
+Colour is what a person checks; it is not what the suite asserts. Blue and red are the marker's
+`data-outcome-state` (`served` / `needs-person`), the exclamation icon is the conversation's
+`data-emphasized`, what the marker describes is its `booking-act` (`data-operation`,
+`data-outcome`) or its `citations`, and Practitioners is read through `bookings-toggle` and
+`week-appointment` — the hooks `services/frontend/.claude/CLAUDE.md` lists, which name what a thing
+is rather than how it looks. The two cases whose whole claim is in the reply's text, 1 and 2, assert
+on the facts the prestate fixed — which times and which appointment appear — never on the model's
+phrasing.
+
+Driven by `pytest-playwright`, so the tier stays pytest behind `make test-e2e`. Alone among the
+test tiers it may spend live model calls (see `docs/testing-strategy.md`) — which is exactly what
+keeps it off the per-push gate the unit tier holds, and what forces its assertions onto structure
+rather than onto the model's wording. The 13-scenario `quickstart.md` stays a manual walk-through:
+its value is that a person reads it before a demo, which automating it would remove rather than
+preserve.
 
 ### Phase 4+ — Platform layers (optional, if time allows)
 Added as deliberate evolution, each with a one-line rationale in the README:

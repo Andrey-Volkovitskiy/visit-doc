@@ -12,7 +12,9 @@ Two things about this tier that differ from the others, both in `docs/testing-st
   joins the per-push gate, and why its assertions are on structure — a citation arrived, a stream
   was cancelled, a booking reached the scheduler's database — never on the model's wording.
 - **It is not a port of a feature's `quickstart.md`.** Those stay manual: their value is that a
-  person walks them before a demo. This tier aims at the one class of defect no other tier can
-  reach — frontend state across time, where a pane, the poll and a reload disagree.
+  person walks them before a demo. This tier holds eight journeys over the features a demo is
+  judged on — free slots, the patient's own appointments, booking, rescheduling, cancelling, an FAQ
+  answer, an FAQ gap and a request for a person — each checked from the patient's reply and from
+  the staff console (the list is in `docs/ROADMAP.md`, Phase 3b).
 
 See `docs/testing-strategy.md` for the full testing convention.
