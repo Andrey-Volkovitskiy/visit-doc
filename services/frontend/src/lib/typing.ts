@@ -4,65 +4,45 @@
  * The server streams tokens as the model produces them, and the pane used to render
  * each one the moment it was read — so the reply appeared at exactly the model's own
  * pace, which is faster than it is comfortable to read.
+ *
+ * Arrival is not a shape worth reproducing either. Several paths send their whole reply
+ * as one chunk — a booking reply, a hand-off, the abstention sentence, an answer to
+ * several questions — and a model's own stream comes in bursts: a few spaced tokens,
+ * then the rest in a rush. A reveal that replayed the arrival timeline (the previous
+ * rule here) typed the first words and then dropped the remainder in at once, which is
+ * exactly the moment a reader notices. So the reveal runs at a steady rate of its own.
  */
 
-/** How much longer than its arrival a reply takes to appear. */
-export const TYPING_SLOWDOWN = 2;
-
-/** How often the reveal catches up while it is behind: ~30 times a second. */
-const STEP_MS = 33;
-
-/** Cumulative characters arrived, and when. */
-export interface Arrival {
-  at: number;
-  chars: number;
-}
+/** The reveal's pace when nothing is pushing it: characters per second. */
+export const TYPING_CPS = 60;
 
 /**
- * How many characters may be shown at `now`, replaying the arrivals at `1/slowdown`.
+ * The longest the reveal may trail what has arrived, in milliseconds.
  *
- * The rule is a replay rather than a rate: the reply appears in the shape it arrived
- * in — the pauses where the model paused, the bursts where it burst — stretched over
- * twice the time. A fixed characters-per-second would have had to guess a number, and
- * would be slower than arrival on a fast reply and faster on a slow one, which is the
- * opposite of what a reader notices.
- *
- * Deliberately **not** measured as a gap between reads. Once the reveal lags, the
- * response body buffers and the next read returns instantly, so inter-read gaps
- * collapse to zero exactly when the pacing is doing its job — a rule built on them
- * stops slowing down the moment it starts working. This one is anchored to the first
- * arrival and is unaffected by how the reading loop is scheduled.
- *
- * Between two arrivals the count is interpolated, so characters appear steadily rather
- * than one chunk at a time.
+ * A steady rate alone makes a long reply take as long as its length says — a
+ * 900-character booking summary would type for fifteen seconds. When a backlog would
+ * take longer than this to show at the current rate, the rate rises to clear it in
+ * this time instead: still one character after another, only faster.
  */
-export function charsRevealedBy(
-  arrivals: Arrival[],
-  now: number,
-  slowdown: number = TYPING_SLOWDOWN,
+export const MAX_TRAIL_MS = 5000;
+
+/** How often the reveal advances while it is behind: ~30 times a second. */
+const STEP_MS = 33;
+
+/**
+ * The rate to reveal at, given how much is waiting and the rate already in use.
+ *
+ * Never lower than the rate already in use, so a reply only ever types at one speed or
+ * speeds up — slowing down partway through reads as a stall. Never lower than
+ * `baseCps`, and high enough to show `backlog` characters within `maxTrailMs`.
+ */
+export function revealRate(
+  backlog: number,
+  current: number,
+  baseCps: number = TYPING_CPS,
+  maxTrailMs: number = MAX_TRAIL_MS,
 ): number {
-  const first = arrivals[0];
-  if (first === undefined) return 0;
-  const last = arrivals[arrivals.length - 1]!;
-  // The instant in the arrival timeline the reveal has reached.
-  const replay = first.at + (now - first.at) / slowdown;
-  if (replay >= last.at) return last.chars;
-  // The latest arrival the replay has reached, which is not always the first one it
-  // meets: several tokens read in the same millisecond share a timestamp, and the last
-  // of them is the one that has arrived.
-  let from = first;
-  let index = 0;
-  for (let i = 1; i < arrivals.length && arrivals[i]!.at <= replay; i++) {
-    from = arrivals[i]!;
-    index = i;
-  }
-  const to = arrivals[index + 1]!;
-  const span = to.at - from.at;
-  // Clamped, so a clock that somehow reads before the first arrival shows that
-  // arrival rather than a negative count. Two arrivals stamped at the same
-  // millisecond have no span to interpolate over.
-  const through = span <= 0 ? 1 : Math.min(Math.max((replay - from.at) / span, 0), 1);
-  return Math.floor(from.chars + through * (to.chars - from.chars));
+  return Math.max(current, baseCps, (backlog * 1000) / maxTrailMs);
 }
 
 /** Reveals a streamed reply at a reading pace, and says when it has caught up. */
@@ -75,25 +55,35 @@ export interface TypingPacer {
   stop: () => void;
 }
 
+/** The pace a pacer reveals at. Both default to this module's constants. */
+export interface TypingPace {
+  cps?: number;
+  maxTrailMs?: number;
+}
+
 /**
  * Drive one turn's reveal, calling `reveal` with the text that may be shown so far.
  *
  * Reading and showing are deliberately separate: the caller keeps consuming the stream
  * at full speed and hands the text over, while this decides how much of it is on screen.
- * Tying the two together would apply backpressure to the network read, which is what
- * makes a paced reveal stop pacing (see `charsRevealedBy`).
+ * Tying the two together would apply backpressure to the network read.
  *
- * A reveal that is already caught up costs nothing and schedules nothing: when every
- * token arrives at once — a test's synchronous stream, or a reply short enough to come
- * in one chunk — the first call reveals all of it and no timer is ever set.
+ * The position advances by elapsed time × rate, measured from the clock at each step
+ * rather than counted in steps, so a throttled timer (a background tab) delays the text
+ * without slowing it down.
  */
 export function createTypingPacer(
   reveal: (text: string) => void,
-  slowdown: number = TYPING_SLOWDOWN,
+  pace: TypingPace = {},
 ): TypingPacer {
-  const arrivals: Arrival[] = [];
+  const baseCps = pace.cps ?? TYPING_CPS;
+  const maxTrailMs = pace.maxTrailMs ?? MAX_TRAIL_MS;
   let full = "";
+  // Fractional, so a step that earns less than a whole character is not thrown away.
+  let position = 0;
   let shown = 0;
+  let rate = 0;
+  let lastStep: number | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let settle: (() => void) | null = null;
   let stopped = false;
@@ -107,19 +97,28 @@ export function createTypingPacer(
     settle = null;
   }
 
-  function show(): void {
+  function step(): void {
     if (stopped) return;
-    const allowed = Math.min(charsRevealedBy(arrivals, now(), slowdown), full.length);
+    const at = now();
+    // A reveal starting from rest is given one step's worth straight away, so text
+    // begins to appear the moment it arrives rather than one step later.
+    const since = lastStep === null ? STEP_MS : at - lastStep;
+    position = Math.min(position + (rate * since) / 1000, full.length);
+    lastStep = at;
+    const allowed = Math.floor(position);
     if (allowed > shown) {
       shown = allowed;
       reveal(full.slice(0, shown));
     }
     if (shown >= full.length) {
+      // Caught up: the clock stops, so time spent waiting for the next token is not
+      // banked and spent as a jump when it lands.
+      lastStep = null;
       finish();
     } else if (timer === null) {
       timer = setTimeout(() => {
         timer = null;
-        show();
+        step();
       }, STEP_MS);
     }
   }
@@ -128,14 +127,13 @@ export function createTypingPacer(
     arrived(next: string): void {
       if (stopped) return;
       full = next;
-      arrivals.push({ at: now(), chars: next.length });
-      show();
+      rate = revealRate(full.length - shown, rate, baseCps, maxTrailMs);
+      step();
     },
     settled(): Promise<void> {
       if (stopped || shown >= full.length) return Promise.resolve();
       return new Promise<void>((resolve) => {
         settle = resolve;
-        show();
       });
     },
     stop(): void {
@@ -149,7 +147,7 @@ export function createTypingPacer(
  * The clock, wrapped once.
  *
  * `performance.now()` is monotonic, which `Date.now()` is not — a clock stepped
- * backwards mid-reply would rewind the replay and freeze the text on screen.
+ * backwards mid-reply would move the reveal backwards and freeze the text on screen.
  */
 function now(): number {
   return performance.now();

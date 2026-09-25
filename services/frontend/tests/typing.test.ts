@@ -1,60 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { charsRevealedBy, createTypingPacer } from "../src/lib/typing";
+import {
+  MAX_TRAIL_MS,
+  TYPING_CPS,
+  createTypingPacer,
+  revealRate,
+} from "../src/lib/typing";
 
-describe("charsRevealedBy: the arrival timeline, replayed slower", () => {
-  const arrivals = [
-    { at: 1000, chars: 5 },
-    { at: 1100, chars: 10 },
-    { at: 1300, chars: 20 },
-  ];
+// `tests/setup.ts` runs every component test at an unbounded pace; this file tests the
+// pace itself, so it needs the real module.
+vi.unmock("../src/lib/typing");
 
-  it("shows the first arrival whole, at the moment it arrives", () => {
-    // Nothing is held back that is already on the wire when the reveal starts: the
-    // first chunk is what the reveal has to replay *from*.
-    expect(charsRevealedBy(arrivals, 1000)).toBe(5);
-    expect(charsRevealedBy(arrivals, 900)).toBe(5);
+describe("revealRate: a steady pace, raised only to keep up", () => {
+  it("types at the base rate when little is waiting", () => {
+    expect(revealRate(10, 0)).toBe(TYPING_CPS);
   });
 
-  it("reaches each arrival at twice its distance from the first", () => {
-    // 1100 arrived 100ms in, so it is shown 200ms in; 1300 arrived 300ms in, 600ms.
-    expect(charsRevealedBy(arrivals, 1200)).toBe(10);
-    expect(charsRevealedBy(arrivals, 1600)).toBe(20);
+  it("rises so that a long backlog is shown within the trail limit", () => {
+    // 900 characters in 5s is 180 a second, three times the base rate.
+    expect(revealRate(900, 0)).toBe((900 * 1000) / MAX_TRAIL_MS);
   });
 
-  it("interpolates between two arrivals rather than jumping at each one", () => {
-    // Halfway (in replay time) between the 100ms and 300ms arrivals: half the
-    // characters between 10 and 20. The model produced them *over* that interval, so
-    // spreading them across it is both truer and steadier to read than landing the
-    // whole chunk at its end.
-    expect(charsRevealedBy(arrivals, 1400)).toBe(15);
+  it("never drops below the rate already in use", () => {
+    // A reply that sped up to clear a burst does not slow down again partway through:
+    // a slowdown mid-sentence reads as a stall.
+    expect(revealRate(1, 150)).toBe(150);
   });
 
-  it("never runs past the last arrival, however long it waits", () => {
-    expect(charsRevealedBy(arrivals, 99999)).toBe(20);
-  });
-
-  it("shows everything at once when everything arrived at once", () => {
-    // A reply short enough to come in one chunk — and every test's synchronous stream.
-    // Replay time cannot be behind a timeline with no duration, so there is nothing to
-    // pace and the pacer never schedules a thing.
-    const together = [
-      { at: 500, chars: 4 },
-      { at: 500, chars: 9 },
-    ];
-
-    expect(charsRevealedBy(together, 500)).toBe(9);
-  });
-
-  it("shows nothing before anything has arrived", () => {
-    expect(charsRevealedBy([], 1000)).toBe(0);
-  });
-
-  it("takes its slowdown as a number, so the factor has one home", () => {
-    // Proof that the 2 is the caller's and not baked into the arithmetic: at the same
-    // instant, a reveal running at arrival speed is further along than a slower one.
-    expect(charsRevealedBy(arrivals, 1200, 1)).toBe(15);
-    expect(charsRevealedBy(arrivals, 1200)).toBe(10);
-    expect(charsRevealedBy(arrivals, 1200, 4)).toBe(7);
+  it("takes its base rate and trail as numbers, so each has one home", () => {
+    expect(revealRate(10, 0, 20)).toBe(20);
+    expect(revealRate(100, 0, 20, 1000)).toBe(100);
   });
 });
 
@@ -74,41 +48,93 @@ describe("createTypingPacer: reading and showing, kept apart", () => {
 
   /** Advance both clocks together: the pacer reads one and is woken by the other. */
   function advance(ms: number): void {
-    clock += ms;
-    vi.advanceTimersByTime(ms);
+    for (let left = ms; left > 0; left -= 1) {
+      clock += 1;
+      vi.advanceTimersByTime(1);
+    }
   }
 
-  it("reveals a burst that arrived all at once without waiting", () => {
+  it("types a reply that arrived in one chunk, rather than showing it whole", () => {
+    // The shape that motivated the steady rate: a booking reply, a hand-off or the
+    // abstention sentence arrives as one token, and replaying arrival showed it at once.
     const shown: string[] = [];
-    const pacer = createTypingPacer((text) => shown.push(text));
+    const pacer = createTypingPacer((text) => shown.push(text), { cps: 30 });
 
-    pacer.arrived("Hel");
-    pacer.arrived("Hello");
+    pacer.arrived("a".repeat(30));
 
-    expect(shown[shown.length - 1]).toBe("Hello");
-    expect(vi.getTimerCount()).toBe(0);
+    // At most one step's worth straight away (33ms at 30/s is under one character),
+    // then steadily on.
+    expect((shown[shown.length - 1] ?? "").length).toBeLessThanOrEqual(1);
+    advance(500);
+    expect(shown[shown.length - 1]!.length).toBeGreaterThanOrEqual(15);
+    expect(shown[shown.length - 1]!.length).toBeLessThan(30);
+    advance(600);
+    expect(shown[shown.length - 1]).toHaveLength(30);
   });
 
-  it("holds back text that arrived faster than it reads", () => {
+  it("grows one small step at a time, never in a jump", () => {
     const shown: string[] = [];
-    const pacer = createTypingPacer((text) => shown.push(text));
+    const pacer = createTypingPacer((text) => shown.push(text), { cps: 60 });
 
-    pacer.arrived("aaaa");
-    advance(100);
-    pacer.arrived("aaaabbbb");
+    pacer.arrived("x".repeat(120));
+    advance(3000);
 
-    // 100ms of arrival is 50ms of reveal: half of the second chunk is still to come.
-    expect(shown[shown.length - 1]).toBe("aaaabb");
+    const lengths = shown.map((text) => text.length);
+    const jumps = lengths.slice(1).map((length, i) => length - lengths[i]!);
+    // 60/s over ~33ms steps is two characters a step; never more than a step's worth.
+    expect(Math.max(...jumps)).toBeLessThanOrEqual(3);
+    expect(lengths[lengths.length - 1]).toBe(120);
+  });
+
+  it("keeps the same pace when the rest of a reply lands in a burst", () => {
+    // A model stream: a few spaced tokens, then everything else at once. The burst is
+    // typed at the rate the reply started at, not dropped in.
+    const shown: string[] = [];
+    const pacer = createTypingPacer((text) => shown.push(text), { cps: 60 });
+
+    pacer.arrived("ab");
+    advance(200);
+    pacer.arrived("ab" + "c".repeat(58));
+    const atBurst = shown[shown.length - 1]!.length;
+
     advance(100);
-    expect(shown[shown.length - 1]).toBe("aaaabbbb");
+    expect(shown[shown.length - 1]!.length - atBurst).toBeLessThanOrEqual(8);
+    advance(1000);
+    expect(shown[shown.length - 1]).toHaveLength(60);
+  });
+
+  it("clears a long backlog within the trail limit", () => {
+    const shown: string[] = [];
+    const pacer = createTypingPacer((text) => shown.push(text), {
+      cps: 10,
+      maxTrailMs: 1000,
+    });
+
+    pacer.arrived("z".repeat(200));
+    advance(1100);
+
+    expect(shown[shown.length - 1]).toHaveLength(200);
+  });
+
+  it("does not bank time spent waiting for the next token", () => {
+    // Caught up, then a long pause, then more text: the new text is typed from the
+    // moment it arrives, not shown at once on the strength of the idle wait.
+    const shown: string[] = [];
+    const pacer = createTypingPacer((text) => shown.push(text), { cps: 60 });
+
+    pacer.arrived("ab");
+    advance(100);
+    expect(shown[shown.length - 1]).toBe("ab");
+    advance(5000);
+    pacer.arrived("ab" + "c".repeat(40));
+
+    expect(shown[shown.length - 1]!.length).toBeLessThanOrEqual(4);
   });
 
   it("settles once the reveal has caught up, and not before", async () => {
     const shown: string[] = [];
-    const pacer = createTypingPacer((text) => shown.push(text));
-    pacer.arrived("aaaa");
-    advance(100);
-    pacer.arrived("aaaabbbb");
+    const pacer = createTypingPacer((text) => shown.push(text), { cps: 60 });
+    pacer.arrived("a".repeat(30));
 
     let settled = false;
     const waiting = pacer.settled().then(() => {
@@ -118,17 +144,17 @@ describe("createTypingPacer: reading and showing, kept apart", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(settled).toBe(false);
 
-    clock += 100;
-    await vi.advanceTimersByTimeAsync(100);
+    advance(1000);
     await waiting;
-    expect(shown[shown.length - 1]).toBe("aaaabbbb");
+    expect(shown[shown.length - 1]).toHaveLength(30);
   });
 
   it("settles immediately when everything is already shown", async () => {
     const pacer = createTypingPacer(() => undefined);
-    pacer.arrived("Hello");
+    pacer.arrived("");
 
     await expect(pacer.settled()).resolves.toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("stops revealing, and releases whoever was waiting, when the turn is abandoned", async () => {
@@ -136,9 +162,7 @@ describe("createTypingPacer: reading and showing, kept apart", () => {
     // it, and a `settled()` that never resolved would strand the loop awaiting it.
     const shown: string[] = [];
     const pacer = createTypingPacer((text) => shown.push(text));
-    pacer.arrived("aaaa");
-    advance(100);
-    pacer.arrived("aaaabbbb");
+    pacer.arrived("a".repeat(100));
     const waiting = pacer.settled();
 
     pacer.stop();

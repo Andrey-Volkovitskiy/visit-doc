@@ -330,9 +330,14 @@ export function StaffThread({
             </p>
           )}
           <span className="ml-auto flex items-center gap-2">
+            {/*
+              "off" wears `--color-attention` for the reason the switch beside it does
+              (see below): the assistant being off is this patient waiting on a person.
+              The word itself carries the state, so the colour is never its only carrier.
+            */}
             <span
               className={`text-sm font-semibold ${
-                assistantMayReply ? "text-accent-dark" : "text-ink-muted"
+                assistantMayReply ? "text-accent-dark" : "text-attention"
               }`}
             >
               {assistantMayReply ? "on" : "off"}

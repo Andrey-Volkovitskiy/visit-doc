@@ -212,7 +212,7 @@ function App() {
     return listing;
   }, []);
 
-  const create = useCallback(async (): Promise<void> => {
+  const create = useCallback(async (): Promise<ChatSummary> => {
     setError(null);
     // The response already *is* the new row, so the list is extended rather than
     // refetched — the server's ordering puts a brand-new, message-less chat first
@@ -225,6 +225,7 @@ function App() {
     setSessionExists(true);
     setChats((prev) => [created, ...prev]);
     setActiveChatId(created.id);
+    return created;
   }, []);
 
   // A first arrival must provision exactly one session, and this effect can run twice
@@ -242,16 +243,32 @@ function App() {
         if (!listing.session_exists) {
           if (provisioning.current) return;
           provisioning.current = true;
-          void create().catch((err: unknown) => {
-            provisioning.current = false;
-            setError(
-              err instanceof Error ? err.message : "Could not start a chat.",
-            );
-          });
+          void create()
+            .then((created) => {
+              // The starter chat opens on the staff side too. A visitor is one person
+              // in both panes, so the conversation they are looking at as the patient is
+              // the one they expect to see as staff — not an empty thread asking them to
+              // pick it from a list. Only when the staff pane has nothing open: a choice
+              // already made there is not overridden. Done here and not in `create`,
+              // which the "new chat" control also calls, and a patient starting a second
+              // chat must not move the staff member's thread.
+              setStaffChatId((current) => current ?? created.id);
+            })
+            .catch((err: unknown) => {
+              provisioning.current = false;
+              setError(
+                err instanceof Error ? err.message : "Could not start a chat.",
+              );
+            });
           return;
         }
         setSessionExists(true);
-        setActiveChatId((current) => current ?? listing.chats[0]?.id ?? null);
+        const first = listing.chats[0]?.id ?? null;
+        setActiveChatId((current) => current ?? first);
+        // A returning visitor gets the same both-panes opening as a first arrival: the
+        // chat the patient pane lands on is open on the staff side too, unless the staff
+        // pane already has one open.
+        setStaffChatId((current) => current ?? first);
       })
       .catch((err: unknown) => {
         // Without this the whole first paint fails silently: no chats, no active chat,

@@ -424,7 +424,7 @@ export function ChatWindow({
             </p>
             <p className="mt-1">
               Hello! I’m your AI clinic receptionist. I can help you book, reschedule,
-              or cancel an appointment, check available appointment slots with our
+              or cancel an appointment, check available slots with our
               practitioners, and answer questions from the clinic’s FAQ.
             </p>
             <p className="mt-2">

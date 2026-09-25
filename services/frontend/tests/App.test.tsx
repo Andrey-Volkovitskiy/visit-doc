@@ -78,6 +78,85 @@ describe("App: first arrival", () => {
     expect(screen.queryByTestId("no-chat")).toBeNull();
   });
 
+  it("opens the chat it just created in the staff pane as well", async () => {
+    // One person in both panes: the starter conversation shown to the patient is the
+    // one the staff side should already be reading, not a list of one to pick from.
+    vi.spyOn(chatStream, "fetchChats")
+      .mockResolvedValueOnce(listing({ session_exists: false }))
+      .mockResolvedValue(listing({ chats: [chat({ id: "01NEW" })] }));
+    vi.spyOn(chatStream, "createChat").mockResolvedValue(chat({ id: "01NEW" }));
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(consoleApi.fetchThread).toHaveBeenCalledWith(
+        "01NEW",
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(screen.queryByTestId("staff-no-thread")).toBeNull();
+  });
+
+  it("opens a returning visitor's most recent chat in the staff pane as well", async () => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({
+        chats: [
+          chat({ id: "01ACTIVE", patient_name: "Newest activity" }),
+          chat({ id: "01STALE", patient_name: "Older" }),
+        ],
+      }),
+    );
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(consoleApi.fetchThread).toHaveBeenCalledWith(
+        "01ACTIVE",
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(screen.queryByTestId("staff-no-thread")).toBeNull();
+  });
+
+  it("leaves the staff pane empty when a returning session holds no chats", async () => {
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [], session_exists: true }),
+    );
+
+    render(<App />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("no-chat")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("staff-no-thread")).toBeInTheDocument();
+    expect(consoleApi.fetchThread).not.toHaveBeenCalled();
+  });
+
+  it("leaves the staff pane on its chat when a returning patient starts another", async () => {
+    // Opening a visit may choose the staff side's thread; a second chat started from
+    // the patient pane must not move it.
+    vi.spyOn(chatStream, "fetchChats").mockResolvedValue(
+      listing({ chats: [chat({ id: "01OLD" })] }),
+    );
+    vi.spyOn(chatStream, "createChat").mockResolvedValue(
+      chat({ id: "01SECOND", patient_name: "Second" }),
+    );
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByLabelText("Start a new chat"));
+    await waitFor(() => expect(chatStream.createChat).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByText("Second")).toBeInTheDocument(),
+    );
+
+    expect(consoleApi.fetchThread).not.toHaveBeenCalledWith(
+      "01SECOND",
+      expect.anything(),
+    );
+    expect(screen.queryByTestId("staff-no-thread")).toBeNull();
+  });
+
   it("creates nothing when a recognized session has emptied its chat list", async () => {
     // FR-040: deleting the last chat must not provision a replacement. Same empty
     // list as a first arrival, opposite required behavior.

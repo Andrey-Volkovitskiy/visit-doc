@@ -49,8 +49,8 @@ src/
 ├── lib/consoleApi.ts    # the staff side's network layer, same rules
 ├── lib/useConsolePoll.ts# the 2s poll of one endpoint, feeding both panes
 ├── lib/scroll.ts        # isPinnedToBottom, a pure predicate with no DOM access
-├── lib/typing.ts        # how fast a streamed reply is *shown*: the arrival timeline,
-│                        #   replayed at half speed, decoupled from reading it
+├── lib/typing.ts        # how fast a streamed reply is *shown*: a steady character rate,
+│                        #   raised only to keep a backlog short, decoupled from reading it
 ├── lib/turns.ts         # which message carries a turn's one evidence marker, and what it
 │                        #   holds — read from the server's own reply_to_message_ids, pure
 ├── lib/useBottomPin.ts  # the one bottom-follow rule, over that predicate, for both threads
@@ -217,6 +217,10 @@ since a swallowed testid looks exactly like a missing element.
 them with `Object.defineProperty`. `scrollIntoView` is `undefined` and throws — scroll by assigning
 `scrollTop`.
 
+- **Every test runs the reply reveal at an unbounded rate.** `tests/setup.ts` mocks
+  `lib/typing` so a streamed reply is on screen the moment it arrives; at the real pace (tens of
+  characters a second) a component test asserting on streamed text races `waitFor`'s one-second
+  limit. `typing.test.ts` calls `vi.unmock` and tests the real pace under fake timers.
 - Network is faked at the `chatStream`/`consoleApi` seam: `vi.spyOn(chatStream, "askChat")` and
   friends, so a test exercises the real component against a controlled wire, never a real server.
   A test rendering `App` has to stub both, since the two panes read from both.
