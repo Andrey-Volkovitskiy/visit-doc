@@ -1032,6 +1032,32 @@ async def test_small_talk_beside_a_question_runs_the_faq_node_alone(
     assert _node_result(logs, "classify_intent")["specialists_collect"] is False
 
 
+async def test_classify_node_output_names_the_request_each_label_was_given_to(
+    seeded_entry: int,
+) -> None:
+    # A list of labels alone does not say which part of the message each one was
+    # attached to, which is the first question a misrouted turn raises.
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        intents=[IntentLabel.SMALL_TALK, IntentLabel.FAQ_QUESTION],
+    )
+
+    with (
+        patch("chat.rag.retriever.embed_texts", fake_embed_texts),
+        capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
+    ):
+        await _run_turn(client, "Hi, when can I visit?")
+
+    result = _node_result(logs, "classify_intent")
+    segments = result["segments"]
+    assert isinstance(segments, list)
+    assert [s["intent"] for s in segments] == result["intents"]
+    assert all(s["text"] and s["query"] for s in segments)
+    assert [s["position"] for s in segments] == list(range(len(segments)))
+    classified = next(e for e in logs if e["event"] == "intent.classified")
+    assert segments == classified["segments"]
+
+
 async def test_small_talk_beside_a_booking_runs_the_booking_node_alone() -> None:
     client = fake_anthropic_client(
         ["never generated"],

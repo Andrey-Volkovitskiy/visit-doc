@@ -53,13 +53,13 @@ interface OutcomeDisclosureProps {
  */
 const ABSTENTION_REASON: Record<string, string> = {
   abstained_empty_corpus:
-    "Not answered: this session's documents hold no entries to search — forwarded to staff.",
+    "Not answered: the FAQ is empty, so the AI assistant has nowhere to look — forwarded to staff.",
   abstained_empty_pool:
-    "Not answered: nothing in the clinic's documents came back for this question — forwarded to staff.",
+    "Not answered: nothing in the FAQ came up for this question — forwarded to staff.",
   abstained_similarity_floor:
-    "Not answered: what came back was too loosely related to stand on — forwarded to staff.",
+    "Not answered: only loosely related FAQ entries came up — forwarded to staff.",
   abstained_rerank_floor:
-    "Not answered: the closer reading found nothing that actually addressed it — forwarded to staff.",
+    "Not answered: no FAQ entry actually answered it — forwarded to staff.",
 };
 
 function abstentionReason(verdict: FaqVerdict): string {
@@ -67,7 +67,7 @@ function abstentionReason(verdict: FaqVerdict): string {
   // abstention has in common, rather than rendering `undefined`.
   return (
     ABSTENTION_REASON[verdict] ??
-    "Not answered from the clinic's documents — forwarded to staff."
+    "Not answered from the clinic's FAQ — forwarded to staff."
   );
 }
 

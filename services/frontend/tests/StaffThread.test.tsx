@@ -1637,7 +1637,7 @@ describe("StaffThread request outcomes", () => {
       "What is your late cancellation fee?",
     );
     expect(screen.getByTestId("outcome-unanswered")).toHaveTextContent(
-      "the closer reading found nothing",
+      "no FAQ entry actually answered it",
     );
   });
 

@@ -544,6 +544,11 @@ def _build_graph(
             )
             span.set(
                 intents=[str(i) for i in intents],
+                # The requests those labels were given to, in the same order - the
+                # list `intent.classified` carries, not a second one built to match
+                # it, so this node's output and the root's metadata cannot disagree
+                # about what each label was attached to.
+                segments=classified["segments"],
                 specialists=specialists,
                 specialists_collect=specialists_collect,
                 stopping_cause=(
