@@ -22,7 +22,6 @@ from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
 from chat.agent.history import (
     OPENING_CLINIC_NOTE,
     split_into_bursts,
-    to_claude_messages,
 )
 from chat.agent.tools.registry import ToolContext
 from chat.agent.tools.scheduling_tools import SCHEDULING_TOOLS
@@ -869,38 +868,57 @@ def test_the_faq_node_is_offered_no_tools_at_all(seeded_entry: int) -> None:
     ]
 
 
-# --- 007: the clinic's opening words survive the specialist's own prompt ------------
+# --- the FAQ answerer is shown no conversation --------------------------------------
 #
-# `to_claude_messages` folds a leading clinic-sided burst into the first `user` entry,
-# and a specialist that builds a prompt of its own replaces the *trailing* entry - the
-# same entry, whenever the whole window renders as one. Asserted here on the specialist
-# rather than on the render, because it was the specialists that dropped it.
+# Shown the conversation, it let it decide the answer: with an earlier question in view
+# that had gone unanswered, it declined questions the entry in front of it answered -
+# and still did with the clinic's replies removed (`answer_faq._TurnContext`). So it is
+# shown none of it - not the patient's earlier messages, not a reply, not a staff post,
+# not the clinic's words opening the window - and answers the classifier's standalone
+# restatement, which was written with all of that in view.
 
 
-def test_the_clinics_opening_words_reach_the_faq_specialist(seeded_entry: int) -> None:
+def test_the_faq_answerer_is_shown_no_conversation(seeded_entry: int) -> None:
     bursts = split_into_bursts(
         [
             Message(
                 sender=MessageSender.STAFF,
                 content="Dr. Chen has a slot Friday at 3 - shall I book it?",
-                id="s1",
+                id="s0",
             ),
-            _patient_message("when can I visit?", id="turn-1"),
+            _patient_message("should I take aspirin for a headache?", id="p1"),
+            Message(
+                sender=MessageSender.ASSISTANT,
+                content="I don't have that information in the clinic's knowledge base.",
+                id="a1",
+            ),
+            Message(sender=MessageSender.STAFF, content="No, you shouldn't", id="s1"),
+            _patient_message("and when can I visit?", id="turn-1"),
         ]
     )
-    # One entry, so the entry the FAQ prompt replaces is the folded one.
-    assert len(to_claude_messages(bursts)) == 1
 
     with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
-        anthropic_client = fake_anthropic_client(["Visiting hours are 8am to 5pm."])
-        asyncio.run(_run_turn(anthropic_client, "when can I visit?", bursts=bursts))
+        anthropic_client = fake_anthropic_client(
+            ["Visiting hours are 8am to 5pm."],
+            segments=[(IntentLabel.FAQ_QUESTION, "When can I visit the clinic?")],
+        )
+        asyncio.run(_run_turn(anthropic_client, "and when can I visit?", bursts=bursts))
 
     sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
-    content = str(sent[-1]["content"])
-    assert "Dr. Chen has a slot Friday at 3 - shall I book it?" in content
-    assert OPENING_CLINIC_NOTE in content
-    # And the turn's own question is still the question it answers.
-    assert content.endswith("Question: when can I visit?")
+    assert [entry["role"] for entry in sent] == ["user"]
+    content = str(sent[0]["content"])
+    for earlier in (
+        "Dr. Chen has a slot",
+        "should I take aspirin",
+        "I don't have that information",
+        "No, you shouldn't",
+    ):
+        assert earlier not in content
+    assert OPENING_CLINIC_NOTE not in content
+    # "and when can I visit?" leans on a conversation this prompt no longer carries,
+    # so the restatement is shown beside it - and the patient's words stay the question.
+    assert "When can I visit the clinic?" in content
+    assert content.endswith("Question: and when can I visit?")
 
 
 def test_a_classification_timeout_is_not_reported_as_an_outage(
@@ -2291,8 +2309,9 @@ def test_a_lone_request_logs_the_patients_words_beside_the_restatement(
 def test_a_lone_faq_request_retrieves_for_the_restatement_and_asks_in_own_words(
     seeded_entry: int,
 ) -> None:
-    # "is it free?" cannot be searched for; the restatement can. The question the
-    # generation answers, and the one the outcome records, is what the patient wrote.
+    # "and when can I come?" cannot be searched for; the restatement can. The answerer
+    # is shown the restatement for what the question refers to, and answers - and the
+    # outcome records - what the patient wrote.
     queries: list[str] = []
     with patch("chat.rag.retriever.embed_texts", recording_embed_texts(queries)):
         anthropic_client = fake_anthropic_client(
@@ -2303,7 +2322,9 @@ def test_a_lone_faq_request_retrieves_for_the_restatement_and_asks_in_own_words(
 
     assert queries == ["when are visiting hours?"]
     sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
-    assert "Question: and when can I come?" in str(sent[-1]["content"])
+    content = str(sent[-1]["content"])
+    assert "when are visiting hours?" in content
+    assert content.endswith("Question: and when can I come?")
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
     assert done_event.request_outcomes is not None

@@ -368,7 +368,11 @@ def _in_patient_wording(
     earliest is fine, yes please book it" restated as "book the earliest slot" is a
     request the booking loop must confirm again, not a confirmation. The restatement
     stays as the query, because retrieval needs a question that stands on its own and
-    "is it free?" does not. Several requests keep their restatements: those are what
+    "is it free?" does not - and the FAQ answerer, which is shown no conversation,
+    reads it beside this wording to learn what the question refers to. It answers
+    this wording, though: a restatement can drop a condition the patient set, and
+    answering it would answer an easier question. Several
+    requests keep their restatements: those are what
     keep one specialist from answering another's clause. A blank message keeps the
     restatement too, since a segment cannot carry blank text.
     """
@@ -582,7 +586,6 @@ def _build_graph(
                 voyage_client,
                 rerank_client,
                 anthropic_client,
-                state["bursts"],
                 state["reply_to_message_ids"],
                 state["session_id"],
                 state["live_revisions"],

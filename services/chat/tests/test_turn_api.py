@@ -944,10 +944,20 @@ async def test_followup_reply_uses_earlier_message_as_history(
 
     calls = anthropic_client.messages.stream.call_args_list
     assert len(calls) == 1  # message 1 abstained - never reached Claude
-    messages_sent = calls[0].kwargs["messages"]
+    # The earlier message is carried by the classifier, which reads the conversation
+    # and restates each request to stand on its own ("that day" -> Tuesday). The FAQ
+    # answerer is shown no conversation: it answers that restatement alone.
+    classifications = [
+        call.kwargs["messages"]
+        for call in anthropic_client.messages.create.call_args_list
+        if "output_config" in call.kwargs
+    ]
     assert any(
-        m["role"] == "user" and "Tuesday" in m["content"] for m in messages_sent[:-1]
+        m["role"] == "user" and "Tuesday" in m["content"]
+        for m in classifications[-1][:-1]
     )
+    assert [m["role"] for m in calls[0].kwargs["messages"]] == ["user"]
+    assert "Tuesday" not in str(calls[0].kwargs["messages"])
 
 
 async def test_followup_still_abstains_when_neither_message_is_grounded(
@@ -1648,15 +1658,22 @@ async def test_a_turn_after_a_silence_answers_only_what_came_after_it(
     assert silenced not in received["message_ids_unified"]
     assert len(answered) == 1
 
-    # And what the FAQ path was asked is that one message alone - while the silenced
-    # message is still in front of the model, which is the other half of FR-019a: it
-    # remains part of the conversation read for context, and is never the question.
+    # And what the FAQ path was asked is that one message alone. The other half of
+    # FR-019a - the silenced message remains part of the conversation read for
+    # context, and is never the question - is the classifier's now: it reads the
+    # window behind its note, while the FAQ answerer is shown no conversation at all.
     sent = anthropic_client.messages.stream.call_args.kwargs["messages"]
     prompt = str(sent[-1]["content"])
-    assert "when can I visit?" in prompt
-    assert "my appointment is wrong" in prompt
-    assert "my appointment is wrong" not in prompt.split("Question:")[-1]
-    assert "do not answer them" in prompt
+    assert prompt.endswith("Question: when can I visit?")
+    assert "my appointment is wrong" not in prompt
+    classification = next(
+        call.kwargs["messages"]
+        for call in anthropic_client.messages.create.call_args_list
+        if "output_config" in call.kwargs
+    )
+    read = str(classification[-1]["content"])
+    assert "my appointment is wrong" in read
+    assert "do not answer them" in read
 
 
 async def test_the_silenced_message_stays_in_the_thread(seeded_entry: int) -> None:

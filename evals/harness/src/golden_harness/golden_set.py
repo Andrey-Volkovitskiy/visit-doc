@@ -1167,11 +1167,65 @@ family(
 )
 
 
+# === r - history-related-issues =====================================================
+
+family(
+    "r",
+    "history-related-issues",
+    "A turn whose right answer does not change with the conversation before it, but "
+    "whose outcome did. Shown the conversation, the FAQ answerer let it decide the "
+    "answer: with an earlier question in view that had gone unanswered, it declined "
+    "questions the entry in front of it answered. Every case here is answerable from "
+    "the corpus on its own; the history is what is under test.",
+    [
+        case(
+            "G-r-01",
+            "Do you have parking? Is it possible to consult with a GP through a "
+            "web-conference, and when is he available next Tuesday?",
+            [
+                faq("is there parking", "hours-location"),
+                faq("GP consultation by video call", "telehealth"),
+                bk("GP availability next Tuesday", "check_availability"),
+            ],
+            history=[
+                turn(
+                    "user",
+                    "What insurances do you accept and should I take Brufen if I "
+                    "have a headache?",
+                ),
+                turn(
+                    "assistant",
+                    "We accept most major insurance providers, including Blue Cross "
+                    "Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If "
+                    "you're unsure whether your specific plan is covered, ask to be "
+                    "connected with a member of our front desk team, who can help "
+                    "clarify your coverage.\n\n"
+                    "As for whether you should take Brufen for a headache, I don't "
+                    "have that information in the clinic's knowledge base. That "
+                    "question has been forwarded to staff, who will follow up with "
+                    "you. In the meantime, feel free to reach out if there's anything "
+                    "else I can help with.",
+                ),
+            ],
+            scheduling=sch([], []),
+            note="taken from a live turn (2026-09-25, message "
+            "01M3BR67WQVK44K2R2HV98127V): both FAQ requests cleared both gates on "
+            "the entry that answers them, and the answerer returned NO_ANSWER for "
+            "each, 5 samples in 5 on replay. It still did with the clinic's replies"
+            " removed and only the patient's earlier question kept, and with an "
+            "instruction to ignore earlier answers; with no conversation shown it "
+            "answered both, 3 in 3. The staff line that followed the reply live is "
+            "left out - removing it changed nothing",
+        ),
+    ],
+)
+
+
 # --- the checks JSON Schema cannot make ---------------------------------------------
 
 # The family letters, in the order the set is meant to read. There is no `h`: the
 # letters follow the order the set was specified in, and that one was not used.
-EXPECTED_LETTERS: Final = list("abcdefgijklmnopq")
+EXPECTED_LETTERS: Final = list("abcdefgijklmnopqr")
 
 # Each seeded practitioner's working week and the hours a 60-minute slot may start in:
 # first weekday, last weekday, first hour, last hour.

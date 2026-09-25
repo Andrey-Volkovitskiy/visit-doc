@@ -945,7 +945,6 @@ async def _faq_turn(
             MagicMock(),
             MagicMock(),
             client,
-            [[Message(sender=MessageSender.PATIENT, content="ask", id="m1")]],
             ["m1"],
             "01SESSION",
             ["01REVISION"],

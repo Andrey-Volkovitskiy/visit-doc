@@ -1,7 +1,7 @@
 # The golden set (v2)
 
-The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 145 patient messages carrying
-180 labelled requests, grouped into 16 families that between them cover what a patient actually
+The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 98 patient messages carrying
+120 labelled requests, grouped into 17 families that between them cover what a patient actually
 does with this assistant.
 
 **It is data, and `cases.json` is a generated artifact.** The set is written in
@@ -39,7 +39,7 @@ The consequences worth knowing:
 | File | What it is |
 |---|---|
 | `cases.json` | The set, grouped by family — generated; see above. `schema.json` is authoritative for the shape. |
-| `schema.json` | JSON Schema for the file. All 145 cases validate against it. |
+| `schema.json` | JSON Schema for the file. All 98 cases validate against it. |
 | `corpus.json` | The pinned FAQ corpus every `cites` label names, with a `sha256` over the entry texts. |
 | `PROVENANCE.md` | Where v2 came from, and what has to be re-checked when the corpus moves. |
 
@@ -88,21 +88,22 @@ than a per-case citation of another spec's set.
 | | Family | n | What it tests |
 |---|---|---|---|
 | a | `single-booking` | 13 | One booking request the booking node serves alone, across its whole range. Writes carry a scripted second turn, so a bare "OK" has to read as the booking it answers. |
-| b | `urgent_condition` | 9 | Something an emergency department exists for. Takes the whole turn; ends it. Carries the hyperbole counter-case. |
-| c | `distress` | 7 | Real fear or acute upset. Carries the brief-exclamation counter-case. |
-| d | `booking_for_another` | 7 | The appointment is plainly for someone else. Nothing may be written. |
+| b | `urgent_condition` | 5 | Something an emergency department exists for. Takes the whole turn; ends it. Carries the hyperbole counter-case. |
+| c | `distress` | 3 | Real fear or acute upset. Carries the brief-exclamation counter-case. |
+| d | `booking_for_another` | 4 | The appointment is plainly for someone else. Nothing may be written. |
 | e | `not_authorized` | 9 | A request the assistant may never serve, whatever the corpus grows to hold. |
-| f | `call_staff` | 6 | An explicit request for a human — the one cause that owes the patient silence. |
-| g | `small-talk` | 12 | Messages asking for nothing. None may page a person or search the corpus. |
-| i | `out-of-topic` | 5 | Clearly outside the clinic's domain: nothing to retrieve and nobody to page. |
-| j | `single-faq-answered` | 16 | One answerable FAQ question: both gates cleared, answer generated, right entry cited. |
-| k | `single-faq-gap` | 14 | One question the corpus cannot answer, most overlapping an entry heavily. Must abstain. |
-| l | `single-faq-that-looks-multi` | 7 | One request wearing the clothes of several. Must not be over-split. |
-| m | `compound-faq-answered` | 8 | Two or three answerable questions, each retrieved on its own and cited on its own. |
-| n | `compound-faq-mixed` | 9 | One answerable, one a gap. Answer the half you can; name the half you cannot. |
-| o | `request-segmentation` | 7 | A request that cannot be searched as written and must be restated without adding. |
-| p | `pleasantry-plus-request` | 8 | A greeting in front of a real request, drawn from every route. |
-| q | `mixed-faq-booking` | 8 | An FAQ half and a booking half; each specialist sees only its own. |
+| f | `call_staff` | 4 | An explicit request for a human — the one cause that owes the patient silence. |
+| g | `small-talk` | 8 | Messages asking for nothing. None may page a person or search the corpus. |
+| i | `out-of-topic` | 2 | Clearly outside the clinic's domain: nothing to retrieve and nobody to page. |
+| j | `single-faq-answered` | 11 | One answerable FAQ question: both gates cleared, answer generated, right entry cited. |
+| k | `single-faq-gap` | 9 | One question the corpus cannot answer, most overlapping an entry heavily. Must abstain. |
+| l | `single-faq-that-looks-multi` | 3 | One request wearing the clothes of several. Must not be over-split. |
+| m | `compound-faq-answered` | 5 | Two or three answerable questions, each retrieved on its own and cited on its own. |
+| n | `compound-faq-mixed` | 6 | One answerable, one a gap. Answer the half you can; name the half you cannot. |
+| o | `request-segmentation` | 5 | A request that cannot be searched as written and must be restated without adding. |
+| p | `pleasantry-plus-request` | 6 | A greeting in front of a real request, drawn from every route. |
+| q | `mixed-faq-booking` | 4 | An FAQ half and a booking half; each specialist sees only its own. |
+| r | `history-related-issues` | 1 | Answerable on its own; the earlier conversation is what is under test. |
 
 There is no family `h`: the letters follow the order the set was specified in, and `h` was not used.
 

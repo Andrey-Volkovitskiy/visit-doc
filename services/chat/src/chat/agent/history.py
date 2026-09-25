@@ -425,8 +425,8 @@ def to_claude_messages_separating_silence(
     One function rather than the same six lines in each caller: it was written three
     times, shipped missing from a fourth, and is still the difference between reading
     a held-back message as context and acting on it. `answer_faq` is the one caller
-    that does not use this - it replaces the trailing entry with a prompt carrying its
-    retrieved context, so it renders the window into that prompt itself.
+    that does not use this - it shows its model no conversation at all, only each
+    request's standalone restatement.
     """
     entries = to_claude_messages(bounded)
     silenced = render_silent_window(silent_window(bounded))

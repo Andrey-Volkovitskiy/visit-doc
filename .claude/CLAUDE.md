@@ -117,6 +117,13 @@ set no longer holds and both `compare` and `score` refuse it. It stays frozen as
 FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
 is evidence rather than a threshold - there is still no noise band, so nothing there is a number a
 later run has to beat.
+**Never start a full `make eval-run` to check a fix before the cases it touches have passed on
+their own.** The full set spends live calls on every case; a fix is checked first offline where it
+can be (replaying stored prompts from a run's case files), then with `make eval-run CASES=...` over
+exactly the cases it can move — the case it is for, and every case sharing the path it changed —
+and only once those behave is the full set run to compare against the baseline. A full run spent on
+an unchecked FAQ-prompt change (2026-09-25) surfaced a regression in G-k-15 that the dozen affected
+cases would have shown for a fraction of the cost.
 A fifth target, `make eval-build-set`, re-renders `evals/golden/cases.json` from its declaration in
 `golden_harness.golden_set` — the JSON is an artifact, and `tests/test_golden_set.py` fails
 byte-for-byte when the two disagree, so the set is changed by editing the declaration and
@@ -350,10 +357,22 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   survives as a *derived* property, which is what let every routing rule keep reading the value it
   read before. Each specialist is handed only its own segments and substitutes them into the trailing
   conversation entry via `history.replace_trailing_entry`, so isolation is structural: the other
-  half's clause is not in the prompt to be answered. A segment carries two wordings: `query`, the
-  classifier's standalone restatement, which is what retrieval searches for; and `text`, what the
-  specialist answers. They are the same restatement when the message carried several requests, but
-  a message the classifier found **one** request in is answered in the patient's own words
+  half's clause is not in the prompt to be answered. The FAQ answerer is the exception: it is shown
+  **no conversation at all** — one `user` message: the clinic information, the request's `query`
+  labelled as what the question refers to (only when it differs from `text`), then `text` as the
+  question. The `query` alone is not enough: it is a search wording and can drop a condition —
+  G-k-15's "…for the same visit, splitting the cost between them?" restated as "Do you accept
+  UnitedHealthcare and Blue Cross Blue Shield?", which an answerer given only that answered.
+  Shown the conversation, it let it decide the answer: with an earlier question in view that had
+  gone unanswered, it declined questions the entry in front of it answered — 5 in 5 on replay of a
+  live turn, still 5 in 5 with the clinic's replies removed and only the patient's earlier messages
+  kept, and 3 in 3 answered with no conversation; an instruction to disregard earlier answers changed
+  nothing. The classifier still reads the whole window (silent window included) and writes `query`
+  to stand on its own, so that is where a follow-up is resolved. Golden case `G-r-01` holds that
+  turn. A segment carries two wordings: `query`, the classifier's standalone restatement, which is
+  what retrieval searches for; and `text`, what the specialist answers and what a stored outcome
+  records. They are the same restatement when the message carried several requests, but a message
+  the classifier found **one** request in is answered in the patient's own words
   (`_in_patient_wording` in `agent/graph.py`) — with no other clause to keep out, a restatement can
   only lose something - the "yes" in "yes, please go ahead", which is what tells the booking loop
   that a change it described is now chosen. The retrieval pipeline runs once per FAQ

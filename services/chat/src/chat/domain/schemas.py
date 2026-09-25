@@ -87,6 +87,10 @@ class IntentLabel(StrEnum):
 MAX_SEGMENTS = 3
 
 
+# This class's docstring - and `IntentClassificationResult`'s - is prompt text: both go
+# to the classifier as the descriptions in its response schema (`_RESPONSE_SCHEMA` in
+# `agent/classify_intent.py`), so editing either one changes how it segments. A note for
+# readers of the code belongs in a comment like this one, which the schema never sees.
 class RequestSegment(BaseModel):
     """One thing the visitor asked for, with the wording each reader of it needs.
 

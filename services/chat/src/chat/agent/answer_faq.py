@@ -40,19 +40,11 @@ from chat.agent.compose_answer import (
     deduplicate_chunks,
 )
 from chat.agent.escalation import EscalationRequests
-from chat.agent.history import (
-    bound_to_last_n_turns,
-    render_opening_clinic,
-    render_silent_window,
-    replace_trailing_entry,
-    silent_window,
-    to_claude_messages,
-    to_loggable_messages,
-)
+from chat.agent.history import to_loggable_messages
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
-from chat.domain.models import EscalationReason, Message
+from chat.domain.models import EscalationReason
 from chat.domain.schemas import (
     ChatDoneEvent,
     ChatTokenEvent,
@@ -124,6 +116,19 @@ _SYSTEM_PROMPT = (
 # The heading the retrieved chunks sit under. It names what they are to the patient, so
 # the model repeating it would still read naturally.
 _RETRIEVED_HEADING = "Clinic information:"
+# Introduces the classifier's restatement, shown beside the patient's own question only
+# when the two differ. The model is shown no conversation (`_TurnContext`), so "and a
+# dentist?" names nothing without it - but the restatement is a search wording and can
+# drop a condition: "...for the same visit, splitting the cost between them?" came back
+# as "Do you accept UnitedHealthcare and Blue Cross Blue Shield?", and answering that
+# answered a question the corpus cannot. So it is labelled as what the question refers
+# to, and the patient's question comes last, as the thing answered. Measured on the 11
+# requests of a full run whose two wordings differed, 3 samples each: every answerable
+# one answered, the dentist's price resolved, and the split-cost gap declined 3 in 3.
+_RESTATED_HEADING = (
+    "What the question refers to, restated to stand on its own - it may leave out part "
+    "of what was asked:"
+)
 # The abstention and the handoff are one outcome, so they are one sentence: an
 # abstention that then attempted a speculative answer, or that left the patient at a
 # dead end, is the failure this wording exists to prevent. The closing invitation is
@@ -144,10 +149,17 @@ _ABSTENTION_MESSAGE = (
 
 @dataclass(frozen=True)
 class _TurnContext:
-    """Everything every request of one turn shares: its clients and its history.
+    """Everything every request of one turn shares: its clients and its corpus.
 
-    Rendered once and read by each request's run, so a fan-out cannot end up with two
-    renderings of one conversation.
+    No conversation: the answerer is shown none of it. What a request refers to comes
+    from its standalone restatement (`RequestSegment.query`), which the classifier
+    wrote with the whole conversation in view and which the prompt shows beside the
+    patient's own question (`_RESTATED_HEADING`). Shown the conversation, the answerer
+    let it decide the answer: with an earlier question in view that had gone
+    unanswered, it declined questions the entry in front of it answered - 5 samples in
+    5 on replay of a live turn, and still 5 in 5 with the clinic's replies taken out
+    and only the patient's earlier messages kept. With no conversation it answered 3
+    in 3. Golden case `G-r-01` holds that turn.
     """
 
     qdrant_client: AsyncQdrantClient
@@ -156,9 +168,6 @@ class _TurnContext:
     anthropic_client: AsyncAnthropic
     session_id: str
     live_revisions: list[str]
-    history: list[MessageParam]
-    silenced: str
-    opening_clinic: str
 
 
 async def answer_faq(
@@ -166,7 +175,6 @@ async def answer_faq(
     voyage_client: AsyncClient,
     rerank_client: AsyncClient,
     anthropic_client: AsyncAnthropic,
-    bursts: list[list[Message]],
     reply_to_message_ids: list[str],
     session_id: str,
     live_revisions: list[str],
@@ -182,10 +190,6 @@ async def answer_faq(
         rerank_client: The reranking client, separate from `voyage_client` so its
             deadline bounds the whole call however the embedding client is configured
             to retry.
-        bursts: The chat's full conversation history, partitioned into contiguous
-            same-side runs. Bounded here to the last few turns before any model call,
-            and used as context only - what is retrieved for and answered is
-            `segments`, not the trailing message.
         reply_to_message_ids: The patient message id(s) this turn is answering.
         session_id: The session this turn belongs to, and the only corpus retrieval may
             reach - carried to the search as a term of its own rather than left to the
@@ -221,8 +225,6 @@ async def answer_faq(
         to stream more than one, or handed a position per question that does not match
         the questions.
     """
-    settings = get_settings()
-    bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
     if not segments:
         raise RuntimeError("the FAQ half was entered with no question to answer")
     if positions is None:
@@ -234,13 +236,6 @@ async def answer_faq(
         # could have; more than one part is always collected and composed.
         raise RuntimeError("a streamed turn answers exactly one question")
 
-    # Both taken from the bursts, not from `history`'s last entry: a turn following a
-    # silent window has two consecutive patient-sided bursts, which that render rejoins
-    # into one. Reading them off it would carry a message a staff member was meant to
-    # deal with into the prompt; and since the prompt below replaces that entry, the
-    # window has to be carried into the prompt explicitly or it would be dropped from
-    # the conversation the model reads at all. The clinic's own opening words are
-    # carried for the same reason - see `replace_trailing_entry`.
     context = _TurnContext(
         qdrant_client=qdrant_client,
         voyage_client=voyage_client,
@@ -248,9 +243,6 @@ async def answer_faq(
         anthropic_client=anthropic_client,
         session_id=session_id,
         live_revisions=live_revisions,
-        history=to_claude_messages(bounded),
-        silenced=render_silent_window(silent_window(bounded)),
-        opening_clinic=render_opening_clinic(bounded),
     )
 
     requests = list(zip(positions, segments, strict=True))
@@ -431,26 +423,17 @@ async def _answer_one_bound(
     # supported a *different* request is untouched: nothing here sees another request.
     survivors = deduplicate_chunks(outcome.survivors)
     retrieved = "\n\n".join(chunk.chunk_text for chunk in survivors)
-    # The same three parts it has always had, and the same two when nothing was
-    # silenced. The question is the request's `text`: the patient's own words when the
-    # message carried only this request, and the classifier's restatement otherwise.
-    # Either way it is the request the shortlist was retrieved for - `query` is only the
-    # same request made to stand on its own. Another request's chunks and another
-    # request's words are not in this prompt at all.
-    prompt = "\n\n".join(
-        part
-        for part in (
-            f"{_RETRIEVED_HEADING}\n{retrieved}",
-            context.silenced,
-            f"Question: {segment.text}",
-        )
-        if part
-    )
-    # Not `[*history[:-1], current_turn]`: when the whole window renders as one entry,
-    # the entry this prompt replaces is the one carrying the clinic's opening words.
-    messages = replace_trailing_entry(
-        context.history, prompt, opening_clinic=context.opening_clinic
-    )
+    # One message, and the only one: the clinic information, the restatement when it
+    # differs from the patient's wording (`_RESTATED_HEADING`), then the question as
+    # the patient asked it. Where the two are the same - every request of a message
+    # that carried several - the prompt is the two parts it has always had. Another
+    # request's chunks and another request's words are not in this prompt at all.
+    parts = [f"{_RETRIEVED_HEADING}\n{retrieved}"]
+    if segment.query != segment.text:
+        parts.append(f"{_RESTATED_HEADING} {segment.query}")
+    parts.append(f"Question: {segment.text}")
+    prompt = "\n\n".join(parts)
+    messages: list[MessageParam] = [{"role": "user", "content": prompt}]
 
     # The retrieved context reaches the model inside this turn's own message, so the
     # logged conversation is also the record of what was retrieved for it.

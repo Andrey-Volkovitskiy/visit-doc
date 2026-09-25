@@ -1799,6 +1799,58 @@
      "note": "'the same time next week' is +9d from a Monday clock"
     }
    ]
+  },
+  {
+   "letter": "r",
+   "name": "history-related-issues",
+   "tests": "A turn whose right answer does not change with the conversation before it, but whose outcome did. Shown the conversation, the FAQ answerer let it decide the answer: with an earlier question in view that had gone unanswered, it declined questions the entry in front of it answered. Every case here is answerable from the corpus on its own; the history is what is under test.",
+   "cases": [
+    {
+     "id": "G-r-01",
+     "message": "Do you have parking? Is it possible to consult with a GP through a web-conference, and when is he available next Tuesday?",
+     "history": [
+      {
+       "role": "user",
+       "text": "What insurances do you accept and should I take Brufen if I have a headache?"
+      },
+      {
+       "role": "assistant",
+       "text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, ask to be connected with a member of our front desk team, who can help clarify your coverage.\n\nAs for whether you should take Brufen for a headache, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is there parking",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      },
+      {
+       "intent": "faq_question",
+       "gist": "GP consultation by video call",
+       "answerable": true,
+       "cites": [
+        "telehealth"
+       ]
+      },
+      {
+       "intent": "booking",
+       "gist": "GP availability next Tuesday",
+       "tools": [
+        "check_availability",
+        "list_practitioners"
+       ]
+      }
+     ],
+     "scheduling": {
+      "given": [],
+      "expect": []
+     },
+     "note": "taken from a live turn (2026-09-25, message 01M3BR67WQVK44K2R2HV98127V): both FAQ requests cleared both gates on the entry that answers them, and the answerer returned NO_ANSWER for each, 5 samples in 5 on replay. It still did with the clinic's replies removed and only the patient's earlier question kept, and with an instruction to ignore earlier answers; with no conversation shown it answered both, 3 in 3. The staff line that followed the reply live is left out - removing it changed nothing"
+    }
+   ]
   }
  ]
 }

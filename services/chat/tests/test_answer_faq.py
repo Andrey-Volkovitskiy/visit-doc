@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import structlog
-from chat.agent.answer_faq import _SYSTEM_PROMPT, answer_faq
+from chat.agent.answer_faq import _RESTATED_HEADING, _SYSTEM_PROMPT, answer_faq
 from chat.agent.compose_answer import (
     FaqResult,
     FaqSegmentAnswer,
@@ -145,6 +145,7 @@ async def _run(
     reranked: list[ScoredChunk] | None,
     live_revisions: list[str] | None = None,
     question: str = "what should I bring?",
+    query: str | None = None,
     stop_reason: str = "end_turn",
     answer: str | list[str] = "an answer",
 ) -> tuple[FaqResult, dict[str, object], AsyncMock, EscalationRequests]:
@@ -164,11 +165,16 @@ async def _run(
             AsyncMock(),
             AsyncMock(),
             _anthropic(recorder, stop_reason=stop_reason, answer=answer),
-            _bursts(question),
             ["p1"],
             _SESSION,
             _REVISIONS if live_revisions is None else live_revisions,
-            segments=[RequestSegment(intent=IntentLabel.FAQ_QUESTION, text=question)],
+            segments=[
+                RequestSegment(
+                    intent=IntentLabel.FAQ_QUESTION,
+                    text=question,
+                    query=question if query is None else query,
+                )
+            ],
             escalation=escalation,
             stream=False,
         ):
@@ -404,7 +410,6 @@ async def test_streaming_mode_emits_the_verdict_on_its_done_event() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic(recorder),
-            _bursts(),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -533,7 +538,6 @@ async def test_the_rerank_gate_reports_its_own_floor_cap_and_drops() -> None:
                 AsyncMock(),
                 AsyncMock(),
                 _anthropic({}),
-                _bursts(),
                 ["p1"],
                 _SESSION,
                 _REVISIONS,
@@ -793,7 +797,6 @@ async def _run_many(
             AsyncMock(),
             AsyncMock(),
             _anthropic(recorder),
-            _bursts(" ".join(pools)),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -925,7 +928,6 @@ async def test_one_requests_search_failure_fails_the_whole_turn() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts("a? b?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -965,7 +967,6 @@ async def test_a_failing_request_stops_the_ones_running_beside_it() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic(recorder),
-            _bursts("fails? slow? also slow?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -994,7 +995,6 @@ async def _drive(
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts(" ".join(segments)),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1141,7 +1141,6 @@ async def test_a_generation_that_returned_no_text_fails_the_request() -> None:
             AsyncMock(),
             AsyncMock(),
             client,
-            _bursts("what should I bring?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1198,7 +1197,6 @@ async def test_one_call_to_staff_however_many_requests_abstained() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts("a? b?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1272,6 +1270,30 @@ async def test_one_requests_prompt_keeps_the_shape_it_has_always_had() -> None:
             "role": "user",
             "content": (
                 "Clinic information:\nchunk text 0\n\nQuestion: what should I bring?"
+            ),
+        }
+    ]
+
+
+async def test_a_differing_restatement_is_shown_before_the_patients_question() -> None:
+    # The answerer sees no conversation, so "and a dentist?" needs the restatement to
+    # name anything; but a restatement can drop a condition, so the patient's own
+    # question is still the one asked, and it comes last.
+    _, recorder, _, _ = await _run(
+        pool=[_chunk(0)],
+        reranked=[_chunk(0, rerank=0.9)],
+        question="And a dentist?",
+        query="How much is a dentist visit if I'm paying out of pocket?",
+    )
+
+    assert recorder["messages"] == [
+        {
+            "role": "user",
+            "content": (
+                "Clinic information:\nchunk text 0\n\n"
+                f"{_RESTATED_HEADING} "
+                "How much is a dentist visit if I'm paying out of pocket?\n\n"
+                "Question: And a dentist?"
             ),
         }
     ]
@@ -1389,7 +1411,6 @@ async def _streamed(answer: str | list[str]) -> list[object]:
             AsyncMock(),
             AsyncMock(),
             _anthropic(recorder, answer=answer),
-            _bursts(),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1505,7 +1526,6 @@ async def test_a_degraded_request_is_named_by_position_not_by_the_turn() -> None
             AsyncMock(),
             failing_client,
             _anthropic(recorder),
-            _bursts("a? b?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1528,7 +1548,6 @@ async def test_an_empty_corpus_is_recorded_per_request() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts("a? b?"),
             ["p1"],
             _SESSION,
             [],
@@ -1603,7 +1622,6 @@ async def test_a_position_list_that_does_not_match_the_questions_is_refused() ->
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts("a? b?"),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1624,7 +1642,6 @@ async def test_a_half_entered_with_no_question_is_refused() -> None:
             AsyncMock(),
             AsyncMock(),
             _anthropic({}),
-            _bursts(),
             ["p1"],
             _SESSION,
             _REVISIONS,
@@ -1706,7 +1723,6 @@ async def _traced_turn(
                 AsyncMock(),
                 rerank_client,
                 _anthropic({}),
-                _bursts(" ".join(questions)),
                 ["p1"],
                 _SESSION,
                 _REVISIONS if live_revisions is None else live_revisions,
