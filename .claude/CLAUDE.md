@@ -209,9 +209,16 @@ is excluded from mypy) are documented in `docs/testing-strategy.md`. In short: u
 colocated per workspace member (`services/chat/tests/`, `services/scheduler/tests/`,
 `packages/shared-db/tests/`, `packages/shared-models/tests/`, `packages/shared-proto/tests/`,
 `evals/harness/tests/`); integration/e2e tests are
-centralized at `tests/integration/`/`tests/e2e/` (placeholders for now). Run via `make test` /
-`make test-unit`, `make test-integration`, `make test-e2e`; only the unit tier runs in CI so far
-(`test` job in `.github/workflows/ci.yml`, alongside `pre-commit`).
+centralized at `tests/integration/`/`tests/e2e/`. Run via `make test` /
+`make test-unit`, `make test-integration`, `make test-e2e`; CI runs the unit, frontend and
+integration tiers (`.github/workflows/ci.yml`, alongside `pre-commit`) and never e2e.
+
+**The e2e tier (Phase 3b) drives a real Chromium against the running stack and spends live
+Claude and Voyage calls**, so it is run by hand: `make services-up`, then `make test-e2e`. It
+isolates by session rather than by database - each journey mints its own session, plants its
+prestate through the console API and the booking tools' gRPC client, and deletes the session
+through `/admin` - and gives the browser a fixed-offset zone in which it is early morning, so
+"today" always has a working day ahead. See `tests/e2e/README.md`.
 
 ### Pre-commit hooks
 

@@ -931,3 +931,32 @@ carried a real tradeoff.
   console already runs, so it costs one correlated aggregate and no new request — rather than a
   push channel, or bending `last_message_at`, which the list shows and orders by, into meaning
   "something changed".
+
+## End-to-End Tests in a Real Browser: technology choices
+
+`tests/e2e/` (ROADMAP Phase 3b) drives eight journeys — free slots, the patient's own
+appointments, booking, rescheduling, cancelling, an FAQ answer, an FAQ gap, a request for a person
+— through a real Chromium, from the patient pane to the staff console. Four choices carried a real
+tradeoff; the details are in [`tests/e2e/README.md`](tests/e2e/README.md).
+
+- **`pytest-playwright`, not a Node test runner.** The frontend has vitest, and Playwright's own
+  runner is the more common choice for browser suites. But these tests set up prestate through
+  `chat`'s own gRPC client and import `chat`'s constants — the hand-off text, the starter corpus,
+  the escalation reasons — so they would otherwise restate them in TypeScript, and the tier would be
+  the one test tier not behind pytest. The cost is the sync API's event loop: an async gRPC call from
+  a test runs on a thread of its own.
+- **Against the running stack, isolated by session.** The integration tier starts its own servers
+  on `_test` databases; this tier drives whatever `make services-up` runs, on the dev databases.
+  Each journey mints a fresh session and deletes it afterwards, and since every read the app makes
+  is scoped to a session, nothing one journey plants is visible to another or to a person using the
+  stack. The payoff is that the tier tests the processes a demo would use, not a copy of them; the
+  cost is that it needs that stack up and an `ADMIN_SECRET` to clean up after itself.
+- **The visitor's clock, chosen per run.** "Today's free slots" depends on the hour. Rather than
+  faking time — which would reach timers and the 2-second poll too — the browser is given a
+  fixed-offset `Etc/GMT` zone in which it is 07:xx, and the prestate is planted on that clock. It
+  works because the system has no timezone anywhere: every time is the visitor's own wall clock,
+  sent as `local_now`, so a zone only chooses which wall clock the visitor has.
+- **Facts from a model's reply, never its wording.** Two journeys have nothing to assert but the
+  reply. They are held to the times of day it names, read in any format, with a prestate arranged
+  so that no forbidden time can appear as the end of a permitted one. Everything else asserts on
+  hooks, data attributes and production constants.

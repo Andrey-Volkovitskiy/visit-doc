@@ -48,8 +48,16 @@ test-integration:
 test-db-prune:
 	@./scripts/prune-test-stores.sh
 
+# A real browser against the stack `make services-up` runs, spending live Claude and Voyage
+# calls - so it is never part of `make test` or CI's per-push gate. A failing journey
+# leaves its Playwright trace under .run/e2e (`uv run playwright show-trace <zip>`).
+# `.run/e2e.env`, if present, is sourced first: the place for one machine's browser setup
+# (PLAYWRIGHT_CHROMIUM_EXECUTABLE, LD_LIBRARY_PATH), gitignored with the rest of .run/, and
+# a sibling of .run/e2e/ rather than inside it, since pytest-playwright empties that folder
+# at the start of every run. ARGS passes through to pytest, e.g. ARGS="-k booking --headed".
 test-e2e:
-	uv run pytest tests/e2e
+	set -a; if [ -f .run/e2e.env ]; then . ./.run/e2e.env; fi; set +a; \
+	uv run pytest tests/e2e --tracing retain-on-failure --output .run/e2e $(ARGS)
 
 precommit:
 	uv run pre-commit run --all-files

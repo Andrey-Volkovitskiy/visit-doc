@@ -12,6 +12,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-xdist>=3.8.0",
     "types-jsonschema>=4.26.0.20260518",
+    "pytest-playwright>=0.9.0",
 ]
 
 [tool.ruff]

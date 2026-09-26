@@ -702,6 +702,14 @@ rather than onto the model's wording. The 13-scenario `quickstart.md` stays a ma
 its value is that a person reads it before a demo, which automating it would remove rather than
 preserve.
 
+*(Shipped in `tests/e2e/`, without a spec directory. The suite runs against the stack `make
+services-up` runs rather than one it starts, and isolates by session instead of by database: each
+journey mints its own session, plants its prestate through the console's practitioner API and the
+booking tools' own gRPC client, and deletes the session through `/admin` afterwards. "Today" is
+made deterministic by the browser's timezone rather than a faked clock — the context gets a
+fixed-offset zone in which it is early morning — which works because every time in this system is
+the visitor's own wall clock. It runs by hand, not in CI.)*
+
 ### Phase 4+ — Platform layers (optional, if time allows)
 Added as deliberate evolution, each with a one-line rationale in the README:
 

@@ -85,6 +85,12 @@ describe("MessageView", () => {
     expect(paragraph).toHaveStyle({ whiteSpace: "pre-wrap" });
   });
 
+  it("exposes the body alone under message-content, without the role label", () => {
+    render(<MessageView sender="assistant" content="The body" startsBurst />);
+    expect(screen.getByTestId("role-label")).toBeInTheDocument();
+    expect(screen.getByTestId("message-content")).toHaveTextContent(/^The body$/);
+  });
+
   it("renders emphasis as italic and bold text, without the delimiters", () => {
     const { container } = render(
       <MessageView

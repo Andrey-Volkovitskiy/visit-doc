@@ -16,8 +16,9 @@
   unit tier's fakes stand in for. Since 007 it also drives `chat`'s **own** stores, so its
   `conftest.py` isolates `DATABASE_URL` and `QDRANT_COLLECTION_NAME` exactly as the chat unit tier
   does: the FAQ corpus's session isolation, the practitioner proxy against a live REST surface, and
-  the two-store session delete all need both sides real at once. `tests/e2e/` is still a placeholder (no full frontend+chat+
-  scheduler flow is automated yet).
+  the two-store session delete all need both sides real at once. `tests/e2e/` is real as of
+  Phase 3b: a Chromium driven by `pytest-playwright` against the running stack, eight journeys
+  over the features a demo is judged on (`tests/e2e/README.md`).
 
 ## Naming
 
@@ -26,7 +27,7 @@
   documents the case, so no docstring is required (see below).
 - Classes: only `Test*` when grouping tests that share setup; prefer flat functions otherwise.
 - `conftest.py`: one per package, scoped to that package's own unit fixtures. For
-  integration/e2e (once built), `tests/integration/conftest.py` and `tests/e2e/conftest.py` hold
+  integration/e2e, `tests/integration/conftest.py` and `tests/e2e/conftest.py` hold
   fixtures that cross service boundaries — e.g. a shared gRPC test channel wiring `chat` to a real
   `scheduler` instance, or a shared HTTP client hitting both services. Since those live in the
   centralized `tests/` tree rather than under any one package, they're the natural home for
@@ -151,13 +152,16 @@ must pass with no key configured at all, and give the same answer every time.
 running services — and stubbing the model there would remove the only thing that tier tests that
 the others do not. Three consequences follow from that permission, and they are the price of it:
 
-- **e2e never joins the per-push gate.** It runs on pull requests to `main`, and by hand before a
-  demo. A tier that spends tokens and depends on a remote service cannot be the thing standing
+- **e2e never joins the per-push gate.** It runs by hand (`make test-e2e`, against the stack
+  `make services-up` runs) before a demo and before merging a change to anything it drives; it is
+  not wired into CI, which would need the whole stack and live keys as secrets. A tier that spends tokens and depends on a remote service cannot be the thing standing
   between a commit and a merge.
 - **Assert on structure, never on wording.** That an answer arrived carrying citations, that a
   stream was cancelled, that a mark cleared, that a booking reached the scheduler's database — all
   reproducible. The sentence the model wrote is not, and an assertion on it is a test that fails on
-  a Tuesday for no reason.
+  a Tuesday for no reason. Where the fact under test exists only in the reply — which free slots
+  were offered, which appointments were listed — the assertion reads the *facts* the prestate
+  fixed (the times of day named, however written), never the phrasing around them.
 - **A missing key fails the tier loudly, and skips nothing.** A silently skipped e2e run reads
   exactly like a passing one.
 
@@ -400,4 +404,4 @@ run proves the thing you changed; only the full one speaks for the rest.
   problem; workers are what make the full run at the end affordable.
 
 `test-unit`, `test-frontend`, and `test-integration` all run in CI (`.github/workflows/ci.yml`).
-`test-e2e` stays manual until that tier has real tests.
+`test-e2e` is manual by design (see "Live paid APIs" above).

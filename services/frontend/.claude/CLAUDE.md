@@ -178,7 +178,7 @@ exists.
 | `App` | `patient-pane`, `staff-pane`, `chat-list-error`, `staff-pane-error`, `attention-total`, `region-loading`, `discard-confirm` |
 | `ChatList` | `chat-list`, `chat-list-item`, `chat-overflow`, `chat-overflow-item`, `delete-confirm` |
 | `ChatWindow` | `messages`, `no-chat`, `error`, `length-error`, `char-count`, `working-indicator`, `thread-greeting` |
-| `MessageView` | `message`, `role-label`, `sender-icon`, `attention-mark` |
+| `MessageView` | `message`, `message-content`, `role-label`, `sender-icon`, `attention-mark` |
 | `OutcomeDisclosure` | `outcome-marker`, `request-outcome`, `outcome-question`, `outcome-unanswered`, `verdict-mark`, `citations`, `booking-act` |
 | `StaffConsole` | `staff-console`, `staff-conversations`, `staff-conversation`, `staff-no-conversations`, `region-loading` |
 | `StaffThread` | `staff-thread`, `staff-no-thread`, `staff-empty-thread`, `staff-error`, `staff-length-error`, `char-count`, `assistant-switch`, `assistant-explanation`, `pause-countdown` |

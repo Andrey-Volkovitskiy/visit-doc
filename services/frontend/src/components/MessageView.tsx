@@ -225,7 +225,11 @@ export function MessageView({
             becomes unassertable under jsdom, which computes nothing for a class name,
             so its existing test would have to be deleted rather than adapted.
           */}
-          <p style={{ whiteSpace: "pre-wrap" }} className="break-words">
+          <p
+            data-testid="message-content"
+            style={{ whiteSpace: "pre-wrap" }}
+            className="break-words"
+          >
             <EmphasisText nodes={parseEmphasis(content)} />
           </p>
         </div>
