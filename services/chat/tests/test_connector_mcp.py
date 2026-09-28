@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from chat.connectors.public_address import UnavailableReason
 from chat.db.session import session_factory
+from chat.repositories import grant_repository
 from httpx import AsyncClient, Response
 from sqlalchemy import text
 
@@ -367,6 +368,25 @@ async def test_an_expired_access_token_is_refused() -> None:
         response = await _rpc(client, token, "tools/list")
 
     assert response.status_code == 401
+
+
+async def test_a_token_expiring_after_2038_still_verifies() -> None:
+    # The expiry is read as a Unix timestamp, which outgrows 32 bits in January 2038.
+    session_id = await new_session_id()
+    async with connector_api() as client:
+        token = (await pair_claude(client, session_id))["access_token"]
+    async with session_factory() as session:
+        await session.execute(
+            text(
+                "UPDATE oauth_tokens SET expires_at = '2040-01-01T00:00:00Z' "
+                "WHERE kind = 'access'"
+            )
+        )
+        await session.commit()
+        verified = await grant_repository.verify_access(session, token)
+
+    assert verified is not None
+    assert verified.expires_at == 2208988800
 
 
 async def test_a_refresh_token_is_not_an_access_token() -> None:

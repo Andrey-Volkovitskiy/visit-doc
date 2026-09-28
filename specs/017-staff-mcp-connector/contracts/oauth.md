@@ -2,7 +2,8 @@
 
 Served by the chat service. `{BASE}` is `PUBLIC_BASE_URL` (R4). When the connector is unavailable,
 every route here answers `503` with `{"error": "temporarily_unavailable", "error_description":
-"<reason>"}`, and `/oauth/authorize` renders the error page with that reason.
+"<reason>"}`, except `/oauth/authorize`, which a person reads: both its `GET` and its form `POST`
+render the error page with that reason.
 
 ## Discovery
 

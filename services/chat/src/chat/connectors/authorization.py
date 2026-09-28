@@ -21,7 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from chat.connectors.pkce import s256_matches
 from chat.connectors.public_address import ConnectorConfig
 from chat.core.logging import get_logger
-from chat.domain.models import CLIENT_NAME_LENGTH, MAX_FAILED_PAIRING_ATTEMPTS
+from chat.domain.models import (
+    CLIENT_NAME_LENGTH,
+    CODE_CHALLENGE_LENGTH,
+    MAX_FAILED_PAIRING_ATTEMPTS,
+)
 from chat.repositories import (
     grant_repository,
     oauth_repository,
@@ -44,7 +48,6 @@ OFFLINE_ACCESS_SCOPE = "offline_access"
 SUPPORTED_SCOPES = (CONNECTOR_SCOPE, OFFLINE_ACCESS_SCOPE)
 SUPPORTED_GRANT_TYPES = ("authorization_code", "refresh_token")
 _UNNAMED_CLIENT = "Unnamed client"
-_MAX_CODE_CHALLENGE_LENGTH = 128
 
 
 # --- registration -------------------------------------------------------------------
@@ -96,8 +99,16 @@ def _string_list(value: object, default: list[str]) -> list[str] | None:
     return list(value)
 
 
-def _registration_error(metadata: object) -> RegistrationError | None:
-    """Return why `metadata` cannot be registered, or None if it can."""
+@dataclass(frozen=True)
+class _Registration:
+    """Registration metadata that passed every check, in the form it is stored."""
+
+    client_name: str
+    grant_types: list[str]
+
+
+def _validated(metadata: object) -> _Registration | RegistrationError:
+    """Return `metadata` as a registration this server accepts, or why it cannot be."""
     if not isinstance(metadata, dict):
         return RegistrationError.INVALID_CLIENT_METADATA
     if metadata.get("redirect_uris") != [CLAUDE_REDIRECT_URI]:
@@ -113,7 +124,10 @@ def _registration_error(metadata: object) -> RegistrationError | None:
     response_types = _string_list(metadata.get("response_types"), ["code"])
     if response_types is None or set(response_types) != {"code"}:
         return RegistrationError.INVALID_CLIENT_METADATA
-    return None
+    trimmed = (name or "").strip()[:CLIENT_NAME_LENGTH]
+    return _Registration(
+        client_name=trimmed or _UNNAMED_CLIENT, grant_types=grant_types
+    )
 
 
 async def register_client(
@@ -125,15 +139,13 @@ async def register_client(
     Claude's callback, asking for no grant beyond an authorization code and its
     refresh, is registered. Its name is trimmed to what the console can show.
     """
-    error = _registration_error(metadata)
-    if error is not None:
-        get_logger().info("connector.client_rejected", error=error)
-        return RegistrationRefused(error=error)
-    assert isinstance(metadata, dict)  # checked by `_registration_error`
-    name = (metadata.get("client_name") or "").strip()[:CLIENT_NAME_LENGTH]
+    registration = _validated(metadata)
+    if isinstance(registration, RegistrationError):
+        get_logger().info("connector.client_rejected", error=registration)
+        return RegistrationRefused(error=registration)
     client = await oauth_repository.create_client(
         session,
-        client_name=name or _UNNAMED_CLIENT,
+        client_name=registration.client_name,
         redirect_uri=CLAUDE_REDIRECT_URI,
     )
     await session.commit()
@@ -145,14 +157,23 @@ async def register_client(
     return RegisteredClient(
         client_id=client.client_id,
         client_name=client.client_name,
-        grant_types=_string_list(metadata.get("grant_types"), ["authorization_code"])
-        or [],
+        grant_types=registration.grant_types,
         response_types=["code"],
         issued_at=int(client.created_at.timestamp()),
     )
 
 
 # --- starting a sign-in ---------------------------------------------------------------
+
+
+class SignInFailureReason(StrEnum):
+    """Why a sign-in step failed, as `connector.authorize_failed` logs it."""
+
+    UNVERIFIED_CLIENT = "unverified_client"
+    INVALID_REQUEST = "invalid_request"
+    EXPIRED_REQUEST = "expired_request"
+    TOO_MANY_ATTEMPTS = "too_many_attempts"
+    BAD_CODE = "bad_code"
 
 
 @dataclass(frozen=True)
@@ -216,7 +237,7 @@ async def start_authorization(
     if client is None or redirect_uri != client.redirect_uri:
         get_logger().info(
             "connector.authorize_failed",
-            reason="unverified_client",
+            reason=SignInFailureReason.UNVERIFIED_CLIENT,
             client_id=client_id or None,
         )
         return SignInRefused()
@@ -229,13 +250,13 @@ async def start_authorization(
         params.get("response_type") != "code"
         or params.get("code_challenge_method") != "S256"
         or not challenge
-        or len(challenge) > _MAX_CODE_CHALLENGE_LENGTH
+        or len(challenge) > CODE_CHALLENGE_LENGTH
         or scope is None
         or resource != config.address
     ):
         get_logger().info(
             "connector.authorize_failed",
-            reason="invalid_request",
+            reason=SignInFailureReason.INVALID_REQUEST,
             client_id=client.client_id,
         )
         return SignInRedirect(
@@ -310,7 +331,9 @@ async def complete_authorization(
     request = await oauth_repository.complete_request(session, request_id)
     if request is None:
         await session.rollback()
-        get_logger().info("connector.authorize_failed", reason="expired_request")
+        get_logger().info(
+            "connector.authorize_failed", reason=SignInFailureReason.EXPIRED_REQUEST
+        )
         return SignInExpired()
 
     # Read before anything can roll back: a rollback expires every loaded object, and
@@ -329,16 +352,16 @@ async def complete_authorization(
             get_logger().info(
                 "connector.authorize_failed",
                 reason=(
-                    "expired_request"
+                    SignInFailureReason.EXPIRED_REQUEST
                     if failures is None or failures < MAX_FAILED_PAIRING_ATTEMPTS
-                    else "too_many_attempts"
+                    else SignInFailureReason.TOO_MANY_ATTEMPTS
                 ),
                 client_id=client_id,
             )
             return SignInExpired()
         get_logger().info(
             "connector.authorize_failed",
-            reason="bad_code",
+            reason=SignInFailureReason.BAD_CODE,
             client_id=client_id,
             failed_attempts=failures,
         )

@@ -511,7 +511,7 @@ _DIGEST_LENGTH = 64
 # `secrets.token_urlsafe(32)`'s length.
 _CLIENT_ID_LENGTH = 43
 CLIENT_NAME_LENGTH = 100
-_CODE_CHALLENGE_LENGTH = 128
+CODE_CHALLENGE_LENGTH = 128
 MAX_FAILED_PAIRING_ATTEMPTS = 5
 
 
@@ -597,7 +597,7 @@ class OAuthAuthorizationRequest(Base):
     )
     redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
     code_challenge: Mapped[str] = mapped_column(
-        String(_CODE_CHALLENGE_LENGTH), nullable=False
+        String(CODE_CHALLENGE_LENGTH), nullable=False
     )
     # Echoed back unchanged; opaque to this service.
     state: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -635,7 +635,7 @@ class OAuthAuthorizationCode(Base):
     )
     redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
     code_challenge: Mapped[str] = mapped_column(
-        String(_CODE_CHALLENGE_LENGTH), nullable=False
+        String(CODE_CHALLENGE_LENGTH), nullable=False
     )
     scope: Mapped[str] = mapped_column(Text, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(

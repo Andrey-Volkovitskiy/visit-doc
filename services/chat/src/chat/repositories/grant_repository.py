@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from enum import StrEnum
 
 from sqlalchemy import (
+    BigInteger,
     ColumnElement,
     Integer,
     and_,
@@ -155,7 +156,8 @@ async def verify_access(session: AsyncSession, token: str) -> VerifiedGrant | No
             OAuthGrant.session_id,
             OAuthGrant.client_id,
             OAuthGrant.scope,
-            func.floor(func.extract("epoch", OAuthToken.expires_at)).cast(Integer),
+            # A timestamp, not a duration: a 32-bit integer stops holding one in 2038.
+            func.floor(func.extract("epoch", OAuthToken.expires_at)).cast(BigInteger),
         )
         .join(OAuthGrant, OAuthGrant.id == OAuthToken.grant_id)
         .where(
@@ -173,6 +175,7 @@ async def verify_access(session: AsyncSession, token: str) -> VerifiedGrant | No
         update(OAuthGrant)
         .where(
             OAuthGrant.id == verified.grant_id,
+            OAuthGrant.session_id == verified.session_id,
             or_(
                 OAuthGrant.last_used_at.is_(None),
                 OAuthGrant.last_used_at < func.now() - _LAST_USED_RESOLUTION,

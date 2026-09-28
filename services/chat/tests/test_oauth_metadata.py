@@ -12,9 +12,10 @@ from .conftest import CONNECTOR_BASE_URL, connector_api
 _UNAVAILABLE_ROUTES = [
     ("GET", "/.well-known/oauth-authorization-server"),
     ("POST", "/oauth/register"),
-    ("POST", "/oauth/authorize"),
     ("POST", "/oauth/token"),
 ]
+# The two sign-in pages: a person reads these answers, so each is a page, not JSON.
+_UNAVAILABLE_PAGES = [("GET", "/oauth/authorize"), ("POST", "/oauth/authorize")]
 
 
 async def test_the_metadata_document_is_the_contracts() -> None:
@@ -58,7 +59,9 @@ async def test_every_oauth_route_answers_503_with_the_reason_while_unavailable(
         responses = [
             await client.request(method, path) for method, path in _UNAVAILABLE_ROUTES
         ]
-        page = await client.get("/oauth/authorize")
+        pages = [
+            await client.request(method, path) for method, path in _UNAVAILABLE_PAGES
+        ]
 
     for response in responses:
         assert response.status_code == 503, response.request.url
@@ -66,9 +69,10 @@ async def test_every_oauth_route_answers_503_with_the_reason_while_unavailable(
             "error": "temporarily_unavailable",
             "error_description": reason.value,
         }
-    assert page.status_code == 503
-    assert page.headers["content-type"].startswith("text/html")
-    assert "location" not in page.headers
+    for page in pages:
+        assert page.status_code == 503, page.request.method
+        assert page.headers["content-type"].startswith("text/html")
+        assert "location" not in page.headers
 
 
 @pytest.mark.parametrize(
@@ -83,7 +87,10 @@ async def test_the_unavailable_sign_in_page_names_its_reason(
     public_base_url: str, words: str
 ) -> None:
     async with connector_api(base_url=public_base_url) as client:
-        page = await client.get("/oauth/authorize")
+        pages = [
+            await client.request(method, path) for method, path in _UNAVAILABLE_PAGES
+        ]
 
-    assert page.status_code == 503
-    assert words in page.text
+    for page in pages:
+        assert page.status_code == 503, page.request.method
+        assert words in page.text

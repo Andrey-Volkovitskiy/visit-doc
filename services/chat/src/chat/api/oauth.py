@@ -132,6 +132,16 @@ def _error_page(heading: str, message: str, status_code: int = 400) -> HTMLRespo
     return _page("error.html", status_code, heading=heading, message=message)
 
 
+def _unavailable_page(unavailable: ConnectorUnavailable) -> HTMLResponse:
+    """Render the `503` a person sees at either sign-in page while it is unavailable."""
+    return _error_page(
+        "Connecting is unavailable",
+        "VisitDoc cannot accept connections right now: "
+        f"{_UNAVAILABLE_REASON[unavailable.reason]}",
+        status_code=503,
+    )
+
+
 def _metadata(config: ConnectorConfig) -> dict[str, Any]:
     """Return the RFC 8414 document for `config`'s issuer.
 
@@ -182,12 +192,7 @@ async def authorize_page(request: Request) -> Response:
     """Validate Claude's sign-in request and ask for the pairing code."""
     config = current_connector()
     if isinstance(config, ConnectorUnavailable):
-        return _error_page(
-            "Connecting is unavailable",
-            "VisitDoc cannot accept connections right now: "
-            f"{_UNAVAILABLE_REASON[config.reason]}",
-            status_code=503,
-        )
+        return _unavailable_page(config)
     async with session_factory() as session:
         outcome = await authorization.start_authorization(
             session, config, request.query_params
@@ -208,10 +213,14 @@ async def authorize_submit(
     request_id: Annotated[str | None, Form(alias="request")] = None,
     code: Annotated[str | None, Form()] = None,
 ) -> Response:
-    """Check the typed pairing code, and send Claude its authorization code if right."""
+    """Check the typed pairing code, and send Claude its authorization code if right.
+
+    Answered with a page, never a JSON body, whatever happens: only the pairing page's
+    form posts here, so a person is reading the answer.
+    """
     config = current_connector()
     if isinstance(config, ConnectorUnavailable):
-        return unavailable_response(config)
+        return _unavailable_page(config)
     if not request_id or code is None:
         return _error_page(_EXPIRED_HEADING, _EXPIRED)
     async with session_factory() as session:
