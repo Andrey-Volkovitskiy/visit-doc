@@ -327,8 +327,16 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   an appointment. The prompt now says outright that the roster item asks for no appointment and is
   still `booking`, and that wanting to be seen is not what makes a message `booking` — it is one of
   the five things that happen to be.
-- Capabilities are exposed to the agent as **MCP tools** (`search_faq`, `check_availability`,
-  `book_appointment`, `escalate_to_staff`) so agent logic stays decoupled from implementation.
+- Capabilities reach the agent through an **in-process tool registry, not MCP** (005):
+  `ToolRegistry` in `agent/tools/registry.py` holds `(name, description, JSON schema, handler)`
+  records rendered straight into the Messages API's `tools=` — `list_practitioners`,
+  `check_availability`, `book_appointment`, `list_my_appointments`, `reschedule_appointment`,
+  `cancel_appointment`, `escalate_to_staff`. The agent knows only names and schemas, so a handler
+  can change transport without touching agent code. FAQ retrieval is not a tool: it is the
+  `answer_faq` graph node. MCP is a transport for a consumer in *another* process, and nothing
+  consumes one yet — `docs/ROADMAP.md` defers it until a second consumer justifies it. Putting an
+  MCP server and client between the agent and handlers in one process is the rejected option
+  (`specs/005-scheduling-and-booking/research.md` #1), not a pending upgrade.
 - RAG must include defensible chunking, a reranking step, citations to source documents — derived
   structurally from what was actually retrieved and placed in context, never self-reported by the
   LLM (avoids hallucinated citations) — and an explicit **abstention path**. Since 008 the
