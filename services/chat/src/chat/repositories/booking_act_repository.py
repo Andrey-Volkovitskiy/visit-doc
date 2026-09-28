@@ -10,15 +10,20 @@ the message belongs to, so a message id from another session selects nothing and
 inserts nothing; the settle and the read take it from the act's own `session_id`.
 """
 
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from sqlalchemy import (
+    ColumnElement,
     DateTime,
     String,
+    and_,
+    distinct,
     func,
     insert,
     literal,
     null,
+    or_,
     select,
     update,
 )
@@ -274,3 +279,69 @@ async def list_for_chat(
         .order_by(BookingAct.seq.asc())
     )
     return list(result.scalars().all())
+
+
+@dataclass(frozen=True)
+class RecentBookingChanges:
+    """What the assistant changed on the schedule in the last `window_minutes`.
+
+    `booked`, `cancelled` and `rescheduled` count distinct appointments with an act of
+    that operation that settled done inside the window: one appointment rescheduled
+    twice counts once, and one booked then cancelled counts once under each.
+    `outcome_unknown` counts acts, not appointments - an unknown booking may name none -
+    whose outcome is not known: settled unknown inside the window, or never settled and
+    written inside it. Attempts that changed nothing are counted nowhere.
+    """
+
+    window_minutes: int
+    booked: int
+    cancelled: int
+    rescheduled: int
+    outcome_unknown: int
+
+
+async def count_recent_changes(
+    session: AsyncSession, session_id: str, minutes: int
+) -> RecentBookingChanges:
+    """Count `session_id`'s schedule changes in the last `minutes` (database clock).
+
+    One statement. An act that never settled has no settle time, so its creation time
+    is the only moment it has and is what places it in the window.
+    """
+    since = func.now() - timedelta(minutes=minutes)
+    settled_in_window = BookingAct.settled_at > since
+    done = and_(BookingAct.outcome == BookingActOutcome.DONE.value, settled_in_window)
+
+    def done_appointments(operation: BookingActOperation) -> ColumnElement[int]:
+        return func.count(distinct(BookingAct.appointment_id)).filter(
+            done, BookingAct.operation == operation.value
+        )
+
+    unknown = func.count().filter(
+        or_(
+            and_(
+                BookingAct.outcome == BookingActOutcome.UNKNOWN.value,
+                settled_in_window,
+            ),
+            and_(BookingAct.outcome.is_(None), BookingAct.created_at > since),
+        )
+    )
+    result = await session.execute(
+        select(
+            done_appointments(BookingActOperation.BOOK),
+            done_appointments(BookingActOperation.CANCEL),
+            done_appointments(BookingActOperation.RESCHEDULE),
+            unknown,
+        ).where(
+            BookingAct.session_id == session_id,
+            or_(settled_in_window, BookingAct.created_at > since),
+        )
+    )
+    booked, cancelled, rescheduled, outcome_unknown = result.one()
+    return RecentBookingChanges(
+        window_minutes=minutes,
+        booked=booked,
+        cancelled=cancelled,
+        rescheduled=rescheduled,
+        outcome_unknown=outcome_unknown,
+    )

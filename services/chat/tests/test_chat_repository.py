@@ -1166,3 +1166,71 @@ async def test_a_staff_post_after_the_message_is_a_takeover_whatever_the_clock()
     write = await _reply_answering(session_id, chat_id, message_id)
 
     assert write is chat_repository.ReplyWrite.TAKEN_OVER
+
+
+# --- 017: the connector's needs-attention count ---------------------------------------
+
+
+async def _plant_attention_state(
+    escalated: int, marked: int, both: int, neither: int
+) -> str:
+    """Create a session holding chats in each of the four attention states.
+
+    Returns: the session id.
+    """
+    async with session_factory() as session:
+        owner = await chat_repository.create_session(session)
+        for index in range(escalated + marked + both + neither):
+            chat = await chat_repository.create_chat(session, owner.id)
+            if index < escalated + both:
+                await chat_repository.set_escalated(
+                    session,
+                    chat.id,
+                    owner.id,
+                    EscalationReason.PATIENT_ASKED_FOR_PERSON,
+                )
+            if escalated <= index < escalated + marked + both:
+                await chat_repository.mark_attention(session, chat.id, owner.id)
+    return owner.id
+
+
+@pytest.mark.parametrize(
+    ("escalated", "marked", "both", "neither"),
+    [
+        (0, 0, 0, 0),
+        (0, 0, 0, 3),
+        (1, 0, 0, 0),
+        (0, 1, 0, 0),
+        (0, 0, 1, 0),
+        (2, 0, 0, 2),
+        (0, 3, 0, 1),
+        (0, 0, 2, 2),
+        (1, 1, 1, 1),
+        (3, 2, 1, 0),
+        (2, 2, 2, 4),
+        (5, 0, 5, 5),
+    ],
+)
+async def test_the_attention_count_equals_the_console_listings_emphasis(
+    escalated: int, marked: int, both: int, neither: int
+) -> None:
+    # SC-002: one definition, so the count the connector answers and the rows the
+    # console emphasizes cannot disagree.
+    session_id = await _plant_attention_state(escalated, marked, both, neither)
+
+    async with session_factory() as session:
+        count = await chat_repository.count_needing_attention(session, session_id)
+        rows = await chat_repository.list_conversations_for_console(session, session_id)
+
+    assert count == sum(1 for row in rows if row.emphasized)
+    assert count == escalated + marked + both
+
+
+async def test_the_attention_count_is_scoped_to_its_session() -> None:
+    mine = await _plant_attention_state(1, 1, 0, 1)
+    await _plant_attention_state(3, 3, 3, 0)
+
+    async with session_factory() as session:
+        count = await chat_repository.count_needing_attention(session, mine)
+
+    assert count == 2

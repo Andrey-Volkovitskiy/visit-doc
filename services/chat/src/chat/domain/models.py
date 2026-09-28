@@ -4,12 +4,14 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    CHAR,
     BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Identity,
     Index,
+    SmallInteger,
     String,
     Text,
     func,
@@ -379,6 +381,11 @@ class Message(Base):
 class BookingAct(Base):
     """One attempt by the assistant to change the schedule: book, reschedule or cancel.
 
+    Exists so staff can read what the assistant actually did to the schedule without
+    relying on the reply's prose, which is missing or inconclusive in exactly the turns
+    a person is called for: one that failed after its write, was cancelled or taken
+    over, or whose write timed out. The record is for staff; the agent never reads it.
+
     Written before the request leaves for the scheduler, with no outcome, and settled
     at most once afterwards. A NULL `outcome` therefore means no outcome was ever
     written - the turn ended, the settle's write failed, or the act is still running -
@@ -424,9 +431,20 @@ class BookingAct(Base):
             "(previous_starts_at IS NOT NULL AND previous_practitioner_id IS NOT NULL)",
             name="ck_booking_acts_previous_with_reschedule",
         ),
+        # A done act always names the appointment it changed. The recent-changes count
+        # takes `COUNT(DISTINCT appointment_id)`, which skips NULLs, so without this a
+        # done booking whose answer carried no id would silently drop out of it; with
+        # it, that settle fails and the act stays unknown, which is what it is.
+        CheckConstraint(
+            "outcome IS DISTINCT FROM 'done' OR appointment_id IS NOT NULL",
+            name="ck_booking_acts_done_with_appointment",
+        ),
         # A thread's acts are read in `seq` order, one chat at a time.
         Index("ix_booking_acts_chat_seq", "chat_id", "seq"),
         Index("ix_booking_acts_message", "message_id"),
+        # The connector's recent-changes window: one session's acts by when they
+        # settled.
+        Index("ix_booking_acts_session_settled", "session_id", "settled_at"),
     )
 
     id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)
@@ -470,11 +488,232 @@ class BookingAct(Base):
     previous_starts_at: Mapped[datetime | None] = mapped_column(
         DateTime(), nullable=True
     )
-    # Diagnostic only, never used for ordering.
+    # Never used for ordering. Also the window position of an act that never settled:
+    # with no `settled_at`, when it was written is the only moment it has, so the
+    # recent-changes count places it by this.
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
     # Written together with `outcome`, and NULL exactly when it is.
     settled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+
+
+# --- The staff connector: pairing the Claude app with a session ---------------------
+#
+# Every secret below - a pairing code, a request id, an authorization code, a token -
+# is stored as its SHA-256 hex digest and nothing else, so a lookup is by the digest of
+# what was presented and nothing stored can be read back. Every expiry is compared
+# against the database's clock.
+
+_DIGEST_LENGTH = 64
+# `secrets.token_urlsafe(32)`'s length.
+_CLIENT_ID_LENGTH = 43
+CLIENT_NAME_LENGTH = 100
+_CODE_CHALLENGE_LENGTH = 128
+MAX_FAILED_PAIRING_ATTEMPTS = 5
+
+
+class OAuthTokenKind(StrEnum):
+    """Which of a grant's two credentials a token is."""
+
+    ACCESS = "access"
+    REFRESH = "refresh"
+
+
+class PairingCode(Base):
+    """The one pairing code a session's console most recently issued.
+
+    Keyed by the session, so a session holds at most one code: issuing another
+    overwrites this row, and the earlier code stops matching because its digest is no
+    longer stored. There is no step invalidating it that a writer could forget.
+    """
+
+    __tablename__ = "mcp_pairing_codes"
+
+    session_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    # Of the normalized code: upper case, no hyphen.
+    code_hash: Mapped[str] = mapped_column(
+        CHAR(_DIGEST_LENGTH), nullable=False, unique=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    # Set once, by the one consume that matched.
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class OAuthClient(Base):
+    """An app that registered itself with the sign-in server.
+
+    Not session data: a client can read nothing until a grant ties it to a session.
+    """
+
+    __tablename__ = "oauth_clients"
+
+    client_id: Mapped[str] = mapped_column(String(_CLIENT_ID_LENGTH), primary_key=True)
+    # As the app registered it, trimmed; shown on the sign-in page and snapshotted onto
+    # each grant.
+    client_name: Mapped[str] = mapped_column(String(CLIENT_NAME_LENGTH), nullable=False)
+    # The one redirect URI registration accepts, stored so a later change to what is
+    # accepted does not rewrite what an existing client registered with.
+    redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class OAuthAuthorizationRequest(Base):
+    """A sign-in in progress, between the pairing page's `GET` and its `POST`.
+
+    The form carries only the request's id; everything the `POST` acts on is read back
+    from here, so nothing the page submits can change the redirect or the challenge
+    between the check and the use.
+    """
+
+    __tablename__ = "oauth_authorization_requests"
+    __table_args__ = (
+        CheckConstraint(
+            f"failed_attempts BETWEEN 0 AND {MAX_FAILED_PAIRING_ATTEMPTS}",
+            name="ck_oauth_authorization_requests_failed_attempts",
+        ),
+    )
+
+    id_hash: Mapped[str] = mapped_column(CHAR(_DIGEST_LENGTH), primary_key=True)
+    client_id: Mapped[str] = mapped_column(
+        String(_CLIENT_ID_LENGTH),
+        ForeignKey("oauth_clients.client_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
+    code_challenge: Mapped[str] = mapped_column(
+        String(_CODE_CHALLENGE_LENGTH), nullable=False
+    )
+    # Echoed back unchanged; opaque to this service.
+    state: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    resource: Mapped[str] = mapped_column(Text, nullable=False)
+    failed_attempts: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default=text("0")
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    # Set when a code was accepted; a completed request accepts nothing more.
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class OAuthAuthorizationCode(Base):
+    """The one-minute code a completed sign-in hands the app, to exchange for tokens."""
+
+    __tablename__ = "oauth_authorization_codes"
+    __table_args__ = (Index("ix_oauth_authorization_codes_session", "session_id"),)
+
+    code_hash: Mapped[str] = mapped_column(CHAR(_DIGEST_LENGTH), primary_key=True)
+    # The session the consumed pairing code belonged to.
+    session_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    client_id: Mapped[str] = mapped_column(
+        String(_CLIENT_ID_LENGTH),
+        ForeignKey("oauth_clients.client_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
+    code_challenge: Mapped[str] = mapped_column(
+        String(_CODE_CHALLENGE_LENGTH), nullable=False
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class OAuthGrant(Base):
+    """One app's standing permission to ask the two counts for one session.
+
+    What the console lists as a connected app. Created at the code exchange, not at
+    pairing, so an abandoned sign-in leaves no grant behind. Whether a grant is active
+    is derived, never stored: not revoked, and holding an unused, unexpired refresh
+    token.
+    """
+
+    __tablename__ = "oauth_grants"
+    __table_args__ = (Index("ix_oauth_grants_session", "session_id"),)
+
+    id: Mapped[str] = mapped_column(String(_ULID_LENGTH), primary_key=True)
+    session_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    client_id: Mapped[str] = mapped_column(
+        String(_CLIENT_ID_LENGTH),
+        ForeignKey("oauth_clients.client_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # The client's name when the grant was made.
+    client_name: Mapped[str] = mapped_column(String(CLIENT_NAME_LENGTH), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    # Written by token verification, at most once a minute. NULL: never used.
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Set by the console's revoke, or by a refresh token presented twice. Never cleared.
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class OAuthToken(Base):
+    """An access or refresh token, belonging to one grant."""
+
+    __tablename__ = "oauth_tokens"
+    __table_args__ = (
+        CheckConstraint("kind IN ('access', 'refresh')", name="ck_oauth_tokens_kind"),
+        # Only a refresh token is ever used up.
+        CheckConstraint(
+            "kind = 'refresh' OR used_at IS NULL",
+            name="ck_oauth_tokens_used_only_refresh",
+        ),
+        Index("ix_oauth_tokens_grant", "grant_id"),
+    )
+
+    token_hash: Mapped[str] = mapped_column(CHAR(_DIGEST_LENGTH), primary_key=True)
+    grant_id: Mapped[str] = mapped_column(
+        String(_ULID_LENGTH),
+        ForeignKey("oauth_grants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # An `OAuthTokenKind` value.
+    kind: Mapped[str] = mapped_column(String(8), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    # Refresh only: set by the one refresh that used it.
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )

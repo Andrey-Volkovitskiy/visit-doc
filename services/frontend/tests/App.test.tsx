@@ -708,7 +708,42 @@ describe("App: the console's three sections (FR-020)", () => {
 
     await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
     const names = screen.getAllByRole("tab").map((el) => el.textContent);
-    expect(names).toEqual(["Conversations", "Practitioners", "FAQ"]);
+    // 017 FR-001 adds a fourth, the gear, which carries no visible text.
+    expect(names).toEqual(["Conversations", "Practitioners", "FAQ", ""]);
+  });
+
+  it("places the Connected apps gear last, named but wordless (017 FR-001)", async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getByRole("tablist")).toBeInTheDocument());
+
+    const tabs = screen.getAllByRole("tab");
+    const gear = screen.getByRole("tab", { name: "Connected apps" });
+    expect(tabs[tabs.length - 1]).toBe(gear);
+    expect(gear).toHaveTextContent("");
+    expect(gear).toHaveAttribute("title", "Connected apps");
+    expect(gear.querySelector("svg")).not.toBeNull();
+  });
+
+  it("opens the Connected apps section on its own", async () => {
+    vi.spyOn(consoleApi, "fetchConnectedApps").mockResolvedValue({
+      connector: { available: true, address: "https://visitdoc.ngrok.app/mcp" },
+      pairing_code: null,
+      grants: [],
+    });
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByTestId("staff-console")).toBeInTheDocument(),
+    );
+
+    openTab("Connected apps");
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Get pairing code" }),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("staff-console")).toBeNull();
+    expect(screen.queryByTestId("faq-admin")).toBeNull();
   });
 
   it("renders only the open section's panel", async () => {
@@ -948,7 +983,7 @@ describe("App: structure before any answer (FR-010a, SC-011)", () => {
     render(<App />);
 
     expect(screen.getByRole("tablist")).toBeInTheDocument();
-    expect(screen.getAllByRole("tab")).toHaveLength(3);
+    expect(screen.getAllByRole("tab")).toHaveLength(4);
   });
 
   it("says in words that a waiting region is waiting, and names which", () => {

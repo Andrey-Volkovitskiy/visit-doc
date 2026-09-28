@@ -2,11 +2,21 @@
 
 import asyncio
 import os
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from contextlib import ExitStack, contextmanager
+import re
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Generator,
+    Iterator,
+)
+from contextlib import ExitStack, asynccontextmanager, contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, Self
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import pytest_asyncio
@@ -22,12 +32,13 @@ from chat.domain.schemas import (
     RequestSegment,
 )
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, Response
 from httpx import AsyncClient as HttpxAsyncClient
-from httpx import Response
 from qdrant_client import AsyncQdrantClient
 from shared_db import ensure_database_exists, isolated_database_url, isolated_name
 from sqlalchemy import text as sql_text
 from sqlalchemy.ext.asyncio import AsyncEngine
+from ulid import ULID
 from voyageai.client_async import AsyncClient
 
 if TYPE_CHECKING:
@@ -123,6 +134,10 @@ os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
 # in-memory exporter - the `span_exporter` fixture below.
 os.environ["LANGFUSE_PUBLIC_KEY"] = ""
 os.environ["LANGFUSE_SECRET_KEY"] = ""
+# A developer's `.env` points the staff connector at their own tunnel. Blank here, so
+# the suite starts with the connector unavailable and a test that needs it configures
+# an address of its own - `connector_configured` below.
+os.environ["PUBLIC_BASE_URL"] = ""
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -1087,3 +1102,233 @@ async def async_turn(client: HttpxAsyncClient, message: str) -> Response:
             "local_now": LOCAL_NOW,
         },
     )
+
+
+# --- The staff connector ------------------------------------------------------------
+
+# The public origin connector tests configure. Also the base URL their HTTP client
+# sends requests to, so the `Host` the MCP transport sees is the one it was told to
+# accept.
+CONNECTOR_BASE_URL = "https://visitdoc.test"
+CLAUDE_CALLBACK = "https://claude.ai/api/mcp/auth_callback"
+# RFC 7636 Appendix B.
+PKCE_VERIFIER = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+PKCE_CHALLENGE = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+CLAUDE_REGISTRATION = {
+    "client_name": "Claude",
+    "redirect_uris": [CLAUDE_CALLBACK],
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "none",
+}
+
+
+@contextmanager
+def connector_configured(base_url: str = CONNECTOR_BASE_URL) -> Generator[None]:
+    """Run the block with `PUBLIC_BASE_URL` set to `base_url`.
+
+    Patched where the one reader of the setting looks it up, so the console, the OAuth
+    routes and the MCP transport all see the same value.
+    """
+    from chat.connectors import public_address
+
+    settings = Settings().model_copy(update={"PUBLIC_BASE_URL": base_url})
+    with patch.object(public_address, "get_settings", return_value=settings):
+        yield
+
+
+def _origin_of(base_url: str) -> str:
+    """The origin requests go to: `base_url`'s scheme and host, with no path."""
+    parts = urlsplit(base_url)
+    if not parts.scheme or not parts.netloc:
+        return CONNECTOR_BASE_URL
+    return f"{parts.scheme}://{parts.netloc}"
+
+
+@asynccontextmanager
+async def connector_api(
+    session_id: str | None = None, *, base_url: str = CONNECTOR_BASE_URL
+) -> AsyncGenerator[HttpxAsyncClient]:
+    """Yield a client against the app with the connector at `base_url`.
+
+    The lifespan runs on the test's own event loop - not through `TestClient`, which
+    runs it on a loop of its own - because the MCP transport is built there, and its
+    session manager starts a task group every tool call is handed to. Started on
+    another loop, the first request reaching it waits forever. Requests go through
+    `ASGITransport` on the same loop. `session_id` is sent as the console's cookie. An
+    empty `base_url` leaves the connector unconfigured.
+    """
+    from chat.db.session import engine
+    from chat.main import app
+
+    await engine.dispose()
+    with (
+        connector_configured(base_url),
+        patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
+    ):
+        mock_anthropic_cls.return_value = fake_anthropic_client()
+        async with (
+            app.router.lifespan_context(app),
+            HttpxAsyncClient(
+                transport=ASGITransport(app=app),
+                base_url=_origin_of(base_url),
+            ) as client,
+        ):
+            if session_id is not None:
+                client.cookies.set(COOKIE_NAME, session_id)
+            yield client
+
+
+async def new_session_id() -> str:
+    """Create a session row and return its id."""
+    from chat.db.session import session_factory
+    from chat.repositories import chat_repository
+
+    async with session_factory() as session:
+        row = await chat_repository.create_session(session)
+    return row.id
+
+
+async def issue_pairing_code(session_id: str) -> str:
+    """Issue `session_id` a pairing code, as the console does, and return it."""
+    from chat.db.session import session_factory
+    from chat.repositories import pairing_code_repository
+
+    async with session_factory() as session:
+        code = await pairing_code_repository.issue(session, session_id)
+        await session.commit()
+    return code
+
+
+async def register_claude(client: HttpxAsyncClient, name: str = "Claude") -> str:
+    """Register a client the way Claude does, and return its `client_id`."""
+    response = await client.post(
+        "/oauth/register", json={**CLAUDE_REGISTRATION, "client_name": name}
+    )
+    assert response.status_code == 201, response.text
+    return str(response.json()["client_id"])
+
+
+def authorize_params(client_id: str, **overrides: str) -> dict[str, str]:
+    """Return a valid `/oauth/authorize` query for `client_id`, with `overrides`."""
+    return {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": CLAUDE_CALLBACK,
+        "code_challenge": PKCE_CHALLENGE,
+        "code_challenge_method": "S256",
+        "state": "state-from-claude",
+        "scope": "console:read offline_access",
+        "resource": f"{CONNECTOR_BASE_URL}/mcp",
+        **overrides,
+    }
+
+
+def request_id_in(page: str) -> str:
+    """Return the sign-in request id the pairing page carries in its hidden field."""
+    match = re.search(r'name="request" value="([^"]+)"', page)
+    assert match is not None, page
+    return match.group(1)
+
+
+async def start_sign_in(client: HttpxAsyncClient, client_id: str) -> str:
+    """Open the pairing page for `client_id` and return its request id."""
+    page = await client.get("/oauth/authorize", params=authorize_params(client_id))
+    assert page.status_code == 200, page.text
+    return request_id_in(page.text)
+
+
+async def authorization_code(
+    client: HttpxAsyncClient, session_id: str, client_id: str
+) -> str:
+    """Pair `client_id` with `session_id` through the page, and return the code."""
+    request_id = await start_sign_in(client, client_id)
+    pairing_code = await issue_pairing_code(session_id)
+    response = await client.post(
+        "/oauth/authorize", data={"request": request_id, "code": pairing_code}
+    )
+    assert response.status_code == 302, response.text
+    query = parse_qs(urlsplit(response.headers["location"]).query)
+    return query["code"][0]
+
+
+async def pair_claude(client: HttpxAsyncClient, session_id: str) -> dict[str, Any]:
+    """Pair a newly registered Claude with `session_id`; return the token response."""
+    client_id = await register_claude(client)
+    code = await authorization_code(client, session_id, client_id)
+    response = await client.post(
+        "/oauth/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": CLAUDE_CALLBACK,
+            "client_id": client_id,
+            "code_verifier": PKCE_VERIFIER,
+        },
+    )
+    assert response.status_code == 200, response.text
+    tokens: dict[str, Any] = {**response.json(), "client_id": client_id}
+    return tokens
+
+
+async def plant_counts(
+    session_id: str, *, needing_attention: int, booked: int, cancelled: int
+) -> None:
+    """Give `session_id` conversations needing attention and done booking changes.
+
+    Each needing-attention conversation is escalated and marked; each change is a done
+    act on a distinct appointment, settled now.
+    """
+    from chat.db.session import session_factory
+    from chat.domain.models import (
+        BookingActOperation,
+        BookingActOutcome,
+        EscalationReason,
+        MessageSender,
+    )
+    from chat.repositories import booking_act_repository, chat_repository
+
+    async with session_factory() as session:
+        for _ in range(needing_attention):
+            chat = await chat_repository.create_chat(session, session_id)
+            await chat_repository.set_escalated(
+                session, chat.id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
+            )
+            await chat_repository.mark_attention(session, chat.id, session_id)
+        chat = await chat_repository.create_chat(session, session_id)
+        message = await chat_repository.create_message(
+            session,
+            id=str(ULID()),
+            chat_id=chat.id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content="book me in",
+        )
+        assert message is not None
+        for operation, count in (
+            (BookingActOperation.BOOK, booked),
+            (BookingActOperation.CANCEL, cancelled),
+        ):
+            for _ in range(count):
+                appointment = str(ULID())
+                act_id = await booking_act_repository.begin(
+                    session,
+                    session_id=session_id,
+                    chat_id=chat.id,
+                    message_id=message.id,
+                    operation=operation,
+                    practitioner_id="01PRACT0000000000000000000",
+                    practitioner_full_name="William Osler",
+                    starts_at=datetime(2027, 1, 12, 10, 0),
+                    appointment_id=(
+                        None if operation is BookingActOperation.BOOK else appointment
+                    ),
+                )
+                assert act_id is not None
+                await booking_act_repository.settle(
+                    session,
+                    act_id=act_id,
+                    session_id=session_id,
+                    outcome=BookingActOutcome.DONE,
+                    appointment_id=appointment,
+                )

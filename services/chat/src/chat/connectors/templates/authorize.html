@@ -1,0 +1,21 @@
+{% extends "_base.html" %}
+{% block title %}Connect {{ client_name }} to VisitDoc{% endblock %}
+{% block content %}
+<h1>Connect {{ client_name }} to VisitDoc</h1>
+<p><strong>{{ client_name }}</strong> is asking to connect to this clinic's Staff Console.
+Access will be given to <strong>{{ redirect_host }}</strong>.</p>
+<p class="scope">Access is read-only and limited to two counts: how many conversations
+need staff attention, and how many bookings changed recently. It cannot read a
+conversation, see a patient's name, or change anything.</p>
+{% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+<form method="post" action="/oauth/authorize">
+  <input type="hidden" name="request" value="{{ request_id }}">
+  <label for="code">Pairing code</label>
+  <input id="code" name="code" type="text" required autofocus
+         autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"
+         inputmode="text" maxlength="16" placeholder="XXXX-XXXX">
+  <button type="submit">Connect</button>
+</form>
+<p class="muted" style="margin-top: 1rem">Get a code from the gear tab, Connected apps,
+in the Staff Console. A code works once and for 10 minutes.</p>
+{% endblock %}

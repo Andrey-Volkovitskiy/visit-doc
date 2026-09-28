@@ -581,3 +581,63 @@ class FaqEntry(FaqEntryWrite):
     id: int
     created_at: datetime
     updated_at: datetime
+
+
+# --- The staff connector: `/console/connected-apps` ---------------------------------
+
+
+class ConnectorAvailableOut(BaseModel):
+    """The connector exists, at `address` - what a staff member pastes into Claude."""
+
+    available: Literal[True] = True
+    address: str
+
+
+class ConnectorUnavailableOut(BaseModel):
+    """The connector does not exist; `reason` is one of three values the tab words."""
+
+    available: Literal[False] = False
+    reason: str
+
+
+class PairingCodeStatusOut(BaseModel):
+    """A live pairing code's remaining time. The code itself is never sent again."""
+
+    expires_in_seconds: int
+
+
+class GrantOut(BaseModel):
+    """One paired app, as the console lists it.
+
+    Both ages are whole seconds measured on the server's clock, so the page renders
+    them as relative text without comparing a server time to the browser's.
+    `last_used_seconds_ago` is null for an app that never asked anything.
+    """
+
+    id: str
+    client_name: str
+    paired_seconds_ago: int
+    last_used_seconds_ago: int | None
+
+
+class ConnectedAppsOut(BaseModel):
+    """`GET /console/connected-apps` response body.
+
+    `pairing_code` is null when the session holds no unused, unexpired code. `grants`
+    lists only pairings that still work, newest first.
+    """
+
+    connector: ConnectorAvailableOut | ConnectorUnavailableOut
+    pairing_code: PairingCodeStatusOut | None
+    grants: list[GrantOut]
+
+
+class PairingCodeOut(BaseModel):
+    """`POST /console/connected-apps/pairing-code` response body.
+
+    The only response that ever carries a code in plain form.
+    """
+
+    code: str
+    expires_in_seconds: int
+    address: str

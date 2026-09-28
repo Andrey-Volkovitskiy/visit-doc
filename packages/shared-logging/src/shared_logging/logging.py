@@ -25,8 +25,14 @@ _Renderer = Callable[[WrappedLogger, str, EventDict], str]
 _MAX_STRING_LENGTH = 2000
 _TRUNCATION_SUFFIX = "..."
 _REDACTED_PLACEHOLDER = "***REDACTED***"
+# Substrings, except `code`: a pairing or authorization code is as much a credential as
+# a token, but `status_code` is logged throughout both services, so a bare `code` is
+# matched only as the whole key and the credential-bearing compounds are named. The
+# `authorization` substring already covers `authorization_code`.
 _SECRET_KEY_PATTERN = re.compile(
-    r"(password|token|secret|api_key|apikey|credential|authorization)", re.IGNORECASE
+    r"(password|token|secret|api_key|apikey|credential|authorization"
+    r"|pairing_code|code_verifier|^code$)",
+    re.IGNORECASE,
 )
 # Faint grey: debug entries are diagnostic detail sitting between the events that
 # describe what the service did, so they have to be skimmable past rather than read.

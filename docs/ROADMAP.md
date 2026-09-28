@@ -205,8 +205,9 @@ change lives in a cookie the browser cannot read; and resetting a demonstration 
 - **Staff notification.** An escalation is worth nothing if nobody happens to be looking at that
   pane. In-app first — a live push and an unread count on the staff side, raised by a turn the user
   may have been driving from the patient side a second earlier — because that needs no new
-  infrastructure. Out-of-band delivery (email, SMS) is deliberately deferred to Phase 4+, where a
-  broker and a Notification service actually exist.
+  infrastructure. Out-of-band delivery (email, SMS) is not planned. Phase 4a's Claude connector
+  covers the time away from the console instead, by letting the staff member ask rather than
+  pushing anything to them.
 - **Practitioner management** — a UI over 1c's REST admin surface: add, edit, and delete
   practitioners, with the seeded-name defaults and the cascading deletes the service already
   enforces. No new backend.
@@ -710,16 +711,86 @@ made deterministic by the browser's timezone rather than a faked clock — the c
 fixed-offset zone in which it is early morning — which works because every time in this system is
 the visitor's own wall clock. It runs by hand, not in CI.)*
 
-### Phase 4+ — Platform layers (optional, if time allows)
+### Phase 4+ — Beyond the console (optional, if time allows)
+
+#### Phase 4a — Staff in the loop from the Claude app
+The console only helps a staff member who is looking at it. This phase lets them stay in the loop
+while they are away from it: from the Claude mobile app, with VisitDoc added as a custom connector,
+they can ask two questions and get a number back.
+
+1. **How many conversations need staff attention right now.**
+2. **How many appointments were booked, cancelled or rescheduled in the last N minutes or
+   hours**, answered as a sentence Claude can relay: "Three appointments were booked, one
+   cancelled and two rescheduled."
+
+This is the second consumer 1c said MCP should wait for, and it is a different consumer from the
+one 1c imagined: a staff member reading console state, not an outside client driving the agent's
+tools. The agent's in-process registry stays exactly as it is. Its tools are patient-scoped, with
+the patient bound from the chat the turn runs in, and nothing in this phase puts them behind MCP.
+
+- **A remote MCP server mounted in the chat service** (`/mcp`, streamable HTTP), calling the same
+  functions the `/console/*` routes call rather than holding logic of its own. The scheduler is not
+  involved: both answers come from the chat service's own database, and the scheduler never learns
+  that MCP exists.
+- **Read-only, by having no write tools at all**, not by a scope that hides them.
+- **It returns counts, never conversations.** No patient name and no message text leaves through
+  this surface. That keeps what reaches a third party to the minimum the two questions need, and
+  it means text a patient wrote can never arrive in the staff member's Claude as something that
+  reads like an instruction. The details stay in the console, where the staff member goes next.
+- **"Needs attention" means exactly what the console marks.** The count is taken over the same
+  derived state the conversation listing shows, so the phone and the console cannot disagree about
+  which conversations are waiting.
+- **The booking count reads 016's `booking_acts`**, counting distinct appointments with an act
+  that settled as `done` inside the window, per operation: an appointment rescheduled twice is one
+  rescheduled appointment. Acts whose outcome is unknown or never settled are reported as their own
+  number, never folded into the done count or silently dropped. Every schedule change the system
+  makes is an act, since staff cannot book, so the table is complete for this question.
+- **The window is the one time judgement in the system that needs no `local_now`.** "The last 30
+  minutes" is measured back from the server's clock against `settled_at`, which is a real timestamp,
+  so the app still stores no timezone. Every other date judgement keeps the visitor's own wall clock.
+
+**Authorization is OAuth 2.1, as the MCP authorization spec requires**, with the chat service as
+both the resource server and the authorization server. Claude discovers it from the `401` on
+`/mcp` (RFC 9728 protected-resource metadata, then RFC 8414 server metadata), registers itself by
+Dynamic Client Registration, and signs in with an authorization code bound by PKCE (S256) and
+redirected to `https://claude.ai/api/mcp/auth_callback`. Tokens are opaque and checked against the
+database, so a revocation takes effect on the next call. Refresh tokens rotate on every use, and a
+reused one revokes the whole grant.
+
+- **The session stays the only identity; a pairing code bridges it.** 1d's decision stands: there
+  is no staff login. The staff member clicks *Connect Claude* in the console, which shows a
+  single-use code valid for ten minutes, stored only as a hash. The `/authorize` page, a
+  server-rendered form rather than part of the SPA, asks for that code. Consuming it is one
+  conditional `UPDATE` whose `WHERE` carries the expiry and `used_at IS NULL`, and wrong attempts
+  are capped. The code is what proves that the person connecting Claude is the person at the
+  console, and it is what binds the issued token to that session.
+- **The session comes from the token, never from a tool argument**, the same rule `ToolContext`
+  follows for the agent. Every query keeps its session predicate.
+- **The console lists connected Claude apps and can revoke each one.** Deleting a session through
+  `/admin` removes its grants and tokens with it. Token material joins the log redaction list in
+  the same change that introduces it.
+- **It needs a public HTTPS endpoint, the first thing in this project that does.** Anthropic's
+  cloud calls the connector, not the phone, so a server reachable only inside WSL cannot serve it.
+  A tunnel is enough for a demonstration.
+
+*(Built in `specs/017-staff-mcp-connector/`; the walk against a real Claude account and a public
+tunnel, its `quickstart.md` §1–§5, has not been done yet, so the connector is tested but not yet
+seen working in Claude. Four things differ from the plan above. The console's control is a gear
+tab, "Connected apps", whose button reads *Get pairing code*. The needs-attention count does not
+call the listing's function but counts the listing's own `emphasized` expression, which keeps the
+two equal by construction without reading every row. `booking_acts` gained a check that a `done`
+act names its appointment, because the count is of distinct appointments and a NULL id would drop
+out of it silently. And the log redaction gained the credential keys by name (`code`,
+`pairing_code`, `code_verifier`) rather than the substring `code`, which would have redacted every
+`status_code` either service logs.)*
+
+#### Phase 4b+ — Platform layers
 Added as deliberate evolution, each with a one-line rationale in the README:
 
-- Extract further services from the core (Scheduling already stands alone; Patient, Knowledge, and
-  Escalation are the natural next cuts).
 - Introduce **one** message broker plus the **transactional outbox** pattern and **idempotent
   consumers** (at-least-once delivery plus idempotency gives effectively-once processing).
 - Add ClickHouse and an event stream for the analytics dashboard.
-- Extend 1d's staff console with operational analytics, and with escalation notifications that
-  reach staff out of band (email/SMS) once a broker and a Notification service exist.
+- Extend 1d's staff console with operational analytics.
 - Containerize and deploy to Kubernetes.
 
 ---

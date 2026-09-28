@@ -1,6 +1,8 @@
+import { Settings } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatList } from "./components/ChatList";
 import { ChatWindow } from "./components/ChatWindow";
+import { ConnectedApps } from "./components/ConnectedApps";
 import { DiscardDialog } from "./components/DiscardDialog";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { FaqAdmin } from "./components/FaqAdmin";
@@ -487,6 +489,20 @@ function App() {
               <TabsTrigger value="chats">Conversations</TabsTrigger>
               <TabsTrigger value="practitioners">Practitioners</TabsTrigger>
               <TabsTrigger value="faq">FAQ</TabsTrigger>
+              {/*
+                017 FR-001: secondary to the three sections, so it is a wordless gear at
+                the far end, muted in every state - selected included, where the tab
+                bar's underline still marks it. The accessible name and the hover title
+                carry what the missing label would have.
+              */}
+              <TabsTrigger
+                value="connected-apps"
+                aria-label="Connected apps"
+                title="Connected apps"
+                className="data-[state=active]:text-ink-muted ml-auto"
+              >
+                <Settings aria-hidden="true" className="size-5" />
+              </TabsTrigger>
             </TabsList>
             <TabsContent
               value="chats"
@@ -559,6 +575,19 @@ function App() {
               ) : (
                 <RegionLoading region="faq">
                   Waiting for this browser&apos;s session before reading the FAQ.
+                </RegionLoading>
+              )}
+            </TabsContent>
+            <TabsContent value="connected-apps" className="min-h-0 overflow-y-auto">
+              {/* Behind the same session gate as the two sections above, for the same
+                  reason: its first read is of something the session owns. Nothing in it
+                  is ever dirty, so it never raises the tab guard. */}
+              {sessionExists ? (
+                <ConnectedApps pollTick={poll.tick} />
+              ) : (
+                <RegionLoading region="connected-apps">
+                  Waiting for this browser&apos;s session before reading its connected
+                  apps.
                 </RegionLoading>
               )}
             </TabsContent>

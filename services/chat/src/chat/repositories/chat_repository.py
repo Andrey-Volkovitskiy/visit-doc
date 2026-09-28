@@ -980,6 +980,21 @@ async def list_conversations_for_console(
     return [ConsoleConversation(*row) for row in result.all()]
 
 
+async def count_needing_attention(session: AsyncSession, session_id: str) -> int:
+    """Return how many of `session_id`'s conversations need a person right now.
+
+    The console listing's own `emphasized` expression, counted: the staff connector's
+    answer and the rows the console emphasizes are one definition, so they cannot
+    disagree about which conversations are waiting.
+    """
+    result = await session.execute(
+        select(func.count())
+        .select_from(Chat)
+        .where(Chat.session_id == session_id, _EMPHASIZED)
+    )
+    return int(result.scalar_one())
+
+
 @dataclass(frozen=True)
 class SessionDeletion:
     """What removing one session's row took with it, by cascade."""

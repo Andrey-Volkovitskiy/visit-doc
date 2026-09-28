@@ -169,6 +169,12 @@ matches the command line of the shell running it, so it kills the caller — and
 command line happens to quote the module name. `scripts/dev-services.sh` kills a recorded pid and
 `pkill -P` for its child, which cannot match anything by accident.
 
+**The staff connector (017) needs a public HTTPS address**, because Claude's servers call it, not
+the phone. Run `ngrok http --url=<static-domain> 8000` in front of the chat service, set
+`PUBLIC_BASE_URL=https://<static-domain>` in `.env`, and restart the stack: the address is read at
+startup. Without it the console's gear tab says pairing is unavailable and why, and nothing else
+changes. The walk against a real Claude account is `specs/017-staff-mcp-connector/quickstart.md`.
+
 `scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a
 turn and stream the reply, read the thread or the staff console, post as staff, flip the assistant
 switch, add a FAQ entry. It exists so that exercising a flow by hand doesn't start with rebuilding
@@ -469,6 +475,24 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   version compared for equality, never a clock — and the staff thread re-reads when the pair
   `(last_message_at, booking_acts_version)` changes, since a turn can settle an act without writing
   a message.
+- **The staff connector is a staff-scoped surface, separate from the agent's registry** (017).
+  `/mcp` is a remote MCP server in the chat service with two read-only tools - conversations
+  needing attention, and appointments booked, cancelled and rescheduled in a window - and
+  `/oauth/*` is the OAuth 2.1 sign-in server Claude connects through, both under
+  `chat/connectors/`. Nothing in `chat/agent/` reaches either, and the agent's in-process
+  `ToolRegistry` is unchanged: its tools are patient-scoped, and this is not the MCP transport
+  005 deferred for them. **The session a tool answers for comes only from the verified token**
+  (`AccessToken.subject`, set from the grant); no tool takes a session, chat or grant argument, so
+  nothing a caller sends can point one at another session. The identity is a **pairing code** the
+  console issues, keyed by the session, spent by one conditional `UPDATE`, and stored, like every
+  token, only as a SHA-256 digest. Grants cascade from the session, so deleting one through
+  `/admin` ends its pairings. The tools return counts and nothing else. **`PUBLIC_BASE_URL` is the
+  single source of every public address** - the issuer, the connector address, the host the MCP
+  transport accepts - read once through `chat.connectors.public_address.current_connector()`, and
+  anything but a bare `https://` origin makes the connector unavailable (`503` on its routes, the
+  reason in the tab) rather than publishing an address nobody can reach. The MCP transport is
+  built per lifespan, because the SDK's session manager runs once per instance, and it is routed
+  to on its two paths rather than mounted at `/`, so every other path keeps FastAPI's own `404`.
 - Repository functions take the `AsyncSession` as an explicit parameter (e.g.
   `faq_repository.create(session, content)`) rather than a repository class holding session state —
   matches FastAPI's own documented pattern, keeps repository functions stateless and reusable across

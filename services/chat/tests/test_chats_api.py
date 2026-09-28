@@ -304,6 +304,7 @@ async def _settle(
     outcome: BookingActOutcome,
     *,
     refusal_reason: str | None = None,
+    appointment_id: str | None = None,
 ) -> None:
     done = outcome is BookingActOutcome.DONE
     async with session_factory() as session:
@@ -313,6 +314,7 @@ async def _settle(
             session_id=session_id,
             outcome=outcome,
             refusal_reason=refusal_reason,
+            appointment_id=appointment_id,
             ends_at=datetime(2027, 1, 12, 11, 0) if done else None,
         )
     assert settled
@@ -447,7 +449,10 @@ async def test_staff_actions_leave_the_recorded_acts_as_they_were() -> None:
     session_id, chat_id = await _seed_chat_with_patient()
     message_id = await _add_patient_message(session_id, chat_id, "book me in")
     settled = await _begin_act(session_id, chat_id, message_id)
-    await _settle(settled, session_id, BookingActOutcome.DONE)
+    # A done booking always names its appointment (the done-with-appointment check).
+    await _settle(
+        settled, session_id, BookingActOutcome.DONE, appointment_id=str(ULID())
+    )
     await _begin_act(session_id, chat_id, message_id, BookingActOperation.CANCEL)
     before = await _thread(session_id, chat_id)
 

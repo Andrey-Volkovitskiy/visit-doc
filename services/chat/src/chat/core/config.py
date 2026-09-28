@@ -103,6 +103,16 @@ class Settings(BaseSettings):
     # events back out of the log as data. The console format is for people, and carries
     # no guarantee a program could parse it, so it stays the default.
     LOG_FORMAT: LogFormat = LogFormat.CONSOLE
+    # The chat service's public HTTPS origin (an ngrok static domain locally), from
+    # which every address the staff connector publishes derives: the OAuth issuer, the
+    # `/mcp` connector address and the one host its transport accepts. Taken from here
+    # rather than the request's `Host`, because the browser asking for a pairing code is
+    # at `localhost` - the one answer Claude's servers cannot reach. Blank, or anything
+    # but a bare `https://` origin, leaves the connector unavailable with the reason
+    # stated (`chat.connectors.public_address`). Deliberately not in
+    # `service.configured`: that event's fields are the eval harness's contract, and
+    # this setting changes no turn.
+    PUBLIC_BASE_URL: str = ""
     # Langfuse tracing: one trace per turn, exported to the project these keys belong
     # to. Blank by default, and blank means off - both keys have to be set for anything
     # to leave the process. Read here and handed to the SDK explicitly, never left to

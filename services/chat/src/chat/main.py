@@ -8,6 +8,8 @@ import aiohttp
 import uvicorn
 from anthropic import AsyncAnthropic
 from fastapi import FastAPI
+from starlette.routing import Route
+from starlette.types import Receive, Scope, Send
 from voyageai.client_async import AsyncClient
 
 from chat import observability
@@ -16,8 +18,20 @@ from chat.api.admin import router as admin_router
 from chat.api.chats import router as chats_router
 from chat.api.console import router as console_router
 from chat.api.faq import router as faq_router
+from chat.api.oauth import router as oauth_router
+from chat.api.oauth import unavailable_response
 from chat.api.turn import router as turn_router
 from chat.clients.scheduling import create_channel
+from chat.connectors.mcp_server import (
+    PROTECTED_RESOURCE_PATH,
+    build_server,
+    build_transport,
+)
+from chat.connectors.public_address import (
+    MCP_PATH,
+    ConnectorUnavailable,
+    current_connector,
+)
 from chat.core.config import Settings, get_settings
 from chat.core.logging import configure_logging, get_logger
 from chat.domain.schemas import MAX_SEGMENTS
@@ -156,7 +170,44 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         # compiled-graph cache keys on the clients above, and would otherwise keep this
         # lifecycle's closed clients reachable for the life of the process.
         stack.callback(clear_graph_cache)
+
+        # The staff connector's MCP transport, built for this lifespan: the SDK's
+        # session manager runs once per instance. Routed to rather than mounted, so
+        # the sub-app's own lifespan never runs and its manager is entered here.
+        # Holds the unavailability instead when there is no connector, so a request
+        # is answered with the reason this lifespan decided rather than a second
+        # reading of the setting.
+        connector = current_connector()
+        if isinstance(connector, ConnectorUnavailable):
+            app.state.mcp_transport = connector
+        else:
+            server = build_server(connector)
+            transport = build_transport(server, connector)
+            await stack.enter_async_context(server.session_manager.run())
+            app.state.mcp_transport = transport
         yield
+
+
+class _ConnectorTransport:
+    """Hands a request for the connector's two paths to this lifespan's MCP transport.
+
+    A class, not a function: Starlette treats a plain function given to a route as a
+    request handler, and only a callable object as an ASGI app it passes the raw
+    request to.
+    """
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Forward the request, or answer the connector's fixed `503`.
+
+        The `503` while the lifespan decided the connector is unavailable is the one
+        the OAuth routes answer: nothing may be published naming an issuer that does
+        not exist.
+        """
+        transport = scope["app"].state.mcp_transport
+        if isinstance(transport, ConnectorUnavailable):
+            await unavailable_response(transport)(scope, receive, send)
+            return
+        await transport(scope, receive, send)
 
 
 def create_app() -> FastAPI:
@@ -167,7 +218,14 @@ def create_app() -> FastAPI:
     app.include_router(chats_router)
     app.include_router(console_router)
     app.include_router(faq_router)
+    app.include_router(oauth_router)
     app.include_router(turn_router)
+    # The connector's two paths, and only those: added as routes rather than a mount
+    # at `/`, which would hand every unmatched path to the transport and replace this
+    # app's own `404`.
+    transport = _ConnectorTransport()
+    for path in (MCP_PATH, PROTECTED_RESOURCE_PATH):
+        app.router.routes.append(Route(path, transport, include_in_schema=False))
     return app
 
 

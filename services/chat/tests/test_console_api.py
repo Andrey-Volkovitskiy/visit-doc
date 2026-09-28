@@ -427,6 +427,9 @@ async def _settle_act(session_id: str, act_id: str) -> None:
             act_id=act_id,
             session_id=session_id,
             outcome=BookingActOutcome.DONE,
+            # A done act always names its appointment (ck_booking_acts_done_with_
+            # appointment); the version counts the settle, not what it names.
+            appointment_id=str(ULID()),
         )
     await engine.dispose()
     assert settled

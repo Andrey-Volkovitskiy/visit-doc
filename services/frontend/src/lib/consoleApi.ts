@@ -451,3 +451,88 @@ export async function deleteFaqEntry(entryId: number): Promise<void> {
   const response = await fetch(`/faq/${entryId}`, { method: "DELETE" });
   if (!response.ok) throw await faqError(response);
 }
+
+// --- Connected apps (017): pairing the Claude app with this session ----------------------
+
+/** Why the connector does not exist in the chat service; the tab words each. */
+export type ConnectorUnavailableReason =
+  "not_configured" | "not_https" | "has_path";
+
+/**
+ * Whether an app can be paired, and at which address.
+ *
+ * A union on `available`, so an address without availability, or a reason beside one,
+ * is unrepresentable rather than guarded against.
+ */
+export type ConnectorStatus =
+  | { available: true; address: string }
+  | { available: false; reason: ConnectorUnavailableReason };
+
+/**
+ * One paired app. Both ages are whole seconds on the server's clock, rendered as
+ * relative text — never compared with the browser's clock.
+ */
+export interface ConnectedApp {
+  id: string;
+  client_name: string;
+  paired_seconds_ago: number;
+  /** Null for an app that has never asked anything. */
+  last_used_seconds_ago: number | null;
+}
+
+/**
+ * GET /console/connected-apps. `pairing_code` is the live code's time left, or null;
+ * the code itself is sent once, by `issuePairingCode`, and never again.
+ */
+export interface ConnectedAppsListing {
+  connector: ConnectorStatus;
+  pairing_code: { expires_in_seconds: number } | null;
+  grants: ConnectedApp[];
+}
+
+/** POST /console/connected-apps/pairing-code: the only answer carrying a code. */
+export interface IssuedPairingCode {
+  code: string;
+  expires_in_seconds: number;
+  address: string;
+}
+
+/**
+ * Check a connected-apps response before its body is read.
+ *
+ * The server's `detail` is not relayed: on this surface it is a reason token (a 409's
+ * `not_configured`), not a sentence a staff member should read.
+ */
+function ensureConnectedAppsOk(response: Response, message: string): void {
+  if (!response.ok) throw new Error(message);
+}
+
+/** GET /console/connected-apps: whether pairing is possible, and what is paired. */
+export async function fetchConnectedApps(): Promise<ConnectedAppsListing> {
+  const response = await fetch("/console/connected-apps");
+  ensureConnectedAppsOk(response, "Could not load the connected apps.");
+  return (await response.json()) as ConnectedAppsListing;
+}
+
+/** POST /console/connected-apps/pairing-code: a new code, replacing any live one. */
+export async function issuePairingCode(): Promise<IssuedPairingCode> {
+  const response = await fetch("/console/connected-apps/pairing-code", {
+    method: "POST",
+  });
+  ensureConnectedAppsOk(
+    response,
+    "Could not get a pairing code. Please try again.",
+  );
+  return (await response.json()) as IssuedPairingCode;
+}
+
+/** POST /console/connected-apps/{id}/revoke: that app's next question is refused. */
+export async function revokeConnectedApp(grantId: string): Promise<void> {
+  const response = await fetch(`/console/connected-apps/${grantId}/revoke`, {
+    method: "POST",
+  });
+  ensureConnectedAppsOk(
+    response,
+    "Could not revoke that app. Please try again.",
+  );
+}

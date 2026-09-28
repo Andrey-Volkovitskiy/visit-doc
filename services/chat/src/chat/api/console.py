@@ -25,6 +25,7 @@ from chat.clients.scheduler_rest import (
     SchedulerTimeoutError,
     SchedulerUnreachableError,
 )
+from chat.connectors.public_address import ConnectorUnavailable, current_connector
 from chat.core.config import get_settings
 from chat.core.logging import get_logger
 from chat.db.session import pinned_session, session_factory
@@ -32,14 +33,25 @@ from chat.domain.models import Chat, MessageSender
 from chat.domain.schemas import (
     AssistantStateOut,
     AssistantSwitchWrite,
+    ConnectedAppsOut,
+    ConnectorAvailableOut,
+    ConnectorUnavailableOut,
     ConsoleConversationOut,
     ConsoleConversationsResponse,
+    GrantOut,
     LocalNow,
     MessageOut,
+    PairingCodeOut,
+    PairingCodeStatusOut,
     StaffMessageWrite,
 )
-from chat.repositories import chat_repository
+from chat.repositories import (
+    chat_repository,
+    grant_repository,
+    pairing_code_repository,
+)
 from chat.repositories.chat_repository import ConsoleConversation, ConversationState
+from chat.repositories.pairing_code_repository import PAIRING_CODE_LIFETIME
 
 router = APIRouter()
 
@@ -505,3 +517,99 @@ async def list_practitioner_appointments(
         unreachable_detail=_READ_UNREACHABLE_DETAIL,
         timeout_detail=_READ_TIMEOUT_DETAIL,
     )
+
+
+# --- Connected apps: pairing the Claude app with this session -------------------------
+
+
+def _session_or_404(request: Request) -> str:
+    """Return the cookie's session id.
+
+    Raises: HTTPException 404 if the request carries no session cookie.
+    """
+    session_id = read_session_id(request)
+    if session_id is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    return session_id
+
+
+@router.get("/console/connected-apps")
+async def list_connected_apps(request: Request) -> ConnectedAppsOut:
+    """Return whether pairing is possible, the live code's time left, and the pairings.
+
+    Raises: HTTPException 404 if the request carries no session cookie.
+
+    The code itself is never read back: only `POST .../pairing-code` ever returns one.
+    """
+    session_id = _session_or_404(request)
+    connector = current_connector()
+    async with session_factory() as db_session:
+        remaining = await pairing_code_repository.live_expiry(db_session, session_id)
+        grants = await grant_repository.list_for_session(db_session, session_id)
+    return ConnectedAppsOut(
+        connector=(
+            ConnectorUnavailableOut(reason=connector.reason.value)
+            if isinstance(connector, ConnectorUnavailable)
+            else ConnectorAvailableOut(address=connector.address)
+        ),
+        pairing_code=(
+            None
+            if remaining is None
+            else PairingCodeStatusOut(expires_in_seconds=remaining)
+        ),
+        grants=[
+            GrantOut(
+                id=grant.id,
+                client_name=grant.client_name,
+                paired_seconds_ago=grant.paired_seconds_ago,
+                last_used_seconds_ago=grant.last_used_seconds_ago,
+            )
+            for grant in grants
+        ],
+    )
+
+
+@router.post("/console/connected-apps/pairing-code", status_code=201)
+async def issue_pairing_code(request: Request) -> PairingCodeOut:
+    """Issue this session a pairing code, replacing any code it held.
+
+    Raises: HTTPException 404 if the request carries no session cookie, or names a
+        session that does not exist; 409 with the reason if the connector is
+        unavailable, in which case no code is issued - one could not be used.
+    """
+    session_id = _session_or_404(request)
+    connector = current_connector()
+    if isinstance(connector, ConnectorUnavailable):
+        raise HTTPException(status_code=409, detail=connector.reason.value)
+    async with session_factory() as db_session:
+        if await chat_repository.get_session(db_session, session_id) is None:
+            raise HTTPException(status_code=404, detail="session not found")
+        code = await pairing_code_repository.issue(db_session, session_id)
+        await db_session.commit()
+    get_logger().info("connector.pairing_code_issued", session_id=session_id)
+    return PairingCodeOut(
+        code=code,
+        expires_in_seconds=int(PAIRING_CODE_LIFETIME.total_seconds()),
+        address=connector.address,
+    )
+
+
+@router.post("/console/connected-apps/{grant_id}/revoke", status_code=204)
+async def revoke_connected_app(grant_id: str, request: Request) -> Response:
+    """Revoke one of this session's pairings; its next call is refused.
+
+    Raises: HTTPException 404 if there is no session cookie, or `grant_id` is not one
+        of this session's pairings - reported alike, as every console route does.
+
+    Idempotent: revoking a pairing already revoked answers the same `204`.
+    """
+    session_id = _session_or_404(request)
+    async with session_factory() as db_session:
+        found = await grant_repository.revoke(db_session, session_id, grant_id)
+        await db_session.commit()
+    if not found:
+        raise HTTPException(status_code=404, detail="connected app not found")
+    get_logger().info(
+        "connector.grant_revoked", session_id=session_id, grant_id=grant_id
+    )
+    return Response(status_code=204)

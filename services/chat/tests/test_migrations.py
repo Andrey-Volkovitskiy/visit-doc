@@ -385,15 +385,17 @@ _VALID_RESCHEDULE: dict[str, object] = {
     "previous_starts_at": "2027-01-12 09:00:00",
 }
 _SETTLED = "2027-01-01 00:00:00+00"
+_ACT_APPOINTMENT = "01APPT00000000000000000000"
 
 
 def _insert_act(connection: sa.Connection, id: str, row: dict[str, object]) -> None:
     connection.execute(
         sa.text(
             "INSERT INTO booking_acts (id, session_id, chat_id, message_id, operation, "
-            "outcome, refusal_reason, practitioner_id, starts_at, "
+            "outcome, refusal_reason, appointment_id, practitioner_id, starts_at, "
             "previous_practitioner_id, previous_starts_at, settled_at) "
-            "VALUES (:id, :s, :c, :m, :operation, :outcome, :refusal_reason, :p, "
+            "VALUES (:id, :s, :c, :m, :operation, :outcome, :refusal_reason, "
+            ":appointment_id, :p, "
             "'2027-01-12 10:00:00', :previous_practitioner_id, "
             "CAST(:previous_starts_at AS timestamp), "
             "CAST(:settled_at AS timestamptz))"
@@ -404,6 +406,7 @@ def _insert_act(connection: sa.Connection, id: str, row: dict[str, object]) -> N
             "c": _ACT_CHAT,
             "m": _ACT_MESSAGE,
             "p": _ACT_PRACTITIONER,
+            "appointment_id": None,
             **row,
         },
     )
@@ -458,12 +461,13 @@ def test_a_well_formed_act_of_each_shape_is_accepted() -> None:
                 "outcome": "done",
                 "refusal_reason": "practitioner_busy",
                 "settled_at": _SETTLED,
+                "appointment_id": _ACT_APPOINTMENT,
             },
         ),
         (
             # An outcome is written together with the moment it was settled ...
             "ck_booking_acts_settled_with_outcome",
-            {**_VALID_BOOK, "outcome": "done"},
+            {**_VALID_BOOK, "outcome": "done", "appointment_id": _ACT_APPOINTMENT},
         ),
         (
             # ... and a settle moment never stands without its outcome.
@@ -487,6 +491,11 @@ def test_a_well_formed_act_of_each_shape_is_accepted() -> None:
         (
             "ck_booking_acts_previous_with_reschedule",
             {**_VALID_RESCHEDULE, "previous_practitioner_id": None},
+        ),
+        (
+            # A done act names the appointment it changed.
+            "ck_booking_acts_done_with_appointment",
+            {**_VALID_BOOK, "outcome": "done", "settled_at": _SETTLED},
         ),
     ],
 )
@@ -518,5 +527,132 @@ def test_the_booking_acts_revision_downgrades_and_upgrades_cleanly() -> None:
     finally:
         # Head either way, so a failure mid-round-trip does not leave every later test
         # in this session running against a half-migrated schema.
+        command.upgrade(alembic_cfg, "head")
+        engine.dispose()
+
+
+# --- 017: pairing the Claude app with a session --------------------------------------
+
+_CONNECTOR_TABLES = (
+    "mcp_pairing_codes",
+    "oauth_clients",
+    "oauth_authorization_requests",
+    "oauth_authorization_codes",
+    "oauth_grants",
+    "oauth_tokens",
+)
+
+
+def test_the_connector_tables_exist() -> None:
+    engine, inspector = _inspector()
+    tables = set(inspector.get_table_names())
+    engine.dispose()
+
+    assert set(_CONNECTOR_TABLES) <= tables
+
+
+def test_a_pairing_code_is_keyed_by_its_session() -> None:
+    # I1: one usable code per session is the primary key, not a rule a writer keeps.
+    engine, inspector = _inspector()
+    primary_key = inspector.get_pk_constraint("mcp_pairing_codes")
+    engine.dispose()
+
+    assert primary_key["constrained_columns"] == ["session_id"]
+
+
+def test_session_owned_connector_rows_die_with_their_session() -> None:
+    # I9: deleting a session removes its codes, grants and tokens by cascade alone.
+    engine, inspector = _inspector()
+    keys = {
+        table: {
+            tuple(fk["constrained_columns"]): fk
+            for fk in inspector.get_foreign_keys(table)
+        }
+        for table in _CONNECTOR_TABLES
+    }
+    engine.dispose()
+
+    for table in ("mcp_pairing_codes", "oauth_authorization_codes", "oauth_grants"):
+        fk = keys[table][("session_id",)]
+        assert fk["referred_table"] == "sessions", table
+        assert fk["options"]["ondelete"] == "CASCADE", table
+    token_fk = keys["oauth_tokens"][("grant_id",)]
+    assert token_fk["referred_table"] == "oauth_grants"
+    assert token_fk["options"]["ondelete"] == "CASCADE"
+    for table in (
+        "oauth_authorization_requests",
+        "oauth_authorization_codes",
+        "oauth_grants",
+    ):
+        fk = keys[table][("client_id",)]
+        assert fk["referred_table"] == "oauth_clients", table
+        assert fk["options"]["ondelete"] == "CASCADE", table
+
+
+def test_every_connector_secret_column_is_a_64_character_digest() -> None:
+    # I10: a code, a token or a request id is stored only as its SHA-256 hex digest.
+    engine, inspector = _inspector()
+    columns = {
+        (table, column["name"]): column
+        for table in _CONNECTOR_TABLES
+        for column in inspector.get_columns(table)
+    }
+    engine.dispose()
+
+    for key in (
+        ("mcp_pairing_codes", "code_hash"),
+        ("oauth_authorization_requests", "id_hash"),
+        ("oauth_authorization_codes", "code_hash"),
+        ("oauth_tokens", "token_hash"),
+    ):
+        assert isinstance(columns[key]["type"], sa.CHAR), key
+        assert columns[key]["type"].length == 64, key
+
+
+def test_the_connector_checks_exist() -> None:
+    engine, _ = _inspector()
+    try:
+        requests = _check_constraints(engine, "oauth_authorization_requests")
+        tokens = _check_constraints(engine, "oauth_tokens")
+        acts = _check_constraints(engine, "booking_acts")
+    finally:
+        engine.dispose()
+
+    assert "ck_oauth_authorization_requests_failed_attempts" in requests
+    assert set(tokens) >= {"ck_oauth_tokens_kind", "ck_oauth_tokens_used_only_refresh"}
+    # R9: `COUNT(DISTINCT appointment_id)` skips NULLs, so a done act without one would
+    # silently drop out of the recent-changes count.
+    assert "ck_booking_acts_done_with_appointment" in acts
+
+
+def test_booking_acts_are_indexed_for_the_recent_changes_window() -> None:
+    engine, inspector = _inspector()
+    indexes = {index["name"]: index for index in inspector.get_indexes("booking_acts")}
+    engine.dispose()
+
+    assert indexes["ix_booking_acts_session_settled"]["column_names"] == [
+        "session_id",
+        "settled_at",
+    ]
+
+
+def test_the_connector_revision_downgrades_and_upgrades_cleanly() -> None:
+    alembic_cfg = Config(str(_CHAT_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(_CHAT_ROOT / "alembic"))
+    engine = sa.create_engine(_sync_database_url())
+    try:
+        command.downgrade(alembic_cfg, "d4f7a2c93e16")
+        inspector = sa.inspect(engine)
+        assert not set(_CONNECTOR_TABLES) & set(inspector.get_table_names())
+        assert "ix_booking_acts_session_settled" not in {
+            index["name"] for index in inspector.get_indexes("booking_acts")
+        }
+        assert "ck_booking_acts_done_with_appointment" not in _check_constraints(
+            engine, "booking_acts"
+        )
+
+        command.upgrade(alembic_cfg, "head")
+        assert set(_CONNECTOR_TABLES) <= set(sa.inspect(engine).get_table_names())
+    finally:
         command.upgrade(alembic_cfg, "head")
         engine.dispose()

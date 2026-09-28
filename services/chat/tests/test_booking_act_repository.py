@@ -6,6 +6,7 @@ to nothing rather than being caught by a check after the fact.
 
 from datetime import datetime
 
+import pytest
 from chat.db.session import session_factory
 from chat.domain.models import (
     BookingAct,
@@ -14,7 +15,8 @@ from chat.domain.models import (
     MessageSender,
 )
 from chat.repositories import booking_act_repository, chat_repository
-from sqlalchemy import select
+from chat.repositories.booking_act_repository import RecentBookingChanges
+from sqlalchemy import select, text
 from ulid import ULID
 
 _PRACTITIONER = "01PRACT0000000000000000000"
@@ -328,3 +330,212 @@ async def test_deleting_the_chat_removes_its_acts() -> None:
     async with session_factory() as session:
         rows = (await session.execute(select(BookingAct))).scalars().all()
     assert rows == []
+
+
+# --- 017: the connector's recent-changes count ----------------------------------------
+
+
+async def _act(
+    session_id: str,
+    chat_id: str,
+    message_id: str,
+    operation: BookingActOperation,
+    outcome: BookingActOutcome | None,
+    *,
+    appointment_id: str | None = None,
+    minutes_ago: int = 5,
+) -> str:
+    """Record one act in `operation`, settled `outcome` (None: never settled).
+
+    Returns: the act's id. Its settle time - or, unsettled, its creation time - is set
+    `minutes_ago` back on the database's clock.
+    """
+    appointment_id = appointment_id or str(ULID())
+    async with session_factory() as session:
+        act_id = await booking_act_repository.begin(
+            session,
+            session_id=session_id,
+            chat_id=chat_id,
+            message_id=message_id,
+            operation=operation,
+            practitioner_id=_PRACTITIONER,
+            practitioner_full_name="William Osler",
+            starts_at=_STARTS_AT,
+            appointment_id=(
+                None if operation is BookingActOperation.BOOK else appointment_id
+            ),
+            previous_practitioner_id=(
+                _OTHER_PRACTITIONER
+                if operation is BookingActOperation.RESCHEDULE
+                else None
+            ),
+            previous_starts_at=(
+                datetime(2027, 1, 11, 9, 0)
+                if operation is BookingActOperation.RESCHEDULE
+                else None
+            ),
+        )
+        assert act_id is not None
+        if outcome is not None:
+            assert await booking_act_repository.settle(
+                session,
+                act_id=act_id,
+                session_id=session_id,
+                outcome=outcome,
+                refusal_reason=(
+                    "practitioner_busy"
+                    if outcome is BookingActOutcome.REFUSED
+                    else None
+                ),
+                appointment_id=(
+                    appointment_id if outcome is BookingActOutcome.DONE else None
+                ),
+            )
+        await session.execute(
+            text(
+                "UPDATE booking_acts SET "
+                "created_at = now() - make_interval(mins => :m), "
+                "settled_at = CASE WHEN settled_at IS NULL THEN NULL "
+                "ELSE now() - make_interval(mins => :m) END "
+                "WHERE id = :id"
+            ),
+            {"m": minutes_ago, "id": act_id},
+        )
+        await session.commit()
+    return act_id
+
+
+async def _recent(session_id: str, minutes: int = 60) -> RecentBookingChanges:
+    async with session_factory() as session:
+        return await booking_act_repository.count_recent_changes(
+            session, session_id, minutes
+        )
+
+
+_BOOK = BookingActOperation.BOOK
+_CANCEL = BookingActOperation.CANCEL
+_RESCHEDULE = BookingActOperation.RESCHEDULE
+_DONE = BookingActOutcome.DONE
+
+
+async def test_done_changes_are_counted_per_operation_as_distinct_appointments() -> (
+    None
+):
+    session_id, chat_id, message_id = await _patient_message()
+    for _ in range(3):
+        await _act(session_id, chat_id, message_id, _BOOK, _DONE)
+    await _act(session_id, chat_id, message_id, _CANCEL, _DONE)
+    for _ in range(2):
+        await _act(session_id, chat_id, message_id, _RESCHEDULE, _DONE)
+
+    assert await _recent(session_id) == RecentBookingChanges(
+        window_minutes=60, booked=3, cancelled=1, rescheduled=2, outcome_unknown=0
+    )
+
+
+async def test_one_appointment_rescheduled_twice_counts_once() -> None:
+    session_id, chat_id, message_id = await _patient_message()
+    appointment = str(ULID())
+    for _ in range(2):
+        await _act(
+            session_id,
+            chat_id,
+            message_id,
+            _RESCHEDULE,
+            _DONE,
+            appointment_id=appointment,
+        )
+
+    assert (await _recent(session_id)).rescheduled == 1
+
+
+async def test_booked_then_cancelled_counts_once_under_each() -> None:
+    session_id, chat_id, message_id = await _patient_message()
+    appointment = str(ULID())
+    await _act(
+        session_id, chat_id, message_id, _BOOK, _DONE, appointment_id=appointment
+    )
+    await _act(
+        session_id, chat_id, message_id, _CANCEL, _DONE, appointment_id=appointment
+    )
+
+    changes = await _recent(session_id)
+    assert (changes.booked, changes.cancelled) == (1, 1)
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        BookingActOutcome.REFUSED,
+        BookingActOutcome.UNCHANGED,
+        BookingActOutcome.NOT_SENT,
+    ],
+)
+async def test_attempts_that_changed_nothing_are_not_counted(
+    outcome: BookingActOutcome,
+) -> None:
+    session_id, chat_id, message_id = await _patient_message()
+    for operation in (_BOOK, _CANCEL, _RESCHEDULE):
+        await _act(session_id, chat_id, message_id, operation, outcome)
+
+    assert await _recent(session_id) == RecentBookingChanges(
+        window_minutes=60, booked=0, cancelled=0, rescheduled=0, outcome_unknown=0
+    )
+
+
+async def test_unknown_and_unsettled_acts_are_counted_as_unknown_only() -> None:
+    session_id, chat_id, message_id = await _patient_message()
+    await _act(session_id, chat_id, message_id, _BOOK, BookingActOutcome.UNKNOWN)
+    await _act(session_id, chat_id, message_id, _CANCEL, BookingActOutcome.UNKNOWN)
+    await _act(session_id, chat_id, message_id, _RESCHEDULE, None)
+
+    assert await _recent(session_id) == RecentBookingChanges(
+        window_minutes=60, booked=0, cancelled=0, rescheduled=0, outcome_unknown=3
+    )
+
+
+async def test_acts_outside_the_window_are_not_counted() -> None:
+    session_id, chat_id, message_id = await _patient_message()
+    await _act(session_id, chat_id, message_id, _BOOK, _DONE, minutes_ago=61)
+    await _act(
+        session_id,
+        chat_id,
+        message_id,
+        _CANCEL,
+        BookingActOutcome.UNKNOWN,
+        minutes_ago=90,
+    )
+    await _act(session_id, chat_id, message_id, _RESCHEDULE, None, minutes_ago=120)
+    await _act(session_id, chat_id, message_id, _BOOK, _DONE, minutes_ago=59)
+
+    assert await _recent(session_id, 60) == RecentBookingChanges(
+        window_minutes=60, booked=1, cancelled=0, rescheduled=0, outcome_unknown=0
+    )
+    assert await _recent(session_id, 180) == RecentBookingChanges(
+        window_minutes=180, booked=2, cancelled=0, rescheduled=0, outcome_unknown=2
+    )
+
+
+async def test_the_window_is_measured_back_from_now_in_minutes() -> None:
+    # SC-003: the same acts, read through windows of different widths.
+    session_id, chat_id, message_id = await _patient_message()
+    for minutes_ago in (1, 9, 11, 29, 31, 59):
+        await _act(
+            session_id, chat_id, message_id, _BOOK, _DONE, minutes_ago=minutes_ago
+        )
+
+    booked = [(await _recent(session_id, window)).booked for window in (5, 10, 30, 60)]
+
+    assert booked == [1, 2, 4, 6]
+
+
+async def test_another_sessions_acts_are_not_counted() -> None:
+    mine, my_chat, my_message = await _patient_message()
+    theirs, their_chat, their_message = await _patient_message()
+    await _act(mine, my_chat, my_message, _BOOK, _DONE)
+    await _act(theirs, their_chat, their_message, _BOOK, _DONE)
+    await _act(theirs, their_chat, their_message, _CANCEL, None)
+
+    assert await _recent(mine) == RecentBookingChanges(
+        window_minutes=60, booked=1, cancelled=0, rescheduled=0, outcome_unknown=0
+    )

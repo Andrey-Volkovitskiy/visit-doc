@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>{% block title %}VisitDoc{% endblock %}</title>
+<style>
+  /* The SPA's own colour values (services/frontend/src/styles/app.css), restated here
+     because this page is served by the chat service to a browser that may never have
+     loaded the SPA. No colour means "a person is needed" on this page, so the
+     attention colour is not used. */
+  :root { color-scheme: light; }
+  body { margin: 0; background: #eef2f3; color: #0f2e33;
+         font: 16px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 26rem; margin: 3rem auto; padding: 1.5rem; background: #ffffff;
+         border: 1px solid #d3dcdc; border-radius: 12px; }
+  h1 { margin: 0 0 1rem; font-size: 1.25rem; font-weight: 600; }
+  p { margin: 0 0 1rem; }
+  .muted { color: #587177; font-size: 0.875rem; }
+  .scope { background: #e4f0ef; border-radius: 6px; padding: 0.75rem 1rem; }
+  .notice { border-left: 3px solid #0a5f5e; padding: 0.25rem 0 0.25rem 0.75rem; }
+  label { display: block; font-weight: 500; margin-bottom: 0.25rem; }
+  input { box-sizing: border-box; width: 100%; padding: 0.625rem 0.75rem; font: inherit;
+          font-family: ui-monospace, "IBM Plex Mono", monospace; font-size: 1.25rem;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          border: 1px solid #d3dcdc; border-radius: 6px; }
+  input:focus-visible { outline: 2px solid #0e7c7b; outline-offset: 1px; }
+  button { margin-top: 1rem; width: 100%; padding: 0.625rem; font: inherit; font-weight: 600;
+           color: #ffffff; background: #0e7c7b; border: 0; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #0a5f5e; }
+  button:focus-visible { outline: 2px solid #0a5f5e; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -960,3 +960,44 @@ tradeoff; the details are in [`tests/e2e/README.md`](tests/e2e/README.md).
   reply. They are held to the times of day it names, read in any format, with a prestate arranged
   so that no forbidden time can appear as the end of a permitted one. Everything else asserts on
   hooks, data attributes and production constants.
+
+## Staff in the Loop from the Claude App: technology choices
+
+`specs/017-staff-mcp-connector/` (ROADMAP Phase 4a) lets a staff member pair the Claude app with
+their session from the console's gear tab, then ask it, from a phone, two questions: how many
+conversations need attention, and how many appointments were booked, cancelled and rescheduled
+in the last N minutes. Five choices carried a real tradeoff.
+
+- **A hand-written authorization server, not the SDK's, Authlib's or an identity provider's.**
+  Claude connects only through OAuth 2.1 with discovery, dynamic registration and PKCE, so some
+  authorization server has to exist. The MCP SDK ships one, and its own documentation advises new
+  servers against it; Authlib is a general framework to be configured down to one public client
+  type and two grants; an external identity provider needs staff accounts, which the project
+  decided against in Phase 1d. None of them models the one step that matters here, a pairing code
+  tied to an anonymous session, so that step would be custom code in any of them. The server is
+  four small routes (`api/oauth.py`) over `chat/connectors/`, with the SDK kept for the half it is
+  meant for: serving `/mcp` and checking tokens. The cost is a security mechanism this project owns,
+  which is why each of its eleven invariants (plan.md's table) has a test of its own.
+- **Opaque tokens looked up on every call, not JWTs.** A JWT is checked without a database read,
+  and stays valid until it expires however quickly it is revoked. Revoking must stop the next call
+  (FR-021), so a JWT would need a deny-list, which is the same database read plus a signing key to
+  manage. Tokens are 32 random bytes stored as SHA-256 digests; a call costs one primary-key
+  lookup, which also stamps "last used" at most once a minute.
+- **The pairing code is the identity bridge.** There is no staff login, so the only thing that can
+  prove the person connecting Claude is the person at this console is something the console shows
+  them. The code is 8 Crockford base32 characters, lives 10 minutes, is keyed by the session so a
+  new one replaces the old by primary key, and is spent by one conditional `UPDATE`, so two
+  submissions at once pair exactly once. Its 40 bits are small, which is why each sign-in accepts 5
+  wrong codes and then nothing, and why the stored digest is unsalted: by the time a stolen digest
+  could be cracked the code is long dead.
+- **Counts only.** The tools return integers and a sentence built from them, never a name, a
+  message or an id. That keeps what reaches a third party to what the two questions need, and it
+  means nothing a patient wrote can arrive in the staff member's Claude as text that reads like an
+  instruction. The cost is that "which conversation?" is answered by opening the console.
+- **One setting for every public address.** Claude's servers call the connector, so it needs an
+  HTTPS address they can reach; the browser asking for a code is at `localhost`, which they cannot.
+  `PUBLIC_BASE_URL` (an ngrok static domain locally) is the single source of the issuer, the
+  connector address and the host the transport accepts, and anything but a bare `https://` origin
+  makes the connector unavailable with the reason shown in the tab, rather than publishing metadata
+  that names an address nobody can reach. Deriving it from the request's `Host` would give the
+  wrong answer from the SPA and let any caller choose the issuer through `X-Forwarded-Host`.

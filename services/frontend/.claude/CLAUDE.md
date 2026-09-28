@@ -34,7 +34,8 @@ putting `export const x: number = "nope"` in `src/`: the first form exits 0, the
 src/
 ├── App.tsx              # owns the shell, the two panes, the staff tab set, the error banner
 ├── components/          # ChatList, ChatWindow, MessageView, OutcomeDisclosure, StaffConsole,
-│                        #   StaffThread, PractitionerAdmin, PractitionerWeek, FaqAdmin — this
+│                        #   StaffThread, PractitionerAdmin, PractitionerWeek, FaqAdmin,
+│                        #   ConnectedApps (the gear tab: pairing the Claude app) — this
 │                        #   app's own components, plus adminSection.ts, the props and the
 │                        #   dirty-report hook the two admin sections share (the staff reply
 │                        #   box reports through it too), and two shapes every surface owes the
@@ -185,6 +186,7 @@ exists.
 | `PractitionerAdmin` | `practitioner-admin`, `practitioner`, `working-range`, `no-practitioners`, `practitioner-error`, `practitioner-edit`, `bookings-toggle`, `discard-confirm`, `delete-confirm` |
 | `PractitionerWeek` | `practitioner-week`, `week-day`, `week-appointment`, `week-more`, `week-empty`, `week-error`, `region-loading` |
 | `FaqAdmin` | `faq-admin`, `faq-entry`, `no-faq-entries`, `faq-error`, `faq-edit`, `discard-confirm`, `delete-confirm` |
+| `ConnectedApps` | `pairing-code`, `connector-address`, `pairing-countdown`, `connected-app`, `connected-apps-error`, `region-loading` |
 
 Data attributes carry state a test would otherwise have to read off a colour: `data-sender` and
 `data-mine` on a message, `data-burst-start` on the first of a sender's run, `data-chat-id` on a
@@ -196,7 +198,9 @@ marker, `data-region` on a `region-loading` (`practitioner-week` for the week's 
 as a sixth value) on a `booking-act`, and `data-failure` (`not_found` / `unreadable`) on a
 `week-error`. `bookings-toggle` is also addressable as
 `getByRole("button", { name: /show bookings|hide bookings/i, expanded })`; the testid exists because
-a roster holds one per practitioner, so a test scopes it `within` its `practitioner` block.
+a roster holds one per practitioner, so a test scopes it `within` its `practitioner` block. The
+Connected apps tab is `getByRole("tab", { name: "Connected apps" })` - a gear with no visible text,
+named by its `aria-label` - and its revoke confirmation is `getByRole("dialog")`, with no testid.
 
 ### Driving the vendored controls
 
