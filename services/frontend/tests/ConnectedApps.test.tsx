@@ -196,6 +196,8 @@ describe("ConnectedApps: getting a code (FR-003)", () => {
     expect(
       screen.getByRole("button", { name: "Get pairing code" }),
     ).toBeInTheDocument();
+    // Nothing is left to count, so the page's clock has stopped ticking.
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("after a reload, says a code is active without showing one", async () => {
@@ -318,6 +320,44 @@ describe("ConnectedApps: the paired apps (FR-005)", () => {
 
     expect(screen.getByTestId("pairing-code")).toHaveTextContent("K7QM-4XPD");
   });
+
+  it("takes a code off the page once a re-read says it was used", async () => {
+    // No live code after the phone spent it: the one on screen would be refused.
+    vi.spyOn(consoleApi, "fetchConnectedApps").mockResolvedValue(listing());
+    vi.spyOn(consoleApi, "issuePairingCode").mockResolvedValue(issued());
+
+    const { rerender } = render(<ConnectedApps pollTick={1} />);
+    press(await screen.findByRole("button", { name: "Get pairing code" }));
+    await screen.findByTestId("pairing-code");
+
+    rerender(<ConnectedApps pollTick={2} />);
+
+    await waitFor(() => expect(screen.queryByTestId("pairing-code")).toBeNull());
+    expect(
+      screen.getByRole("button", { name: "Get pairing code" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Code expired")).toBeNull();
+  });
+
+  it("takes a code off the page once another tab replaced it", async () => {
+    vi.spyOn(consoleApi, "fetchConnectedApps")
+      .mockResolvedValueOnce(listing())
+      .mockResolvedValue(listing({ pairing_code: { expires_in_seconds: 600 } }));
+    vi.spyOn(consoleApi, "issuePairingCode").mockResolvedValue(
+      issued({ expires_in_seconds: 300 }),
+    );
+
+    const { rerender } = render(<ConnectedApps pollTick={1} />);
+    press(await screen.findByRole("button", { name: "Get pairing code" }));
+    await screen.findByTestId("pairing-code");
+
+    rerender(<ConnectedApps pollTick={2} />);
+
+    await waitFor(() => expect(screen.queryByTestId("pairing-code")).toBeNull());
+    expect(
+      screen.getByText(/A code is active \(expires in 10:00\)/),
+    ).toBeInTheDocument();
+  });
 });
 
 describe("ConnectedApps: revoking an app (FR-021)", () => {
@@ -400,5 +440,34 @@ describe("ConnectedApps: revoking an app (FR-021)", () => {
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
     expect(screen.getAllByTestId("connected-app")).toHaveLength(1);
+  });
+
+  it("keeps a failed revoke's report across a poll's re-read", async () => {
+    const fetch = vi
+      .spyOn(consoleApi, "fetchConnectedApps")
+      .mockResolvedValue(listing({ grants: [grant()] }));
+    vi.spyOn(consoleApi, "revokeConnectedApp").mockRejectedValue(
+      new Error("Could not revoke that app. Please try again."),
+    );
+
+    const { rerender } = render(<ConnectedApps pollTick={1} />);
+    press(
+      within(await screen.findByTestId("connected-app")).getByRole("button", {
+        name: "Revoke",
+      }),
+    );
+    press(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Revoke",
+      }),
+    );
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+
+    rerender(<ConnectedApps pollTick={2} />);
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Could not revoke that app.",
+    );
   });
 });

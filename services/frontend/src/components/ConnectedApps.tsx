@@ -76,15 +76,60 @@ function secondsLeft(
   return Math.max(0, code.expiresInSeconds - elapsed);
 }
 
-/** This page's clock, ticking once a second while `running`. */
-function useNow(running: boolean): number {
+/** When `code` runs out, on this page's clock. */
+function deadlineOf(code: ActiveCode): number {
+  return code.receivedAt + code.expiresInSeconds * 1000;
+}
+
+/**
+ * How far a live code's remaining time may exceed the shown one's and still be the same
+ * code: a request's round trip plus the rounding of two whole-second counts. A code
+ * replacing the shown one was issued later, so it outlives it by more than this.
+ */
+const SAME_CODE_SLACK_SECONDS = 5;
+
+/**
+ * Whether a listing says the code on screen can no longer be used.
+ *
+ * Only a listing whose request began after the code arrived speaks for it. It reports
+ * no live code once the code was used, and a code outliving this one once another page
+ * replaced it; either way the code on screen would be refused. A code about to run out
+ * is left to the countdown, which says "Code expired" rather than dropping it.
+ */
+function isSuperseded(
+  code: IssuedCode,
+  live: { expires_in_seconds: number } | null,
+  requestedAt: number,
+  now: number,
+): boolean {
+  if (requestedAt < code.receivedAt) return false;
+  const left = secondsLeft(code, now);
+  if (left <= SAME_CODE_SLACK_SECONDS) return false;
+  return (
+    live === null || live.expires_in_seconds > left + SAME_CODE_SLACK_SECONDS
+  );
+}
+
+/**
+ * This page's clock, ticking once a second until `until`, and still when it is null.
+ *
+ * It stops at the deadline rather than when a code leaves the page: an expired code
+ * stays on screen as "Code expired", with nothing left to count.
+ */
+function useNow(until: number | null): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!running) return undefined;
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    if (until === null) return undefined;
+    const start = Date.now();
+    setNow(start);
+    if (start >= until) return undefined;
+    const timer = setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= until) clearInterval(timer);
+    }, 1000);
     return () => clearInterval(timer);
-  }, [running]);
+  }, [until]);
   return now;
 }
 
@@ -195,25 +240,38 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
   const [active, setActive] = useState<ActiveCode | null>(null);
   const [issued, setIssued] = useState<IssuedCode | null>(null);
   const [issuing, setIssuing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Two slots, because the poll's success must not clear a failed action's report: a
+  // refused revoke would otherwise leave the screen within one tick of appearing.
+  const [readError, setReadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<ConnectedApp | null>(null);
 
   const read = useCallback(() => {
+    const requestedAt = Date.now();
     fetchConnectedApps()
       .then((next) => {
+        const receivedAt = Date.now();
         setListing(next);
         setActive(
           next.pairing_code === null
             ? null
             : {
                 expiresInSeconds: next.pairing_code.expires_in_seconds,
-                receivedAt: Date.now(),
+                receivedAt,
               },
         );
-        setError(null);
+        // A code used on the phone, or replaced from another tab, leaves the page
+        // rather than counting down as if it still worked.
+        setIssued((current) =>
+          current !== null &&
+          isSuperseded(current, next.pairing_code, requestedAt, receivedAt)
+            ? null
+            : current,
+        );
+        setReadError(null);
       })
       .catch((e: unknown) => {
-        setError(
+        setReadError(
           e instanceof Error ? e.message : "Could not load the connected apps.",
         );
       });
@@ -223,7 +281,10 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
     read();
   }, [read, pollTick]);
 
-  const now = useNow(issued !== null || active !== null);
+  const deadlines = [issued, active]
+    .filter((code): code is ActiveCode => code !== null)
+    .map(deadlineOf);
+  const now = useNow(deadlines.length === 0 ? null : Math.max(...deadlines));
   const issuedLeft = issued === null ? 0 : secondsLeft(issued, now);
   const activeLeft = active === null ? 0 : secondsLeft(active, now);
 
@@ -237,10 +298,10 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
           expiresInSeconds: next.expires_in_seconds,
           receivedAt: Date.now(),
         });
-        setError(null);
+        setActionError(null);
       })
       .catch((e: unknown) => {
-        setError(
+        setActionError(
           e instanceof Error
             ? e.message
             : "Could not get a pairing code. Please try again.",
@@ -264,10 +325,10 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
                 grants: current.grants.filter((g) => g.id !== app.id),
               },
         );
-        setError(null);
+        setActionError(null);
       })
       .catch((e: unknown) => {
-        setError(
+        setActionError(
           e instanceof Error
             ? e.message
             : "Could not revoke that app. Please try again.",
@@ -276,6 +337,7 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
   }
 
   const connector = listing?.connector ?? null;
+  const error = actionError ?? readError;
 
   return (
     <div className="flex max-w-2xl flex-col gap-6 p-4">

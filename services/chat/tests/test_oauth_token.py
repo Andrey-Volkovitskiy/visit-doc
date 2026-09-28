@@ -7,8 +7,10 @@ client and its redirect URI.
 from typing import Any
 
 import pytest
+from chat.connectors.authorization import TokenRefusalReason
 from chat.db.session import session_factory
 from chat.domain.models import OAuthGrant, OAuthToken
+from chat.repositories.grant_repository import RefreshRefusal
 from httpx import AsyncClient, Response
 from sqlalchemy import func, select
 
@@ -116,6 +118,37 @@ async def test_a_mismatched_exchange_is_invalid_grant_and_creates_nothing(
     assert _error(response) == "invalid_grant"
     assert await _grants() == []
     assert await _token_count() == 0
+
+
+async def test_a_refusal_does_not_say_which_check_failed() -> None:
+    # The description belongs to the error code, so a caller probing with stolen parts
+    # learns nothing from which part was wrong.
+    session_id = await new_session_id()
+    descriptions: set[str] = set()
+    async with connector_api() as client:
+        client_id = await register_claude(client)
+        for override in (
+            {"code_verifier": PKCE_VERIFIER[:-1] + "A"},
+            {"redirect_uri": "https://evil.example/callback"},
+            {"code": "not-a-code-that-was-ever-issued"},
+        ):
+            code = await authorization_code(client, session_id, client_id)
+            response = await _exchange(
+                client, _exchange_form(code, client_id, **override)
+            )
+            assert _error(response) == "invalid_grant"
+            descriptions.add(str(response.json()["error_description"]))
+
+    assert len(descriptions) == 1
+    [description] = descriptions
+    for leaked in ("pkce", "redirect", "verifier", "mismatch"):
+        assert leaked not in description.lower()
+
+
+def test_every_refresh_refusal_is_a_token_refusal_reason() -> None:
+    # The refresh path names its refusal by the repository's value; one without a
+    # counterpart here would raise instead of being refused.
+    assert {r.value for r in RefreshRefusal} <= {r.value for r in TokenRefusalReason}
 
 
 async def test_another_clients_code_is_invalid_grant() -> None:

@@ -31,6 +31,9 @@ In order:
      - three numbered steps: add a custom connector in Claude with this address; press Connect;
        enter this code.
      - At zero the code block is replaced by "Code expired" and the button returns.
+     - A re-read that reports no live code while this one still has time (it was used), or a
+       live code outliving this one (another tab replaced it), takes the code off the page:
+       one that would be refused is never shown counting down.
    - After a reload, only the remaining time is known, not the code (the server never re-sends
      it). The panel says "A code is active (expires in m:ss). Get a new one to see it." with the
      button.

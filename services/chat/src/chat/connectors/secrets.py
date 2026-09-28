@@ -11,6 +11,8 @@ import secrets
 # read aloud or copied by eye has no pair of characters to confuse.
 PAIRING_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 _PAIRING_CODE_LENGTH = 8
+# Crockford's decoding of the letters left out of the alphabet.
+_CONFUSABLES = str.maketrans({"O": "0", "I": "1", "L": "1"})
 _SECRET_BYTES = 32
 
 
@@ -36,7 +38,10 @@ def new_pairing_code() -> str:
 def normalize_pairing_code(typed: str) -> str:
     """Return a pairing code in the form its digest is taken of.
 
-    Upper-cased, with the hyphen and surrounding whitespace removed, so a code typed in
-    lower case or without its hyphen is the same code.
+    Upper-cased, with hyphens and whitespace removed, so a code typed in lower case,
+    without its hyphen or with a space for it is the same code. The letters the
+    alphabet leaves out are read the way Crockford's base32 decodes them - O as 0, I
+    and L as 1 - since those are the characters a person copying the code by eye
+    mistakes for them.
     """
-    return typed.strip().upper().replace("-", "")
+    return "".join(typed.upper().split()).replace("-", "").translate(_CONFUSABLES)

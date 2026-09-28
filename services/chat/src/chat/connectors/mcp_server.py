@@ -124,6 +124,7 @@ def _caller() -> _Caller:
 
 
 def _log_call(caller: _Caller, tool: str) -> None:
+    """Log that `tool` answered for `caller`'s session and grant."""
     get_logger().info(
         "connector.tool_called",
         session_id=caller.session_id,
@@ -133,6 +134,7 @@ def _log_call(caller: _Caller, tool: str) -> None:
 
 
 def _attention_sentence(count: int) -> str:
+    """Say how many conversations need staff attention, as a sentence."""
     if count == 0:
         return "No conversations need staff attention."
     if count == 1:

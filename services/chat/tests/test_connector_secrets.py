@@ -65,6 +65,14 @@ def test_a_code_is_normalized_whatever_its_case_and_hyphen(typed: str) -> None:
     assert normalize_pairing_code(typed) == "K7QM4XPD"
 
 
+@pytest.mark.parametrize("typed", ["1O7Q-M4X0", "io7q m4xo", "L07Q-M4XO", "107QM4X0"])
+def test_a_code_typed_with_the_letters_its_digits_look_like_is_the_same_code(
+    typed: str,
+) -> None:
+    # The alphabet has no I, L or O, so each can only be the 1 or 0 it was taken for.
+    assert normalize_pairing_code(typed) == "107QM4X0"
+
+
 def test_the_rfc_7636_vector_matches() -> None:
     assert s256_matches(_RFC_VERIFIER, _RFC_CHALLENGE)
 

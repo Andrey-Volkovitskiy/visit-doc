@@ -18,6 +18,7 @@ def _number(count: int) -> str:
 
 
 def _capitalized(text: str) -> str:
+    """Return `text` with its first character upper-cased and the rest unchanged."""
     return text[:1].upper() + text[1:]
 
 

@@ -180,6 +180,24 @@ async def test_the_page_escapes_every_value_it_shows() -> None:
     assert "&lt;script&gt;" in response.text
 
 
+async def test_no_other_site_may_frame_the_pages() -> None:
+    # The page asks for a secret: framed invisibly inside another site, it could
+    # collect a code typed by someone who cannot see where it goes.
+    async with connector_api() as client:
+        client_id = await register_claude(client)
+        pairing = await client.get(
+            "/oauth/authorize", params=authorize_params(client_id)
+        )
+        error = await client.get(
+            "/oauth/authorize", params=authorize_params("not-a-registered-client")
+        )
+
+    for response in (pairing, error):
+        assert response.headers["x-frame-options"] == "DENY"
+        assert response.headers["content-security-policy"] == "frame-ancestors 'none'"
+        assert response.headers["cache-control"] == "no-store"
+
+
 async def test_the_request_id_on_the_page_is_not_what_is_stored() -> None:
     async with connector_api() as client:
         request_id = await start_sign_in(client, await register_claude(client))

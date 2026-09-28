@@ -29,6 +29,7 @@ from chat.connectors.authorization import (
     SignInRedirect,
     SignInRefused,
     TokenError,
+    TokenRefusalReason,
     TokenRefused,
     WrongPairingCode,
     refuse_token,
@@ -69,7 +70,24 @@ _UNAVAILABLE_REASON = {
 _EXPIRED = "This sign-in has expired. Start again from Claude."
 # Token responses carry credentials, so no cache may keep one (RFC 6749 §5.1).
 _NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
+# One description per error code, never per refusal reason: which check failed is
+# logged for whoever runs this service and withheld from the caller.
+_TOKEN_ERROR_DESCRIPTION = {
+    TokenError.INVALID_REQUEST: "The token request is malformed.",
+    TokenError.INVALID_CLIENT: "The client is not registered.",
+    TokenError.INVALID_GRANT: "The code or refresh token is not valid.",
+    TokenError.UNSUPPORTED_GRANT_TYPE: (
+        "Only the authorization_code and refresh_token grants are supported."
+    ),
+}
 _FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
+# The pairing page asks for a secret, so no other site may frame it: a page shown
+# invisibly inside another could collect a code typed by someone who cannot see it.
+_PAGE_HEADERS = {
+    "Cache-Control": "no-store",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "frame-ancestors 'none'",
+}
 
 
 def unavailable_response(unavailable: ConnectorUnavailable) -> JSONResponse:
@@ -84,14 +102,16 @@ def unavailable_response(unavailable: ConnectorUnavailable) -> JSONResponse:
 
 
 def _page(template: str, status_code: int, **context: object) -> HTMLResponse:
+    """Render one of the sign-in pages, uncached and unframeable."""
     return HTMLResponse(
         _TEMPLATES.get_template(template).render(**context),
         status_code=status_code,
-        headers={"Cache-Control": "no-store"},
+        headers=_PAGE_HEADERS,
     )
 
 
 def _pairing_page(page: SignInPage, message: str | None = None) -> HTMLResponse:
+    """Render the page asking for the pairing code, with `message` above the form."""
     return _page(
         "authorize.html",
         200,
@@ -103,6 +123,7 @@ def _pairing_page(page: SignInPage, message: str | None = None) -> HTMLResponse:
 
 
 def _error_page(heading: str, message: str, status_code: int = 400) -> HTMLResponse:
+    """Render a sign-in that cannot continue, saying why."""
     return _page("error.html", status_code, heading=heading, message=message)
 
 
@@ -198,17 +219,22 @@ async def authorize_submit(
 
 
 def _token_error(refused: TokenRefused) -> JSONResponse:
+    """Render a refused token request as RFC 6749 §5.2's error body.
+
+    The description is the error code's, so it says nothing the code does not.
+    """
     return JSONResponse(
         status_code=400,
         content={
             "error": refused.error.value,
-            "error_description": refused.reason.replace("_", " "),
+            "error_description": _TOKEN_ERROR_DESCRIPTION[refused.error],
         },
         headers=_NO_STORE,
     )
 
 
 def _token_success(tokens: IssuedTokens) -> JSONResponse:
+    """Render a new token pair as RFC 6749 §5.1's success body, uncached."""
     return JSONResponse(
         {
             "access_token": tokens.access_token,
@@ -232,7 +258,9 @@ async def token(request: Request) -> Response:
         return unavailable_response(config)
     content_type = request.headers.get("content-type", "")
     if not content_type.startswith(_FORM_CONTENT_TYPE):
-        return _token_error(refuse_token(TokenError.INVALID_REQUEST, "not_a_form_body"))
+        return _token_error(
+            refuse_token(TokenError.INVALID_REQUEST, TokenRefusalReason.NOT_A_FORM_BODY)
+        )
     form = await request.form()
     fields = {key: value for key, value in form.items() if isinstance(value, str)}
     grant_type = fields.get("grant_type")
@@ -241,7 +269,9 @@ async def token(request: Request) -> Response:
         required = ("code", "redirect_uri", "client_id", "code_verifier")
         if any(not fields.get(name) for name in required):
             return _token_error(
-                refuse_token(TokenError.INVALID_REQUEST, "missing_field")
+                refuse_token(
+                    TokenError.INVALID_REQUEST, TokenRefusalReason.MISSING_FIELD
+                )
             )
         async with session_factory() as session:
             outcome = await authorization.exchange_code(
@@ -254,7 +284,9 @@ async def token(request: Request) -> Response:
     elif grant_type == "refresh_token":
         if not fields.get("refresh_token") or not fields.get("client_id"):
             return _token_error(
-                refuse_token(TokenError.INVALID_REQUEST, "missing_field")
+                refuse_token(
+                    TokenError.INVALID_REQUEST, TokenRefusalReason.MISSING_FIELD
+                )
             )
         async with session_factory() as session:
             outcome = await authorization.refresh(
@@ -264,7 +296,10 @@ async def token(request: Request) -> Response:
             )
     else:
         return _token_error(
-            refuse_token(TokenError.UNSUPPORTED_GRANT_TYPE, "unsupported_grant_type")
+            refuse_token(
+                TokenError.UNSUPPORTED_GRANT_TYPE,
+                TokenRefusalReason.UNSUPPORTED_GRANT_TYPE,
+            )
         )
 
     if isinstance(outcome, TokenRefused):

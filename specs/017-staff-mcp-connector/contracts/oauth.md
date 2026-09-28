@@ -73,8 +73,12 @@ The pairing page shows:
 - that access is read-only and limited to two counts: conversations needing attention, and recent
   booking changes;
 - a code field (`autocomplete="one-time-code"`, accepts upper or lower case, with or without the
-  hyphen) and a hidden `request` field;
+  hyphen, and O, I and L read as the 0 and 1 of Crockford's base32) and a hidden `request` field;
 - a *Connect* button.
+
+Every page here is sent with `Cache-Control: no-store`, `X-Frame-Options: DENY` and
+`Content-Security-Policy: frame-ancestors 'none'`: it asks for a secret, so no other site may
+frame it.
 
 ## `POST /oauth/authorize` (form)
 
@@ -92,7 +96,8 @@ was.
 ## `POST /oauth/token` (`application/x-www-form-urlencoded`)
 
 All errors are `400` JSON `{"error": "<code>", "error_description": "…"}` per RFC 6749 §5.2, with
-`Cache-Control: no-store`.
+`Cache-Control: no-store`. The description is fixed per error code and never says which check
+failed; that is logged as the event's `reason`.
 
 **Authorization code**: `grant_type=authorization_code`, `code`, `redirect_uri`, `client_id`,
 `code_verifier`, and optionally `resource`.

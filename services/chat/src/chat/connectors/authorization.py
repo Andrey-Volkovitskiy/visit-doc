@@ -368,22 +368,37 @@ class TokenError(StrEnum):
     UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type"
 
 
+class TokenRefusalReason(StrEnum):
+    """This server's own name for the check that refused a token request."""
+
+    NOT_A_FORM_BODY = "not_a_form_body"
+    MISSING_FIELD = "missing_field"
+    UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type"
+    UNKNOWN_CLIENT = "unknown_client"
+    CODE_INVALID = "code_invalid"
+    CLIENT_MISMATCH = "client_mismatch"
+    REDIRECT_URI_MISMATCH = "redirect_uri_mismatch"
+    PKCE_MISMATCH = "pkce_mismatch"
+    REFRESH_REUSED = "refresh_reused"
+    # `grant_repository.RefreshRefusal.NOT_LIVE`, under the same value.
+    NOT_LIVE = "not_live"
+
+
 @dataclass(frozen=True)
 class TokenRefused:
     """A token request refused.
 
-    `reason` is this server's own name for which check failed. It is logged, never
-    sent: the client is told only `error`, so a caller probing with stolen parts learns
-    nothing from which part was wrong.
+    `reason` is logged, never sent: the client is told only `error`, so a caller
+    probing with stolen parts learns nothing from which part was wrong.
     """
 
     error: TokenError
-    reason: str
+    reason: TokenRefusalReason
 
 
 def refuse_token(
     error: TokenError,
-    reason: str,
+    reason: TokenRefusalReason,
     *,
     client_id: str | None = None,
     session_id: str | None = None,
@@ -422,20 +437,24 @@ async def exchange_code(
     """
     client = await oauth_repository.get_client(session, client_id)
     if client is None:
-        return refuse_token(TokenError.INVALID_CLIENT, "unknown_client")
+        return refuse_token(
+            TokenError.INVALID_CLIENT, TokenRefusalReason.UNKNOWN_CLIENT
+        )
 
     stored = await oauth_repository.consume_authorization_code(session, code)
     if stored is None:
         await session.rollback()
         return refuse_token(
-            TokenError.INVALID_GRANT, "code_invalid", client_id=client_id
+            TokenError.INVALID_GRANT,
+            TokenRefusalReason.CODE_INVALID,
+            client_id=client_id,
         )
     mismatch = (
-        "client_mismatch"
+        TokenRefusalReason.CLIENT_MISMATCH
         if stored.client_id != client_id
-        else "redirect_uri_mismatch"
+        else TokenRefusalReason.REDIRECT_URI_MISMATCH
         if stored.redirect_uri != redirect_uri
-        else "pkce_mismatch"
+        else TokenRefusalReason.PKCE_MISMATCH
         if not s256_matches(code_verifier, stored.code_challenge)
         else None
     )
@@ -485,12 +504,14 @@ async def refresh(
             grant_id=outcome.grant_id,
             client_id=client_id,
         )
-        return TokenRefused(error=TokenError.INVALID_GRANT, reason="refresh_reused")
+        return TokenRefused(
+            error=TokenError.INVALID_GRANT, reason=TokenRefusalReason.REFRESH_REUSED
+        )
     if isinstance(outcome, MismatchedRefresh):
         await session.rollback()
         return refuse_token(
             TokenError.INVALID_GRANT,
-            "client_mismatch",
+            TokenRefusalReason.CLIENT_MISMATCH,
             client_id=client_id,
             session_id=outcome.session_id,
             grant_id=outcome.grant_id,
@@ -498,7 +519,9 @@ async def refresh(
     if isinstance(outcome, RefreshRefusal):
         await session.rollback()
         return refuse_token(
-            TokenError.INVALID_GRANT, outcome.value, client_id=client_id
+            TokenError.INVALID_GRANT,
+            TokenRefusalReason(outcome.value),
+            client_id=client_id,
         )
     await session.commit()
     get_logger().info(
