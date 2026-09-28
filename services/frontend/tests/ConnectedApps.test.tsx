@@ -471,3 +471,112 @@ describe("ConnectedApps: revoking an app (FR-021)", () => {
     );
   });
 });
+
+describe("ConnectedApps: a late read never rewinds the screen", () => {
+  /** A promise this test settles by hand, for a read answering out of order. */
+  function deferred<T>(): {
+    promise: Promise<T>;
+    resolve: (value: T) => void;
+  } {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  }
+
+  it("drops a read answered after a newer one was applied", async () => {
+    const slow = deferred<ConnectedAppsListing>();
+    vi.spyOn(consoleApi, "fetchConnectedApps")
+      .mockReturnValueOnce(slow.promise)
+      .mockResolvedValueOnce(
+        listing({ grants: [grant({ id: "01NEW", client_name: "Newer" })] }),
+      );
+
+    const { rerender } = render(<ConnectedApps pollTick={1} />);
+    rerender(<ConnectedApps pollTick={2} />);
+    await waitFor(() =>
+      expect(screen.getByTestId("connected-app")).toHaveTextContent("Newer"),
+    );
+
+    await act(async () => {
+      slow.resolve(
+        listing({ grants: [grant({ id: "01OLD", client_name: "Older" })] }),
+      );
+      await slow.promise;
+    });
+
+    expect(screen.getByTestId("connected-app")).toHaveTextContent("Newer");
+  });
+
+  it("does not put back an app revoked after the read went out", async () => {
+    const paired = listing({
+      grants: [grant({ id: "01GONE", client_name: "Claude (phone)" })],
+    });
+    const late = deferred<ConnectedAppsListing>();
+    vi.spyOn(consoleApi, "fetchConnectedApps")
+      .mockResolvedValueOnce(paired)
+      .mockReturnValueOnce(late.promise);
+    vi.spyOn(consoleApi, "revokeConnectedApp").mockResolvedValue(undefined);
+
+    const { rerender } = render(<ConnectedApps pollTick={1} />);
+    const row = await screen.findByTestId("connected-app");
+    // The next tick's read goes out, and is answered from before the revoke.
+    rerender(<ConnectedApps pollTick={2} />);
+    press(within(row).getByRole("button", { name: "Revoke" }));
+    press(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Revoke",
+      }),
+    );
+    await waitFor(() => expect(screen.queryByTestId("connected-app")).toBeNull());
+
+    await act(async () => {
+      late.resolve(paired);
+      await late.promise;
+    });
+
+    expect(screen.queryByTestId("connected-app")).toBeNull();
+  });
+
+  it("gives up on a read that outlives its deadline and says so", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let signal: AbortSignal | undefined;
+    vi.spyOn(consoleApi, "fetchConnectedApps").mockImplementation(
+      (s?: AbortSignal) => {
+        signal = s;
+        return new Promise((_, reject) => {
+          s?.addEventListener("abort", () =>
+            reject(new DOMException("The operation was aborted.", "AbortError")),
+          );
+        });
+      },
+    );
+
+    render(<ConnectedApps pollTick={1} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8000);
+    });
+
+    expect(signal?.aborted).toBe(true);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Could not load the connected apps.",
+    );
+  });
+
+  it("aborts the reads still out when the tab closes", async () => {
+    let signal: AbortSignal | undefined;
+    vi.spyOn(consoleApi, "fetchConnectedApps").mockImplementation(
+      (s?: AbortSignal) => {
+        signal = s;
+        return new Promise(() => undefined);
+      },
+    );
+
+    const { unmount } = render(<ConnectedApps pollTick={1} />);
+    expect(signal?.aborted).toBe(false);
+    unmount();
+
+    expect(signal?.aborted).toBe(true);
+  });
+});

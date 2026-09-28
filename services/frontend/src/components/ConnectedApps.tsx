@@ -1,5 +1,5 @@
 import { Copy } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchConnectedApps,
   issuePairingCode,
@@ -8,6 +8,7 @@ import {
   type ConnectedAppsListing,
   type ConnectorUnavailableReason,
 } from "../lib/consoleApi";
+import { READ_TIMEOUT_MS } from "../lib/useThreadReads";
 import { ErrorBanner } from "./ErrorBanner";
 import { Button } from "./ui/button";
 import {
@@ -25,6 +26,9 @@ const UNAVAILABLE_REASON: Record<ConnectorUnavailableReason, string> = {
   has_path:
     "the public address (PUBLIC_BASE_URL) must be an origin only, with no path.",
 };
+/** For a reason a newer chat service sends that this build has no words for. */
+const UNKNOWN_UNAVAILABLE_REASON = "the chat service reports it is unavailable.";
+const LOAD_ERROR = "Could not load the connected apps.";
 
 /** `m:ss`, the way every countdown on the console is written. */
 function formatRemaining(seconds: number): string {
@@ -245,11 +249,37 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
   const [readError, setReadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<ConnectedApp | null>(null);
+  // Reads are ordered the way the console poll orders its own: `issuedReads` numbers
+  // each read as it goes out, `appliedRead` is the newest whose answer reached the
+  // screen. A read answering below it describes an older state than the one shown - a
+  // revoked app still paired, a replaced code still live - and is dropped. An action's
+  // answer changes the screen too, so it takes a number of its own, and every read
+  // issued before it lands below it.
+  const issuedReads = useRef(0);
+  const appliedRead = useRef(0);
+  // Every read still out, so unmounting gives its socket back.
+  const inFlight = useRef(new Set<AbortController>());
+
+  useEffect(() => {
+    const reads = inFlight.current;
+    return () => {
+      for (const controller of reads) controller.abort();
+      reads.clear();
+    };
+  }, []);
 
   const read = useCallback(() => {
+    const sequence = ++issuedReads.current;
     const requestedAt = Date.now();
-    fetchConnectedApps()
+    // A timer-driven read: one that never settles would hold a socket for good, and
+    // the next tick adds another.
+    const controller = new AbortController();
+    inFlight.current.add(controller);
+    const deadline = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
+    fetchConnectedApps(controller.signal)
       .then((next) => {
+        if (sequence <= appliedRead.current) return;
+        appliedRead.current = sequence;
         const receivedAt = Date.now();
         setListing(next);
         setActive(
@@ -271,9 +301,15 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
         setReadError(null);
       })
       .catch((e: unknown) => {
+        // A read older than the screen changed nothing on it, failed or not.
+        if (sequence <= appliedRead.current) return;
         setReadError(
-          e instanceof Error ? e.message : "Could not load the connected apps.",
+          e instanceof Error && !controller.signal.aborted ? e.message : LOAD_ERROR,
         );
+      })
+      .finally(() => {
+        clearTimeout(deadline);
+        inFlight.current.delete(controller);
       });
   }, []);
 
@@ -292,6 +328,7 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
     setIssuing(true);
     issuePairingCode()
       .then((next) => {
+        appliedRead.current = ++issuedReads.current;
         setIssued({
           code: next.code,
           address: next.address,
@@ -316,7 +353,9 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
       .then(() => {
         // The row leaves on the answer rather than on the next poll: the server has
         // said it is gone, and a row offering a Revoke that already happened invites a
-        // second click.
+        // second click. A read already out may have been answered before the revoke
+        // landed, so it must not put the row back.
+        appliedRead.current = ++issuedReads.current;
         setListing((current) =>
           current === null
             ? current
@@ -368,7 +407,8 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
           </p>
         ) : !connector.available ? (
           <p className="text-ink-muted text-sm">
-            Pairing is unavailable: {UNAVAILABLE_REASON[connector.reason]}
+            Pairing is unavailable:{" "}
+            {UNAVAILABLE_REASON[connector.reason] ?? UNKNOWN_UNAVAILABLE_REASON}
           </p>
         ) : issued !== null && issuedLeft > 0 ? (
           <div className="border-rule bg-surface-sunken flex flex-col gap-3 rounded-lg border p-4">

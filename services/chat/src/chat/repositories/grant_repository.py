@@ -375,19 +375,42 @@ async def rotate_refresh(
     return RefreshRefusal.NOT_LIVE
 
 
-async def revoke(session: AsyncSession, session_id: str, grant_id: str) -> bool:
+class Revocation(StrEnum):
+    """What asking to revoke one of a session's grants did."""
+
+    # It was active, and this call revoked it.
+    REVOKED = "revoked"
+    # It was revoked before this call, which changed nothing.
+    ALREADY_REVOKED = "already_revoked"
+    # It is not this session's grant, or does not exist; nothing changed.
+    NOT_FOUND = "not_found"
+
+
+async def revoke(session: AsyncSession, session_id: str, grant_id: str) -> Revocation:
     """Revoke one of `session_id`'s grants.
 
-    Returns: True if the grant is `session_id`'s - revoked now or already - and False
-        if it is not, in which case nothing changed.
-
-    The session is in the `WHERE`, so another session's grant id does not resolve. An
-    earlier revocation's moment is kept.
+    The session is in both statements' `WHERE`, so another session's grant id does not
+    resolve. The write is conditional on the grant not being revoked yet, so an earlier
+    revocation's moment is kept, and of two concurrent calls exactly one is `REVOKED`:
+    the other waits on its row lock, then finds `revoked_at` set.
     """
     result = await session.execute(
         update(OAuthGrant)
-        .where(OAuthGrant.id == grant_id, OAuthGrant.session_id == session_id)
-        .values(revoked_at=func.coalesce(OAuthGrant.revoked_at, func.now()))
+        .where(
+            OAuthGrant.id == grant_id,
+            OAuthGrant.session_id == session_id,
+            OAuthGrant.revoked_at.is_(None),
+        )
+        .values(revoked_at=func.now())
         .returning(OAuthGrant.id)
     )
-    return result.first() is not None
+    if result.first() is not None:
+        return Revocation.REVOKED
+    existing = await session.execute(
+        select(OAuthGrant.id).where(
+            OAuthGrant.id == grant_id, OAuthGrant.session_id == session_id
+        )
+    )
+    if existing.first() is not None:
+        return Revocation.ALREADY_REVOKED
+    return Revocation.NOT_FOUND

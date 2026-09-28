@@ -9,12 +9,12 @@ is there.
 """
 
 from dataclasses import dataclass
-from enum import StrEnum
 from urllib.parse import urlsplit
 
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from chat.core.config import Settings, get_settings
+from chat.domain.schemas import UnavailableReason
 
 # Where the MCP transport is served, under the configured origin.
 MCP_PATH = "/mcp"
@@ -22,17 +22,6 @@ _DEFAULT_HTTPS_PORT = 443
 # The parser the MCP SDK validates its issuer and resource URLs with, so the origin
 # published here is the one it names.
 _ORIGIN: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
-
-
-class UnavailableReason(StrEnum):
-    """Why the connector does not exist in this process."""
-
-    # `PUBLIC_BASE_URL` is blank.
-    NOT_CONFIGURED = "not_configured"
-    # It is not an `https://` URL naming a valid host and port.
-    NOT_HTTPS = "not_https"
-    # It names more than an origin: user info, a path, a query or a fragment.
-    HAS_PATH = "has_path"
 
 
 @dataclass(frozen=True)

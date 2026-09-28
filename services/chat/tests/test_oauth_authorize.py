@@ -8,13 +8,17 @@ comes from the caller, so it is also checked for escaping.
 """
 
 from collections.abc import Callable
+from unittest.mock import AsyncMock, patch
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from chat.db.session import session_factory
 from chat.domain.models import OAuthAuthorizationCode, OAuthAuthorizationRequest
+from chat.repositories import oauth_repository
+from chat.repositories.pairing_code_repository import PAIRING_CODE_LIFETIME
 from httpx import AsyncClient, Response
 from sqlalchemy import func, select, text
+from structlog.testing import capture_logs
 
 from .conftest import (
     CLAUDE_CALLBACK,
@@ -354,3 +358,34 @@ async def test_a_submission_missing_a_field_gets_the_expired_page() -> None:
 
     assert response.status_code == 400
     assert _EXPIRED in response.text
+
+
+async def test_a_sign_in_ending_during_a_wrong_code_is_logged_as_expired() -> None:
+    session_id = await new_session_id()
+    async with connector_api() as client:
+        client_id = await register_claude(client)
+        request_id = await start_sign_in(client, client_id)
+        await issue_pairing_code(session_id)
+        # The sign-in stops accepting codes between the wrong code's rollback and its
+        # count - expired, or completed by a concurrent submission - so nothing is
+        # counted.
+        with (
+            patch.object(
+                oauth_repository, "record_failed_attempt", AsyncMock(return_value=None)
+            ),
+            capture_logs() as logs,
+        ):
+            response = await _submit(client, request_id, "0000-0000")
+
+    assert response.status_code == 400
+    [failed] = [e for e in logs if e["event"] == "connector.authorize_failed"]
+    assert failed["reason"] == "expired_request"
+
+
+async def test_the_page_states_the_codes_lifetime_as_it_is_issued() -> None:
+    async with connector_api() as client:
+        client_id = await register_claude(client)
+        page = await client.get("/oauth/authorize", params=authorize_params(client_id))
+
+    minutes = int(PAIRING_CODE_LIFETIME.total_seconds() // 60)
+    assert f"A code works once and for {minutes} minutes." in page.text

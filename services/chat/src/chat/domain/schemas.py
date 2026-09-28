@@ -593,11 +593,22 @@ class ConnectorAvailableOut(BaseModel):
     address: str
 
 
+class UnavailableReason(StrEnum):
+    """Why the staff connector does not exist in this process."""
+
+    # `PUBLIC_BASE_URL` is blank.
+    NOT_CONFIGURED = "not_configured"
+    # It is not an `https://` URL naming a valid host and port.
+    NOT_HTTPS = "not_https"
+    # It names more than an origin: user info, a path, a query or a fragment.
+    HAS_PATH = "has_path"
+
+
 class ConnectorUnavailableOut(BaseModel):
-    """The connector does not exist; `reason` is one of three values the tab words."""
+    """The connector does not exist, and why, in one of the reasons the tab words."""
 
     available: Literal[False] = False
-    reason: str
+    reason: UnavailableReason
 
 
 class PairingCodeStatusOut(BaseModel):

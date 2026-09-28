@@ -11,10 +11,10 @@ from chat.connectors.public_address import (
     MCP_PATH,
     ConnectorConfig,
     ConnectorUnavailable,
-    UnavailableReason,
     connector_config,
 )
 from chat.core.config import Settings
+from chat.domain.schemas import UnavailableReason
 from mcp.server.auth.settings import AuthSettings
 
 

@@ -507,9 +507,15 @@ function ensureConnectedAppsOk(response: Response, message: string): void {
   if (!response.ok) throw new Error(message);
 }
 
-/** GET /console/connected-apps: whether pairing is possible, and what is paired. */
-export async function fetchConnectedApps(): Promise<ConnectedAppsListing> {
-  const response = await fetch("/console/connected-apps");
+/**
+ * GET /console/connected-apps: whether pairing is possible, and what is paired.
+ *
+ * `signal` carries the caller's deadline: the tab re-reads this on every poll tick.
+ */
+export async function fetchConnectedApps(
+  signal?: AbortSignal,
+): Promise<ConnectedAppsListing> {
+  const response = await fetch("/console/connected-apps", { signal });
   ensureConnectedAppsOk(response, "Could not load the connected apps.");
   return (await response.json()) as ConnectedAppsListing;
 }

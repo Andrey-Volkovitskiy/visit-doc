@@ -5,6 +5,7 @@ client and its redirect URI.
 """
 
 from typing import Any
+from urllib.parse import urlencode
 
 import pytest
 from chat.connectors.authorization import TokenRefusalReason
@@ -249,6 +250,29 @@ async def test_a_json_body_is_refused_and_the_form_body_accepted() -> None:
 
     assert _error(as_json) == "invalid_request"
     assert as_form.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "content_type",
+    [
+        "Application/X-WWW-Form-Urlencoded",
+        "application/x-www-form-urlencoded; charset=UTF-8",
+    ],
+)
+async def test_a_form_body_is_read_whatever_the_media_types_case_or_parameters(
+    content_type: str,
+) -> None:
+    session_id = await new_session_id()
+    async with connector_api() as client:
+        client_id = await register_claude(client)
+        code = await authorization_code(client, session_id, client_id)
+        response = await client.post(
+            "/oauth/token",
+            content=urlencode(_exchange_form(code, client_id)),
+            headers={"content-type": content_type},
+        )
+
+    assert response.status_code == 200, response.text
 
 
 @pytest.mark.parametrize("grant_type", ["client_credentials", "password", ""])

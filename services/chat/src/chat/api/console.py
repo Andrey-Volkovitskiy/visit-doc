@@ -51,6 +51,7 @@ from chat.repositories import (
     pairing_code_repository,
 )
 from chat.repositories.chat_repository import ConsoleConversation, ConversationState
+from chat.repositories.grant_repository import Revocation
 from chat.repositories.pairing_code_repository import PAIRING_CODE_LIFETIME
 
 router = APIRouter()
@@ -548,7 +549,7 @@ async def list_connected_apps(request: Request) -> ConnectedAppsOut:
         grants = await grant_repository.list_for_session(db_session, session_id)
     return ConnectedAppsOut(
         connector=(
-            ConnectorUnavailableOut(reason=connector.reason.value)
+            ConnectorUnavailableOut(reason=connector.reason)
             if isinstance(connector, ConnectorUnavailable)
             else ConnectorAvailableOut(address=connector.address)
         ),
@@ -601,15 +602,18 @@ async def revoke_connected_app(grant_id: str, request: Request) -> Response:
     Raises: HTTPException 404 if there is no session cookie, or `grant_id` is not one
         of this session's pairings - reported alike, as every console route does.
 
-    Idempotent: revoking a pairing already revoked answers the same `204`.
+    Idempotent: revoking a pairing already revoked answers the same `204`, and logs
+    nothing - `connector.grant_revoked` records a revocation, and that one changed
+    nothing.
     """
     session_id = _session_or_404(request)
     async with session_factory() as db_session:
-        found = await grant_repository.revoke(db_session, session_id, grant_id)
+        revocation = await grant_repository.revoke(db_session, session_id, grant_id)
         await db_session.commit()
-    if not found:
+    if revocation is Revocation.NOT_FOUND:
         raise HTTPException(status_code=404, detail="connected app not found")
-    get_logger().info(
-        "connector.grant_revoked", session_id=session_id, grant_id=grant_id
-    )
+    if revocation is Revocation.REVOKED:
+        get_logger().info(
+            "connector.grant_revoked", session_id=session_id, grant_id=grant_id
+        )
     return Response(status_code=204)

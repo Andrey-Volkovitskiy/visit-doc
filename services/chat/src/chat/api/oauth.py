@@ -37,11 +37,12 @@ from chat.connectors.authorization import (
 from chat.connectors.public_address import (
     ConnectorConfig,
     ConnectorUnavailable,
-    UnavailableReason,
     current_connector,
 )
 from chat.db.session import session_factory
+from chat.domain.schemas import UnavailableReason
 from chat.repositories.grant_repository import IssuedTokens
+from chat.repositories.pairing_code_repository import PAIRING_CODE_LIFETIME
 
 router = APIRouter(include_in_schema=False)
 
@@ -68,6 +69,9 @@ _UNAVAILABLE_REASON = {
     ),
 }
 _EXPIRED = "This sign-in has expired. Start again from Claude."
+# What the page tells a person about the code they are typing, from the lifetime the
+# code is issued with rather than a second copy of it.
+_PAIRING_CODE_MINUTES = int(PAIRING_CODE_LIFETIME.total_seconds() // 60)
 # Token responses carry credentials, so no cache may keep one (RFC 6749 §5.1).
 _NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache"}
 # One description per error code, never per refusal reason: which check failed is
@@ -119,6 +123,7 @@ def _pairing_page(page: SignInPage, message: str | None = None) -> HTMLResponse:
         redirect_host=page.redirect_host,
         request_id=page.request_id,
         message=message,
+        code_lifetime_minutes=_PAIRING_CODE_MINUTES,
     )
 
 
@@ -256,8 +261,10 @@ async def token(request: Request) -> Response:
     config = current_connector()
     if isinstance(config, ConnectorUnavailable):
         return unavailable_response(config)
-    content_type = request.headers.get("content-type", "")
-    if not content_type.startswith(_FORM_CONTENT_TYPE):
+    # A media type is case-insensitive and may carry parameters (`; charset=utf-8`),
+    # so the type itself is compared whole, never a prefix of the header.
+    media_type = request.headers.get("content-type", "").split(";")[0]
+    if media_type.strip().lower() != _FORM_CONTENT_TYPE:
         return _token_error(
             refuse_token(TokenError.INVALID_REQUEST, TokenRefusalReason.NOT_A_FORM_BODY)
         )

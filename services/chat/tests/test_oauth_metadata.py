@@ -5,7 +5,7 @@ issuer that does not exist, so each route answers `503` with the reason instead.
 """
 
 import pytest
-from chat.connectors.public_address import UnavailableReason
+from chat.domain.schemas import UnavailableReason
 
 from .conftest import CONNECTOR_BASE_URL, connector_api
 

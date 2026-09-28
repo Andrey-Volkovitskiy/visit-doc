@@ -323,9 +323,16 @@ async def complete_authorization(
         page = await _page_for(session, request_id)
         await session.commit()
         if failures is None or failures >= MAX_FAILED_PAIRING_ATTEMPTS or page is None:
+            # A sign-in that stopped accepting codes while this one was being checked -
+            # expired, or completed by a concurrent submission - counted nothing, and
+            # is not one that ran out of tries.
             get_logger().info(
                 "connector.authorize_failed",
-                reason="too_many_attempts",
+                reason=(
+                    "expired_request"
+                    if failures is None or failures < MAX_FAILED_PAIRING_ATTEMPTS
+                    else "too_many_attempts"
+                ),
                 client_id=client_id,
             )
             return SignInExpired()

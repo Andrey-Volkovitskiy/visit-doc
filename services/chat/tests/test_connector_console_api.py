@@ -8,10 +8,14 @@ from unittest.mock import patch
 
 import pytest
 from chat.clients.scheduling import SessionPurge
-from chat.connectors.public_address import UnavailableReason
 from chat.core.config import Settings
 from chat.db.session import session_factory
-from sqlalchemy import text
+from chat.domain.models import OAuthGrant
+from chat.domain.schemas import UnavailableReason
+from chat.repositories import grant_repository
+from chat.repositories.grant_repository import Revocation
+from sqlalchemy import select, text
+from structlog.testing import capture_logs
 
 from .conftest import (
     CONNECTOR_BASE_URL,
@@ -172,6 +176,50 @@ async def test_revoking_a_pairing_removes_it_and_is_idempotent() -> None:
     assert first.status_code == 204
     assert listed == []
     assert second.status_code == 204
+
+
+async def test_only_the_revoke_that_revoked_is_logged() -> None:
+    session_id = await new_session_id()
+    async with connector_api(session_id) as client:
+        await pair_claude(client, session_id)
+        [grant] = (await client.get("/console/connected-apps")).json()["grants"]
+        # Opened inside `connector_api`, whose first use configures logging.
+        with capture_logs() as logs:
+            await client.post(f"/console/connected-apps/{grant['id']}/revoke")
+            await client.post(f"/console/connected-apps/{grant['id']}/revoke")
+
+    revoked = [e for e in logs if e["event"] == "connector.grant_revoked"]
+    assert [e["grant_id"] for e in revoked] == [grant["id"]]
+
+
+async def test_revoke_tells_revoked_already_revoked_and_not_found_apart() -> None:
+    mine = await new_session_id()
+    theirs = await new_session_id()
+    async with connector_api(mine) as client:
+        await pair_claude(client, mine)
+        [grant] = (await client.get("/console/connected-apps")).json()["grants"]
+
+    async with session_factory() as session:
+        other = await grant_repository.revoke(session, theirs, grant["id"])
+        first = await grant_repository.revoke(session, mine, grant["id"])
+        await session.commit()
+        revoked_at = (
+            await session.execute(
+                select(OAuthGrant.revoked_at).where(OAuthGrant.id == grant["id"])
+            )
+        ).scalar_one()
+        second = await grant_repository.revoke(session, mine, grant["id"])
+        await session.commit()
+        kept = (
+            await session.execute(
+                select(OAuthGrant.revoked_at).where(OAuthGrant.id == grant["id"])
+            )
+        ).scalar_one()
+
+    assert other is Revocation.NOT_FOUND
+    assert first is Revocation.REVOKED
+    assert second is Revocation.ALREADY_REVOKED
+    assert kept == revoked_at
 
 
 async def test_another_sessions_pairing_cannot_be_revoked_from_here() -> None:
