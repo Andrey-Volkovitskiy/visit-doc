@@ -160,3 +160,6 @@ eval-band:
 # when the two disagree. Offline, and it spends nothing.
 eval-build-set:
 	uv run --package golden-harness -- python -m golden_harness build-set
+
+ngrok:
+	ngrok http 8000 --url https://ship-pellet-unranked.ngrok-free.dev

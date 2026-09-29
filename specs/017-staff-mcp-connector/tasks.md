@@ -167,7 +167,7 @@ the moment staff revoke them or the session is deleted.
 - [X] T058 [P] Add a key-decision entry to `.claude/CLAUDE.md` (the connector is a staff-scoped surface separate from the agent's registry; the session comes only from the token; `PUBLIC_BASE_URL` is the single source of every public address), and mention the tunnel prerequisite under "Running the stack by hand"
 - [X] T059 [P] Mark Phase 4a shipped in `docs/ROADMAP.md` with a one-paragraph note of what differed from the plan, if anything
 - [X] T060 Run the full tiers once: `make lint`, `make typecheck`, `make test-unit`, `make test-frontend`, `./node_modules/.bin/tsc -b --noEmit` and `npm run build` in `services/frontend`
-- [ ] T061 Walk `specs/017-staff-mcp-connector/quickstart.md` §1–§5 by hand with ngrok and a real Claude account, timing §3 from opening the tab to "connected" against SC-001's 3 minutes, noting §3 step 6's `Origin` header (research R4), and record each section's result in `specs/017-staff-mcp-connector/evaluation/manual-walk.md`
+- [X] T061 Walk `specs/017-staff-mcp-connector/quickstart.md` §1–§5 by hand with ngrok and a real Claude account, timing §3 from opening the tab to "connected" against SC-001's 3 minutes, noting §3 step 6's `Origin` header (research R4), and record each section's result in `specs/017-staff-mcp-connector/evaluation/manual-walk.md`
 
 ---
 
