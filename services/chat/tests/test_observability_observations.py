@@ -14,7 +14,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from anthropic.types import Usage
+from anthropic.types import CacheCreation, OutputTokensDetails, Usage
 from chat import observability
 from chat.observability import (
     UNTRACED,
@@ -28,7 +28,7 @@ from chat.observability import (
 from langfuse import Langfuse
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from shared_logging import LogLevel
+from shared_logging import LogLevel, is_secret_key
 from structlog.testing import capture_logs
 
 from .conftest import finished_spans, installed_tracer, tracing_settings
@@ -315,6 +315,97 @@ def test_a_generation_leaves_out_a_cache_count_the_provider_did_not_report(
         "langfuse.observation.usage_details"
     ]
     assert json.loads(usage) == {"input": 3, "output": 4}
+
+
+def _full_usage() -> Usage:
+    return Usage(
+        input_tokens=50,
+        output_tokens=90,
+        cache_read_input_tokens=2000,
+        cache_creation_input_tokens=300,
+        cache_creation=CacheCreation(
+            ephemeral_5m_input_tokens=200, ephemeral_1h_input_tokens=100
+        ),
+        output_tokens_details=OutputTokensDetails(thinking_tokens=60),
+    )
+
+
+def test_a_generation_reports_its_cache_writes_to_langfuse_but_not_their_parts(
+    span_exporter: InMemorySpanExporter,
+) -> None:
+    with generation(
+        "handle_booking.model[2]", model="m", input={}, model_parameters={}
+    ) as observed:
+        observed.record_completion("done", _full_usage(), "end_turn")
+
+    usage = _attributes(_only(span_exporter, "handle_booking.model[2]"))[
+        "langfuse.observation.usage_details"
+    ]
+    assert json.loads(usage) == {
+        "input": 50,
+        "output": 90,
+        "cache_read_input_tokens": 2000,
+        "cache_creation_input_tokens": 300,
+    }
+
+
+def test_a_generation_logs_what_it_spent_when_nothing_is_traced() -> None:
+    with (
+        capture_logs() as logs,
+        generation(
+            "handle_booking.model[2]",
+            model="claude-sonnet-5",
+            input={},
+            model_parameters={},
+        ) as observed,
+    ):
+        observed.record_completion("done", _full_usage(), "max_tokens")
+
+    assert not observed.recording
+    assert logs == [
+        {
+            "event": "model.usage",
+            "log_level": "info",
+            "call": "handle_booking.model[2]",
+            "model": "claude-sonnet-5",
+            "stop_reason": "max_tokens",
+            "usage": {
+                "input": 50,
+                "output": 90,
+                "cache_read": 2000,
+                "cache_write": 300,
+                "cache_write_1h": 100,
+                "thinking": 60,
+            },
+        }
+    ]
+
+
+def test_a_usage_entry_leaves_out_what_the_provider_did_not_report() -> None:
+    with (
+        capture_logs() as logs,
+        generation(
+            "small_talk.model", model="m", input={}, model_parameters={}
+        ) as observed,
+    ):
+        observed.record_completion("hi", Usage(input_tokens=3, output_tokens=4), None)
+
+    (entry,) = logs
+    assert entry["usage"] == {"input": 3, "output": 4}
+
+
+def test_no_field_of_a_usage_entry_is_one_the_log_would_redact() -> None:
+    with (
+        capture_logs() as logs,
+        generation(
+            "small_talk.model", model="m", input={}, model_parameters={}
+        ) as observed,
+    ):
+        observed.record_completion("hi", _full_usage(), "end_turn")
+
+    (entry,) = logs
+    fields = [*entry, *entry["usage"]]
+    assert [field for field in fields if is_secret_key(field)] == []
 
 
 def test_a_generation_stopped_by_max_tokens_is_a_warning(

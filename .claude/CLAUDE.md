@@ -124,7 +124,10 @@ exactly the cases it can move — the case it is for, and every case sharing the
 and only once those behave is the full set run to compare against the baseline. A full run spent on
 an unchecked FAQ-prompt change (2026-09-25) surfaced a regression in G-k-15 that the dozen affected
 cases would have shown for a fraction of the cost.
-A fifth target, `make eval-build-set`, re-renders `evals/golden/cases.json` from its declaration in
+`make eval-cost RUN=<run>` totals what a stored run's model calls spent - tokens, prompt-cache
+hits, thinking and dollars per call site - from the `model.usage` entry the chat service logs for
+every model call that returned; it is offline too, and a run recorded before that entry existed
+reports none rather than zero. A sixth target, `make eval-build-set`, re-renders `evals/golden/cases.json` from its declaration in
 `golden_harness.golden_set` — the JSON is an artifact, and `tests/test_golden_set.py` fails
 byte-for-byte when the two disagree, so the set is changed by editing the declaration and
 re-rendering, never by editing the JSON. It is offline and spends nothing.

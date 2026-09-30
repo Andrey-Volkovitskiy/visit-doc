@@ -1,6 +1,7 @@
 """The harness command line: `run` drives cases, `score` re-scores, `compare` reads two.
 
-`score` and `compare` read stored runs and the labels and nothing else, so both work
+`cost` totals what a stored run's model calls spent. `score`, `compare` and `cost` read
+stored runs - the first two the labels as well - and nothing else, so all three work
 with the stack down. `run` needs the chat service running with `LOG_FORMAT=json`, its
 log file, and its database.
 
@@ -31,6 +32,7 @@ from golden_harness.comparison.render import (
     to_json,
 )
 from golden_harness.corpus import UnmappedCorpusEntryError, load_pin
+from golden_harness.cost.report import UsageContractError, cost_report, render_cost
 from golden_harness.driver.logslice import ConditionsMissingError, JsonLogMissingError
 from golden_harness.driver.run import (
     DEFAULT_CLOCK,
@@ -85,6 +87,7 @@ _REPORTED_FAILURES: Final = (
     ThreadReadError,
     TurnProtocolError,
     UnmappedCorpusEntryError,
+    UsageContractError,
     ValidationError,
     httpx.HTTPError,
 )
@@ -165,6 +168,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     band.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS)
     band.add_argument("--labels", type=Path, default=DEFAULT_LABELS)
 
+    cost = commands.add_parser(
+        "cost", help="total what a stored run's model calls spent, by call site"
+    )
+    cost.add_argument("--run", required=True, help="a run id or directory")
+    cost.add_argument("--artifacts", type=Path, default=DEFAULT_ARTIFACTS)
+
     commands.add_parser(
         "build-set", help="render evals/golden/cases.json from its declaration"
     )
@@ -196,6 +205,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "band":
             _band(args)
+            return 0
+        if args.command == "cost":
+            print(render_cost(cost_report(resolve_run(args.run, args.artifacts))))
             return 0
         if args.command == "build-set":
             families, case_count = write_golden_set()

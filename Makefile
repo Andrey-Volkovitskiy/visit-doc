@@ -3,7 +3,7 @@
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
         db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
-        eval-run eval-score eval-compare eval-band eval-build-set
+        eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
 sync:
 	uv sync
@@ -154,6 +154,12 @@ eval-compare:
 
 eval-band:
 	uv run --package golden-harness -- python -m golden_harness band --runs $(RUNS)
+
+# What a stored run's model calls spent, by call site: tokens, cache hits, thinking and dollars,
+# read from the `model.usage` entries each case stored. Offline, it spends nothing, and a run
+# recorded before the chat service logged those entries reports no spend.
+eval-cost:
+	uv run --package golden-harness -- python -m golden_harness cost --run $(RUN)
 
 # Re-render `evals/golden/cases.json` from its declaration in `golden_harness.golden_set`, which is
 # where the set is actually written - the JSON is an artifact, and `tests/test_golden_set.py` fails

@@ -82,6 +82,17 @@ _TURN = "turn"
 # A model call that stopped here ran out of room rather than finishing.
 _TRUNCATED_STOP_REASON = "max_tokens"
 _CANCELLED = "cancelled"
+# The usage types a generation reports to Langfuse, from the `model.usage` log entry's
+# keys. Langfuse prices a generation by these names, so they are its names, not the
+# log's - which cannot say "tokens", a word the log redacts. One is renamed from the
+# other so the two sinks cannot disagree on a count. The lifetime and thinking splits
+# are left out: each is a part of a count already given, not a usage of its own.
+_LANGFUSE_USAGE_KEY = {
+    "input": "input",
+    "output": "output",
+    "cache_read": "cache_read_input_tokens",
+    "cache_write": "cache_creation_input_tokens",
+}
 
 _Wrapped = LangfuseSpan | LangfuseGeneration | LangfuseTool | LangfuseRetriever
 
@@ -149,22 +160,55 @@ class TraceDirective:
         return metadata
 
 
+class CacheWriteBreakdown(Protocol):
+    """How a call's cache writes divide between the two cache lifetimes."""
+
+    @property
+    def ephemeral_1h_input_tokens(self) -> int:
+        """Tokens written to the one-hour cache; the rest went to the 5-minute one."""
+        ...
+
+
+class OutputBreakdown(Protocol):
+    """What a call's generated tokens were spent on."""
+
+    @property
+    def thinking_tokens(self) -> int:
+        """Tokens spent thinking, out of the call's output tokens."""
+        ...
+
+
 class TokenUsage(Protocol):
     """What a model call reports it spent."""
 
     @property
     def input_tokens(self) -> int:
-        """Tokens the call was sent."""
+        """Tokens the call was sent that the cache neither served nor stored."""
         ...
 
     @property
     def output_tokens(self) -> int:
-        """Tokens the call generated."""
+        """Tokens the call generated, thinking included."""
         ...
 
     @property
     def cache_read_input_tokens(self) -> int | None:
         """Tokens read from the prompt cache, or None when the provider did not say."""
+        ...
+
+    @property
+    def cache_creation_input_tokens(self) -> int | None:
+        """Tokens written to the prompt cache, or None when the provider did not say."""
+        ...
+
+    @property
+    def cache_creation(self) -> CacheWriteBreakdown | None:
+        """The cache writes by lifetime, or None when the provider did not say."""
+        ...
+
+    @property
+    def output_tokens_details(self) -> OutputBreakdown | None:
+        """The output by purpose, or None when the provider did not say."""
         ...
 
 
@@ -204,9 +248,18 @@ class Observation:
 class Generation(Observation):
     """A handle on one model call's observation."""
 
-    def __init__(self, wrapped: _Wrapped | None, *, recording: bool) -> None:
-        """Hold the SDK's observation, with no streamed token seen yet."""
+    def __init__(
+        self, wrapped: _Wrapped | None, *, recording: bool, name: str, model: str
+    ) -> None:
+        """Hold the SDK's observation, with no streamed token seen yet.
+
+        Args:
+            name: The observation's name, logged as the call a usage entry is for.
+            model: The model the call was sent to.
+        """
         super().__init__(wrapped, recording=recording)
+        self._name = name
+        self._model = model
         self._first_token_at: datetime | None = None
 
     def mark_token(self) -> None:
@@ -229,17 +282,28 @@ class Generation(Observation):
             completion_start_time: When a streamed call's first token arrived; by
                 default, when `mark_token` was first called, if it was.
 
-        A cache count the provider did not report is left out rather than recorded as
-        zero: zero would be a claim about the call that nobody measured.
+        What the call spent is logged as `model.usage` whether or not the call is
+        traced, so a run's own log accounts for every call that returned. A count the
+        provider did not report is left out rather than recorded as zero, in the log
+        and in the trace alike: zero would be a claim about the call nobody measured.
         """
+        spent = _spent(usage)
+        get_logger().info(
+            "model.usage",
+            call=self._name,
+            model=self._model,
+            stop_reason=stop_reason,
+            usage=spent,
+        )
         if self._wrapped is None:
             return
-        usage_details = {"input": usage.input_tokens, "output": usage.output_tokens}
-        if usage.cache_read_input_tokens is not None:
-            usage_details["cache_read_input_tokens"] = usage.cache_read_input_tokens
         self._wrapped.update(
             output=_recordable(output),
-            usage_details=usage_details,
+            usage_details={
+                _LANGFUSE_USAGE_KEY[key]: count
+                for key, count in spent.items()
+                if key in _LANGFUSE_USAGE_KEY
+            },
             completion_start_time=(
                 completion_start_time
                 if completion_start_time is not None
@@ -420,7 +484,7 @@ def generation(
     """
     tracer = _active
     if tracer is None or tracer.client is None:
-        yield Generation(None, recording=False)
+        yield Generation(None, recording=False, name=name, model=model)
         return
     with _observed(
         tracer,
@@ -431,7 +495,10 @@ def generation(
         model_parameters=model_parameters,
     ) as wrapped:
         yield Generation(
-            wrapped, recording=otel_trace.get_current_span().is_recording()
+            wrapped,
+            recording=otel_trace.get_current_span().is_recording(),
+            name=name,
+            model=model,
         )
 
 
@@ -458,6 +525,28 @@ def record(
     """
     _LOG_METHODS[level](get_logger(), event, **payload)
     observation.set_output(payload)
+
+
+def _spent(usage: TokenUsage) -> dict[str, int]:
+    """Return what a model call spent, keyed as the `model.usage` log entry keys it.
+
+    Returns: the tokens sent uncached (`input`) and generated (`output`), and - each
+        only when the provider reported it - those read from the cache (`cache_read`),
+        written to it (`cache_write`), written to its one-hour lifetime out of those
+        (`cache_write_1h`), and spent thinking out of the output (`thinking`).
+
+    No key names a token: the log redacts any field whose name contains one.
+    """
+    spent = {"input": usage.input_tokens, "output": usage.output_tokens}
+    if usage.cache_read_input_tokens is not None:
+        spent["cache_read"] = usage.cache_read_input_tokens
+    if usage.cache_creation_input_tokens is not None:
+        spent["cache_write"] = usage.cache_creation_input_tokens
+    if usage.cache_creation is not None:
+        spent["cache_write_1h"] = usage.cache_creation.ephemeral_1h_input_tokens
+    if usage.output_tokens_details is not None:
+        spent["thinking"] = usage.output_tokens_details.thinking_tokens
+    return spent
 
 
 def _recordable(value: Any) -> Any:

@@ -20,7 +20,7 @@ measurement rather than a verdict. Comparing one build's measurement against ano
 measuring how much difference is noise before calling any of it a regression — is what `compare`
 and `band` below do, offline, over runs already taken.
 
-Four things exist side by side, and they are easy to confuse:
+Five things exist side by side, and they are easy to confuse:
 
 | | What it checks | Deterministic | Cost | Runs in CI | Who judges |
 |---|---|---|---|---|---|
@@ -28,6 +28,7 @@ Four things exist side by side, and they are easy to confuse:
 | `make eval-run` | the assistant, against the golden set | no | live calls | no | the scorer |
 | `make eval-compare` | what moved between two stored runs | yes | free | no | a person reading |
 | `make eval-band` | how much the numbers move on their own | yes, given the runs | free (the five runs are not) | no | a person reading |
+| `make eval-cost` | what a stored run's model calls spent, by call site | yes | free | no | a person reading |
 | `specs/<n>/evaluation/procedure.md` | what a label cannot capture | no | live calls | no | a person reading |
 
 The third survives this harness: the golden set labels no reply *wording*, so a constraint a model is
@@ -60,6 +61,7 @@ make eval-run CASES=G-a-01,G-j-03      # only those cases
 make eval-run FAMILY=single-faq-gap    # only one family
 make eval-run TRACE=0                  # send every turn untraced, exporting nothing to Langfuse
 make eval-score RUN=<run_id>           # re-score a stored run; spends nothing, needs no stack
+make eval-cost RUN=<run_id>            # what the run's model calls spent; spends nothing, needs no stack
 make eval-build-set                    # re-render evals/golden/cases.json from its declaration
 ```
 
@@ -520,3 +522,32 @@ A band applies to a comparison only when its conditions, corpus hash, run clock 
 **both** runs; otherwise the comparison says the band was measured under other conditions and marks
 nothing.
 A metric the band never observed is reported unmarked, never assumed stable.
+
+## What a run's model calls spent
+
+```bash
+make eval-cost RUN=<run_id>   # tokens, cache hits, thinking and dollars, one row per call site
+```
+
+The chat service logs `model.usage` once for every model call that returned - traced or not -
+naming the call, the model, and what it spent: `input` (sent and neither read from nor written to
+the prompt cache), `output`, and, whenever the API reported them, `cache_read`, `cache_write`,
+`cache_write_1h` (the part of `cache_write` given the one-hour lifetime) and `thinking` (the part of
+`output` spent thinking). No key says "tokens" because the log redacts any field whose name does.
+The harness stores those entries with the rest of each turn's events, so `cost` reads the case files
+and nothing else, and a run is priced as often as it is asked, at the list prices in
+`golden_harness.cost.prices` as they stand then.
+
+A call site is the call's name without its iteration, so the booking loop's rounds are one row,
+with more calls than turns. A row reports two cache rates that say different things: the share of
+calls that read anything from the cache, and the share of the input the cache served - which is the
+one that follows the bill. What it cannot know is left visibly unknown rather than counted as zero:
+a model with no price, or a call that did not say which cache lifetime it wrote to, makes its row
+and the total `unpriced`; a call that did not report its cache counts leaves the row without rates;
+and a run recorded before the service logged `model.usage` reports that none was logged. Only the
+attempt a case records is counted, and a call that raised before returning logged no entry, so the
+report can undercount what a run spent. It covers Claude calls only: Voyage's embeddings and
+reranking are not in it.
+
+The entry's field names are a data contract with the harness, like `service.configured`'s: a stored
+entry that does not parse stops the report naming its case, rather than leaving out a call.
