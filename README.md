@@ -216,6 +216,12 @@ full rationale and alternatives considered live in
 - **Haiku 4.5 for classification, unchanged Sonnet 5 for generation**: routing/classification steps
   use the cheapest model capable of the task, reserving the stronger model for generation — the
   same shared `AsyncAnthropic` client, just a different `model=` argument.
+- **Small talk on Haiku too, under its own `SMALL_TALK_MODEL`**: the reply to "Thanks" or "Hi" is
+  the one text a patient reads that the cheap model writes. That is safe because the node is given
+  nothing factual - no corpus, no tools, no record - and its prompt forbids stating any fact, so
+  there is nothing a weaker model could get wrong; the tradeoff is tone, not correctness, and a
+  small-talk call costs a fraction of a cent either way. It shares Haiku with the classifier but
+  not the setting: the two jobs are judged differently, so each can be changed alone.
 - **Classification context bounded to the last 5 turns (`history.py::bound_to_last_n_turns`)**, not
   the unbounded history `answer_faq`'s generation call uses: classification is cost-sensitive in a
   way generation quality isn't. `bound_to_last_n_turns` lives alongside `split_into_bursts`,

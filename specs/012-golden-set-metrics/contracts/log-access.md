@@ -59,6 +59,7 @@ emits one event at INFO from its lifespan startup, before it builds a client:
 | `embedding_model` | `chat.rag.embeddings.EMBEDDING_MODEL` |
 | `retrieval_pool_size`, `similarity_floor`, `similarity_cap`, `rerank_floor`, `rerank_cap`, `context_turns` | `Settings` |
 | `max_segments` | `chat.domain.schemas.MAX_SEGMENTS` |
+| `small_talk_model` | `Settings` - added 2026-09-30, when small talk got a model setting of its own. A run whose event lacks it is read as having run small talk on its `classification_model`, which is what the service did until then. |
 
 Field names are part of the contract, as 008's are. No secret-bearing setting is on the list, and
 redaction runs upstream of the renderer regardless.

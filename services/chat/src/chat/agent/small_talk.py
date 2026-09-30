@@ -115,12 +115,12 @@ async def answer_small_talk(
     try:
         with generation(
             "small_talk.model",
-            model=settings.CLASSIFICATION_MODEL,
+            model=settings.SMALL_TALK_MODEL,
             input={"system": _SYSTEM_PROMPT, "messages": messages},
             model_parameters={"max_tokens": _MAX_TOKENS},
         ) as observed:
             async with anthropic_client.messages.stream(
-                model=settings.CLASSIFICATION_MODEL,
+                model=settings.SMALL_TALK_MODEL,
                 max_tokens=_MAX_TOKENS,
                 system=_SYSTEM_PROMPT,
                 messages=messages,

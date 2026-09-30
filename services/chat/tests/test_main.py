@@ -101,6 +101,7 @@ def _expected_conditions(settings: Settings) -> dict[str, object]:
     return {
         "classification_model": settings.CLASSIFICATION_MODEL,
         "generation_model": settings.GENERATION_MODEL,
+        "small_talk_model": settings.SMALL_TALK_MODEL,
         "embedding_model": EMBEDDING_MODEL,
         "rerank_model": settings.RERANK_MODEL,
         "retrieval_pool_size": settings.RETRIEVAL_POOL_SIZE,
@@ -134,12 +135,14 @@ def test_the_stated_conditions_follow_an_environment_override(
 ) -> None:
     monkeypatch.setenv("RERANK_FLOOR", "0.61")
     monkeypatch.setenv("CLASSIFICATION_MODEL", "claude-overridden")
+    monkeypatch.setenv("SMALL_TALK_MODEL", "claude-small-talk")
 
     with patch("chat.main.get_settings", Settings):
         (event,) = _configured_events()
 
     assert event["rerank_floor"] == 0.61
     assert event["classification_model"] == "claude-overridden"
+    assert event["small_talk_model"] == "claude-small-talk"
 
 
 def test_the_conditions_are_stated_before_any_client_is_built() -> None:

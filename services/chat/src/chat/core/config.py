@@ -48,11 +48,17 @@ class Settings(BaseSettings):
     # follow-up sentence, short enough that a staff member who wandered off does not
     # strand the patient. Changing it touches no other rule.
     ASSISTANT_PAUSE_SECONDS: int = 120
-    # The strong model writes anything a patient reads; the cheap one only routes.
-    # Declared here rather than per module so the pairing stays one decision - three
-    # copies of a model id is three places a change can be applied to two of.
+    # One setting per job a model does, each declared once here rather than per module -
+    # copies of a model id are places a change can be applied to some of and not all.
+    # The strong model writes the replies that carry the clinic's facts: FAQ answers,
+    # the booking loop, the composed reply. The cheap one routes, and writes small talk:
+    # a reply given nothing factual to state, so nothing a weaker model could get wrong
+    # (spec 009 FR-011). Small talk has its own setting so the classifier can be changed
+    # - which is measured against the golden set's routing - without also changing how
+    # the assistant chats.
     GENERATION_MODEL: str = "claude-sonnet-5"
     CLASSIFICATION_MODEL: str = "claude-haiku-4-5-20251001"
+    SMALL_TALK_MODEL: str = "claude-haiku-4-5-20251001"
     # How many trailing turns of history every model call is given. One number, so the
     # specialists cannot disagree about what "recent" means within a single turn.
     CONTEXT_TURNS: int = 5

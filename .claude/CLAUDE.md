@@ -303,7 +303,10 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 ### Key design decisions to preserve
 
 - Intent classification uses **structured output**, not free-text parsing, and a cheap/fast model —
-  reserve the stronger model for generation. Since 009 the label set says what a message *is*
+  reserve the stronger model for generation. The small-talk reply is the one patient-facing text
+  written on the cheap model (009 FR-011: it is given nothing factual to state), under its own
+  `SMALL_TALK_MODEL` rather than `CLASSIFICATION_MODEL`, so changing the classifier - which the
+  golden set measures - does not also change how the assistant chats. Since 009 the label set says what a message *is*
   before anything decides who handles it: `faq_question`, `booking`, `small_talk` (asks for nothing
   that can be acted on), `urgent_condition`, `distress`, `booking_for_another`, `call_staff` (an
   explicit request for a human, and nothing else), `not_authorized` (a request the assistant is

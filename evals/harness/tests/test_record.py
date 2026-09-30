@@ -28,6 +28,7 @@ from pydantic import ValidationError
 _CONDITIONS: dict[str, Any] = {
     "classification_model": "claude-haiku-4-5-20251001",
     "generation_model": "claude-sonnet-5",
+    "small_talk_model": "claude-haiku-4-5-20251001",
     "embedding_model": "voyage-3.5",
     "rerank_model": "rerank-3",
     "retrieval_pool_size": 25,
@@ -514,7 +515,9 @@ def test_a_run_refuses_a_recorded_case_it_did_not_select() -> None:
         Run.model_validate(_run(cases=["G001", "G099"]))
 
 
-@pytest.mark.parametrize("field", sorted(_CONDITIONS))
+# Every field but the one a run recorded before it existed may leave out: that run's
+# small talk ran on the classification model, which the run did state.
+@pytest.mark.parametrize("field", sorted(set(_CONDITIONS) - {"small_talk_model"}))
 def test_run_conditions_require_every_field_of_the_settings_event(field: str) -> None:
     raw = _run()
     del raw["conditions"][field]
@@ -527,6 +530,34 @@ def test_run_conditions_are_exactly_the_settings_event_fields() -> None:
     run = Run.model_validate(_run())
 
     assert set(run.conditions.model_dump()) == set(_CONDITIONS)
+
+
+def test_a_run_that_stated_no_small_talk_model_ran_small_talk_on_the_classifier() -> (
+    None
+):
+    stated = {
+        key: value for key, value in _CONDITIONS.items() if key != "small_talk_model"
+    }
+    stated["classification_model"] = "claude-classifier"
+
+    conditions = RunConditions.model_validate(stated)
+
+    assert conditions.small_talk_model == "claude-classifier"
+
+
+def test_a_stated_small_talk_model_is_kept_when_it_differs_from_the_classifier() -> (
+    None
+):
+    conditions = RunConditions.from_event(
+        {
+            **_CONDITIONS,
+            "classification_model": "claude-classifier",
+            "small_talk_model": "claude-small-talk",
+            "event": "service.configured",
+        }
+    )
+
+    assert conditions.small_talk_model == "claude-small-talk"
 
 
 def test_a_case_file_is_written_and_read_back(tmp_path: Path) -> None:

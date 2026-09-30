@@ -60,6 +60,7 @@ def _log_configuration(settings: Settings) -> None:
         "service.configured",
         classification_model=settings.CLASSIFICATION_MODEL,
         generation_model=settings.GENERATION_MODEL,
+        small_talk_model=settings.SMALL_TALK_MODEL,
         embedding_model=EMBEDDING_MODEL,
         rerank_model=settings.RERANK_MODEL,
         retrieval_pool_size=settings.RETRIEVAL_POOL_SIZE,

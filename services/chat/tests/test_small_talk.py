@@ -8,7 +8,7 @@ generation failure rather than becoming a silent empty reply.
 """
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from chat.agent.history import ANSWERING_HEADING, SILENT_WINDOW_NOTE
@@ -71,13 +71,26 @@ async def test_it_makes_exactly_one_model_call() -> None:
     assert client.messages.create.call_count == 0
 
 
-async def test_it_runs_on_the_cheap_model() -> None:
+async def test_it_runs_on_the_small_talk_model() -> None:
     client = fake_anthropic_client(_TOKENS)
 
     await _run(client, "Thanks!")
 
     kwargs = client.messages.stream.call_args.kwargs
-    assert kwargs["model"] == Settings().CLASSIFICATION_MODEL
+    assert kwargs["model"] == Settings().SMALL_TALK_MODEL
+
+
+async def test_changing_the_classifier_model_does_not_change_the_small_talk_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CLASSIFICATION_MODEL", "claude-classifier-only")
+    monkeypatch.setenv("SMALL_TALK_MODEL", "claude-small-talk-only")
+    client = fake_anthropic_client(_TOKENS)
+
+    with patch("chat.agent.small_talk.get_settings", Settings):
+        await _run(client, "Thanks!")
+
+    assert client.messages.stream.call_args.kwargs["model"] == "claude-small-talk-only"
 
 
 async def test_it_builds_no_tool_registry() -> None:

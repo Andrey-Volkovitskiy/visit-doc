@@ -19,8 +19,10 @@ the message, which is what makes a constant the right instrument.
 
 ## The small-talk reply (generated, bounded)
 
-- One call, `CLASSIFICATION_MODEL`, short cap, bounded history (`CONTEXT_TURNS`), streamed like any
-  other single-specialist reply.
+- One call, `SMALL_TALK_MODEL`, short cap, bounded history (`CONTEXT_TURNS`), streamed like any
+  other single-specialist reply. The cheap model, as FR-011 requires: `SMALL_TALK_MODEL` defaults to
+  the same Haiku model as `CLASSIFICATION_MODEL`, whose setting this reply shared until 2026-09-30.
+  It has its own so the classifier can be changed without changing how the assistant chats.
 - **May**: acknowledge, thank, greet, close, and offer help in general terms.
 - **Must not**: state a policy, a price, a date or time, a practitioner, or an appointment; promise
   a callback; say staff have been notified; give clinical content of any kind.

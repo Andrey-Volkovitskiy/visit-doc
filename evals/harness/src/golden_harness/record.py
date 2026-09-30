@@ -15,6 +15,7 @@ import tempfile
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from chat.domain.models import AttentionMark
 from chat.domain.schemas import IntentLabel, RequestOutcome
@@ -280,6 +281,7 @@ class RunConditions(BaseModel):
 
     classification_model: str
     generation_model: str
+    small_talk_model: str
     embedding_model: str
     rerank_model: str
     retrieval_pool_size: int
@@ -289,6 +291,23 @@ class RunConditions(BaseModel):
     rerank_cap: int
     max_segments: int
     context_turns: int
+
+    @model_validator(mode="before")
+    @classmethod
+    def _small_talk_ran_on_the_classifier_before_it_had_a_model(cls, data: Any) -> Any:
+        """Fill `small_talk_model` from `classification_model` where none was stated.
+
+        A service that stated no small-talk model predates the setting, and until it
+        existed small talk ran on the classification model - so this is what that run
+        was measured under, not a guess.
+        """
+        if (
+            isinstance(data, dict)
+            and "small_talk_model" not in data
+            and "classification_model" in data
+        ):
+            return {**data, "small_talk_model": data["classification_model"]}
+        return data
 
     @classmethod
     def from_event(cls, event: dict[str, JsonValue]) -> "RunConditions":

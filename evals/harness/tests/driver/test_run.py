@@ -92,6 +92,7 @@ _PLANTED_AT = datetime(2026, 9, 14, 10, 0, tzinfo=UTC)
 
 _CONDITIONS: dict[str, Any] = {
     "classification_model": "claude-haiku-4-5-20251001",
+    "small_talk_model": "claude-haiku-4-5-20251001",
     "generation_model": "claude-sonnet-5",
     "embedding_model": "voyage-3.5",
     "rerank_model": "rerank-3",
