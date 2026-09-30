@@ -1007,3 +1007,43 @@ in the last N minutes. Five choices carried a real tradeoff.
   makes the connector unavailable with the reason shown in the tab, rather than publishing metadata
   that names an address nobody can reach. Deriving it from the request's `Host` would give the
   wrong answer from the SPA and let any caller choose the issuer through `X-Forwarded-Host`.
+
+## Model Spend and Prompt Caching: technology choices
+
+Measured before anything was changed: every model call logs a `model.usage` entry, and
+`make eval-cost RUN=<run>` totals a stored run's spend per call site (`evals/harness/README.md`).
+Two unchanged runs of the same 15 golden cases cost $0.448 and $0.431 in Claude calls, and the
+booking loop was 80% of both - about 2.4 model calls per booking turn, each re-sending ~5.9k
+tokens of tool definitions and system prompt. Five choices carried a real tradeoff.
+
+- **Spend is read from the service's own log, not from Langfuse or the Console.** The entry is
+  written whether or not a turn is traced, is stored with the case it belongs to, and is priced
+  offline by a pure function of the stored run - so a spend report is reproducible and sits beside
+  the quality report of the same run. The cost is a second record of usage beside Langfuse's; both
+  are built from one dict, so they cannot disagree. Its keys avoid the word "token", which the
+  log's redaction rule would blank.
+- **Caching in the booking loop only.** A prefix shorter than the model's minimum is silently not
+  cached (1,024 tokens on Sonnet 5, 4,096 on Haiku 4.5), and a cache pays only when the same bytes
+  are sent again within five minutes. Measured with `count_tokens`: the classifier's system prompt is
+  2,126 tokens on Haiku, and the composer's, the FAQ answerer's and small talk's are 982, 210 and
+  338. Only the booking loop re-sends a prefix long enough, seconds apart.
+- **Three breakpoints, most shared first, and the prompt reordered to match.** A cache entry is
+  written only where a marker sits and read only by a request starting with the same bytes. The
+  tools (~2.7k) are marked on the last one; the instructions and the clinic's roster are one
+  system block with its own marker; the patient's name and local time follow as a second, unmarked
+  block, and the request-level marker caches that and the conversation so each iteration reads what
+  the previous one sent. Before the split, the name and time sat in the first lines of the system
+  prompt, so no turn could read another's copy of it. The cost was a prompt change - the rules now
+  refer to "the patient named below" - so every booking case of the golden set was re-run
+  (24/24 end to end; of the 23 the baseline also recorded, none moved). Measured: the 15 cases went from $0.44 to
+  $0.24 with the first two breakpoints, and with all three 94% of the booking loop's input was read
+  from the cache, at $0.0035 a call against about $0.014 uncached.
+- **The five-minute cache, not the one-hour.** A one-hour write costs 2x instead of 1.25x. The
+  hits within a turn are seconds apart either way; the hits across turns - another patient's turn
+  reading the shared prefix - need booking traffic less than five minutes apart. An eval supplies
+  that and a quiet clinic may not, and when it does not, a turn's first call writes the prefix at
+  1.25x rather than reading it at 0.1x: the within-turn saving remains. Which lifetime pays depends
+  on real traffic gaps, which no eval shows.
+- **No effort tuning.** Sonnet 5 thinks by default, but thinking was under $0.02 of a run: output
+  of every kind was about a tenth of the spend. Lowering `effort` would trade answer quality for a
+  saving the measurements do not show.

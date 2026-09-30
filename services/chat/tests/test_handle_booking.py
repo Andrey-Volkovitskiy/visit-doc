@@ -145,9 +145,14 @@ def _model_dispatched(registry: _RecordingRegistry) -> list[str]:
     return [name for name, _ in registry.dispatched[1:]]
 
 
+def _system_text(kwargs: dict[str, Any]) -> str:
+    """Return a model call's system prompt as the model reads it, blocks in order."""
+    return "\n\n".join(block["text"] for block in kwargs["system"])
+
+
 def _system_prompt(client: MagicMock) -> str:
     """Return the system prompt the turn's first model call was given."""
-    return str(client.messages.create.await_args_list[0].kwargs["system"])
+    return _system_text(client.messages.create.await_args_list[0].kwargs)
 
 
 def _tool_use_response(calls: list[tuple[str, dict[str, Any]]]) -> MagicMock:
@@ -545,9 +550,37 @@ async def test_the_clients_local_now_reaches_the_system_prompt_verbatim() -> Non
 
     await _run(client, registry, _bursts("book me next Tuesday"))
 
-    system = client.messages.create.call_args.kwargs["system"]
+    system = _system_text(client.messages.create.call_args.kwargs)
     assert _LOCAL_NOW in system
     assert "Ada Lovelace" in system
+
+
+async def test_the_cached_block_is_the_same_for_any_patient_at_any_time() -> None:
+    # What another patient's turn can read back from the cache is exactly this block,
+    # so nothing in it may depend on who the turn is for or when it is.
+    first, second = _client([_text_response("ok")]), _client([_text_response("ok")])
+    await _run(first, _RecordingRegistry({}), _bursts("book me next Tuesday"))
+    async for _ in handle_booking(
+        second,
+        _RecordingRegistry({}),
+        _bursts("book me next Tuesday"),
+        patient_name="Grace Hopper",
+        local_now="2026-12-24T17:30:00",
+        stream=False,
+        segments=[RequestSegment(intent=IntentLabel.BOOKING, text="book me")],
+        escalation=EscalationRequests(),
+    ):
+        pass
+
+    (cached_a, patient_a), (cached_b, patient_b) = (
+        client.messages.create.call_args.kwargs["system"] for client in (first, second)
+    )
+    assert cached_a == cached_b
+    assert cached_a["cache_control"] == {"type": "ephemeral"}
+    assert "Ada Lovelace" in patient_a["text"]
+    assert _LOCAL_NOW in patient_a["text"]
+    assert "Grace Hopper" in patient_b["text"]
+    assert "cache_control" not in patient_b
 
 
 async def test_the_prompt_books_once_a_practitioner_and_time_are_chosen() -> None:
@@ -561,7 +594,7 @@ async def test_the_prompt_books_once_a_practitioner_and_time_are_chosen() -> Non
 
     await _run(client, registry, _bursts("book me something"))
 
-    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    system = re.sub(r"\s+", " ", _system_text(client.messages.create.call_args.kwargs))
     assert "Book when the current message tells you to or accepts an offer" in system
     assert "confirm what they have already chosen" in system
     assert "more than one start time" in system
@@ -577,7 +610,7 @@ async def test_the_prompt_answers_a_question_about_booking_with_an_offer() -> No
 
     await _run(client, registry, _bursts("can I book Friday?"))
 
-    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    system = re.sub(r"\s+", " ", _system_text(client.messages.create.call_args.kwargs))
     assert "A question about booking is not an instruction to book" in system
     assert "offer to book the time they asked about - but book nothing" in system
     assert "A request addressed to you is an instruction" in system
@@ -593,7 +626,7 @@ async def test_the_prompt_looks_up_an_appointment_the_conversation_reported() ->
 
     await _run(client, registry, _bursts("yes, book it"))
 
-    system = re.sub(r"\s+", " ", client.messages.create.call_args.kwargs["system"])
+    system = re.sub(r"\s+", " ", _system_text(client.messages.create.call_args.kwargs))
     assert 'call list_my_appointments with status_filter "both"' in system
     assert "Never book or cancel it a second time" in system
     assert "a listing that leaves out cancelled appointments" in system
@@ -606,7 +639,7 @@ async def test_the_prompt_forbids_leaking_ids_and_timezones() -> None:
 
     await _run(client, registry, _bursts("book me something"))
 
-    system = client.messages.create.call_args.kwargs["system"]
+    system = _system_text(client.messages.create.call_args.kwargs)
     assert "Never mention a timezone, an internal" in system
 
 

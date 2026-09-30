@@ -21,7 +21,12 @@ from enum import StrEnum
 from typing import Any
 
 from anthropic import AsyncAnthropic
-from anthropic.types import CacheControlEphemeralParam, MessageParam, ToolParam
+from anthropic.types import (
+    CacheControlEphemeralParam,
+    MessageParam,
+    TextBlockParam,
+    ToolParam,
+)
 from shared_models.localtime import parse_local_datetime
 
 from chat.agent.escalation import EscalationRequests
@@ -47,23 +52,27 @@ _LIST_PRACTITIONERS = "list_practitioners"
 # doing something other than making progress.
 _MAX_ITERATIONS = 6
 # Every call of the loop re-sends the tool definitions and the system prompt - about
-# 5.9k tokens, most of what each call is billed for - so both are read back from the
-# prompt cache rather than paid for again. Two breakpoints, because the two halves are
-# shared differently. The tools (~2.7k) are the same for every patient and turn, so a
-# marker on the last one lets any booking call within the cache's five minutes read
-# them. The system prompt names the patient and the time, so it repeats only within
-# one turn; the request-level marker, which the API moves to the request's last block,
-# caches it with the conversation so far, and the next iteration reads all of it.
-# Neither changes what the model is sent, only what it is billed for.
+# 5.9k tokens, most of what each call is billed for - so they are read back from the
+# prompt cache rather than paid for again. A cache entry is written only where a
+# marker sits, and read only by a request that starts with the same bytes, so the
+# prompt is ordered from the most shared to the least and marked at each boundary:
+# - the tools (~2.7k), the same for every patient and turn: a marker on the last one;
+# - the instructions and the clinic's roster, the same for every patient and turn
+#   while the roster is: a marker on that block, so a turn's first call can read
+#   everything up to the patient from another turn's within the cache's five minutes;
+# - the patient's name and local time, then the conversation, which repeat only within
+#   one turn: the request-level marker, which the API moves to the request's last
+#   block, so each iteration reads everything the previous one sent.
+# None of them changes what the model is sent, only what it is billed for.
 _CACHED: CacheControlEphemeralParam = {"type": "ephemeral"}
 
-_SYSTEM_PROMPT = """You are a clinic's booking assistant, talking to {patient_name}.
-Your goal is to answer the last message in the conversation, previous messages are
-context.
+_SYSTEM_PROMPT = """You are a clinic's booking assistant, talking to the patient named
+at the end of these instructions. Your goal is to answer the last message in the
+conversation, previous messages are context.
 
-The patient's current local date and time is {local_now}. Resolve every relative
-phrase ("tomorrow", "next Tuesday at 3") against that, and never against your own
-sense of the date.
+The patient's current local date and time is given at the end of these instructions.
+Resolve every relative phrase ("tomorrow", "next Tuesday at 3") against that, and
+never against your own sense of the date.
 
 {practitioners}
 
@@ -73,7 +82,7 @@ Rules you must follow:
   job, and it is being handled separately - say nothing about it, not even that you
   cannot help with it.
 - Establish who the appointment is for before booking anything. Every appointment in
-  this conversation is for {patient_name}. If anything suggests it might be for
+  this conversation is for the patient named below. If anything suggests it might be for
   someone else - a different name, "for her", "for him" - ask plainly who the
   appointment is for and book nothing until they answer. Never assume, and never book
   for someone else.
@@ -191,6 +200,12 @@ Changing and cancelling an existing appointment:
   never say it about the future appointments, which are always complete.
 - If the patient has no appointments at all, say so plainly. Do not present an empty
   list."""
+
+# Who the turn is for and when it is, kept out of `_SYSTEM_PROMPT` and sent after it:
+# they differ between patients and turns, and anything placed before them could not be
+# read back from another turn's cache.
+_PATIENT_AND_TIME = """You are talking to {patient_name}. The patient's current local
+date and time is {local_now}."""
 
 # The roster is read once per turn and put in front of the model, because the failure
 # it prevents is the model inventing a `practitioner_id` from a name it read in the
@@ -610,11 +625,19 @@ async def handle_booking(
         # that already holds them. A roster that could not be read teaches nothing,
         # so an act planned without one records no name rather than a guess.
         registry.acts.learn_practitioners(roster)
-    system = _SYSTEM_PROMPT.format(
-        patient_name=patient_name,
-        local_now=local_now,
-        practitioners=_practitioners_section(roster),
-    )
+    system: list[TextBlockParam] = [
+        {
+            "type": "text",
+            "text": _SYSTEM_PROMPT.format(practitioners=_practitioners_section(roster)),
+            "cache_control": _CACHED,
+        },
+        {
+            "type": "text",
+            "text": _PATIENT_AND_TIME.format(
+                patient_name=patient_name, local_now=local_now
+            ),
+        },
+    ]
     if not segments:
         raise RuntimeError("the booking loop was entered with no request")
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
