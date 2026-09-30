@@ -272,6 +272,27 @@ async def test_the_loop_chains_list_then_availability_then_book_in_one_turn() ->
     assert result.tool_calls == 3
 
 
+async def test_every_call_caches_the_tools_and_the_turn_so_far() -> None:
+    registry = _RecordingRegistry({"list_practitioners": {"practitioners": []}})
+    client = _client(
+        [
+            _tool_use_response([("list_practitioners", {})]),
+            _text_response("Who would you like to see?"),
+        ]
+    )
+
+    await _run(client, registry, _bursts("book me something"))
+
+    rendered = registry.to_anthropic_tools()
+    for call in client.messages.create.await_args_list:
+        # The request-level marker caches the system prompt and the conversation.
+        assert call.kwargs["cache_control"] == {"type": "ephemeral"}
+        # One marker on the last tool caches them all; the definitions are unchanged.
+        *first, last = call.kwargs["tools"]
+        assert first == rendered[:-1]
+        assert last == {**rendered[-1], "cache_control": {"type": "ephemeral"}}
+
+
 async def test_a_turn_with_no_tool_calls_is_informational() -> None:
     registry = _RecordingRegistry({})
     client = _client([_text_response("What day suits you?")])
@@ -1745,7 +1766,7 @@ async def test_each_iteration_is_a_generation_under_the_booking_node(
         assert attributes["langfuse.observation.model.name"] == call.kwargs["model"]
         sent = json.loads(attributes["langfuse.observation.input"])
         assert sent["system"] == call.kwargs["system"]
-        assert sent["tools"] == registry.to_anthropic_tools()
+        assert sent["tools"] == call.kwargs["tools"]
         assert json.loads(attributes["langfuse.observation.usage_details"]) == {
             "input": fake_usage().input_tokens,
             "output": fake_usage().output_tokens,

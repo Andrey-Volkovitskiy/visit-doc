@@ -21,7 +21,7 @@ from enum import StrEnum
 from typing import Any
 
 from anthropic import AsyncAnthropic
-from anthropic.types import MessageParam
+from anthropic.types import CacheControlEphemeralParam, MessageParam, ToolParam
 from shared_models.localtime import parse_local_datetime
 
 from chat.agent.escalation import EscalationRequests
@@ -46,6 +46,16 @@ _LIST_PRACTITIONERS = "list_practitioners"
 # book, and a retry or two after a refusal - with room to spare before the loop is
 # doing something other than making progress.
 _MAX_ITERATIONS = 6
+# Every call of the loop re-sends the tool definitions and the system prompt - about
+# 5.9k tokens, most of what each call is billed for - so both are read back from the
+# prompt cache rather than paid for again. Two breakpoints, because the two halves are
+# shared differently. The tools (~2.7k) are the same for every patient and turn, so a
+# marker on the last one lets any booking call within the cache's five minutes read
+# them. The system prompt names the patient and the time, so it repeats only within
+# one turn; the request-level marker, which the API moves to the request's last block,
+# caches it with the conversation so far, and the next iteration reads all of it.
+# Neither changes what the model is sent, only what it is billed for.
+_CACHED: CacheControlEphemeralParam = {"type": "ephemeral"}
 
 _SYSTEM_PROMPT = """You are a clinic's booking assistant, talking to {patient_name}.
 Your goal is to answer the last message in the conversation, previous messages are
@@ -403,6 +413,18 @@ def _practitioner_line(entry: Any) -> str:
     )
 
 
+def _caching_every_tool(tools: list[ToolParam]) -> list[ToolParam]:
+    """Return a copy of `tools` that the API will cache as one block.
+
+    A cache marker covers everything up to and including the block it sits on, and
+    tools come first in a request - so one marker on the last tool caches all of
+    them. The definitions themselves are unchanged.
+    """
+    if not tools:
+        return tools
+    return [*tools[:-1], {**tools[-1], "cache_control": _CACHED}]
+
+
 def _outcome_from(results: list[dict[str, Any]]) -> tuple[BookingOutcome, str | None]:
     """Derive the turn's outcome from the tool results it actually observed.
 
@@ -607,7 +629,7 @@ async def handle_booking(
             bounded, answering="\n\n".join(segment.text for segment in segments)
         )
     )
-    tools = registry.to_anthropic_tools()
+    tools = _caching_every_tool(registry.to_anthropic_tools())
     observed: list[dict[str, Any]] = []
     tool_calls = 0
 
@@ -634,6 +656,7 @@ async def handle_booking(
                     system=system,
                     messages=messages,
                     tools=tools,
+                    cache_control=_CACHED,
                 )
                 model_call.record_completion(
                     content_as_output(response.content),
