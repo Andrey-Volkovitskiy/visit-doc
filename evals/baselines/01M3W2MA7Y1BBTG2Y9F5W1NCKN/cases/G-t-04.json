@@ -1,0 +1,282 @@
+{
+  "case_id": "G-t-04",
+  "chat_id": "01M3W31NDDFAX9GQ6F90G7A3RA",
+  "patient_id": "01M3W31NE1PXV6S8JVJQ4C2HN9",
+  "attempts": 1,
+  "elapsed_seconds": 3.0278495870297775,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W31NFKB3FHM7EQR2024DY5",
+    "content": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W31RAD29YJ5QPZKMVCFMAM",
+    "content": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+        "query": "I have an appointment and will arrive about twenty minutes late. Will I still be seen?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "chat_id": "01M3W31NDDFAX9GQ6F90G7A3RA",
+      "sender": "patient",
+      "content": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+      "event": "message.persisted",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.218058Z"
+    },
+    {
+      "message": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+      "message_ids_unified": [
+        "01M3W31NFKB3FHM7EQR2024DY5"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.218327Z"
+    },
+    {
+      "trace_id": "78e711df482230a1118d4af1a0b827f6",
+      "event": "turn.traced",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.219847Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.222784Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3222,
+        "output": 44,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.263551Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+          "query": "I have an appointment and will arrive about twenty minutes late. Will I still be seen?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.264106Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1042.71,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+            "query": "I have an appointment and will arrive about twenty minutes late. Will I still be seen?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.264504Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.266737Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.276842Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:06.277422Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:59:06.277748Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 75,
+        "cache_read": 5834,
+        "cache_write": 141,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.100796Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1823.38,
+      "tool_names": [],
+      "text": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.101276Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 1835.21,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 268,
+        "answer_text": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.101718Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.104100Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.51,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 268,
+        "answer_text": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.104304Z"
+    },
+    {
+      "duration_ms": 2900.78,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M3W31NFKB3FHM7EQR2024DY5"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.104634Z"
+    },
+    {
+      "message_id": "01M3W31RAD29YJ5QPZKMVCFMAM",
+      "chat_id": "01M3W31NDDFAX9GQ6F90G7A3RA",
+      "sender": "assistant",
+      "content": "I'm not able to speak to clinic policies on things like running late for an appointment — that's handled separately from what I can help with. If you'd like, I can look up your appointment details or help you reschedule it to a different time instead. Would that help?",
+      "event": "message.persisted",
+      "turn_id": "01M3W31NFKB3FHM7EQR2024DY5",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.127090Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W31NFKB3FHM7EQR2024DY5": "78e711df482230a1118d4af1a0b827f6"
+  }
+}

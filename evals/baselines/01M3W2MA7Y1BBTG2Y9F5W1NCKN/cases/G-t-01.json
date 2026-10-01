@@ -1,0 +1,247 @@
+{
+  "case_id": "G-t-01",
+  "chat_id": "01M3W31CBED555KEQ5WVYJVZ6N",
+  "patient_id": "01M3W31CC2978GW8D6KNMC3R3Z",
+  "attempts": 1,
+  "elapsed_seconds": 2.3989776669768617,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+    "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W31EN51E05HD9BHVSAT8FQ",
+    "content": "I can't advise on that, I'm afraid—it's best to ask the dentist or hygienist before you leave, or give them a quick call if you've already gone. They'll know what's safe while the numbness wears off!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+        "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "chat_id": "01M3W31CBED555KEQ5WVYJVZ6N",
+      "sender": "patient",
+      "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "event": "message.persisted",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:55.932194Z"
+    },
+    {
+      "message": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "message_ids_unified": [
+        "01M3W31CDGX61RGB2D6Q2XQ0T6"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:55.932494Z"
+    },
+    {
+      "trace_id": "b3400f7926649ae7e41e554ecb7f2b28",
+      "event": "turn.traced",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:55.933664Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:55.936213Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:56.847516Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+          "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:56.848274Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 913.43,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+            "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:56.848771Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:56.851223Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:56.851405Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 57,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.205691Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1355.33,
+      "result": {
+        "answer_chars": 199,
+        "answer_text": "I can't advise on that, I'm afraid—it's best to ask the dentist or hygienist before you leave, or give them a quick call if you've already gone. They'll know what's safe while the numbness wears off!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.206191Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.207686Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.49,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 199,
+        "answer_text": "I can't advise on that, I'm afraid—it's best to ask the dentist or hygienist before you leave, or give them a quick call if you've already gone. They'll know what's safe while the numbness wears off!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.207885Z"
+    },
+    {
+      "duration_ms": 2287.42,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I can't advise on that, I'm afraid—it's best to ask the dentist or hygienist before you leave, or give them a quick call if you've already gone. They'll know what's safe while the numbness wears off!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W31CDGX61RGB2D6Q2XQ0T6"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.208170Z"
+    },
+    {
+      "message_id": "01M3W31EN51E05HD9BHVSAT8FQ",
+      "chat_id": "01M3W31CBED555KEQ5WVYJVZ6N",
+      "sender": "assistant",
+      "content": "I can't advise on that, I'm afraid—it's best to ask the dentist or hygienist before you leave, or give them a quick call if you've already gone. They'll know what's safe while the numbness wears off!",
+      "event": "message.persisted",
+      "turn_id": "01M3W31CDGX61RGB2D6Q2XQ0T6",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:58.221207Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W31CDGX61RGB2D6Q2XQ0T6": "b3400f7926649ae7e41e554ecb7f2b28"
+  }
+}

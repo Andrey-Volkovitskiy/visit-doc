@@ -1,0 +1,794 @@
+{
+  "case_id": "G-j-01",
+  "chat_id": "01M3W2SJ6BWEQX70YBPY0N51CQ",
+  "patient_id": "01M3W2SJ6WTMNC8WXC7VJ2SWQA",
+  "attempts": 1,
+  "elapsed_seconds": 6.099778083967976,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I bring to my first appointment?",
+          "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+    "content": "What should I bring to my first appointment?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2SR3G64G02Y6AM5DWBJ95",
+    "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I bring to my first appointment?",
+        "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2803,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          },
+          {
+            "entry_id": 2817,
+            "chunk_index": 0,
+            "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+          },
+          {
+            "entry_id": 2817,
+            "chunk_index": 1,
+            "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring to my first appointment?",
+        "query": "What should I bring to my first appointment?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "chat_id": "01M3W2SJ6BWEQX70YBPY0N51CQ",
+      "sender": "patient",
+      "content": "What should I bring to my first appointment?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:39.761637Z"
+    },
+    {
+      "message": "What should I bring to my first appointment?",
+      "message_ids_unified": [
+        "01M3W2SJ87F5CSM1D33H6QCFQA"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:39.761976Z"
+    },
+    {
+      "trace_id": "9742d8b8ccba45056584c5b830ec99f5",
+      "event": "turn.traced",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:39.763992Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:39.766256Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3210,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:40.789969Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring to my first appointment?",
+          "query": "What should I bring to my first appointment?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:40.791129Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1025.82,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What should I bring to my first appointment?",
+            "query": "What should I bring to my first appointment?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:40.791810Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:40.794163Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.153559Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6278378,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.475575,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.43210092,
+          "considered": true,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41297388,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.4099506,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.38912585,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.38571942,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.37239543,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.37233144,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.36915028,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.3533305,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.34911844,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.32787865,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.32748693,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.31908655,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.31732258,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.31335694,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.30853063,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.30526346,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.30439478,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.30417553,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.29929274,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.29785007,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.29155397,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.29038048,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.165648Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6278378
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.475575
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.43210092
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41297388
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.4099506
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.38912585
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.38571942
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.37239543
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.37233144
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.36915028
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.3533305
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.34911844
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.32787865
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.32748693
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.31908655
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.31732258
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.31335694
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.30853063
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.30526346
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.30439478
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.30417553
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.29929274
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.29785007
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.29155397
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.29038048
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.167300Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 300.57,
+      "scores": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6278378,
+          "rerank_score": 0.94140625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.4099506,
+          "rerank_score": 0.7109375
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41297388,
+          "rerank_score": 0.66015625
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.475575,
+          "rerank_score": 0.65625
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.43210092,
+          "rerank_score": 0.5859375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.468983Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "rerank_score": 0.94140625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "rerank_score": 0.7109375
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "rerank_score": 0.66015625
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "rerank_score": 0.65625
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "rerank_score": 0.5859375
+        }
+      ],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.470243Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6278378,
+      "best_rerank_score": 0.94140625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:41.471321Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\n# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n\n\n your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photogr..."
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:54:41.471953Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 921,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.736679Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 4944.02,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 116,
+        "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What should I bring to my first appointment?",
+            "verdict": "answered",
+            "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.737930Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.739568Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.45,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 116,
+        "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.739754Z"
+    },
+    {
+      "duration_ms": 5988.64,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.6278378,
+              "rerank_score": 0.94140625
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+              "similarity_score": 0.4099506,
+              "rerank_score": 0.7109375
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+              "similarity_score": 0.41297388,
+              "rerank_score": 0.66015625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2SJ87F5CSM1D33H6QCFQA"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.740052Z"
+    },
+    {
+      "message_id": "01M3W2SR3G64G02Y6AM5DWBJ95",
+      "chat_id": "01M3W2SJ6BWEQX70YBPY0N51CQ",
+      "sender": "assistant",
+      "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2SJ87F5CSM1D33H6QCFQA",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:45.759793Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2SJ87F5CSM1D33H6QCFQA": "9742d8b8ccba45056584c5b830ec99f5"
+  }
+}

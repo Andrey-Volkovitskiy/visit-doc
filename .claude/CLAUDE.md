@@ -110,8 +110,9 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M3W1XFRH400SHPXDSSFYWR0Z`** - the whole set at 146 cases, taken on `b0aa7a1`
-after Phase 4b extended the corpus to 19 entries and dropped the similarity floor;
+`evals/baselines/01M3W2MA7Y1BBTG2Y9F5W1NCKN`** - the whole set at 146 cases, taken on `957f240`
+after Phase 4b extended the corpus to 19 entries, dropped the similarity floor and let the answerer
+give a no the information states;
 `01M3VYV0RYA8N8RF2S1RQE5PSF`, the same set under the 0.25 floor, stays as the record of what the
 floor cost. The earlier
 v2 baseline `01M321DWRXSVSY7GW9RY3CR9YW` no longer re-scores - the corpus pin changed and six of

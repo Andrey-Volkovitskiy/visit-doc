@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-06",
+  "chat_id": "01M3W2RPWNST5QJ0JV4N1XM9YE",
+  "patient_id": "01M3W2RPXEHJN10AYG05W9AV5M",
+  "attempts": 1,
+  "elapsed_seconds": 1.1189835750265047,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2RPYXKR47DGRCARKY0RYD",
+    "content": "Can you tell me what my blood test results mean?",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2RQXXWTX0PDMRWQYFM6Y7",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Can you tell me what my blood test results mean?",
+        "query": "Can you tell me what my blood test results mean?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "chat_id": "01M3W2RPWNST5QJ0JV4N1XM9YE",
+      "sender": "patient",
+      "content": "Can you tell me what my blood test results mean?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:11.816709Z"
+    },
+    {
+      "message": "Can you tell me what my blood test results mean?",
+      "message_ids_unified": [
+        "01M3W2RPYXKR47DGRCARKY0RYD"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:11.816969Z"
+    },
+    {
+      "trace_id": "86065885e9c11029f6f3ce3f49e8ea72",
+      "event": "turn.traced",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:11.818047Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:11.820415Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3212,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.785737Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Can you tell me what my blood test results mean?",
+          "query": "Can you tell me what my blood test results mean?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.786589Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 967.46,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "Can you tell me what my blood test results mean?",
+            "query": "Can you tell me what my blood test results mean?"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.787254Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.789299Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.39,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.789463Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.791107Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.76,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.791390Z"
+    },
+    {
+      "duration_ms": 986.33,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2RPYXKR47DGRCARKY0RYD"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.791853Z"
+    },
+    {
+      "message_id": "01M3W2RQXXWTX0PDMRWQYFM6Y7",
+      "chat_id": "01M3W2RPWNST5QJ0JV4N1XM9YE",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.811043Z"
+    },
+    {
+      "chat_id": "01M3W2RPWNST5QJ0JV4N1XM9YE",
+      "reason": "not_authorized",
+      "message_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W2RPYXKR47DGRCARKY0RYD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:12.822938Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W2RPYXKR47DGRCARKY0RYD": "86065885e9c11029f6f3ce3f49e8ea72"
+  }
+}

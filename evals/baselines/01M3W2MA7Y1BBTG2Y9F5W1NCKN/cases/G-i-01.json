@@ -1,0 +1,247 @@
+{
+  "case_id": "G-i-01",
+  "chat_id": "01M3W2SE76500JSBX0AZNF5HH1",
+  "patient_id": "01M3W2SE7R10YA75MYX5YGVWCR",
+  "attempts": 1,
+  "elapsed_seconds": 2.1497394510079175,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2SE937YEJPVYTCYS0WC3F",
+    "content": "Who won the football last night?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2SG93NF87RAG80GD5HRQ9",
+    "content": "I appreciate the question, but that's a bit outside what I'm here for! Is there anything I can help you with regarding the clinic?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Who won the football last night?",
+        "query": "Who won the football last night?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "chat_id": "01M3W2SE76500JSBX0AZNF5HH1",
+      "sender": "patient",
+      "content": "Who won the football last night?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:35.694134Z"
+    },
+    {
+      "message": "Who won the football last night?",
+      "message_ids_unified": [
+        "01M3W2SE937YEJPVYTCYS0WC3F"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:35.694376Z"
+    },
+    {
+      "trace_id": "10620beea375e9abd1a03be3aad75db2",
+      "event": "turn.traced",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:35.695422Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:35.697751Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3208,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:36.815286Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Who won the football last night?",
+          "query": "Who won the football last night?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:36.815950Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1119.31,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Who won the football last night?",
+            "query": "Who won the football last night?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:36.816392Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:36.818671Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Who won the football last night?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:54:36.818886Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 258,
+        "output": 32,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.722644Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 904.99,
+      "result": {
+        "answer_chars": 130,
+        "answer_text": "I appreciate the question, but that's a bit outside what I'm here for! Is there anything I can help you with regarding the clinic?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.723388Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.725782Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.71,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 130,
+        "answer_text": "I appreciate the question, but that's a bit outside what I'm here for! Is there anything I can help you with regarding the clinic?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.725965Z"
+    },
+    {
+      "duration_ms": 2043.05,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I appreciate the question, but that's a bit outside what I'm here for! Is there anything I can help you with regarding the clinic?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2SE937YEJPVYTCYS0WC3F"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.726408Z"
+    },
+    {
+      "message_id": "01M3W2SG93NF87RAG80GD5HRQ9",
+      "chat_id": "01M3W2SE76500JSBX0AZNF5HH1",
+      "sender": "assistant",
+      "content": "I appreciate the question, but that's a bit outside what I'm here for! Is there anything I can help you with regarding the clinic?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2SE937YEJPVYTCYS0WC3F",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:37.740253Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2SE937YEJPVYTCYS0WC3F": "10620beea375e9abd1a03be3aad75db2"
+  }
+}

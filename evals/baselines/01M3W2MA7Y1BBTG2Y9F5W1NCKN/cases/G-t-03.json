@@ -1,0 +1,777 @@
+{
+  "case_id": "G-t-03",
+  "chat_id": "01M3W31HAGHPZ4A66FHKTHYD7C",
+  "patient_id": "01M3W31HB01VS1WY6XRB0BJF4C",
+  "attempts": 1,
+  "elapsed_seconds": 4.180123035097495,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "My English isn't great. Will someone be able to translate for me?",
+          "answer": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W31HCHD114VQW785ERXGVX",
+    "content": "My English isn't great. Will someone be able to translate for me?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W31NBQTYBWH6EBEF0DPNMV",
+    "content": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "My English isn't great. Will someone be able to translate for me?",
+        "answer": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2817,
+            "chunk_index": 1,
+            "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+          },
+          {
+            "entry_id": 2817,
+            "chunk_index": 0,
+            "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "My English isn't great. Will someone be able to translate for me?",
+        "query": "Will someone at the clinic be able to translate for me?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W31HCHD114VQW785ERXGVX",
+      "chat_id": "01M3W31HAGHPZ4A66FHKTHYD7C",
+      "sender": "patient",
+      "content": "My English isn't great. Will someone be able to translate for me?",
+      "event": "message.persisted",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:01.020120Z"
+    },
+    {
+      "message": "My English isn't great. Will someone be able to translate for me?",
+      "message_ids_unified": [
+        "01M3W31HCHD114VQW785ERXGVX"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:01.020379Z"
+    },
+    {
+      "trace_id": "b4f0d7e0f4fb1dfeea04f86a05a4b26c",
+      "event": "turn.traced",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:01.022278Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:01.024357Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 41,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.690144Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "My English isn't great. Will someone be able to translate for me?",
+          "query": "Will someone at the clinic be able to translate for me?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.690819Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1667.38,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "My English isn't great. Will someone be able to translate for me?",
+            "query": "Will someone at the clinic be able to translate for me?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.691429Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.693655Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.960212Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.5070304,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.36567327,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who handle billing for your visits. We share information from your record with your insurance company only as far as is needed to process claims for your care. We never share your health information with your employer, and we never sell it.\n\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.\n\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.36027125,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.34253716,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33900374,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.3363052,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.31836843,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.30213988,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.2871453,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.28603944,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.28266108,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.27494586,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.26241198,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.24958824,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.2483451,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.23855478,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.23075801,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.23026732,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.22622856,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.21922141,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.21400848,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.21110666,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.20635083,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.20550276,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.20178732,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.972317Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.5070304
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.36567327
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.36027125
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.34253716
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33900374
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.3363052
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.31836843
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.30213988
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.2871453
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.28603944
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.28266108
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.27494586
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.26241198
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.24958824
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.2483451
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.23855478
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.23075801
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.23026732
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.22622856
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.21922141
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.21400848
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.21110666
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.20635083
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.20550276
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.20178732
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:02.974629Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 596.99,
+      "scores": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.5070304,
+          "rerank_score": 0.78125
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.34253716,
+          "rerank_score": 0.59765625
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.36567327,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33900374,
+          "rerank_score": 0.357421875
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.36027125,
+          "rerank_score": 0.34765625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:03.573347Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "rerank_score": 0.78125
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "rerank_score": 0.59765625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "rerank_score": 0.357421875
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "rerank_score": 0.34765625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:03.575344Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5070304,
+      "best_rerank_score": 0.78125,
+      "event": "faq.verdict",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:03.576232Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.\n\n# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n\n\nWhat the question refers to, restated to stand on its own - it may leave out part ..."
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:59:03.576670Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 918,
+        "output": 99,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.069424Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2377.01,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 323,
+        "answer_text": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "My English isn't great. Will someone be able to translate for me?",
+            "verdict": "answered",
+            "answer_text": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.070422Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.072897Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.55,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 323,
+        "answer_text": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.073146Z"
+    },
+    {
+      "duration_ms": 4063.95,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+              "similarity_score": 0.5070304,
+              "rerank_score": 0.78125
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+              "similarity_score": 0.34253716,
+              "rerank_score": 0.59765625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W31HCHD114VQW785ERXGVX"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.073501Z"
+    },
+    {
+      "message_id": "01M3W31NBQTYBWH6EBEF0DPNMV",
+      "chat_id": "01M3W31HAGHPZ4A66FHKTHYD7C",
+      "sender": "assistant",
+      "content": "Yes. Free telephone interpreting is available in more than 200 languages for any appointment—just ask for it when you book or when you check in. There's no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can also attend in person if you ask at least 72 hours before your appointment.",
+      "event": "message.persisted",
+      "turn_id": "01M3W31HCHD114VQW785ERXGVX",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:05.089797Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W31HCHD114VQW785ERXGVX": "b4f0d7e0f4fb1dfeea04f86a05a4b26c"
+  }
+}

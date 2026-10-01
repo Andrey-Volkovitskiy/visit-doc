@@ -1,0 +1,247 @@
+{
+  "case_id": "G-c-06",
+  "chat_id": "01M3W2R3PM6VNKSJFMHD3W3RHF",
+  "patient_id": "01M3W2R3Q6HX8A0BEPNGEEAPTG",
+  "attempts": 1,
+  "elapsed_seconds": 2.0703536939108744,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+    "content": "Ugh, what a week.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2R5NG2GB60M68VCH8CFAM",
+    "content": "I'm sorry to hear you've had a tough week! We hope things improve for you soon.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Ugh, what a week.",
+        "query": "Ugh, what a week."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "chat_id": "01M3W2R3PM6VNKSJFMHD3W3RHF",
+      "sender": "patient",
+      "content": "Ugh, what a week.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:52.155602Z"
+    },
+    {
+      "message": "Ugh, what a week.",
+      "message_ids_unified": [
+        "01M3W2R3RHTDSQ5EYQHBJSYK3X"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:52.155961Z"
+    },
+    {
+      "trace_id": "ab2ab9b0424752cc12cac59e0b1fcc23",
+      "event": "turn.traced",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:52.158302Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:52.160373Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:53.274479Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Ugh, what a week.",
+          "query": "Ugh, what a week."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:53.276502Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1117.46,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Ugh, what a week.",
+            "query": "Ugh, what a week."
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:53.277597Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:53.281768Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Ugh, what a week."
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:53:53.282053Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 259,
+        "output": 23,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.050651Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 769.9,
+      "result": {
+        "answer_chars": 79,
+        "answer_text": "I'm sorry to hear you've had a tough week! We hope things improve for you soon.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.051201Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.052643Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.45,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 79,
+        "answer_text": "I'm sorry to hear you've had a tough week! We hope things improve for you soon."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.052806Z"
+    },
+    {
+      "duration_ms": 1907.81,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm sorry to hear you've had a tough week! We hope things improve for you soon.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2R3RHTDSQ5EYQHBJSYK3X"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.053100Z"
+    },
+    {
+      "message_id": "01M3W2R5NG2GB60M68VCH8CFAM",
+      "chat_id": "01M3W2R3PM6VNKSJFMHD3W3RHF",
+      "sender": "assistant",
+      "content": "I'm sorry to hear you've had a tough week! We hope things improve for you soon.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2R3RHTDSQ5EYQHBJSYK3X",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:54.117262Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2R3RHTDSQ5EYQHBJSYK3X": "ab2ab9b0424752cc12cac59e0b1fcc23"
+  }
+}

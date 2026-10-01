@@ -1,0 +1,1426 @@
+{
+  "case_id": "G-q-02",
+  "chat_id": "01M3W2YYXAN7KEJ6V7NXFFNMTJ",
+  "patient_id": "01M3W2YYXW7X98R4T0C59T98HK",
+  "attempts": 1,
+  "elapsed_seconds": 12.181647727033123,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What should I bring to my appointment?",
+          "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+            },
+            {
+              "entry_id": 2819,
+              "chunk_index": 1,
+              "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+    "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2Z5SMGH07SVRMP3KRF8K5",
+    "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What should I bring to my appointment?",
+        "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2803,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          },
+          {
+            "entry_id": 2817,
+            "chunk_index": 1,
+            "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+          },
+          {
+            "entry_id": 2819,
+            "chunk_index": 1,
+            "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What should I bring to my appointment?",
+        "query": "What should I bring to my appointment?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Can you book me Wednesday at 9 with William Osler?",
+        "query": "Can you book me Wednesday at 9 with William Osler?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "chat_id": "01M3W2YYXAN7KEJ6V7NXFFNMTJ",
+      "sender": "patient",
+      "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:36.634414Z"
+    },
+    {
+      "message": "What should I bring, and can you book me Wednesday at 9 with William Osler?",
+      "message_ids_unified": [
+        "01M3W2YYZCKM9EYXS2VX3WB7NG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:36.634685Z"
+    },
+    {
+      "trace_id": "467845d3a988a8b039bba7b798b460b0",
+      "event": "turn.traced",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:36.635745Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:36.637860Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3222,
+        "output": 63,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.902619Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What should I bring to my appointment?",
+          "query": "What should I bring to my appointment?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Can you book me Wednesday at 9 with William Osler?",
+          "query": "Can you book me Wednesday at 9 with William Osler?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.904041Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1267.61,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What should I bring to my appointment?",
+            "query": "What should I bring to my appointment?"
+          },
+          {
+            "position": 1,
+            "intent": "booking",
+            "text": "Can you book me Wednesday at 9 with William Osler?",
+            "query": "Can you book me Wednesday at 9 with William Osler?"
+          }
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.905215Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.908492Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.910286Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.920945Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:37.921706Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you book me Wednesday at 9 with William Osler?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:57:37.922082Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.175936Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6036462,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.45518965,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.44077542,
+          "considered": true,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.4244253,
+          "considered": true,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41967183,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.40423772,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.3997708,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.38391763,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.38130814,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.38026097,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.3683588,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.36448818,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.3556579,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.35084188,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.3455934,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.338679,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.33307347,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.322695,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.32174936,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.32002077,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.31844395,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.31221813,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.30688852,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.30593646,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.30105358,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.193133Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6036462
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.45518965
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.44077542
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.4244253
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41967183
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.40423772
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.3997708
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.38391763
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.38130814
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.38026097
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.3683588
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.36448818
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.3556579
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.35084188
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.3455934
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.338679
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.33307347
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.322695
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.32174936
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.32002077
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.31844395
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.31221813
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.30688852
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.30593646
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.30105358
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.194990Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 417.53,
+      "scores": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.6036462,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.41967183,
+          "rerank_score": 0.74609375
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.4244253,
+          "rerank_score": 0.6796875
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.44077542,
+          "rerank_score": 0.66015625
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.45518965,
+          "rerank_score": 0.61328125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.614165Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "rerank_score": 0.890625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "rerank_score": 0.74609375
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "rerank_score": 0.6796875
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "rerank_score": 0.66015625
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "rerank_score": 0.61328125
+        }
+      ],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.616200Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6036462,
+      "best_rerank_score": 0.890625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:38.617832Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\n your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.\n\nr blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n\n\nQuestion: What shou..."
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:57:38.618521Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 886,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.068068Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2161.03,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 116,
+        "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What should I bring to my appointment?",
+            "verdict": "answered",
+            "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.068976Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 198,
+        "cache_read": 5834,
+        "cache_write": 131,
+        "cache_write_1h": 0,
+        "thinking": 65
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.356423Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2434.76,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.356970Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.357151Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.368498Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 11.88,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:40.369161Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you book me Wednesday at 9 with William Osler?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01McUyYxGzGHBtrwWuS7ombL",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01McUyYxGzGHBtrwWuS7ombL",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:57:40.369416Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 50,
+        "cache_read": 5965,
+        "cache_write": 347,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:42.070823Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1701.56,
+      "tool_names": [],
+      "text": "9am on Wednesday, March 4th is available with William Osler (General Practice). Just to confirm — this appointment is for you, Jane, correct?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:42.071265Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4161.62,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 141,
+        "answer_text": "9am on Wednesday, March 4th is available with William Osler (General Practice). Just to confirm — this appointment is for you, Jane, correct?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:42.071506Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:42.073464Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1113,
+        "output": 109,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:43.598108Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1525.97,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 3,
+        "answer_chars": 330,
+        "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:43.598901Z"
+    },
+    {
+      "duration_ms": 6979.41,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.6036462,
+              "rerank_score": 0.890625
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 1,
+              "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+              "similarity_score": 0.41967183,
+              "rerank_score": 0.74609375
+            },
+            {
+              "entry_id": 2819,
+              "chunk_index": 1,
+              "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n",
+              "similarity_score": 0.4244253,
+              "rerank_score": 0.6796875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W2YYZCKM9EYXS2VX3WB7NG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:43.599523Z"
+    },
+    {
+      "message_id": "01M3W2Z5SMGH07SVRMP3KRF8K5",
+      "chat_id": "01M3W2YYXAN7KEJ6V7NXFFNMTJ",
+      "sender": "assistant",
+      "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2YYZCKM9EYXS2VX3WB7NG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:57:43.612168Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+      "content": "OK",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M3W2ZAQAP4AZJ0KRF5VMZMGC",
+      "content": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "chat_id": "01M3W2YYXAN7KEJ6V7NXFFNMTJ",
+        "sender": "patient",
+        "content": "OK",
+        "event": "message.persisted",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:43.667957Z"
+      },
+      {
+        "message": "OK",
+        "message_ids_unified": [
+          "01M3W2Z5V8NZXS5JCDPAFRZ8M5"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:43.668300Z"
+      },
+      {
+        "trace_id": "3651fe6b58ad950258282765d5b2eca7",
+        "event": "turn.traced",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:43.669587Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:43.671978Z"
+      },
+      {
+        "call": "classify_intent.model",
+        "model": "claude-haiku-4-5-20251001",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 3304,
+          "output": 38,
+          "cache_read": 0,
+          "cache_write": 0,
+          "cache_write_1h": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.056557Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "OK",
+            "query": "Book me Wednesday at 9 with William Osler"
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.057763Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 1387.31,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "segments": [
+            {
+              "position": 0,
+              "intent": "booking",
+              "text": "OK",
+              "query": "Book me Wednesday at 9 with William Osler"
+            }
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.058698Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.067535Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.087203Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:45.089263Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?"
+          },
+          {
+            "role": "assistant",
+            "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it."
+          },
+          {
+            "role": "user",
+            "content": "OK"
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-01T15:57:45.090920Z"
+      },
+      {
+        "call": "handle_booking.model[1]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 137,
+          "cache_read": 5834,
+          "cache_write": 250,
+          "cache_write_1h": 0,
+          "thinking": 23
+        },
+        "event": "model.usage",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:47.272429Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 2181.69,
+        "tool_names": [
+          "book_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:47.272949Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 1,
+        "arguments": {
+          "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+          "starts_at": "2026-03-04T09:00:00"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:47.273159Z"
+      },
+      {
+        "method": "BookAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:47.304886Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 1,
+        "status": "booked",
+        "reason": null,
+        "duration_ms": 39.78,
+        "event": "booking.tool_result",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:47.313118Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What should I bring, and can you book me Wednesday at 9 with William Osler?"
+          },
+          {
+            "role": "assistant",
+            "content": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\nFor your appointment request, 9am on Wednesday, March 4th with William Osler (General Practice) is available. Just to confirm — is this appointment for you, Jane? Once you confirm, we can proceed with booking it."
+          },
+          {
+            "role": "user",
+            "content": "OK"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_015iwMcPhMhZQ19imN5UyoYA",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+                  "starts_at": "2026-03-04T09:00:00"
+                },
+                "name": "book_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_015iwMcPhMhZQ19imN5UyoYA",
+                "content": "{\"status\": \"booked\", \"appointment\": {\"id\": \"01M3W2Z9D3Y9YEX676B800BSFF\", \"practitioner_full_name\": \"William Osler\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\"}}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-01T15:57:47.313483Z"
+      },
+      {
+        "call": "handle_booking.model[2]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 2,
+          "output": 52,
+          "cache_read": 6084,
+          "cache_write": 242,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.638271Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 1326.16,
+        "tool_names": [],
+        "text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am.",
+        "event": "booking.model_call",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.640150Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 3575.38,
+        "result": {
+          "outcome": "booked",
+          "appointment_id": "01M3W2Z9D3Y9YEX676B800BSFF",
+          "iterations": 2,
+          "tool_calls": 1,
+          "answer_chars": 139,
+          "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.641049Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.644760Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.68,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "booked",
+          "citation_count": 0,
+          "answer_chars": 139,
+          "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am."
+        },
+        "event": "node.completed",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.645041Z"
+      },
+      {
+        "duration_ms": 4988.82,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am.",
+        "booking_outcome": "booked",
+        "message_ids_unified": [
+          "01M3W2Z5V8NZXS5JCDPAFRZ8M5"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.645561Z"
+      },
+      {
+        "message_id": "01M3W2ZAQAP4AZJ0KRF5VMZMGC",
+        "chat_id": "01M3W2YYXAN7KEJ6V7NXFFNMTJ",
+        "sender": "assistant",
+        "content": "You're all set! Your appointment with William Osler (General Practice) is booked for Wednesday, March 4th at 9:00am, running until 10:00am.",
+        "event": "message.persisted",
+        "turn_id": "01M3W2Z5V8NZXS5JCDPAFRZ8M5",
+        "level": "info",
+        "timestamp": "2026-10-01T15:57:48.665019Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [],
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T09:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T09:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2YYZCKM9EYXS2VX3WB7NG": "467845d3a988a8b039bba7b798b460b0",
+    "01M3W2Z5V8NZXS5JCDPAFRZ8M5": "3651fe6b58ad950258282765d5b2eca7"
+  }
+}
