@@ -1378,6 +1378,15 @@ def test_the_generation_prompt_forbids_inferring_an_answer_from_a_silence() -> N
     assert "say nothing it does not say - not even a no" in prompt
 
 
+def test_the_generation_prompt_lets_a_stated_no_answer() -> None:
+    # Read alone, "not even a no" became "never a no": "do you have Spikevax?" was
+    # declined with "we do not stock ... Spikevax" in front of the model.
+    from chat.agent.answer_faq import _SYSTEM_PROMPT
+
+    prompt = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "a no it does say is an answer, so give it" in prompt
+
+
 def test_the_generation_prompt_asks_for_the_sentinel_and_nothing_else() -> None:
     # The decline is a signal this module reads, not prose for the patient: read as
     # prose it is indistinguishable from an answer, and the turn recorded one.
