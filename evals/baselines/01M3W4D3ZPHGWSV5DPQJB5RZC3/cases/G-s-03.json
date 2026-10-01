@@ -1,0 +1,777 @@
+{
+  "case_id": "G-s-03",
+  "chat_id": "01M3W4S875X3NWCXQF85C13J45",
+  "patient_id": "01M3W4S87PBQ0X2MXNKZV9VJCF",
+  "attempts": 1,
+  "elapsed_seconds": 3.010427799075842,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Is Cigna LocalPlus accepted?",
+          "answer": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2849,
+              "chunk_index": 3,
+              "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network."
+            },
+            {
+              "entry_id": 2843,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+    "content": "Is Cigna LocalPlus accepted?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4SB3TP9XMF17R787MK9GF",
+    "content": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Is Cigna LocalPlus accepted?",
+        "answer": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2849,
+            "chunk_index": 3,
+            "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network."
+          },
+          {
+            "entry_id": 2843,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Is Cigna LocalPlus accepted?",
+        "query": "Is Cigna LocalPlus accepted?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "chat_id": "01M3W4S875X3NWCXQF85C13J45",
+      "sender": "patient",
+      "content": "Is Cigna LocalPlus accepted?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:26.702298Z"
+    },
+    {
+      "message": "Is Cigna LocalPlus accepted?",
+      "message_ids_unified": [
+        "01M3W4S894CK4GDQGKX6KG5TMQ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:26.702718Z"
+    },
+    {
+      "trace_id": "4f37ab733adbb315654fc4ab53fca65c",
+      "event": "turn.traced",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:26.704488Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:26.706282Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3210,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.693325Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Is Cigna LocalPlus accepted?",
+          "query": "Is Cigna LocalPlus accepted?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.694112Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 988.67,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Is Cigna LocalPlus accepted?",
+            "query": "Is Cigna LocalPlus accepted?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.694730Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.697162Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.976718Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.538207,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.36400542,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.35161668,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.34951386,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.33864647,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.33483374,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.31125915,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.28938517,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.23647903,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.23608303,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.21201219,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.20915362,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.20789953,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.2034545,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.1954638,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.18357214,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "similarity_score": 0.1817463,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.17844436,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.17659985,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.1698273,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.16899216,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.1667897,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.16543692,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.16304667,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.16215208,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.988690Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.538207
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.36400542
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.35161668
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.34951386
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.33864647
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.33483374
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.31125915
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.28938517
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.23647903
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.23608303
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.21201219
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.20915362
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.20789953
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.2034545
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.1954638
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.18357214
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "similarity_score": 0.1817463
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.17844436
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.17659985
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.1698273
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.16899216
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.1667897
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.16543692
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.16304667
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.16215208
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:27.990362Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 278.69,
+      "scores": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.538207,
+          "rerank_score": 0.8359375
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.36400542,
+          "rerank_score": 0.62890625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.34951386,
+          "rerank_score": 0.431640625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.35161668,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.33864647,
+          "rerank_score": 0.34375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:28.270428Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "rerank_score": 0.8359375
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "rerank_score": 0.62890625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "rerank_score": 0.431640625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "rerank_score": 0.34375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:28.271452Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.538207,
+      "best_rerank_score": 0.8359375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:28.272184Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Is Cigna LocalPlus accepted?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:29:28.272443Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 500,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.585442Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1889.63,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 130,
+        "answer_text": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Is Cigna LocalPlus accepted?",
+            "verdict": "answered",
+            "answer_text": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.586495Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.588578Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.59,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 130,
+        "answer_text": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.588787Z"
+    },
+    {
+      "duration_ms": 2896.16,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2849,
+              "chunk_index": 3,
+              "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+              "similarity_score": 0.538207,
+              "rerank_score": 0.8359375
+            },
+            {
+              "entry_id": 2843,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.36400542,
+              "rerank_score": 0.62890625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4S894CK4GDQGKX6KG5TMQ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.589071Z"
+    },
+    {
+      "message_id": "01M3W4SB3TP9XMF17R787MK9GF",
+      "chat_id": "01M3W4S875X3NWCXQF85C13J45",
+      "sender": "assistant",
+      "content": "Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4S894CK4GDQGKX6KG5TMQ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:29.603247Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4S894CK4GDQGKX6KG5TMQ": "4f37ab733adbb315654fc4ab53fca65c"
+  }
+}

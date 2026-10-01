@@ -110,9 +110,9 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M3W2MA7Y1BBTG2Y9F5W1NCKN`** - the whole set at 146 cases, taken on `957f240`
-after Phase 4b extended the corpus to 19 entries, dropped the similarity floor and let the answerer
-give a no the information states;
+`evals/baselines/01M3W4D3ZPHGWSV5DPQJB5RZC3`** - the whole set at 146 cases, taken on `a171078`
+after Phase 4b extended the corpus to 19 entries, dropped the similarity floor, let the answerer
+give a no the information states and chunked documents by heading section;
 `01M3VYV0RYA8N8RF2S1RQE5PSF`, the same set under the 0.25 floor, stays as the record of what the
 floor cost. The earlier
 v2 baseline `01M321DWRXSVSY7GW9RY3CR9YW` no longer re-scores - the corpus pin changed and six of
@@ -352,18 +352,21 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   consumes one yet — `docs/ROADMAP.md` defers it until a second consumer justifies it. Putting an
   MCP server and client between the agent and handlers in one process is the rejected option
   (`specs/005-scheduling-and-booking/research.md` #1), not a pending upgrade.
-- RAG must include defensible chunking, a reranking step, citations to source documents — derived
-  structurally from what was actually retrieved and placed in context, never self-reported by the
-  LLM (avoids hallucinated citations) — and an explicit **abstention path**. Since 008 the
-  "groundedness check" is **two gates before generation**, not a boolean after it: a per-chunk
-  similarity floor, then a cross-encoder rerank floor, either of which abstains without spending a
-  generation call. Since 018 the similarity floor defaults to -1.0, so the first gate is its cap
-  alone and the rerank floor is the one that decides an abstention: measured on the extended
-  corpus, a 0.25 floor dropped chunks dense search had ranked first. The floor that remains is
-  `UNRERANKED_SIMILARITY_FLOOR`, applied only when the reranker is unavailable, so a fallback never
-  answers from a shortlist nothing has judged (`specs/018-hybrid-retrieval/evaluation/`). `rag/groundedness.py` and the `grounded` flag are gone; a turn now carries a
-  five-value `FaqVerdict` naming which gate stopped it, because "an answered turn is grounded" made
-  `true` uninformative while `false` covered three situations needing three different fixes.
+- RAG must include defensible chunking (since 018: one chunk per heading section, prefixed with
+  its heading path; headless entries fixed-size as before), a reranking step, citations to source
+  documents — derived structurally from what was actually retrieved and placed in context, never
+  self-reported by the LLM (avoids hallucinated citations) — and an explicit **abstention path**.
+  Since 008 the "groundedness check" is **two gates before generation**, not a boolean after it:
+  a per-chunk similarity floor, then a cross-encoder rerank floor, either of which abstains without
+  spending a generation call. Since 018 the similarity floor defaults to -1.0, so the first gate
+  is its cap alone and the rerank floor is the one that decides an abstention: measured on the
+  extended corpus, a 0.25 floor dropped chunks dense search had ranked first. The floor that
+  remains is `UNRERANKED_SIMILARITY_FLOOR`, applied only when the reranker is unavailable, so a
+  fallback never answers from a shortlist nothing has judged
+  (`specs/018-hybrid-retrieval/evaluation/`). `rag/groundedness.py` and the `grounded` flag are
+  gone; a turn now carries a five-value `FaqVerdict` naming which gate stopped it, because "an
+  answered turn is grounded" made `true` uninformative while `false` covered three situations
+  needing three different fixes.
   Per-turn *post-generation* groundedness verification is deliberately not done — `docs/ROADMAP.md`
   assigns answer groundedness to Phase 2's offline eval harness.
 - **Postgres decides what Qdrant may answer from.** For any entity with both a Postgres row and a

@@ -1,0 +1,411 @@
+{
+  "case_id": "G-a-07",
+  "chat_id": "01M3W4DQ5PKWHYDW2V3BPWHF46",
+  "patient_id": "01M3W4DQ6DHFWND129BV7BG01A",
+  "attempts": 1,
+  "elapsed_seconds": 5.836068103089929,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4DQ95PPASXNXQE29TYKMG",
+    "content": "Is there anything free on Saturday?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4DWS7FVJ10ZMWJ3VJ4ZAT",
+    "content": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Is there anything free on Saturday?",
+        "query": "Is there a free appointment on Saturday?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "chat_id": "01M3W4DQ5PKWHYDW2V3BPWHF46",
+      "sender": "patient",
+      "content": "Is there anything free on Saturday?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.856395Z"
+    },
+    {
+      "message": "Is there anything free on Saturday?",
+      "message_ids_unified": [
+        "01M3W4DQ95PPASXNXQE29TYKMG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.857129Z"
+    },
+    {
+      "trace_id": "36c5a7118c8ffd7e0a731b16c80cc179",
+      "event": "turn.traced",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.860103Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.864063Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3232,
+        "output": 34,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.796314Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Is there anything free on Saturday?",
+          "query": "Is there a free appointment on Saturday?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.797814Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 937.71,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Is there anything free on Saturday?",
+            "query": "Is there a free appointment on Saturday?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.800857Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.813690Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.843387Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:09.844959Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I would like to get a tooth filling."
+        },
+        {
+          "role": "assistant",
+          "content": "Of course - which day would suit you?"
+        },
+        {
+          "role": "user",
+          "content": "Is there anything free on Saturday?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:23:09.846117Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 171,
+        "cache_read": 5831,
+        "cache_write": 149,
+        "cache_write_1h": 0,
+        "thinking": 40
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:12.610892Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2765.54,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:12.612085Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+        "from_date": "2026-03-07",
+        "to_date": "2026-03-07"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:12.612624Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:12.641136Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 29.15,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:12.642255Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I would like to get a tooth filling."
+        },
+        {
+          "role": "assistant",
+          "content": "Of course - which day would suit you?"
+        },
+        {
+          "role": "user",
+          "content": "Is there anything free on Saturday?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01RNpaAR2ytuce9uH2KVR47n",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+                "from_date": "2026-03-07",
+                "to_date": "2026-03-07"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01RNpaAR2ytuce9uH2KVR47n",
+              "content": "{\"available_starts\": [\"2026-03-07T09:00:00\", \"2026-03-07T10:00:00\", \"2026-03-07T11:00:00\", \"2026-03-07T12:00:00\", \"2026-03-07T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:23:12.642899Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 71,
+        "cache_read": 5980,
+        "cache_write": 277,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.444127Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1802.74,
+      "tool_names": [],
+      "text": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.446200Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4634.69,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 147,
+        "answer_text": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.447720Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.457024Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.41,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.457562Z"
+    },
+    {
+      "duration_ms": 5620.53,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M3W4DQ95PPASXNXQE29TYKMG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.459247Z"
+    },
+    {
+      "message_id": "01M3W4DWS7FVJ10ZMWJ3VJ4ZAT",
+      "chat_id": "01M3W4DQ5PKWHYDW2V3BPWHF46",
+      "sender": "assistant",
+      "content": "On Saturday, March 7th, Dr. Andreas Vesalius (Dentistry) has these times open: 9am, 10am, 11am, 12pm, and 1pm. Would you like to book one of these?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4DQ95PPASXNXQE29TYKMG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:14.486344Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4DQ95PPASXNXQE29TYKMG": "36c5a7118c8ffd7e0a731b16c80cc179"
+  }
+}

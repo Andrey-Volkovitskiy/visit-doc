@@ -29,6 +29,7 @@ finding out, not a thing to repair by editing the run.
 | [`01M3VYV0RYA8N8RF2S1RQE5PSF`](01M3VYV0RYA8N8RF2S1RQE5PSF/) | 146 (all) | `e28479a` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3W1XFRH400SHPXDSSFYWR0Z`](01M3W1XFRH400SHPXDSSFYWR0Z/) | 146 (all) | `b0aa7a1` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3W2MA7Y1BBTG2Y9F5W1NCKN`](01M3W2MA7Y1BBTG2Y9F5W1NCKN/) | 146 (all) | `957f240` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3W4D3ZPHGWSV5DPQJB5RZC3`](01M3W4D3ZPHGWSV5DPQJB5RZC3/) | 146 (all) | `a171078` on `018-hybrid-retrieval` | 2026-10-01 |
 
 The first run of the golden set at v2 that is scoreable. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not: it selects v1 case ids the set no longer holds,
@@ -38,7 +39,8 @@ supersedes it as the run a comparison starts from, and does not replace it as a 
 `01M3VYV0RYA8N8RF2S1RQE5PSF` was the baseline of the set after Phase 4b extended the corpus to 19
 entries and added the retrieval families, under a 0.25 similarity floor.
 `01M3W1XFRH400SHPXDSSFYWR0Z` is the same set on the build that dropped that floor, so the earlier
-run stays as the record of what the floor cost. `01M3W2MA7Y1BBTG2Y9F5W1NCKN` is the current
-baseline: that build with the answer prompt giving a no the information states. It supersedes `01M321D…` in turn, which no longer
+run stays as the record of what the floor cost. `01M3W2MA7Y1BBTG2Y9F5W1NCKN` is
+that build with the answer prompt giving a no the information states, and
+`01M3W4D3ZPHGWSV5DPQJB5RZC3` is the current baseline: that build with heading-aware chunking. It supersedes `01M321D…` in turn, which no longer
 re-scores - the corpus pin changed and six of its labels gained a citation (`PROVENANCE.md`) - and
 stays as the record of the 9-entry build.

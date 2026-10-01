@@ -1,0 +1,227 @@
+{
+  "case_id": "G-b-02",
+  "chat_id": "01M3W4GA068JH7FBD70ESV9NMS",
+  "patient_id": "01M3W4GA154B9141HS235GH4K2",
+  "attempts": 1,
+  "elapsed_seconds": 1.3344920061063021,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+    "content": "I can't breathe properly.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4GB6T3PS222GGCKQX61M0",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I can't breathe properly.",
+        "query": "I can't breathe properly."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "chat_id": "01M3W4GA068JH7FBD70ESV9NMS",
+      "sender": "patient",
+      "content": "I can't breathe properly.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:33.677626Z"
+    },
+    {
+      "message": "I can't breathe properly.",
+      "message_ids_unified": [
+        "01M3W4GA3Q0E62NKVSWZAGBPD9"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:33.678897Z"
+    },
+    {
+      "trace_id": "e64d9aaf57e482f7332002bcbd9ca6e8",
+      "event": "turn.traced",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:33.682414Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:33.687951Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3208,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.760176Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I can't breathe properly.",
+          "query": "I can't breathe properly."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.761299Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1074.98,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "urgent_condition",
+            "text": "I can't breathe properly.",
+            "query": "I can't breathe properly."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.762371Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.766892Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.73,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.767227Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.770377Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.95,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.770703Z"
+    },
+    {
+      "duration_ms": 1116.26,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4GA3Q0E62NKVSWZAGBPD9"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.771632Z"
+    },
+    {
+      "message_id": "01M3W4GB6T3PS222GGCKQX61M0",
+      "chat_id": "01M3W4GA068JH7FBD70ESV9NMS",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.791653Z"
+    },
+    {
+      "chat_id": "01M3W4GA068JH7FBD70ESV9NMS",
+      "reason": "urgent_condition",
+      "message_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4GA3Q0E62NKVSWZAGBPD9",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:34.821215Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W4GA3Q0E62NKVSWZAGBPD9": "e64d9aaf57e482f7332002bcbd9ca6e8"
+  }
+}

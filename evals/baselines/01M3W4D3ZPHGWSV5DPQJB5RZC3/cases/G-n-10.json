@@ -1,0 +1,1263 @@
+{
+  "case_id": "G-n-10",
+  "chat_id": "01M3W4P68K160J53BN9DAM0JTD",
+  "patient_id": "01M3W4P69JM43F6246NRJGWXFW",
+  "attempts": 1,
+  "elapsed_seconds": 3.56343807594385,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you validate parking?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        },
+        {
+          "position": 1,
+          "question": "How much does an MRI scan cost if I pay myself?",
+          "answer": null,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+    "content": "Do you validate parking, and how much does an MRI scan cost if I pay myself?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4P9JHT0665GMY5KMBKF2N",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you validate parking?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      },
+      {
+        "position": 1,
+        "question": "How much does an MRI scan cost if I pay myself?",
+        "answer": null,
+        "verdict": "abstained_generation",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you validate parking?",
+        "query": "Do you validate parking?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "How much does an MRI scan cost if I pay myself?",
+        "query": "How much does an MRI scan cost if I pay myself?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "chat_id": "01M3W4P68K160J53BN9DAM0JTD",
+      "sender": "patient",
+      "content": "Do you validate parking, and how much does an MRI scan cost if I pay myself?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:46.450218Z"
+    },
+    {
+      "message": "Do you validate parking, and how much does an MRI scan cost if I pay myself?",
+      "message_ids_unified": [
+        "01M3W4P6C0CFQDZGGGC3A0642Q"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:46.450634Z"
+    },
+    {
+      "trace_id": "e48048a46ca06fe7180dcc938599d3db",
+      "event": "turn.traced",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:46.452694Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:46.458918Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3220,
+        "output": 61,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:47.644958Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you validate parking?",
+          "query": "Do you validate parking?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "How much does an MRI scan cost if I pay myself?",
+          "query": "How much does an MRI scan cost if I pay myself?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:47.646750Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1191.61,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you validate parking?",
+            "query": "Do you validate parking?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "How much does an MRI scan cost if I pay myself?",
+            "query": "How much does an MRI scan cost if I pay myself?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:47.648341Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:47.659509Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:47.996561Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.011079Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.40684003,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.2751454,
+          "considered": true,
+          "chunk_text": "# Running late\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.27042136,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.25861245,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.2554559,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.25104767,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.2488974,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.24416535,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.23987028,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.23373686,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.23345077,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.22415425,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.22325748,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.21949303,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.21609002,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.21010342,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.20937902,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.20580214,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.20342728,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.20140025,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.196916,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.19655523,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.1910344,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.18619327,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.18557653,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.034412Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.40684003
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.2751454
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.27042136
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.25861245
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.2554559
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.25104767
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.2488974
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.24416535
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.23987028
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.23373686
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.23345077
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.22415425
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.22325748
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.21949303
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.21609002
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.21010342
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.20937902
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.20580214
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.20342728
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.20140025
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.196916
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.19655523
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.1910344
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.18619327
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.18557653
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.044991Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.4893394,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.44490865,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.41621265,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.39724687,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.368174,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If your plan has a deductible you have not met yet, you pay the amount your plan allows for the visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 4,
+          "similarity_score": 0.36266285,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.3451876,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.34366187,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.29631245,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.2958376,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.28255022,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.26282638,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.24945584,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.24167639,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.22983322,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.22952972,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.22707069,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.22637379,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.22561684,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.222926,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.22228575,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.21664402,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.21654928,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 3,
+          "similarity_score": 0.21574771,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.21366617,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.084945Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.4893394
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.44490865
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.41621265
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.39724687
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.368174
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2852,
+          "chunk_index": 4,
+          "similarity_score": 0.36266285
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.3451876
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.34366187
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.29631245
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.2958376
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.28255022
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.26282638
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.24945584
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.24167639
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.22983322
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.22952972
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.22707069
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.22637379
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.22561684
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.222926
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.22228575
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.21664402
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.21654928
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 3,
+          "similarity_score": 0.21574771
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.21366617
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.092548Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 292.48,
+      "scores": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.40684003,
+          "rerank_score": 0.404296875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.2751454,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.2554559,
+          "rerank_score": 0.265625
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.25861245,
+          "rerank_score": 0.25
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.27042136,
+          "rerank_score": 0.25
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.341727Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "rerank_score": 0.404296875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "rerank_score": 0.265625
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "rerank_score": 0.25
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "rerank_score": 0.25
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.343101Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.40684003,
+      "best_rerank_score": 0.404296875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.344467Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 326.87,
+      "scores": [
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.39724687,
+          "rerank_score": 0.58203125
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.368174,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.44490865,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.4893394,
+          "rerank_score": 0.46484375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.41621265,
+          "rerank_score": 0.390625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.430213Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "rerank_score": 0.58203125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "rerank_score": 0.46484375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "rerank_score": 0.390625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.433147Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4893394,
+      "best_rerank_score": 0.58203125,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:48.435595Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\nQuestion: How much does an MRI scan cost if I pay myself?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:27:48.436806Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 378,
+        "output": 10,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.684517Z"
+    },
+    {
+      "gates_verdict": "answered",
+      "survivor_count": 1,
+      "malformed": false,
+      "event": "faq.no_answer",
+      "segment": 1,
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.685671Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2030.51,
+      "result": {
+        "segment_count": 2,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you validate parking?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          },
+          {
+            "position": 1,
+            "question": "How much does an MRI scan cost if I pay myself?",
+            "verdict": "abstained_generation",
+            "answer_text": ""
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.689046Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.698111Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2.21,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": true,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.699727Z"
+    },
+    {
+      "duration_ms": 3268.7,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        },
+        {
+          "position": 1,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4P6C0CFQDZGGGC3A0642Q"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.701226Z"
+    },
+    {
+      "message_id": "01M3W4P9JHT0665GMY5KMBKF2N",
+      "chat_id": "01M3W4P68K160J53BN9DAM0JTD",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.744216Z"
+    },
+    {
+      "chat_id": "01M3W4P68K160J53BN9DAM0JTD",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4P6C0CFQDZGGGC3A0642Q",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:49.771642Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4P6C0CFQDZGGGC3A0642Q": "e48048a46ca06fe7180dcc938599d3db"
+  }
+}

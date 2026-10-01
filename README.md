@@ -108,9 +108,19 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   LangGraph lands in Phase 1 once real branching (parallel specialist nodes) exists.
 - **Streaming transport**: NDJSON over a plain `fetch` + `ReadableStream`, not SSE/`EventSource`
   (which can't carry a POST body) or WebSocket (unnecessary for one request/response stream).
-- **Chunking**: fixed-size (~1,000 chars, ~150-char overlap), preferring paragraph/sentence
-  boundaries over mid-word cuts — simple and defensible at this phase's scale; semantic chunking
-  and reranking are deferred to Phase 1.
+- **Chunking**: by heading section where an entry has markdown headings, every chunk prefixed with
+  its heading path (`# Dental care guide` / `## Dental insurance`); fixed-size (~1,000 chars,
+  ~150-char overlap, preferring paragraph and sentence boundaries) inside an over-long section and
+  for an entry with no heading, which is every Q&A entry - those chunk exactly as they did. Chosen
+  over semantic chunking because the documents already mark their own sections, so a model
+  deciding where one ends would buy nothing and add a call to every save. Fixed-size windows were
+  the Phase 0 choice and stopped being defensible once the corpus held long documents (018): a
+  chunk ended on a bare heading, began mid-sentence, and put one section's sentence beside
+  another's - "do you take Delta Dental PPO?" was read as being about taking a medicine because the
+  blood-thinner paragraph shared its chunk, declined 10 times in 10 replays where section chunks
+  answer it 10 in 10. The tradeoff accepted: more, smaller chunks (36 to 62 on the starter corpus),
+  so more of the 25-wide pool is spent on one document, and a heading prefix repeated in every
+  chunk's embedding (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Groundedness gate**: a pre-generation similarity-threshold check on retrieval, not a second
   LLM call (LLM-as-judge) — satisfies the constitution's mandatory-abstention principle without
   doubling latency/cost on every question; a fuller check lands in Phase 1/2.

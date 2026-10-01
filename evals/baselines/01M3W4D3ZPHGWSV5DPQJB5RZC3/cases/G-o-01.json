@@ -1,0 +1,1031 @@
+{
+  "case_id": "G-o-01",
+  "chat_id": "01M3W4P9THZSV3KV5MGWHS0PPS",
+  "patient_id": "01M3W4P9VZEBA6D51VAKKGSH68",
+  "attempts": 1,
+  "elapsed_seconds": 9.143426583963446,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 1,
+          "question": "How much is a dentist visit if I'm paying out of pocket?",
+          "answer": "A dentist appointment costs $180 out-of-pocket.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2845,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+            },
+            {
+              "entry_id": 2858,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done."
+            },
+            {
+              "entry_id": 2858,
+              "chunk_index": 2,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4PA22TN2FD8AHRHX53MDB",
+    "content": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4PJPEVV2TXCS1126J5EA8",
+    "content": "A dentist appointment costs $180 out-of-pocket.\n\nFor Tuesday, March 3rd, Dr. Andreas Vesalius has morning openings at 9:00am, 10:00am, and 11:00am (also 12:00pm and 1:00pm if you'd prefer afternoon). Let me know which time works for you and I'll get it booked.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 1,
+        "question": "How much is a dentist visit if I'm paying out of pocket?",
+        "answer": "A dentist appointment costs $180 out-of-pocket.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2845,
+            "chunk_index": 0,
+            "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+          },
+          {
+            "entry_id": 2858,
+            "chunk_index": 0,
+            "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done."
+          },
+          {
+            "entry_id": 2858,
+            "chunk_index": 2,
+            "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "When is a dentist available on Tuesday morning?",
+        "query": "When is a dentist available on Tuesday morning?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "How much is a dentist visit if I'm paying out of pocket?",
+        "query": "How much is a dentist visit if I'm paying out of pocket?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "chat_id": "01M3W4P9THZSV3KV5MGWHS0PPS",
+      "sender": "patient",
+      "content": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:50.234479Z"
+    },
+    {
+      "message": "When is a dentist available on Tuesday morning, and how much is the visit if I'm paying out of pocket?",
+      "message_ids_unified": [
+        "01M3W4PA22TN2FD8AHRHX53MDB"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:50.234958Z"
+    },
+    {
+      "trace_id": "3a11e907d6b0071a66ff345f5af44739",
+      "event": "turn.traced",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:50.237240Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:50.243510Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3225,
+        "output": 65,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.080739Z"
+    },
+    {
+      "intents": [
+        "booking",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "When is a dentist available on Tuesday morning?",
+          "query": "When is a dentist available on Tuesday morning?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "How much is a dentist visit if I'm paying out of pocket?",
+          "query": "How much is a dentist visit if I'm paying out of pocket?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.081514Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1841.2,
+      "result": {
+        "intents": [
+          "booking",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "When is a dentist available on Tuesday morning?",
+            "query": "When is a dentist available on Tuesday morning?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "How much is a dentist visit if I'm paying out of pocket?",
+            "query": "How much is a dentist visit if I'm paying out of pocket?"
+          }
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.082633Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.085652Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.087712Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.102375Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.103762Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is a dentist available on Tuesday morning?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:27:52.104455Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.354985Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.665851,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.58503574,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.5409192,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.4726085,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.46124104,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.4534844,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.44049934,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.4327269,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.42998862,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.41294628,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.38757122,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 4,
+          "similarity_score": 0.38383952,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 4,
+          "similarity_score": 0.36672243,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a filling\n\nYour mouth may stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without notic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 5,
+          "similarity_score": 0.36573192,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently wi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.3393851,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.33284795,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.31414613,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.3090282,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.28295642,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.27344286,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.26305068,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.25559592,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 2,
+          "similarity_score": 0.25232476,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.24766015,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.24284872,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.372945Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.665851
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.58503574
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.5409192
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.4726085
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.46124104
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.4534844
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.44049934
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.4327269
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.42998862
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.41294628
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.38757122
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 4,
+          "similarity_score": 0.38383952
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 4,
+          "similarity_score": 0.36672243
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 5,
+          "similarity_score": 0.36573192
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.3393851
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.33284795
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.31414613
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.3090282
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.28295642
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.27344286
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.26305068
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.25559592
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 2,
+          "similarity_score": 0.25232476
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.24766015
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.24284872
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.376476Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 283.21,
+      "scores": [
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.665851,
+          "rerank_score": 0.89453125
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.5409192,
+          "rerank_score": 0.70703125
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.58503574,
+          "rerank_score": 0.66015625
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.4726085,
+          "rerank_score": 0.484375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.46124104,
+          "rerank_score": 0.44921875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.662345Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "rerank_score": 0.89453125
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "rerank_score": 0.70703125
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "rerank_score": 0.66015625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "rerank_score": 0.484375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "rerank_score": 0.44921875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.664764Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.665851,
+      "best_rerank_score": 0.89453125,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:52.666028Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.\n\n# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\nQuestion: How much is a dentist visit if I'm paying out of pocket?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:27:52.666834Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 558,
+        "output": 22,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 1,
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:54.096945Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2013.35,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 47,
+        "answer_text": "A dentist appointment costs $180 out-of-pocket.",
+        "segment_answers": [
+          {
+            "position": 1,
+            "question": "How much is a dentist visit if I'm paying out of pocket?",
+            "verdict": "answered",
+            "answer_text": "A dentist appointment costs $180 out-of-pocket."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:54.098689Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 204,
+        "cache_read": 5831,
+        "cache_write": 130,
+        "cache_write_1h": 0,
+        "thinking": 72
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:55.439126Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 3334.94,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:55.439696Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:55.439888Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:55.454234Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 14.77,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:55.454835Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is a dentist available on Tuesday morning?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01LtzqZnjBDYEg7fjnBHWva5",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01LtzqZnjBDYEg7fjnBHWva5",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:27:55.455161Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 99,
+        "cache_read": 5961,
+        "cache_write": 309,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:57.375739Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1920.66,
+      "tool_names": [],
+      "text": "On Tuesday, March 3rd, our dentist Andreas Vesalius has these morning openings:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He also has 12:00pm and 1:00pm available, if afternoon works better.)\n\nWould you like me to book one of these for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:57.376274Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5289.21,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 230,
+        "answer_text": "On Tuesday, March 3rd, our dentist Andreas Vesalius has these morning openings:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He also has 12:00pm and 1:00pm available, if afternoon works better.)\n\nWould you like me to book one of these for you?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:57.376498Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:57.378281Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1157,
+        "output": 118,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:59.049062Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1671.62,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 3,
+        "answer_chars": 260,
+        "answer_text": "A dentist appointment costs $180 out-of-pocket.\n\nFor Tuesday, March 3rd, Dr. Andreas Vesalius has morning openings at 9:00am, 10:00am, and 11:00am (also 12:00pm and 1:00pm if you'd prefer afternoon). Let me know which time works for you and I'll get it booked."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:59.049591Z"
+    },
+    {
+      "duration_ms": 8839.28,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2845,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+              "similarity_score": 0.665851,
+              "rerank_score": 0.89453125
+            },
+            {
+              "entry_id": 2858,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+              "similarity_score": 0.5409192,
+              "rerank_score": 0.70703125
+            },
+            {
+              "entry_id": 2858,
+              "chunk_index": 2,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+              "similarity_score": 0.58503574,
+              "rerank_score": 0.66015625
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "A dentist appointment costs $180 out-of-pocket.\n\nFor Tuesday, March 3rd, Dr. Andreas Vesalius has morning openings at 9:00am, 10:00am, and 11:00am (also 12:00pm and 1:00pm if you'd prefer afternoon). Let me know which time works for you and I'll get it booked.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W4PA22TN2FD8AHRHX53MDB"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:59.050011Z"
+    },
+    {
+      "message_id": "01M3W4PJPEVV2TXCS1126J5EA8",
+      "chat_id": "01M3W4P9THZSV3KV5MGWHS0PPS",
+      "sender": "assistant",
+      "content": "A dentist appointment costs $180 out-of-pocket.\n\nFor Tuesday, March 3rd, Dr. Andreas Vesalius has morning openings at 9:00am, 10:00am, and 11:00am (also 12:00pm and 1:00pm if you'd prefer afternoon). Let me know which time works for you and I'll get it booked.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4PA22TN2FD8AHRHX53MDB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:59.062365Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4PA22TN2FD8AHRHX53MDB": "3a11e907d6b0071a66ff345f5af44739"
+  }
+}

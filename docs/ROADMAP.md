@@ -797,6 +797,10 @@ then changes the retriever, in that order.
   Keeping the 9 keeps every existing FAQ label meaningful, and the existing cases run against the
   larger corpus measure what distractors alone cost. Long documents are what make 1e's chunking
   matter for the first time: today the 1,000-character splitter never triggers.
+  *(It did matter, and was replaced: a fixed window ran across sections, so a chunk could end on a
+  bare heading and set one section's sentence beside another's. An entry with headings is now
+  chunked per section with its heading path as a prefix, and a headless entry exactly as before.
+  `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
   *(First increment on branch `018-hybrid-retrieval`: ten documents of 1.0-2.9k characters,
   bringing the corpus to 19 entries and 36 chunks. Smaller than planned, and grown further only if
   the new baseline shows retrieval still saturated. The tenth, a price list by procedure code, was

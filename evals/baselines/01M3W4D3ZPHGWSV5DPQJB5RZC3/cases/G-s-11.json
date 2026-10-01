@@ -1,0 +1,760 @@
+{
+  "case_id": "G-s-11",
+  "chat_id": "01M3W4SZ1A83AX5H57K1R06DFM",
+  "patient_id": "01M3W4SZ1YNWQ6BS6YA4Z5CZDY",
+  "attempts": 1,
+  "elapsed_seconds": 3.484573227004148,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you take Delta Dental PPO?",
+          "answer": "Yes, we accept Delta Dental PPO.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2850,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+    "content": "Do you take Delta Dental PPO?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4T2CWSAZDH9AHZC1CZFGK",
+    "content": "Yes, we accept Delta Dental PPO.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you take Delta Dental PPO?",
+        "answer": "Yes, we accept Delta Dental PPO.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2850,
+            "chunk_index": 1,
+            "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you take Delta Dental PPO?",
+        "query": "Do you take Delta Dental PPO?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "chat_id": "01M3W4SZ1A83AX5H57K1R06DFM",
+      "sender": "patient",
+      "content": "Do you take Delta Dental PPO?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:50.083361Z"
+    },
+    {
+      "message": "Do you take Delta Dental PPO?",
+      "message_ids_unified": [
+        "01M3W4SZ3K1DMW1S5ZARWE1D67"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:50.083664Z"
+    },
+    {
+      "trace_id": "e1baccf8e0894cf0b7559a806abea563",
+      "event": "turn.traced",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:50.085349Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:50.088565Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3210,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:51.718551Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you take Delta Dental PPO?",
+          "query": "Do you take Delta Dental PPO?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:51.719265Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1631.98,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you take Delta Dental PPO?",
+            "query": "Do you take Delta Dental PPO?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:51.719827Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:51.722368Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:51.994437Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.6104849,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.4683956,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.43346542,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.42702425,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.41753718,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.41578895,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.4059409,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.39955342,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.39318636,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.38082567,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.37321603,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.36805645,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simpl",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.36239302,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.36101946,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.33093518,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.32969943,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.31941795,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.3165016,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 5,
+          "similarity_score": 0.31586128,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently wi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.30730155,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 4,
+          "similarity_score": 0.3062734,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a filling\n\nYour mouth may stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without notic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.3006276,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.2992041,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.29870296,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "similarity_score": 0.29212427,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:52.005869Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.6104849
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.4683956
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.43346542
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.42702425
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.41753718
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.41578895
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.4059409
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.39955342
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.39318636
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.38082567
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.37321603
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 2,
+          "similarity_score": 0.36805645
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.36239302
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.36101946
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.33093518
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.32969943
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.31941795
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.3165016
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 5,
+          "similarity_score": 0.31586128
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.30730155
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 4,
+          "similarity_score": 0.3062734
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.3006276
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.2992041
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.29870296
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "similarity_score": 0.29212427
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:52.007632Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 343.91,
+      "scores": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.6104849,
+          "rerank_score": 0.84375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.42702425,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.41753718,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.4683956,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.43346542,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:52.352812Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "rerank_score": 0.84375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:52.355237Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6104849,
+      "best_rerank_score": 0.84375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:52.356445Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\nQuestion: Do you take Delta Dental PPO?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:29:52.356934Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 401,
+        "output": 19,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.427156Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1706.29,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 32,
+        "answer_text": "Yes, we accept Delta Dental PPO.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you take Delta Dental PPO?",
+            "verdict": "answered",
+            "answer_text": "Yes, we accept Delta Dental PPO."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.428431Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.430969Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.6,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 32,
+        "answer_text": "Yes, we accept Delta Dental PPO."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.431215Z"
+    },
+    {
+      "duration_ms": 3364.24,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2850,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+              "similarity_score": 0.6104849,
+              "rerank_score": 0.84375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Yes, we accept Delta Dental PPO.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4SZ3K1DMW1S5ZARWE1D67"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.431774Z"
+    },
+    {
+      "message_id": "01M3W4T2CWSAZDH9AHZC1CZFGK",
+      "chat_id": "01M3W4SZ1A83AX5H57K1R06DFM",
+      "sender": "assistant",
+      "content": "Yes, we accept Delta Dental PPO.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4SZ3K1DMW1S5ZARWE1D67",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:53.444343Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4SZ3K1DMW1S5ZARWE1D67": "e1baccf8e0894cf0b7559a806abea563"
+  }
+}

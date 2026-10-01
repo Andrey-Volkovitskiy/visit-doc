@@ -1,0 +1,247 @@
+{
+  "case_id": "G-s-10",
+  "chat_id": "01M3W4SWAHCCPB6RFS6DB3EABZ",
+  "patient_id": "01M3W4SWB7KAM1BT02H20P2TPK",
+  "attempts": 1,
+  "elapsed_seconds": 2.770033046952449,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+    "content": "I got a text from 72913 - is that really you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4SYZP57672AS03HZ5ENPP",
+    "content": "I'm not sure what that number refers! If you have questions about our clinic or need to reach us, I'd be happy to help. What can I assist you with today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "I got a text from 72913 - is that really you?",
+        "query": "I got a text from 72913 - is that really you?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "chat_id": "01M3W4SWAHCCPB6RFS6DB3EABZ",
+      "sender": "patient",
+      "content": "I got a text from 72913 - is that really you?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:47.297502Z"
+    },
+    {
+      "message": "I got a text from 72913 - is that really you?",
+      "message_ids_unified": [
+        "01M3W4SWCQR3VF7X1D3C7CAWRV"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:47.297789Z"
+    },
+    {
+      "trace_id": "047c5470664c1ad568de22b942d452c0",
+      "event": "turn.traced",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:47.299720Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:47.302325Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:48.937850Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "I got a text from 72913 - is that really you?",
+          "query": "I got a text from 72913 - is that really you?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:48.938533Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1636.92,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "I got a text from 72913 - is that really you?",
+            "query": "I got a text from 72913 - is that really you?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:48.938941Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:48.941126Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "I got a text from 72913 - is that really you?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:29:48.941318Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.933086Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 993.07,
+      "result": {
+        "answer_chars": 153,
+        "answer_text": "I'm not sure what that number refers! If you have questions about our clinic or need to reach us, I'd be happy to help. What can I assist you with today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.933798Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.936155Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.56,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 153,
+        "answer_text": "I'm not sure what that number refers! If you have questions about our clinic or need to reach us, I'd be happy to help. What can I assist you with today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.936367Z"
+    },
+    {
+      "duration_ms": 2649.46,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not sure what that number refers! If you have questions about our clinic or need to reach us, I'd be happy to help. What can I assist you with today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4SWCQR3VF7X1D3C7CAWRV"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.936859Z"
+    },
+    {
+      "message_id": "01M3W4SYZP57672AS03HZ5ENPP",
+      "chat_id": "01M3W4SWAHCCPB6RFS6DB3EABZ",
+      "sender": "assistant",
+      "content": "I'm not sure what that number refers! If you have questions about our clinic or need to reach us, I'd be happy to help. What can I assist you with today?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4SWCQR3VF7X1D3C7CAWRV",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:49.953530Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4SWCQR3VF7X1D3C7CAWRV": "047c5470664c1ad568de22b942d452c0"
+  }
+}

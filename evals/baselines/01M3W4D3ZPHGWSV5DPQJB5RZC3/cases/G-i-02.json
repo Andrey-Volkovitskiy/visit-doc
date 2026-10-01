@@ -1,0 +1,247 @@
+{
+  "case_id": "G-i-02",
+  "chat_id": "01M3W4J4R8WJ1EQEEC3CCQ25MV",
+  "patient_id": "01M3W4J4S29JV0QSR0ZS5R0W79",
+  "attempts": 1,
+  "elapsed_seconds": 2.120109896059148,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+    "content": "What's the weather in Paris today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4J6RCNS2VRFRCAQ6XP8V7",
+    "content": "I'm not sure that's something I can help with from the clinic desk! Is there anything I can assist you with regarding the clinic itself?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "What's the weather in Paris today?",
+        "query": "What's the weather in Paris today?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "chat_id": "01M3W4J4R8WJ1EQEEC3CCQ25MV",
+      "sender": "patient",
+      "content": "What's the weather in Paris today?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:33.818531Z"
+    },
+    {
+      "message": "What's the weather in Paris today?",
+      "message_ids_unified": [
+        "01M3W4J4V8HPWNNHYHSDYMDJA4"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:33.818981Z"
+    },
+    {
+      "trace_id": "3b9ce4c582c405a2f3727c25c1737ee8",
+      "event": "turn.traced",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:33.820848Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:33.825784Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:34.730279Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "What's the weather in Paris today?",
+          "query": "What's the weather in Paris today?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:34.731731Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 909.09,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "What's the weather in Paris today?",
+            "query": "What's the weather in Paris today?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:34.732686Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:34.737365Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What's the weather in Paris today?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:25:34.737746Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 259,
+        "output": 32,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.742440Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1006.72,
+      "result": {
+        "answer_chars": 136,
+        "answer_text": "I'm not sure that's something I can help with from the clinic desk! Is there anything I can assist you with regarding the clinic itself?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.743421Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.747250Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.46,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 136,
+        "answer_text": "I'm not sure that's something I can help with from the clinic desk! Is there anything I can assist you with regarding the clinic itself?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.747776Z"
+    },
+    {
+      "duration_ms": 1948.26,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not sure that's something I can help with from the clinic desk! Is there anything I can assist you with regarding the clinic itself?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4J4V8HPWNNHYHSDYMDJA4"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.748610Z"
+    },
+    {
+      "message_id": "01M3W4J6RCNS2VRFRCAQ6XP8V7",
+      "chat_id": "01M3W4J4R8WJ1EQEEC3CCQ25MV",
+      "sender": "assistant",
+      "content": "I'm not sure that's something I can help with from the clinic desk! Is there anything I can assist you with regarding the clinic itself?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4J4V8HPWNNHYHSDYMDJA4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:35.769188Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4J4V8HPWNNHYHSDYMDJA4": "3b9ce4c582c405a2f3727c25c1737ee8"
+  }
+}

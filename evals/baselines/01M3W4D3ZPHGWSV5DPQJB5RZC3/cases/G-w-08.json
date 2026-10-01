@@ -1,0 +1,760 @@
+{
+  "case_id": "G-w-08",
+  "chat_id": "01M3W4X5BPK3DGNTPXXVTMAYJX",
+  "patient_id": "01M3W4X5C8CHQ79CWQEB84BWNV",
+  "attempts": 1,
+  "elapsed_seconds": 2.8560078110313043,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What is the HC-9?",
+          "answer": "HC-9 is the Consent to Treatment form.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2855,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+    "content": "What is the HC-9?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4X83E13HJZHGGAPT8QGGJ",
+    "content": "HC-9 is the Consent to Treatment form.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What is the HC-9?",
+        "answer": "HC-9 is the Consent to Treatment form.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2855,
+            "chunk_index": 0,
+            "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is the HC-9?",
+        "query": "What is the HC-9?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "chat_id": "01M3W4X5BPK3DGNTPXXVTMAYJX",
+      "sender": "patient",
+      "content": "What is the HC-9?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:34.850044Z"
+    },
+    {
+      "message": "What is the HC-9?",
+      "message_ids_unified": [
+        "01M3W4X5DNTTE36V4VRT6VM4PT"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:34.850426Z"
+    },
+    {
+      "trace_id": "f62aa480d70b29e714d2a10c7ddc32e6",
+      "event": "turn.traced",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:34.852358Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:34.854600Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3208,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.101987Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is the HC-9?",
+          "query": "What is the HC-9?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.102465Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1248.46,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What is the HC-9?",
+            "query": "What is the HC-9?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.102772Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.104736Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.379014Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "similarity_score": 0.21933612,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.1914652,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 1,
+          "similarity_score": 0.18818808,
+          "considered": true,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and legs. It takes about ten minutes and does not hurt. On the day, do not put body lotion, oil or powder on your chest, because the electrodes do not stick well to it. Wear a two-piece outfit so you only need to remove your top. You can eat, drink and take your usual medicines before an ECG.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.17851594,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.17210436,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.1661827,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.15175167,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.14466709,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 3,
+          "similarity_score": 0.13548097,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.13527249,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.13304257,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.13116178,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.12884709,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.12871769,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.12813306,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.12427613,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.12365719,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.122588485,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.11554626,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.112828135,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.11105771,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.11020603,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 3,
+          "similarity_score": 0.10614002,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## How long we keep records\n\nWe keep adult medical records for 10 years after your last visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.105817325,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.10576862,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.391051Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "similarity_score": 0.21933612
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.1914652
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 1,
+          "similarity_score": 0.18818808
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.17851594
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.17210436
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.1661827
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.15175167
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.14466709
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 3,
+          "similarity_score": 0.13548097
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.13527249
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.13304257
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.13116178
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.12884709
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.12871769
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.12813306
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.12427613
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.12365719
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.122588485
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.11554626
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.112828135
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.11105771
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.11020603
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 3,
+          "similarity_score": 0.10614002
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.105817325
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.10576862
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.392951Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 287.43,
+      "scores": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "similarity_score": 0.21933612,
+          "rerank_score": 0.734375
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.17210436,
+          "rerank_score": 0.353515625
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "similarity_score": 0.1914652,
+          "rerank_score": 0.333984375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.17851594,
+          "rerank_score": 0.330078125
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 1,
+          "similarity_score": 0.18818808,
+          "rerank_score": 0.32421875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.682477Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 0,
+          "rerank_score": 0.734375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "rerank_score": 0.353515625
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 1,
+          "rerank_score": 0.333984375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "rerank_score": 0.330078125
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 1,
+          "rerank_score": 0.32421875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.684721Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.21933612,
+      "best_rerank_score": 0.734375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:36.685980Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\nQuestion: What is the HC-9?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:31:36.686522Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 458,
+        "output": 19,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.575042Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1471.45,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 38,
+        "answer_text": "HC-9 is the Consent to Treatment form.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What is the HC-9?",
+            "verdict": "answered",
+            "answer_text": "HC-9 is the Consent to Treatment form."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.575834Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.577724Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.38,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 38,
+        "answer_text": "HC-9 is the Consent to Treatment form."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.577871Z"
+    },
+    {
+      "duration_ms": 2740.58,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2855,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.",
+              "similarity_score": 0.21933612,
+              "rerank_score": 0.734375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "HC-9 is the Consent to Treatment form.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4X5DNTTE36V4VRT6VM4PT"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.578259Z"
+    },
+    {
+      "message_id": "01M3W4X83E13HJZHGGAPT8QGGJ",
+      "chat_id": "01M3W4X5BPK3DGNTPXXVTMAYJX",
+      "sender": "assistant",
+      "content": "HC-9 is the Consent to Treatment form.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4X5DNTTE36V4VRT6VM4PT",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:37.595615Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4X5DNTTE36V4VRT6VM4PT": "f62aa480d70b29e714d2a10c7ddc32e6"
+  }
+}

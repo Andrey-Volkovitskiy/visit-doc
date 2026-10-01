@@ -1,0 +1,247 @@
+{
+  "case_id": "G-c-06",
+  "chat_id": "01M3W4GPYHRFS3HYRZS9ZDA0GZ",
+  "patient_id": "01M3W4GPZKTF1YX1AQ1S76F03J",
+  "attempts": 1,
+  "elapsed_seconds": 1.9577130420366302,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+    "content": "Ugh, what a week.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4GPHCQW2FB0QY96D8J8A0",
+    "content": "I hear you—that sounds exhausting! Is there anything I can help you with today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Ugh, what a week.",
+        "query": "Ugh, what a week."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "chat_id": "01M3W4GPYHRFS3HYRZS9ZDA0GZ",
+      "sender": "patient",
+      "content": "Ugh, what a week.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.942925Z"
+    },
+    {
+      "message": "Ugh, what a week.",
+      "message_ids_unified": [
+        "01M3W4GQ2BH7BR94QAE64P5TT7"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.943354Z"
+    },
+    {
+      "trace_id": "1b1427d49b1af913aa0a6dac33a22fed",
+      "event": "turn.traced",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.945536Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.950395Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:45.622875Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Ugh, what a week.",
+          "query": "Ugh, what a week."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:45.624001Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 989.66,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Ugh, what a week.",
+            "query": "Ugh, what a week."
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:45.624977Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:45.629402Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Ugh, what a week."
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:24:45.629778Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 259,
+        "output": 22,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.370062Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 741.88,
+      "result": {
+        "answer_chars": 79,
+        "answer_text": "I hear you—that sounds exhausting! Is there anything I can help you with today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.370880Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.373362Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.69,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 79,
+        "answer_text": "I hear you—that sounds exhausting! Is there anything I can help you with today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.373602Z"
+    },
+    {
+      "duration_ms": 1764.79,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I hear you—that sounds exhausting! Is there anything I can help you with today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4GQ2BH7BR94QAE64P5TT7"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.374247Z"
+    },
+    {
+      "message_id": "01M3W4GPHCQW2FB0QY96D8J8A0",
+      "chat_id": "01M3W4GPYHRFS3HYRZS9ZDA0GZ",
+      "sender": "assistant",
+      "content": "I hear you—that sounds exhausting! Is there anything I can help you with today?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4GQ2BH7BR94QAE64P5TT7",
+      "level": "info",
+      "timestamp": "2026-10-01T16:24:46.395262Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4GQ2BH7BR94QAE64P5TT7": "1b1427d49b1af913aa0a6dac33a22fed"
+  }
+}

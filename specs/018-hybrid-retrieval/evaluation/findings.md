@@ -155,7 +155,36 @@ model surer that a no must be the information's own words. Kept, because four re
 answered one or two times in five now answer five in five and no gap moved; recorded, because
 `G-t-08` is the case a later wording has to keep.
 
-## 6. What this means for hybrid search
+## 6. Finding: chunk by section, and say which section
+
+The 1,000-character window ran across a document's sections: a chunk could end on a bare heading,
+start mid-sentence, and put one section's sentence beside another's. `G-s-11` showed the cost -
+asked why it declined "Do you take Delta Dental PPO?", the model said it read "take" as taking a
+medicine, because the blood-thinner paragraph shared the chunk. An entry with headings is now
+chunked by section, every chunk prefixed with its heading path (`# Dental care guide` /
+`## Dental insurance`); a section longer than a chunk is split further under the same prefix, and
+an entry with no heading - every Q&A entry - is chunked exactly as before. The starter corpus went
+from 36 chunks to 62.
+
+Replayed ten times each on the new chunks: `G-s-11` answered 10 of 10 (0-4 in 5 before), `G-t-08`
+10 of 10 (7 in 10 under the stated-no prompt on the old chunks, so this also repairs that
+regression), `G-w-05` 5 of 10 (about 1 in 5 before), and the gaps `G-k-07` and `G-k-14` declined 10
+of 10. A full run (`01M3W4D3ZPHGWSV5DPQJB5RZC3`, `a171078`, $0.90) against the stated-no baseline:
+
+| | stated no | + section chunks |
+|---|---|---|
+| unserved answerable | 6 / 86 | 5 / 87 |
+| wrong abstentions | 2 / 25 | 1 / 24 |
+| answers on labelled gaps | 0 | 0 |
+| similarity hit@1 | 0.927 | 0.952 |
+
+Four of the five unserved requests left are the classifier's. The cost that came with it: three
+gaps (`G-k-07`, `G-k-14`, the MRI half of `G-n-10`) now clear the rerank floor and are declined by
+the answerer rather than stopped before it, so the generation step carries more of the
+abstention than it did. All declined; the margin is thinner, and those are the cases to watch when
+the answer prompt next changes.
+
+## 7. What this means for hybrid search
 
 The "dense, no floor" row the ablation was to carry is now the default pipeline. Hybrid has to
 beat it, not the pipeline it was planned against, and on this corpus dense ranking already puts
@@ -164,13 +193,14 @@ recovered by the reranker anyway. Hybrid search is expected to show no measurabl
 which is a result worth recording rather than a reason to skip the measurement - it says the
 retrieval problem this corpus poses is solved by a cross-encoder over a dense shortlist.
 
-## 7. Left open
+## 8. Left open
 
-- **The answer prompt's word-level reading.** The stated-no fix leaves `G-t-08` (moisturiser
-  against "body lotion") declined 3 times in 10 where it was never declined before.
-- **Chunk boundaries.** The 1,000-character splitter ends chunks on a bare heading and starts the
-  next mid-sentence; `G-m-02`'s truncated guide chunk is one consequence.
-- **The classifier on short or odd questions** - three to `small_talk`, one to `booking`.
+- **The classifier on short or odd questions** - three to `small_talk`, one to `booking`. Four of
+  the five requests the current baseline leaves unserved.
+- **`G-w-05`** ("Cigna DHMO") is answered 5 times in 10: its chunks look contradictory - the
+  insurance entry accepts Cigna, the dental guide refuses Cigna's DHMO.
+- **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
+  rerank floor used to stop.
 - **A noise band** for this build, before any of the above is read as a result.
-- **The corpus is still small** - 36 chunks against a 25-wide pool. If hybrid shows nothing, the
+- **The corpus is still small** - 62 chunks against a 25-wide pool. If hybrid shows nothing, the
   honest next question is whether a larger corpus would, not whether BM25 is useless.

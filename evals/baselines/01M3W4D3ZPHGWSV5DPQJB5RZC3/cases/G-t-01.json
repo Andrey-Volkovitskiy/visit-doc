@@ -1,0 +1,247 @@
+{
+  "case_id": "G-t-01",
+  "chat_id": "01M3W4T587NQ8D04DWKXAA29HD",
+  "patient_id": "01M3W4T58WN3A7FSSZCPWSYGAG",
+  "attempts": 1,
+  "elapsed_seconds": 2.9950066270539537,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+    "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4T84JM9WT6VTVVRP068HS",
+    "content": "I can't advise on what's safe to eat or drink after dental work—your dentist will have covered that with you, so it's best to follow their guidance! If you have questions about your aftercare, feel free to give us a call.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+        "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "chat_id": "01M3W4T587NQ8D04DWKXAA29HD",
+      "sender": "patient",
+      "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:56.438812Z"
+    },
+    {
+      "message": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "message_ids_unified": [
+        "01M3W4T5ACR46H5EDWXK9HS6ZG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:56.439092Z"
+    },
+    {
+      "trace_id": "703f831b3fd15f8a32bf5e1d1cc82b8d",
+      "event": "turn.traced",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:56.440499Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:56.443217Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:57.940116Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+          "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:57.940774Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1498.37,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+            "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:57.941353Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:57.944464Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:29:57.944941Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 56,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.307820Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1364.45,
+      "result": {
+        "answer_chars": 221,
+        "answer_text": "I can't advise on what's safe to eat or drink after dental work—your dentist will have covered that with you, so it's best to follow their guidance! If you have questions about your aftercare, feel free to give us a call.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.308318Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.309803Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.48,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 221,
+        "answer_text": "I can't advise on what's safe to eat or drink after dental work—your dentist will have covered that with you, so it's best to follow their guidance! If you have questions about your aftercare, feel free to give us a call."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.310012Z"
+    },
+    {
+      "duration_ms": 2881.39,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I can't advise on what's safe to eat or drink after dental work—your dentist will have covered that with you, so it's best to follow their guidance! If you have questions about your aftercare, feel free to give us a call.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4T5ACR46H5EDWXK9HS6ZG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.310389Z"
+    },
+    {
+      "message_id": "01M3W4T84JM9WT6VTVVRP068HS",
+      "chat_id": "01M3W4T587NQ8D04DWKXAA29HD",
+      "sender": "assistant",
+      "content": "I can't advise on what's safe to eat or drink after dental work—your dentist will have covered that with you, so it's best to follow their guidance! If you have questions about your aftercare, feel free to give us a call.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4T5ACR46H5EDWXK9HS6ZG",
+      "level": "info",
+      "timestamp": "2026-10-01T16:29:59.321865Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4T5ACR46H5EDWXK9HS6ZG": "703f831b3fd15f8a32bf5e1d1cc82b8d"
+  }
+}
