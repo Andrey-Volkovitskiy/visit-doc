@@ -116,6 +116,45 @@ say - not even a no" is plausibly read against; that is a hypothesis, not yet te
 
 None of these is retrieval, and hybrid search will not move them.
 
+### The fix, and what it cost
+
+The answer prompt's "Say nothing it does not say - not even a no" became "... not even a no - but a
+no it does say is an answer, so give it." Four wordings were replayed offline against prompts
+rebuilt from the no-floor run (5 samples each): the five failing requests, the five labelled gaps
+that reach generation, nine near-miss gaps fed their three best-reranked chunks as if the rerank
+floor had let them through, and twelve controls the prompt already answered.
+
+| | current | stated no | + context limit | + partial answer |
+|---|---|---|---|---|
+| failing (5), answered | 7 / 25 | **16 / 25** | 16 / 25 | 11 / 25 |
+| gaps reaching generation (5), declined | 25 / 25 | **25 / 25** | 25 / 25 | 25 / 25 |
+| near-miss gaps forced through (9), declined | 45 / 45 | **45 / 45** | 45 / 45 | 45 / 45 |
+| controls (12), answered | 55 / 60 | **60 / 60** | 60 / 60 | 56 / 60 |
+
+The stated-no wording alone was kept; a second replay reproduced it. A fifth wording ("'you' in the
+question means the clinic") was tried for `G-s-11` and made four cases worse. `G-s-11` stays
+unreliable under every wording because of what the chunk holds, not what the prompt says: asked why
+it declined, the model read "do you **take** Delta Dental PPO?" as a question about taking a
+medicine, since the blood-thinner paragraph shares the chunk. That is a chunking fix.
+
+A full run on the change (`01M3W2MA7Y1BBTG2Y9F5W1NCKN`, `957f240`, $0.94) against the no-floor
+baseline, conditions identical:
+
+| | baseline | stated no |
+|---|---|---|
+| unserved answerable | 10 / 87 | 6 / 86 |
+| wrong abstentions | 6 / 29 | 2 / 25 |
+| answers on labelled gaps | 0 | 0 |
+
+`G-m-02`, `G-s-06`, `G-u-06` and `G-w-05` moved to answered. `G-u-04` was answered in the targeted
+run before it and errored here on a Voyage blip (excluded as `run_error`). One case moved the other
+way: `G-t-08` ("Can I put moisturiser on before the heart tracing?", against "do not put body
+lotion ... on your chest") was declined. Replayed ten times, the old prompt declined it 0 times and
+the new one 3 - a real cost, not noise: the stated no is about lotion, and the clause makes the
+model surer that a no must be the information's own words. Kept, because four requests that were
+answered one or two times in five now answer five in five and no gap moved; recorded, because
+`G-t-08` is the case a later wording has to keep.
+
 ## 6. What this means for hybrid search
 
 The "dense, no floor" row the ablation was to carry is now the default pipeline. Hybrid has to
@@ -127,8 +166,8 @@ retrieval problem this corpus poses is solved by a cross-encoder over a dense sh
 
 ## 7. Left open
 
-- **The answer prompt's strictness**, five of the remaining eight misses' worth. Its own measured
-  change, since every one of its clauses was tuned against a named case.
+- **The answer prompt's word-level reading.** The stated-no fix leaves `G-t-08` (moisturiser
+  against "body lotion") declined 3 times in 10 where it was never declined before.
 - **Chunk boundaries.** The 1,000-character splitter ends chunks on a bare heading and starts the
   next mid-sentence; `G-m-02`'s truncated guide chunk is one consequence.
 - **The classifier on short or odd questions** - three to `small_talk`, one to `booking`.
