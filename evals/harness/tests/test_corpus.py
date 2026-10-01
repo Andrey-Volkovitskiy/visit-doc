@@ -149,7 +149,7 @@ def test_a_live_entry_the_pin_does_not_hold_is_named_by_its_live_id() -> None:
 
     assert check.matched is False
     assert check.moved_entry_ids == []
-    assert check.unpinned_live_entry_ids == [110]
+    assert check.unpinned_live_entry_ids == [101 + len(DEFAULT_FAQ_ENTRIES)]
 
 
 def test_a_pinned_text_carried_by_two_live_entries_fails_the_mapping_by_name() -> None:

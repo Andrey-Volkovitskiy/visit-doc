@@ -84,6 +84,62 @@ the eleven cases after it would rename labels that had not changed and make ever
 selected them unscoreable. v1 left `G103` as a hole for the same reason. The loader enforces the
 family letter and that the numbers ascend, and deliberately not that they are contiguous.
 
+## The corpus extended, and four retrieval families added (2026-10-01, by the reviewer's decision)
+
+ROADMAP Phase 4b. The 9 entries were too few and too unlike each other to measure retrieval: the
+v2 baseline read similarity hit@3 1.0 and MRR 0.988. Nine of the clinic's longer documents were
+added after them, **extending** the corpus rather than replacing it, so that every label resting on
+the original nine keeps its meaning: `insurance-plan-guide`, `dental-care-guide`,
+`test-preparation`, `vaccinations`, `running-late`, `reminders-and-messages`,
+`check-in-and-registration`, `privacy`, `gp-services`. 18 entries, 34 chunks where there were 9,
+so the 25-wide pool no longer returns the whole corpus. The documents were written against three
+rules: nothing in them contradicts one of the nine; none names a practitioner, a specialty on the
+roster or anyone's hours, which are live records data; and none answers an existing gap.
+
+The labels below were drafted by the assistant and adjudicated by the reviewer, who approved
+every one of them as written on 2026-10-01.
+
+### What moved in existing labels
+
+Every existing label was re-checked against the nine new documents.
+
+- **Six answerable labels gained a second citation**, `insurance-plan-guide`, because the plan guide
+  now answers them too and a label citing only the old entry would score a correct retrieval as a
+  miss: `G-j-08` (Aetna), `G-l-04` (Blue Cross), `G-m-02` and `G-q-03` (which plans), `G-m-06`
+  (Cigna), `G-o-06` (Medicare). Their scored digests changed, and scoring refuses a whole run,
+  not just the case, when any case it selected has a moved label - so `eval-score` and
+  `eval-compare` refuse every earlier run that selected one of the six, the v2 baseline among
+  them.
+- **Two were left alone, and are the first to re-read**: "when is payment due" in `G-m-04` and
+  `G-m-06`. The plan guide says a copay is collected at check-in, which is part of an answer and
+  not the whole of one, so it was not added as a citation.
+- **Every gap still holds.** None of the new documents answers one. Three sit deliberately close,
+  and are the ones to re-read whenever their document changes: `G-k-04` (cancellation and no-show)
+  against `running-late`, which says what happens to a late arrival and nothing about cancelling
+  or not turning up; `G-k-07` (fasting before a blood test) against `test-preparation`, whose
+  spirometry section says to avoid a large meal - and which mentions no blood test; and `G-n-06`
+  (whether a scan is included) against `vaccinations`, which says a vaccine is charged in addition
+  to the visit. `G-k-02`/`G-n-02` (wheelchair access) are also what the e2e tier's abstention
+  journey asks, so no document may mention step-free access without moving that test too.
+
+### What was added
+
+- **Five gaps in `k`** (`G-k-17` to `G-k-21`), near misses against the new documents: a charge for
+  arriving too late, the shingles vaccine, the length of a filling appointment, Humana, reminders by
+  WhatsApp. Each is a subject a document is close to and does not cover, and the notes say which
+  sentence each is close to.
+- **Four families**, each aimed at one retrieval weakness, so the Phase 4b ablation can be read per
+  family: `s` exact terms (12), `t` paraphrase (9), `u` an answer deep in a long document (7),
+  `v` a near-miss distractor (7). `s` and `t` are each other's counterweight - lexical search should
+  help the first and dense search the second, and a fusion is judged on both.
+
+### What it means for stored runs
+
+The corpus pin changed and six labels moved, so the v2 baseline
+(`evals/baselines/01M321DWRXSVSY7GW9RY3CR9YW`) no longer re-scores and is evidence of the 9-entry
+build rather than a baseline for this one. A new baseline, and a noise band for it, are
+taken next.
+
 ## What the set depends on, and what to re-check when each moves
 
 ### The corpus

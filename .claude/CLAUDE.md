@@ -567,4 +567,5 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   additions should follow that pattern rather than going undocumented.
 
 See `docs/ROADMAP.md` for the full phased plan (Phase 0 walking skeleton → Phase 1 agent → Phase 2
-eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, then Kubernetes).
+eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, retrieval under a
+realistic corpus with hybrid search, then Kubernetes).

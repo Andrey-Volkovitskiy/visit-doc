@@ -427,7 +427,7 @@ capabilities — full rationale and alternatives considered live in
   corpus behind a console with a delete button and no login is the design that stayed rejected.
 - **All of it or none of it, and never at the cost of the chat.** The seeding follows the same shape
   a save does: every entry is chunked and embedded first, its chunks are written under a revision
-  nothing yet names live, and one commit publishes all nine at once. So a failure at any step leaves
+  nothing yet names live, and one commit publishes all of them at once. So a failure at any step leaves
   the session with no corpus rather than part of one, and the cost is leaked chunks. It is also
   never fatal — `POST /chats` still returns a working chat when Voyage or Qdrant is unreachable,
   and the empty corpus that results is the state the rest of the system already handles: the console

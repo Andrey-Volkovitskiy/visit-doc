@@ -358,7 +358,7 @@ def _new_sessions_start_empty(request: pytest.FixtureRequest) -> Iterator[None]:
     """Keep the starter corpus out of every test that has not asked for it.
 
     `POST /chats` plants `DEFAULT_FAQ_ENTRIES` in a session it creates, so without this
-    every test that mints a session through it would answer from nine entries it never
+    every test that mints a session through it would answer from a corpus it never
     mentioned - and a test written to check an abstention against an empty corpus would
     quietly become a grounded one. The corpus a test retrieves against has to be the
     corpus that test built.

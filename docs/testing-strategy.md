@@ -96,7 +96,7 @@ what a chat service with no scheduler running really sees.
 The **starter FAQ corpus** is kept out of the suite the same way, by
 `services/chat/tests/conftest.py`'s autouse `_new_sessions_start_empty`. `POST /chats` plants
 `DEFAULT_FAQ_ENTRIES` in a session it creates, and a test that mints a session through it would
-otherwise retrieve against nine entries it never mentioned — quietly turning a test written about
+otherwise retrieve against a corpus it never mentioned — quietly turning a test written about
 an abstention into a test about a grounded answer. The corpus a test retrieves against has to be
 the corpus that test built, so a test which is about the seeding itself opts back in with
 `@pytest.mark.seeds_default_corpus` and gets the real thing, embeddings included

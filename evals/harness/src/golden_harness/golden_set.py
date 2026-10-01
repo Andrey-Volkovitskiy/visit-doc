@@ -658,7 +658,7 @@ family(
         case(
             "G-j-08",
             "Do you take Aetna?",
-            [faq("is Aetna accepted", "insurance-plans")],
+            [faq("is Aetna accepted", "insurance-plans", "insurance-plan-guide")],
             note="the entry lists the plans it accepts, and this names one of them, so "
             "the answer has to settle a membership question rather than repeat the "
             "list back",
@@ -779,6 +779,44 @@ family(
             "in the generation prompt: accepting each method separately is not "
             "accepting them combined",
         ),
+        case(
+            "G-k-17",
+            "Is there a charge if I turn up too late to be seen?",
+            [gap("a charge for arriving too late to be seen")],
+            note="the running-late document says what happens to the appointment - a "
+            "new time is chosen - and nothing about a charge. Its nearest neighbour "
+            "is G-k-04's cancellation policy, which no document holds either",
+        ),
+        case(
+            "G-k-18",
+            "Do you give the shingles vaccine?",
+            [gap("shingles vaccine")],
+            note="the vaccinations document lists what is offered and names three "
+            "vaccines that are not; shingles is in neither list, so it is not a no",
+        ),
+        case(
+            "G-k-19",
+            "How long does a filling appointment take?",
+            [gap("length of a filling appointment")],
+            note="the dental guide says fillings get a separate appointment and how "
+            "long the numbness lasts afterwards - two durations near the one asked "
+            "for, neither of them it",
+        ),
+        case(
+            "G-k-20",
+            "Do you take Humana?",
+            [gap("is Humana accepted")],
+            note="an insurer name in the exact shape of the plan guide's own entries, "
+            "absent from both it and the insurance entry. 'Not on the list' is not a "
+            "no: the insurance entry says most major providers are accepted",
+        ),
+        case(
+            "G-k-21",
+            "Can you send my appointment reminders on WhatsApp instead?",
+            [gap("reminders by WhatsApp")],
+            note="the reminders document describes text messages and email and does "
+            "not say they are the only channels",
+        ),
     ],
 )
 
@@ -804,7 +842,7 @@ family(
             "G-l-04",
             "So, my insurance is Blue Cross, and I was wondering, because my last "
             "clinic did not take it, whether you do?",
-            [faq("is Blue Cross accepted", "insurance-plans")],
+            [faq("is Blue Cross accepted", "insurance-plans", "insurance-plan-guide")],
             note="comma-heavy with an aside, still one request",
         ),
         case(
@@ -842,7 +880,7 @@ family(
             "How early should I arrive, and which insurance plans do you accept?",
             [
                 faq("arrival time", "arrival-time"),
-                faq("accepted plans", "insurance-plans"),
+                faq("accepted plans", "insurance-plans", "insurance-plan-guide"),
             ],
         ),
         case(
@@ -857,7 +895,7 @@ family(
             "Do I need a referral, do you take Cigna, and when do I pay?",
             [
                 faq("is a referral needed", "referral"),
-                faq("is Cigna accepted", "insurance-plans"),
+                faq("is Cigna accepted", "insurance-plans", "insurance-plan-guide"),
                 faq("when payment is due", "payment"),
             ],
             note="three requests, which is the segment cap - nothing may be dropped "
@@ -1015,7 +1053,7 @@ family(
             "G-o-06",
             "Do you take Medicare? What if you don't take my plan?",
             [
-                faq("is Medicare accepted", "insurance-plans"),
+                faq("is Medicare accepted", "insurance-plans", "insurance-plan-guide"),
                 faq("out-of-network options", "out-of-network"),
             ],
             note="the second request is conditional on the first's answer and still "
@@ -1120,7 +1158,7 @@ family(
             "G-q-03",
             "Which insurers do you accept, and which practitioners do you have?",
             [
-                faq("accepted plans", "insurance-plans"),
+                faq("accepted plans", "insurance-plans", "insurance-plan-guide"),
                 bk("the roster", "list_practitioners"),
             ],
             scheduling=sch([], []),
@@ -1221,11 +1259,270 @@ family(
 )
 
 
+# === s - faq-exact-terms ============================================================
+
+family(
+    "s",
+    "faq-exact-terms",
+    "One answerable FAQ question that turns on an exact term - a plan name, a form "
+    "number, a drug or vaccine brand, a short code, a network name. A dense embedding "
+    "places such a term near its category rather than on it, so 'Aetna Choice POS II' "
+    "lands beside every other insurance sentence; lexical search matches the string "
+    "itself. This is the family hybrid retrieval is expected to move, and the one an "
+    "ablation reads first.",
+    [
+        case(
+            "G-s-01",
+            "Are you in-network with Aetna Choice POS II?",
+            [faq("is Aetna Choice POS II in-network", "insurance-plan-guide")],
+        ),
+        case(
+            "G-s-02",
+            "I'm on UnitedHealthcare Navigate HMO - can I use it with you?",
+            [faq("is UHC Navigate HMO in-network", "insurance-plan-guide")],
+            note="the answer is no, and the insurance entry names UnitedHealthcare "
+            "among the insurers accepted - the plan name is what decides it",
+        ),
+        case(
+            "G-s-03",
+            "Is Cigna LocalPlus accepted?",
+            [faq("is Cigna LocalPlus accepted", "insurance-plan-guide")],
+        ),
+        case(
+            "G-s-04",
+            "What is form IC-2 for?",
+            [faq("what form IC-2 is", "insurance-plan-guide")],
+        ),
+        case(
+            "G-s-05",
+            "What goes on the PR-4?",
+            [faq("what form PR-4 asks for", "check-in-and-registration")],
+        ),
+        case(
+            "G-s-06",
+            "Do you have Spikevax?",
+            [faq("is Spikevax stocked", "vaccinations")],
+        ),
+        case(
+            "G-s-07",
+            "How long before spirometry do I have to stop my Spiriva?",
+            [faq("when to stop Spiriva before spirometry", "test-preparation")],
+        ),
+        case(
+            "G-s-08",
+            "I take Eliquis. Does the dentist need to know?",
+            [faq("Eliquis and dental treatment", "dental-care-guide")],
+        ),
+        case(
+            "G-s-09",
+            "What's the Wi-Fi network called?",
+            [faq("guest Wi-Fi network name", "check-in-and-registration")],
+        ),
+        case(
+            "G-s-10",
+            "I got a text from 72913 - is that really you?",
+            [faq("whether short code 72913 is the clinic", "reminders-and-messages")],
+        ),
+        case(
+            "G-s-11",
+            "Do you take Delta Dental PPO?",
+            [faq("is Delta Dental PPO accepted", "dental-care-guide")],
+            note="a dental plan, so the answer is in the dental guide rather than "
+            "either insurance entry - both of which a dense search is likely to rank "
+            "first",
+        ),
+        case(
+            "G-s-12",
+            "How do I take the Vivotif typhoid vaccine?",
+            [faq("how Vivotif is taken", "vaccinations")],
+        ),
+    ],
+)
+
+
+# === t - faq-paraphrase =============================================================
+
+family(
+    "t",
+    "faq-paraphrase",
+    "One answerable FAQ question asked the way a patient says it, sharing little or "
+    "no vocabulary with the document section that answers it - 'frozen' for numb, "
+    "'jabs' for vaccinations, 'heart tracing' for an ECG. Dense search is expected to "
+    "be strong here and lexical search weak, so this family is the counterweight to "
+    "family s: a fusion that helps one must be read against what it does to the "
+    "other.",
+    [
+        case(
+            "G-t-01",
+            "My mouth is still frozen from the filling. Can I have a coffee?",
+            [faq("hot drinks while still numb after a filling", "dental-care-guide")],
+        ),
+        case(
+            "G-t-02",
+            "Can my sister come in with me when I see the doctor?",
+            [faq("a companion in the consultation", "check-in-and-registration")],
+            note="names a third party without the appointment being for her - an "
+            "ordinary FAQ question, not booking_for_another",
+        ),
+        case(
+            "G-t-03",
+            "My English isn't great. Will someone be able to translate for me?",
+            [faq("interpreting", "check-in-and-registration")],
+        ),
+        case(
+            "G-t-04",
+            "Something came up and I'll get there about twenty minutes after my slot. "
+            "Will I still be seen?",
+            [faq("being seen when twenty minutes late", "running-late")],
+            note="asks the terms governing a visit, not for a change to one, so it is "
+            "faq_question even though it is about the patient's own appointment",
+        ),
+        case(
+            "G-t-05",
+            "I'm off to Kenya in two months. Which jabs can you do?",
+            [faq("travel vaccinations offered", "vaccinations")],
+        ),
+        case(
+            "G-t-06",
+            "My ears feel bunged up with wax. How do I get ready to have it cleared?",
+            [faq("preparing for ear wax removal", "gp-services")],
+        ),
+        case(
+            "G-t-07",
+            "Who else gets to look at my file?",
+            [faq("who can see the medical record", "privacy")],
+        ),
+        case(
+            "G-t-08",
+            "Can I put moisturiser on before the heart tracing?",
+            [faq("lotion before an ECG", "test-preparation")],
+        ),
+        case(
+            "G-t-09",
+            "How long do you hang on to my notes?",
+            [faq("how long records are kept", "privacy")],
+        ),
+    ],
+)
+
+
+# === u - faq-deep-in-a-document =====================================================
+
+family(
+    "u",
+    "faq-deep-in-a-document",
+    "One answerable FAQ question whose answer sits in a late section of a long "
+    "document, several chunks away from its title. A chunk that far in carries none "
+    "of the document's opening context, so it has to be found on its own wording - "
+    "which is what makes chunking a measured choice rather than a default. The label "
+    "cites the document; which chunk carried the answer is read from the stored run.",
+    [
+        case(
+            "G-u-01",
+            "When do I have to bring the blood pressure monitor back?",
+            [faq("returning the 24-hour blood pressure monitor", "test-preparation")],
+        ),
+        case(
+            "G-u-02",
+            "How long can I keep a urine sample in the fridge?",
+            [faq("storing a urine sample", "test-preparation")],
+        ),
+        case(
+            "G-u-03",
+            "When can I start rinsing after having a tooth taken out?",
+            [faq("rinsing after an extraction", "dental-care-guide")],
+        ),
+        case(
+            "G-u-04",
+            "Do you do braces?",
+            [faq("is orthodontic treatment offered", "dental-care-guide")],
+            note="answered by the dental guide's last section, as a no",
+        ),
+        case(
+            "G-u-05",
+            "How long does it take you to verify a new insurance card?",
+            [faq("verifying a new insurance card", "insurance-plan-guide")],
+        ),
+        case(
+            "G-u-06",
+            "Can I get a DOT physical with you?",
+            [faq("are DOT medical examinations offered", "gp-services")],
+        ),
+        case(
+            "G-u-07",
+            "Do you accept Medicaid?",
+            [faq("is Medicaid accepted", "insurance-plan-guide")],
+            note="the insurance entry names Medicare, one word away; the answer is a "
+            "no from the plan guide",
+        ),
+    ],
+)
+
+
+# === v - faq-near-miss-distractor ===================================================
+
+family(
+    "v",
+    "faq-near-miss-distractor",
+    "One answerable FAQ question with a neighbouring entry that looks like its answer "
+    "and is not: the clinic's hours against the phone line's, a visit's rate against "
+    "a vaccine's price, arriving early against arriving late. Retrieval that ranks the "
+    "neighbour first hands the answerer a confident wrong answer, so the label cites "
+    "only the entry that actually answers - a hit on the neighbour is a miss.",
+    [
+        case(
+            "G-v-01",
+            "What time does your phone line open?",
+            [faq("phone line hours", "running-late")],
+            note="the hours entry says the clinic opens at 9:00; the phone line opens "
+            "at 8:30",
+        ),
+        case(
+            "G-v-02",
+            "How much is a flu shot if I'm paying myself?",
+            [faq("self-pay price of a flu vaccine", "vaccinations")],
+            note="the rates entry prices visits by practitioner type, not vaccines",
+        ),
+        case(
+            "G-v-03",
+            "Will my Aetna plan pay for a dental cleaning?",
+            [faq("medical insurance and dental care", "dental-care-guide")],
+            note="both insurance entries say Aetna is accepted; the dental guide says "
+            "medical plans do not cover dental care",
+        ),
+        case(
+            "G-v-04",
+            "Does Medicare cover my dental appointment?",
+            [faq("Medicare and dental appointments", "insurance-plan-guide")],
+        ),
+        case(
+            "G-v-05",
+            "How late can I be for a dentist appointment?",
+            [faq("lateness limit for a dental appointment", "running-late")],
+            note="the arrival entry says how early to come, which reads as the same "
+            "subject",
+        ),
+        case(
+            "G-v-06",
+            "Will you email me my test results?",
+            [faq("test results by email", "reminders-and-messages")],
+        ),
+        case(
+            "G-v-07",
+            "Should I skip eating before my breathing test?",
+            [faq("eating before spirometry", "test-preparation")],
+            note="the counter-case to G-k-07: fasting before a blood test is a gap, "
+            "and a meal before spirometry is answered - by 'avoid a large meal', "
+            "which is not fasting",
+        ),
+    ],
+)
+
 # --- the checks JSON Schema cannot make ---------------------------------------------
 
 # The family letters, in the order the set is meant to read. There is no `h`: the
 # letters follow the order the set was specified in, and that one was not used.
-EXPECTED_LETTERS: Final = list("abcdefgijklmnopqr")
+EXPECTED_LETTERS: Final = list("abcdefgijklmnopqrstuv")
 
 # Each seeded practitioner's working week and the hours a 60-minute slot may start in:
 # first weekday, last weekday, first hour, last hour.
