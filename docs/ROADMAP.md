@@ -38,7 +38,7 @@ resolve something; urgent or ambiguous requests are prioritized.
 over a conversation and reply in the patient's own thread, and manages the practitioners and FAQ
 entries the assistant answers from. Both sides live on one screen — patient chats on the left, the
 staff console on the right — so a visitor drives an escalation and then answers it, as the session's
-single staff member, without logging in as anyone. Operational analytics follow in Phase 4+.
+single staff member, without logging in as anyone.
 
 ---
 
@@ -227,8 +227,6 @@ change lives in a cookie the browser cannot read; and resetting a demonstration 
   side-by-side demonstration that is the point of the screen. The staff member is a core-backend
   record, alongside sessions, chats, and messages — nothing about it touches Scheduling's
   invariants.
-
-Operational analytics over this console stay in Phase 4+.
 
 #### Phase 1e — RAG done properly
 Upgrade Phase 0's naive embed-and-top-k retrieval into a pipeline with a defensible stage for each
@@ -784,14 +782,9 @@ out of it silently. And the log redaction gained the credential keys by name (`c
 `pairing_code`, `code_verifier`) rather than the substring `code`, which would have redacted every
 `status_code` either service logs.)*
 
-#### Phase 4b+ — Platform layers
-Added as deliberate evolution, each with a one-line rationale in the README:
-
-- Introduce **one** message broker plus the **transactional outbox** pattern and **idempotent
-  consumers** (at-least-once delivery plus idempotency gives effectively-once processing).
-- Add ClickHouse and an event stream for the analytics dashboard.
-- Extend 1d's staff console with operational analytics.
-- Containerize and deploy to Kubernetes.
+#### Phase 4b — Kubernetes
+Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
+in the README like every other technology choice.
 
 ---
 
@@ -802,27 +795,3 @@ Added as deliberate evolution, each with a one-line rationale in the README:
 - **Structured outputs** for intents and tool arguments, not string parsing.
 - **Ship a live, clickable demo** on something cheap and simple — a URL an interviewer can poke,
   prioritized over deployment sophistication.
-
----
-
-## Target architecture (Phase 4+ reference)
-
-The fuller microservices shape, kept as the destination if the project is extended. Database-per-service,
-synchronous gRPC where a request needs an immediate answer, asynchronous messaging for the event
-stream, all behind an Nginx gateway.
-
-| Service | Responsibility | Data store |
-|---|---|---|
-| API Gateway | Routing, TLS, rate limiting, WebSocket passthrough | — (Nginx) |
-| Auth | Login, JWT issuance, token/session cache | PostgreSQL |
-| Patient | Patient profiles and contact records | PostgreSQL |
-| Scheduling | Doctor calendars, availability, booking | PostgreSQL |
-| Notification | Confirmations, reminders, alerts | (document store) |
-| Chat / Agent Orchestration | Conversation loop, intent routing, tool calling | (document store) |
-| Knowledge (RAG) | Clinic document ingestion, semantic search | Qdrant + doc store |
-| Escalation | Routes unresolved/urgent cases to staff | (document store) |
-| Analytics | Operational reporting | ClickHouse |
-| Staff Console | Internal UI backend for staff workflows | reads across the above |
-
-Some of these stores can collapse into PostgreSQL (chat transcripts, notification log, and
-escalation records work well as JSONB); the choice per service is documented in the README.

@@ -11,7 +11,7 @@ This repository is at the walking-skeleton stage: each service has only a placeh
 `docs/ROADMAP.md` is the authoritative design document — read it before starting any implementation
 work, since it defines the architecture, phased build plan, and the reasoning behind each technology
 choice. Treat its "Design principles" and "Phased build plan" sections as binding scope guidance,
-not just background: build Phase 0 before Phase 1, don't introduce Phase 3+ platform layers early,
+not just background: build Phase 0 before Phase 1, don't introduce Phase 4+ platform work early,
 and don't add services/infra beyond what the current phase calls for.
 
 The repo is a **monorepo**: `services/chat`, `services/scheduler`, and `services/frontend` are
@@ -567,5 +567,4 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   additions should follow that pattern rather than going undocumented.
 
 See `docs/ROADMAP.md` for the full phased plan (Phase 0 walking skeleton → Phase 1 agent → Phase 2
-eval/observability → Phase 3+ optional platform layers) and the target microservices reference
-architecture.
+eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, then Kubernetes).
