@@ -1,0 +1,762 @@
+{
+  "case_id": "G-k-15",
+  "chat_id": "01M3WDFRNPDT9PRJWNBB6PK9HQ",
+  "patient_id": "01M3WDFRPY9FEJ0PHVYFDMCKW2",
+  "attempts": 1,
+  "elapsed_seconds": 3.1824008269468322,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+          "answer": null,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDFRSBSM96MCPSTHK77PES",
+    "content": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDFVP54Z5S1XJNC7KEY5PW",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+        "answer": null,
+        "verdict": "abstained_generation",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+        "query": "Do you accept UnitedHealthcare and Blue Cross Blue Shield?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "chat_id": "01M3WDFRNPDT9PRJWNBB6PK9HQ",
+      "sender": "patient",
+      "content": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:33.115157Z"
+    },
+    {
+      "message": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+      "message_ids_unified": [
+        "01M3WDFRSBSM96MCPSTHK77PES"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:33.115448Z"
+    },
+    {
+      "trace_id": "05204ae7e22bd8ce46cd5793b4a113f8",
+      "event": "turn.traced",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:33.117090Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:33.120556Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3342,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.108243Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+          "query": "Do you accept UnitedHealthcare and Blue Cross Blue Shield?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.108749Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 989.57,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+            "query": "Do you accept UnitedHealthcare and Blue Cross Blue Shield?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.109185Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.111901Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.488388Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.6055276,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.54910845,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.53489834,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.46466383,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45837834,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.44780517,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.44334996,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.4168475,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.39375222,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.37967074,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.3470766,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.34610614,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.33983064,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.33207503,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.32617116,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.31927586,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.31441075,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.31174207,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.31042868,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.30862552,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.3063383,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.30518252,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.29681146,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.29257718,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.28976312,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.501673Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.6055276
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.54910845
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.53489834
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.46466383
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45837834
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.44780517
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.44334996
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.4168475
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.39375222
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.37967074
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.3470766
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.34610614
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.33983064
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.33207503
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.32617116
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.31927586
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.31441075
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.31174207
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.31042868
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.30862552
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.3063383
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.30518252
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.29681146
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.29257718
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.28976312
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.504894Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 280.83,
+      "scores": [
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.6055276,
+          "rerank_score": 0.90234375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.53489834,
+          "rerank_score": 0.76171875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.54910845,
+          "rerank_score": 0.7578125
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45837834,
+          "rerank_score": 0.53515625
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.46466383,
+          "rerank_score": 0.431640625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.787449Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "rerank_score": 0.90234375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "rerank_score": 0.76171875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "rerank_score": 0.7578125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "rerank_score": 0.53515625
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "rerank_score": 0.431640625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.788604Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6055276,
+      "best_rerank_score": 0.90234375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:34.789890Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\n# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Do you accept UnitedHealthcare and Blue Cross Blue Shield?\n\nQuestion: Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:01:34.790413Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 771,
+        "output": 10,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.054582Z"
+    },
+    {
+      "gates_verdict": "answered",
+      "survivor_count": 3,
+      "malformed": false,
+      "event": "faq.no_answer",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.055097Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1944.19,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you accept UnitedHealthcare and Blue Cross Blue Shield for the same visit, splitting the cost between them?",
+            "verdict": "abstained_generation",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.055790Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.058156Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.74,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.058418Z"
+    },
+    {
+      "duration_ms": 2960.63,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDFRSBSM96MCPSTHK77PES"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.060045Z"
+    },
+    {
+      "message_id": "01M3WDFVP54Z5S1XJNC7KEY5PW",
+      "chat_id": "01M3WDFRNPDT9PRJWNBB6PK9HQ",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.096553Z"
+    },
+    {
+      "chat_id": "01M3WDFRNPDT9PRJWNBB6PK9HQ",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3WDFRSBSM96MCPSTHK77PES",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:36.111387Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDFRSBSM96MCPSTHK77PES": "05204ae7e22bd8ce46cd5793b4a113f8"
+  }
+}

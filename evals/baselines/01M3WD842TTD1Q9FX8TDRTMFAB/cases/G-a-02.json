@@ -1,0 +1,282 @@
+{
+  "case_id": "G-a-02",
+  "chat_id": "01M3WD85NAFYJW86AFY9K1H73Q",
+  "patient_id": "01M3WD85P55VW673JFSYGSF6HT",
+  "attempts": 1,
+  "elapsed_seconds": 3.38851745496504,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WD85R657PW5XPJA2T9S80A",
+    "content": "Do you have a dentist?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WD88WTJSV16YJBMZY1DQHF",
+    "content": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Do you have a dentist?",
+        "query": "Do you have a dentist?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "chat_id": "01M3WD85NAFYJW86AFY9K1H73Q",
+      "sender": "patient",
+      "content": "Do you have a dentist?",
+      "event": "message.persisted",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:24.247966Z"
+    },
+    {
+      "message": "Do you have a dentist?",
+      "message_ids_unified": [
+        "01M3WD85R657PW5XPJA2T9S80A"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:24.248503Z"
+    },
+    {
+      "trace_id": "d59df62462b917263d9e9f82316fa125",
+      "event": "turn.traced",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:24.249975Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:24.252328Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3325,
+        "output": 33,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.165781Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Do you have a dentist?",
+          "query": "Do you have a dentist?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.166564Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 915.03,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Do you have a dentist?",
+            "query": "Do you have a dentist?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.167014Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.169603Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.183897Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:25.185044Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a dentist?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "debug",
+      "timestamp": "2026-10-01T18:57:25.185474Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 77,
+        "cache_read": 5828,
+        "cache_write": 121,
+        "cache_write_1h": 0,
+        "thinking": 22
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.440429Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2255.47,
+      "tool_names": [],
+      "text": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.441161Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 2272.36,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 147,
+        "answer_text": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.441596Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.443901Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.73,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.444148Z"
+    },
+    {
+      "duration_ms": 3214.26,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M3WD85R657PW5XPJA2T9S80A"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.444857Z"
+    },
+    {
+      "message_id": "01M3WD88WTJSV16YJBMZY1DQHF",
+      "chat_id": "01M3WD85NAFYJW86AFY9K1H73Q",
+      "sender": "assistant",
+      "content": "Yes — we have Dr. Andreas Vesalius, who specializes in Dentistry, with 60-minute appointments. Would you like me to check his availability for you?",
+      "event": "message.persisted",
+      "turn_id": "01M3WD85R657PW5XPJA2T9S80A",
+      "level": "info",
+      "timestamp": "2026-10-01T18:57:27.462148Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WD85R657PW5XPJA2T9S80A": "d59df62462b917263d9e9f82316fa125"
+  }
+}

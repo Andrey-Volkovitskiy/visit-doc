@@ -15,8 +15,10 @@ is one sample: what counts as a regression is read by a person, against a noise 
 from five runs of one unchanged build (`make eval-band`).
 
 **The band is `bands/01M3W93XYN42QWH1TCYXN3E5FC.json`** (its report beside it as `.md`), measured from the current
-baseline and four more runs of the same build (`a171078`), untraced. Pass it as
-`make eval-compare BASE=evals/baselines/01M3W4D3ZPHGWSV5DPQJB5RZC3 NEW=<run> BAND=evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`.
+previous baseline `01M3W4D3…` and four more runs of its build (`a171078`), untraced. The current
+baseline differs from that build only in the classifier prompt, which the band shows never varied,
+so it applies to the current one as well. Pass it as
+`make eval-compare BASE=evals/baselines/01M3WD842TTD1Q9FX8TDRTMFAB NEW=<run> BAND=evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`.
 It applies only to a comparison whose two runs share its conditions, corpus, clock and case set,
 so it marks a prompt or code change and stays silent on one that moves a setting. What it found:
 classification, retrieval and booking gave identical numbers in all five runs, case for case; only
@@ -39,6 +41,7 @@ finding out, not a thing to repair by editing the run.
 | [`01M3W1XFRH400SHPXDSSFYWR0Z`](01M3W1XFRH400SHPXDSSFYWR0Z/) | 146 (all) | `b0aa7a1` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3W2MA7Y1BBTG2Y9F5W1NCKN`](01M3W2MA7Y1BBTG2Y9F5W1NCKN/) | 146 (all) | `957f240` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3W4D3ZPHGWSV5DPQJB5RZC3`](01M3W4D3ZPHGWSV5DPQJB5RZC3/) | 146 (all) | `a171078` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3WD842TTD1Q9FX8TDRTMFAB`](01M3WD842TTD1Q9FX8TDRTMFAB/) | 146 (all) | `009d4ff` on `018-hybrid-retrieval` | 2026-10-01 |
 
 The first run of the golden set at v2 that is scoreable. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not: it selects v1 case ids the set no longer holds,
@@ -50,6 +53,8 @@ entries and added the retrieval families, under a 0.25 similarity floor.
 `01M3W1XFRH400SHPXDSSFYWR0Z` is the same set on the build that dropped that floor, so the earlier
 run stays as the record of what the floor cost. `01M3W2MA7Y1BBTG2Y9F5W1NCKN` is
 that build with the answer prompt giving a no the information states, and
-`01M3W4D3ZPHGWSV5DPQJB5RZC3` is the current baseline: that build with heading-aware chunking. It supersedes `01M321D…` in turn, which no longer
+`01M3W4D3ZPHGWSV5DPQJB5RZC3` is that build with heading-aware chunking, and the build the band
+was measured on. `01M3WD842TTD1Q9FX8TDRTMFAB` is the current baseline: that build with the
+classifier fix that closed Phase 4b, 1 of 87 answerable requests unserved. It supersedes `01M321D…` in turn, which no longer
 re-scores - the corpus pin changed and six of its labels gained a citation (`PROVENANCE.md`) - and
 stays as the record of the 9-entry build.

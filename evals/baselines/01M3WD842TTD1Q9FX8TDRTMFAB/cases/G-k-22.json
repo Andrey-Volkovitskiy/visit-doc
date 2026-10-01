@@ -1,0 +1,718 @@
+{
+  "case_id": "G-k-22",
+  "chat_id": "01M3WDGAJ4NXE445K3ZMJ03HC7",
+  "patient_id": "01M3WDGAJR2PEQK0T8V3N8PWRD",
+  "attempts": 1,
+  "elapsed_seconds": 2.0691636180272326,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What's the self-pay price for code 99213?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDGAM6YTS3PJKY85GKJF01",
+    "content": "What's the self-pay price for code 99213?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDGCH74QX11BC17PC7H1D2",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What's the self-pay price for code 99213?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What's the self-pay price for code 99213?",
+        "query": "What is the self-pay price for code 99213?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "chat_id": "01M3WDGAJ4NXE445K3ZMJ03HC7",
+      "sender": "patient",
+      "content": "What's the self-pay price for code 99213?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:51.376816Z"
+    },
+    {
+      "message": "What's the self-pay price for code 99213?",
+      "message_ids_unified": [
+        "01M3WDGAM6YTS3PJKY85GKJF01"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:51.377096Z"
+    },
+    {
+      "trace_id": "dda78e786940f3a85c515d3f7e187c96",
+      "event": "turn.traced",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:51.380553Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:51.383656Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3331,
+        "output": 42,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.484138Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What's the self-pay price for code 99213?",
+          "query": "What is the self-pay price for code 99213?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.485665Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1103.17,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What's the self-pay price for code 99213?",
+            "query": "What is the self-pay price for code 99213?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.486579Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.490217Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.753366Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.39239204,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.32616568,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.31576613,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.3038755,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.27388674,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.23960708,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.22004399,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.2085113,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.1932646,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.17537755,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.16060501,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.14694467,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.14016566,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.13633826,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.13558412,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.1312919,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.12338537,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.11829675,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.116792396,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.11346649,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.111049674,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.10788342,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 1,
+          "similarity_score": 0.10221079,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.09603253,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 ho",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.09531214,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.764191Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.39239204
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.32616568
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.31576613
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.3038755
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.27388674
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.23960708
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.22004399
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.2085113
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.1932646
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.17537755
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.16060501
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.14694467
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.14016566
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.13633826
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.13558412
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.1312919
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.12338537
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.11829675
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.116792396
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.11346649
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.111049674
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.10788342
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 1,
+          "similarity_score": 0.10221079
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.09603253
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.09531214
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:52.766814Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 539.7,
+      "scores": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.27388674,
+          "rerank_score": 0.5546875
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.3038755,
+          "rerank_score": 0.490234375
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.39239204,
+          "rerank_score": 0.478515625
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.32616568,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.31576613,
+          "rerank_score": 0.439453125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.308135Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "rerank_score": 0.5546875
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "rerank_score": 0.490234375
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "rerank_score": 0.478515625
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "rerank_score": 0.439453125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.309850Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.39239204,
+      "best_rerank_score": 0.5546875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.311011Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 822.31,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What's the self-pay price for code 99213?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.311893Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.313874Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.59,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.314084Z"
+    },
+    {
+      "duration_ms": 1948.23,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDGAM6YTS3PJKY85GKJF01"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.314535Z"
+    },
+    {
+      "message_id": "01M3WDGCH74QX11BC17PC7H1D2",
+      "chat_id": "01M3WDGAJ4NXE445K3ZMJ03HC7",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.326054Z"
+    },
+    {
+      "chat_id": "01M3WDGAJ4NXE445K3ZMJ03HC7",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3WDGAM6YTS3PJKY85GKJF01",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:53.336597Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDGAM6YTS3PJKY85GKJF01": "dda78e786940f3a85c515d3f7e187c96"
+  }
+}

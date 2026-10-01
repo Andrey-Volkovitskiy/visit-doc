@@ -1,0 +1,760 @@
+{
+  "case_id": "G-s-12",
+  "chat_id": "01M3WDPHJR8F4YDPQH0ZDBYSE9",
+  "patient_id": "01M3WDPHKGAJPZXQV5SGGZ369N",
+  "attempts": 1,
+  "elapsed_seconds": 2.6651362139964476,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "How do I take the Vivotif typhoid vaccine?",
+          "answer": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2985,
+              "chunk_index": 3,
+              "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+    "content": "How do I take the Vivotif typhoid vaccine?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDPM4SRK011H7PZXRZYRGS",
+    "content": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "How do I take the Vivotif typhoid vaccine?",
+        "answer": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2985,
+            "chunk_index": 3,
+            "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "How do I take the Vivotif typhoid vaccine?",
+        "query": "How do I take the Vivotif typhoid vaccine?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "chat_id": "01M3WDPHJR8F4YDPQH0ZDBYSE9",
+      "sender": "patient",
+      "content": "How do I take the Vivotif typhoid vaccine?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:15.184449Z"
+    },
+    {
+      "message": "How do I take the Vivotif typhoid vaccine?",
+      "message_ids_unified": [
+        "01M3WDPHN2K2WPMXT58Q4DXWF2"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:15.184706Z"
+    },
+    {
+      "trace_id": "206cae429aa27810506322c369814f3f",
+      "event": "turn.traced",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:15.186070Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:15.188907Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3331,
+        "output": 42,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.178457Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "How do I take the Vivotif typhoid vaccine?",
+          "query": "How do I take the Vivotif typhoid vaccine?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.179857Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 992.26,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "How do I take the Vivotif typhoid vaccine?",
+            "query": "How do I take the Vivotif typhoid vaccine?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.180853Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.184551Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.459099Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 3,
+          "similarity_score": 0.5292839,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.5107715,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.42670265,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.4260523,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.41606432,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.41018224,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.36809933,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 3,
+          "similarity_score": 0.3534318,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Urine sample\n\nIf you have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 2,
+          "similarity_score": 0.30194074,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Spirometry (breathing test)\n\nSpirometry measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 5,
+          "similarity_score": 0.29295024,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently wi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.2921964,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.29212713,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 ho",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.28842112,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.28153348,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.2753292,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.26992458,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.2697669,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.26819757,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.2645399,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.26295143,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.25909525,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.25730044,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.2551645,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.25496083,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.25465178,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.469126Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 3,
+          "similarity_score": 0.5292839
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.5107715
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.42670265
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.4260523
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.41606432
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.41018224
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.36809933
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 3,
+          "similarity_score": 0.3534318
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 2,
+          "similarity_score": 0.30194074
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 5,
+          "similarity_score": 0.29295024
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.2921964
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.29212713
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.28842112
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.28153348
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.2753292
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.26992458
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.2697669
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.26819757
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.2645399
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.26295143
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.25909525
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.25730044
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.2551645
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.25496083
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.25465178
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.470700Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 271.33,
+      "scores": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 3,
+          "similarity_score": 0.5292839,
+          "rerank_score": 0.73828125
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.5107715,
+          "rerank_score": 0.458984375
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.42670265,
+          "rerank_score": 0.443359375
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.4260523,
+          "rerank_score": 0.32421875
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.41606432,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.743276Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 3,
+          "rerank_score": 0.73828125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "rerank_score": 0.458984375
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "rerank_score": 0.443359375
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "rerank_score": 0.32421875
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "rerank_score": 0.318359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.744140Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5292839,
+      "best_rerank_score": 0.73828125,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:16.744878Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\nQuestion: How do I take the Vivotif typhoid vaccine?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:05:16.745154Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 543,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.713101Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1530.04,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 116,
+        "answer_text": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "How do I take the Vivotif typhoid vaccine?",
+            "verdict": "answered",
+            "answer_text": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.714075Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.715728Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.41,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 116,
+        "answer_text": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.715879Z"
+    },
+    {
+      "duration_ms": 2545.52,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2985,
+              "chunk_index": 3,
+              "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.",
+              "similarity_score": 0.5292839,
+              "rerank_score": 0.73828125
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDPHN2K2WPMXT58Q4DXWF2"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.716207Z"
+    },
+    {
+      "message_id": "01M3WDPM4SRK011H7PZXRZYRGS",
+      "chat_id": "01M3WDPHJR8F4YDPQH0ZDBYSE9",
+      "sender": "assistant",
+      "content": "Vivotif is taken as four capsules on alternate days, and you must finish the course at least one week before travel.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDPHN2K2WPMXT58Q4DXWF2",
+      "level": "info",
+      "timestamp": "2026-10-01T19:05:17.729317Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDPHN2K2WPMXT58Q4DXWF2": "206cae429aa27810506322c369814f3f"
+  }
+}

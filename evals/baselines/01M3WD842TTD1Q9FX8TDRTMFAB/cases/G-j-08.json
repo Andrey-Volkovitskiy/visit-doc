@@ -1,0 +1,777 @@
+{
+  "case_id": "G-j-08",
+  "chat_id": "01M3WDEHY60MPFCT0TMFCMBE7W",
+  "patient_id": "01M3WDEJ0GD49JWZZW02KDAE4D",
+  "attempts": 1,
+  "elapsed_seconds": 8.865247823065147,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you take Aetna?",
+          "answer": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2982,
+              "chunk_index": 2,
+              "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it."
+            },
+            {
+              "entry_id": 2976,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+    "content": "Do you take Aetna?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDETHJQ1XYN8C4A0GVN38X",
+    "content": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you take Aetna?",
+        "answer": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2982,
+            "chunk_index": 2,
+            "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it."
+          },
+          {
+            "entry_id": 2976,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you take Aetna?",
+        "query": "Do you take Aetna insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "chat_id": "01M3WDEHY60MPFCT0TMFCMBE7W",
+      "sender": "patient",
+      "content": "Do you take Aetna?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.520518Z"
+    },
+    {
+      "message": "Do you take Aetna?",
+      "message_ids_unified": [
+        "01M3WDEJ3Y8ZTP2MS7Q2E131DQ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.520885Z"
+    },
+    {
+      "trace_id": "c2b2d1addbaa7234aff870045c793ebe",
+      "event": "turn.traced",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.523241Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.529736Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3326,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.195548Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you take Aetna?",
+          "query": "Do you take Aetna insurance?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.196709Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 5669.31,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you take Aetna?",
+            "query": "Do you take Aetna insurance?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.197226Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.199643Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.462107Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.53845805,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.47067714,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.42212838,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.4122454,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.40073085,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.36119533,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.34832275,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.34668037,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.3324364,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.32236218,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3218131,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.31857598,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.30278158,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.2809665,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.27781624,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.26699185,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.2541414,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.251858,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.24978453,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.24756859,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.24707803,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.23721132,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.23550448,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.23352802,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.23281461,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.475536Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.53845805
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.47067714
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.42212838
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.4122454
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.40073085
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.36119533
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.34832275
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.34668037
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.3324364
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.32236218
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3218131
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.31857598
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.30278158
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 4,
+          "similarity_score": 0.2809665
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.27781624
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.26699185
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.2541414
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.251858
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.24978453
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.24756859
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.24707803
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.23721132
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.23550448
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.23352802
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.23281461
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.479412Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 410.04,
+      "scores": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.53845805,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.47067714,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.4122454,
+          "rerank_score": 0.484375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.42212838,
+          "rerank_score": 0.40234375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.40073085,
+          "rerank_score": 0.40234375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.891130Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "rerank_score": 0.85546875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "rerank_score": 0.484375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "rerank_score": 0.40234375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "rerank_score": 0.40234375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.892000Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.53845805,
+      "best_rerank_score": 0.85546875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:59.892659Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Do you take Aetna insurance?\n\nQuestion: Do you take Aetna?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:00:59.892969Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 523,
+        "output": 153,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.120469Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2922.33,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 226,
+        "answer_text": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you take Aetna?",
+            "verdict": "answered",
+            "answer_text": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.121695Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.124013Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.71,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 226,
+        "answer_text": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.124256Z"
+    },
+    {
+      "duration_ms": 8622.27,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2982,
+              "chunk_index": 2,
+              "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+              "similarity_score": 0.53845805,
+              "rerank_score": 0.85546875
+            },
+            {
+              "entry_id": 2976,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.47067714,
+              "rerank_score": 0.85546875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDEJ3Y8ZTP2MS7Q2E131DQ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.124714Z"
+    },
+    {
+      "message_id": "01M3WDETHJQ1XYN8C4A0GVN38X",
+      "chat_id": "01M3WDEHY60MPFCT0TMFCMBE7W",
+      "sender": "assistant",
+      "content": "We're in-network with Aetna Choice POS II, Aetna Open Access Managed Choice, and Aetna Medicare Advantage PPO plans. However, plans administered by Aetna Signature Administrators use a separate network that we are not part of.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDEJ3Y8ZTP2MS7Q2E131DQ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:02.148073Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDEJ3Y8ZTP2MS7Q2E131DQ": "c2b2d1addbaa7234aff870045c793ebe"
+  }
+}

@@ -16,7 +16,9 @@ build.
 
 Phase 4b set out to make retrieval hard enough to measure and then add hybrid search. Making it
 hard worked; the weaknesses it exposed were not where hybrid search reaches. Every change below
-shipped on its own evidence, and hybrid search was not built (section 7).
+shipped on its own evidence, and hybrid search was not built (section 7). Unserved answerable
+requests went from 12/87 on the extended corpus to 1/87, with no answer on a labelled gap at any
+step; the closing baseline is `01M3WD842TTD1Q9FX8TDRTMFAB`.
 
 | change | why | evidence | commit |
 |---|---|---|---|
@@ -26,7 +28,7 @@ shipped on its own evidence, and hybrid search was not built (section 7).
 | The answerer gives a no the information states | "not even a no" was read as "never a no", so a stated refusal was declined as a gap | section 5: 16/25 vs 7/25 answered on replay, every guard and stress gap still declined | `957f240` |
 | Chunk by heading section, each chunk prefixed with its heading path | a fixed window ran across sections and set one section's sentence beside another's | section 6: 10/10 on the two replayed cases it broke | `a171078` |
 | Noise band on that build | to tell a real movement from the answerer's run-to-run variation | section 8: only the answerer varies, ±1 | `fcc024b` |
-| Classifier: what the clinic sent, billed or treated is `faq_question`; arriving late is a term, not a booking | four of the five remaining misses were routing | section 9: 142 to 145 of 146 exact on replay | `009d4ff` |
+| Classifier: what the clinic sent, billed or treated is `faq_question`; arriving late is a term, not a booking | four of the five remaining misses were routing | section 9: 142 to 145 of 146 exact on replay, and on the full run | `009d4ff` |
 
 ## 1. Why the corpus had to change first
 
@@ -263,12 +265,17 @@ input rebuilt by the service's own history renderer:
 Either clause alone moved "Do you have a dentist?" (`G-a-02`) off `booking`; together they did
 not, so they ship together (`009d4ff`). A targeted live run on the four, `G-a-02` and every
 small-talk and out-of-topic case matched the replay: everything right but `G-w-02`, which the
-model still reads as unintelligible. Not yet confirmed by a full run against the band.
+model still reads as unintelligible.
+
+A full run on `009d4ff` (`01M3WD842TTD1Q9FX8TDRTMFAB`, $0.94) against the chunking baseline and
+the band confirmed it. Intent went from 164/168 to 167/168 and exact segmentation from 142/146 to
+145/146 - both outside a band in which they never moved - and the three re-routed requests were
+ranked first by both stages and answered. Unserved answerable fell from 5/87 to 1/87, with no
+wrong abstention and no answer on a labelled gap; `G-w-05` was answered this time, which the band
+already shows it doing. Nothing else moved. The run is the baseline that closes Phase 4b.
 
 ## 10. Left open
 
-- **A full run of the classifier change against the band** - the targeted run agrees with the
-  replay, but the whole set has not been driven on `009d4ff`.
 - **`G-w-02`** ("How much is 93000 if I'm paying myself?") - a bare billing code still routes to
   `small_talk`.
 - **`G-w-05`** ("Cigna DHMO") is answered 5 times in 10: its chunks look contradictory - the

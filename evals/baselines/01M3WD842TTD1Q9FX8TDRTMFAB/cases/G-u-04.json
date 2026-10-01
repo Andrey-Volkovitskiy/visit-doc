@@ -1,0 +1,760 @@
+{
+  "case_id": "G-u-04",
+  "chat_id": "01M3WDQZXT6YBYDWVQCYX27KCQ",
+  "patient_id": "01M3WDQZYF049MGXA88AQ7HSBQ",
+  "attempts": 1,
+  "elapsed_seconds": 2.679324552998878,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you do braces?",
+          "answer": "We do not offer orthodontic treatment such as braces or clear aligners.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2983,
+              "chunk_index": 6,
+              "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDQZZZX1WC86BWH2QTR09C",
+    "content": "Do you do braces?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDR2G8NY132AC40HMW1E61",
+    "content": "We do not offer orthodontic treatment such as braces or clear aligners.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you do braces?",
+        "answer": "We do not offer orthodontic treatment such as braces or clear aligners.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2983,
+            "chunk_index": 6,
+            "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you do braces?",
+        "query": "Do you do braces?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "chat_id": "01M3WDQZXT6YBYDWVQCYX27KCQ",
+      "sender": "patient",
+      "content": "Do you do braces?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:02.634549Z"
+    },
+    {
+      "message": "Do you do braces?",
+      "message_ids_unified": [
+        "01M3WDQZZZX1WC86BWH2QTR09C"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:02.634800Z"
+    },
+    {
+      "trace_id": "e017924544a4ea144e4bf8ef786ba2ca",
+      "event": "turn.traced",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:02.635918Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:02.638649Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3324,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.612934Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you do braces?",
+          "query": "Do you do braces?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.614547Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 978.47,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you do braces?",
+            "query": "Do you do braces?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.616017Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.620123Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.891153Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.3092664,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.21032706,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenever you use it. Noise-cancelling headphones are available in the treatment room. We do not offer sedation of any kind, including nitrous oxide (\"laughing gas\") and IV sedation; a patient who needs sedation for dental treatment has to be treated at a dental practice that provides it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.19319591,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.18970634,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.18433988,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.1814081,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.17664686,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.17020589,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.16777624,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.16645181,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.1658628,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.16410968,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.16163346,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.15872547,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.15599018,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.15131167,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.15072149,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.14818327,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.14594309,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.14542006,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.1421262,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.13831493,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.13737151,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 0,
+          "similarity_score": 0.13686728,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.13290356,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simpl",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.903713Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.3092664
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.21032706
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.19319591
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.18970634
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.18433988
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.1814081
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 3,
+          "similarity_score": 0.17664686
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.17020589
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.16777624
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.16645181
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.1658628
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.16410968
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.16163346
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.15872547
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.15599018
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.15131167
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.15072149
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 5,
+          "similarity_score": 0.14818327
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.14594309
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.14542006
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.1421262
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 1,
+          "similarity_score": 0.13831493
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.13737151
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 0,
+          "similarity_score": 0.13686728
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.13290356
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:03.907002Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 308.78,
+      "scores": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.3092664,
+          "rerank_score": 0.8203125
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.21032706,
+          "rerank_score": 0.384765625
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.18433988,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.18970634,
+          "rerank_score": 0.341796875
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "similarity_score": 0.19319591,
+          "rerank_score": 0.283203125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:04.217478Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "rerank_score": 0.8203125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "rerank_score": 0.384765625
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "rerank_score": 0.341796875
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 2,
+          "rerank_score": 0.283203125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:04.219327Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.3092664,
+      "best_rerank_score": 0.8203125,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:04.220782Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.\n\nQuestion: Do you do braces?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:06:04.221428Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 303,
+        "output": 26,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.184049Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1565.39,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 71,
+        "answer_text": "We do not offer orthodontic treatment such as braces or clear aligners.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you do braces?",
+            "verdict": "answered",
+            "answer_text": "We do not offer orthodontic treatment such as braces or clear aligners."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.185110Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.186820Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.48,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 71,
+        "answer_text": "We do not offer orthodontic treatment such as braces or clear aligners."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.186971Z"
+    },
+    {
+      "duration_ms": 2563.96,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2983,
+              "chunk_index": 6,
+              "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+              "similarity_score": 0.3092664,
+              "rerank_score": 0.8203125
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "We do not offer orthodontic treatment such as braces or clear aligners.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDQZZZX1WC86BWH2QTR09C"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.187417Z"
+    },
+    {
+      "message_id": "01M3WDR2G8NY132AC40HMW1E61",
+      "chat_id": "01M3WDQZXT6YBYDWVQCYX27KCQ",
+      "sender": "assistant",
+      "content": "We do not offer orthodontic treatment such as braces or clear aligners.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDQZZZX1WC86BWH2QTR09C",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:05.200981Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDQZZZX1WC86BWH2QTR09C": "e017924544a4ea144e4bf8ef786ba2ca"
+  }
+}

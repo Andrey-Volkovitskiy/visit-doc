@@ -1,0 +1,760 @@
+{
+  "case_id": "G-j-06",
+  "chat_id": "01M3WDEE1TCKT9HNW4DK4J3Q4Q",
+  "patient_id": "01M3WDEE2JKY20P1113TJWP4BY",
+  "attempts": 1,
+  "elapsed_seconds": 3.96932460507378,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Is it possible to have my appointment over video call?",
+          "answer": "No, we currently only offer in-person visits at our clinic location.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2975,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+    "content": "Is it possible to have my appointment over video call?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDEHW3PH5AT8TBG7AWMVKN",
+    "content": "No, we currently only offer in-person visits at our clinic location.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Is it possible to have my appointment over video call?",
+        "answer": "No, we currently only offer in-person visits at our clinic location.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2975,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Is it possible to have my appointment over video call?",
+        "query": "Is it possible to have my appointment over video call?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "chat_id": "01M3WDEE1TCKT9HNW4DK4J3Q4Q",
+      "sender": "patient",
+      "content": "Is it possible to have my appointment over video call?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:49.453820Z"
+    },
+    {
+      "message": "Is it possible to have my appointment over video call?",
+      "message_ids_unified": [
+        "01M3WDEE4K5SCD7XNNDG5XWBTC"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:49.454168Z"
+    },
+    {
+      "trace_id": "b5612dd05c8c0061f221b7f695357ec5",
+      "event": "turn.traced",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:49.457991Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:49.461355Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3329,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.255709Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Is it possible to have my appointment over video call?",
+          "query": "Is it possible to have my appointment over video call?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.256839Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1796.35,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Is it possible to have my appointment over video call?",
+            "query": "Is it possible to have my appointment over video call?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.257347Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.260093Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.537203Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.5136982,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.45138192,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.4497432,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.4023773,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 2,
+          "similarity_score": 0.3951605,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.38881385,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.38618073,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.3787092,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.37517607,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.3661778,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.3451622,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.33264053,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.3295172,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.32378945,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.32297492,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.32198432,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.31814772,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3157071,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.31258267,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.2973977,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.28503495,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.28230652,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.28191036,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.28045633,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.27152145,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.565933Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.5136982
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.45138192
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.4497432
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.4023773
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 2,
+          "similarity_score": 0.3951605
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.38881385
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.38618073
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.3787092
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.37517607
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.3661778
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.3451622
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.33264053
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.3295172
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.32378945
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.32297492
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.32198432
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.31814772
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3157071
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.31258267
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.2973977
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.28503495
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.28230652
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.28191036
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.28045633
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.27152145
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:51.567968Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 492.51,
+      "scores": [
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.5136982,
+          "rerank_score": 0.6875
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.45138192,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 2,
+          "similarity_score": 0.3951605,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.4023773,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.4497432,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:52.062912Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "rerank_score": 0.6875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 2,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:52.063938Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5136982,
+      "best_rerank_score": 0.6875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:52.065011Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.\n\nQuestion: Is it possible to have my appointment over video call?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:00:52.065517Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 302,
+        "output": 22,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.241710Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1982.86,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 68,
+        "answer_text": "No, we currently only offer in-person visits at our clinic location.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Is it possible to have my appointment over video call?",
+            "verdict": "answered",
+            "answer_text": "No, we currently only offer in-person visits at our clinic location."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.242529Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.245781Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.81,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 68,
+        "answer_text": "No, we currently only offer in-person visits at our clinic location."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.245990Z"
+    },
+    {
+      "duration_ms": 3818.53,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2975,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+              "similarity_score": 0.5136982,
+              "rerank_score": 0.6875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "No, we currently only offer in-person visits at our clinic location.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDEE4K5SCD7XNNDG5XWBTC"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.246523Z"
+    },
+    {
+      "message_id": "01M3WDEHW3PH5AT8TBG7AWMVKN",
+      "chat_id": "01M3WDEE1TCKT9HNW4DK4J3Q4Q",
+      "sender": "assistant",
+      "content": "No, we currently only offer in-person visits at our clinic location.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDEE4K5SCD7XNNDG5XWBTC",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:53.261007Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDEE4K5SCD7XNNDG5XWBTC": "b5612dd05c8c0061f221b7f695357ec5"
+  }
+}

@@ -1,0 +1,718 @@
+{
+  "case_id": "G-k-04",
+  "chat_id": "01M3WDFG93TGK9N8N6A66MS753",
+  "patient_id": "01M3WDFG9QRXMD07089T7GEXSA",
+  "attempts": 1,
+  "elapsed_seconds": 1.884037588024512,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What is your cancellation and no-show policy?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+    "content": "What is your cancellation and no-show policy?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDFJ1K7HH7YRVXD3KNHKKQ",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What is your cancellation and no-show policy?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is your cancellation and no-show policy?",
+        "query": "What is your cancellation and no-show policy?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "chat_id": "01M3WDFG93TGK9N8N6A66MS753",
+      "sender": "patient",
+      "content": "What is your cancellation and no-show policy?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:24.465939Z"
+    },
+    {
+      "message": "What is your cancellation and no-show policy?",
+      "message_ids_unified": [
+        "01M3WDFGB7JPQ2PKPGX2X1Q02Q"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:24.466294Z"
+    },
+    {
+      "trace_id": "212189d42b96f71024156f30ba9574de",
+      "event": "turn.traced",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:24.468590Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:24.471457Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3329,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.447207Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is your cancellation and no-show policy?",
+          "query": "What is your cancellation and no-show policy?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.447956Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 977.44,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What is your cancellation and no-show policy?",
+            "query": "What is your cancellation and no-show policy?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.448503Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.451644Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.714461Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.3593068,
+          "considered": true,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.35295832,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.32215866,
+          "considered": true,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you when you check in, and you can choose to wait or to pick a new time. When we know about a delay of more than 30 minutes before you leave home, we send you a text message instead.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.29198837,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.28657234,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.28410584,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.2816071,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.28062326,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.276754,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 2,
+          "similarity_score": 0.2681665,
+          "considered": false,
+          "chunk_text": "# Running late\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.26648062,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.26516712,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.2644655,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.25836653,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.24984108,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.24796328,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.24190462,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.24051288,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.23812185,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.23627871,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.2360679,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.23432794,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 0,
+          "similarity_score": 0.23205933,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.23160756,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.2291371,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.725820Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.3593068
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.35295832
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.32215866
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.29198837
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.28657234
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.28410584
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.2816071
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.28062326
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.276754
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 2,
+          "similarity_score": 0.2681665
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.26648062
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.26516712
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.2644655
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.25836653
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.24984108
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.24796328
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.24190462
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.24051288
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.23812185
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.23627871
+        },
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.2360679
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.23432794
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 0,
+          "similarity_score": 0.23205933
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.23160756
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.2291371
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:25.731609Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 448.32,
+      "scores": [
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.3593068,
+          "rerank_score": 0.4921875
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.32215866,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.35295832,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.28657234,
+          "rerank_score": 0.333984375
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.29198837,
+          "rerank_score": 0.3046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.181874Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "rerank_score": 0.4921875
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "rerank_score": 0.333984375
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "rerank_score": 0.3046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.183380Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.3593068,
+      "best_rerank_score": 0.4921875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.184382Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 735.68,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What is your cancellation and no-show policy?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.186901Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.189534Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.55,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.189798Z"
+    },
+    {
+      "duration_ms": 1735.14,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDFGB7JPQ2PKPGX2X1Q02Q"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.190341Z"
+    },
+    {
+      "message_id": "01M3WDFJ1K7HH7YRVXD3KNHKKQ",
+      "chat_id": "01M3WDFG93TGK9N8N6A66MS753",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.206949Z"
+    },
+    {
+      "chat_id": "01M3WDFG93TGK9N8N6A66MS753",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3WDFGB7JPQ2PKPGX2X1Q02Q",
+      "level": "info",
+      "timestamp": "2026-10-01T19:01:26.223732Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDFGB7JPQ2PKPGX2X1Q02Q": "212189d42b96f71024156f30ba9574de"
+  }
+}

@@ -795,7 +795,7 @@ retrieval weaknesses, and what they exposed was not ranking. Four changes shippe
 measurement - no similarity floor in front of the reranker, a fallback floor of its own for a
 reranker outage, an answerer that gives a no the information states, and chunks cut by heading
 section - plus a classifier fix for the routing misses that remained. Unserved answerable requests
-went from 12/87 to 5/87 with no answer on a labelled gap. **Hybrid search was not built**: dense
+went from 12/87 to 1/87 with no answer on a labelled gap (baseline `01M3WD842TTD1Q9FX8TDRTMFAB`). **Hybrid search was not built**: dense
 search put the cited chunk in the reranker's shortlist for every answerable request and the
 reranker ranked it first every time, so fusion had nothing to move. The plan below is kept as
 written, with notes on what happened to each part; the measurements and the decision are in

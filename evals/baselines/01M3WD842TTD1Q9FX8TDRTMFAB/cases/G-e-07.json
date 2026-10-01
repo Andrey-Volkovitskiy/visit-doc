@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-07",
+  "chat_id": "01M3WDC486TCW7PNCTTPHC14P3",
+  "patient_id": "01M3WDC48W7BNQQBKCDMT71B0K",
+  "attempts": 1,
+  "elapsed_seconds": 1.581600900972262,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDC4AB3M7EJDC0K747HF72",
+    "content": "I need a copy of my vaccination certificate.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDC5QKB09XG0EPWTEX00HD",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "I need a copy of my vaccination certificate.",
+        "query": "I need a copy of my vaccination certificate."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "chat_id": "01M3WDC486TCW7PNCTTPHC14P3",
+      "sender": "patient",
+      "content": "I need a copy of my vaccination certificate.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:33.846328Z"
+    },
+    {
+      "message": "I need a copy of my vaccination certificate.",
+      "message_ids_unified": [
+        "01M3WDC4AB3M7EJDC0K747HF72"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:33.846563Z"
+    },
+    {
+      "trace_id": "c3d8bd213572552af81310e11aba8b6b",
+      "event": "turn.traced",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:33.848467Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:33.850436Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3327,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.272946Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "I need a copy of my vaccination certificate.",
+          "query": "I need a copy of my vaccination certificate."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.273459Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1423.78,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "I need a copy of my vaccination certificate.",
+            "query": "I need a copy of my vaccination certificate."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.273991Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.276455Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.53,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.276706Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.278619Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.65,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.278846Z"
+    },
+    {
+      "duration_ms": 1443.57,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDC4AB3M7EJDC0K747HF72"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.279561Z"
+    },
+    {
+      "message_id": "01M3WDC5QKB09XG0EPWTEX00HD",
+      "chat_id": "01M3WDC486TCW7PNCTTPHC14P3",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.298394Z"
+    },
+    {
+      "chat_id": "01M3WDC486TCW7PNCTTPHC14P3",
+      "reason": "not_authorized",
+      "message_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3WDC4AB3M7EJDC0K747HF72",
+      "level": "info",
+      "timestamp": "2026-10-01T18:59:35.308071Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3WDC4AB3M7EJDC0K747HF72": "c3d8bd213572552af81310e11aba8b6b"
+  }
+}
