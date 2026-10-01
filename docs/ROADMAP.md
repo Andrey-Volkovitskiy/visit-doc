@@ -846,10 +846,18 @@ then changes the retriever, in that order.
   stage on its own. The result is a table — dense only, BM25 only, fused, each with and without the
   reranker — split by case family, and read against the band. Hybrid is kept only if the table
   says it pays for itself; "no measurable effect" is a result the README records, not one it hides.
-- **Seeding cost.** Every new session is planted with the starter corpus, and planting embeds it
-  through Voyage. A corpus twenty times larger makes every session creation twenty times as
-  expensive, so its vectors are computed once and copied into each new session rather than
-  re-embedded.
+- **Seeding cost: deferred until it is measured.** Every new session is planted with the starter
+  corpus, and planting embeds every chunk through Voyage in one call, awaited inside the first
+  `POST /chats` - so a new visitor's first chat, every eval run and every e2e journey pay for it.
+  At 34 chunks that is about 5k tokens and one request: not worth a mechanism yet. Caching vectors
+  is a new invariant - a vector is valid only for one text, one embedding model and one chunker -
+  and one broken silently degrades retrieval rather than failing, so it is built only for a
+  measured need: the corpus growing toward hundreds of chunks, first-chat latency a visitor can
+  notice, or Voyage rate limits biting during eval or e2e runs. Not before hybrid search either,
+  which changes what a stored point carries. When it is built, the likelier shape is a template
+  copy of the starter corpus's points kept in Qdrant and copied into each new session under its
+  own `session_id` and revisions - no embedding call at all, and dense and sparse vectors copied
+  alike.
 
 #### Phase 4c — Kubernetes
 Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
