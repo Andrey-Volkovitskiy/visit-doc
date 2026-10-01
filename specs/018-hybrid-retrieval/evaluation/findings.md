@@ -5,10 +5,12 @@ What was measured between extending the starter corpus and the first change to t
 is what the measurements said, so a later reader can tell a decision from a guess.
 
 Every number below comes from a stored run under `.run/evals/` (the baseline is committed under
-`evals/baselines/`) or from an offline replay or probe described where it is used. No run here was
-measured against a noise band - none exists for this build yet - so a movement of one or two cases
-is a sample, not evidence. The three conclusions this file draws rest on movements that are
-structural (a chunk that never reached a stage, and then did), not on rates.
+`evals/baselines/`) or from an offline replay or probe described where it is used. Every change
+below was judged before a noise band existed, so a movement of one or two cases in a full run is a
+sample, not evidence: the conclusions rest on movements that are structural (a chunk that never
+reached a stage, and then did) or on replays of one prompt many times. The band measured
+afterwards (section 8) confirms the reading - full-run answer counts move by ±1 on an unchanged
+build.
 
 ## 1. Why the corpus had to change first
 
@@ -193,7 +195,27 @@ recovered by the reranker anyway. Hybrid search is expected to show no measurabl
 which is a result worth recording rather than a reason to skip the measurement - it says the
 retrieval problem this corpus poses is solved by a cross-encoder over a dense shortlist.
 
-## 8. Left open
+## 8. The noise band
+
+Five full runs of the heading-aware-chunking build (`a171078`) - the baseline
+`01M3W4D3ZPHGWSV5DPQJB5RZC3` and four untraced runs - measured as band
+`01M3W93XYN42QWH1TCYXN3E5FC` (`evals/baselines/bands/`). Request count, intent, segmentation,
+every similarity and rerank metric, gate survival, tool selection and end-to-end success were the
+same in all five, case for case. Only the answerer moved:
+
+| | low | high |
+|---|---|---|
+| unserved answerable | 4 / 87 | 6 / 87 |
+| wrong abstentions | 0 | 2 |
+| abstained at generation | 0.066 | 0.085 |
+
+Two cases varied: `G-w-05` (declined in 3 runs of 5) and `G-r-01`'s first request (1 of 5). So the
+full-run step from 6 to 5 unserved that section 6 reports is inside the band, and the evidence
+for section chunks is the ten-sample replays, not the total. A classifier or retrieval change, on
+the other hand, moves something this build never moved - and because a prompt change states no new
+condition, the band is applied to its comparison automatically.
+
+## 9. Left open
 
 - **The classifier on short or odd questions** - three to `small_talk`, one to `booking`. Four of
   the five requests the current baseline leaves unserved.
@@ -201,6 +223,5 @@ retrieval problem this corpus poses is solved by a cross-encoder over a dense sh
   insurance entry accepts Cigna, the dental guide refuses Cigna's DHMO.
 - **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
   rerank floor used to stop.
-- **A noise band** for this build, before any of the above is read as a result.
 - **The corpus is still small** - 62 chunks against a 25-wide pool. If hybrid shows nothing, the
   honest next question is whether a larger corpus would, not whether BM25 is useless.

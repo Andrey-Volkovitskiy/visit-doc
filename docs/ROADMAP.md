@@ -822,6 +822,10 @@ then changes the retriever, in that order.
   baseline no longer compares and the v1 bands never did. Take the baseline, then five full runs of
   that one build through `make eval-band`, before any retriever change — a band measured earlier
   ranges over a different corpus and stops applying the moment the corpus changes.
+  *(Done in a different order than planned: the floor, the answer prompt and the chunker changed
+  first, each judged on replays and on movements a band could not have explained, and the band
+  was measured on the build they produced - five runs, `evals/baselines/bands/`. Classification
+  and retrieval did not move across them at all; only the answerer did, by ±1 request.)*
 - **Hybrid retrieval: dense + BM25, fused by Reciprocal Rank Fusion.** A sparse BM25 vector is
   stored on the same Qdrant point as the dense one and written in the same upsert, so a save stays
   additive and 007's revision scheme is unchanged. One Query API call runs two `prefetch` searches

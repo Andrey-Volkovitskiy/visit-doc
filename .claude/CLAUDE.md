@@ -118,8 +118,11 @@ floor cost. The earlier
 v2 baseline `01M321DWRXSVSY7GW9RY3CR9YW` no longer re-scores - the corpus pin changed and six of
 its labels gained a citation - and stays as the record of the 9-entry build, as the 2b record
 under `specs/012-golden-set-metrics/evaluation/` stays frozen as FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
-is evidence rather than a threshold - there is still no noise band, so nothing there is a number a
-later run has to beat.
+is evidence rather than a threshold. **The noise band is
+`evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`**, five runs of the baseline's build: classification,
+retrieval and booking did not move at all across them, and unserved answerable ranged 4-6 of 87 -
+so a classifier or retrieval movement against it is real, and a ±1 in answered requests is not.
+It is still a range, never a number a later run has to beat.
 **Never start a full `make eval-run` to check a fix before the cases it touches have passed on
 their own.** The full set spends live calls on every case; a fix is checked first offline where it
 can be (replaying stored prompts from a run's case files), then with `make eval-run CASES=...` over

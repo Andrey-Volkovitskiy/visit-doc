@@ -12,7 +12,16 @@ rewrite it.
 **A baseline is evidence, not a threshold.** Nothing here is the number a later run has to beat.
 The assistant is non-deterministic and `claude-sonnet-5` takes no `temperature`, so a single run
 is one sample: what counts as a regression is read by a person, against a noise band measured
-from five runs of one unchanged build (`make eval-band`), and there is no band yet.
+from five runs of one unchanged build (`make eval-band`).
+
+**The band is `bands/01M3W93XYN42QWH1TCYXN3E5FC.json`** (its report beside it as `.md`), measured from the current
+baseline and four more runs of the same build (`a171078`), untraced. Pass it as
+`make eval-compare BASE=evals/baselines/01M3W4D3ZPHGWSV5DPQJB5RZC3 NEW=<run> BAND=evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`.
+It applies only to a comparison whose two runs share its conditions, corpus, clock and case set,
+so it marks a prompt or code change and stays silent on one that moves a setting. What it found:
+classification, retrieval and booking gave identical numbers in all five runs, case for case; only
+the answerer varied - unserved answerable between 4 and 6 of 87, from G-w-05 (declined in 3 of 5)
+and G-r-01's first request (1 of 5).
 
 A run is added here deliberately, by copying it out of `.run/evals/`, and is never edited
 afterwards. Compare against one rather than re-scoring it: `compare` writes into neither input,
