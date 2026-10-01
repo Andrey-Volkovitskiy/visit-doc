@@ -107,6 +107,7 @@ def _expected_conditions(settings: Settings) -> dict[str, object]:
         "retrieval_pool_size": settings.RETRIEVAL_POOL_SIZE,
         "similarity_floor": settings.SIMILARITY_FLOOR,
         "similarity_cap": settings.SIMILARITY_CAP,
+        "unreranked_similarity_floor": settings.UNRERANKED_SIMILARITY_FLOOR,
         "rerank_floor": settings.RERANK_FLOOR,
         "rerank_cap": settings.RERANK_CAP,
         "max_segments": MAX_SEGMENTS,

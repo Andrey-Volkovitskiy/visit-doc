@@ -90,6 +90,16 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   FAQ path, and therefore one more thing that can be down. That is bounded by a 5-second deadline and
   absorbed rather than propagated — a failed or slow reranker costs the answer its precision stage,
   never the turn (`specs/008-reranked-retrieval-pipeline/`).
+- **No similarity floor in front of the reranker** (018): the shortlist is the top 5 of the dense
+  search by rank alone, and the rerank floor is the one gate that decides whether a question is
+  answered. A cosine floor of 0.25 sat there before, as a cheap early abstention. Measured on the
+  extended corpus it was dropping right answers - "PR-4", "braces", "HC-9", short questions whose
+  chunk dense search had ranked *first* but scored 0.22-0.24 against a long section - and removing
+  it answered all three while every labelled gap still abstained. The tradeoff accepted: a rerank
+  call on every FAQ request, including the few an early floor used to stop, which was four calls in
+  a 146-case run. A reranker outage is the one place a floor still applies
+  (`UNRERANKED_SIMILARITY_FLOOR`), because with no rerank score nothing else has judged the
+  shortlist (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Postgres drivers**: `asyncpg` for the app, `psycopg` v3 (sync) for Alembic migrations —
   the conventional SQLAlchemy 2.0 pairing, rather than forcing Alembic's sync runner through
   `asyncpg` via `run_sync`.

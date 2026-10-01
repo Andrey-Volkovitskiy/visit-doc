@@ -178,16 +178,20 @@ def test_an_unscored_chunk_is_dropped_rather_than_treated_as_passing() -> None:
 # decide() - the five rows of the decision table
 # --------------------------------------------------------------------------
 
+# The floor a reranker outage answers through. An input to a pure function here, not a
+# restatement of the setting: each test says which side of it its chunks sit on.
+_FALLBACK_FLOOR = 0.25
+
 
 def test_row_1_empty_corpus_abstains_at_the_corpus() -> None:
-    outcome = decide([], [], None, corpus_empty=True)
+    outcome = decide([], [], None, corpus_empty=True, unreranked_floor=_FALLBACK_FLOOR)
 
     assert outcome.verdict is FaqVerdict.ABSTAINED_EMPTY_CORPUS
     assert outcome.survivors == []
 
 
 def test_row_2_a_searched_corpus_that_matched_nothing_abstains_at_the_pool() -> None:
-    outcome = decide([], [], None, corpus_empty=False)
+    outcome = decide([], [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR)
 
     assert outcome.verdict is FaqVerdict.ABSTAINED_EMPTY_POOL
     assert outcome.survivors == []
@@ -197,7 +201,9 @@ def test_row_2_a_searched_corpus_that_matched_nothing_abstains_at_the_pool() -> 
 def test_row_3_nothing_cleared_the_similarity_floor() -> None:
     observed = [_chunk(0.1)]
 
-    outcome = decide(observed, [], None, corpus_empty=False)
+    outcome = decide(
+        observed, [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert outcome.verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert outcome.survivors == []
@@ -207,16 +213,62 @@ def test_row_3_nothing_cleared_the_similarity_floor() -> None:
 def test_row_4_no_rerank_scores_obtained_answers_unreranked() -> None:
     considered = [_chunk(0.9, index=0), _chunk(0.5, index=1)]
 
-    outcome = decide(considered, considered, None, corpus_empty=False)
+    outcome = decide(
+        considered,
+        considered,
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
 
     assert outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED
     assert outcome.survivors == considered
 
 
+def test_row_4_an_unreranked_answer_keeps_only_chunks_above_the_fallback_floor() -> (
+    None
+):
+    above = _chunk(_FALLBACK_FLOOR + 0.1, index=0)
+    below = _chunk(_FALLBACK_FLOOR - 0.1, index=1)
+
+    outcome = decide(
+        [above, below],
+        [above, below],
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
+
+    assert outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED
+    assert outcome.survivors == [above]
+    assert outcome.considered == [above, below]
+
+
+def test_row_4_an_unreranked_shortlist_wholly_below_the_fallback_floor_abstains() -> (
+    None
+):
+    # Nothing judged the shortlist, so it is never answered from as the cap left it.
+    considered = [_chunk(_FALLBACK_FLOOR - 0.1)]
+
+    outcome = decide(
+        considered,
+        considered,
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
+
+    assert outcome.verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert outcome.survivors == []
+    assert outcome.considered == considered
+
+
 def test_row_5_scored_but_none_cleared_the_rerank_floor() -> None:
     considered = [_chunk(0.9)]
 
-    outcome = decide(considered, considered, [], corpus_empty=False)
+    outcome = decide(
+        considered, considered, [], corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert outcome.verdict is FaqVerdict.ABSTAINED_RERANK_FLOOR
     assert outcome.survivors == []
@@ -226,7 +278,13 @@ def test_row_6_reranked_survivors_answer() -> None:
     considered = [_chunk(0.9, index=0), _chunk(0.5, index=1)]
     reranked = [_chunk(0.5, index=1, rerank=0.8)]
 
-    outcome = decide(considered, considered, reranked, corpus_empty=False)
+    outcome = decide(
+        considered,
+        considered,
+        reranked,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
 
     assert outcome.verdict is FaqVerdict.ANSWERED
     assert outcome.survivors == reranked
@@ -238,8 +296,16 @@ def test_none_and_empty_reranked_are_different_answers() -> None:
     # answer and an abstention indistinguishable.
     considered = [_chunk(0.9)]
 
-    fallback = decide(considered, considered, None, corpus_empty=False)
-    abstention = decide(considered, considered, [], corpus_empty=False)
+    fallback = decide(
+        considered,
+        considered,
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
+    abstention = decide(
+        considered, considered, [], corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert fallback.verdict is not abstention.verdict
     assert fallback.verdict.answered
@@ -249,8 +315,10 @@ def test_none_and_empty_reranked_are_different_answers() -> None:
 def test_empty_corpus_and_similarity_miss_are_different_verdicts() -> None:
     # Both abstain identically; only the record differs. One is fixed by adding
     # entries, the other by rewriting one or lowering the floor.
-    empty = decide([], [], None, corpus_empty=True)
-    miss = decide([_chunk(0.1)], [], None, corpus_empty=False)
+    empty = decide([], [], None, corpus_empty=True, unreranked_floor=_FALLBACK_FLOOR)
+    miss = decide(
+        [_chunk(0.1)], [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert empty.verdict is not miss.verdict
     assert not empty.verdict.answered
@@ -260,8 +328,12 @@ def test_empty_corpus_and_similarity_miss_are_different_verdicts() -> None:
 def test_an_unmatched_search_and_a_similarity_miss_are_different_verdicts() -> None:
     # A corpus with live revisions the search returned no chunk of is an index behind
     # the rows, not a floor set too high - and no floor rejected anything to lower.
-    unmatched = decide([], [], None, corpus_empty=False)
-    miss = decide([_chunk(0.1)], [], None, corpus_empty=False)
+    unmatched = decide(
+        [], [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
+    miss = decide(
+        [_chunk(0.1)], [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert unmatched.verdict is not miss.verdict
     assert unmatched.verdict is not FaqVerdict.ABSTAINED_EMPTY_CORPUS
@@ -277,12 +349,36 @@ def _outcomes() -> list[PipelineOutcome]:
     considered = [_chunk(0.9, index=0), _chunk(0.5, index=1)]
     reranked = [_chunk(0.9, index=0, rerank=0.8)]
     return [
-        decide([], [], None, corpus_empty=True),
-        decide([], [], None, corpus_empty=False),
-        decide([_chunk(0.1)], [], None, corpus_empty=False),
-        decide(considered, considered, None, corpus_empty=False),
-        decide(considered, considered, [], corpus_empty=False),
-        decide(considered, considered, reranked, corpus_empty=False),
+        decide([], [], None, corpus_empty=True, unreranked_floor=_FALLBACK_FLOOR),
+        decide([], [], None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR),
+        decide(
+            [_chunk(0.1)],
+            [],
+            None,
+            corpus_empty=False,
+            unreranked_floor=_FALLBACK_FLOOR,
+        ),
+        decide(
+            considered,
+            considered,
+            None,
+            corpus_empty=False,
+            unreranked_floor=_FALLBACK_FLOOR,
+        ),
+        decide(
+            considered,
+            considered,
+            [],
+            corpus_empty=False,
+            unreranked_floor=_FALLBACK_FLOOR,
+        ),
+        decide(
+            considered,
+            considered,
+            reranked,
+            corpus_empty=False,
+            unreranked_floor=_FALLBACK_FLOOR,
+        ),
     ]
 
 
@@ -316,7 +412,13 @@ def test_an_answered_verdict_respects_the_rerank_cap() -> None:
         cap=_RERANK_CAP,
     )
 
-    outcome = decide(considered, considered, gate.kept, corpus_empty=False)
+    outcome = decide(
+        considered,
+        considered,
+        gate.kept,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
 
     assert outcome.verdict is FaqVerdict.ANSWERED
     assert len(outcome.survivors) <= _RERANK_CAP
@@ -326,7 +428,9 @@ def test_an_unreranked_verdict_respects_the_similarity_cap() -> None:
     pool = [_chunk(0.9, index=i) for i in range(8)]
     gate = apply_similarity_gate(pool, floor=_FLOOR, cap=_CAP)
 
-    outcome = decide(pool, gate.kept, None, corpus_empty=False)
+    outcome = decide(
+        pool, gate.kept, None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR
+    )
 
     assert outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED
     assert len(outcome.survivors) <= _CAP
@@ -336,7 +440,13 @@ def test_every_answered_survivor_carries_a_rerank_score() -> None:
     considered = [_chunk(0.9)]
     reranked = [considered[0].with_rerank_score(0.8)]
 
-    outcome = decide(considered, considered, reranked, corpus_empty=False)
+    outcome = decide(
+        considered,
+        considered,
+        reranked,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
 
     assert all(c.rerank_score is not None for c in outcome.survivors)
 
@@ -345,6 +455,12 @@ def test_every_unreranked_survivor_carries_no_rerank_score() -> None:
     # Absent, never zero: a chunk the cross-encoder never saw was not judged at all.
     considered = [_chunk(0.9)]
 
-    outcome = decide(considered, considered, None, corpus_empty=False)
+    outcome = decide(
+        considered,
+        considered,
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
 
     assert all(c.rerank_score is None for c in outcome.survivors)

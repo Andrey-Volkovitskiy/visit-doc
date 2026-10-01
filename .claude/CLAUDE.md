@@ -354,7 +354,11 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
   LLM (avoids hallucinated citations) — and an explicit **abstention path**. Since 008 the
   "groundedness check" is **two gates before generation**, not a boolean after it: a per-chunk
   similarity floor, then a cross-encoder rerank floor, either of which abstains without spending a
-  generation call. `rag/groundedness.py` and the `grounded` flag are gone; a turn now carries a
+  generation call. Since 018 the similarity floor defaults to -1.0, so the first gate is its cap
+  alone and the rerank floor is the one that decides an abstention: measured on the extended
+  corpus, a 0.25 floor dropped chunks dense search had ranked first. The floor that remains is
+  `UNRERANKED_SIMILARITY_FLOOR`, applied only when the reranker is unavailable, so a fallback never
+  answers from a shortlist nothing has judged (`specs/018-hybrid-retrieval/evaluation/`). `rag/groundedness.py` and the `grounded` flag are gone; a turn now carries a
   five-value `FaqVerdict` naming which gate stopped it, because "an answered turn is grounded" made
   `true` uninformative while `false` covered three situations needing three different fixes.
   Per-turn *post-generation* groundedness verification is deliberately not done — `docs/ROADMAP.md`

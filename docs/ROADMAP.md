@@ -827,20 +827,22 @@ then changes the retriever, in that order.
   gets the same number whether it is a perfect match or the least bad of nothing. No floor can be
   put on it: fusion decides only the order of what reaches the reranker, and the rerank floor stays
   where the abstention is decided.
-- **Hybrid has no similarity floor; the rerank floor is the only abstention gate.** The floor is a
-  dense cosine threshold, and BM25 earns its place on exactly the chunks dense search scores low —
-  an exact plan name or form number the embedding blurs — so a floor applied to the fused
-  candidates would drop the chunk BM25 rescued, and the ablation would credit hybrid with nothing
-  because of the gate rather than the retrieval. Gating only what the dense branch found was the
-  alternative, rejected for keeping two admission rules in one pipeline. The cost is a rerank call
-  on every query the floor used to stop early. The cap stays: the fused list's top 5 go to the
-  reranker. The dense-only configuration keeps its floor, so its ablation row is today's pipeline.
-- **No unchecked fallback.** Today a reranker outage answers from the ≤5 chunks that cleared the
-  similarity floor (`answered_unreranked`). Without the floor nothing in the fused list has passed a
+- **No similarity floor; the rerank floor is the only abstention gate.** The floor is a dense
+  cosine threshold, and BM25 earns its place on exactly the chunks dense search scores low — an
+  exact plan name or form number the embedding blurs — so a floor applied to the fused candidates
+  would drop the chunk BM25 rescued. It turned out to be dropping dense search's own right answers
+  first: on the extended corpus it stopped "PR-4", "braces" and "HC-9" with the right chunk ranked
+  first. *(Shipped ahead of hybrid, on that evidence: `SIMILARITY_FLOOR` defaults to -1.0, so the
+  cap alone picks the shortlist; measured, it answered all three and let no labelled gap through,
+  at four more rerank calls in 146 cases. `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
+- **No unchecked fallback.** A reranker outage used to answer from the ≤5 chunks that cleared the
+  similarity floor (`answered_unreranked`). Without the floor nothing in the shortlist has passed a
   relevance check, so answering from it would serve the least bad of nothing whenever the reranker
-  is down. A hybrid turn whose reranker is unavailable abstains instead, under a verdict of its own —
-  never `answered_unreranked`, which keeps meaning a floor-checked answer, and never
-  `abstained_rerank_floor`, which would read an outage as a corpus gap.
+  is down. *(Shipped as a floor of the fallback's own rather than a new verdict:
+  `UNRERANKED_SIMILARITY_FLOOR`, 0.25, applies only when no rerank score was obtained. The fallback
+  answers from the chunks at or above it - so `answered_unreranked` keeps meaning a floor-checked
+  answer - and abstains at the similarity floor when none is, which still never reads an outage as
+  a rerank-floor corpus gap. It is a run condition, so a comparison names it.)*
 - **An ablation, not a switch.** Which branches run is a setting recorded in `service.configured`,
   so it becomes a run condition and a comparison names it as the thing that changed. Each branch's
   rank is logged alongside the fused one in `faq.retrieval_completed`, so the harness scores each
@@ -856,10 +858,15 @@ then changes the retriever, in that order.
   carries dense retrieval with the floor removed and the rerank floor as the only gate, beside
   today's pipeline and the fused one: what separates "dense, no floor" from "fused" is BM25's own
   contribution, and what separates today's pipeline from "dense, no floor" is the floor's.
+  *(Measured, and now the default: run `01M3VZWB0SA7P17DQD8S827T21` against the baseline took
+  unserved answerable requests from 12/87 to 8/87, with no answer on a labelled gap. That makes
+  "dense, no floor" the row hybrid has to beat, and on this corpus dense search already hands the
+  reranker the right chunk every time - so "no measurable effect" is the expected outcome, and
+  worth recording as one.)*
 - **Seeding cost: deferred until it is measured.** Every new session is planted with the starter
   corpus, and planting embeds every chunk through Voyage in one call, awaited inside the first
   `POST /chats` - so a new visitor's first chat, every eval run and every e2e journey pay for it.
-  At 34 chunks that is about 5k tokens and one request: not worth a mechanism yet. Caching vectors
+  At 36 chunks that is about 5k tokens and one request: not worth a mechanism yet. Caching vectors
   is a new invariant - a vector is valid only for one text, one embedding model and one chunker -
   and one broken silently degrades retrieval rather than failing, so it is built only for a
   measured need: the corpus growing toward hundreds of chunks, first-chat latency a visitor can

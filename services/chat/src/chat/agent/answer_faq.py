@@ -651,7 +651,13 @@ async def _run_pipeline(
             reranked = gate.kept
 
     with step("faq.verdict") as decided:
-        outcome = decide(pool, similarity.kept, reranked, corpus_empty=corpus_empty)
+        outcome = decide(
+            pool,
+            similarity.kept,
+            reranked,
+            corpus_empty=corpus_empty,
+            unreranked_floor=settings.UNRERANKED_SIMILARITY_FLOOR,
+        )
         record(
             decided,
             "faq.verdict",

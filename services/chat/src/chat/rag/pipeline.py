@@ -131,6 +131,7 @@ def decide(
     reranked: list[ScoredChunk] | None,
     *,
     corpus_empty: bool,
+    unreranked_floor: float,
 ) -> PipelineOutcome:
     """Assign the turn's verdict from what each stage produced.
 
@@ -146,6 +147,10 @@ def decide(
             empty list standing for both would make a fallback and an abstention
             indistinguishable, and the difference between them is whether the patient
             gets an answer.
+        unreranked_floor: the similarity a considered chunk must reach for the
+            fallback to answer from it. With no rerank score nothing has judged the
+            shortlist, so a fallback answers only from the chunks at or above this, and
+            abstains at the similarity floor when none is.
         corpus_empty: True when the session publishes no live revisions, so no search
             was issued. Recorded separately from a search that returned nothing usable,
             because the two call for different fixes.
@@ -163,9 +168,18 @@ def decide(
             verdict=FaqVerdict.ABSTAINED_SIMILARITY_FLOOR, observed=observed
         )
     if reranked is None:
+        floor_checked = [
+            c for c in considered if c.similarity_score >= unreranked_floor
+        ]
+        if not floor_checked:
+            return PipelineOutcome(
+                verdict=FaqVerdict.ABSTAINED_SIMILARITY_FLOOR,
+                considered=considered,
+                observed=observed,
+            )
         return PipelineOutcome(
             verdict=FaqVerdict.ANSWERED_UNRERANKED,
-            survivors=considered,
+            survivors=floor_checked,
             considered=considered,
             observed=observed,
         )

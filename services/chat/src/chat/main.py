@@ -66,6 +66,7 @@ def _log_configuration(settings: Settings) -> None:
         retrieval_pool_size=settings.RETRIEVAL_POOL_SIZE,
         similarity_floor=settings.SIMILARITY_FLOOR,
         similarity_cap=settings.SIMILARITY_CAP,
+        unreranked_similarity_floor=settings.UNRERANKED_SIMILARITY_FLOOR,
         rerank_floor=settings.RERANK_FLOOR,
         rerank_cap=settings.RERANK_CAP,
         max_segments=MAX_SEGMENTS,
