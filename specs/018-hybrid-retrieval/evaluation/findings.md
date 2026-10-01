@@ -215,10 +215,33 @@ for section chunks is the ten-sample replays, not the total. A classifier or ret
 the other hand, moves something this build never moved - and because a prompt change states no new
 condition, the band is applied to its comparison automatically.
 
-## 9. Left open
+## 9. Finding: the classifier misread what the clinic itself sent or did
 
-- **The classifier on short or odd questions** - three to `small_talk`, one to `booking`. Four of
-  the five requests the current baseline leaves unserved.
+With retrieval and the answerer settled, four of the five unserved requests were routing: a text
+from the clinic's short code (`G-s-10`), aftercare after a filling (`G-t-01`) and a bare billing
+code (`G-w-02`) went to `small_talk`, and arriving late (`G-t-04`) to `booking`. The classifier
+runs at temperature 0 and the band shows it never varied, so each wording was replayed once over
+the whole set - every case, not only the four, since a routing clause can move anything - with the
+input rebuilt by the service's own history renderer:
+
+| prompt | exact over 146 |
+|---|---|
+| current | 142 |
+| + "what the clinic sent, billed or treated is its business" | 143 (fixes two, breaks `G-a-02`) |
+| + "arriving late is a term of an appointment" | 141 (breaks `G-a-02` and `G-w-03`) |
+| **both** | **145**, in three replays out of three |
+
+Either clause alone moved "Do you have a dentist?" (`G-a-02`) off `booking`; together they did
+not, so they ship together (`009d4ff`). A targeted live run on the four, `G-a-02` and every
+small-talk and out-of-topic case matched the replay: everything right but `G-w-02`, which the
+model still reads as unintelligible. Not yet confirmed by a full run against the band.
+
+## 10. Left open
+
+- **A full run of the classifier change against the band** - the targeted run agrees with the
+  replay, but the whole set has not been driven on `009d4ff`.
+- **`G-w-02`** ("How much is 93000 if I'm paying myself?") - a bare billing code still routes to
+  `small_talk`.
 - **`G-w-05`** ("Cigna DHMO") is answered 5 times in 10: its chunks look contradictory - the
   insurance entry accepts Cigna, the dental guide refuses Cigna's DHMO.
 - **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
