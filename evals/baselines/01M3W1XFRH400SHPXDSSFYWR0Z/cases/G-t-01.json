@@ -1,0 +1,247 @@
+{
+  "case_id": "G-t-01",
+  "chat_id": "01M3W29SSH77R5E36Q4V94SERZ",
+  "patient_id": "01M3W29ST7X2YRH5NW9HX7VTN0",
+  "attempts": 1,
+  "elapsed_seconds": 2.5029182189609855,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W29SVKX3TN8B0NB6QKPM06",
+    "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W29W6EW65PBRDJ7KRPXEHS",
+    "content": "I can't advise on that, I'm afraid—you'd want to check with the dentist or hygienist who did your filling, as they'll know best what's safe while the anesthetic is wearing off. Feel free to give the clinic a call if you'd like to ask them directly!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+        "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "chat_id": "01M3W29SSH77R5E36Q4V94SERZ",
+      "sender": "patient",
+      "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "event": "message.persisted",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:03.263834Z"
+    },
+    {
+      "message": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "message_ids_unified": [
+        "01M3W29SVKX3TN8B0NB6QKPM06"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:03.264060Z"
+    },
+    {
+      "trace_id": "d5f323c1a4acdee0eb609ef8ab8d1593",
+      "event": "turn.traced",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:03.266053Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:03.268106Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:04.188787Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+          "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:04.189525Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 922.23,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+            "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:04.189978Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:04.191992Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:46:04.192153Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 66,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "small_talk",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.639517Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1448.44,
+      "result": {
+        "answer_chars": 248,
+        "answer_text": "I can't advise on that, I'm afraid—you'd want to check with the dentist or hygienist who did your filling, as they'll know best what's safe while the anesthetic is wearing off. Feel free to give the clinic a call if you'd like to ask them directly!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.640226Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.642002Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.48,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 248,
+        "answer_text": "I can't advise on that, I'm afraid—you'd want to check with the dentist or hygienist who did your filling, as they'll know best what's safe while the anesthetic is wearing off. Feel free to give the clinic a call if you'd like to ask them directly!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.642189Z"
+    },
+    {
+      "duration_ms": 2390.64,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I can't advise on that, I'm afraid—you'd want to check with the dentist or hygienist who did your filling, as they'll know best what's safe while the anesthetic is wearing off. Feel free to give the clinic a call if you'd like to ask them directly!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W29SVKX3TN8B0NB6QKPM06"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.642637Z"
+    },
+    {
+      "message_id": "01M3W29W6EW65PBRDJ7KRPXEHS",
+      "chat_id": "01M3W29SSH77R5E36Q4V94SERZ",
+      "sender": "assistant",
+      "content": "I can't advise on that, I'm afraid—you'd want to check with the dentist or hygienist who did your filling, as they'll know best what's safe while the anesthetic is wearing off. Feel free to give the clinic a call if you'd like to ask them directly!",
+      "event": "message.persisted",
+      "turn_id": "01M3W29SVKX3TN8B0NB6QKPM06",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:05.656214Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W29SVKX3TN8B0NB6QKPM06": "d5f323c1a4acdee0eb609ef8ab8d1593"
+  }
+}

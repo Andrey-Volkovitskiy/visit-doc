@@ -1,0 +1,1903 @@
+{
+  "case_id": "G-m-06",
+  "chat_id": "01M3W24V7PGEFDHQRAZBH0C1DC",
+  "patient_id": "01M3W24V9938D6QBTQS51XXR7K",
+  "attempts": 1,
+  "elapsed_seconds": 5.980530389933847,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do I need a referral to see a specialist?",
+          "answer": "You can book a visit with any of our practitioners without a referral.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2764,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Do you take Cigna insurance?",
+          "answer": "We accept Cigna. We're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2767,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            },
+            {
+              "entry_id": 2773,
+              "chunk_index": 1,
+              "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n"
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "question": "When do I pay for my appointment?",
+          "answer": "Payment is due at the time of service.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2770,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+    "content": "Do I need a referral, do you take Cigna, and when do I pay?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W25112D4Q8BG3YB04NQHXQ",
+    "content": "You do not need a referral to book a visit with any of our practitioners.\n\nFor insurance: we accept Cigna, and we're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are only in-network for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans purchased through the health insurance marketplace are not in-network.\n\nPayment for your appointment is due at the time of service.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do I need a referral to see a specialist?",
+        "answer": "You can book a visit with any of our practitioners without a referral.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2764,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Do you take Cigna insurance?",
+        "answer": "We accept Cigna. We're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2767,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          },
+          {
+            "entry_id": 2773,
+            "chunk_index": 1,
+            "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n"
+          }
+        ]
+      },
+      {
+        "position": 2,
+        "question": "When do I pay for my appointment?",
+        "answer": "Payment is due at the time of service.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2770,
+            "chunk_index": 0,
+            "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do I need a referral to see a specialist?",
+        "query": "Do I need a referral to see a specialist?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Do you take Cigna insurance?",
+        "query": "Do you take Cigna insurance?"
+      },
+      {
+        "position": 2,
+        "intent": "faq_question",
+        "text": "When do I pay for my appointment?",
+        "query": "When do I pay for my appointment?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "chat_id": "01M3W24V7PGEFDHQRAZBH0C1DC",
+      "sender": "patient",
+      "content": "Do I need a referral, do you take Cigna, and when do I pay?",
+      "event": "message.persisted",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:20.967044Z"
+    },
+    {
+      "message": "Do I need a referral, do you take Cigna, and when do I pay?",
+      "message_ids_unified": [
+        "01M3W24VBQD6XWANJQCJK8TXZ2"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:20.967590Z"
+    },
+    {
+      "trace_id": "7a09f7a6d0424b43c4b39dfbc938831e",
+      "event": "turn.traced",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:20.970664Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:20.973913Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3221,
+        "output": 84,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.386544Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do I need a referral to see a specialist?",
+          "query": "Do I need a referral to see a specialist?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Do you take Cigna insurance?",
+          "query": "Do you take Cigna insurance?"
+        },
+        {
+          "position": 2,
+          "intent": "faq_question",
+          "text": "When do I pay for my appointment?",
+          "query": "When do I pay for my appointment?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.387007Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1414.32,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do I need a referral to see a specialist?",
+            "query": "Do I need a referral to see a specialist?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "Do you take Cigna insurance?",
+            "query": "Do you take Cigna insurance?"
+          },
+          {
+            "position": 2,
+            "intent": "faq_question",
+            "text": "When do I pay for my appointment?",
+            "query": "When do I pay for my appointment?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.387411Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.389898Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.656187Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.666267Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.5065222,
+          "considered": true,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.46742356,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.3937577,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.\n\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.37532917,
+          "considered": true,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.\n\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If your plan has a deductible you have not met yet, you pay the amount your plan allows for the visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.35604846,
+          "considered": true,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim goes to the right plan. A new card can take up to two business days to verify. If you give us the new details at least two business days before your appointment, we can confirm your coverage before you arrive.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.339532,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3325528,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.28669944,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.27347693,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 0,
+          "similarity_score": 0.26270726,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.25994912,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.25849056,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.25760227,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.24586813,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23844966,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.23434238,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.23086613,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 1,
+          "similarity_score": 0.2266143,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.20937891,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.2056291,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.2005933,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.20051502,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.19672062,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.19422127,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.18367219,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.671519Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.5065222
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.46742356
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.3937577
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.37532917
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.35604846
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.339532
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3325528
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.28669944
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.27347693
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 0,
+          "similarity_score": 0.26270726
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.25994912
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.25849056
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.25760227
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.24586813
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23844966
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.23434238
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.23086613
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 1,
+          "similarity_score": 0.2266143
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.20937891
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.2056291
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.2005933
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.20051502
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.19672062
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.19422127
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.18367219
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.673190Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.5919221,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.36043817,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.34238586,
+          "considered": true,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.32879466,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.31241372,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.30512673,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.29940224,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.29334992,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.29033455,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.2879191,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27412468,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2714882,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.26675528,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.25090715,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.24923818,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.24861884,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.2438875,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.24128729,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23599781,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.23427336,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.22901405,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.22869137,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2223781,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.21733774,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.21176276,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.683054Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.5919221
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.36043817
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.34238586
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.32879466
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.31241372
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.30512673
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.29940224
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.29334992
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.29033455
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.2879191
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27412468
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2714882
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.26675528
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.25090715
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.24923818
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.24861884
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.2438875
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.24128729
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23599781
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.23427336
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.22901405
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.22869137
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2223781
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.21733774
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.21176276
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.684986Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.760028Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.48998612,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.43791258,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.42517218,
+          "considered": true,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you when you check in, and you can choose to wait or to pick a new time. When we know about a delay of more than 30 minutes before you leave home, we send you a text message instead.\n\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.42192984,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.40823233,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.40372807,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.39356166,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.38278508,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.37875676,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.37369314,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.3595798,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.34668875,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.34420776,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.34400457,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.33343494,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.31858665,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.31096923,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.30264118,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.30045798,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.29538158,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28974694,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.28733158,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.28335845,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.27926692,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.2740169,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.770689Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.48998612
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.43791258
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.42517218
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.42192984
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.40823233
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.40372807
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.39356166
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.38278508
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.37875676
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.37369314
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.3595798
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.34668875
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.34420776
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.34400457
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.33343494
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.31858665
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.31096923
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.30264118
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.30045798
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.29538158
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28974694
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.28733158
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.28335845
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.27926692
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.2740169
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.772946Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 301.15,
+      "scores": [
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.46742356,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.5065222,
+          "rerank_score": 0.81640625
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.3937577,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.37532917,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.35604846,
+          "rerank_score": 0.416015625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.975563Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "rerank_score": 0.81640625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "rerank_score": 0.416015625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.977110Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5065222,
+      "best_rerank_score": 0.85546875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:22.977744Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nre not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n\n\nQuestion: Do you take Cigna insurance?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:43:22.978024Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 333.12,
+      "scores": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.5919221,
+          "rerank_score": 0.921875
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.32879466,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.31241372,
+          "rerank_score": 0.43359375
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.36043817,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.34238586,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.019313Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "rerank_score": 0.921875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "rerank_score": 0.43359375
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.416015625
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.020472Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5919221,
+      "best_rerank_score": 0.921875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.021224Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.\n\nQuestion: Do I need a referral to see a specialist?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:43:23.021497Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 311.15,
+      "scores": [
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.48998612,
+          "rerank_score": 0.75
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.40823233,
+          "rerank_score": 0.5625
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.43791258,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.42192984,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.42517218,
+          "rerank_score": 0.390625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.085702Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "rerank_score": 0.75
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.5625
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "rerank_score": 0.54296875
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "rerank_score": 0.390625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.087908Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.48998612,
+      "best_rerank_score": 0.75,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.090278Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: When do I pay for my appointment?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:43:23.090769Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 291,
+        "output": 21,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:23.969994Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 334,
+        "output": 13,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 2,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:24.278076Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 733,
+        "output": 111,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:24.667206Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2279.64,
+      "result": {
+        "segment_count": 3,
+        "abstained": false,
+        "citation_count": 4,
+        "answer_chars": 424,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do I need a referral to see a specialist?",
+            "verdict": "answered",
+            "answer_text": "You can book a visit with any of our practitioners without a referral."
+          },
+          {
+            "position": 1,
+            "question": "Do you take Cigna insurance?",
+            "verdict": "answered",
+            "answer_text": "We accept Cigna. We're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network."
+          },
+          {
+            "position": 2,
+            "question": "When do I pay for my appointment?",
+            "verdict": "answered",
+            "answer_text": "Payment is due at the time of service."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:24.669391Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:24.671763Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1193,
+        "output": 157,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:26.747716Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2077.34,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 4,
+        "answer_chars": 474,
+        "answer_text": "You do not need a referral to book a visit with any of our practitioners.\n\nFor insurance: we accept Cigna, and we're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are only in-network for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans purchased through the health insurance marketplace are not in-network.\n\nPayment for your appointment is due at the time of service."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:26.748560Z"
+    },
+    {
+      "duration_ms": 5797.85,
+      "segment_count": 3,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2764,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+              "similarity_score": 0.5919221,
+              "rerank_score": 0.921875
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2767,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.46742356,
+              "rerank_score": 0.85546875
+            },
+            {
+              "entry_id": 2773,
+              "chunk_index": 1,
+              "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n",
+              "similarity_score": 0.5065222,
+              "rerank_score": 0.81640625
+            }
+          ]
+        },
+        {
+          "position": 2,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2770,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+              "similarity_score": 0.48998612,
+              "rerank_score": 0.75
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "You do not need a referral to book a visit with any of our practitioners.\n\nFor insurance: we accept Cigna, and we're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are only in-network for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans purchased through the health insurance marketplace are not in-network.\n\nPayment for your appointment is due at the time of service.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W24VBQD6XWANJQCJK8TXZ2"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:26.749335Z"
+    },
+    {
+      "message_id": "01M3W25112D4Q8BG3YB04NQHXQ",
+      "chat_id": "01M3W24V7PGEFDHQRAZBH0C1DC",
+      "sender": "assistant",
+      "content": "You do not need a referral to book a visit with any of our practitioners.\n\nFor insurance: we accept Cigna, and we're in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are only in-network for members who live in our county, as shown on the network area printed on the back of the card. Cigna Connect plans purchased through the health insurance marketplace are not in-network.\n\nPayment for your appointment is due at the time of service.",
+      "event": "message.persisted",
+      "turn_id": "01M3W24VBQD6XWANJQCJK8TXZ2",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:26.763036Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W24VBQD6XWANJQCJK8TXZ2": "7a09f7a6d0424b43c4b39dfbc938831e"
+  }
+}

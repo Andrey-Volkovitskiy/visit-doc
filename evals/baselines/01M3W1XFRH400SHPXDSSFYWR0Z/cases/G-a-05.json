@@ -1,0 +1,395 @@
+{
+  "case_id": "G-a-05",
+  "chat_id": "01M3W1XSHAZEXVZ4T95V1AEFZ8",
+  "patient_id": "01M3W1XSJ0Y5X0729NZYFESE06",
+  "attempts": 1,
+  "elapsed_seconds": 5.990012038033456,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+    "content": "What times does William Osler have free on Wednesday?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W1XX29DJRZ25X322C7GN39",
+    "content": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "What times does William Osler have free on Wednesday?",
+        "query": "What times does William Osler have free on Wednesday?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "chat_id": "01M3W1XSHAZEXVZ4T95V1AEFZ8",
+      "sender": "patient",
+      "content": "What times does William Osler have free on Wednesday?",
+      "event": "message.persisted",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:29.800686Z"
+    },
+    {
+      "message": "What times does William Osler have free on Wednesday?",
+      "message_ids_unified": [
+        "01M3W1XSKWRDGBH3TAN0Q054G1"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:29.800972Z"
+    },
+    {
+      "trace_id": "255f87b580b3b5131559650f51d79da1",
+      "event": "turn.traced",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:29.802346Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:29.807882Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3213,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.878383Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "What times does William Osler have free on Wednesday?",
+          "query": "What times does William Osler have free on Wednesday?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.880348Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1074.38,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "What times does William Osler have free on Wednesday?",
+            "query": "What times does William Osler have free on Wednesday?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.881360Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.887950Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.915086Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:30.916483Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What times does William Osler have free on Wednesday?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:39:30.916937Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 164,
+        "cache_read": 5833,
+        "cache_write": 125,
+        "cache_write_1h": 0,
+        "thinking": 32
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.261958Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2345.51,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.262730Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W1XFN8589CG5Q2AR4YV8HX",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.263004Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.293285Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 30.82,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.293946Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What times does William Osler have free on Wednesday?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01D6beD32NDZLUG84Twj5dgH",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W1XFN8589CG5Q2AR4YV8HX",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01D6beD32NDZLUG84Twj5dgH",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:39:33.296347Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 103,
+        "cache_read": 5958,
+        "cache_write": 313,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.307512Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2317.61,
+      "tool_names": [],
+      "text": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.308375Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4728.75,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 202,
+        "answer_text": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.309128Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.311766Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.34,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 202,
+        "answer_text": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.312617Z"
+    },
+    {
+      "duration_ms": 5831.56,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M3W1XSKWRDGBH3TAN0Q054G1"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.314211Z"
+    },
+    {
+      "message_id": "01M3W1XX29DJRZ25X322C7GN39",
+      "chat_id": "01M3W1XSHAZEXVZ4T95V1AEFZ8",
+      "sender": "assistant",
+      "content": "Dr. William Osler (General Practice) has these 60-minute slots open on Wednesday, March 4th:\n\n9:00am, 10:00am, 11:00am, 12:00pm, 1:00pm, 2:00pm, 3:00pm, and 4:00pm.\n\nWould you like to book one of these?",
+      "event": "message.persisted",
+      "turn_id": "01M3W1XSKWRDGBH3TAN0Q054G1",
+      "level": "info",
+      "timestamp": "2026-10-01T15:39:33.332259Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W1XSKWRDGBH3TAN0Q054G1": "255f87b580b3b5131559650f51d79da1"
+  }
+}

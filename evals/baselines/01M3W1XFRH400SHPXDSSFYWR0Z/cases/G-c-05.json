@@ -1,0 +1,227 @@
+{
+  "case_id": "G-c-05",
+  "chat_id": "01M3W20PEA55VMFDDV80YNAM6Q",
+  "patient_id": "01M3W20PF5SYBWE4EAFW4VY7SH",
+  "attempts": 1,
+  "elapsed_seconds": 1.2161850780248642,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W20PGSGCZT687E0N48RNC3",
+    "content": "I am so frightened that something is seriously wrong with me.",
+    "attention_mark": "distress",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W20QHYSPER8Z5HXBBVK2VK",
+    "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "distress",
+        "text": "I am so frightened that something is seriously wrong with me.",
+        "query": "I am so frightened that something is seriously wrong with me."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "chat_id": "01M3W20PEA55VMFDDV80YNAM6Q",
+      "sender": "patient",
+      "content": "I am so frightened that something is seriously wrong with me.",
+      "event": "message.persisted",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:04.934130Z"
+    },
+    {
+      "message": "I am so frightened that something is seriously wrong with me.",
+      "message_ids_unified": [
+        "01M3W20PGSGCZT687E0N48RNC3"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:04.934499Z"
+    },
+    {
+      "trace_id": "13b4ec451ad3484dd91cb426cab762a1",
+      "event": "turn.traced",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:04.936212Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:04.939244Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3214,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.970895Z"
+    },
+    {
+      "intents": [
+        "distress"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "distress",
+          "text": "I am so frightened that something is seriously wrong with me.",
+          "query": "I am so frightened that something is seriously wrong with me."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.971833Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1033.97,
+      "result": {
+        "intents": [
+          "distress"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "distress",
+            "text": "I am so frightened that something is seriously wrong with me.",
+            "query": "I am so frightened that something is seriously wrong with me."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "distress",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.972454Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.975675Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 1.09,
+      "result": {
+        "cause": "distress",
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.976070Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.977848Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.43,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.978045Z"
+    },
+    {
+      "duration_ms": 1056.94,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W20PGSGCZT687E0N48RNC3"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.978352Z"
+    },
+    {
+      "message_id": "01M3W20QHYSPER8Z5HXBBVK2VK",
+      "chat_id": "01M3W20PEA55VMFDDV80YNAM6Q",
+      "sender": "assistant",
+      "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "event": "message.persisted",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:05.993404Z"
+    },
+    {
+      "chat_id": "01M3W20PEA55VMFDDV80YNAM6Q",
+      "reason": "distress",
+      "message_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3W20PGSGCZT687E0N48RNC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:06.012889Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W20PGSGCZT687E0N48RNC3": "13b4ec451ad3484dd91cb426cab762a1"
+  }
+}

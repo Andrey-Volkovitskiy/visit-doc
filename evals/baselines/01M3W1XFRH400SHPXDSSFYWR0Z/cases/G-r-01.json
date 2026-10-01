@@ -1,0 +1,1567 @@
+{
+  "case_id": "G-r-01",
+  "chat_id": "01M3W28FJY913CZSYZ677NVXG6",
+  "patient_id": "01M3W28FKG7B5GXAT87GMC0P1H",
+  "attempts": 1,
+  "elapsed_seconds": 8.937285515014082,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you have parking?",
+          "answer": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Is it possible to consult with a GP through a web-conference?",
+          "answer": "No, we currently only offer in-person visits at our clinic location.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2766,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W28FN36SND3J21WXGX39YT",
+    "content": "Do you have parking? Is it possible to consult with a GP through a web-conference, and when is he available next Tuesday?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W28R8KBY359NP85CPPZFQ0",
+    "content": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nConsulting with a GP via web-conference isn't currently available — we only offer in-person visits at our clinic location.\n\nFor your appointment request, Dr. William Osler (General Practice) has the following 60-minute slots open on Tuesday, March 3rd: 9:00 AM, 10:00 AM, 11:00 AM, 12:00 PM, 1:00 PM, 2:00 PM, 3:00 PM, and 4:00 PM. Let me know which time works for you and I'll get it booked.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you have parking?",
+        "answer": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2771,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Is it possible to consult with a GP through a web-conference?",
+        "answer": "No, we currently only offer in-person visits at our clinic location.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2766,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you have parking?",
+        "query": "Do you have parking?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Is it possible to consult with a GP through a web-conference?",
+        "query": "Is it possible to consult with a GP through a web-conference?"
+      },
+      {
+        "position": 2,
+        "intent": "booking",
+        "text": "When is a GP available next Tuesday?",
+        "query": "When is a GP available next Tuesday?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W28FN36SND3J21WXGX39YT",
+      "chat_id": "01M3W28FJY913CZSYZ677NVXG6",
+      "sender": "patient",
+      "content": "Do you have parking? Is it possible to consult with a GP through a web-conference, and when is he available next Tuesday?",
+      "event": "message.persisted",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:20.046667Z"
+    },
+    {
+      "message": "Do you have parking? Is it possible to consult with a GP through a web-conference, and when is he available next Tuesday?",
+      "message_ids_unified": [
+        "01M3W28FN36SND3J21WXGX39YT"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:20.046931Z"
+    },
+    {
+      "trace_id": "cacd1546ac04a529d4ad5c678c2b6bf0",
+      "event": "turn.traced",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:20.048062Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:20.051668Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3383,
+        "output": 82,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.357032Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you have parking?",
+          "query": "Do you have parking?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Is it possible to consult with a GP through a web-conference?",
+          "query": "Is it possible to consult with a GP through a web-conference?"
+        },
+        {
+          "position": 2,
+          "intent": "booking",
+          "text": "When is a GP available next Tuesday?",
+          "query": "When is a GP available next Tuesday?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.357722Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1308.42,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question",
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you have parking?",
+            "query": "Do you have parking?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "Is it possible to consult with a GP through a web-conference?",
+            "query": "Is it possible to consult with a GP through a web-conference?"
+          },
+          {
+            "position": 2,
+            "intent": "booking",
+            "text": "When is a GP available next Tuesday?",
+            "query": "When is a GP available next Tuesday?"
+          }
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.358399Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.360855Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.361542Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.377557Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.378362Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What insurances do you accept and should I take Brufen if I have a headache?"
+        },
+        {
+          "role": "assistant",
+          "content": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, ask to be connected with a member of our front desk team, who can help clarify your coverage.\n\nAs for whether you should take Brufen for a headache, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with."
+        },
+        {
+          "role": "user",
+          "content": "When is a GP available next Tuesday?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:45:21.378628Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.635879Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.23717973,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.2214046,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22006959,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2134811,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.21286395,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.20776378,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.20113286,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.18468866,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17929026,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.17302269,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.16486463,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.15813607,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.1573691,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.14836442,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14401385,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.14386368,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.13630009,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.1281951,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.12404442,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.11796839,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.648021Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.23717973
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.2214046
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22006959
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2134811
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.21286395
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.20776378
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.20113286
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.18468866
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17929026
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.17302269
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.16486463
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.15813607
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.1573691
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.14836442
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14401385
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.14386368
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.13630009
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.1281951
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.12404442
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.11796839
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.651080Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.830585Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.47519913,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.4405178,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.43917623,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who handle billing for your visits. We share information from your record with your insurance company only as far as is needed to process claims for your care. We never share your health information with your employer, and we never sell it.\n\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.\n\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.43165135,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.35095343,
+          "considered": true,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; your blood pressure, heart rate, height, weight and body mass index (BMI); a physical examination; and a discussion of the screening tests and vaccinations recommended for your age. Most insurance plans cover one preventive physical a year at no cost to you, but check with your plan.\n\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule with you, usually every three or six months. Bring your home blood pressure or blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.34049797,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.3374105,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.33578116,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.3333079,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.31362575,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.31221393,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.29002404,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.28098267,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.27278042,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.2726556,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.26632804,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.26611853,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24916977,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.245769,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.23871237,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.23843378,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23275918,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.22782962,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.21846038,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.21346487,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.843071Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.47519913
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.4405178
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.43917623
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.43165135
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.35095343
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.34049797
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.3374105
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.33578116
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.3333079
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.31362575
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.31221393
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.29002404
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.28098267
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.27278042
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.2726556
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.26632804
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.26611853
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24916977
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.245769
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.23871237
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.23843378
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.23275918
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.22782962
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.21846038
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.21346487
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.845209Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 283.11,
+      "scores": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837,
+          "rerank_score": 0.68359375
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.936386Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "rerank_score": 0.68359375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.937960Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.48466837,
+      "best_rerank_score": 0.68359375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:21.939346Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Do you have parking?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:45:21.939879Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 277.19,
+      "scores": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.47519913,
+          "rerank_score": 0.65234375
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.43165135,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.4405178,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.43917623,
+          "rerank_score": 0.40234375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.35095343,
+          "rerank_score": 0.3984375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:22.124510Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "rerank_score": 0.65234375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "rerank_score": 0.40234375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "rerank_score": 0.3984375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:22.125852Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.47519913,
+      "best_rerank_score": 0.65234375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:22.126875Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.\n\nQuestion: Is it possible to consult with a GP through a web-conference?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:45:22.127453Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 328,
+        "output": 51,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:23.330005Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 291,
+        "output": 22,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:23.466703Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2107.53,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 200,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you have parking?",
+            "verdict": "answered",
+            "answer_text": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          },
+          {
+            "position": 1,
+            "question": "Is it possible to consult with a GP through a web-conference?",
+            "verdict": "answered",
+            "answer_text": "No, we currently only offer in-person visits at our clinic location."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:23.468126Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 265,
+        "cache_read": 5833,
+        "cache_write": 325,
+        "cache_write_1h": 0,
+        "thinking": 132
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:24.680319Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 3302.43,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:24.681286Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W1XFN8589CG5Q2AR4YV8HX",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:24.681802Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:24.696736Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 15.33,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:24.697418Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What insurances do you accept and should I take Brufen if I have a headache?"
+        },
+        {
+          "role": "assistant",
+          "content": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, ask to be connected with a member of our front desk team, who can help clarify your coverage.\n\nAs for whether you should take Brufen for a headache, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with."
+        },
+        {
+          "role": "user",
+          "content": "When is a GP available next Tuesday?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UNw1GF3YkPm6upbnQbZj6U",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W1XFN8589CG5Q2AR4YV8HX",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UNw1GF3YkPm6upbnQbZj6U",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\", \"2026-03-03T14:00:00\", \"2026-03-03T15:00:00\", \"2026-03-03T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:45:24.697698Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 127,
+        "cache_read": 6158,
+        "cache_write": 413,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:26.491012Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1793.62,
+      "tool_names": [],
+      "text": "On Tuesday, March 3rd, Dr. William Osler (General Practice) has the following 60-minute appointment slots available:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n- 12:00 PM\n- 1:00 PM\n- 2:00 PM\n- 3:00 PM\n- 4:00 PM\n\nWould you like to book one of these?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:26.491532Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5130.55,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 238,
+        "answer_text": "On Tuesday, March 3rd, Dr. William Osler (General Practice) has the following 60-minute appointment slots available:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n- 12:00 PM\n- 1:00 PM\n- 2:00 PM\n- 3:00 PM\n- 4:00 PM\n\nWould you like to book one of these?",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:26.491757Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:26.493386Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1249,
+        "output": 217,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:28.844733Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2352.34,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 2,
+        "answer_chars": 526,
+        "answer_text": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nConsulting with a GP via web-conference isn't currently available — we only offer in-person visits at our clinic location.\n\nFor your appointment request, Dr. William Osler (General Practice) has the following 60-minute slots open on Tuesday, March 3rd: 9:00 AM, 10:00 AM, 11:00 AM, 12:00 PM, 1:00 PM, 2:00 PM, 3:00 PM, and 4:00 PM. Let me know which time works for you and I'll get it booked."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:28.845382Z"
+    },
+    {
+      "duration_ms": 8810.43,
+      "segment_count": 3,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.48466837,
+              "rerank_score": 0.68359375
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2766,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+              "similarity_score": 0.47519913,
+              "rerank_score": 0.65234375
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nConsulting with a GP via web-conference isn't currently available — we only offer in-person visits at our clinic location.\n\nFor your appointment request, Dr. William Osler (General Practice) has the following 60-minute slots open on Tuesday, March 3rd: 9:00 AM, 10:00 AM, 11:00 AM, 12:00 PM, 1:00 PM, 2:00 PM, 3:00 PM, and 4:00 PM. Let me know which time works for you and I'll get it booked.",
+      "booking_outcome": "awaiting_confirmation",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W28FN36SND3J21WXGX39YT"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:28.845917Z"
+    },
+    {
+      "message_id": "01M3W28R8KBY359NP85CPPZFQ0",
+      "chat_id": "01M3W28FJY913CZSYZ677NVXG6",
+      "sender": "assistant",
+      "content": "We don't have on-site parking, but the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nConsulting with a GP via web-conference isn't currently available — we only offer in-person visits at our clinic location.\n\nFor your appointment request, Dr. William Osler (General Practice) has the following 60-minute slots open on Tuesday, March 3rd: 9:00 AM, 10:00 AM, 11:00 AM, 12:00 PM, 1:00 PM, 2:00 PM, 3:00 PM, and 4:00 PM. Let me know which time works for you and I'll get it booked.",
+      "event": "message.persisted",
+      "turn_id": "01M3W28FN36SND3J21WXGX39YT",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:28.860838Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W28FN36SND3J21WXGX39YT": "cacd1546ac04a529d4ad5c678c2b6bf0"
+  }
+}

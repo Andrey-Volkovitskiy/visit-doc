@@ -458,7 +458,7 @@ make eval-band RUNS=<id>,<id>,<id>,<id>,<id>        # measure the noise from fiv
 
 `BASE` and `NEW` each take a run id under `.run/evals/` **or** a directory path, so a run
 committed under `evals/baselines/` is usable as a baseline where it sits.
-`evals/baselines/01M3VYV0RYA8N8RF2S1RQE5PSF` is the *documented* baseline a comparison starts
+`evals/baselines/01M3W1XFRH400SHPXDSSFYWR0Z` is the *documented* baseline a comparison starts
 from, and naming it is the caller's job: neither command ever defaults to it. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not usable as one - its v1 case ids are not in the
 set any more, so `compare` and `score` both refuse it.

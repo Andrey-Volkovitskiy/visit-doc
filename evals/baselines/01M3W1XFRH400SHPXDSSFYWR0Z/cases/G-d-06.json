@@ -1,0 +1,395 @@
+{
+  "case_id": "G-d-06",
+  "chat_id": "01M3W20X91EZR1Y9XRWJDK3NVY",
+  "patient_id": "01M3W20X9PQ1TSNW6RF3PJ2V68",
+  "attempts": 1,
+  "elapsed_seconds": 6.104216668987647,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W20XB8T1WV5MQTK3M63VBG",
+    "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2135N2G3BXN0VA9QQE7N5",
+    "content": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+        "query": "book an appointment for Tuesday with Dr. Andreas"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "chat_id": "01M3W20X91EZR1Y9XRWJDK3NVY",
+      "sender": "patient",
+      "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+      "event": "message.persisted",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:11.924642Z"
+    },
+    {
+      "message": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+      "message_ids_unified": [
+        "01M3W20XB8T1WV5MQTK3M63VBG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:11.924942Z"
+    },
+    {
+      "trace_id": "c89e1ffe2c56d64125b0e52a6eb2c308",
+      "event": "turn.traced",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:11.926975Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:11.929094Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3218,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.981364Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+          "query": "book an appointment for Tuesday with Dr. Andreas"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.982176Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1054.25,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?",
+            "query": "book an appointment for Tuesday with Dr. Andreas"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.983078Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.985543Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.996284Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:12.996898Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:41:12.997152Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 188,
+        "cache_read": 5833,
+        "cache_write": 140,
+        "cache_write_1h": 0,
+        "thinking": 55
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:15.548203Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2551.36,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:15.548709Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W1XFNVKTZX8P2XCMF5JKAK",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:15.548938Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:15.565531Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 17.16,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:15.566276Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My wife recommended you - can I book myself in for Tuesday with dr. Andreas?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01UaoXJBVGTUxEfL8bXo5Ci2",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W1XFNVKTZX8P2XCMF5JKAK",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UaoXJBVGTUxEfL8bXo5Ci2",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:41:15.566714Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 94,
+        "cache_read": 5973,
+        "cache_write": 295,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.864067Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2297.96,
+      "tool_names": [],
+      "text": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.864964Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4880.82,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 169,
+        "answer_text": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.866052Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.869627Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.69,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 169,
+        "answer_text": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.869911Z"
+    },
+    {
+      "duration_ms": 5957.53,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M3W20XB8T1WV5MQTK3M63VBG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.870498Z"
+    },
+    {
+      "message_id": "01M3W2135N2G3BXN0VA9QQE7N5",
+      "chat_id": "01M3W20X91EZR1Y9XRWJDK3NVY",
+      "sender": "assistant",
+      "content": "Sure thing, Knut — Dr. Andreas Vesalius (Dentistry) has these openings on Tuesday, March 3rd:\n\n- 9:00am\n- 10:00am\n- 11:00am\n- 12:00pm\n- 1:00pm\n\nWhich time works for you?",
+      "event": "message.persisted",
+      "turn_id": "01M3W20XB8T1WV5MQTK3M63VBG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:17.889463Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W20XB8T1WV5MQTK3M63VBG": "c89e1ffe2c56d64125b0e52a6eb2c308"
+  }
+}
