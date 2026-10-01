@@ -100,6 +100,21 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   a 146-case run. A reranker outage is the one place a floor still applies
   (`UNRERANKED_SIMILARITY_FLOOR`), because with no rerank score nothing else has judged the
   shortlist (`specs/018-hybrid-retrieval/evaluation/findings.md`).
+- **Dense retrieval only - no BM25, no hybrid fusion** (018): planned as dense + BM25 fused by
+  Reciprocal Rank Fusion, and not built, on measurement. A lexical branch earns its place on the
+  chunks dense search ranks too low to reach the reranker - exact plan names, form numbers,
+  procedure codes - so the extended set was given 42 cases in five families aimed at retrieval
+  weaknesses, eight of them written to favour lexical matching. Dense search put the right chunk
+  in the reranker's shortlist for every answerable request that reached retrieval (similarity
+  hit@5 83/83), and the reranker ranked it first every time (rerank hit@1 83/83). Offline, local
+  BM25 ranked the cited entry first in 4 of the 8 lexical cases against dense search's 7, and the
+  one case BM25 won alone the reranker recovered anyway. With the retrieval stages already perfect
+  there is nothing for fusion to move, and every remaining miss was the classifier routing or the
+  answerer declining. The tradeoff accepted: a sparse vector per point, a second prefetch carrying
+  the session filter and an ablation setting are left unbuilt, and the claim that dense search
+  suffices holds for a 19-entry, 62-chunk corpus, not beyond it - a corpus large enough for the
+  25-wide pool to stop reaching the right chunk is when to reconsider
+  (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Postgres drivers**: `asyncpg` for the app, `psycopg` v3 (sync) for Alembic migrations —
   the conventional SQLAlchemy 2.0 pairing, rather than forcing Alembic's sync runner through
   `asyncpg` via `run_sync`.

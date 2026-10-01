@@ -1,6 +1,6 @@
 # 018 — Retrieval under a realistic corpus: findings
 
-What was measured between extending the starter corpus and the first change to the retriever,
+What was measured from extending the starter corpus to the decision not to build hybrid search,
 2026-10-01, on branch `018-hybrid-retrieval`. ROADMAP Phase 4b is the plan this follows; this file
 is what the measurements said, so a later reader can tell a decision from a guess.
 
@@ -11,6 +11,22 @@ sample, not evidence: the conclusions rest on movements that are structural (a c
 reached a stage, and then did) or on replays of one prompt many times. The band measured
 afterwards (section 8) confirms the reading - full-run answer counts move by ±1 on an unchanged
 build.
+
+## Summary: what changed, and why
+
+Phase 4b set out to make retrieval hard enough to measure and then add hybrid search. Making it
+hard worked; the weaknesses it exposed were not where hybrid search reaches. Every change below
+shipped on its own evidence, and hybrid search was not built (section 7).
+
+| change | why | evidence | commit |
+|---|---|---|---|
+| Ten clinic documents added to the starter corpus, five case families and six gaps to the golden set | 9 one-chunk entries put the whole corpus in every pool, so no retrieval number could move | sections 1-2 | `051e194`, `e28479a` |
+| Similarity floor removed (`SIMILARITY_FLOOR` -1.0); the reranker alone decides | a 0.25 cosine floor dropped short questions whose right chunk dense search had ranked first | section 4: 12 to 8 unserved of 87, no gap answered | `b0aa7a1` |
+| The reranker-down fallback keeps a floor of its own (`UNRERANKED_SIMILARITY_FLOOR` 0.25) | without one an outage would answer from a shortlist nothing has judged | section 4 | `b0aa7a1` |
+| The answerer gives a no the information states | "not even a no" was read as "never a no", so a stated refusal was declined as a gap | section 5: 16/25 vs 7/25 answered on replay, every guard and stress gap still declined | `957f240` |
+| Chunk by heading section, each chunk prefixed with its heading path | a fixed window ran across sections and set one section's sentence beside another's | section 6: 10/10 on the two replayed cases it broke | `a171078` |
+| Noise band on that build | to tell a real movement from the answerer's run-to-run variation | section 8: only the answerer varies, ±1 | `fcc024b` |
+| Classifier: what the clinic sent, billed or treated is `faq_question`; arriving late is a term, not a booking | four of the five remaining misses were routing | section 9: 142 to 145 of 146 exact on replay | `009d4ff` |
 
 ## 1. Why the corpus had to change first
 
@@ -186,14 +202,27 @@ the answerer rather than stopped before it, so the generation step carries more 
 abstention than it did. All declined; the margin is thinner, and those are the cases to watch when
 the answer prompt next changes.
 
-## 7. What this means for hybrid search
+## 7. Decision: hybrid search is not built
 
-The "dense, no floor" row the ablation was to carry is now the default pipeline. Hybrid has to
-beat it, not the pipeline it was planned against, and on this corpus dense ranking already puts
-the right chunk in the reranker's shortlist every time. The probe's one BM25 win (`G-w-05`) was
-recovered by the reranker anyway. Hybrid search is expected to show no measurable effect here,
-which is a result worth recording rather than a reason to skip the measurement - it says the
-retrieval problem this corpus poses is solved by a cross-encoder over a dense shortlist.
+The "dense, no floor" row the ablation was to carry became the default pipeline, so hybrid would
+have had to beat it rather than the pipeline it was planned against. It had nothing to beat:
+
+- **Every answerable request that reached retrieval had its cited chunk in the shortlist**
+  (similarity hit@5 83/83), and the reranker put it first every time (rerank hit@1 83/83) - in the
+  baseline and in all five band runs, which did not vary.
+- **The cases written to favour lexical matching did not need it.** The offline probe (section 3)
+  had dense search rank the cited entry first in 7 of family `w`'s 8 cases and BM25 in 4; BM25's
+  one solo win (`G-w-05`) reached the reranker through dense search anyway, and its residual
+  failure is the answerer weighing two chunks that disagree, which no retriever fixes.
+- **Every remaining miss is downstream of retrieval** - the classifier routing elsewhere, or the
+  answerer declining - so fusion could reorder the pool without changing an outcome.
+
+Building it would have cost a sparse vector on every point, a second prefetch that must carry the
+session and revision filter, a run-condition setting and its ablation runs, to measure a result
+already predicted as null. The predicted null is recorded here in place of a measured one, with its
+limit: the claim covers a 19-entry, 62-chunk corpus searched with a 25-wide pool. A corpus large
+enough that the pool stops reaching the right chunk is where a lexical branch could matter, and
+that - not BM25 on this corpus - is the question to reopen.
 
 ## 8. The noise band
 
@@ -246,5 +275,5 @@ model still reads as unintelligible. Not yet confirmed by a full run against the
   insurance entry accepts Cigna, the dental guide refuses Cigna's DHMO.
 - **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
   rerank floor used to stop.
-- **The corpus is still small** - 62 chunks against a 25-wide pool. If hybrid shows nothing, the
-  honest next question is whether a larger corpus would, not whether BM25 is useless.
+- **The corpus is still small** - 62 chunks against a 25-wide pool. Section 7's decision holds for
+  this size; a larger corpus is what would reopen it.

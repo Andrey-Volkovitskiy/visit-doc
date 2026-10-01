@@ -581,4 +581,5 @@ cloning (it's a `.git/hooks/` entry, not tracked by git).
 
 See `docs/ROADMAP.md` for the full phased plan (Phase 0 walking skeleton → Phase 1 agent → Phase 2
 eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, retrieval under a
-realistic corpus with hybrid search, then Kubernetes).
+realistic corpus (hybrid search planned there, measured as unneeded and not built), the
+starter corpus's seeding cost (deferred until measured), then Kubernetes).

@@ -790,6 +790,17 @@ pool returns the whole corpus on every search. The v2 baseline reads similarity 
 added now would move none of those numbers, so this phase makes the problem hard first and only
 then changes the retriever, in that order.
 
+*(Outcome, branch `018-hybrid-retrieval`: the corpus was extended and the set given cases aimed at
+retrieval weaknesses, and what they exposed was not ranking. Four changes shipped, each on its own
+measurement - no similarity floor in front of the reranker, a fallback floor of its own for a
+reranker outage, an answerer that gives a no the information states, and chunks cut by heading
+section - plus a classifier fix for the routing misses that remained. Unserved answerable requests
+went from 12/87 to 5/87 with no answer on a labelled gap. **Hybrid search was not built**: dense
+search put the cited chunk in the reranker's shortlist for every answerable request and the
+reranker ranked it first every time, so fusion had nothing to move. The plan below is kept as
+written, with notes on what happened to each part; the measurements and the decision are in
+`specs/018-hybrid-retrieval/evaluation/findings.md`.)*
+
 - **A realistic corpus, by extension rather than replacement.** The 9 entries stay as they are,
   and documents the size a clinic actually has are added beside them — a patient handbook,
   insurance and billing policy, preparation instructions per procedure, records and privacy policy
@@ -831,6 +842,10 @@ then changes the retriever, in that order.
   additive and 007's revision scheme is unchanged. One Query API call runs two `prefetch` searches
   and fuses them with `Fusion.RRF`. **The session and live-revision filter goes on both
   prefetches**: a lexical branch without it would reach points Postgres no longer vouches for.
+  *(Not built. On the extended corpus dense search left BM25 nothing to rescue - rerank hit@1
+  83/83, and the offline probe ranked the cited entry first by dense search in 7 of the 8 cases
+  written to favour lexical matching against BM25's 4. A larger corpus, where the 25-wide pool
+  stops reaching the right chunk, is what would reopen it.)*
 - **The fused score is a rank, not a relevance score.** RRF scores `1/(k + rank)`, so the top result
   gets the same number whether it is a perfect match or the least bad of nothing. No floor can be
   put on it: fusion decides only the order of what reaches the reranker, and the rerank floor stays
@@ -857,6 +872,9 @@ then changes the retriever, in that order.
   stage on its own. The result is a table — dense only, BM25 only, fused, each with and without the
   reranker — split by case family, and read against the band. Hybrid is kept only if the table
   says it pays for itself; "no measurable effect" is a result the README records, not one it hides.
+  *(Not run: with hybrid unbuilt there is no fused row. The predicted "no measurable effect" is
+  recorded in the README's technology choices, with the evidence it rests on, rather than
+  measured.)*
 - **A "dense, no floor" row, so removing the floor is not credited to BM25.** Hybrid changes two
   things at once - it adds a lexical branch and it drops the similarity floor - and the first
   targeted run on the extended set put every retrieval miss on the second: "PR-4" and "braces"
@@ -871,20 +889,20 @@ then changes the retriever, in that order.
   "dense, no floor" the row hybrid has to beat, and on this corpus dense search already hands the
   reranker the right chunk every time - so "no measurable effect" is the expected outcome, and
   worth recording as one.)*
-- **Seeding cost: deferred until it is measured.** Every new session is planted with the starter
-  corpus, and planting embeds every chunk through Voyage in one call, awaited inside the first
-  `POST /chats` - so a new visitor's first chat, every eval run and every e2e journey pay for it.
-  At 36 chunks that is about 5k tokens and one request: not worth a mechanism yet. Caching vectors
-  is a new invariant - a vector is valid only for one text, one embedding model and one chunker -
-  and one broken silently degrades retrieval rather than failing, so it is built only for a
-  measured need: the corpus growing toward hundreds of chunks, first-chat latency a visitor can
-  notice, or Voyage rate limits biting during eval or e2e runs. Not before hybrid search either,
-  which changes what a stored point carries. When it is built, the likelier shape is a template
-  copy of the starter corpus's points kept in Qdrant and copied into each new session under its
-  own `session_id` and revisions - no embedding call at all, and dense and sparse vectors copied
-  alike.
+#### Phase 4c — Starter corpus seeding cost
+Deferred until it is measured. Every new session is planted with the starter corpus, and planting
+embeds every chunk through Voyage in one call, awaited inside the first `POST /chats` - so a new
+visitor's first chat, every eval run and every e2e journey pay for it. At 36 chunks that was about
+5k tokens and one request, and at 62 since 4b's section chunking it is still one request: not
+worth a mechanism yet. Caching vectors is a new invariant - a vector is valid only for one text,
+one embedding model and one chunker - and one broken silently degrades retrieval rather than
+failing, so it is built only for a measured need: the corpus growing toward hundreds of chunks,
+first-chat latency a visitor can notice, or Voyage rate limits biting during eval or e2e runs.
+When it is built, the likelier shape is a template copy of the starter corpus's points kept in
+Qdrant and copied into each new session under its own `session_id` and revisions - no embedding
+call at all.
 
-#### Phase 4c — Kubernetes
+#### Phase 4d — Kubernetes
 Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
 in the README like every other technology choice.
 
