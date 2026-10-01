@@ -571,7 +571,7 @@ function App() {
                 </RegionLoading>
               )}
             </TabsContent>
-            <TabsContent value="faq" className="min-h-0 overflow-y-auto">
+            <TabsContent value="faq" className="flex min-h-0 flex-col overflow-y-auto">
               {sessionExists ? (
                 <FaqAdmin onDirtyChange={markFaqDirty} />
               ) : (

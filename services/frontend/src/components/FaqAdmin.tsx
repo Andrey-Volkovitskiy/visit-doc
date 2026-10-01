@@ -107,7 +107,7 @@ function FaqEditor({
   }
 
   return (
-    <div data-testid="faq-edit" className="flex flex-col gap-4 p-4">
+    <div data-testid="faq-edit" className="flex flex-1 flex-col gap-4 p-4">
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -122,17 +122,16 @@ function FaqEditor({
       <h4 className="text-md text-ink font-semibold">
         {writing ? "New entry" : "Edit entry"}
       </h4>
-      <div className="flex flex-col gap-1">
+      {/* The box takes the height the pane has left, so a long document is edited
+          in a box the size of the pane rather than a few lines of one. */}
+      <div className="flex flex-1 flex-col gap-1">
         <p className="text-ink-muted text-sm">
-          Write a question and its answer on two lines, labelled{" "}
-          <code className="text-ink">Question:</code> and{" "}
-          <code className="text-ink">Answer:</code>, and the list reads them as the two
-          things they are. Anything else is stored, and answered from, exactly as it is
-          written.
+          Enter an FAQ question and answer, or a clinic policy the assistant should base
+          its answers on.
         </p>
         <Textarea
           aria-label={writing ? "New entry" : `Entry ${String(entry.id)}`}
-          className="min-h-40"
+          className="min-h-40 flex-1"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={
@@ -295,7 +294,7 @@ export function FaqAdmin({
     confirming === null ? null : splitEntry(confirming.content).question;
 
   return (
-    <div data-testid="faq-admin" className="flex min-h-0 flex-col gap-3 p-4">
+    <div data-testid="faq-admin" className="flex flex-1 flex-col gap-3 p-4">
       {editorOpen ? (
         <FaqEditor
           onDirtyChange={onDirtyChange}
