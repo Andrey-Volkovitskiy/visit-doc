@@ -817,6 +817,14 @@ family(
             note="the reminders document describes text messages and email and does "
             "not say they are the only channels",
         ),
+        case(
+            "G-k-22",
+            "What's the self-pay price for code 99213?",
+            [gap("self-pay price of code 99213")],
+            note="a code in the exact shape of the price list's own entries, absent "
+            "from it - the identifier counterpart of G-k-20. The list says the front "
+            "desk can explain an unlisted code, which is not a price",
+        ),
     ],
 )
 
@@ -1485,10 +1493,12 @@ family(
         ),
         case(
             "G-v-03",
-            "Will my Aetna plan pay for a dental cleaning?",
+            "Can I use my Aetna medical insurance for a dental cleaning?",
             [faq("medical insurance and dental care", "dental-care-guide")],
             note="both insurance entries say Aetna is accepted; the dental guide says "
-            "medical plans do not cover dental care",
+            "medical plans do not cover dental care. It names the plan as medical "
+            "because Aetna also sells dental plans, and 'my Aetna plan' left the "
+            "answer undecidable - a no for a medical plan, unknown for a dental one",
         ),
         case(
             "G-v-04",
@@ -1503,11 +1513,6 @@ family(
             "subject",
         ),
         case(
-            "G-v-06",
-            "Will you email me my test results?",
-            [faq("test results by email", "reminders-and-messages")],
-        ),
-        case(
             "G-v-07",
             "Should I skip eating before my breathing test?",
             [faq("eating before spirometry", "test-preparation")],
@@ -1518,11 +1523,86 @@ family(
     ],
 )
 
+# === w - faq-lexical-discriminator ==================================================
+
+family(
+    "w",
+    "faq-lexical-discriminator",
+    "One answerable FAQ question in which an exact token is the only thing that "
+    "separates the entry that answers it from entries sharing its other words or its "
+    "subject: a bare billing code beside the entries about receipts, rates or the "
+    "procedure itself; a plan qualifier beside the insurance entries that accept the "
+    "brand. Family s does not do this - every term in it has its category to itself. "
+    "The cases were written by that principle and are kept whatever any retriever "
+    "scores on them: an offline probe on 2026-10-01 found dense search ranking the "
+    "cited entry first in seven of eight and BM25 in four, so this family is where the "
+    "ablation can show lexical search losing as well as winning. Family t is the "
+    "counterweight in the other direction.",
+    [
+        case(
+            "G-w-01",
+            "What was 94010 on my receipt?",
+            [faq("what code 94010 is", "procedure-prices")],
+            note="the out-of-network entry is the one that talks about receipts",
+        ),
+        case(
+            "G-w-02",
+            "How much is 93000 if I'm paying myself?",
+            [faq("self-pay price of code 93000", "procedure-prices")],
+            note="the rates entry is the one about paying out of pocket",
+        ),
+        case(
+            "G-w-03",
+            "My receipt lists D7140. What is that?",
+            [faq("what code D7140 is", "procedure-prices")],
+            note="the dental guide describes extractions at length; only the price "
+            "list names the code",
+        ),
+        case(
+            "G-w-04",
+            "What does 69210 cost?",
+            [faq("self-pay price of code 69210", "procedure-prices")],
+        ),
+        case(
+            "G-w-05",
+            "Do you accept Cigna DHMO?",
+            [faq("is Cigna's DHMO accepted", "dental-care-guide")],
+            note="the answer is no, from the dental guide; both insurance entries say "
+            "Cigna is accepted, and DHMO is the only word that says otherwise",
+        ),
+        case(
+            "G-w-06",
+            "Is an AARP Medicare Advantage HMO from UnitedHealthcare accepted?",
+            [
+                faq(
+                    "is UHC's AARP Medicare Advantage HMO accepted",
+                    "insurance-plan-guide",
+                )
+            ],
+            note="no; the insurance entry accepts both UnitedHealthcare and Medicare, "
+            "and only HMO against PPO decides it",
+        ),
+        case(
+            "G-w-07",
+            "Do you take Blue Essentials?",
+            [faq("is Blue Essentials accepted", "insurance-plan-guide")],
+            note="no; the insurance entry names Blue Cross Blue Shield as accepted",
+        ),
+        case(
+            "G-w-08",
+            "What is the HC-9?",
+            [faq("what form HC-9 is", "check-in-and-registration")],
+            note="forms are named in three documents - PR-1 in the reminders one, IC-2 "
+            "in the insurance guide - and HC-9 only in the check-in one",
+        ),
+    ],
+)
+
 # --- the checks JSON Schema cannot make ---------------------------------------------
 
 # The family letters, in the order the set is meant to read. There is no `h`: the
 # letters follow the order the set was specified in, and that one was not used.
-EXPECTED_LETTERS: Final = list("abcdefgijklmnopqrstuv")
+EXPECTED_LETTERS: Final = list("abcdefgijklmnopqrstuvw")
 
 # Each seeded practitioner's working week and the hours a 60-minute slot may start in:
 # first weekday, last weekday, first hour, last hour.

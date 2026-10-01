@@ -1159,6 +1159,19 @@
       }
      ],
      "note": "the reminders document describes text messages and email and does not say they are the only channels"
+    },
+    {
+     "id": "G-k-22",
+     "message": "What's the self-pay price for code 99213?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 99213",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "a code in the exact shape of the price list's own entries, absent from it - the identifier counterpart of G-k-20. The list says the front desk can explain an unlisted code, which is not a price"
     }
    ]
   },
@@ -2379,7 +2392,7 @@
     },
     {
      "id": "G-v-03",
-     "message": "Will my Aetna plan pay for a dental cleaning?",
+     "message": "Can I use my Aetna medical insurance for a dental cleaning?",
      "requests": [
       {
        "intent": "faq_question",
@@ -2390,7 +2403,7 @@
        ]
       }
      ],
-     "note": "both insurance entries say Aetna is accepted; the dental guide says medical plans do not cover dental care"
+     "note": "both insurance entries say Aetna is accepted; the dental guide says medical plans do not cover dental care. It names the plan as medical because Aetna also sells dental plans, and 'my Aetna plan' left the answer undecidable - a no for a medical plan, unknown for a dental one"
     },
     {
      "id": "G-v-04",
@@ -2422,20 +2435,6 @@
      "note": "the arrival entry says how early to come, which reads as the same subject"
     },
     {
-     "id": "G-v-06",
-     "message": "Will you email me my test results?",
-     "requests": [
-      {
-       "intent": "faq_question",
-       "gist": "test results by email",
-       "answerable": true,
-       "cites": [
-        "reminders-and-messages"
-       ]
-      }
-     ]
-    },
-    {
      "id": "G-v-07",
      "message": "Should I skip eating before my breathing test?",
      "requests": [
@@ -2449,6 +2448,132 @@
       }
      ],
      "note": "the counter-case to G-k-07: fasting before a blood test is a gap, and a meal before spirometry is answered - by 'avoid a large meal', which is not fasting"
+    }
+   ]
+  },
+  {
+   "letter": "w",
+   "name": "faq-lexical-discriminator",
+   "tests": "One answerable FAQ question in which an exact token is the only thing that separates the entry that answers it from entries sharing its other words or its subject: a bare billing code beside the entries about receipts, rates or the procedure itself; a plan qualifier beside the insurance entries that accept the brand. Family s does not do this - every term in it has its category to itself. The cases were written by that principle and are kept whatever any retriever scores on them: an offline probe on 2026-10-01 found dense search ranking the cited entry first in seven of eight and BM25 in four, so this family is where the ablation can show lexical search losing as well as winning. Family t is the counterweight in the other direction.",
+   "cases": [
+    {
+     "id": "G-w-01",
+     "message": "What was 94010 on my receipt?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what code 94010 is",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the out-of-network entry is the one that talks about receipts"
+    },
+    {
+     "id": "G-w-02",
+     "message": "How much is 93000 if I'm paying myself?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 93000",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the rates entry is the one about paying out of pocket"
+    },
+    {
+     "id": "G-w-03",
+     "message": "My receipt lists D7140. What is that?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what code D7140 is",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the dental guide describes extractions at length; only the price list names the code"
+    },
+    {
+     "id": "G-w-04",
+     "message": "What does 69210 cost?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 69210",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-w-05",
+     "message": "Do you accept Cigna DHMO?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Cigna's DHMO accepted",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ],
+     "note": "the answer is no, from the dental guide; both insurance entries say Cigna is accepted, and DHMO is the only word that says otherwise"
+    },
+    {
+     "id": "G-w-06",
+     "message": "Is an AARP Medicare Advantage HMO from UnitedHealthcare accepted?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is UHC's AARP Medicare Advantage HMO accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "no; the insurance entry accepts both UnitedHealthcare and Medicare, and only HMO against PPO decides it"
+    },
+    {
+     "id": "G-w-07",
+     "message": "Do you take Blue Essentials?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Blue Essentials accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "no; the insurance entry names Blue Cross Blue Shield as accepted"
+    },
+    {
+     "id": "G-w-08",
+     "message": "What is the HC-9?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what form HC-9 is",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ],
+     "note": "forms are named in three documents - PR-1 in the reminders one, IC-2 in the insurance guide - and HC-9 only in the check-in one"
     }
    ]
   }

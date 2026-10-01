@@ -797,9 +797,10 @@ then changes the retriever, in that order.
   Keeping the 9 keeps every existing FAQ label meaningful, and the existing cases run against the
   larger corpus measure what distractors alone cost. Long documents are what make 1e's chunking
   matter for the first time: today the 1,000-character splitter never triggers.
-  *(First increment on branch `018-hybrid-retrieval`: nine documents of 1.3-2.9k characters,
-  bringing the corpus to 18 entries and 34 chunks. Smaller than planned, and grown further only if
-  the new baseline shows retrieval still saturated.)*
+  *(First increment on branch `018-hybrid-retrieval`: ten documents of 1.0-2.9k characters,
+  bringing the corpus to 19 entries and 36 chunks. Smaller than planned, and grown further only if
+  the new baseline shows retrieval still saturated. The tenth, a price list by procedure code, was
+  added after the first targeted run showed dense search ranking every exact-term case first.)*
 - **Every existing FAQ label re-checked against the additions**, as `PROVENANCE.md` requires when
   the corpus moves. An `answerable: false` label was checked against nine entries and may now be
   answered by a new document; an `answerable: true` label may now be answered by a second one too,
@@ -846,6 +847,15 @@ then changes the retriever, in that order.
   stage on its own. The result is a table — dense only, BM25 only, fused, each with and without the
   reranker — split by case family, and read against the band. Hybrid is kept only if the table
   says it pays for itself; "no measurable effect" is a result the README records, not one it hides.
+- **A "dense, no floor" row, so removing the floor is not credited to BM25.** Hybrid changes two
+  things at once - it adds a lexical branch and it drops the similarity floor - and the first
+  targeted run on the extended set put every retrieval miss on the second: "PR-4" and "braces"
+  ranked the right chunk first and the floor dropped it, and an offline probe put two of family
+  `w`'s billing-code questions below the floor the same way. The same probe found dense search
+  ranking the cited entry first in seven of family `w`'s eight cases and BM25 in four. So the table
+  carries dense retrieval with the floor removed and the rerank floor as the only gate, beside
+  today's pipeline and the fused one: what separates "dense, no floor" from "fused" is BM25's own
+  contribution, and what separates today's pipeline from "dense, no floor" is the floor's.
 - **Seeding cost: deferred until it is measured.** Every new session is planted with the starter
   corpus, and planting embeds every chunk through Voyage in one call, awaited inside the first
   `POST /chats` - so a new visitor's first chat, every eval run and every e2e journey pay for it.

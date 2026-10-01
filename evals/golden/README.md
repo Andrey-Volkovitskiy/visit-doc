@@ -1,7 +1,7 @@
 # The golden set (v2)
 
-The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 138 patient messages carrying
-160 labelled requests, grouped into 21 families that between them cover what a patient actually
+The labelled dataset Phase 2 measures against (`docs/ROADMAP.md`). 146 patient messages carrying
+168 labelled requests, grouped into 22 families that between them cover what a patient actually
 does with this assistant.
 
 **It is data, and `cases.json` is a generated artifact.** The set is written in
@@ -39,7 +39,7 @@ The consequences worth knowing:
 | File | What it is |
 |---|---|
 | `cases.json` | The set, grouped by family — generated; see above. `schema.json` is authoritative for the shape. |
-| `schema.json` | JSON Schema for the file. All 138 cases validate against it. |
+| `schema.json` | JSON Schema for the file. All 146 cases validate against it. |
 | `corpus.json` | The pinned FAQ corpus every `cites` label names, with a `sha256` over the entry texts. |
 | `PROVENANCE.md` | Where v2 came from, and what has to be re-checked when the corpus moves. |
 
@@ -96,7 +96,7 @@ than a per-case citation of another spec's set.
 | g | `small-talk` | 8 | Messages asking for nothing. None may page a person or search the corpus. |
 | i | `out-of-topic` | 2 | Clearly outside the clinic's domain: nothing to retrieve and nobody to page. |
 | j | `single-faq-answered` | 11 | One answerable FAQ question: both gates cleared, answer generated, right entry cited. |
-| k | `single-faq-gap` | 14 | One question the corpus cannot answer, most overlapping an entry heavily. Must abstain. |
+| k | `single-faq-gap` | 15 | One question the corpus cannot answer, most overlapping an entry heavily. Must abstain. |
 | l | `single-faq-that-looks-multi` | 3 | One request wearing the clothes of several. Must not be over-split. |
 | m | `compound-faq-answered` | 5 | Two or three answerable questions, each retrieved on its own and cited on its own. |
 | n | `compound-faq-mixed` | 6 | One answerable, one a gap. Answer the half you can; name the half you cannot. |
@@ -107,7 +107,8 @@ than a per-case citation of another spec's set.
 | s | `faq-exact-terms` | 12 | Turns on an exact term — a plan name, a form number, a brand. Where lexical search should help. |
 | t | `faq-paraphrase` | 9 | A patient's own wording, sharing little vocabulary with its answer. Where dense search should help. |
 | u | `faq-deep-in-a-document` | 7 | Answered by a late section of a long document, far from its title. |
-| v | `faq-near-miss-distractor` | 7 | A neighbouring entry looks like the answer and is not; only the real one is cited. |
+| v | `faq-near-miss-distractor` | 6 | A neighbouring entry looks like the answer and is not; only the real one is cited. |
+| w | `faq-lexical-discriminator` | 8 | An exact token — a billing code, a plan qualifier — is the only thing separating the answer from entries on the same subject. |
 
 There is no family `h`: the letters follow the order the set was specified in, and `h` was not used.
 

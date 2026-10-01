@@ -539,4 +539,36 @@ DEFAULT_FAQ_ENTRIES: tuple[str, ...] = (
         a competition is done in a standard GP appointment.
         """
     ),
+    _document(
+        """
+        # Procedure codes and self-pay prices
+
+        Your itemized receipt lists each procedure done at your visit by its billing
+        code. Medical procedures use five-digit CPT codes, and dental procedures use CDT
+        codes that start with the letter D. If you pay out of pocket, each procedure
+        below is charged at the price shown, in addition to the rate for the visit at
+        which it is done.
+
+        ## Medical procedures
+
+        - 93000: resting 12-lead electrocardiogram, with the doctor's reading of it -
+          $65
+        - 94010: spirometry - $85
+        - 93784: 24-hour ambulatory blood pressure monitoring - $140
+        - 81002: urine dipstick test done in the clinic - $15
+        - 69210: ear wax removal, per ear - $75
+        - 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90
+
+        ## Dental procedures
+
+        - D2391: tooth-coloured filling on one surface of a back tooth - $210
+        - D2140: silver (amalgam) filling on one surface - $160
+        - D7140: simple tooth extraction - $240
+
+        ## A code you do not recognise
+
+        If your receipt shows a code that is not in this list, the front desk can tell
+        you what it is.
+        """
+    ),
 )

@@ -130,8 +130,31 @@ Every existing label was re-checked against the nine new documents.
   sentence each is close to.
 - **Four families**, each aimed at one retrieval weakness, so the Phase 4b ablation can be read per
   family: `s` exact terms (12), `t` paraphrase (9), `u` an answer deep in a long document (7),
-  `v` a near-miss distractor (7). `s` and `t` are each other's counterweight - lexical search should
+  `v` a near-miss distractor (6, after `G-v-06` below). `s` and `t` are each other's counterweight - lexical search should
   help the first and dense search the second, and a fusion is judged on both.
+- **`G-v-03` reworded the same day, by the reviewer's decision**, after the first targeted run of
+  family `v`: *"Will my Aetna plan pay for a dental cleaning?"* became *"Can I use my Aetna medical
+  insurance for a dental cleaning?"*. Aetna also sells dental plans, so "my Aetna plan" did not say
+  which kind the patient held, and the dental guide answers only the medical one - the answerer's
+  abstention on the old wording was defensible. The id is kept: no baseline had been taken on it.
+- **`G-v-06` removed the same day, by the reviewer's decision.** *"Will you email me my test
+  results?"* was classified `not_authorized` and handed off, which is a defensible reading: it can
+  be heard as a request for results, which the assistant may never serve, as much as a question
+  about the clinic's email policy. A case whose right intent depends on that reading measures the
+  wording, not the routing. Its number is not reused, so family `v` runs 01-05 and 07.
+- **A tenth document, `procedure-prices`, and family `w`, by the reviewer's decision.** The first
+  targeted run showed dense search ranking the cited entry first in every case of family `s`:
+  each exact term there has its category to itself, so the category alone picks the entry and BM25
+  has nothing to win. `w` puts the token where it is the only discriminator - bare billing codes
+  from a new price list beside the entries about receipts and rates, and plan qualifiers (Cigna
+  DHMO, an AARP HMO, Blue Essentials) beside the insurance entries that accept the brand - plus
+  `G-k-22`, a code the list does not hold. The document prices procedures only, never a visit, a
+  scan, an MRI or a follow-up, so every gap still holds and no existing label gains a citation;
+  its last section was reworded before pinning, because "a code not in this list is part of the
+  visit" would have answered `G-n-06`'s scan half and `G-k-22` both. An offline probe ranked the
+  cited entry under dense search and a plain BM25 over the 36 chunks: dense first in seven of
+  eight, BM25 in four, BM25 alone in one (`G-w-05`). Every case was kept regardless - selecting
+  cases by which retriever fails them would decide the ablation before it ran.
 
 ### What it means for stored runs
 
