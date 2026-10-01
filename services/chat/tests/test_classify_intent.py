@@ -135,6 +135,21 @@ def test_the_prompt_defines_small_talk_as_asking_for_nothing() -> None:
     assert "unintelligible" in prompt
 
 
+def test_the_prompt_makes_what_the_clinic_sent_or_did_its_business() -> None:
+    # A text from its short code and aftercare after a filling went to small_talk.
+    prompt = " ".join(_prompt().split())
+    assert "something that came from the clinic or happened there is its business" in (
+        prompt
+    )
+
+
+def test_the_prompt_makes_arriving_late_a_term_not_a_change() -> None:
+    # Arriving late was read as asking to move the appointment, and the booking node
+    # holds no lateness policy to answer it from.
+    prompt = " ".join(_prompt().split())
+    assert "what happens to a patient who arrives late" in prompt
+
+
 def test_the_prompt_makes_a_request_win_a_tie_against_small_talk() -> None:
     # Answering a real request with "You're welcome!" is the costlier error, and the
     # other paths already know how to abstain (FR-007).
