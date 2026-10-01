@@ -1420,9 +1420,10 @@ family(
     "u",
     "faq-deep-in-a-document",
     "One answerable FAQ question whose answer sits in a late section of a long "
-    "document, several chunks away from its title. A chunk that far in carries none "
-    "of the document's opening context, so it has to be found on its own wording - "
-    "which is what makes chunking a measured choice rather than a default. The label "
+    "document, several sections away from its title. Under fixed-size chunking a "
+    "chunk that far in carried none of the document's opening context and had to be "
+    "found on its own wording; heading-aware chunking (018) prefixes every chunk with "
+    "its heading path, and this family is where that choice is measured. The label "
     "cites the document; which chunk carried the answer is read from the stored run.",
     [
         case(
