@@ -57,7 +57,9 @@ function Wordmark() {
           strokeLinecap="round"
         />
       </svg>
-      AI Clinic Receptionist
+      <span>
+        VisitDoc<span className="text-ink-muted"> - AI Clinic Receptionist</span>
+      </span>
     </h1>
   );
 }
