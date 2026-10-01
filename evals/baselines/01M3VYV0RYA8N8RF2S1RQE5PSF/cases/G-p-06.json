@@ -1,0 +1,399 @@
+{
+  "case_id": "G-p-06",
+  "chat_id": "01M3VZ59DAN2CB0B0KTG4GJX6X",
+  "patient_id": "01M3VZ59DZD8HMNZSTPDPRD0AT",
+  "attempts": 1,
+  "elapsed_seconds": 4.859520511934534,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+    "content": "Cheers - when is my next appointment?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ5E2481EBFAD53PPWA4XQ",
+    "content": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Cheers - when is my next appointment?",
+        "query": "which appointments does this patient already have?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "chat_id": "01M3VZ59DAN2CB0B0KTG4GJX6X",
+      "sender": "patient",
+      "content": "Cheers - when is my next appointment?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:09.739925Z"
+    },
+    {
+      "message": "Cheers - when is my next appointment?",
+      "message_ids_unified": [
+        "01M3VZ59GWGFBXF1CGKDTCZMDJ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:09.740450Z"
+    },
+    {
+      "trace_id": "2601902a2373107345fcd87d517f491e",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:09.741778Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:09.746121Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 34,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.785563Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Cheers - when is my next appointment?",
+          "query": "which appointments does this patient already have?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.786220Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1042.09,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Cheers - when is my next appointment?",
+            "query": "which appointments does this patient already have?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.786678Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.789150Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.804298Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:10.805018Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Cheers - when is my next appointment?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:51:10.805242Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 42,
+        "cache_read": 5830,
+        "cache_write": 125,
+        "cache_write_1h": 0,
+        "thinking": 10
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:11.971801Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1166.89,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:11.972376Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:11.972641Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:11.988548Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 17.03,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:11.989831Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Cheers - when is my next appointment?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01VqXhae6Di2uRmTg2Ybnnnj",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01VqXhae6Di2uRmTg2Ybnnnj",
+              "content": "{\"future\": [{\"id\": \"01M3VZ59G4G35JE5WSYHCGYP9F\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T10:00:00\", \"ends_at\": \"2026-03-04T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:51:11.990246Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 55,
+        "cache_read": 5955,
+        "cache_write": 232,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.362098Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2372.31,
+      "tool_names": [],
+      "text": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am.",
+      "event": "booking.model_call",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.362801Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 3574.36,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 121,
+        "answer_text": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.363187Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.365268Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.47,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 121,
+        "answer_text": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.365475Z"
+    },
+    {
+      "duration_ms": 4641.39,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am.",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M3VZ59GWGFBXF1CGKDTCZMDJ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.365788Z"
+    },
+    {
+      "message_id": "01M3VZ5E2481EBFAD53PPWA4XQ",
+      "chat_id": "01M3VZ59DAN2CB0B0KTG4GJX6X",
+      "sender": "assistant",
+      "content": "Your next appointment is on Wednesday, March 4th at 10:00am with Dr. Andreas Vesalius (Dentistry), running until 11:00am.",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ59GWGFBXF1CGKDTCZMDJ",
+      "level": "info",
+      "timestamp": "2026-10-01T14:51:14.388163Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-04T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-04T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ59GWGFBXF1CGKDTCZMDJ": "2601902a2373107345fcd87d517f491e"
+  }
+}

@@ -1,0 +1,749 @@
+{
+  "case_id": "G-w-04",
+  "chat_id": "01M3VZABE73NE8Z3SAYGBD12Q3",
+  "patient_id": "01M3VZABF2SNHJSE97SH6HZC9T",
+  "attempts": 1,
+  "elapsed_seconds": 3.5365147539414465,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What does 69210 cost?",
+          "answer": "Ear wax removal (code 69210) costs $75 per ear.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2744,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+    "content": "What does 69210 cost?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZAETQ1SAHN39D0GHVETBH",
+    "content": "Ear wax removal (code 69210) costs $75 per ear.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What does 69210 cost?",
+        "answer": "Ear wax removal (code 69210) costs $75 per ear.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2744,
+            "chunk_index": 0,
+            "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What does 69210 cost?",
+        "query": "What does 69210 cost?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "chat_id": "01M3VZABE73NE8Z3SAYGBD12Q3",
+      "sender": "patient",
+      "content": "What does 69210 cost?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:55.657318Z"
+    },
+    {
+      "message": "What does 69210 cost?",
+      "message_ids_unified": [
+        "01M3VZABHRNQ0HXH2YWPTWA78V"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:55.657622Z"
+    },
+    {
+      "trace_id": "29254435a8a34868c9d3d0f87445bb65",
+      "event": "turn.traced",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:55.660145Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:55.662909Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.629806Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What does 69210 cost?",
+          "query": "What does 69210 cost?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.630486Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 968.37,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What does 69210 cost?",
+            "query": "What does 69210 cost?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.630884Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.633926Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.936591Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.33028257,
+          "considered": true,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.32632643,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.26692656,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.2504295,
+          "considered": true,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.\n\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 1,
+          "similarity_score": 0.18076947,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.1494757,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.14888495,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.13495086,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.11612833,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.10508694,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.10504511,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.09240718,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.08923872,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "similarity_score": 0.08215089,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.078852266,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.07034962,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "similarity_score": 0.06966366,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.06831877,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.068133056,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.06278852,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.05490991,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.053457513,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.04369581,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.040473275,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.039406605,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.976741Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.33028257
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.32632643
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.26692656
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.2504295
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2738,
+          "chunk_index": 1,
+          "similarity_score": 0.18076947
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.1494757
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.14888495
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.13495086
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.11612833
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.10508694
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.10504511
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.09240718
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.08923872
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "similarity_score": 0.08215089
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.078852266
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.07034962
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "similarity_score": 0.06966366
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.06831877
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.068133056
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.06278852
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.05490991
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.053457513
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.04369581
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.040473275
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.039406605
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:56.979130Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 4,
+      "duration_ms": 498.36,
+      "scores": [
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.32632643,
+          "rerank_score": 0.8515625
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.33028257,
+          "rerank_score": 0.431640625
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.26692656,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.2504295,
+          "rerank_score": 0.4140625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:57.479240Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "rerank_score": 0.8515625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "rerank_score": 0.431640625
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "rerank_score": 0.4140625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:57.480213Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.33028257,
+      "best_rerank_score": 0.8515625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:57.481052Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n\n\nQuestion: What does 69210 cost?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:53:57.481514Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 596,
+        "output": 24,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:58.986142Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2354.34,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 47,
+        "answer_text": "Ear wax removal (code 69210) costs $75 per ear.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What does 69210 cost?",
+            "verdict": "answered",
+            "answer_text": "Ear wax removal (code 69210) costs $75 per ear."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:58.988188Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:58.992439Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.39,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 47,
+        "answer_text": "Ear wax removal (code 69210) costs $75 per ear."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:58.993078Z"
+    },
+    {
+      "duration_ms": 3353.32,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2744,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n",
+              "similarity_score": 0.32632643,
+              "rerank_score": 0.8515625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Ear wax removal (code 69210) costs $75 per ear.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VZABHRNQ0HXH2YWPTWA78V"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:58.993792Z"
+    },
+    {
+      "message_id": "01M3VZAETQ1SAHN39D0GHVETBH",
+      "chat_id": "01M3VZABE73NE8Z3SAYGBD12Q3",
+      "sender": "assistant",
+      "content": "Ear wax removal (code 69210) costs $75 per ear.",
+      "event": "message.persisted",
+      "turn_id": "01M3VZABHRNQ0HXH2YWPTWA78V",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:59.016104Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZABHRNQ0HXH2YWPTWA78V": "29254435a8a34868c9d3d0f87445bb65"
+  }
+}

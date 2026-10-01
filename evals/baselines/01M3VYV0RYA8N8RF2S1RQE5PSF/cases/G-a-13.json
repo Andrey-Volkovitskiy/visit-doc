@@ -1,0 +1,541 @@
+{
+  "case_id": "G-a-13",
+  "chat_id": "01M3VYXF5AY1B9TY56N4KHE9BZ",
+  "patient_id": "01M3VYXF5WYBR526HXVKS7Y9P8",
+  "attempts": 1,
+  "elapsed_seconds": 7.801898060948588,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYXF8171B906BJ0FVW1HC8",
+    "content": "Please cancel my appointment tomorrow.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYXMEFWHMM0GEHAJZ692H0",
+    "content": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Please cancel my appointment tomorrow.",
+        "query": "cancel my appointment tomorrow"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "chat_id": "01M3VYXF5AY1B9TY56N4KHE9BZ",
+      "sender": "patient",
+      "content": "Please cancel my appointment tomorrow.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.456108Z"
+    },
+    {
+      "message": "Please cancel my appointment tomorrow.",
+      "message_ids_unified": [
+        "01M3VYXF8171B906BJ0FVW1HC8"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.456356Z"
+    },
+    {
+      "trace_id": "dfe7dffd36ba4d5ff4544f73e7dd164f",
+      "event": "turn.traced",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.457877Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.459748Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3207,
+        "output": 30,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.531198Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Please cancel my appointment tomorrow.",
+          "query": "cancel my appointment tomorrow"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.532339Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1073.32,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Please cancel my appointment tomorrow.",
+            "query": "cancel my appointment tomorrow"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.532801Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.535154Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.544980Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:54.545573Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please cancel my appointment tomorrow."
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:54.545802Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 44,
+        "cache_read": 5830,
+        "cache_write": 126,
+        "cache_write_1h": 0,
+        "thinking": 12
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.180725Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1635.31,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.181345Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.181587Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.195298Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 14.58,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.196329Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please cancel my appointment tomorrow."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_012A9REcBWa2npwPxnvFuGbE",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_012A9REcBWa2npwPxnvFuGbE",
+              "content": "{\"future\": [{\"id\": \"01M3VYXF7E0NQ3K398GAAXKFZX\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-03T10:00:00\", \"ends_at\": \"2026-03-03T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:56.196647Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 217,
+        "cache_read": 5956,
+        "cache_write": 228,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.890386Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 3017.23,
+      "tool_names": [
+        "cancel_appointment"
+      ],
+      "text": "I found your appointment tomorrow (March 3) at 10:00 AM with Dr. William Osler (General Practice). I'll cancel it now.",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.891424Z"
+    },
+    {
+      "tool_name": "cancel_appointment",
+      "iteration": 2,
+      "arguments": {
+        "appointment_id": "01M3VYXF7E0NQ3K398GAAXKFZX",
+        "expected_starts_at": "2026-03-03T10:00:00",
+        "expected_practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.891956Z"
+    },
+    {
+      "method": "CancelAppointment",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.928114Z"
+    },
+    {
+      "tool_name": "cancel_appointment",
+      "iteration": 2,
+      "status": "changed",
+      "reason": null,
+      "duration_ms": 45.37,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:56.937590Z"
+    },
+    {
+      "iteration": 3,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please cancel my appointment tomorrow."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_012A9REcBWa2npwPxnvFuGbE",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_012A9REcBWa2npwPxnvFuGbE",
+              "content": "{\"future\": [{\"id\": \"01M3VYXF7E0NQ3K398GAAXKFZX\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-03T10:00:00\", \"ends_at\": \"2026-03-03T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "citations": null,
+              "text": "I found your appointment tomorrow (March 3) at 10:00 AM with Dr. William Osler (General Practice). I'll cancel it now.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_01FgU4W9reoC4rRbTRmLuthP",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "appointment_id": "01M3VYXF7E0NQ3K398GAAXKFZX",
+                "expected_starts_at": "2026-03-03T10:00:00",
+                "expected_practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0"
+              },
+              "name": "cancel_appointment",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01FgU4W9reoC4rRbTRmLuthP",
+              "content": "{\"status\": \"changed\", \"change\": \"cancelled\", \"appointment\": {\"id\": \"01M3VYXF7E0NQ3K398GAAXKFZX\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-03T10:00:00\", \"ends_at\": \"2026-03-03T11:00:00\", \"status\": \"cancelled\"}, \"previous_starts_at\": \"2026-03-03T10:00:00\", \"previous_practitioner_full_name\": \"William Osler\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:56.937861Z"
+    },
+    {
+      "call": "handle_booking.model[3]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 47,
+        "cache_read": 6184,
+        "cache_write": 395,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.759396Z"
+    },
+    {
+      "iteration": 3,
+      "duration_ms": 1821.72,
+      "tool_names": [],
+      "text": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled.",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.759807Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 6547.96,
+      "result": {
+        "outcome": "cancelled",
+        "appointment_id": "01M3VYXF7E0NQ3K398GAAXKFZX",
+        "iterations": 3,
+        "tool_calls": 2,
+        "answer_chars": 109,
+        "answer_text": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.760020Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.761995Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.54,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "cancelled",
+        "citation_count": 0,
+        "answer_chars": 109,
+        "answer_text": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.762149Z"
+    },
+    {
+      "duration_ms": 7643.31,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled.",
+      "booking_outcome": "cancelled",
+      "message_ids_unified": [
+        "01M3VYXF8171B906BJ0FVW1HC8"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.762491Z"
+    },
+    {
+      "message_id": "01M3VYXMEFWHMM0GEHAJZ692H0",
+      "chat_id": "01M3VYXF5AY1B9TY56N4KHE9BZ",
+      "sender": "assistant",
+      "content": "Your appointment tomorrow, March 3 at 10:00 AM with Dr. William Osler (General Practice), has been cancelled.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYXF8171B906BJ0FVW1HC8",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:58.774791Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-03T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "reply_skipped": true,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-03T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VYXF8171B906BJ0FVW1HC8": "dfe7dffd36ba4d5ff4544f73e7dd164f"
+  }
+}

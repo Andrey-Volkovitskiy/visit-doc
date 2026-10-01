@@ -1,0 +1,761 @@
+{
+  "case_id": "G-v-01",
+  "chat_id": "01M3VZ9HY4R6WPT8QG9S5CSY8W",
+  "patient_id": "01M3VZ9HYW989HXW6WB7NJ8EFN",
+  "attempts": 1,
+  "elapsed_seconds": 2.647909183986485,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What time does your phone line open?",
+          "answer": "8:30 AM.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2739,
+              "chunk_index": 0,
+              "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. "
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+    "content": "What time does your phone line open?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ9MER94RA3D1Z41YDEA4M",
+    "content": "8:30 AM.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What time does your phone line open?",
+        "answer": "8:30 AM.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2739,
+            "chunk_index": 0,
+            "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. "
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What time does your phone line open?",
+        "query": "What time does your phone line open?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "chat_id": "01M3VZ9HY4R6WPT8QG9S5CSY8W",
+      "sender": "patient",
+      "content": "What time does your phone line open?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:29.502348Z"
+    },
+    {
+      "message": "What time does your phone line open?",
+      "message_ids_unified": [
+        "01M3VZ9J0JBZKY75F2X0QCEG0G"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:29.502696Z"
+    },
+    {
+      "trace_id": "eb4ef1b3a43c2a8c30108b700b1d6cea",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:29.505626Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:29.508826Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.520283Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What time does your phone line open?",
+          "query": "What time does your phone line open?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.520985Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1013.1,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What time does your phone line open?",
+            "query": "What time does your phone line open?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.521544Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.524799Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.790738Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.49557635,
+          "considered": true,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.45227486,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.37126505,
+          "considered": true,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you when you check in, and you can choose to wait or to pick a new time. When we know about a delay of more than 30 minutes before you leave home, we send you a text message instead.\n\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.37097365,
+          "considered": true,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.\n\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in kiosk. Reminders are sent to the phone number we hold when the reminder goes out.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.35193384,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always come from the short code 72913 and start with \"VisitDoc Clinic\". The 48-hour reminder includes a check-in QR code you can scan at the self-check-in kiosk when you arrive. To stop receiving reminder texts, reply STOP to any of them. To start them again, reply START, or tell the front desk at your next visit.\n\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical advice by email.\n\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.3491991,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.32307976,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "similarity_score": 0.2956207,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.27681762,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.2678743,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.25691032,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.25432992,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.24615487,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.23479286,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.23351964,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 1,
+          "similarity_score": 0.23303594,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.21066606,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.1944581,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.18550375,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.18455055,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.1808794,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.17956072,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.1784529,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.17693952,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.16366032,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.801959Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.49557635
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.45227486
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.37126505
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.37097365
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.35193384
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.24615487
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.23479286
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.23351964
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 1,
+          "similarity_score": 0.23303594
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.21066606
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.1944581
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.18550375
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.18455055
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.1808794
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.17956072
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.1784529
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.17693952
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.16366032
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.3491991
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.32307976
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "similarity_score": 0.2956207
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.27681762
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.2678743
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.25691032
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.25432992
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:30.804489Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 301.35,
+      "scores": [
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.49557635,
+          "rerank_score": 0.72265625
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.45227486,
+          "rerank_score": 0.5078125
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.35193384,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.37097365,
+          "rerank_score": 0.34765625
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.37126505,
+          "rerank_score": 0.3125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.108138Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "rerank_score": 0.72265625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "rerank_score": 0.5078125
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "rerank_score": 0.34765625
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "rerank_score": 0.3125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.110039Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.49557635,
+      "best_rerank_score": 0.72265625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.111413Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. \n\nQuestion: What time does your phone line open?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:53:31.111975Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 510,
+        "output": 9,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.975464Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1452.26,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 8,
+        "answer_text": "8:30 AM.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What time does your phone line open?",
+            "verdict": "answered",
+            "answer_text": "8:30 AM."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.976781Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.979014Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.62,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 8,
+        "answer_text": "8:30 AM."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.979242Z"
+    },
+    {
+      "duration_ms": 2489.58,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2739,
+              "chunk_index": 0,
+              "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. ",
+              "similarity_score": 0.49557635,
+              "rerank_score": 0.72265625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "8:30 AM.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VZ9J0JBZKY75F2X0QCEG0G"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:31.980047Z"
+    },
+    {
+      "message_id": "01M3VZ9MER94RA3D1Z41YDEA4M",
+      "chat_id": "01M3VZ9HY4R6WPT8QG9S5CSY8W",
+      "sender": "assistant",
+      "content": "8:30 AM.",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ9J0JBZKY75F2X0QCEG0G",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:32.009089Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ9J0JBZKY75F2X0QCEG0G": "eb4ef1b3a43c2a8c30108b700b1d6cea"
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "case_id": "G-t-01",
+  "chat_id": "01M3VZ7ZK6P9FR1CQGV1ZYV4D1",
+  "patient_id": "01M3VZ7ZKWNMGXT25E88PY7Q3F",
+  "attempts": 1,
+  "elapsed_seconds": 2.5044516200432554,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+    "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ81YMSYHPJ7BMVKA86BWN",
+    "content": "I can't advise on that, I'm afraid—it's best to check with the dentist or hygienist before you leave, or give them a quick call if you need guidance. They'll let you know what's safe while the numbness wears off!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+        "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "chat_id": "01M3VZ7ZK6P9FR1CQGV1ZYV4D1",
+      "sender": "patient",
+      "content": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:37.961234Z"
+    },
+    {
+      "message": "My mouth is still frozen from the filling. Can I have a coffee?",
+      "message_ids_unified": [
+        "01M3VZ7ZNS41ZT8DFN68JJKCD4"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:37.961755Z"
+    },
+    {
+      "trace_id": "a4b7a97c54df00daaff50c516bb9b5c3",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:37.963866Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:37.967927Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:38.982879Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+          "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:38.983430Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1017.23,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "My mouth is still frozen from the filling. Can I have a coffee?",
+            "query": "My mouth is still frozen from the filling. Can I have a coffee?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:38.983944Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:38.986999Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "My mouth is still frozen from the filling. Can I have a coffee?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:52:38.987277Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 59,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.251100Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1265.46,
+      "result": {
+        "answer_chars": 212,
+        "answer_text": "I can't advise on that, I'm afraid—it's best to check with the dentist or hygienist before you leave, or give them a quick call if you need guidance. They'll let you know what's safe while the numbness wears off!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.252190Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.257899Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.09,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 212,
+        "answer_text": "I can't advise on that, I'm afraid—it's best to check with the dentist or hygienist before you leave, or give them a quick call if you need guidance. They'll let you know what's safe while the numbness wears off!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.258290Z"
+    },
+    {
+      "duration_ms": 2313.65,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I can't advise on that, I'm afraid—it's best to check with the dentist or hygienist before you leave, or give them a quick call if you need guidance. They'll let you know what's safe while the numbness wears off!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VZ7ZNS41ZT8DFN68JJKCD4"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.259350Z"
+    },
+    {
+      "message_id": "01M3VZ81YMSYHPJ7BMVKA86BWN",
+      "chat_id": "01M3VZ7ZK6P9FR1CQGV1ZYV4D1",
+      "sender": "assistant",
+      "content": "I can't advise on that, I'm afraid—it's best to check with the dentist or hygienist before you leave, or give them a quick call if you need guidance. They'll let you know what's safe while the numbness wears off!",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ7ZNS41ZT8DFN68JJKCD4",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:40.298771Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ7ZNS41ZT8DFN68JJKCD4": "a4b7a97c54df00daaff50c516bb9b5c3"
+  }
+}

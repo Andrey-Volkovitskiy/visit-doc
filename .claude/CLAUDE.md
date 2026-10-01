@@ -110,11 +110,11 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M321DWRXSVSY7GW9RY3CR9YW`** - the whole set at 97 cases, taken on `12341e1`,
-the first v2 run that is scoreable. The 2b record under `specs/012-golden-set-metrics/evaluation/`
-is not: the set was reworked into v2, whose case ids are all new, so that record selects ids the
-set no longer holds and both `compare` and `score` refuse it. It stays frozen as the record
-FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
+`evals/baselines/01M3VYV0RYA8N8RF2S1RQE5PSF`** - the whole set at 146 cases, taken on `e28479a`
+after Phase 4b extended the corpus to 19 entries, and before any retriever change. The earlier
+v2 baseline `01M321DWRXSVSY7GW9RY3CR9YW` no longer re-scores - the corpus pin changed and six of
+its labels gained a citation - and stays as the record of the 9-entry build, as the 2b record
+under `specs/012-golden-set-metrics/evaluation/` stays frozen as FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
 is evidence rather than a threshold - there is still no noise band, so nothing there is a number a
 later run has to beat.
 **Never start a full `make eval-run` to check a fix before the cases it touches have passed on

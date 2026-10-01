@@ -1,0 +1,720 @@
+{
+  "case_id": "G-a-12",
+  "chat_id": "01M3VYX1ZQR7T56PPYF7H9R40K",
+  "patient_id": "01M3VYX20ABQKG5VT61CGCRWD1",
+  "attempts": 1,
+  "elapsed_seconds": 13.482260679942556,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYX22FEJFF30FX5MQJAAGG",
+    "content": "Can you move my Thursday appointment to Friday at 12?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYXF23QX9EA8MKG8SS18E3",
+    "content": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Can you move my Thursday appointment to Friday at 12?",
+        "query": "move my Thursday appointment to Friday at 12"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "chat_id": "01M3VYX1ZQR7T56PPYF7H9R40K",
+      "sender": "patient",
+      "content": "Can you move my Thursday appointment to Friday at 12?",
+      "event": "message.persisted",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:39.960852Z"
+    },
+    {
+      "message": "Can you move my Thursday appointment to Friday at 12?",
+      "message_ids_unified": [
+        "01M3VYX22FEJFF30FX5MQJAAGG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:39.961132Z"
+    },
+    {
+      "trace_id": "4ec61c054505baa4ab183e161414fdca",
+      "event": "turn.traced",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:39.962904Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:39.965373Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3213,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.028210Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Can you move my Thursday appointment to Friday at 12?",
+          "query": "move my Thursday appointment to Friday at 12"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.028939Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1064.53,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Can you move my Thursday appointment to Friday at 12?",
+            "query": "move my Thursday appointment to Friday at 12"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.029622Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.031826Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.041552Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:41.042116Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Thursday appointment to Friday at 12?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:41.042322Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 58,
+        "cache_read": 5830,
+        "cache_write": 131,
+        "cache_write_1h": 0,
+        "thinking": 26
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:43.205023Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2163.12,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:43.205561Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:43.205729Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:43.217477Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 12.03,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:43.218030Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Thursday appointment to Friday at 12?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "content": "{\"future\": [{\"id\": \"01M3VYX21X6FZ55X7PFHJPK1E8\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-05T11:00:00\", \"ends_at\": \"2026-03-05T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:43.218341Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 280,
+        "cache_read": 5961,
+        "cache_write": 242,
+        "cache_write_1h": 0,
+        "thinking": 96
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:46.397357Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 3179.32,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:46.397983Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "arguments": {
+        "practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0",
+        "from_date": "2026-03-06",
+        "to_date": "2026-03-06",
+        "excluded_appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:46.398337Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:46.419345Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 21.31,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:46.419899Z"
+    },
+    {
+      "iteration": 3,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Thursday appointment to Friday at 12?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "content": "{\"future\": [{\"id\": \"01M3VYX21X6FZ55X7PFHJPK1E8\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-05T11:00:00\", \"ends_at\": \"2026-03-05T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_018nvpayC8j6VEz13HaxHteQ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0",
+                "from_date": "2026-03-06",
+                "to_date": "2026-03-06",
+                "excluded_appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_018nvpayC8j6VEz13HaxHteQ",
+              "content": "{\"available_starts\": [\"2026-03-06T09:00:00\", \"2026-03-06T10:00:00\", \"2026-03-06T11:00:00\", \"2026-03-06T12:00:00\", \"2026-03-06T13:00:00\", \"2026-03-06T14:00:00\", \"2026-03-06T15:00:00\", \"2026-03-06T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:46.420204Z"
+    },
+    {
+      "call": "handle_booking.model[3]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 206,
+        "cache_read": 6203,
+        "cache_write": 429,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:50.963647Z"
+    },
+    {
+      "iteration": 3,
+      "duration_ms": 4544.31,
+      "tool_names": [
+        "reschedule_appointment"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:50.964803Z"
+    },
+    {
+      "tool_name": "reschedule_appointment",
+      "iteration": 3,
+      "arguments": {
+        "appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8",
+        "new_starts_at": "2026-03-06T12:00:00",
+        "expected_starts_at": "2026-03-05T11:00:00",
+        "expected_practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:50.965246Z"
+    },
+    {
+      "method": "RescheduleAppointment",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:51.056447Z"
+    },
+    {
+      "tool_name": "reschedule_appointment",
+      "iteration": 3,
+      "status": "changed",
+      "reason": null,
+      "duration_ms": 101.97,
+      "event": "booking.tool_result",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:51.067471Z"
+    },
+    {
+      "iteration": 4,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Thursday appointment to Friday at 12?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01HHGr1dxoYXCFpU7NUov9CC",
+              "content": "{\"future\": [{\"id\": \"01M3VYX21X6FZ55X7PFHJPK1E8\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-05T11:00:00\", \"ends_at\": \"2026-03-05T12:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_018nvpayC8j6VEz13HaxHteQ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0",
+                "from_date": "2026-03-06",
+                "to_date": "2026-03-06",
+                "excluded_appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_018nvpayC8j6VEz13HaxHteQ",
+              "content": "{\"available_starts\": [\"2026-03-06T09:00:00\", \"2026-03-06T10:00:00\", \"2026-03-06T11:00:00\", \"2026-03-06T12:00:00\", \"2026-03-06T13:00:00\", \"2026-03-06T14:00:00\", \"2026-03-06T15:00:00\", \"2026-03-06T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_016P36gtbF8Ed3sKaqU3DmFJ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8",
+                "new_starts_at": "2026-03-06T12:00:00",
+                "expected_starts_at": "2026-03-05T11:00:00",
+                "expected_practitioner_id": "01M3VYV0QBX2X0SP50RWGEFWH0"
+              },
+              "name": "reschedule_appointment",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_016P36gtbF8Ed3sKaqU3DmFJ",
+              "content": "{\"status\": \"changed\", \"change\": \"rescheduled\", \"appointment\": {\"id\": \"01M3VYX21X6FZ55X7PFHJPK1E8\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-06T12:00:00\", \"ends_at\": \"2026-03-06T13:00:00\", \"status\": \"standing\"}, \"previous_starts_at\": \"2026-03-05T11:00:00\", \"previous_practitioner_full_name\": \"William Osler\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:46:51.067737Z"
+    },
+    {
+      "call": "handle_booking.model[4]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 56,
+        "cache_read": 6632,
+        "cache_write": 383,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.243114Z"
+    },
+    {
+      "iteration": 4,
+      "duration_ms": 2175.71,
+      "tool_names": [],
+      "text": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment.",
+      "event": "booking.model_call",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.243724Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 12212.6,
+      "result": {
+        "outcome": "rescheduled",
+        "appointment_id": "01M3VYX21X6FZ55X7PFHJPK1E8",
+        "iterations": 4,
+        "tool_calls": 3,
+        "answer_chars": 145,
+        "answer_text": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.244110Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.245897Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.48,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "rescheduled",
+        "citation_count": 0,
+        "answer_chars": 145,
+        "answer_text": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.246096Z"
+    },
+    {
+      "duration_ms": 13295.34,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment.",
+      "booking_outcome": "rescheduled",
+      "message_ids_unified": [
+        "01M3VYX22FEJFF30FX5MQJAAGG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.246415Z"
+    },
+    {
+      "message_id": "01M3VYXF23QX9EA8MKG8SS18E3",
+      "chat_id": "01M3VYX1ZQR7T56PPYF7H9R40K",
+      "sender": "assistant",
+      "content": "Your appointment with Dr. William Osler (General Practice) has been moved from Thursday at 11am to Friday at 12pm, still a 60-minute appointment.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYX22FEJFF30FX5MQJAAGG",
+      "level": "info",
+      "timestamp": "2026-10-01T14:46:53.260765Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-06T12:00:00",
+      "status": "standing"
+    }
+  ],
+  "reply_skipped": true,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-06T12:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-06T12:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VYX22FEJFF30FX5MQJAAGG": "4ec61c054505baa4ab183e161414fdca"
+  }
+}
