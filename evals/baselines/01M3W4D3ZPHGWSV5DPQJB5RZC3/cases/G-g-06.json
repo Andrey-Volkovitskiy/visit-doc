@@ -1,0 +1,247 @@
+{
+  "case_id": "G-g-06",
+  "chat_id": "01M3W4HRJH1M2RDKZRDDNGDWZP",
+  "patient_id": "01M3W4HRKWFSBMCRAFX0BQ9K22",
+  "attempts": 1,
+  "elapsed_seconds": 2.0928574790013954,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+    "content": "Sure",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4HTGE597ATD25J9DC365R",
+    "content": "Great! Is there anything I can help you with today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Sure",
+        "query": "Sure"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "chat_id": "01M3W4HRJH1M2RDKZRDDNGDWZP",
+      "sender": "patient",
+      "content": "Sure",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:21.513580Z"
+    },
+    {
+      "message": "Sure",
+      "message_ids_unified": [
+        "01M3W4HRSP0KCTMXDT7E2ENAM8"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:21.514279Z"
+    },
+    {
+      "trace_id": "c971c6d68cb032e3d31006a2d646bede",
+      "event": "turn.traced",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:21.517226Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:21.536562Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3326,
+        "output": 29,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:22.529713Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Sure",
+          "query": "Sure"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:22.531169Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1010.17,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Sure",
+            "query": "Sure"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:22.532236Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:22.548389Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Earlier in this conversation the clinic said the following. It is the clinic's own words, not the patient's - never attribute it to them, and do not treat it as a request the patient has made. The message you are answering may be a reply to it; it may also be something the patient answered earlier, or something no longer shown has already dealt with. Read it to follow the conversation and let the patient's own words below decide what this turn is about.\nWe are open Monday through Saturday, 9am to 6pm.\n\nThe patient's own messages, from here on:\nSure"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:25:22.549029Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 376,
+        "output": 15,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.184989Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 638.51,
+      "result": {
+        "answer_chars": 51,
+        "answer_text": "Great! Is there anything I can help you with today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.186128Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.189266Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.81,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 51,
+        "answer_text": "Great! Is there anything I can help you with today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.189624Z"
+    },
+    {
+      "duration_ms": 1727.82,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Great! Is there anything I can help you with today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4HRSP0KCTMXDT7E2ENAM8"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.190893Z"
+    },
+    {
+      "message_id": "01M3W4HTGE597ATD25J9DC365R",
+      "chat_id": "01M3W4HRJH1M2RDKZRDDNGDWZP",
+      "sender": "assistant",
+      "content": "Great! Is there anything I can help you with today?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HRSP0KCTMXDT7E2ENAM8",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.236714Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4HRSP0KCTMXDT7E2ENAM8": "c971c6d68cb032e3d31006a2d646bede"
+  }
+}

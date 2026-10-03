@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-05",
+  "chat_id": "01M3VYZ2ENTFRTXR1AKHVDCJX1",
+  "patient_id": "01M3VYZ2F8M1D4JNQ9FCF06AV0",
+  "attempts": 1,
+  "elapsed_seconds": 1.369987439014949,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+    "content": "Can you refund my last visit?",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYZ3QAD9KBWK0JKKGHBX1K",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Can you refund my last visit?",
+        "query": "Can you refund my last visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "chat_id": "01M3VYZ2ENTFRTXR1AKHVDCJX1",
+      "sender": "patient",
+      "content": "Can you refund my last visit?",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:45.954774Z"
+    },
+    {
+      "message": "Can you refund my last visit?",
+      "message_ids_unified": [
+        "01M3VYZ2GQWXX206Q5A6Q79RVH"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:45.955040Z"
+    },
+    {
+      "trace_id": "e36ce0b387b19891707dde1fde2b9fe9",
+      "event": "turn.traced",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:45.956269Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:45.958348Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.168163Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Can you refund my last visit?",
+          "query": "Can you refund my last visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.168898Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1211.67,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "Can you refund my last visit?",
+            "query": "Can you refund my last visit?"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.169434Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.172410Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.5,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.172633Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.173834Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.39,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.174018Z"
+    },
+    {
+      "duration_ms": 1231.16,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VYZ2GQWXX206Q5A6Q79RVH"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.174377Z"
+    },
+    {
+      "message_id": "01M3VYZ3QAD9KBWK0JKKGHBX1K",
+      "chat_id": "01M3VYZ2ENTFRTXR1AKHVDCJX1",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.192899Z"
+    },
+    {
+      "chat_id": "01M3VYZ2ENTFRTXR1AKHVDCJX1",
+      "reason": "not_authorized",
+      "message_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3VYZ2GQWXX206Q5A6Q79RVH",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:47.204210Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3VYZ2GQWXX206Q5A6Q79RVH": "e36ce0b387b19891707dde1fde2b9fe9"
+  }
+}

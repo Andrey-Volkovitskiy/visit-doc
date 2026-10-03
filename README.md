@@ -90,6 +90,31 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   FAQ path, and therefore one more thing that can be down. That is bounded by a 5-second deadline and
   absorbed rather than propagated — a failed or slow reranker costs the answer its precision stage,
   never the turn (`specs/008-reranked-retrieval-pipeline/`).
+- **No similarity floor in front of the reranker** (018): the shortlist is the top 5 of the dense
+  search by rank alone, and the rerank floor is the one gate that decides whether a question is
+  answered. A cosine floor of 0.25 sat there before, as a cheap early abstention. Measured on the
+  extended corpus it was dropping right answers - "PR-4", "braces", "HC-9", short questions whose
+  chunk dense search had ranked *first* but scored 0.22-0.24 against a long section - and removing
+  it answered all three while every labelled gap still abstained. The tradeoff accepted: a rerank
+  call on every FAQ request, including the few an early floor used to stop, which was four calls in
+  a 146-case run. A reranker outage is the one place a floor still applies
+  (`UNRERANKED_SIMILARITY_FLOOR`), because with no rerank score nothing else has judged the
+  shortlist (`specs/018-hybrid-retrieval/evaluation/findings.md`).
+- **Dense retrieval only - no BM25, no hybrid fusion** (018): planned as dense + BM25 fused by
+  Reciprocal Rank Fusion, and not built, on measurement. A lexical branch earns its place on the
+  chunks dense search ranks too low to reach the reranker - exact plan names, form numbers,
+  procedure codes - so the extended set was given 42 cases in five families aimed at retrieval
+  weaknesses, eight of them written to favour lexical matching. Dense search put the right chunk
+  in the reranker's shortlist for every answerable request that reached retrieval (similarity
+  hit@5 83/83), and the reranker ranked it first every time (rerank hit@1 83/83). Offline, local
+  BM25 ranked the cited entry first in 4 of the 8 lexical cases against dense search's 7, and the
+  one case BM25 won alone the reranker recovered anyway. With the retrieval stages already perfect
+  there is nothing for fusion to move, and every remaining miss was the classifier routing or the
+  answerer declining. The tradeoff accepted: a sparse vector per point, a second prefetch carrying
+  the session filter and an ablation setting are left unbuilt, and the claim that dense search
+  suffices holds for a 19-entry, 62-chunk corpus, not beyond it - a corpus large enough for the
+  25-wide pool to stop reaching the right chunk is when to reconsider
+  (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Postgres drivers**: `asyncpg` for the app, `psycopg` v3 (sync) for Alembic migrations —
   the conventional SQLAlchemy 2.0 pairing, rather than forcing Alembic's sync runner through
   `asyncpg` via `run_sync`.
@@ -98,9 +123,19 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   LangGraph lands in Phase 1 once real branching (parallel specialist nodes) exists.
 - **Streaming transport**: NDJSON over a plain `fetch` + `ReadableStream`, not SSE/`EventSource`
   (which can't carry a POST body) or WebSocket (unnecessary for one request/response stream).
-- **Chunking**: fixed-size (~1,000 chars, ~150-char overlap), preferring paragraph/sentence
-  boundaries over mid-word cuts — simple and defensible at this phase's scale; semantic chunking
-  and reranking are deferred to Phase 1.
+- **Chunking**: by heading section where an entry has markdown headings, every chunk prefixed with
+  its heading path (`# Dental care guide` / `## Dental insurance`); fixed-size (~1,000 chars,
+  ~150-char overlap, preferring paragraph and sentence boundaries) inside an over-long section and
+  for an entry with no heading, which is every Q&A entry - those chunk exactly as they did. Chosen
+  over semantic chunking because the documents already mark their own sections, so a model
+  deciding where one ends would buy nothing and add a call to every save. Fixed-size windows were
+  the Phase 0 choice and stopped being defensible once the corpus held long documents (018): a
+  chunk ended on a bare heading, began mid-sentence, and put one section's sentence beside
+  another's - "do you take Delta Dental PPO?" was read as being about taking a medicine because the
+  blood-thinner paragraph shared its chunk, declined 10 times in 10 replays where section chunks
+  answer it 10 in 10. The tradeoff accepted: more, smaller chunks (36 to 62 on the starter corpus),
+  so more of the 25-wide pool is spent on one document, and a heading prefix repeated in every
+  chunk's embedding (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Groundedness gate**: a pre-generation similarity-threshold check on retrieval, not a second
   LLM call (LLM-as-judge) — satisfies the constitution's mandatory-abstention principle without
   doubling latency/cost on every question; a fuller check lands in Phase 1/2.
@@ -427,7 +462,7 @@ capabilities — full rationale and alternatives considered live in
   corpus behind a console with a delete button and no login is the design that stayed rejected.
 - **All of it or none of it, and never at the cost of the chat.** The seeding follows the same shape
   a save does: every entry is chunked and embedded first, its chunks are written under a revision
-  nothing yet names live, and one commit publishes all nine at once. So a failure at any step leaves
+  nothing yet names live, and one commit publishes all of them at once. So a failure at any step leaves
   the session with no corpus rather than part of one, and the cost is leaked chunks. It is also
   never fatal — `POST /chats` still returns a working chat when Voyage or Qdrant is unreachable,
   and the empty corpus that results is the state the rest of the system already handles: the console

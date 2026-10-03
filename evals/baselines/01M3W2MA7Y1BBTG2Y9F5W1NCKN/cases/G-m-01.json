@@ -1,0 +1,1367 @@
+{
+  "case_id": "G-m-01",
+  "chat_id": "01M3W2VVYAQW8T4ZYX9X4NY2XN",
+  "patient_id": "01M3W2VVYTN1CQC8XWEM6TA72X",
+  "attempts": 1,
+  "elapsed_seconds": 5.374667729018256,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What are your opening hours?",
+          "answer": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2809,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "What should I bring to my first visit?",
+          "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+            },
+            {
+              "entry_id": 2810,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+    "content": "What are your opening hours, and what should I bring to my first visit?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2W14SR44ZXR3X2V889CCY",
+    "content": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nFor your first visit, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What are your opening hours?",
+        "answer": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2809,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "What should I bring to my first visit?",
+        "answer": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2803,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          },
+          {
+            "entry_id": 2817,
+            "chunk_index": 0,
+            "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+          },
+          {
+            "entry_id": 2810,
+            "chunk_index": 0,
+            "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What are your opening hours?",
+        "query": "What are your opening hours?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "What should I bring to my first visit?",
+        "query": "What should I bring to my first visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "chat_id": "01M3W2VVYAQW8T4ZYX9X4NY2XN",
+      "sender": "patient",
+      "content": "What are your opening hours, and what should I bring to my first visit?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:55.285620Z"
+    },
+    {
+      "message": "What are your opening hours, and what should I bring to my first visit?",
+      "message_ids_unified": [
+        "01M3W2VW09Y0EQ0NC9G7R225YB"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:55.286017Z"
+    },
+    {
+      "trace_id": "3fc72448e021b852c7aae258eba28db9",
+      "event": "turn.traced",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:55.288712Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:55.291085Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3217,
+        "output": 58,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.373093Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What are your opening hours?",
+          "query": "What are your opening hours?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "What should I bring to my first visit?",
+          "query": "What should I bring to my first visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.373550Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1083.13,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What are your opening hours?",
+            "query": "What are your opening hours?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "What should I bring to my first visit?",
+            "query": "What should I bring to my first visit?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.373945Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.376125Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.638789Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.5959,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.43069535,
+          "considered": true,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.39086157,
+          "considered": true,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you when you check in, and you can choose to wait or to pick a new time. When we know about a delay of more than 30 minutes before you leave home, we send you a text message instead.\n\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.38674107,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.3571937,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.3289745,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.32834256,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.30089688,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.29974985,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.29346532,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.28375965,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.27941087,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.2740583,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.2725535,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.26949528,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.2667631,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.2640739,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.26141754,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.25235796,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.24486913,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.24419384,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.23901284,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.23653908,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.23514919,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2341646,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.649663Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.5959
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.43069535
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.39086157
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.38674107
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.3571937
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.3289745
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.32834256
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.30089688
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.29974985
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.29346532
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.28375965
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.27941087
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.2740583
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.2725535
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.26949528
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.2667631
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.2640739
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.26141754
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.25235796
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.24486913
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.24419384
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.23901284
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.23653908
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.23514919
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2341646
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.651406Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.742895Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.5241217,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.39305013,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.38397443,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.3709517,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.34678835,
+          "considered": true,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.31024575,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.303532,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.29706323,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.2816838,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.27441466,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.27119064,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.27053866,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.26433265,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.25293815,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.24747398,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.24402913,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.24287713,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.24036965,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.24036124,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.23690261,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.23323312,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.23011479,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.22180003,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.21949905,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.21547803,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.752771Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.5241217
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.39305013
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.38397443
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.3709517
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.34678835
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.31024575
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.303532
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.29706323
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.2816838
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.27441466
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.27119064
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.27053866
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.26433265
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.25293815
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.24747398
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.24402913
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.24287713
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.24036965
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.24036124
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.23690261
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.23323312
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.23011479
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.22180003
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.21949905
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.21547803
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.754712Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 316.93,
+      "scores": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.5959,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.43069535,
+          "rerank_score": 0.50390625
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.38674107,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.39086157,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.3571937,
+          "rerank_score": 0.38671875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.969771Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "rerank_score": 0.82421875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "rerank_score": 0.50390625
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "rerank_score": 0.38671875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.971079Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5959,
+      "best_rerank_score": 0.82421875,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:56.971837Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What are your opening hours?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:55:56.972208Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 279.83,
+      "scores": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.5241217,
+          "rerank_score": 0.8515625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.3709517,
+          "rerank_score": 0.7578125
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.39305013,
+          "rerank_score": 0.6328125
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.38397443,
+          "rerank_score": 0.58984375
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.34678835,
+          "rerank_score": 0.51953125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:57.036028Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "rerank_score": 0.8515625
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "rerank_score": 0.7578125
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "rerank_score": 0.6328125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "rerank_score": 0.51953125
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "rerank_score": 0.58984375
+        }
+      ],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:57.037973Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5241217,
+      "best_rerank_score": 0.8515625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:57.039341Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.\n\n# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n\n\nQuestion: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.\n\nQuestion: What should I bring to my first visit?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:55:57.039915Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 720,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 1,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:58.255908Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 344,
+        "output": 76,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:58.774533Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2399.45,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 4,
+        "answer_chars": 292,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What are your opening hours?",
+            "verdict": "answered",
+            "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          },
+          {
+            "position": 1,
+            "question": "What should I bring to my first visit?",
+            "verdict": "answered",
+            "answer_text": "Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:58.775319Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:58.776686Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1135,
+        "output": 117,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T15:56:00.531079Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1755.17,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 4,
+        "answer_chars": 316,
+        "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nFor your first visit, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:56:00.531627Z"
+    },
+    {
+      "duration_ms": 5258.34,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2809,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.5959,
+              "rerank_score": 0.82421875
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2803,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+              "similarity_score": 0.5241217,
+              "rerank_score": 0.8515625
+            },
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+              "similarity_score": 0.3709517,
+              "rerank_score": 0.7578125
+            },
+            {
+              "entry_id": 2810,
+              "chunk_index": 0,
+              "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+              "similarity_score": 0.39305013,
+              "rerank_score": 0.6328125
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nFor your first visit, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W2VW09Y0EQ0NC9G7R225YB"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:56:00.532049Z"
+    },
+    {
+      "message_id": "01M3W2W14SR44ZXR3X2V889CCY",
+      "chat_id": "01M3W2VVYAQW8T4ZYX9X4NY2XN",
+      "sender": "assistant",
+      "content": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nFor your first visit, please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2VW09Y0EQ0NC9G7R225YB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:56:00.550925Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2VW09Y0EQ0NC9G7R225YB": "3fc72448e021b852c7aae258eba28db9"
+  }
+}

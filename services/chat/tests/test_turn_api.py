@@ -169,7 +169,7 @@ def test_abstention_on_unrelated_question(seeded_entry: int) -> None:
 
     assert len(lines) == 1
     assert lines[0]["type"] == "done"
-    assert _verdicts(lines[0]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _verdicts(lines[0]) == [FaqVerdict.ABSTAINED_RERANK_FLOOR]
     assert _cited(lines[0]) == []
 
 
@@ -261,12 +261,10 @@ def test_abstained_turn_logs_full_trace_under_one_turn_id(seeded_entry: int) -> 
     assert "turn.message_received" in events
     assert "turn.message_embedded" in events
     assert "faq.retrieval_completed" in events
-    assert (
-        events["faq.verdict"]["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
-    )
+    assert events["faq.verdict"]["verdict"] == FaqVerdict.ABSTAINED_RERANK_FLOOR.value
     done = events["turn.completed"]
     assert done["outcome"] == "faq"
-    assert _verdicts(done) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value]
+    assert _verdicts(done) == [FaqVerdict.ABSTAINED_RERANK_FLOOR.value]
     assert "abstention_message" in done
     assert "intent.classified" in events
     assert (
@@ -981,7 +979,7 @@ async def test_followup_still_abstains_when_neither_message_is_grounded(
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_RERANK_FLOOR]
 
 
 async def test_burst_cancels_earlier_generation_and_yields_one_reply(
@@ -1161,7 +1159,7 @@ def test_get_chat_history_preserves_abstention(seeded_entry: int) -> None:
             history_response = client.get(f"/chats/{chat_id_for(client)}/messages")
 
     messages = history_response.json()["messages"]
-    assert _verdicts(messages[1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _verdicts(messages[1]) == [FaqVerdict.ABSTAINED_RERANK_FLOOR]
     assert _cited(messages[1]) == []
     assert messages[1]["content"] == _ABSTENTION_MESSAGE
 
@@ -1424,7 +1422,7 @@ async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) 
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _verdicts(lines[-1]) == [FaqVerdict.ABSTAINED_RERANK_FLOOR]
     # No speculative answer alongside the abstention: the turn produced no tokens at
     # all, so there is nothing for a patient to mistake for an answer (FR-003b).
     assert not [line for line in lines if line["type"] == "token"]

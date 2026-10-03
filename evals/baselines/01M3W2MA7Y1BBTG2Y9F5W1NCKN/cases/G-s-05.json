@@ -1,0 +1,760 @@
+{
+  "case_id": "G-s-05",
+  "chat_id": "01M3W30P42J1QVE1W3F5700QRW",
+  "patient_id": "01M3W30P4RZKGNMD3H0N3XXVM9",
+  "attempts": 1,
+  "elapsed_seconds": 2.9893958860775456,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What goes on the PR-4?",
+          "answer": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W30P6BRYPMYXKCZNY18GCM",
+    "content": "What goes on the PR-4?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W30S05FG15J0A9EBQH8V44",
+    "content": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What goes on the PR-4?",
+        "answer": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2817,
+            "chunk_index": 0,
+            "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What goes on the PR-4?",
+        "query": "What goes on the PR-4?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "chat_id": "01M3W30P42J1QVE1W3F5700QRW",
+      "sender": "patient",
+      "content": "What goes on the PR-4?",
+      "event": "message.persisted",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:33.175878Z"
+    },
+    {
+      "message": "What goes on the PR-4?",
+      "message_ids_unified": [
+        "01M3W30P6BRYPMYXKCZNY18GCM"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:33.176157Z"
+    },
+    {
+      "trace_id": "f022fe1ae3b13dbf0fabb5546e227343",
+      "event": "turn.traced",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:33.177429Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:33.179513Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.203009Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What goes on the PR-4?",
+          "query": "What goes on the PR-4?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.203700Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1025.0,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What goes on the PR-4?",
+            "query": "What goes on the PR-4?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.204204Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.206919Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.488025Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.22924294,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.15916944,
+          "considered": true,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.15285607,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.\n\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.15032138,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.13798326,
+          "considered": true,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.\n\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in kiosk. Reminders are sent to the phone number we hold when the reminder goes out.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.12571153,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.1149309,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.110634,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.10369095,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.09939109,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.098003946,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.09327032,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.09236522,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.09123029,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.08720121,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.08272517,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.08197732,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.08113157,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.07785257,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.07205514,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.06721185,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.06512822,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.063147366,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.061816357,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.06084716,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.499173Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.22924294
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.15916944
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.15285607
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.15032138
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.13798326
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.12571153
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.1149309
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 0,
+          "similarity_score": 0.110634
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.10369095
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 1,
+          "similarity_score": 0.09939109
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.098003946
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.09327032
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.09236522
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.09123029
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.08720121
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.08272517
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.08197732
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.08113157
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.07785257
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.07205514
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.06721185
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.06512822
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.063147366
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.061816357
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.06084716
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.501493Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 296.88,
+      "scores": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.22924294,
+          "rerank_score": 0.78515625
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.13798326,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.15032138,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.15916944,
+          "rerank_score": 0.306640625
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.15285607,
+          "rerank_score": 0.28515625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.799910Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "rerank_score": 0.78515625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "rerank_score": 0.3515625
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "rerank_score": 0.306640625
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "rerank_score": 0.28515625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.801039Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.22924294,
+      "best_rerank_score": 0.78515625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:34.802139Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n\n\nQuestion: What goes on the PR-4?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:34.802649Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 570,
+        "output": 42,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.030455Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1824.74,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 114,
+        "answer_text": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What goes on the PR-4?",
+            "verdict": "answered",
+            "answer_text": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.031270Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.032733Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.39,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 114,
+        "answer_text": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.032895Z"
+    },
+    {
+      "duration_ms": 2869.38,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2817,
+              "chunk_index": 0,
+              "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.\n\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\n",
+              "similarity_score": 0.22924294,
+              "rerank_score": 0.78515625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W30P6BRYPMYXKCZNY18GCM"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.033166Z"
+    },
+    {
+      "message_id": "01M3W30S05FG15J0A9EBQH8V44",
+      "chat_id": "01M3W30P42J1QVE1W3F5700QRW",
+      "sender": "assistant",
+      "content": "Form PR-4 (Medical History Questionnaire) covers your past illnesses, operations, current medicines and allergies.",
+      "event": "message.persisted",
+      "turn_id": "01M3W30P6BRYPMYXKCZNY18GCM",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:36.044314Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W30P6BRYPMYXKCZNY18GCM": "f022fe1ae3b13dbf0fabb5546e227343"
+  }
+}

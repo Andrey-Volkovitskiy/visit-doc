@@ -1,0 +1,255 @@
+{
+  "case_id": "G-g-04",
+  "chat_id": "01M3W21PN3CSG3GQTAHJ74VZMC",
+  "patient_id": "01M3W21PNN1XY8XXW7Z9TJMEJ9",
+  "attempts": 1,
+  "elapsed_seconds": 1.712858733953908,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W21PQA7B70CRMV3Q848EC3",
+    "content": "OK",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W21R93P1V18801HZMKDCR2",
+    "content": "Great! Feel free to reach out if you need anything else.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "OK",
+        "query": "OK"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "chat_id": "01M3W21PN3CSG3GQTAHJ74VZMC",
+      "sender": "patient",
+      "content": "OK",
+      "event": "message.persisted",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:37.911224Z"
+    },
+    {
+      "message": "OK",
+      "message_ids_unified": [
+        "01M3W21PQA7B70CRMV3Q848EC3"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:37.911537Z"
+    },
+    {
+      "trace_id": "a855ee85fd0f1be02c07075c3e7b72d6",
+      "event": "turn.traced",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:37.912976Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:37.915743Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3225,
+        "output": 29,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:38.819493Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "OK",
+          "query": "OK"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:38.820787Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 906.35,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "OK",
+            "query": "OK"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:38.821786Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:38.827101Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What time should I arrive?"
+        },
+        {
+          "role": "assistant",
+          "content": "Please arrive 15 minutes before your appointment time."
+        },
+        {
+          "role": "user",
+          "content": "OK"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:41:38.827654Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 275,
+        "output": 16,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "small_talk",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.483921Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 658.05,
+      "result": {
+        "answer_chars": 56,
+        "answer_text": "Great! Feel free to reach out if you need anything else.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.484524Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.486163Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.46,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 56,
+        "answer_text": "Great! Feel free to reach out if you need anything else."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.486403Z"
+    },
+    {
+      "duration_ms": 1588.03,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Great! Feel free to reach out if you need anything else.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W21PQA7B70CRMV3Q848EC3"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.486720Z"
+    },
+    {
+      "message_id": "01M3W21R93P1V18801HZMKDCR2",
+      "chat_id": "01M3W21PN3CSG3GQTAHJ74VZMC",
+      "sender": "assistant",
+      "content": "Great! Feel free to reach out if you need anything else.",
+      "event": "message.persisted",
+      "turn_id": "01M3W21PQA7B70CRMV3Q848EC3",
+      "level": "info",
+      "timestamp": "2026-10-01T15:41:39.503142Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W21PQA7B70CRMV3Q848EC3": "a855ee85fd0f1be02c07075c3e7b72d6"
+  }
+}

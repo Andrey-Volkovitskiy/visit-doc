@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-01",
+  "chat_id": "01M3W2RH1WMXGCWKZVBXD40H96",
+  "patient_id": "01M3W2RH2FWP5BVB9H6GQFC3MM",
+  "attempts": 1,
+  "elapsed_seconds": 1.2481881389394403,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+    "content": "I'd like you to write me a sick note for my employer.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2RJ72BBXE3BCW5TDYR9NE",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "I'd like you to write me a sick note for my employer.",
+        "query": "write me a sick note for my employer"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "chat_id": "01M3W2RH1WMXGCWKZVBXD40H96",
+      "sender": "patient",
+      "content": "I'd like you to write me a sick note for my employer.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:05.838458Z"
+    },
+    {
+      "message": "I'd like you to write me a sick note for my employer.",
+      "message_ids_unified": [
+        "01M3W2RH406D2J9N1XPQ8N9G7D"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:05.838724Z"
+    },
+    {
+      "trace_id": "b3376c945fdb1db9d309b099fdb6542b",
+      "event": "turn.traced",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:05.840037Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:05.843813Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3215,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.935125Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "I'd like you to write me a sick note for my employer.",
+          "query": "write me a sick note for my employer"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.936084Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1094.81,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "I'd like you to write me a sick note for my employer.",
+            "query": "write me a sick note for my employer"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.936686Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.939100Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.51,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.939302Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.940607Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.39,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.940757Z"
+    },
+    {
+      "duration_ms": 1116.47,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2RH406D2J9N1XPQ8N9G7D"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.941093Z"
+    },
+    {
+      "message_id": "01M3W2RJ72BBXE3BCW5TDYR9NE",
+      "chat_id": "01M3W2RH1WMXGCWKZVBXD40H96",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.963464Z"
+    },
+    {
+      "chat_id": "01M3W2RH1WMXGCWKZVBXD40H96",
+      "reason": "not_authorized",
+      "message_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W2RH406D2J9N1XPQ8N9G7D",
+      "level": "info",
+      "timestamp": "2026-10-01T15:54:06.973501Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W2RH406D2J9N1XPQ8N9G7D": "b3376c945fdb1db9d309b099fdb6542b"
+  }
+}

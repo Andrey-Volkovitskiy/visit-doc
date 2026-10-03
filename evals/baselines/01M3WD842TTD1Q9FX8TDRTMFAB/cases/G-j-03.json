@@ -1,0 +1,760 @@
+{
+  "case_id": "G-j-03",
+  "chat_id": "01M3WDE661DB2MBK3KG32VDRJZ",
+  "patient_id": "01M3WDE66X34928Z954MW97V26",
+  "attempts": 1,
+  "elapsed_seconds": 3.6826894000405446,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Where are you based?",
+          "answer": "15a Willson St.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2980,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDE68XAV17JNZ1RQP00HKS",
+    "content": "Where are you based?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDE9Q0NPYXH1NJ7JCBEAYJ",
+    "content": "15a Willson St.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Where are you based?",
+        "answer": "15a Willson St.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2980,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Where are you based?",
+        "query": "Where is the clinic based?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "chat_id": "01M3WDE661DB2MBK3KG32VDRJZ",
+      "sender": "patient",
+      "content": "Where are you based?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:41.387276Z"
+    },
+    {
+      "message": "Where are you based?",
+      "message_ids_unified": [
+        "01M3WDE68XAV17JNZ1RQP00HKS"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:41.387590Z"
+    },
+    {
+      "trace_id": "28119cf795465bf34114b9533c83dcb7",
+      "event": "turn.traced",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:41.390265Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:41.392709Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3323,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:42.883477Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Where are you based?",
+          "query": "Where is the clinic based?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:42.884349Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1492.56,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Where are you based?",
+            "query": "Where is the clinic based?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:42.884985Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:42.887712Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.150292Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.4719097,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.4035352,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.34955624,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.34904328,
+          "considered": true,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instructions, follow those instead.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.3244592,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in kiosk. Reminders are sent to the phone number we hold when the reminder goes out.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.32200733,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.3202855,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.3038783,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.30335814,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.28157565,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.2771262,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.27087724,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.26468447,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.26269922,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.26094913,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.25426513,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.25147253,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.25099373,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.2484099,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.2482771,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.23822899,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.23528431,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 ho",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.23495755,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.23393449,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.23277226,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.182877Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.4719097
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.4035352
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.34955624
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.34904328
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.3244592
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.32200733
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.3202855
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.3038783
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.30335814
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.28157565
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.2771262
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.27087724
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 4,
+          "similarity_score": 0.26468447
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.26269922
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.26094913
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.25426513
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.25147253
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.25099373
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 3,
+          "similarity_score": 0.2484099
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.2482771
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 2,
+          "similarity_score": 0.23822899
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 4,
+          "similarity_score": 0.23528431
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.23495755
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.23393449
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.23277226
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.184678Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 322.95,
+      "scores": [
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "similarity_score": 0.4719097,
+          "rerank_score": 0.703125
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.4035352,
+          "rerank_score": 0.50390625
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.34904328,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "similarity_score": 0.3244592,
+          "rerank_score": 0.36328125
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "similarity_score": 0.34955624,
+          "rerank_score": 0.35546875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.509129Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2980,
+          "chunk_index": 0,
+          "rerank_score": 0.703125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "rerank_score": 0.50390625
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 4,
+          "rerank_score": 0.36328125
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 1,
+          "rerank_score": 0.35546875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.511186Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4719097,
+      "best_rerank_score": 0.703125,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:43.512437Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Where is the clinic based?\n\nQuestion: Where are you based?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:00:43.513087Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 380,
+        "output": 9,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.884902Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1998.64,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 15,
+        "answer_text": "15a Willson St.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Where are you based?",
+            "verdict": "answered",
+            "answer_text": "15a Willson St."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.886047Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.888402Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.7,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 15,
+        "answer_text": "15a Willson St."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.888779Z"
+    },
+    {
+      "duration_ms": 3516.64,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2980,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.4719097,
+              "rerank_score": 0.703125
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "15a Willson St.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDE68XAV17JNZ1RQP00HKS"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.889765Z"
+    },
+    {
+      "message_id": "01M3WDE9Q0NPYXH1NJ7JCBEAYJ",
+      "chat_id": "01M3WDE661DB2MBK3KG32VDRJZ",
+      "sender": "assistant",
+      "content": "15a Willson St.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDE68XAV17JNZ1RQP00HKS",
+      "level": "info",
+      "timestamp": "2026-10-01T19:00:44.906421Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDE68XAV17JNZ1RQP00HKS": "28119cf795465bf34114b9533c83dcb7"
+  }
+}

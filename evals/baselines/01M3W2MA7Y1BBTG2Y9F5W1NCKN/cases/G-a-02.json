@@ -1,0 +1,387 @@
+{
+  "case_id": "G-a-02",
+  "chat_id": "01M3W2MF4QE5QXKHC6AKMSYVPC",
+  "patient_id": "01M3W2MF58DESX4M3VPG3BRXSK",
+  "attempts": 1,
+  "elapsed_seconds": 5.192519601085223,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+    "content": "Do you have a dentist?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2MM58JY2XF09M0Y9HCM0M",
+    "content": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Do you have a dentist?",
+        "query": "Do you have a dentist?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "chat_id": "01M3W2MF4QE5QXKHC6AKMSYVPC",
+      "sender": "patient",
+      "content": "Do you have a dentist?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:52.798462Z"
+    },
+    {
+      "message": "Do you have a dentist?",
+      "message_ids_unified": [
+        "01M3W2MF6KRZS2ENH76YQ8HA85"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:52.798700Z"
+    },
+    {
+      "trace_id": "e76e29f4a8b697bd7376b3cf71a50617",
+      "event": "turn.traced",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:52.799809Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:52.802048Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3208,
+        "output": 33,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.023349Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Do you have a dentist?",
+          "query": "Do you have a dentist?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.024021Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1222.67,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Do you have a dentist?",
+            "query": "Do you have a dentist?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.024443Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.026778Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.036644Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:54.037419Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a dentist?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:51:54.037656Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 115,
+        "cache_read": 5834,
+        "cache_write": 121,
+        "cache_write_1h": 0,
+        "thinking": 85
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:56.145693Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2108.72,
+      "tool_names": [
+        "list_practitioners"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:56.146555Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:56.146853Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:56.156538Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 10.2,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:56.157283Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Do you have a dentist?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01FUGuwoN7ReNzRaimwF2tiY",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_practitioners",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01FUGuwoN7ReNzRaimwF2tiY",
+              "content": "{\"practitioners\": [{\"id\": \"01M3W2MA6E3S5T0T5ZCBHM02W6\", \"full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"appointment_duration_minutes\": 60, \"bookable\": true}, {\"id\": \"01M3W2MA6KP4DPKKYB3Q2F59AR\", \"full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"appointment_duration_minutes\": 60, \"bookable\": true}]}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:51:56.157839Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 73,
+        "cache_read": 5955,
+        "cache_write": 287,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.854253Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1697.25,
+      "tool_names": [],
+      "text": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.855440Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 3829.57,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 203,
+        "answer_text": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.856074Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.858236Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.59,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 203,
+        "answer_text": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.858516Z"
+    },
+    {
+      "duration_ms": 5071.01,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M3W2MF6KRZS2ENH76YQ8HA85"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.858991Z"
+    },
+    {
+      "message_id": "01M3W2MM58JY2XF09M0Y9HCM0M",
+      "chat_id": "01M3W2MF4QE5QXKHC6AKMSYVPC",
+      "sender": "assistant",
+      "content": "Yes — we have Dr. Andreas Vesalius, who practices Dentistry, and he's currently accepting appointments. Each appointment with him is 60 minutes. Would you like me to check his availability for a booking?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2MF6KRZS2ENH76YQ8HA85",
+      "level": "info",
+      "timestamp": "2026-10-01T15:51:57.876199Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2MF6KRZS2ENH76YQ8HA85": "e76e29f4a8b697bd7376b3cf71a50617"
+  }
+}

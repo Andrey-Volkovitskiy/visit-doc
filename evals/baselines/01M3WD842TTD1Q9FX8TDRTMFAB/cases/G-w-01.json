@@ -1,0 +1,777 @@
+{
+  "case_id": "G-w-01",
+  "chat_id": "01M3WDRXV406MN3XN4C2N40AY1",
+  "patient_id": "01M3WDRXVM9X5KH5RV93DGMGCY",
+  "attempts": 1,
+  "elapsed_seconds": 2.856500713969581,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What was 94010 on my receipt?",
+          "answer": "94010 is spirometry, priced at $85.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2991,
+              "chunk_index": 1,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90"
+            },
+            {
+              "entry_id": 2991,
+              "chunk_index": 3,
+              "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+    "content": "What was 94010 on my receipt?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDS0JW6RVZBMEW3XDQ0BMA",
+    "content": "94010 is spirometry, priced at $85.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What was 94010 on my receipt?",
+        "answer": "94010 is spirometry, priced at $85.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2991,
+            "chunk_index": 1,
+            "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90"
+          },
+          {
+            "entry_id": 2991,
+            "chunk_index": 3,
+            "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What was 94010 on my receipt?",
+        "query": "What was 94010 on my receipt?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "chat_id": "01M3WDRXV406MN3XN4C2N40AY1",
+      "sender": "patient",
+      "content": "What was 94010 on my receipt?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:33.258856Z"
+    },
+    {
+      "message": "What was 94010 on my receipt?",
+      "message_ids_unified": [
+        "01M3WDRXX07BEF44VSKZYX3KVZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:33.259217Z"
+    },
+    {
+      "trace_id": "a84a304a137980b0421d29201939205c",
+      "event": "turn.traced",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:33.261030Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:33.263965Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3328,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.351692Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What was 94010 on my receipt?",
+          "query": "What was 94010 on my receipt?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.352507Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1089.91,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What was 94010 on my receipt?",
+            "query": "What was 94010 on my receipt?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.353033Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.355394Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.627861Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.390309,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.2790072,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.2771548,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.22210313,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.21164826,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.2050159,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.1935665,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.1931673,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.19017604,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.17713267,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 2,
+          "similarity_score": 0.17273833,
+          "considered": false,
+          "chunk_text": "# Running late\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 3,
+          "similarity_score": 0.16712412,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## How long we keep records\n\nWe keep adult medical records for 10 years after your last visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.15810871,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.15221083,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 1,
+          "similarity_score": 0.15220407,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.14462268,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.14337987,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.14195117,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.13675708,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.13616073,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.13388416,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.13385242,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.12311925,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.11908527,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.117885515,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.637458Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.390309
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.2790072
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.2771548
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.22210313
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.21164826
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.2050159
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 0,
+          "similarity_score": 0.1935665
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 1,
+          "similarity_score": 0.1931673
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.19017604
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.17713267
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 2,
+          "similarity_score": 0.17273833
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 3,
+          "similarity_score": 0.16712412
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.15810871
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.15221083
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 1,
+          "similarity_score": 0.15220407
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.14462268
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 0,
+          "similarity_score": 0.14337987
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.14195117
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.13675708
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.13616073
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 4,
+          "similarity_score": 0.13388416
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.13385242
+        },
+        {
+          "entry_id": 2988,
+          "chunk_index": 3,
+          "similarity_score": 0.12311925
+        },
+        {
+          "entry_id": 2981,
+          "chunk_index": 0,
+          "similarity_score": 0.11908527
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 0,
+          "similarity_score": 0.117885515
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.639468Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 279.56,
+      "scores": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.2771548,
+          "rerank_score": 0.81640625
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.390309,
+          "rerank_score": 0.5859375
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.2790072,
+          "rerank_score": 0.49609375
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.22210313,
+          "rerank_score": 0.361328125
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "similarity_score": 0.21164826,
+          "rerank_score": 0.341796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.920625Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "rerank_score": 0.81640625
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "rerank_score": 0.5859375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "rerank_score": 0.49609375
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "rerank_score": 0.361328125
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 2,
+          "rerank_score": 0.341796875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.921393Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.390309,
+      "best_rerank_score": 0.81640625,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:34.921988Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.\n\nQuestion: What was 94010 on my receipt?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:06:34.922254Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 478,
+        "output": 17,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:35.986612Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1633.38,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 35,
+        "answer_text": "94010 is spirometry, priced at $85.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What was 94010 on my receipt?",
+            "verdict": "answered",
+            "answer_text": "94010 is spirometry, priced at $85."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:35.988525Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:35.991186Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.66,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 35,
+        "answer_text": "94010 is spirometry, priced at $85."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:35.991458Z"
+    },
+    {
+      "duration_ms": 2742.91,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2991,
+              "chunk_index": 1,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+              "similarity_score": 0.2771548,
+              "rerank_score": 0.81640625
+            },
+            {
+              "entry_id": 2991,
+              "chunk_index": 3,
+              "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+              "similarity_score": 0.390309,
+              "rerank_score": 0.5859375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "94010 is spirometry, priced at $85.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3WDRXX07BEF44VSKZYX3KVZ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:35.991857Z"
+    },
+    {
+      "message_id": "01M3WDS0JW6RVZBMEW3XDQ0BMA",
+      "chat_id": "01M3WDRXV406MN3XN4C2N40AY1",
+      "sender": "assistant",
+      "content": "94010 is spirometry, priced at $85.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDRXX07BEF44VSKZYX3KVZ",
+      "level": "info",
+      "timestamp": "2026-10-01T19:06:36.011150Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDRXX07BEF44VSKZYX3KVZ": "a84a304a137980b0421d29201939205c"
+  }
+}

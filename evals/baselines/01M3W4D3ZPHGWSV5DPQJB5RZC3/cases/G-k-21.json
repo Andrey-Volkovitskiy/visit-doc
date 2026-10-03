@@ -1,0 +1,718 @@
+{
+  "case_id": "G-k-21",
+  "chat_id": "01M3W4M3MP6ZY1A1DZ940KJ4XV",
+  "patient_id": "01M3W4M3NP1J4THFX5FKACA6ZS",
+  "attempts": 1,
+  "elapsed_seconds": 1.9948158550541848,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can you send my appointment reminders on WhatsApp instead?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+    "content": "Can you send my appointment reminders on WhatsApp instead?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4M7GZ96M6FKZH8XYFAV2W",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can you send my appointment reminders on WhatsApp instead?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can you send my appointment reminders on WhatsApp instead?",
+        "query": "Can you send appointment reminders on WhatsApp instead of the current method?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "chat_id": "01M3W4M3MP6ZY1A1DZ940KJ4XV",
+      "sender": "patient",
+      "content": "Can you send my appointment reminders on WhatsApp instead?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:38.222797Z"
+    },
+    {
+      "message": "Can you send my appointment reminders on WhatsApp instead?",
+      "message_ids_unified": [
+        "01M3W4M3QW08D6H8QA2WQ2BP4R"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:38.223161Z"
+    },
+    {
+      "trace_id": "f5d9dc2e0e5b3222be9baff27428e42d",
+      "event": "turn.traced",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:38.227248Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:38.230781Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3214,
+        "output": 45,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:39.478867Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can you send my appointment reminders on WhatsApp instead?",
+          "query": "Can you send appointment reminders on WhatsApp instead of the current method?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:39.479773Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1250.3,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can you send my appointment reminders on WhatsApp instead?",
+            "query": "Can you send appointment reminders on WhatsApp instead of the current method?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:39.480704Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:39.484929Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:41.789995Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.44920516,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.42675677,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical advice by email.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.4144762,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always come from the short code 72913 and start with \"VisitDoc Clinic\". The 48-hour reminder includes a check-in QR code you can scan at the self-check-in kiosk when you arrive. To stop receiving reminder texts, reply STOP to any of them. To start them again, reply START, or tell the front desk at your next visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "similarity_score": 0.40719563,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in kiosk. Reminders are sent to the phone number we hold when the reminder goes out.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.3488868,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.34056213,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.31705672,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.30047867,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.28221142,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.27935243,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.27833787,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.27519095,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.26271892,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.25399876,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.25157985,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.2355347,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.22654578,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.22213012,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.2217253,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.21830449,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.21532863,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.21500409,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.21481091,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.21389824,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 3,
+          "similarity_score": 0.2109854,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:41.803866Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.44920516
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.42675677
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.4144762
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "similarity_score": 0.40719563
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.3488868
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.34056213
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.31705672
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.30047867
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.28221142
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.27935243
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.27833787
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.27519095
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.26271892
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.25399876
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.25157985
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.2355347
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.22654578
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 2,
+          "similarity_score": 0.22213012
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.2217253
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.21830449
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.21532863
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.21500409
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.21481091
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.21389824
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 3,
+          "similarity_score": 0.2109854
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:41.806537Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 253.49,
+      "scores": [
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.4144762,
+          "rerank_score": 0.52734375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "similarity_score": 0.40719563,
+          "rerank_score": 0.4609375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.3488868,
+          "rerank_score": 0.396484375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.42675677,
+          "rerank_score": 0.39453125
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.44920516,
+          "rerank_score": 0.388671875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.062089Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "rerank_score": 0.52734375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "rerank_score": 0.4609375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "rerank_score": 0.396484375
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "rerank_score": 0.39453125
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "rerank_score": 0.388671875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.064988Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.44920516,
+      "best_rerank_score": 0.52734375,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.067973Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 527.72,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can you send my appointment reminders on WhatsApp instead?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.069801Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.072083Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.64,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.072390Z"
+    },
+    {
+      "duration_ms": 1810.43,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4M3QW08D6H8QA2WQ2BP4R"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.072998Z"
+    },
+    {
+      "message_id": "01M3W4M7GZ96M6FKZH8XYFAV2W",
+      "chat_id": "01M3W4M3MP6ZY1A1DZ940KJ4XV",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.090217Z"
+    },
+    {
+      "chat_id": "01M3W4M3MP6ZY1A1DZ940KJ4XV",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4M3QW08D6H8QA2WQ2BP4R",
+      "level": "info",
+      "timestamp": "2026-10-01T16:26:42.104145Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4M3QW08D6H8QA2WQ2BP4R": "f5d9dc2e0e5b3222be9baff27428e42d"
+  }
+}

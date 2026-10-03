@@ -1,0 +1,1332 @@
+{
+  "case_id": "G-o-03",
+  "chat_id": "01M3W26AZZF4H4E14C7WWQ5EG6",
+  "patient_id": "01M3W26B0HHWV5MCWZC8PCTWRV",
+  "attempts": 1,
+  "elapsed_seconds": 4.293312242953107,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you have parking?",
+          "answer": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Is the parking free?",
+          "answer": "Yes, the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W26B20B5C992MS1XZ623CG",
+    "content": "Do you have parking, and is it free?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W26F4KQ510S0YDV5Y3WYM7",
+    "content": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.), and yes, that parking is free.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you have parking?",
+        "answer": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2771,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Is the parking free?",
+        "answer": "Yes, the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2771,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you have parking?",
+        "query": "Do you have parking?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Is the parking free?",
+        "query": "Is the parking free?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W26B20B5C992MS1XZ623CG",
+      "chat_id": "01M3W26AZZF4H4E14C7WWQ5EG6",
+      "sender": "patient",
+      "content": "Do you have parking, and is it free?",
+      "event": "message.persisted",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:09.803957Z"
+    },
+    {
+      "message": "Do you have parking, and is it free?",
+      "message_ids_unified": [
+        "01M3W26B20B5C992MS1XZ623CG"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:09.804196Z"
+    },
+    {
+      "trace_id": "b170a1d209fcd2caf08b25a1cda5f8cf",
+      "event": "turn.traced",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:09.806129Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:09.808152Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 53,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:10.790936Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you have parking?",
+          "query": "Do you have parking?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Is the parking free?",
+          "query": "Is the parking free?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:10.791815Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 984.68,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you have parking?",
+            "query": "Do you have parking?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "Is the parking free?",
+            "query": "Is the parking free?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:10.792576Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:10.795271Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.064947Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.071648Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.23717973,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.2214046,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22006959,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2134811,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.21286395,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.20776378,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.20113286,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.18468866,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17929026,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.17302269,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.16486463,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.15813607,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.15736912,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.14836442,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14401385,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.14386368,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.13630009,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.1281951,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.12404442,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.11796839,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.103137Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.23717973
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.2214046
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22006959
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2134811
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.21286395
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.20776378
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.20113286
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.18468866
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17929026
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.17302269
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.16486463
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.15813607
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.15736912
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.14836442
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14401385
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.14386368
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.13630009
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.1281951
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.12404442
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.11796839
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.105222Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.43912822,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.32058746,
+          "considered": true,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.\n\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.\n\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.24377465,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.22561541,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.21981388,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.21175951,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.20872761,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20773701,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.19930264,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.1931628,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.17546642,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.17413725,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.1715055,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.1673735,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.16204138,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.15906514,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.15555693,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.15525274,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.1539703,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.1503034,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.14913753,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14711218,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.14247592,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.13530317,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.12675561,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.111063Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.43912822
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.32058746
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.24377465
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.22561541
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.21981388
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.21175951
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.20872761
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20773701
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.19930264
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.1931628
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.17546642
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.17413725
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.1715055
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.1673735
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.16204138
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.15906514
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.15555693
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.15525274
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.1539703
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.1503034
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.14913753
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.14711218
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.14247592
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.13530317
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.12675561
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.113366Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 280.81,
+      "scores": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.48466837,
+          "rerank_score": 0.68359375
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.24198143,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.27061796,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.28542155,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.2589999,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.388482Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "rerank_score": 0.68359375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "rerank_score": 0.359375
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.391614Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.48466837,
+      "best_rerank_score": 0.68359375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.392979Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Do you have parking?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:44:11.393516Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 291.66,
+      "scores": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.43912822,
+          "rerank_score": 0.6796875
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.32058746,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.22561541,
+          "rerank_score": 0.330078125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.24377465,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.21981388,
+          "rerank_score": 0.287109375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.406859Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "rerank_score": 0.6796875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "rerank_score": 0.330078125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.314453125
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "rerank_score": 0.287109375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.408444Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.43912822,
+      "best_rerank_score": 0.6796875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:11.409504Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: Is the parking free?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:44:11.410149Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 328,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:12.460558Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 328,
+        "output": 44,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:12.743025Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1949.03,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 192,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you have parking?",
+            "verdict": "answered",
+            "answer_text": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          },
+          {
+            "position": 1,
+            "question": "Is the parking free?",
+            "verdict": "answered",
+            "answer_text": "Yes, the nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:12.743961Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:12.745316Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1098,
+        "output": 47,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:13.964548Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1220.11,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 121,
+        "answer_text": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.), and yes, that parking is free."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:13.965245Z"
+    },
+    {
+      "duration_ms": 4173.14,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.48466837,
+              "rerank_score": 0.68359375
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2771,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.43912822,
+              "rerank_score": 0.6796875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.), and yes, that parking is free.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W26B20B5C992MS1XZ623CG"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:13.965769Z"
+    },
+    {
+      "message_id": "01M3W26F4KQ510S0YDV5Y3WYM7",
+      "chat_id": "01M3W26AZZF4H4E14C7WWQ5EG6",
+      "sender": "assistant",
+      "content": "We have free parking a 3-minute walk away at the Mega Mall parking garage (9 Willson St.), and yes, that parking is free.",
+      "event": "message.persisted",
+      "turn_id": "01M3W26B20B5C992MS1XZ623CG",
+      "level": "info",
+      "timestamp": "2026-10-01T15:44:13.987613Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W26B20B5C992MS1XZ623CG": "b170a1d209fcd2caf08b25a1cda5f8cf"
+  }
+}

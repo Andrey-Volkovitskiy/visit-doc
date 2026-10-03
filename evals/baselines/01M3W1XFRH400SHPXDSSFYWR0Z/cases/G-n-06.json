@@ -1,0 +1,1289 @@
+{
+  "case_id": "G-n-06",
+  "chat_id": "01M3W25JGTSKAVF8AWAK32MX22",
+  "patient_id": "01M3W25JHD47PJ5EHY9KK8BRAQ",
+  "attempts": 1,
+  "elapsed_seconds": 5.004015143960714,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What is the out-of-pocket rate for a specialist?",
+          "answer": "All other specialist consultations cost $160 out-of-pocket.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2769,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Is a scan included in the specialist visit?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+    "content": "What is the out-of-pocket rate for a specialist, and is a scan included?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W25QB59ME2XGAGJQRGJ1NR",
+    "content": "All other specialist consultations cost $160 out-of-pocket.\n\nAs for whether a scan is included as part of the specialist visit, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What is the out-of-pocket rate for a specialist?",
+        "answer": "All other specialist consultations cost $160 out-of-pocket.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2769,
+            "chunk_index": 0,
+            "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Is a scan included in the specialist visit?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is the out-of-pocket rate for a specialist?",
+        "query": "What is the out-of-pocket rate for a specialist?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Is a scan included in the specialist visit?",
+        "query": "Is a scan included in the specialist visit?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "chat_id": "01M3W25JGTSKAVF8AWAK32MX22",
+      "sender": "patient",
+      "content": "What is the out-of-pocket rate for a specialist, and is a scan included?",
+      "event": "message.persisted",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:44.744231Z"
+    },
+    {
+      "message": "What is the out-of-pocket rate for a specialist, and is a scan included?",
+      "message_ids_unified": [
+        "01M3W25JJSSKYBQXVSQ81DF5KY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:44.744615Z"
+    },
+    {
+      "trace_id": "c60366a44e7333914f2e76a01e217c76",
+      "event": "turn.traced",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:44.746175Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:44.750239Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3220,
+        "output": 65,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.099122Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is the out-of-pocket rate for a specialist?",
+          "query": "What is the out-of-pocket rate for a specialist?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Is a scan included in the specialist visit?",
+          "query": "Is a scan included in the specialist visit?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.100317Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1351.91,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What is the out-of-pocket rate for a specialist?",
+            "query": "What is the out-of-pocket rate for a specialist?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "Is a scan included in the specialist visit?",
+            "query": "Is a scan included in the specialist visit?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.101299Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.104451Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.377203Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.380973Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.5530709,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.40738228,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90\n\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3716244,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.34621832,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.33429068,
+          "considered": true,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.32246926,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.27794576,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.25553113,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.24842313,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.2474441,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.23127273,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 1,
+          "similarity_score": 0.2255007,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22438791,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.21901271,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.21081503,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.21024314,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2057472,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.20453389,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20412527,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.20023409,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.18589711,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.18456739,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.18392181,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17811872,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.17313576,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.392478Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.5530709
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.40738228
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3716244
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.34621832
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.33429068
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.32246926
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 2,
+          "similarity_score": 0.27794576
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.25553113
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.24842313
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.2474441
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.23127273
+        },
+        {
+          "entry_id": 2776,
+          "chunk_index": 1,
+          "similarity_score": 0.2255007
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.22438791
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.21901271
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.21081503
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.21024314
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2057472
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 1,
+          "similarity_score": 0.20453389
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20412527
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.20023409
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.18589711
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.18456739
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.18392181
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.17811872
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.17313576
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.395004Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.38555992,
+          "considered": true,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; your blood pressure, heart rate, height, weight and body mass index (BMI); a physical examination; and a discussion of the screening tests and vaccinations recommended for your age. Most insurance plans cover one preventive physical a year at no cost to you, but check with your plan.\n\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule with you, usually every three or six months. Bring your home blood pressure or blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.37853724,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.37243408,
+          "considered": true,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.348928,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.33352193,
+          "considered": true,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.33079436,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.3273525,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.3207236,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.31931543,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.3108887,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3056628,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.30273044,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.2990462,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.2685101,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.2670172,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.2651323,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.2610262,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.26048502,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.25821346,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.24730456,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.24720463,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.24433234,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2305145,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.22508022,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.22352639,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.401023Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.38555992
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.37853724
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.37243408
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.348928
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.33352193
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.33079436
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.3273525
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.3207236
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.31931543
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.3108887
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3056628
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.30273044
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.2990462
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.2685101
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 0,
+          "similarity_score": 0.2670172
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.2651323
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.2610262
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.26048502
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.25821346
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.24730456
+        },
+        {
+          "entry_id": 2767,
+          "chunk_index": 0,
+          "similarity_score": 0.24720463
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.24433234
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.2305145
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.22508022
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.22352639
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.403223Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 407.42,
+      "scores": [
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.5530709,
+          "rerank_score": 0.8203125
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.40738228,
+          "rerank_score": 0.48828125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.3716244,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.33429068,
+          "rerank_score": 0.357421875
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.34621832,
+          "rerank_score": 0.341796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.804391Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "rerank_score": 0.8203125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "rerank_score": 0.48828125
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "rerank_score": 0.357421875
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "rerank_score": 0.341796875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.806552Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5530709,
+      "best_rerank_score": 0.8203125,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.808390Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.\n\nQuestion: What is the out-of-pocket rate for a specialist?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:43:46.809208Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 407.79,
+      "scores": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.37853724,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.38555992,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.348928,
+          "rerank_score": 0.349609375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.33352193,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.37243408,
+          "rerank_score": 0.3046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.813290Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "rerank_score": 0.365234375
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "rerank_score": 0.349609375
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "rerank_score": 0.3125
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "rerank_score": 0.3046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.814485Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.38555992,
+      "best_rerank_score": 0.365234375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 1,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:46.815378Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 330,
+        "output": 23,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:47.994095Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1891.17,
+      "result": {
+        "segment_count": 2,
+        "abstained": true,
+        "citation_count": 1,
+        "answer_chars": 59,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What is the out-of-pocket rate for a specialist?",
+            "verdict": "answered",
+            "answer_text": "All other specialist consultations cost $160 out-of-pocket."
+          },
+          {
+            "position": 1,
+            "question": "Is a scan included in the specialist visit?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:47.995305Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:47.997841Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1182,
+        "output": 104,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:49.599275Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1602.29,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 337,
+        "answer_text": "All other specialist consultations cost $160 out-of-pocket.\n\nAs for whether a scan is included as part of the specialist visit, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:49.599865Z"
+    },
+    {
+      "duration_ms": 4870.5,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2769,
+              "chunk_index": 0,
+              "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+              "similarity_score": 0.5530709,
+              "rerank_score": 0.8203125
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "All other specialist consultations cost $160 out-of-pocket.\n\nAs for whether a scan is included as part of the specialist visit, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W25JJSSKYBQXVSQ81DF5KY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:49.600345Z"
+    },
+    {
+      "message_id": "01M3W25QB59ME2XGAGJQRGJ1NR",
+      "chat_id": "01M3W25JGTSKAVF8AWAK32MX22",
+      "sender": "assistant",
+      "content": "All other specialist consultations cost $160 out-of-pocket.\n\nAs for whether a scan is included as part of the specialist visit, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to ask if there's anything else I can help with.",
+      "event": "message.persisted",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:49.622615Z"
+    },
+    {
+      "chat_id": "01M3W25JGTSKAVF8AWAK32MX22",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W25JJSSKYBQXVSQ81DF5KY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:43:49.634709Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W25JJSSKYBQXVSQ81DF5KY": "c60366a44e7333914f2e76a01e217c76"
+  }
+}

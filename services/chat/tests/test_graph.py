@@ -224,7 +224,7 @@ def test_abstention_matches_answer_faq_byte_for_byte(seeded_entry: int) -> None:
     assert len(events) == 1
     done_event = events[0]
     assert isinstance(done_event, ChatDoneEvent)
-    assert _verdicts(done_event) == [FaqVerdict.ABSTAINED_SIMILARITY_FLOOR]
+    assert _verdicts(done_event) == [FaqVerdict.ABSTAINED_RERANK_FLOOR]
     assert _cited(done_event) == []
 
 
@@ -2274,7 +2274,7 @@ def test_the_turn_records_each_requests_own_outcome_beside_the_summary(
         for o in completed["request_outcomes"]
     ] == [
         {"position": 0, "verdict": "answered"},
-        {"position": 1, "verdict": "abstained_similarity_floor"},
+        {"position": 1, "verdict": "abstained_rerank_floor"},
     ]
     assert _node_result(logs, "answer_faq")["segment_count"] == 2
 

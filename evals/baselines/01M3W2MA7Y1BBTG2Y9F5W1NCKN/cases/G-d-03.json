@@ -1,0 +1,227 @@
+{
+  "case_id": "G-d-03",
+  "chat_id": "01M3W2R6XWF1YCR44CMK5ZWC5F",
+  "patient_id": "01M3W2R6YG1F0EM78JF7FZS8GR",
+  "attempts": 1,
+  "elapsed_seconds": 1.6441426170058548,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2R707T6TS8KZ8Q089A7CP",
+    "content": "I'm calling on behalf of my father, he needs an appointment.",
+    "attention_mark": "booking_for_another_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2R8FH2X7VKY0QTEZS3N2H",
+    "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking_for_another",
+        "text": "I'm calling on behalf of my father, he needs an appointment.",
+        "query": "Book an appointment for my father"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "chat_id": "01M3W2R6XWF1YCR44CMK5ZWC5F",
+      "sender": "patient",
+      "content": "I'm calling on behalf of my father, he needs an appointment.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:55.475707Z"
+    },
+    {
+      "message": "I'm calling on behalf of my father, he needs an appointment.",
+      "message_ids_unified": [
+        "01M3W2R707T6TS8KZ8Q089A7CP"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:55.476012Z"
+    },
+    {
+      "trace_id": "97c462d8749f9ed177ac03aad4ffc53a",
+      "event": "turn.traced",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:55.477174Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:55.480040Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3215,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.966079Z"
+    },
+    {
+      "intents": [
+        "booking_for_another"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking_for_another",
+          "text": "I'm calling on behalf of my father, he needs an appointment.",
+          "query": "Book an appointment for my father"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.967027Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1488.44,
+      "result": {
+        "intents": [
+          "booking_for_another"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking_for_another",
+            "text": "I'm calling on behalf of my father, he needs an appointment.",
+            "query": "Book an appointment for my father"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "booking_for_another_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.967822Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.971097Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.84,
+      "result": {
+        "cause": "booking_for_another_person",
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.971388Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.972972Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.44,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.973136Z"
+    },
+    {
+      "duration_ms": 1509.85,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2R707T6TS8KZ8Q089A7CP"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.973431Z"
+    },
+    {
+      "message_id": "01M3W2R8FH2X7VKY0QTEZS3N2H",
+      "chat_id": "01M3W2R6XWF1YCR44CMK5ZWC5F",
+      "sender": "assistant",
+      "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.984785Z"
+    },
+    {
+      "chat_id": "01M3W2R6XWF1YCR44CMK5ZWC5F",
+      "reason": "booking_for_another_person",
+      "message_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3W2R707T6TS8KZ8Q089A7CP",
+      "level": "info",
+      "timestamp": "2026-10-01T15:53:56.999225Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W2R707T6TS8KZ8Q089A7CP": "97c462d8749f9ed177ac03aad4ffc53a"
+  }
+}

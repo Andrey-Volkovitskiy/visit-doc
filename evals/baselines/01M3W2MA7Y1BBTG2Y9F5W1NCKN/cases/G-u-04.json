@@ -1,0 +1,174 @@
+{
+  "case_id": "G-u-04",
+  "chat_id": "01M3W32J3QKFNJVV79RHW7VD9C",
+  "patient_id": "01M3W32J49XMP2VV314T1HBDMC",
+  "attempts": 1,
+  "elapsed_seconds": 3.7366882499773055,
+  "terminal": {
+    "kind": "error",
+    "payload": {}
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+    "content": "Do you do braces?",
+    "attention_mark": "assistant_failed",
+    "request_outcomes": null
+  },
+  "assistant_message": null,
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you do braces?",
+        "query": "Do you do braces?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "chat_id": "01M3W32J3QKFNJVV79RHW7VD9C",
+      "sender": "patient",
+      "content": "Do you do braces?",
+      "event": "message.persisted",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:34.593279Z"
+    },
+    {
+      "message": "Do you do braces?",
+      "message_ids_unified": [
+        "01M3W32J5QJMJ4X9ESX74A0RJY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:34.593618Z"
+    },
+    {
+      "trace_id": "a7659aec7eb1bea670e2b0d243b25660",
+      "event": "turn.traced",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:34.595541Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:34.597685Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3207,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:38.119814Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you do braces?",
+          "query": "Do you do braces?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:38.120499Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 3523.51,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you do braces?",
+            "query": "Do you do braces?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:38.120932Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:38.123236Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 41.1,
+      "error_type": "TurnPipelineError",
+      "error_detail": "Error communicating with Voyage",
+      "event": "node.failed",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "error",
+      "timestamp": "2026-10-01T15:59:38.164097Z"
+    },
+    {
+      "pipeline_step": "embedding",
+      "error_detail": "Error communicating with Voyage",
+      "event": "turn.error",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "error",
+      "timestamp": "2026-10-01T15:59:38.165116Z"
+    },
+    {
+      "chat_id": "01M3W32J3QKFNJVV79RHW7VD9C",
+      "reason": "assistant_failed",
+      "message_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W32J5QJMJ4X9ESX74A0RJY",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:38.194676Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "run_error",
+  "unplantable": null,
+  "traces": {
+    "01M3W32J5QJMJ4X9ESX74A0RJY": "a7659aec7eb1bea670e2b0d243b25660"
+  }
+}

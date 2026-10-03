@@ -1,0 +1,227 @@
+{
+  "case_id": "G-c-01",
+  "chat_id": "01M3VYYED9207G19DJNYC2M147",
+  "patient_id": "01M3VYYEDWV23ZGM1PH80CDP8N",
+  "attempts": 1,
+  "elapsed_seconds": 1.1008149769622833,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYYEF7VDN155V0EADV6B98",
+    "content": "I'm terrified about my results.",
+    "attention_mark": "distress",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYYFDFKBYKM0F13Z0AQTHJ",
+    "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "distress",
+        "text": "I'm terrified about my results.",
+        "query": "I'm terrified about my results."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "chat_id": "01M3VYYED9207G19DJNYC2M147",
+      "sender": "patient",
+      "content": "I'm terrified about my results.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:25.430892Z"
+    },
+    {
+      "message": "I'm terrified about my results.",
+      "message_ids_unified": [
+        "01M3VYYEF7VDN155V0EADV6B98"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:25.431198Z"
+    },
+    {
+      "trace_id": "156d61a9e6ad4e21a52942226acc04d8",
+      "event": "turn.traced",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:25.432380Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:25.434890Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.371489Z"
+    },
+    {
+      "intents": [
+        "distress"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "distress",
+          "text": "I'm terrified about my results.",
+          "query": "I'm terrified about my results."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.372718Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 939.43,
+      "result": {
+        "intents": [
+          "distress"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "distress",
+            "text": "I'm terrified about my results.",
+            "query": "I'm terrified about my results."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "distress",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.373731Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.377310Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.65,
+      "result": {
+        "cause": "distress",
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.377537Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.379021Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.46,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 139,
+        "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.379220Z"
+    },
+    {
+      "duration_ms": 963.82,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VYYEF7VDN155V0EADV6B98"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.379588Z"
+    },
+    {
+      "message_id": "01M3VYYFDFKBYKM0F13Z0AQTHJ",
+      "chat_id": "01M3VYYED9207G19DJNYC2M147",
+      "sender": "assistant",
+      "content": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.398567Z"
+    },
+    {
+      "chat_id": "01M3VYYED9207G19DJNYC2M147",
+      "reason": "distress",
+      "message_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3VYYEF7VDN155V0EADV6B98",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:26.415681Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3VYYEF7VDN155V0EADV6B98": "156d61a9e6ad4e21a52942226acc04d8"
+  }
+}

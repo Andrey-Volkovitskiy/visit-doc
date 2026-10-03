@@ -1,0 +1,1349 @@
+{
+  "case_id": "G-o-06",
+  "chat_id": "01M3WDK6YT074YB6CAZY9SSRCB",
+  "patient_id": "01M3WDK6ZBYRXN7WHHCF858X8W",
+  "attempts": 1,
+  "elapsed_seconds": 6.00759732502047,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you take Medicare?",
+          "answer": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2982,
+              "chunk_index": 5,
+              "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans."
+            },
+            {
+              "entry_id": 2976,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "What if you don't take my insurance plan?",
+          "answer": "If we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2977,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3WDK70TGP46SNHJWS94BANM",
+    "content": "Do you take Medicare? What if you don't take my plan?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3WDKCS7ARQKBMZ8EEQS2Z5Y",
+    "content": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless you also hold one of the dental plans listed in our dental care guide.\n\nIf we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you take Medicare?",
+        "answer": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2982,
+            "chunk_index": 5,
+            "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans."
+          },
+          {
+            "entry_id": 2976,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "What if you don't take my insurance plan?",
+        "answer": "If we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2977,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you take Medicare?",
+        "query": "Do you take Medicare?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "What if you don't take my insurance plan?",
+        "query": "What if you don't take my insurance plan?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "chat_id": "01M3WDK6YT074YB6CAZY9SSRCB",
+      "sender": "patient",
+      "content": "Do you take Medicare? What if you don't take my plan?",
+      "event": "message.persisted",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:25.989514Z"
+    },
+    {
+      "message": "Do you take Medicare? What if you don't take my plan?",
+      "message_ids_unified": [
+        "01M3WDK70TGP46SNHJWS94BANM"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:25.989836Z"
+    },
+    {
+      "trace_id": "ecf0aea3e24d310eebb8d5da8e5c85f8",
+      "event": "turn.traced",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:25.991256Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:25.997186Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3332,
+        "output": 58,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.227130Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you take Medicare?",
+          "query": "Do you take Medicare?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "What if you don't take my insurance plan?",
+          "query": "What if you don't take my insurance plan?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.228450Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1232.82,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you take Medicare?",
+            "query": "Do you take Medicare?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "What if you don't take my insurance plan?",
+            "query": "What if you don't take my insurance plan?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.229792Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.233604Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.500586Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.513947Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45402667,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44640017,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.44225597,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43727344,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.41898194,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.40172368,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.40168542,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.39894572,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.39354485,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.3701058,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.3694126,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3011635,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.28548267,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.26654047,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.2585017,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.25827187,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.24737525,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.24483442,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.24318393,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.23949747,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.23199856,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.23019888,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.22580403,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.22020222,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.2175361,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.518830Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45402667
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44640017
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.44225597
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43727344
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.41898194
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.40172368
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.40168542
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 7,
+          "similarity_score": 0.39894572
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.39354485
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.3701058
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.3694126
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.3011635
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.28548267
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.26654047
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 2,
+          "similarity_score": 0.2585017
+        },
+        {
+          "entry_id": 2973,
+          "chunk_index": 0,
+          "similarity_score": 0.25827187
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.24737525
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.24483442
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.24318393
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.23949747
+        },
+        {
+          "entry_id": 2986,
+          "chunk_index": 1,
+          "similarity_score": 0.23199856
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 6,
+          "similarity_score": 0.23019888
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.22580403
+        },
+        {
+          "entry_id": 2978,
+          "chunk_index": 0,
+          "similarity_score": 0.22020222
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.2175361
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.520738Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.493375,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44879943,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43872926,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.4014284,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.38464364,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.36665115,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.34909356,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.34028482,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.33531928,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.31610164,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.30815208,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.30401313,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.3002815,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.28626943,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.28535804,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.28441095,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.282969,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.2817375,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.2779955,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.27661934,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.27372807,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.26933563,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.26872364,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.26551425,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.26177558,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.530609Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.493375
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44879943
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43872926
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.4014284
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.38464364
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.36665115
+        },
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.34909356
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 1,
+          "similarity_score": 0.34028482
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.33531928
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 0,
+          "similarity_score": 0.31610164
+        },
+        {
+          "entry_id": 2989,
+          "chunk_index": 0,
+          "similarity_score": 0.30815208
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 0,
+          "similarity_score": 0.30401313
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 6,
+          "similarity_score": 0.3002815
+        },
+        {
+          "entry_id": 2974,
+          "chunk_index": 0,
+          "similarity_score": 0.28626943
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 3,
+          "similarity_score": 0.28535804
+        },
+        {
+          "entry_id": 2983,
+          "chunk_index": 2,
+          "similarity_score": 0.28441095
+        },
+        {
+          "entry_id": 2985,
+          "chunk_index": 0,
+          "similarity_score": 0.282969
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 1,
+          "similarity_score": 0.2817375
+        },
+        {
+          "entry_id": 2990,
+          "chunk_index": 4,
+          "similarity_score": 0.2779955
+        },
+        {
+          "entry_id": 2979,
+          "chunk_index": 0,
+          "similarity_score": 0.27661934
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 3,
+          "similarity_score": 0.27372807
+        },
+        {
+          "entry_id": 2975,
+          "chunk_index": 0,
+          "similarity_score": 0.26933563
+        },
+        {
+          "entry_id": 2984,
+          "chunk_index": 0,
+          "similarity_score": 0.26872364
+        },
+        {
+          "entry_id": 2987,
+          "chunk_index": 1,
+          "similarity_score": 0.26551425
+        },
+        {
+          "entry_id": 2991,
+          "chunk_index": 1,
+          "similarity_score": 0.26177558
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.532457Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 271.69,
+      "scores": [
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "similarity_score": 0.44225597,
+          "rerank_score": 0.71484375
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44640017,
+          "rerank_score": 0.5546875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "similarity_score": 0.45402667,
+          "rerank_score": 0.400390625
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43727344,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "similarity_score": 0.41898194,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.793670Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2977,
+          "chunk_index": 0,
+          "rerank_score": 0.71484375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "rerank_score": 0.5546875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 0,
+          "rerank_score": 0.400390625
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "rerank_score": 0.380859375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 3,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.794781Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.45402667,
+      "best_rerank_score": 0.71484375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.795643Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.\n\nQuestion: What if you don't take my insurance plan?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:03:27.796209Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 280.42,
+      "scores": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "similarity_score": 0.493375,
+          "rerank_score": 0.8203125
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "similarity_score": 0.44879943,
+          "rerank_score": 0.77734375
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "similarity_score": 0.4014284,
+          "rerank_score": 0.51953125
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "similarity_score": 0.43872926,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "similarity_score": 0.38464364,
+          "rerank_score": 0.37109375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.814327Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 5,
+          "rerank_score": 0.8203125
+        },
+        {
+          "entry_id": 2976,
+          "chunk_index": 0,
+          "rerank_score": 0.77734375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2982,
+          "chunk_index": 2,
+          "rerank_score": 0.51953125
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 4,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 2982,
+          "chunk_index": 1,
+          "rerank_score": 0.37109375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.815679Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.493375,
+      "best_rerank_score": 0.8203125,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:27.817771Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.\n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nQuestion: Do you take Medicare?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "debug",
+      "timestamp": "2026-10-01T19:03:27.818266Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 333,
+        "output": 61,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 1,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:29.151271Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 500,
+        "output": 79,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "segment": 0,
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:29.865669Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2633.65,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 429,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you take Medicare?",
+            "verdict": "answered",
+            "answer_text": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide."
+          },
+          {
+            "position": 1,
+            "question": "What if you don't take my insurance plan?",
+            "verdict": "answered",
+            "answer_text": "If we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:29.866732Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:29.868725Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1165,
+        "output": 139,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:31.873630Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2006.13,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 430,
+        "answer_text": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless you also hold one of the dental plans listed in our dental care guide.\n\nIf we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:31.874558Z"
+    },
+    {
+      "duration_ms": 5896.39,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2982,
+              "chunk_index": 5,
+              "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+              "similarity_score": 0.493375,
+              "rerank_score": 0.8203125
+            },
+            {
+              "entry_id": 2976,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.44879943,
+              "rerank_score": 0.77734375
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2977,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+              "similarity_score": 0.44225597,
+              "rerank_score": 0.71484375
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless you also hold one of the dental plans listed in our dental care guide.\n\nIf we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3WDK70TGP46SNHJWS94BANM"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:31.875022Z"
+    },
+    {
+      "message_id": "01M3WDKCS7ARQKBMZ8EEQS2Z5Y",
+      "chat_id": "01M3WDK6YT074YB6CAZY9SSRCB",
+      "sender": "assistant",
+      "content": "We accept Original Medicare (Part B) for medical visits. However, Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless you also hold one of the dental plans listed in our dental care guide.\n\nIf we don't take your insurance plan, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "event": "message.persisted",
+      "turn_id": "01M3WDK70TGP46SNHJWS94BANM",
+      "level": "info",
+      "timestamp": "2026-10-01T19:03:31.887529Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3WDK70TGP46SNHJWS94BANM": "ecf0aea3e24d310eebb8d5da8e5c85f8"
+  }
+}

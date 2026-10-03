@@ -1,0 +1,1276 @@
+{
+  "case_id": "G-m-04",
+  "chat_id": "01M3VZ2M9TYSP07PDXR4S460MJ",
+  "patient_id": "01M3VZ2MARWGDVZX3JDZKN1V3A",
+  "attempts": 1,
+  "elapsed_seconds": 6.856358475983143,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "When is payment due?",
+          "answer": "Payment is due at the time of service.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2732,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "What cards do you take?",
+          "answer": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2732,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+    "content": "When is payment due, and what cards do you take?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ2RF6607KQP9MAM4TJ8CV",
+    "content": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "When is payment due?",
+        "answer": "Payment is due at the time of service.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2732,
+            "chunk_index": 0,
+            "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "What cards do you take?",
+        "answer": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2732,
+            "chunk_index": 0,
+            "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "When is payment due?",
+        "query": "When is payment due?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "What cards do you take?",
+        "query": "What cards do you take?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "chat_id": "01M3VZ2M9TYSP07PDXR4S460MJ",
+      "sender": "patient",
+      "content": "When is payment due, and what cards do you take?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:42.546718Z"
+    },
+    {
+      "message": "When is payment due, and what cards do you take?",
+      "message_ids_unified": [
+        "01M3VZ2MC6D61DKWT77FWH3JQM"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:42.546986Z"
+    },
+    {
+      "trace_id": "862aca8cfc5e1ef8a5ee3d557a5b6e49",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:42.548057Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:42.550447Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3213,
+        "output": 54,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.070462Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "When is payment due?",
+          "query": "When is payment due?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "What cards do you take?",
+          "query": "What cards do you take?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.070983Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1065.61,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "When is payment due?",
+            "query": "When is payment due?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "What cards do you take?",
+            "query": "What cards do you take?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.071428Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.073857Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.349141Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.352584Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "similarity_score": 0.2851025,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.\n\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.27363214,
+          "considered": true,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instructions, follow those instead.\n\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and legs. It takes about ten minutes and does not hurt. On the day, do not put body lotion, oil or powder on your chest, because the electrodes do not stick well to it. Wear a two-piece outfit so you only need to remove your top. You can eat, drink and take your usual medicines before an ECG.\n\n## Spirometry (breathing test)\n\nSpirometry measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "similarity_score": 0.26277852,
+          "considered": true,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.25825694,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.23082638,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.22996181,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.224592,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.22144417,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.20381439,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.20183046,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.19929487,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.19890507,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.18530092,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 1,
+          "similarity_score": 0.17060742,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.16349551,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.1596663,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.15964901,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.15614466,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.15016603,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.14428875,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 1,
+          "similarity_score": 0.13511506,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.13451912,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.1327455,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.12790668,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.12490018,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.367944Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "similarity_score": 0.2851025
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.27363214
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "similarity_score": 0.26277852
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.25825694
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.23082638
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.22996181
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.224592
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.22144417
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.20381439
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.20183046
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.19929487
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.19890507
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.18530092
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 1,
+          "similarity_score": 0.17060742
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.16349551
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.1596663
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.15964901
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.15614466
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.15016603
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.14428875
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 1,
+          "similarity_score": 0.13511506
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.13451912
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.1327455
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.12790668
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.12490018
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.371635Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.43875223,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.23858473,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.22059381,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.21947548,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.21848741,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.20798364,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 1,
+          "similarity_score": 0.2012293,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.1971046,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.19385847,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.18475543,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.17670828,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.17590728,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.16903958,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.16365775,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.15731566,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.15563095,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.1416504,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.14144373,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.1376518,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.13570924,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.12689331,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.12503354,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.121315524,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 2,
+          "similarity_score": 0.12104492,
+          "considered": false,
+          "chunk_text": "stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without noticing. A tooth with a new filling can be sensitive to col",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.11726773,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.379866Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.43875223
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2735,
+          "chunk_index": 3,
+          "similarity_score": 0.23858473
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.22059381
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.21947548
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.21848741
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.20798364
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 1,
+          "similarity_score": 0.2012293
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 2,
+          "similarity_score": 0.1971046
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.19385847
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.18475543
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 3,
+          "similarity_score": 0.17670828
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.17590728
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.16903958
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.16365775
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.15731566
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.15563095
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 1,
+          "similarity_score": 0.1416504
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.14144373
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 0,
+          "similarity_score": 0.1376518
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.13570924
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.12689331
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.12503354
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.121315524
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 2,
+          "similarity_score": 0.12104492
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.11726773
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.382029Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 1,
+      "duration_ms": 270.5,
+      "scores": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.43875223,
+          "rerank_score": 0.890625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.654299Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "rerank_score": 0.890625
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.655258Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.43875223,
+      "best_rerank_score": 0.890625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.655992Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: When is payment due?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:49:41.656277Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 4,
+      "duration_ms": 285.42,
+      "scores": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.25825694,
+          "rerank_score": 0.79296875
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "similarity_score": 0.2851025,
+          "rerank_score": 0.5
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "similarity_score": 0.26277852,
+          "rerank_score": 0.5
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.27363214,
+          "rerank_score": 0.330078125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.659228Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "rerank_score": 0.79296875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2735,
+          "chunk_index": 0,
+          "rerank_score": 0.5
+        },
+        {
+          "entry_id": 2735,
+          "chunk_index": 1,
+          "rerank_score": 0.5
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "rerank_score": 0.330078125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.660186Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.2851025,
+      "best_rerank_score": 0.79296875,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:41.660746Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: What cards do you take?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:49:41.661010Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 329,
+        "output": 13,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:42.865159Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 330,
+        "output": 73,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 1,
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:43.091134Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2019.61,
+      "result": {
+        "segment_count": 2,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 233,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "When is payment due?",
+            "verdict": "answered",
+            "answer_text": "Payment is due at the time of service."
+          },
+          {
+            "position": 1,
+            "question": "What cards do you take?",
+            "verdict": "answered",
+            "answer_text": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:43.093074Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:43.096021Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1102,
+        "output": 277,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:46.720068Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 3624.91,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 195,
+        "answer_text": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:46.720579Z"
+    },
+    {
+      "duration_ms": 6730.5,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2732,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+              "similarity_score": 0.43875223,
+              "rerank_score": 0.890625
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2732,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+              "similarity_score": 0.25825694,
+              "rerank_score": 0.79296875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3VZ2MC6D61DKWT77FWH3JQM"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:46.720953Z"
+    },
+    {
+      "message_id": "01M3VZ2RF6607KQP9MAM4TJ8CV",
+      "chat_id": "01M3VZ2M9TYSP07PDXR4S460MJ",
+      "sender": "assistant",
+      "content": "Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ2MC6D61DKWT77FWH3JQM",
+      "level": "info",
+      "timestamp": "2026-10-01T14:49:46.734387Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ2MC6D61DKWT77FWH3JQM": "862aca8cfc5e1ef8a5ee3d557a5b6e49"
+  }
+}

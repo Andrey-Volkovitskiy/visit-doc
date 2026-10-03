@@ -1,0 +1,760 @@
+{
+  "case_id": "G-u-01",
+  "chat_id": "01M3W2AN7EMPCE379R1XMMHYR3",
+  "patient_id": "01M3W2AN7ZT6RZ6NG5NTSSQ3AE",
+  "attempts": 1,
+  "elapsed_seconds": 2.9903382930206135,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "When do I have to bring the blood pressure monitor back?",
+          "answer": "Return the monitor to the front desk the next day by 10:00 AM.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2775,
+              "chunk_index": 2,
+              "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2AN9C5G83MZN54YMT4JKD",
+    "content": "When do I have to bring the blood pressure monitor back?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2AR3M9D76AGAPZHJYM34W",
+    "content": "Return the monitor to the front desk the next day by 10:00 AM.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "When do I have to bring the blood pressure monitor back?",
+        "answer": "Return the monitor to the front desk the next day by 10:00 AM.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2775,
+            "chunk_index": 2,
+            "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "When do I have to bring the blood pressure monitor back?",
+        "query": "When do I have to bring the blood pressure monitor back?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "chat_id": "01M3W2AN7EMPCE379R1XMMHYR3",
+      "sender": "patient",
+      "content": "When do I have to bring the blood pressure monitor back?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:31.350788Z"
+    },
+    {
+      "message": "When do I have to bring the blood pressure monitor back?",
+      "message_ids_unified": [
+        "01M3W2AN9C5G83MZN54YMT4JKD"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:31.351066Z"
+    },
+    {
+      "trace_id": "1cd92ac3ba6aac4d003b4a09a8a3bfc0",
+      "event": "turn.traced",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:31.352110Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:31.354659Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3213,
+        "output": 41,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.337550Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "When do I have to bring the blood pressure monitor back?",
+          "query": "When do I have to bring the blood pressure monitor back?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.338500Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 985.24,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "When do I have to bring the blood pressure monitor back?",
+            "query": "When do I have to bring the blood pressure monitor back?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.339170Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.342278Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.627254Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.62381417,
+          "considered": true,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.3988371,
+          "considered": true,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; your blood pressure, heart rate, height, weight and body mass index (BMI); a physical examination; and a discussion of the screening tests and vaccinations recommended for your age. Most insurance plans cover one preventive physical a year at no cost to you, but check with your plan.\n\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule with you, usually every three or six months. Bring your home blood pressure or blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.3254516,
+          "considered": true,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instructions, follow those instead.\n\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and legs. It takes about ten minutes and does not hurt. On the day, do not put body lotion, oil or powder on your chest, because the electrodes do not stick well to it. Wear a two-piece outfit so you only need to remove your top. You can eat, drink and take your usual medicines before an ECG.\n\n## Spirometry (breathing test)\n\nSpirometry measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.29989427,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.29930675,
+          "considered": true,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you when you check in, and you can choose to wait or to pick a new time. When we know about a delay of more than 30 minutes before you leave home, we send you a text message instead.\n\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.28640413,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.28478986,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.28295085,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 1,
+          "similarity_score": 0.2821173,
+          "considered": false,
+          "chunk_text": "try measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting down. Before the test:\n\n- do not use a short-acting reliever inhaler, such",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.28001568,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.27999905,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.2736205,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.2666462,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.24468255,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.23274383,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.23165467,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.22727436,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.22258246,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.22251293,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.21152815,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.21139778,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20745635,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.20238549,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.20145479,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.19347939,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.638149Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.62381417
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.3988371
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.3254516
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.29989427
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.29930675
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.28640413
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.28478986
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.28295085
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 1,
+          "similarity_score": 0.2821173
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.28001568
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.27999905
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.2736205
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.2666462
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.24468255
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.23274383
+        },
+        {
+          "entry_id": 2771,
+          "chunk_index": 0,
+          "similarity_score": 0.23165467
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.22727436
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.22258246
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.22251293
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.21152815
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.21139778
+        },
+        {
+          "entry_id": 2770,
+          "chunk_index": 0,
+          "similarity_score": 0.20745635
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.20238549
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.20145479
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.19347939
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.639830Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 284.03,
+      "scores": [
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "similarity_score": 0.62381417,
+          "rerank_score": 0.8046875
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.3988371,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.29989427,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.29930675,
+          "rerank_score": 0.318359375
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "similarity_score": 0.3254516,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.926014Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2775,
+          "chunk_index": 2,
+          "rerank_score": 0.8046875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "rerank_score": 0.318359375
+        },
+        {
+          "entry_id": 2775,
+          "chunk_index": 0,
+          "rerank_score": 0.306640625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.927225Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.62381417,
+      "best_rerank_score": 0.8046875,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:32.928449Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nhave been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.\n\nQuestion: When do I have to bring the blood pressure monitor back?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:46:32.929069Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 575,
+        "output": 25,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.219871Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1879.06,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 62,
+        "answer_text": "Return the monitor to the front desk the next day by 10:00 AM.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "When do I have to bring the blood pressure monitor back?",
+            "verdict": "answered",
+            "answer_text": "Return the monitor to the front desk the next day by 10:00 AM."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.221041Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.223038Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.63,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 62,
+        "answer_text": "Return the monitor to the front desk the next day by 10:00 AM."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.223198Z"
+    },
+    {
+      "duration_ms": 2883.17,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2775,
+              "chunk_index": 2,
+              "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first urine of the morning, catching the middle part of the stream. Write your full name and date of birth on the label. Bring the sample to the clinic within 2 hours. If that is not possible, keep it in the fridge - not the freezer - for up to 24 hours.\n\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 hours. It inflates automatically every 30 minutes during the day and every hour at night. Wear a loose short-sleeved or sleeveless top to the fitting appointment. You cannot shower or bathe while wearing the monitor, so do it before you come in. Keep your arm still and relaxed by your side while the cuff inflates. Return the monitor to the front desk the next day by 10:00 AM.",
+              "similarity_score": 0.62381417,
+              "rerank_score": 0.8046875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Return the monitor to the front desk the next day by 10:00 AM.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2AN9C5G83MZN54YMT4JKD"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.223549Z"
+    },
+    {
+      "message_id": "01M3W2AR3M9D76AGAPZHJYM34W",
+      "chat_id": "01M3W2AN7EMPCE379R1XMMHYR3",
+      "sender": "assistant",
+      "content": "Return the monitor to the front desk the next day by 10:00 AM.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2AN9C5G83MZN54YMT4JKD",
+      "level": "info",
+      "timestamp": "2026-10-01T15:46:34.235997Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2AN9C5G83MZN54YMT4JKD": "1cd92ac3ba6aac4d003b4a09a8a3bfc0"
+  }
+}

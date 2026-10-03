@@ -1,0 +1,247 @@
+{
+  "case_id": "G-g-07",
+  "chat_id": "01M3W4HTMB17WP3J10G9T386NN",
+  "patient_id": "01M3W4HTNBWZ7E2SQ7R4AYBFP0",
+  "attempts": 1,
+  "elapsed_seconds": 1.9013893340015784,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+    "content": "Bye",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4HWCHSYQ5R9959VAQE267",
+    "content": "Take care, and we hope to see you soon!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Bye",
+        "query": "Bye"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "chat_id": "01M3W4HTMB17WP3J10G9T386NN",
+      "sender": "patient",
+      "content": "Bye",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.484280Z"
+    },
+    {
+      "message": "Bye",
+      "message_ids_unified": [
+        "01M3W4HTR5Y9M7JCQ352QXQ6S0"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.484823Z"
+    },
+    {
+      "trace_id": "019c7cb452e3fa06d5f844a6e8de9fe7",
+      "event": "turn.traced",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.487793Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:23.492692Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3203,
+        "output": 30,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:24.426610Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Bye",
+          "query": "Bye"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:24.428112Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 938.32,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Bye",
+            "query": "Bye"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:24.429308Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:24.435028Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Bye"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:25:24.435542Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 253,
+        "output": 14,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.116803Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 684.22,
+      "result": {
+        "answer_chars": 39,
+        "answer_text": "Take care, and we hope to see you soon!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.118558Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.122794Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.02,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 39,
+        "answer_text": "Take care, and we hope to see you soon!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.123244Z"
+    },
+    {
+      "duration_ms": 1663.04,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Take care, and we hope to see you soon!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4HTR5Y9M7JCQ352QXQ6S0"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.124356Z"
+    },
+    {
+      "message_id": "01M3W4HWCHSYQ5R9959VAQE267",
+      "chat_id": "01M3W4HTMB17WP3J10G9T386NN",
+      "sender": "assistant",
+      "content": "Take care, and we hope to see you soon!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HTR5Y9M7JCQ352QXQ6S0",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:25.163836Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4HTR5Y9M7JCQ352QXQ6S0": "019c7cb452e3fa06d5f844a6e8de9fe7"
+  }
+}

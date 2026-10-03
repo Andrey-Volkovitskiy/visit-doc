@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-04",
+  "chat_id": "01M3W4H70AX30BTRM8NPMG7M6Y",
+  "patient_id": "01M3W4H719D1VFCEFDPTGFD109",
+  "attempts": 1,
+  "elapsed_seconds": 1.3577589628985152,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4H740BNE9J006YDSYGBZX",
+    "content": "Send my records over to another clinic.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4H858BK91ZX4P4NZY0880",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Send my records over to another clinic.",
+        "query": "Send my records over to another clinic."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "chat_id": "01M3W4H70AX30BTRM8NPMG7M6Y",
+      "sender": "patient",
+      "content": "Send my records over to another clinic.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:03.378929Z"
+    },
+    {
+      "message": "Send my records over to another clinic.",
+      "message_ids_unified": [
+        "01M3W4H740BNE9J006YDSYGBZX"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:03.379382Z"
+    },
+    {
+      "trace_id": "70d0c9edb48501d73bd5635e8a7437d5",
+      "event": "turn.traced",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:03.381347Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:03.386995Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.398638Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Send my records over to another clinic.",
+          "query": "Send my records over to another clinic."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.399853Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1016.7,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "Send my records over to another clinic.",
+            "query": "Send my records over to another clinic."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.400838Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.405907Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 1.41,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.406520Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.412999Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1.2,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.413403Z"
+    },
+    {
+      "duration_ms": 1053.91,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4H740BNE9J006YDSYGBZX"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.414620Z"
+    },
+    {
+      "message_id": "01M3W4H858BK91ZX4P4NZY0880",
+      "chat_id": "01M3W4H70AX30BTRM8NPMG7M6Y",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.471662Z"
+    },
+    {
+      "chat_id": "01M3W4H70AX30BTRM8NPMG7M6Y",
+      "reason": "not_authorized",
+      "message_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4H740BNE9J006YDSYGBZX",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:04.500867Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W4H740BNE9J006YDSYGBZX": "70d0c9edb48501d73bd5635e8a7437d5"
+  }
+}

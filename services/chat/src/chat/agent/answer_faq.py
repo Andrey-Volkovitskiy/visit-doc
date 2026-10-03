@@ -102,12 +102,26 @@ _NO_ANSWER = "NO_ANSWER"
 # answered the "specialist" wording every time. Deleting the rule instead was measured
 # and is worse - the invented "we do not offer blood tests on Saturdays" returns at 3
 # samples in 5, and an MRI acquires a $160 price the corpus never states.
+#
+# "Not even a no" was then read as "never a no". Once the corpus held documents that
+# state one - "we do not stock ... Spikevax", "we do not carry out ... DOT medical
+# examinations", "we do not offer ... braces" - the model declined those questions with
+# the sentence that answers them in front of it: replayed 5 times each on the 018
+# extended set, "do you have Spikevax?" answered 2 in 5, the DOT question 1, braces 2.
+# Saying that a no the information states is an answer took all three to 5 in 5, and
+# "which insurance plans do you accept?" with it, while every labelled gap that reaches
+# generation, and nine near-miss gaps handed their nearest chunks as if they had, still
+# declined 5 in 5. Two other clauses were measured beside it and dropped: one on a
+# statement limited to a context ("for dental appointments") moved nothing, and one
+# allowing an answer from the part of the information that answers outright cost
+# answers it had been giving. See specs/018-hybrid-retrieval/evaluation/findings.md.
 _SYSTEM_PROMPT = (
     "You are a clinic assistant. Answer the visitor's question using ONLY the clinic "
     "information given with it. Do not use outside knowledge. Be concise. Speak as the "
     "clinic, stating the facts directly: never mention where they came from, and never "
     "refer to context, provided information, documents, excerpts or text you were "
-    "given. Say nothing it does not say - not even a no. What it states of every "
+    "given. Say nothing it does not say - not even a no - but a no it does say is an "
+    "answer, so give it. What it states of every "
     "member of a group it states of each one, so a question about one of them is "
     f"answered, not missing. When it does not answer the question, reply with exactly "
     f"{_NO_ANSWER} and nothing else. Listing what it does say, or agreeing because "
@@ -651,7 +665,13 @@ async def _run_pipeline(
             reranked = gate.kept
 
     with step("faq.verdict") as decided:
-        outcome = decide(pool, similarity.kept, reranked, corpus_empty=corpus_empty)
+        outcome = decide(
+            pool,
+            similarity.kept,
+            reranked,
+            corpus_empty=corpus_empty,
+            unreranked_floor=settings.UNRERANKED_SIMILARITY_FLOOR,
+        )
         record(
             decided,
             "faq.verdict",

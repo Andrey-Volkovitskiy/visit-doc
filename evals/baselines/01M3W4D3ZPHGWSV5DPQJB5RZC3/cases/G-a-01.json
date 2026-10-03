@@ -1,0 +1,282 @@
+{
+  "case_id": "G-a-01",
+  "chat_id": "01M3W4D406NTVDC646BE2V5JR8",
+  "patient_id": "01M3W4D40WQY10SE8BF1EDX76D",
+  "attempts": 1,
+  "elapsed_seconds": 3.162264071055688,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4D44SX0EEMZ41K5CKT166",
+    "content": "Which practitioners do you have?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4D70NPJ9G5PPKCHYDMQZY",
+    "content": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Which practitioners do you have?",
+        "query": "Which practitioners do you have?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "chat_id": "01M3W4D406NTVDC646BE2V5JR8",
+      "sender": "patient",
+      "content": "Which practitioners do you have?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:49.260156Z"
+    },
+    {
+      "message": "Which practitioners do you have?",
+      "message_ids_unified": [
+        "01M3W4D44SX0EEMZ41K5CKT166"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:49.260579Z"
+    },
+    {
+      "trace_id": "fb29e3f4a68b2bf15dab38498e207d26",
+      "event": "turn.traced",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:49.264067Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:49.268955Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3207,
+        "output": 32,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.345500Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Which practitioners do you have?",
+          "query": "Which practitioners do you have?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.347324Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1079.99,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Which practitioners do you have?",
+            "query": "Which practitioners do you have?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.348325Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.351789Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.363528Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:50.365118Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:22:50.365915Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 94,
+        "cache_read": 2594,
+        "cache_write": 3357,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.171204Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1805.46,
+      "tool_names": [],
+      "text": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.171862Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 1820.65,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 1,
+        "tool_calls": 0,
+        "answer_chars": 244,
+        "answer_text": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.172155Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.174819Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.71,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 244,
+        "answer_text": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.175100Z"
+    },
+    {
+      "duration_ms": 2934.08,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!",
+      "booking_outcome": "informational",
+      "message_ids_unified": [
+        "01M3W4D44SX0EEMZ41K5CKT166"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.175604Z"
+    },
+    {
+      "message_id": "01M3W4D70NPJ9G5PPKCHYDMQZY",
+      "chat_id": "01M3W4D406NTVDC646BE2V5JR8",
+      "sender": "assistant",
+      "content": "We have two practitioners at the clinic:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nLet me know if you'd like to check availability for either of them!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4D44SX0EEMZ41K5CKT166",
+      "level": "info",
+      "timestamp": "2026-10-01T16:22:52.195081Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4D44SX0EEMZ41K5CKT166": "fb29e3f4a68b2bf15dab38498e207d26"
+  }
+}

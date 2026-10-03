@@ -12,7 +12,18 @@ rewrite it.
 **A baseline is evidence, not a threshold.** Nothing here is the number a later run has to beat.
 The assistant is non-deterministic and `claude-sonnet-5` takes no `temperature`, so a single run
 is one sample: what counts as a regression is read by a person, against a noise band measured
-from five runs of one unchanged build (`make eval-band`), and there is no band yet.
+from five runs of one unchanged build (`make eval-band`).
+
+**The band is `bands/01M3W93XYN42QWH1TCYXN3E5FC.json`** (its report beside it as `.md`), measured from the current
+previous baseline `01M3W4D3…` and four more runs of its build (`a171078`), untraced. The current
+baseline differs from that build only in the classifier prompt, which the band shows never varied,
+so it applies to the current one as well. Pass it as
+`make eval-compare BASE=evals/baselines/01M3WD842TTD1Q9FX8TDRTMFAB NEW=<run> BAND=evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`.
+It applies only to a comparison whose two runs share its conditions, corpus, clock and case set,
+so it marks a prompt or code change and stays silent on one that moves a setting. What it found:
+classification, retrieval and booking gave identical numbers in all five runs, case for case; only
+the answerer varied - unserved answerable between 4 and 6 of 87, from G-w-05 (declined in 3 of 5)
+and G-r-01's first request (1 of 5).
 
 A run is added here deliberately, by copying it out of `.run/evals/`, and is never edited
 afterwards. Compare against one rather than re-scoring it: `compare` writes into neither input,
@@ -26,8 +37,24 @@ finding out, not a thing to repair by editing the run.
 | Run | Cases | Code | Taken |
 |---|---|---|---|
 | [`01M321DWRXSVSY7GW9RY3CR9YW`](01M321DWRXSVSY7GW9RY3CR9YW/) | 97 (all) | `12341e1` on `new-golden-set` | 2026-09-21 |
+| [`01M3VYV0RYA8N8RF2S1RQE5PSF`](01M3VYV0RYA8N8RF2S1RQE5PSF/) | 146 (all) | `e28479a` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3W1XFRH400SHPXDSSFYWR0Z`](01M3W1XFRH400SHPXDSSFYWR0Z/) | 146 (all) | `b0aa7a1` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3W2MA7Y1BBTG2Y9F5W1NCKN`](01M3W2MA7Y1BBTG2Y9F5W1NCKN/) | 146 (all) | `957f240` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3W4D3ZPHGWSV5DPQJB5RZC3`](01M3W4D3ZPHGWSV5DPQJB5RZC3/) | 146 (all) | `a171078` on `018-hybrid-retrieval` | 2026-10-01 |
+| [`01M3WD842TTD1Q9FX8TDRTMFAB`](01M3WD842TTD1Q9FX8TDRTMFAB/) | 146 (all) | `009d4ff` on `018-hybrid-retrieval` | 2026-10-01 |
 
 The first run of the golden set at v2 that is scoreable. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not: it selects v1 case ids the set no longer holds,
 so both `compare` and `score` refuse it. That record stays frozen as FR-048a made it; this one
 supersedes it as the run a comparison starts from, and does not replace it as a record.
+
+`01M3VYV0RYA8N8RF2S1RQE5PSF` was the baseline of the set after Phase 4b extended the corpus to 19
+entries and added the retrieval families, under a 0.25 similarity floor.
+`01M3W1XFRH400SHPXDSSFYWR0Z` is the same set on the build that dropped that floor, so the earlier
+run stays as the record of what the floor cost. `01M3W2MA7Y1BBTG2Y9F5W1NCKN` is
+that build with the answer prompt giving a no the information states, and
+`01M3W4D3ZPHGWSV5DPQJB5RZC3` is that build with heading-aware chunking, and the build the band
+was measured on. `01M3WD842TTD1Q9FX8TDRTMFAB` is the current baseline: that build with the
+classifier fix that closed Phase 4b, 1 of 87 answerable requests unserved. It supersedes `01M321D…` in turn, which no longer
+re-scores - the corpus pin changed and six of its labels gained a citation (`PROVENANCE.md`) - and
+stays as the record of the 9-entry build.

@@ -1,0 +1,718 @@
+{
+  "case_id": "G-k-03",
+  "chat_id": "01M3W2TQ21H56JQ5RDASTYCEZN",
+  "patient_id": "01M3W2TQ2KD09726Y3Z6NFZ73C",
+  "attempts": 1,
+  "elapsed_seconds": 1.7284117500530556,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I pay by cheque?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+    "content": "Can I pay by cheque?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W2TRP86KRDQB92QDMZH635",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I pay by cheque?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I pay by cheque?",
+        "query": "Can I pay by cheque?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "chat_id": "01M3W2TQ21H56JQ5RDASTYCEZN",
+      "sender": "patient",
+      "content": "Can I pay by cheque?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:17.515170Z"
+    },
+    {
+      "message": "Can I pay by cheque?",
+      "message_ids_unified": [
+        "01M3W2TQ3ZN6N2G17PT2TNXX63"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:17.515400Z"
+    },
+    {
+      "trace_id": "35eae3b543e47d4c96557a18d3d9c0c3",
+      "event": "turn.traced",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:17.516545Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:17.519128Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3208,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.449395Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I pay by cheque?",
+          "query": "Can I pay by cheque?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.450129Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 932.37,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I pay by cheque?",
+            "query": "Can I pay by cheque?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.450792Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.453467Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.719922Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.48465282,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.33903039,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.29005405,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.27049112,
+          "considered": true,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim goes to the right plan. A new card can take up to two business days to verify. If you give us the new details at least two business days before your appointment, we can confirm your coverage before you arrive.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.26812682,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.26306105,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.25975066,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.25735235,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.2550982,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.2548101,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.24663648,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.23867297,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.23220895,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.22896847,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.22310287,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.22234961,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2208326,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.21977124,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.21966979,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.20762196,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.20690432,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.20603159,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.18938605,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.17896521,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.17498313,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.733098Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.48465282
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.33903039
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.29005405
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.27049112
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.26812682
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.26306105
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.25975066
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.25735235
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.2550982
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.2548101
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.24663648
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.23867297
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.23220895
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.22896847
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.22310287
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.22234961
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2208326
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.21977124
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.21966979
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.20762196
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.20690432
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.20603159
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.18938605
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.17896521
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.17498313
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:18.734885Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 364.18,
+      "scores": [
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.48465282,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.33903039,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.29005405,
+          "rerank_score": 0.3671875
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.26812682,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.27049112,
+          "rerank_score": 0.330078125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.100376Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "rerank_score": 0.56640625
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "rerank_score": 0.44140625
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "rerank_score": 0.3671875
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "rerank_score": 0.33984375
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "rerank_score": 0.330078125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.102257Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.48465282,
+      "best_rerank_score": 0.56640625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.103674Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 651.77,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I pay by cheque?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.104942Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.107409Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.64,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.107607Z"
+    },
+    {
+      "duration_ms": 1604.58,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W2TQ3ZN6N2G17PT2TNXX63"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.107987Z"
+    },
+    {
+      "message_id": "01M3W2TRP86KRDQB92QDMZH635",
+      "chat_id": "01M3W2TQ21H56JQ5RDASTYCEZN",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.127143Z"
+    },
+    {
+      "chat_id": "01M3W2TQ21H56JQ5RDASTYCEZN",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W2TQ3ZN6N2G17PT2TNXX63",
+      "level": "info",
+      "timestamp": "2026-10-01T15:55:19.139730Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2TQ3ZN6N2G17PT2TNXX63": "35eae3b543e47d4c96557a18d3d9c0c3"
+  }
+}

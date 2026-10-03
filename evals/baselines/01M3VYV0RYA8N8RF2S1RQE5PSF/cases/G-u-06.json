@@ -1,0 +1,763 @@
+{
+  "case_id": "G-u-06",
+  "chat_id": "01M3VZ9BY4G0X7T5RK004E287B",
+  "patient_id": "01M3VZ9BZ2FDTYPZX9SF6QS7ZQ",
+  "attempts": 1,
+  "elapsed_seconds": 3.231769150006585,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I get a DOT physical with you?",
+          "answer": null,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+    "content": "Can I get a DOT physical with you?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ9F0S5D7FKM81TMTWDA9P",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I get a DOT physical with you?",
+        "answer": null,
+        "verdict": "abstained_generation",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I get a DOT physical with you?",
+        "query": "Can I get a DOT physical with you?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "chat_id": "01M3VZ9BY4G0X7T5RK004E287B",
+      "sender": "patient",
+      "content": "Can I get a DOT physical with you?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:23.475101Z"
+    },
+    {
+      "message": "Can I get a DOT physical with you?",
+      "message_ids_unified": [
+        "01M3VZ9C2YDCHHXVKH4E2BE71J"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:23.475537Z"
+    },
+    {
+      "trace_id": "9a47716ea60897c264d2735ab0c697ec",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:23.477173Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:23.482007Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.513944Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I get a DOT physical with you?",
+          "query": "Can I get a DOT physical with you?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.514403Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1034.57,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I get a DOT physical with you?",
+            "query": "Can I get a DOT physical with you?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.514732Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.517936Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.792380Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.44115615,
+          "considered": true,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "similarity_score": 0.38546374,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.3387403,
+          "considered": true,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; your blood pressure, heart rate, height, weight and body mass index (BMI); a physical examination; and a discussion of the screening tests and vaccinations recommended for your age. Most insurance plans cover one preventive physical a year at no cost to you, but check with your plan.\n\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule with you, usually every three or six months. Bring your home blood pressure or blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.33319587,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.28778595,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.27912855,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.27586082,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.27479243,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.2744509,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.27171588,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.2707046,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.26495838,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.26286304,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.26078585,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.2589479,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.25605303,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.25565,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.23462749,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.22727013,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.22512639,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.22420749,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.21902427,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.2186912,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.20684001,
+          "considered": false,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.20216134,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.805324Z"
+    },
+    {
+      "floor": 0.25,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.44115615
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "similarity_score": 0.38546374
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.3387403
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.33319587
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.28778595
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2737,
+          "chunk_index": 2,
+          "similarity_score": 0.23462749
+        },
+        {
+          "entry_id": 2729,
+          "chunk_index": 0,
+          "similarity_score": 0.22727013
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 1,
+          "similarity_score": 0.22512639
+        },
+        {
+          "entry_id": 2731,
+          "chunk_index": 0,
+          "similarity_score": 0.22420749
+        },
+        {
+          "entry_id": 2732,
+          "chunk_index": 0,
+          "similarity_score": 0.21902427
+        },
+        {
+          "entry_id": 2739,
+          "chunk_index": 0,
+          "similarity_score": 0.2186912
+        },
+        {
+          "entry_id": 2738,
+          "chunk_index": 2,
+          "similarity_score": 0.20684001
+        },
+        {
+          "entry_id": 2736,
+          "chunk_index": 0,
+          "similarity_score": 0.20216134
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2741,
+          "chunk_index": 1,
+          "similarity_score": 0.27912855
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 1,
+          "similarity_score": 0.27586082
+        },
+        {
+          "entry_id": 2730,
+          "chunk_index": 0,
+          "similarity_score": 0.27479243
+        },
+        {
+          "entry_id": 2737,
+          "chunk_index": 0,
+          "similarity_score": 0.2744509
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 1,
+          "similarity_score": 0.27171588
+        },
+        {
+          "entry_id": 2744,
+          "chunk_index": 0,
+          "similarity_score": 0.2707046
+        },
+        {
+          "entry_id": 2733,
+          "chunk_index": 0,
+          "similarity_score": 0.26495838
+        },
+        {
+          "entry_id": 2742,
+          "chunk_index": 0,
+          "similarity_score": 0.26286304
+        },
+        {
+          "entry_id": 2734,
+          "chunk_index": 0,
+          "similarity_score": 0.26078585
+        },
+        {
+          "entry_id": 2741,
+          "chunk_index": 0,
+          "similarity_score": 0.2589479
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 1,
+          "similarity_score": 0.25605303
+        },
+        {
+          "entry_id": 2740,
+          "chunk_index": 0,
+          "similarity_score": 0.25565
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:24.809226Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 274.89,
+      "scores": [
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "similarity_score": 0.44115615,
+          "rerank_score": 0.78125
+        },
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "similarity_score": 0.3387403,
+          "rerank_score": 0.462890625
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "similarity_score": 0.28778595,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "similarity_score": 0.33319587,
+          "rerank_score": 0.400390625
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "similarity_score": 0.38546374,
+          "rerank_score": 0.392578125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:25.086593Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2743,
+          "chunk_index": 2,
+          "rerank_score": 0.78125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2743,
+          "chunk_index": 0,
+          "rerank_score": 0.462890625
+        },
+        {
+          "entry_id": 2726,
+          "chunk_index": 0,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 2727,
+          "chunk_index": 0,
+          "rerank_score": 0.400390625
+        },
+        {
+          "entry_id": 2728,
+          "chunk_index": 0,
+          "rerank_score": 0.392578125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:25.088102Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.44115615,
+      "best_rerank_score": 0.78125,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:25.088925Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nhree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.\n\nQuestion: Can I get a DOT physical with you?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:53:25.089330Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 358,
+        "output": 10,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.417678Z"
+    },
+    {
+      "gates_verdict": "answered",
+      "survivor_count": 1,
+      "malformed": false,
+      "event": "faq.no_answer",
+      "segment": 0,
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.418262Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1901.83,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I get a DOT physical with you?",
+            "verdict": "abstained_generation",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.418909Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.420779Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.46,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.420959Z"
+    },
+    {
+      "duration_ms": 2998.36,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VZ9C2YDCHHXVKH4E2BE71J"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.421277Z"
+    },
+    {
+      "message_id": "01M3VZ9F0S5D7FKM81TMTWDA9P",
+      "chat_id": "01M3VZ9BY4G0X7T5RK004E287B",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.441755Z"
+    },
+    {
+      "chat_id": "01M3VZ9BY4G0X7T5RK004E287B",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3VZ9C2YDCHHXVKH4E2BE71J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:53:26.456575Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ9C2YDCHHXVKH4E2BE71J": "9a47716ea60897c264d2735ab0c697ec"
+  }
+}

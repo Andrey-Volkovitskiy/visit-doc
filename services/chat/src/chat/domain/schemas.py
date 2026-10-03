@@ -193,9 +193,15 @@ class FaqVerdict(StrEnum):
     live revisions and the search still matched no chunk of them, which says the index
     is behind the rows, not that the bar is too high. Lowering the floor cannot fix it.
 
+    `ABSTAINED_SIMILARITY_FLOOR` is reached in two ways: no candidate cleared a
+    configured shortlist floor, or the reranker was unavailable and none of the
+    shortlist cleared the floor its fallback answers through. With the shortlist floor
+    at its default of -1.0 only the second happens.
+
     `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
-    because the answer rests on different evidence: up to five chunks no cross-encoder
-    approved, rather than at most three it did.
+    because the answer rests on different evidence: up to five chunks that cleared a
+    similarity floor and that no cross-encoder approved, rather than at most three it
+    did.
 
     The five abstentions are identical in what they cause - same message, same call
     to staff - and nothing may branch on which one it is. They differ in what they

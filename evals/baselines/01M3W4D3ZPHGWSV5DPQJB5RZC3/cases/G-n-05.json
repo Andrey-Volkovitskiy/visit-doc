@@ -1,0 +1,1289 @@
+{
+  "case_id": "G-n-05",
+  "chat_id": "01M3W4NR8BG91YNGRCPWDEZG50",
+  "patient_id": "01M3W4NR961KCQD4K1MKJ9BRKE",
+  "attempts": 1,
+  "elapsed_seconds": 4.4595666519599035,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you see children under five?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        },
+        {
+          "position": 1,
+          "question": "What are your opening hours?",
+          "answer": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2847,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4NRBG809TAFKZDH566EV4",
+    "content": "Do you see children under five, and what are your opening hours?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4NWGYPNDE7EHZM1D60E95",
+    "content": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.\n\nAs for whether young children are seen at the clinic, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff who will follow up. In the meantime, feel free to ask if there's anything else I can help with.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you see children under five?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      },
+      {
+        "position": 1,
+        "question": "What are your opening hours?",
+        "answer": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2847,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you see children under five?",
+        "query": "Do you see children under five?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "What are your opening hours?",
+        "query": "What are your opening hours?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "chat_id": "01M3W4NR8BG91YNGRCPWDEZG50",
+      "sender": "patient",
+      "content": "Do you see children under five, and what are your opening hours?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:32.097905Z"
+    },
+    {
+      "message": "Do you see children under five, and what are your opening hours?",
+      "message_ids_unified": [
+        "01M3W4NRBG809TAFKZDH566EV4"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:32.098282Z"
+    },
+    {
+      "trace_id": "cc1611d2d40f50dd0e42f4482145d173",
+      "event": "turn.traced",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:32.100138Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:32.103797Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3215,
+        "output": 56,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.092092Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you see children under five?",
+          "query": "Do you see children under five?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "What are your opening hours?",
+          "query": "What are your opening hours?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.098690Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 996.64,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you see children under five?",
+            "query": "Do you see children under five?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "What are your opening hours?",
+            "query": "What are your opening hours?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.100109Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.105789Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.372165Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.382202Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.59422845,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.43023518,
+          "considered": true,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.38656393,
+          "considered": true,
+          "chunk_text": "# Running late\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.3852406,
+          "considered": true,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your registration paperwork. Returning patients can arrive 5 to 10 minutes prior to their slot.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.36160827,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.35560352,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.355149,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.35040528,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.32829493,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.30963844,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 4,
+          "similarity_score": 0.3073532,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 ho",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.30603892,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.30109277,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.2864058,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.2786991,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "similarity_score": 0.27610236,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.27495867,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.27316064,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.2724366,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.26769215,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.26728863,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.26602763,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.26406658,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.26106933,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.2564544,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.403630Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.59422845
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.43023518
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.38656393
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.3852406
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.36160827
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.35560352
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.355149
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.35040528
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.32829493
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 1,
+          "similarity_score": 0.30963844
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 4,
+          "similarity_score": 0.3073532
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.30603892
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.30109277
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 4,
+          "similarity_score": 0.2864058
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.2786991
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 4,
+          "similarity_score": 0.27610236
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.27495867
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.27316064
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.2724366
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.26769215
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 0,
+          "similarity_score": 0.26728863
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.26602763
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.26406658
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.26106933
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.2564544
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.406933Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.23032615,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.20273933,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.19806927,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "similarity_score": 0.18722358,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.18633127,
+          "considered": true,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.17783336,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.17417386,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.17365052,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.16808632,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.16791494,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.16494814,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.16453892,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 3,
+          "similarity_score": 0.16364776,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.15979633,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.15955861,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.15613902,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.15579838,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 2,
+          "similarity_score": 0.14911014,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.14658254,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.14082998,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.14047882,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.1400363,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.13896614,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.13768154,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.13732891,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.413644Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.23032615
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.20273933
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.19806927
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "similarity_score": 0.18722358
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.18633127
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.17783336
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.17417386
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.17365052
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.16808632
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.16791494
+        },
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.16494814
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.16453892
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 3,
+          "similarity_score": 0.16364776
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.15979633
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.15955861
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.15613902
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.15579838
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 2,
+          "similarity_score": 0.14911014
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.14658254
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.14082998
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.14047882
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.1400363
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 0,
+          "similarity_score": 0.13896614
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.13768154
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.13732891
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.416905Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 255.38,
+      "scores": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "similarity_score": 0.59422845,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.43023518,
+          "rerank_score": 0.5234375
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "similarity_score": 0.3852406,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "similarity_score": 0.38656393,
+          "rerank_score": 0.3828125
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.36160827,
+          "rerank_score": 0.3359375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.664939Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2847,
+          "chunk_index": 0,
+          "rerank_score": 0.82421875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "rerank_score": 0.5234375
+        },
+        {
+          "entry_id": 2848,
+          "chunk_index": 0,
+          "rerank_score": 0.466796875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 2,
+          "rerank_score": 0.3828125
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "rerank_score": 0.3359375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.666288Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.59422845,
+      "best_rerank_score": 0.82421875,
+      "event": "faq.verdict",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.667642Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What are your opening hours?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:27:33.668187Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 262.08,
+      "scores": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.23032615,
+          "rerank_score": 0.36328125
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.20273933,
+          "rerank_score": 0.353515625
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "similarity_score": 0.18722358,
+          "rerank_score": 0.33203125
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.18633127,
+          "rerank_score": 0.30859375
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "similarity_score": 0.19806927,
+          "rerank_score": 0.296875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.682777Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "rerank_score": 0.36328125
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "rerank_score": 0.353515625
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 2,
+          "rerank_score": 0.33203125
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "rerank_score": 0.30859375
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 5,
+          "rerank_score": 0.296875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.684836Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.23032615,
+      "best_rerank_score": 0.36328125,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:33.686849Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 344,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 1,
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:34.675644Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1571.98,
+      "result": {
+        "segment_count": 2,
+        "abstained": true,
+        "citation_count": 1,
+        "answer_chars": 78,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you see children under five?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          },
+          {
+            "position": 1,
+            "question": "What are your opening hours?",
+            "verdict": "answered",
+            "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:34.676785Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:34.679782Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1181,
+        "output": 112,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:36.341891Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1663.57,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 333,
+        "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.\n\nAs for whether young children are seen at the clinic, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff who will follow up. In the meantime, feel free to ask if there's anything else I can help with."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:36.342868Z"
+    },
+    {
+      "duration_ms": 4262.98,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        },
+        {
+          "position": 1,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2847,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.59422845,
+              "rerank_score": 0.82421875
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.\n\nAs for whether young children are seen at the clinic, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff who will follow up. In the meantime, feel free to ask if there's anything else I can help with.",
+      "booking_outcome": null,
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W4NRBG809TAFKZDH566EV4"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:36.343796Z"
+    },
+    {
+      "message_id": "01M3W4NWGYPNDE7EHZM1D60E95",
+      "chat_id": "01M3W4NR8BG91YNGRCPWDEZG50",
+      "sender": "assistant",
+      "content": "We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St.\n\nAs for whether young children are seen at the clinic, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff who will follow up. In the meantime, feel free to ask if there's anything else I can help with.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:36.366259Z"
+    },
+    {
+      "chat_id": "01M3W4NR8BG91YNGRCPWDEZG50",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4NRBG809TAFKZDH566EV4",
+      "level": "info",
+      "timestamp": "2026-10-01T16:27:36.382560Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4NRBG809TAFKZDH566EV4": "cc1611d2d40f50dd0e42f4482145d173"
+  }
+}

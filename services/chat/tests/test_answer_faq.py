@@ -55,6 +55,18 @@ _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
 
 
+@pytest.fixture
+def shortlist_floor(monkeypatch: pytest.MonkeyPatch) -> float:
+    """Cut the shortlist at 0.25, the floor the pipeline ran with before 018.
+
+    The similarity floor is still a setting a deployment may turn on, and the tests
+    using this are about what it does when it is on; by default it admits every
+    candidate, which the tests without it cover.
+    """
+    monkeypatch.setattr(get_settings(), "SIMILARITY_FLOOR", 0.25)
+    return 0.25
+
+
 def _only(result: FaqResult) -> FaqSegmentAnswer:
     """Return the one request a single-request turn answered.
 
@@ -263,6 +275,7 @@ async def test_the_reranker_sees_only_the_similarity_survivors() -> None:
     assert [c.chunk_index for c in sent] == [0, 1, 2, 3, 4]
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_sub_floor_candidates_never_reach_the_reranker() -> None:
     pool = [_chunk(0, similarity=0.9), _chunk(1, similarity=0.05)]
     survivors = [_chunk(0, rerank=0.9)]
@@ -315,6 +328,7 @@ async def test_a_search_matching_nothing_abstains_at_the_pool_not_the_floor() ->
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_a_below_floor_pool_abstains_with_no_rerank_and_no_generation() -> None:
     result, recorder, rerank, _ = await _run(
         pool=[_chunk(0, similarity=0.05)], reranked=None
@@ -323,6 +337,45 @@ async def test_a_below_floor_pool_abstains_with_no_rerank_and_no_generation() ->
     assert _verdict(result) is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
     assert recorder.get("calls") is None
     rerank.assert_not_awaited()
+
+
+async def test_by_default_every_candidate_reaches_the_reranker() -> None:
+    # No shortlist floor: a chunk scoring low against a short question is still the
+    # reranker's to judge, which is where "PR-4" and "braces" were lost before 018.
+    pool = [_chunk(0, similarity=0.9), _chunk(1, similarity=0.05)]
+
+    _, _, rerank, _ = await _run(pool=pool, reranked=[_chunk(0, rerank=0.9)])
+
+    sent = rerank.await_args.args[2]
+    assert [c.chunk_index for c in sent] == [0, 1]
+
+
+async def test_a_reranker_outage_answers_only_from_chunks_above_its_own_floor() -> None:
+    floor = get_settings().UNRERANKED_SIMILARITY_FLOOR
+    pool = [_chunk(0, similarity=floor + 0.5), _chunk(1, similarity=floor - 0.1)]
+
+    result, recorder, rerank, _ = await _run(pool=pool, reranked=None)
+
+    rerank.assert_awaited_once()
+    assert _verdict(result) is FaqVerdict.ANSWERED_UNRERANKED
+    assert [c.chunk_index for c in _citations(result)] == [0]
+    assert recorder.get("calls") is not None
+
+
+async def test_a_reranker_outage_with_nothing_above_the_unreranked_floor_abstains() -> (
+    None
+):
+    # Nothing has judged the shortlist, so it is not answered from as the cap left it.
+    floor = get_settings().UNRERANKED_SIMILARITY_FLOOR
+    result, recorder, rerank, escalation = await _run(
+        pool=[_chunk(0, similarity=floor - 0.1)], reranked=None
+    )
+
+    rerank.assert_awaited_once()
+    assert _verdict(result) is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert _citations(result) == []
+    assert recorder.get("calls") is None
+    assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
 
 
 async def test_an_all_rejected_rerank_abstains_with_no_generation() -> None:
@@ -501,6 +554,7 @@ async def test_truncation_is_only_marked_when_the_text_was_actually_cut() -> Non
     assert not any(c["text_truncated"] for c in excluded)
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_the_similarity_gate_separates_floor_drops_from_cap_drops() -> None:
     # One says the bar is too high, the other says it is too low. A log that conflates
     # them cannot tune either.
@@ -673,6 +727,7 @@ async def test_a_wider_pool_costs_log_lines_not_log_volume() -> None:
     assert logged_chars < 25 * 1000 / 2
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_considered_reflects_the_gate_not_the_candidate_position() -> None:
     """`considered` must mean "the similarity gate kept it", not "it was in the top 5".
 
@@ -696,6 +751,7 @@ async def test_considered_reflects_the_gate_not_the_candidate_position() -> None
     assert considered == [0, 1]
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_a_below_floor_candidate_inside_the_cap_is_logged_as_a_preview() -> None:
     long_text = "x" * 400
     pool = [
@@ -734,6 +790,7 @@ async def test_an_empty_corpus_raises_no_retrieval_or_gate_event() -> None:
     assert events["faq.verdict"]["blocked_gate"] == "empty_corpus"
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
     # The other side of the same rule: a search that ran and found nothing usable is a
     # decision the gate made, and it has to be visible as one.
@@ -1321,6 +1378,15 @@ def test_the_generation_prompt_forbids_inferring_an_answer_from_a_silence() -> N
     assert "say nothing it does not say - not even a no" in prompt
 
 
+def test_the_generation_prompt_lets_a_stated_no_answer() -> None:
+    # Read alone, "not even a no" became "never a no": "do you have Spikevax?" was
+    # declined with "we do not stock ... Spikevax" in front of the model.
+    from chat.agent.answer_faq import _SYSTEM_PROMPT
+
+    prompt = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert "a no it does say is an answer, so give it" in prompt
+
+
 def test_the_generation_prompt_asks_for_the_sentinel_and_nothing_else() -> None:
     # The decline is a signal this module reads, not prose for the patient: read as
     # prose it is indistinguishable from an answer, and the turn recorded one.
@@ -1866,6 +1932,7 @@ async def test_an_answered_request_records_its_generation_under_it(
     assert "langfuse.observation.completion_start_time" in attributes
 
 
+@pytest.mark.usefixtures("shortlist_floor")
 async def test_an_abstention_records_no_generation_and_no_rerank(
     span_exporter: InMemorySpanExporter,
 ) -> None:

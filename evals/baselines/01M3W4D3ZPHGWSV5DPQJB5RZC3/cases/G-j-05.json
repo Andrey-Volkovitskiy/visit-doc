@@ -1,0 +1,760 @@
+{
+  "case_id": "G-j-05",
+  "chat_id": "01M3W4JGKTNKYHPJGQDZZ5J8HG",
+  "patient_id": "01M3W4JGMHJMTV4Q2X35FT9JQS",
+  "attempts": 1,
+  "elapsed_seconds": 3.10363259492442,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I see a specialist if my GP hasn't sent anything over?",
+          "answer": "You can book a visit with any of our practitioners without a referral.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2840,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+    "content": "Can I see a specialist if my GP hasn't sent anything over?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4JKJEGGTNV2223EPXPBSG",
+    "content": "You can book a visit with any of our practitioners without a referral.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I see a specialist if my GP hasn't sent anything over?",
+        "answer": "You can book a visit with any of our practitioners without a referral.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2840,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I see a specialist if my GP hasn't sent anything over?",
+        "query": "Can I see a specialist if my GP hasn't sent a referral?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "chat_id": "01M3W4JGKTNKYHPJGQDZZ5J8HG",
+      "sender": "patient",
+      "content": "Can I see a specialist if my GP hasn't sent anything over?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:45.956973Z"
+    },
+    {
+      "message": "Can I see a specialist if my GP hasn't sent anything over?",
+      "message_ids_unified": [
+        "01M3W4JGPM2VWMNFD3GQWB9TXB"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:45.957524Z"
+    },
+    {
+      "trace_id": "505e9748e8c1ea05b4bab3f53ce89321",
+      "event": "turn.traced",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:45.961180Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:45.965997Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3215,
+        "output": 44,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.098728Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I see a specialist if my GP hasn't sent anything over?",
+          "query": "Can I see a specialist if my GP hasn't sent a referral?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.099775Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1134.94,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I see a specialist if my GP hasn't sent anything over?",
+            "query": "Can I see a specialist if my GP hasn't sent a referral?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.100391Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.104349Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.370890Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.5702388,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.39010465,
+          "considered": true,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.35614344,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.35013703,
+          "considered": true,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other specialist consultations.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.33636534,
+          "considered": true,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Monday through Saturday from 8:30 AM to 6:00 PM.\n\nIf you arrive up to 10 minutes after your appointment time, you will still be seen, but the appointment may be shorter so that the patients booked after you are not kept waiting. If you arrive more than 15 minutes late for a GP or specialist appointment, or more than 10 minutes late for a dental appointment, we may not be able to see you, and you will be asked to choose a new time. Dental appointments have the shorter limit because the treatment room has to be prepared and cleaned between patients.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.33315575,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.31403646,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.30852342,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.30561918,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.29215968,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.28782058,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.2770908,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.27453375,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.2663558,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.25810415,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.2564738,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.25549924,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.25511754,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.2496184,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.24707493,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.24565414,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.24271281,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.2422142,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.23817018,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.22419295,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.390235Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.5702388
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.39010465
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.35614344
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.35013703
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.33636534
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.33315575
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 2,
+          "similarity_score": 0.31403646
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.30852342
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 1,
+          "similarity_score": 0.30561918
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.29215968
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.28782058
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.2770908
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.27453375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.2663558
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.25810415
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.2564738
+        },
+        {
+          "entry_id": 2851,
+          "chunk_index": 0,
+          "similarity_score": 0.25549924
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.25511754
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 4,
+          "similarity_score": 0.2496184
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 2,
+          "similarity_score": 0.24707493
+        },
+        {
+          "entry_id": 2855,
+          "chunk_index": 3,
+          "similarity_score": 0.24565414
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 3,
+          "similarity_score": 0.24271281
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 0,
+          "similarity_score": 0.2422142
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 2,
+          "similarity_score": 0.23817018
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.22419295
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.394482Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 279.37,
+      "scores": [
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "similarity_score": 0.5702388,
+          "rerank_score": 0.8515625
+        },
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "similarity_score": 0.35013703,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "similarity_score": 0.33636534,
+          "rerank_score": 0.37890625
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.35614344,
+          "rerank_score": 0.375
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.39010465,
+          "rerank_score": 0.322265625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.676114Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2840,
+          "chunk_index": 0,
+          "rerank_score": 0.8515625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2845,
+          "chunk_index": 0,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2853,
+          "chunk_index": 0,
+          "rerank_score": 0.37890625
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "rerank_score": 0.375
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "rerank_score": 0.322265625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.677753Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5702388,
+      "best_rerank_score": 0.8515625,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:47.678895Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Can I see a specialist if my GP hasn't sent a referral?\n\nQuestion: Can I see a specialist if my GP hasn't sent anything over?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:25:47.679530Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 365,
+        "output": 21,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.865912Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1763.96,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 70,
+        "answer_text": "You can book a visit with any of our practitioners without a referral.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I see a specialist if my GP hasn't sent anything over?",
+            "verdict": "answered",
+            "answer_text": "You can book a visit with any of our practitioners without a referral."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.867247Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.869491Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.64,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 70,
+        "answer_text": "You can book a visit with any of our practitioners without a referral."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.869763Z"
+    },
+    {
+      "duration_ms": 2929.6,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2840,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+              "similarity_score": 0.5702388,
+              "rerank_score": 0.8515625
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "You can book a visit with any of our practitioners without a referral.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4JGPM2VWMNFD3GQWB9TXB"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.870473Z"
+    },
+    {
+      "message_id": "01M3W4JKJEGGTNV2223EPXPBSG",
+      "chat_id": "01M3W4JGKTNKYHPJGQDZZ5J8HG",
+      "sender": "assistant",
+      "content": "You can book a visit with any of our practitioners without a referral.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4JGPM2VWMNFD3GQWB9TXB",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:48.893888Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4JGPM2VWMNFD3GQWB9TXB": "505e9748e8c1ea05b4bab3f53ce89321"
+  }
+}

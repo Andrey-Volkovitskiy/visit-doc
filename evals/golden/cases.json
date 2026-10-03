@@ -894,7 +894,8 @@
        "gist": "is Aetna accepted",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       }
      ],
@@ -1093,6 +1094,84 @@
       }
      ],
      "note": "the same shape against the payment entry, which names cash and HSA cards among the methods accepted and says nothing about dividing one payment between two of them. It also guards the group-to-member licence in the generation prompt: accepting each method separately is not accepting them combined"
+    },
+    {
+     "id": "G-k-17",
+     "message": "Is there a charge if I turn up too late to be seen?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "a charge for arriving too late to be seen",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "the running-late document says what happens to the appointment - a new time is chosen - and nothing about a charge. Its nearest neighbour is G-k-04's cancellation policy, which no document holds either"
+    },
+    {
+     "id": "G-k-18",
+     "message": "Do you give the shingles vaccine?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "shingles vaccine",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "the vaccinations document lists what is offered and names three vaccines that are not; shingles is in neither list, so it is not a no"
+    },
+    {
+     "id": "G-k-19",
+     "message": "How long does a filling appointment take?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "length of a filling appointment",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "the dental guide says fillings get a separate appointment and how long the numbness lasts afterwards - two durations near the one asked for, neither of them it"
+    },
+    {
+     "id": "G-k-20",
+     "message": "Do you take Humana?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Humana accepted",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "an insurer name in the exact shape of the plan guide's own entries, absent from both it and the insurance entry. 'Not on the list' is not a no: the insurance entry says most major providers are accepted"
+    },
+    {
+     "id": "G-k-21",
+     "message": "Can you send my appointment reminders on WhatsApp instead?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "reminders by WhatsApp",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "the reminders document describes text messages and email and does not say they are the only channels"
+    },
+    {
+     "id": "G-k-22",
+     "message": "What's the self-pay price for code 99213?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 99213",
+       "answerable": false,
+       "cites": []
+      }
+     ],
+     "note": "a code in the exact shape of the price list's own entries, absent from it - the identifier counterpart of G-k-20. The list says the front desk can explain an unlisted code, which is not a price"
     }
    ]
   },
@@ -1125,7 +1204,8 @@
        "gist": "is Blue Cross accepted",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       }
      ],
@@ -1190,7 +1270,8 @@
        "gist": "accepted plans",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       }
      ]
@@ -1235,7 +1316,8 @@
        "gist": "is Cigna accepted",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       },
       {
@@ -1514,7 +1596,8 @@
        "gist": "is Medicare accepted",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       },
       {
@@ -1713,7 +1796,8 @@
        "gist": "accepted plans",
        "answerable": true,
        "cites": [
-        "insurance-plans"
+        "insurance-plans",
+        "insurance-plan-guide"
        ]
       },
       {
@@ -1849,6 +1933,647 @@
       "expect": []
      },
      "note": "taken from a live turn (2026-09-25, message 01M3BR67WQVK44K2R2HV98127V): both FAQ requests cleared both gates on the entry that answers them, and the answerer returned NO_ANSWER for each, 5 samples in 5 on replay. It still did with the clinic's replies removed and only the patient's earlier question kept, and with an instruction to ignore earlier answers; with no conversation shown it answered both, 3 in 3. The staff line that followed the reply live is left out - removing it changed nothing"
+    }
+   ]
+  },
+  {
+   "letter": "s",
+   "name": "faq-exact-terms",
+   "tests": "One answerable FAQ question that turns on an exact term - a plan name, a form number, a drug or vaccine brand, a short code, a network name. A dense embedding places such a term near its category rather than on it, so 'Aetna Choice POS II' lands beside every other insurance sentence; lexical search matches the string itself. This is the family hybrid retrieval is expected to move, and the one an ablation reads first.",
+   "cases": [
+    {
+     "id": "G-s-01",
+     "message": "Are you in-network with Aetna Choice POS II?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Aetna Choice POS II in-network",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-02",
+     "message": "I'm on UnitedHealthcare Navigate HMO - can I use it with you?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is UHC Navigate HMO in-network",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "the answer is no, and the insurance entry names UnitedHealthcare among the insurers accepted - the plan name is what decides it"
+    },
+    {
+     "id": "G-s-03",
+     "message": "Is Cigna LocalPlus accepted?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Cigna LocalPlus accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-04",
+     "message": "What is form IC-2 for?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what form IC-2 is",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-05",
+     "message": "What goes on the PR-4?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what form PR-4 asks for",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-06",
+     "message": "Do you have Spikevax?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Spikevax stocked",
+       "answerable": true,
+       "cites": [
+        "vaccinations"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-07",
+     "message": "How long before spirometry do I have to stop my Spiriva?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "when to stop Spiriva before spirometry",
+       "answerable": true,
+       "cites": [
+        "test-preparation"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-08",
+     "message": "I take Eliquis. Does the dentist need to know?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "Eliquis and dental treatment",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-09",
+     "message": "What's the Wi-Fi network called?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "guest Wi-Fi network name",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-10",
+     "message": "I got a text from 72913 - is that really you?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "whether short code 72913 is the clinic",
+       "answerable": true,
+       "cites": [
+        "reminders-and-messages"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-s-11",
+     "message": "Do you take Delta Dental PPO?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Delta Dental PPO accepted",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ],
+     "note": "a dental plan, so the answer is in the dental guide rather than either insurance entry - both of which a dense search is likely to rank first"
+    },
+    {
+     "id": "G-s-12",
+     "message": "How do I take the Vivotif typhoid vaccine?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "how Vivotif is taken",
+       "answerable": true,
+       "cites": [
+        "vaccinations"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "letter": "t",
+   "name": "faq-paraphrase",
+   "tests": "One answerable FAQ question asked the way a patient says it, sharing little or no vocabulary with the document section that answers it - 'frozen' for numb, 'jabs' for vaccinations, 'heart tracing' for an ECG. Dense search is expected to be strong here and lexical search weak, so this family is the counterweight to family s: a fusion that helps one must be read against what it does to the other.",
+   "cases": [
+    {
+     "id": "G-t-01",
+     "message": "My mouth is still frozen from the filling. Can I have a coffee?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "hot drinks while still numb after a filling",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-02",
+     "message": "Can my sister come in with me when I see the doctor?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "a companion in the consultation",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ],
+     "note": "names a third party without the appointment being for her - an ordinary FAQ question, not booking_for_another"
+    },
+    {
+     "id": "G-t-03",
+     "message": "My English isn't great. Will someone be able to translate for me?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "interpreting",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-04",
+     "message": "Something came up and I'll get there about twenty minutes after my slot. Will I still be seen?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "being seen when twenty minutes late",
+       "answerable": true,
+       "cites": [
+        "running-late"
+       ]
+      }
+     ],
+     "note": "asks the terms governing a visit, not for a change to one, so it is faq_question even though it is about the patient's own appointment"
+    },
+    {
+     "id": "G-t-05",
+     "message": "I'm off to Kenya in two months. Which jabs can you do?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "travel vaccinations offered",
+       "answerable": true,
+       "cites": [
+        "vaccinations"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-06",
+     "message": "My ears feel bunged up with wax. How do I get ready to have it cleared?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "preparing for ear wax removal",
+       "answerable": true,
+       "cites": [
+        "gp-services"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-07",
+     "message": "Who else gets to look at my file?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "who can see the medical record",
+       "answerable": true,
+       "cites": [
+        "privacy"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-08",
+     "message": "Can I put moisturiser on before the heart tracing?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "lotion before an ECG",
+       "answerable": true,
+       "cites": [
+        "test-preparation"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-t-09",
+     "message": "How long do you hang on to my notes?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "how long records are kept",
+       "answerable": true,
+       "cites": [
+        "privacy"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "letter": "u",
+   "name": "faq-deep-in-a-document",
+   "tests": "One answerable FAQ question whose answer sits in a late section of a long document, several sections away from its title. Under fixed-size chunking a chunk that far in carried none of the document's opening context and had to be found on its own wording; heading-aware chunking (018) prefixes every chunk with its heading path, and this family is where that choice is measured. The label cites the document; which chunk carried the answer is read from the stored run.",
+   "cases": [
+    {
+     "id": "G-u-01",
+     "message": "When do I have to bring the blood pressure monitor back?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "returning the 24-hour blood pressure monitor",
+       "answerable": true,
+       "cites": [
+        "test-preparation"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-u-02",
+     "message": "How long can I keep a urine sample in the fridge?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "storing a urine sample",
+       "answerable": true,
+       "cites": [
+        "test-preparation"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-u-03",
+     "message": "When can I start rinsing after having a tooth taken out?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "rinsing after an extraction",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-u-04",
+     "message": "Do you do braces?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is orthodontic treatment offered",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ],
+     "note": "answered by the dental guide's last section, as a no"
+    },
+    {
+     "id": "G-u-05",
+     "message": "How long does it take you to verify a new insurance card?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "verifying a new insurance card",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-u-06",
+     "message": "Can I get a DOT physical with you?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "are DOT medical examinations offered",
+       "answerable": true,
+       "cites": [
+        "gp-services"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-u-07",
+     "message": "Do you accept Medicaid?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Medicaid accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "the insurance entry names Medicare, one word away; the answer is a no from the plan guide"
+    }
+   ]
+  },
+  {
+   "letter": "v",
+   "name": "faq-near-miss-distractor",
+   "tests": "One answerable FAQ question with a neighbouring entry that looks like its answer and is not: the clinic's hours against the phone line's, a visit's rate against a vaccine's price, arriving early against arriving late. Retrieval that ranks the neighbour first hands the answerer a confident wrong answer, so the label cites only the entry that actually answers - a hit on the neighbour is a miss.",
+   "cases": [
+    {
+     "id": "G-v-01",
+     "message": "What time does your phone line open?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "phone line hours",
+       "answerable": true,
+       "cites": [
+        "running-late"
+       ]
+      }
+     ],
+     "note": "the hours entry says the clinic opens at 9:00; the phone line opens at 8:30"
+    },
+    {
+     "id": "G-v-02",
+     "message": "How much is a flu shot if I'm paying myself?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of a flu vaccine",
+       "answerable": true,
+       "cites": [
+        "vaccinations"
+       ]
+      }
+     ],
+     "note": "the rates entry prices visits by practitioner type, not vaccines"
+    },
+    {
+     "id": "G-v-03",
+     "message": "Can I use my Aetna medical insurance for a dental cleaning?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "medical insurance and dental care",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ],
+     "note": "both insurance entries say Aetna is accepted; the dental guide says medical plans do not cover dental care. It names the plan as medical because Aetna also sells dental plans, and 'my Aetna plan' left the answer undecidable - a no for a medical plan, unknown for a dental one"
+    },
+    {
+     "id": "G-v-04",
+     "message": "Does Medicare cover my dental appointment?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "Medicare and dental appointments",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-v-05",
+     "message": "How late can I be for a dentist appointment?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "lateness limit for a dental appointment",
+       "answerable": true,
+       "cites": [
+        "running-late"
+       ]
+      }
+     ],
+     "note": "the arrival entry says how early to come, which reads as the same subject"
+    },
+    {
+     "id": "G-v-07",
+     "message": "Should I skip eating before my breathing test?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "eating before spirometry",
+       "answerable": true,
+       "cites": [
+        "test-preparation"
+       ]
+      }
+     ],
+     "note": "the counter-case to G-k-07: fasting before a blood test is a gap, and a meal before spirometry is answered - by 'avoid a large meal', which is not fasting"
+    }
+   ]
+  },
+  {
+   "letter": "w",
+   "name": "faq-lexical-discriminator",
+   "tests": "One answerable FAQ question in which an exact token is the only thing that separates the entry that answers it from entries sharing its other words or its subject: a bare billing code beside the entries about receipts, rates or the procedure itself; a plan qualifier beside the insurance entries that accept the brand. Family s does not do this - every term in it has its category to itself. The cases were written by that principle and are kept whatever any retriever scores on them: an offline probe on 2026-10-01 found dense search ranking the cited entry first in seven of eight and BM25 in four, so this family is where the ablation can show lexical search losing as well as winning. Family t is the counterweight in the other direction.",
+   "cases": [
+    {
+     "id": "G-w-01",
+     "message": "What was 94010 on my receipt?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what code 94010 is",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the out-of-network entry is the one that talks about receipts"
+    },
+    {
+     "id": "G-w-02",
+     "message": "How much is 93000 if I'm paying myself?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 93000",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the rates entry is the one about paying out of pocket"
+    },
+    {
+     "id": "G-w-03",
+     "message": "My receipt lists D7140. What is that?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what code D7140 is",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ],
+     "note": "the dental guide describes extractions at length; only the price list names the code"
+    },
+    {
+     "id": "G-w-04",
+     "message": "What does 69210 cost?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "self-pay price of code 69210",
+       "answerable": true,
+       "cites": [
+        "procedure-prices"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-w-05",
+     "message": "Do you accept Cigna DHMO?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Cigna's DHMO accepted",
+       "answerable": true,
+       "cites": [
+        "dental-care-guide"
+       ]
+      }
+     ],
+     "note": "the answer is no, from the dental guide; both insurance entries say Cigna is accepted, and DHMO is the only word that says otherwise"
+    },
+    {
+     "id": "G-w-06",
+     "message": "Is an AARP Medicare Advantage HMO from UnitedHealthcare accepted?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is UHC's AARP Medicare Advantage HMO accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "no; the insurance entry accepts both UnitedHealthcare and Medicare, and only HMO against PPO decides it"
+    },
+    {
+     "id": "G-w-07",
+     "message": "Do you take Blue Essentials?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is Blue Essentials accepted",
+       "answerable": true,
+       "cites": [
+        "insurance-plan-guide"
+       ]
+      }
+     ],
+     "note": "no; the insurance entry names Blue Cross Blue Shield as accepted"
+    },
+    {
+     "id": "G-w-08",
+     "message": "What is the HC-9?",
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "what form HC-9 is",
+       "answerable": true,
+       "cites": [
+        "check-in-and-registration"
+       ]
+      }
+     ],
+     "note": "forms are named in three documents - PR-1 in the reminders one, IC-2 in the insurance guide - and HC-9 only in the check-in one"
     }
    ]
   }

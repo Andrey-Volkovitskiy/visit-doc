@@ -1,0 +1,227 @@
+{
+  "case_id": "G-e-03",
+  "chat_id": "01M3VYZ02MH96ZF1J3DE8QGP2W",
+  "patient_id": "01M3VYZ03BKM0117F3WVW288VD",
+  "attempts": 1,
+  "elapsed_seconds": 1.2497322760755196,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+    "content": "There's a mistake on my bill, please correct it.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYZ17YCEDV6FSSN82WG7KC",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "There's a mistake on my bill, please correct it.",
+        "query": "There is a mistake on my bill, please correct it."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "chat_id": "01M3VYZ02MH96ZF1J3DE8QGP2W",
+      "sender": "patient",
+      "content": "There's a mistake on my bill, please correct it.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:43.522223Z"
+    },
+    {
+      "message": "There's a mistake on my bill, please correct it.",
+      "message_ids_unified": [
+        "01M3VYZ04QAGDWGZ0EFMHBM18E"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:43.522473Z"
+    },
+    {
+      "trace_id": "72e83d28d434f8bc4cf6177535f67df8",
+      "event": "turn.traced",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:43.524557Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:43.526302Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3213,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.628763Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "There's a mistake on my bill, please correct it.",
+          "query": "There is a mistake on my bill, please correct it."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.629366Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1103.72,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "There's a mistake on my bill, please correct it.",
+            "query": "There is a mistake on my bill, please correct it."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.629776Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.632354Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.7,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.632549Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.633738Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.35,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.633883Z"
+    },
+    {
+      "duration_ms": 1122.57,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VYZ04QAGDWGZ0EFMHBM18E"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.634196Z"
+    },
+    {
+      "message_id": "01M3VYZ17YCEDV6FSSN82WG7KC",
+      "chat_id": "01M3VYZ02MH96ZF1J3DE8QGP2W",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.652052Z"
+    },
+    {
+      "chat_id": "01M3VYZ02MH96ZF1J3DE8QGP2W",
+      "reason": "not_authorized",
+      "message_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3VYZ04QAGDWGZ0EFMHBM18E",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:44.662369Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3VYZ04QAGDWGZ0EFMHBM18E": "72e83d28d434f8bc4cf6177535f67df8"
+  }
+}

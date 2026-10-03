@@ -1,0 +1,247 @@
+{
+  "case_id": "G-s-10",
+  "chat_id": "01M3VZ7QFVEH3GT8JG5G57CHXV",
+  "patient_id": "01M3VZ7QGP8M7VHB3FAYXVK91D",
+  "attempts": 1,
+  "elapsed_seconds": 2.3714679640252143,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+    "content": "I got a text from 72913 - is that really you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VZ7SQZDHQE2A3KV8X010Y6",
+    "content": "I'm not sure what that number refers to—it's not something I can verify from here. If you have questions about whether a message is from our clinic, I'd recommend calling us directly to confirm. How can I help you today?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "I got a text from 72913 - is that really you?",
+        "query": "I got a text from 72913 - is that really you?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "chat_id": "01M3VZ7QFVEH3GT8JG5G57CHXV",
+      "sender": "patient",
+      "content": "I got a text from 72913 - is that really you?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:29.673942Z"
+    },
+    {
+      "message": "I got a text from 72913 - is that really you?",
+      "message_ids_unified": [
+        "01M3VZ7QJQGG0E1GZ7RYF2S456"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:29.674573Z"
+    },
+    {
+      "trace_id": "bc7965ea396753f1d24e8d72520060a9",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:29.677122Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:29.683200Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:30.638112Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "I got a text from 72913 - is that really you?",
+          "query": "I got a text from 72913 - is that really you?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:30.639291Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 958.63,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "I got a text from 72913 - is that really you?",
+            "query": "I got a text from 72913 - is that really you?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:30.640076Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:30.656630Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "I got a text from 72913 - is that really you?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T14:52:30.657105Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 266,
+        "output": 52,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.862796Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 1207.9,
+      "result": {
+        "answer_chars": 220,
+        "answer_text": "I'm not sure what that number refers to—it's not something I can verify from here. If you have questions about whether a message is from our clinic, I'd recommend calling us directly to confirm. How can I help you today?",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.863617Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.865549Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.62,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 220,
+        "answer_text": "I'm not sure what that number refers to—it's not something I can verify from here. If you have questions about whether a message is from our clinic, I'd recommend calling us directly to confirm. How can I help you today?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.865829Z"
+    },
+    {
+      "duration_ms": 2210.43,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not sure what that number refers to—it's not something I can verify from here. If you have questions about whether a message is from our clinic, I'd recommend calling us directly to confirm. How can I help you today?",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VZ7QJQGG0E1GZ7RYF2S456"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.866246Z"
+    },
+    {
+      "message_id": "01M3VZ7SQZDHQE2A3KV8X010Y6",
+      "chat_id": "01M3VZ7QFVEH3GT8JG5G57CHXV",
+      "sender": "assistant",
+      "content": "I'm not sure what that number refers to—it's not something I can verify from here. If you have questions about whether a message is from our clinic, I'd recommend calling us directly to confirm. How can I help you today?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ7QJQGG0E1GZ7RYF2S456",
+      "level": "info",
+      "timestamp": "2026-10-01T14:52:31.887411Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3VZ7QJQGG0E1GZ7RYF2S456": "bc7965ea396753f1d24e8d72520060a9"
+  }
+}

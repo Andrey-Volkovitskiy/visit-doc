@@ -1,0 +1,174 @@
+{
+  "case_id": "G-k-04",
+  "chat_id": "01M3VZ12SZZVXRQF6V2KYYW0C7",
+  "patient_id": "01M3VZ12TPJMTZFCDZ67HB8023",
+  "attempts": 1,
+  "elapsed_seconds": 1.1759838300058618,
+  "terminal": {
+    "kind": "error",
+    "payload": {}
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VZ12W46BGAARR4R0A2178J",
+    "content": "What is your cancellation and no-show policy?",
+    "attention_mark": "assistant_failed",
+    "request_outcomes": null
+  },
+  "assistant_message": null,
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is your cancellation and no-show policy?",
+        "query": "What is your cancellation and no-show policy?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "chat_id": "01M3VZ12SZZVXRQF6V2KYYW0C7",
+      "sender": "patient",
+      "content": "What is your cancellation and no-show policy?",
+      "event": "message.persisted",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:51.855274Z"
+    },
+    {
+      "message": "What is your cancellation and no-show policy?",
+      "message_ids_unified": [
+        "01M3VZ12W46BGAARR4R0A2178J"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:51.855542Z"
+    },
+    {
+      "trace_id": "da318530e5598de6ccd0eaa1dd617c2b",
+      "event": "turn.traced",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:51.856678Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:51.859119Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3212,
+        "output": 40,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:52.820652Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is your cancellation and no-show policy?",
+          "query": "What is your cancellation and no-show policy?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:52.821135Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 963.15,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What is your cancellation and no-show policy?",
+            "query": "What is your cancellation and no-show policy?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:52.821475Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:52.823662Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 34.32,
+      "error_type": "TurnPipelineError",
+      "error_detail": "Error communicating with Voyage",
+      "event": "node.failed",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "error",
+      "timestamp": "2026-10-01T14:48:52.857660Z"
+    },
+    {
+      "pipeline_step": "embedding",
+      "error_detail": "Error communicating with Voyage",
+      "event": "turn.error",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "error",
+      "timestamp": "2026-10-01T14:48:52.858378Z"
+    },
+    {
+      "chat_id": "01M3VZ12SZZVXRQF6V2KYYW0C7",
+      "reason": "assistant_failed",
+      "message_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3VZ12W46BGAARR4R0A2178J",
+      "level": "info",
+      "timestamp": "2026-10-01T14:48:52.877530Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "run_error",
+  "unplantable": null,
+  "traces": {
+    "01M3VZ12W46BGAARR4R0A2178J": "da318530e5598de6ccd0eaa1dd617c2b"
+  }
+}

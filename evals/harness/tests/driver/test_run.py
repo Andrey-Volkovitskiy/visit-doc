@@ -99,6 +99,7 @@ _CONDITIONS: dict[str, Any] = {
     "retrieval_pool_size": 25,
     "similarity_floor": 0.3,
     "similarity_cap": 5,
+    "unreranked_similarity_floor": 0.25,
     "rerank_floor": 0.58,
     "rerank_cap": 3,
     "max_segments": 3,

@@ -107,9 +107,20 @@ def test_retrieval_pool_is_wider_than_the_similarity_cap(
 
 
 def test_pipeline_gate_defaults(unconfigured: Settings) -> None:
-    assert unconfigured.SIMILARITY_FLOOR == 0.25
+    # No shortlist floor by default: -1.0 is the lowest a cosine can be, so the cap
+    # alone picks the shortlist and the rerank floor decides the abstention.
+    assert unconfigured.SIMILARITY_FLOOR == -1.0
+    assert unconfigured.UNRERANKED_SIMILARITY_FLOOR == 0.25
     assert unconfigured.RERANK_FLOOR == 0.58
     assert unconfigured.RERANK_CAP == 3
+
+
+def test_a_reranker_outage_answers_through_a_floor_the_shortlist_does_not_have(
+    unconfigured: Settings,
+) -> None:
+    # The fallback answers with nothing having judged the shortlist, so it must be
+    # stricter than the shortlist, or an outage answers from the least bad candidate.
+    assert unconfigured.UNRERANKED_SIMILARITY_FLOOR > unconfigured.SIMILARITY_FLOOR
 
 
 def test_rerank_gate_is_narrower_than_the_similarity_gate(
@@ -143,6 +154,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
     overridden = _settings(
         RETRIEVAL_POOL_SIZE=40,
         SIMILARITY_FLOOR=0.25,
+        UNRERANKED_SIMILARITY_FLOOR=0.4,
         SIMILARITY_CAP=8,
         RERANK_FLOOR=0.55,
         RERANK_CAP=2,
@@ -152,6 +164,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
 
     assert overridden.RETRIEVAL_POOL_SIZE == 40
     assert overridden.SIMILARITY_FLOOR == 0.25
+    assert overridden.UNRERANKED_SIMILARITY_FLOOR == 0.4
     assert overridden.SIMILARITY_CAP == 8
     assert overridden.RERANK_FLOOR == 0.55
     assert overridden.RERANK_CAP == 2
@@ -167,6 +180,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
         ("RERANK_CAP", -1),
         ("RERANK_FLOOR", 1.5),
         ("SIMILARITY_FLOOR", -2.0),
+        ("UNRERANKED_SIMILARITY_FLOOR", 1.5),
         ("RERANK_TIMEOUT_SECONDS", 0.0),
     ],
 )

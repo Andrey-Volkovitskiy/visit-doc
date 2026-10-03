@@ -1,0 +1,762 @@
+{
+  "case_id": "G-w-05",
+  "chat_id": "01M3W4WYM0DR6EGNA5BGHJ6GMY",
+  "patient_id": "01M3W4WYMMNE88NYZCFBMRRJ5J",
+  "attempts": 1,
+  "elapsed_seconds": 2.9385661450214684,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you accept Cigna DHMO?",
+          "answer": null,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+    "content": "Do you accept Cigna DHMO?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4WZ572G5S8WCFFGEWQDGP",
+    "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you accept Cigna DHMO?",
+        "answer": null,
+        "verdict": "abstained_generation",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you accept Cigna DHMO?",
+        "query": "Do you accept Cigna DHMO?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "chat_id": "01M3W4WYM0DR6EGNA5BGHJ6GMY",
+      "sender": "patient",
+      "content": "Do you accept Cigna DHMO?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.702016Z"
+    },
+    {
+      "message": "Do you accept Cigna DHMO?",
+      "message_ids_unified": [
+        "01M3W4WYEAZ6WGT50HVAANPQAZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.702368Z"
+    },
+    {
+      "trace_id": "4a0fff441e235bd3a21830f86e395682",
+      "event": "turn.traced",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.703818Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.706295Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.615587Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you accept Cigna DHMO?",
+          "query": "Do you accept Cigna DHMO?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.616565Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 989.41,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you accept Cigna DHMO?",
+            "query": "Do you accept Cigna DHMO?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.617102Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.619672Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.888139Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.4833842,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.46131176,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.437059,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.38619295,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.36877465,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.36791533,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.36647546,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.34660453,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.29657143,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.2910568,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.29101753,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.29053566,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.28830647,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.279714,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.27895585,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.2729085,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.26590058,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.26254928,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.26236576,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.26068556,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.25542974,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.2481837,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.24722007,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.24332383,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.23994869,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.901170Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.4833842
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.46131176
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.437059
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.38619295
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.36877465
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 2,
+          "similarity_score": 0.36791533
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 5,
+          "similarity_score": 0.36647546
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 1,
+          "similarity_score": 0.34660453
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 7,
+          "similarity_score": 0.29657143
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 0,
+          "similarity_score": 0.2910568
+        },
+        {
+          "entry_id": 2846,
+          "chunk_index": 0,
+          "similarity_score": 0.29101753
+        },
+        {
+          "entry_id": 2844,
+          "chunk_index": 0,
+          "similarity_score": 0.29053566
+        },
+        {
+          "entry_id": 2842,
+          "chunk_index": 0,
+          "similarity_score": 0.28830647
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 0,
+          "similarity_score": 0.279714
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 4,
+          "similarity_score": 0.27895585
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 3,
+          "similarity_score": 0.2729085
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 6,
+          "similarity_score": 0.26590058
+        },
+        {
+          "entry_id": 2850,
+          "chunk_index": 6,
+          "similarity_score": 0.26254928
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 1,
+          "similarity_score": 0.26236576
+        },
+        {
+          "entry_id": 2857,
+          "chunk_index": 1,
+          "similarity_score": 0.26068556
+        },
+        {
+          "entry_id": 2856,
+          "chunk_index": 1,
+          "similarity_score": 0.25542974
+        },
+        {
+          "entry_id": 2854,
+          "chunk_index": 1,
+          "similarity_score": 0.2481837
+        },
+        {
+          "entry_id": 2852,
+          "chunk_index": 0,
+          "similarity_score": 0.24722007
+        },
+        {
+          "entry_id": 2858,
+          "chunk_index": 3,
+          "similarity_score": 0.24332383
+        },
+        {
+          "entry_id": 2841,
+          "chunk_index": 0,
+          "similarity_score": 0.23994869
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:26.902927Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 355.95,
+      "scores": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "similarity_score": 0.46131176,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "similarity_score": 0.437059,
+          "rerank_score": 0.76953125
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "similarity_score": 0.4833842,
+          "rerank_score": 0.71484375
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "similarity_score": 0.36877465,
+          "rerank_score": 0.515625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "similarity_score": 0.38619295,
+          "rerank_score": 0.42578125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.260246Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2850,
+          "chunk_index": 1,
+          "rerank_score": 0.85546875
+        },
+        {
+          "entry_id": 2843,
+          "chunk_index": 0,
+          "rerank_score": 0.76953125
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 3,
+          "rerank_score": 0.71484375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2849,
+          "chunk_index": 0,
+          "rerank_score": 0.515625
+        },
+        {
+          "entry_id": 2849,
+          "chunk_index": 4,
+          "rerank_score": 0.42578125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.261441Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4833842,
+      "best_rerank_score": 0.85546875,
+      "event": "faq.verdict",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:27.262194Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\n# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\nQuestion: Do you accept Cigna DHMO?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:31:27.262503Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 644,
+        "output": 10,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.404970Z"
+    },
+    {
+      "gates_verdict": "answered",
+      "survivor_count": 3,
+      "malformed": false,
+      "event": "faq.no_answer",
+      "segment": 0,
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.405426Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1786.72,
+      "result": {
+        "segment_count": 1,
+        "abstained": true,
+        "citation_count": 0,
+        "answer_chars": 0,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you accept Cigna DHMO?",
+            "verdict": "abstained_generation",
+            "answer_text": ""
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.406096Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.408881Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 2.09,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 250,
+        "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.410041Z"
+    },
+    {
+      "duration_ms": 2798.26,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "abstained_generation",
+          "citations": []
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4WYEAZ6WGT50HVAANPQAZ"
+      ],
+      "abstention_message": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "turn.completed",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.410950Z"
+    },
+    {
+      "message_id": "01M3W4WZ572G5S8WCFFGEWQDGP",
+      "chat_id": "01M3W4WYM0DR6EGNA5BGHJ6GMY",
+      "sender": "assistant",
+      "content": "I don't have that information in the clinic's knowledge base, so I've forwarded your question to our staff to ensure you get an accurate answer. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.434120Z"
+    },
+    {
+      "chat_id": "01M3W4WYM0DR6EGNA5BGHJ6GMY",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "silenced": false,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4WYEAZ6WGT50HVAANPQAZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:28.446601Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4WYEAZ6WGT50HVAANPQAZ": "4a0fff441e235bd3a21830f86e395682"
+  }
+}

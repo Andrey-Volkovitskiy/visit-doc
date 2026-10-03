@@ -1,0 +1,227 @@
+{
+  "case_id": "G-f-01",
+  "chat_id": "01M3VYZ7KDQ7Q69WVBTGECN957",
+  "patient_id": "01M3VYZ7KXCCVJDDDJFYS0Q8NM",
+  "attempts": 1,
+  "elapsed_seconds": 1.117505782051012,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+    "content": "I'd rather speak to a person.",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3VYZ8MB2WWQ1A4ZQDTFZD0V",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "call_staff",
+        "text": "I'd rather speak to a person.",
+        "query": "I'd rather speak to a person."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "chat_id": "01M3VYZ7KDQ7Q69WVBTGECN957",
+      "sender": "patient",
+      "content": "I'd rather speak to a person.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:51.219940Z"
+    },
+    {
+      "message": "I'd rather speak to a person.",
+      "message_ids_unified": [
+        "01M3VYZ7N9BYKVEMGPEQMZX9W3"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:51.220160Z"
+    },
+    {
+      "trace_id": "e75b55ee8e89268d9544450bfcd9c129",
+      "event": "turn.traced",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:51.221397Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:51.224166Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3209,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.190800Z"
+    },
+    {
+      "intents": [
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "call_staff",
+          "text": "I'd rather speak to a person.",
+          "query": "I'd rather speak to a person."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.191684Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 968.5,
+      "result": {
+        "intents": [
+          "call_staff"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "call_staff",
+            "text": "I'd rather speak to a person.",
+            "query": "I'd rather speak to a person."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.192368Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.195246Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.53,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.195473Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.197300Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.69,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.197536Z"
+    },
+    {
+      "duration_ms": 988.24,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3VYZ7N9BYKVEMGPEQMZX9W3"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.198029Z"
+    },
+    {
+      "message_id": "01M3VYZ8MB2WWQ1A4ZQDTFZD0V",
+      "chat_id": "01M3VYZ7KDQ7Q69WVBTGECN957",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.218818Z"
+    },
+    {
+      "chat_id": "01M3VYZ7KDQ7Q69WVBTGECN957",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3VYZ7N9BYKVEMGPEQMZX9W3",
+      "level": "info",
+      "timestamp": "2026-10-01T14:47:52.234613Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3VYZ7N9BYKVEMGPEQMZX9W3": "e75b55ee8e89268d9544450bfcd9c129"
+  }
+}

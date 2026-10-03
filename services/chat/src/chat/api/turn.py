@@ -70,10 +70,11 @@ def _model_api_was_unreachable(exc: Exception) -> bool:
 # being unreachable), per spec.md Assumptions.
 #
 # Reranking is absent for a different reason: it raises no pipeline step at all. Its
-# failures are absorbed where they happen - the turn answers from the similarity
-# survivors and records `answered_unreranked` - so nothing about a reranker outage ever
-# reaches this classification. Its own `faq.reranking_unavailable` event is where an
-# operator sees it.
+# failures are absorbed where they happen - the turn answers from the shortlist chunks
+# that clear `UNRERANKED_SIMILARITY_FLOOR` and records `answered_unreranked`, or
+# abstains at the similarity floor when none does - so nothing about a reranker
+# outage ever reaches this classification. Its own `faq.reranking_unavailable` event
+# is where an operator sees it.
 #
 # Each carries the test a failure of that step must pass before it may be called an
 # outage, because naming the step is not enough on its own. "generation" is wrapped

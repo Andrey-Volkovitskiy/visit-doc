@@ -6,7 +6,8 @@ calls it.
 
 This module scores; it does not gate. The floor lives in `rag/pipeline.py`, which is
 what keeps "no scores were obtained" and "scores were obtained and none cleared the
-floor" two different answers - the first falls back and answers, the second abstains.
+floor" two different answers - the first falls back to the chunks that clear the
+unreranked similarity floor, the second abstains.
 """
 
 import asyncio

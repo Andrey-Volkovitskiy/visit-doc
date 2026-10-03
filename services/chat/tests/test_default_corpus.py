@@ -12,6 +12,7 @@ import pytest
 import structlog
 from chat.core.config import Settings
 from chat.main import app
+from chat.rag.chunking import chunk_content
 from chat.rag.default_corpus import DEFAULT_FAQ_ENTRIES
 from fastapi.testclient import TestClient
 from structlog.testing import capture_logs
@@ -64,11 +65,16 @@ def test_the_seeded_corpus_grounds_the_sessions_first_question() -> None:
 
     done = _done_event(response.text)
     cited = [c for o in done["request_outcomes"] for c in o["citations"]]
+    # A chunk of a headed document carries its heading path, so it is not a substring
+    # of the entry; it is one of the chunks the chunker cuts the starter corpus into.
+    planted = {
+        chunk.chunk_text
+        for entry in DEFAULT_FAQ_ENTRIES
+        for chunk in chunk_content(entry)
+    }
     assert cited
     for citation in cited:
-        assert any(citation["chunk_text"] in entry for entry in DEFAULT_FAQ_ENTRIES), (
-            citation
-        )
+        assert citation["chunk_text"] in planted, citation
 
 
 def test_a_returning_visitor_is_not_given_a_second_copy() -> None:

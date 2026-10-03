@@ -358,7 +358,7 @@ def _new_sessions_start_empty(request: pytest.FixtureRequest) -> Iterator[None]:
     """Keep the starter corpus out of every test that has not asked for it.
 
     `POST /chats` plants `DEFAULT_FAQ_ENTRIES` in a session it creates, so without this
-    every test that mints a session through it would answer from nine entries it never
+    every test that mints a session through it would answer from a corpus it never
     mentioned - and a test written to check an abstention against an empty corpus would
     quietly become a grounded one. The corpus a test retrieves against has to be the
     corpus that test built.
@@ -443,8 +443,8 @@ def _paid_apis_are_blocked() -> Iterator[None]:
 
 
 @pytest.fixture(autouse=True)
-def _reranking_keeps_what_it_is_given() -> Iterator[None]:
-    """Fake the reranking boundary for every test, scoring each chunk above the floor.
+def _reranking_agrees_with_the_toy_embedding() -> Iterator[None]:
+    """Fake the reranking boundary for every test, judging relevance as the toy does.
 
     Required, not convenient. `rerank_chunks` converts *every* `Exception` to None so a
     reranker outage costs the answer its precision stage rather than the turn, which is
@@ -453,9 +453,13 @@ def _reranking_keeps_what_it_is_given() -> Iterator[None]:
     failing. The guard makes the omission loud; this fake is what makes an ordinary FAQ
     test not need one.
 
-    The default is a *working* reranker that keeps the shortlist in the order it was
-    given, so an ordinary FAQ test still sees `answered`. A test about degradation
-    patches over this with None; a test about ordering patches its own scores in.
+    The default is a *working* reranker that agrees with `fake_embed_texts`: a chunk
+    the toy embedding put on the question's axis scores above the rerank floor, and one
+    on the other axis scores below it. With no similarity floor by default, the rerank
+    floor is what stops an unrelated question, so this is the stage a test's abstention
+    comes from - as it is in production. An ordinary FAQ test still sees `answered`; a
+    test about degradation patches over this with None; a test about ordering patches
+    its own scores in.
 
     Two places opt out entirely and patch the *real* `rerank_chunks` back in, each
     supplying its own fake client rather than a live one, so the paid-API guard is not
@@ -468,15 +472,19 @@ def _reranking_keeps_what_it_is_given() -> Iterator[None]:
     """
     from chat.rag.pipeline import ScoredChunk
 
-    async def keep_all(
+    async def judge(
         _client: object,
         _query: str,
         chunks: list[ScoredChunk],
         **_kwargs: object,
     ) -> list[ScoredChunk]:
-        return [chunk.with_rerank_score(0.9) for chunk in chunks]
+        # The toy embedding scores a chunk 1.0 on the question's axis and 0.0 off it.
+        return [
+            chunk.with_rerank_score(0.9 if chunk.similarity_score >= 0.5 else 0.1)
+            for chunk in chunks
+        ]
 
-    with patch("chat.agent.answer_faq.rerank_chunks", new=keep_all):
+    with patch("chat.agent.answer_faq.rerank_chunks", new=judge):
         yield
 
 

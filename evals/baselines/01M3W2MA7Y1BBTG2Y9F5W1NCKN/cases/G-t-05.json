@@ -1,0 +1,794 @@
+{
+  "case_id": "G-t-05",
+  "chat_id": "01M3W31RCB3YMEX2N3AAHMGS24",
+  "patient_id": "01M3W31RD0GTD8QPT6YBGB18YV",
+  "attempts": 1,
+  "elapsed_seconds": 5.765203953022137,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "I'm off to Kenya in two months. Which jabs can you do?",
+          "answer": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2814,
+              "chunk_index": 0,
+              "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.\n\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.\n\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).\n\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n"
+            },
+            {
+              "entry_id": 2814,
+              "chunk_index": 1,
+              "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. "
+            },
+            {
+              "entry_id": 2814,
+              "chunk_index": 2,
+              "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.\n\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W31REG8Q6GV03H90WGWWTF",
+    "content": "I'm off to Kenya in two months. Which jabs can you do?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W31XYXEFEE0C3TP94KYBA7",
+    "content": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "I'm off to Kenya in two months. Which jabs can you do?",
+        "answer": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2814,
+            "chunk_index": 0,
+            "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.\n\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.\n\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).\n\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n"
+          },
+          {
+            "entry_id": 2814,
+            "chunk_index": 1,
+            "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. "
+          },
+          {
+            "entry_id": 2814,
+            "chunk_index": 2,
+            "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.\n\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "I'm off to Kenya in two months. Which jabs can you do?",
+        "query": "Which vaccinations can you provide?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "chat_id": "01M3W31RCB3YMEX2N3AAHMGS24",
+      "sender": "patient",
+      "content": "I'm off to Kenya in two months. Which jabs can you do?",
+      "event": "message.persisted",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.252359Z"
+    },
+    {
+      "message": "I'm off to Kenya in two months. Which jabs can you do?",
+      "message_ids_unified": [
+        "01M3W31REG8Q6GV03H90WGWWTF"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.252636Z"
+    },
+    {
+      "trace_id": "e93a60dd6340cb53e3bd64ace5f51b37",
+      "event": "turn.traced",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.255704Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:08.257809Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3217,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.404460Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "I'm off to Kenya in two months. Which jabs can you do?",
+          "query": "Which vaccinations can you provide?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.405003Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1147.89,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "I'm off to Kenya in two months. Which jabs can you do?",
+            "query": "Which vaccinations can you provide?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.405408Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.407913Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.681300Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.6128969,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.\n\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.\n\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).\n\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.5905726,
+          "considered": true,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.5651729,
+          "considered": true,
+          "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.\n\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.38773668,
+          "considered": true,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.3835745,
+          "considered": true,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three drops of olive oil or sodium bicarbonate ear drops into the affected ear twice a day, to soften the wax. Do not use cotton buds. Microsuction is not suitable if you have a perforated eardrum, so tell us when you book if you have ever had one.\n\n## Minor procedures\n\nWe freeze common warts and verrucas with cryotherapy (liquid nitrogen). A wart may need two to four treatments, about three weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.38331002,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.36171907,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.34766376,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.34209317,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.33997935,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.33857292,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.32680935,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.31919676,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.3178144,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.31014824,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.29982552,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.2994028,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.29693246,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.29242334,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.28458795,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.28136933,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.2792604,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.27714014,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2764058,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.27358383,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.695036Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.6128969
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.5905726
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.5651729
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.38773668
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.3835745
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.38331002
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.36171907
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.34766376
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.34209317
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.33997935
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.33857292
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.32680935
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.31919676
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.3178144
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.31014824
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.29982552
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.2994028
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.29693246
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.29242334
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.28458795
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.28136933
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.2792604
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.27714014
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.2764058
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.27358383
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.697968Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 287.42,
+      "scores": [
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.6128969,
+          "rerank_score": 0.87890625
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.5905726,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "similarity_score": 0.5651729,
+          "rerank_score": 0.6875
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.38773668,
+          "rerank_score": 0.30859375
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "similarity_score": 0.3835745,
+          "rerank_score": 0.298828125
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.987566Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "rerank_score": 0.87890625
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "rerank_score": 0.82421875
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 2,
+          "rerank_score": 0.6875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "rerank_score": 0.30859375
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 1,
+          "rerank_score": 0.298828125
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.988742Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.6128969,
+      "best_rerank_score": 0.87890625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:09.989610Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.\n\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.\n\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).\n\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n\n\nome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. \n\nvaccine $35, high-dose flu vaccine $70, Tdap $55, hep..."
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:59:09.990106Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1207,
+        "output": 345,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.871845Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 4466.36,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 434,
+        "answer_text": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "I'm off to Kenya in two months. Which jabs can you do?",
+            "verdict": "answered",
+            "answer_text": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.873976Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.876704Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.56,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 434,
+        "answer_text": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.876955Z"
+    },
+    {
+      "duration_ms": 5636.7,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2814,
+              "chunk_index": 0,
+              "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-Dose), which gives a stronger immune response at that age. The flu vaccine can be given at the same appointment as a COVID-19 vaccine.\n\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.\n\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).\n\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n",
+              "similarity_score": 0.6128969,
+              "rerank_score": 0.87890625
+            },
+            {
+              "entry_id": 2814,
+              "chunk_index": 1,
+              "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.\n\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. ",
+              "similarity_score": 0.5905726,
+              "rerank_score": 0.82421875
+            },
+            {
+              "entry_id": 2814,
+              "chunk_index": 2,
+              "chunk_text": "vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, typhoid injection $90, oral typhoid course $95, hepatitis B $70 per dose. They are the price of the vaccine itself, and are charged in addition to the rate for the visit.\n\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day or two is common. Bring your vaccination record to the appointment so the new dose can be added to it.",
+              "similarity_score": 0.5651729,
+              "rerank_score": 0.6875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W31REG8Q6GV03H90WGWWTF"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.877620Z"
+    },
+    {
+      "message_id": "01M3W31XYXEFEE0C3TP94KYBA7",
+      "chat_id": "01M3W31RCB3YMEX2N3AAHMGS24",
+      "sender": "assistant",
+      "content": "We can offer hepatitis A (Havrix), typhoid (either the Typhim Vi injection or the oral Vivotif course), and hepatitis B (Engerix-B) for your trip. We do not offer yellow fever, rabies, or Japanese encephalitis vaccines — yellow fever can only be given at a registered yellow fever vaccination centre.\n\nPlease book your appointment at least six weeks before you leave, and bring your travel dates and list of countries you're visiting.",
+      "event": "message.persisted",
+      "turn_id": "01M3W31REG8Q6GV03H90WGWWTF",
+      "level": "info",
+      "timestamp": "2026-10-01T15:59:13.900511Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W31REG8Q6GV03H90WGWWTF": "e93a60dd6340cb53e3bd64ace5f51b37"
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "case_id": "G-w-02",
+  "chat_id": "01M3W4WPGZ6QX2KFSV3KN1TFKP",
+  "patient_id": "01M3W4WPHMTZR7608NJ9H5P10C",
+  "attempts": 1,
+  "elapsed_seconds": 2.571185558103025,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+    "content": "How much is 93000 if I'm paying myself?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4WRZVCJ0K70GP0WFDQHMC",
+    "content": "I'm not sure I understand your question—could you rephrase that? If you're trying to reach us about a clinic matter, I'm happy to help!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "How much is 93000 if I'm paying myself?",
+        "query": "How much is 93000 if I'm paying myself?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "chat_id": "01M3W4WPGZ6QX2KFSV3KN1TFKP",
+      "sender": "patient",
+      "content": "How much is 93000 if I'm paying myself?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:19.663288Z"
+    },
+    {
+      "message": "How much is 93000 if I'm paying myself?",
+      "message_ids_unified": [
+        "01M3W4WPK3QVWVQ4D7M5C14VPJ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:19.663548Z"
+    },
+    {
+      "trace_id": "3b8933f8eb0d9b92a4840e2592b992cd",
+      "event": "turn.traced",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:19.664632Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:19.666821Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3214,
+        "output": 41,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:21.131228Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "How much is 93000 if I'm paying myself?",
+          "query": "How much is 93000 if I'm paying myself?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:21.131888Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1466.1,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "How much is 93000 if I'm paying myself?",
+            "query": "How much is 93000 if I'm paying myself?"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:21.132269Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:21.134321Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "How much is 93000 if I'm paying myself?"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:31:21.134522Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 264,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.099808Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 966.35,
+      "result": {
+        "answer_chars": 135,
+        "answer_text": "I'm not sure I understand your question—could you rephrase that? If you're trying to reach us about a clinic matter, I'm happy to help!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.100397Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.101878Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.44,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 135,
+        "answer_text": "I'm not sure I understand your question—could you rephrase that? If you're trying to reach us about a clinic matter, I'm happy to help!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.102054Z"
+    },
+    {
+      "duration_ms": 2450.72,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "I'm not sure I understand your question—could you rephrase that? If you're trying to reach us about a clinic matter, I'm happy to help!",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4WPK3QVWVQ4D7M5C14VPJ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.102392Z"
+    },
+    {
+      "message_id": "01M3W4WRZVCJ0K70GP0WFDQHMC",
+      "chat_id": "01M3W4WPGZ6QX2KFSV3KN1TFKP",
+      "sender": "assistant",
+      "content": "I'm not sure I understand your question—could you rephrase that? If you're trying to reach us about a clinic matter, I'm happy to help!",
+      "event": "message.persisted",
+      "turn_id": "01M3W4WPK3QVWVQ4D7M5C14VPJ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:31:22.122730Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4WPK3QVWVQ4D7M5C14VPJ": "3b8933f8eb0d9b92a4840e2592b992cd"
+  }
+}

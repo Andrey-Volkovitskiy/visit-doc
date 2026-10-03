@@ -24,6 +24,17 @@ _MAX_TOKENS = 1024
 # Zero makes the most likely reading the one returned; it does not make the call
 # fully deterministic.
 _TEMPERATURE = 0.0
+# Two clauses were added in 018, each measured by replaying the whole golden set (146
+# cases, three replays) against the prompt without it. Questions about something the
+# clinic sent, billed or treated - a text from its short code, aftercare after a filling
+# - went to small_talk as if they were about nothing; the clause naming the clinic's own
+# messages, bills and treatments as its business moved two of three. Arriving late was
+# read as a request to change the appointment; naming it a term governing one, as the
+# cancellation policy already was, moved it to faq_question. Together: 145 of 146 exact
+# against 142, nothing that was right went wrong. Either clause alone moved "do you
+# have a dentist?" off booking, so they stand or fall together. A bare billing code
+# ("how much is 93000?") still reads as unintelligible. See
+# specs/018-hybrid-retrieval/evaluation/.
 _SYSTEM_PROMPT = (
     "Split the visitor's most recent message into the requests it contains, given the "
     "conversation so far, and label each one. Return one segment per request, in the "
@@ -42,7 +53,11 @@ _SYSTEM_PROMPT = (
     "the clinic has nothing to do with, such as the weather. A message that asks "
     "anything about the clinic, an appointment, a practitioner or the patient's own "
     'care is NEVER small_talk, however short or polite it is: "is there a number I '
-    'can call you on?" is faq_question, not a pleasantry. A bare "ok", "yes", "sure" '
+    'can call you on?" is faq_question, not a pleasantry. Something that came from the '
+    "clinic or happened there is its business too - a text or letter it sent, a code "
+    "or line on its bill, what to do or avoid after a treatment it gave - so a "
+    "question about one is faq_question even when it is terse, oddly put, or names "
+    'something unfamiliar. A bare "ok", "yes", "sure" '
     "or "
     '"perfect" that answers a question you just asked is never small_talk either - '
     "it belongs to whatever you asked about), "
@@ -97,7 +112,10 @@ _SYSTEM_PROMPT = (
     "patient's records, and the terms those acts are subject to are written in the "
     "clinic's documents rather than the records, so \"what is your cancellation "
     'policy?" and "how late may I reschedule?" are faq_question while "cancel my '
-    'Friday appointment" is booking. One specialty can likewise fall on both sides: '
+    'Friday appointment" is booking. What happens to a patient who arrives late, '
+    'early or not at all is such a term: "will I lose my slot if I am running '
+    'behind?" is faq_question, and "move my slot back an hour" is booking. '
+    "One specialty can likewise fall on both sides: "
     '"is a dermatologist free on the 14th?" is booking, and "what does a '
     'dermatologist charge?" is faq_question. '
     "(b) faq_question or small_talk: parking, directions, transport, opening hours and "

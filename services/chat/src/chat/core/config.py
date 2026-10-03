@@ -73,15 +73,23 @@ class Settings(BaseSettings):
     # every score silently abstains on every turn - so the range is enforced at startup
     # rather than discovered from a week of abstentions.
     RETRIEVAL_POOL_SIZE: int = Field(default=25, gt=0)
-    # Per-chunk, not per-turn: a chunk below this is not admitted because a better one
-    # cleared it. Lower than the 0.5 whole-turn gate it replaces, and stricter in
-    # effect, because a chunk admitted here is still only a candidate - the reranker
-    # decides whether it survives. 0.25 rather than 0.3 since G081: "what cards do you
-    # take?" ranks the payment entry first at 0.257, and a short, colloquial question
-    # scoring low against a long entry in the clinic's wording is what this floor
-    # should let through to the reranker, not decide on its own.
-    SIMILARITY_FLOOR: float = Field(default=0.25, ge=-1.0, le=1.0)
+    # The floor the shortlist handed to the reranker is cut at, per chunk. -1.0, the
+    # lowest a cosine can be, so by default it admits every candidate and the cap alone
+    # picks the shortlist: the rerank floor decides the abstention. Measured on the
+    # extended corpus (specs/018-hybrid-retrieval/evaluation/): at 0.25 it dropped the
+    # chunk dense search had ranked first for "PR-4", "braces" and "HC-9" - short
+    # questions turning on one token score low against a long section - and with it
+    # removed all three were answered while every labelled gap still abstained, at the
+    # cost of a rerank call on the few queries it used to stop.
+    SIMILARITY_FLOOR: float = Field(default=-1.0, ge=-1.0, le=1.0)
     SIMILARITY_CAP: int = Field(default=5, gt=0)
+    # The floor a turn answers through when the reranker is unavailable, and only then.
+    # Without a rerank score nothing has judged the shortlist, so the fallback answers
+    # from the chunks at or above this and abstains when none is - never from the
+    # shortlist as the cap left it, which with no similarity floor would be the least
+    # bad of whatever the search returned. 0.25 is the shortlist floor the pipeline ran
+    # with before 018, so `answered_unreranked` keeps meaning what it meant.
+    UNRERANKED_SIMILARITY_FLOOR: float = Field(default=0.25, ge=-1.0, le=1.0)
     # The midpoint of the band that scores best on the calibration set. Every floor
     # from 0.520 to 0.636 scores identically there (10/10 answerable, 9/10 not), so
     # there is no optimum to find - only a widest gap from the nearest mistake on
@@ -96,7 +104,8 @@ class Settings(BaseSettings):
     RERANK_CAP: int = Field(default=3, gt=0)
     # The reranker sits between retrieval and the first generated token, so every
     # second it hangs is silence the patient watches. Exceeding this is handled as a
-    # failure: the turn answers from the retrieval survivors instead. Tolerant rather
+    # failure: the turn answers from the shortlist chunks that clear
+    # `UNRERANKED_SIMILARITY_FLOOR` instead. Tolerant rather
     # than tight because falling back costs the turn its precision stage, so a call
     # that would have returned at 3s is worth waiting for.
     RERANK_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0.0)

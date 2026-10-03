@@ -1,0 +1,794 @@
+{
+  "case_id": "G-w-05",
+  "chat_id": "01M3W33X6JXEYQN59J3M6987A3",
+  "patient_id": "01M3W33X789XKHYPKJ3H9T4X20",
+  "attempts": 1,
+  "elapsed_seconds": 3.8391219129553065,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you accept Cigna DHMO?",
+          "answer": "We do not accept Cigna Dental Care DHMO.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2812,
+              "chunk_index": 0,
+              "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. "
+            },
+            {
+              "entry_id": 2805,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            },
+            {
+              "entry_id": 2811,
+              "chunk_index": 1,
+              "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n"
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W33X8PY2D677DBTMXR6GRF",
+    "content": "Do you accept Cigna DHMO?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W340X3ZTM62HSYVYPGN1CX",
+    "content": "We do not accept Cigna Dental Care DHMO.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you accept Cigna DHMO?",
+        "answer": "We do not accept Cigna Dental Care DHMO.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2812,
+            "chunk_index": 0,
+            "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. "
+          },
+          {
+            "entry_id": 2805,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          },
+          {
+            "entry_id": 2811,
+            "chunk_index": 1,
+            "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n"
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you accept Cigna DHMO?",
+        "query": "Do you accept Cigna DHMO?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "chat_id": "01M3W33X6JXEYQN59J3M6987A3",
+      "sender": "patient",
+      "content": "Do you accept Cigna DHMO?",
+      "event": "message.persisted",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:18.720877Z"
+    },
+    {
+      "message": "Do you accept Cigna DHMO?",
+      "message_ids_unified": [
+        "01M3W33X8PY2D677DBTMXR6GRF"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:18.721184Z"
+    },
+    {
+      "trace_id": "ed1230b1c767af169b515bb0764b418b",
+      "event": "turn.traced",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:18.722248Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:18.724561Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.245797Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you accept Cigna DHMO?",
+          "query": "Do you accept Cigna DHMO?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.246321Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1522.82,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you accept Cigna DHMO?",
+            "query": "Do you accept Cigna DHMO?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.246681Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.248802Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.513837Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.4808017,
+          "considered": true,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.43649286,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.38763717,
+          "considered": true,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.\n\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If your plan has a deductible you have not met yet, you pay the amount your plan allows for the visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.37572277,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.35228634,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.\n\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.30174583,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.29066503,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.29050398,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.2880594,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.27811962,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.27474266,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.27014714,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.26348144,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.26207608,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.2541067,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.2528817,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.248313,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.240061,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.23876262,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.23646083,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.21948522,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.20347524,
+          "considered": false,
+          "chunk_text": "ome vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.20242229,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.1995488,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.19951437,
+          "considered": false,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment un",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.527417Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.4808017
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.43649286
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.38763717
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.37572277
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.35228634
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.30174583
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.29066503
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.29050398
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.2880594
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 0,
+          "similarity_score": 0.27811962
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.27474266
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 0,
+          "similarity_score": 0.27014714
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.26348144
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 2,
+          "similarity_score": 0.26207608
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.2541067
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.2528817
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.248313
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.240061
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.23876262
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.23646083
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.21948522
+        },
+        {
+          "entry_id": 2814,
+          "chunk_index": 1,
+          "similarity_score": 0.20347524
+        },
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.20242229
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.1995488
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 1,
+          "similarity_score": 0.19951437
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.529998Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 274.18,
+      "scores": [
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "similarity_score": 0.37572277,
+          "rerank_score": 0.8359375
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.43649286,
+          "rerank_score": 0.76953125
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.4808017,
+          "rerank_score": 0.74609375
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.35228634,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.38763717,
+          "rerank_score": 0.466796875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.805849Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2812,
+          "chunk_index": 0,
+          "rerank_score": 0.8359375
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "rerank_score": 0.76953125
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "rerank_score": 0.74609375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "rerank_score": 0.482421875
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "rerank_score": 0.466796875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.806923Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.4808017,
+      "best_rerank_score": 0.8359375,
+      "event": "faq.verdict",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:20.807699Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. \n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nre not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought thr..."
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:00:20.808029Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1092,
+        "output": 21,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.428335Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2180.71,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 40,
+        "answer_text": "We do not accept Cigna Dental Care DHMO.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you accept Cigna DHMO?",
+            "verdict": "answered",
+            "answer_text": "We do not accept Cigna Dental Care DHMO."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.429224Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.430792Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.43,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 40,
+        "answer_text": "We do not accept Cigna Dental Care DHMO."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.430980Z"
+    },
+    {
+      "duration_ms": 3720.53,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2812,
+              "chunk_index": 0,
+              "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. ",
+              "similarity_score": 0.37572277,
+              "rerank_score": 0.8359375
+            },
+            {
+              "entry_id": 2805,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.43649286,
+              "rerank_score": 0.76953125
+            },
+            {
+              "entry_id": 2811,
+              "chunk_index": 1,
+              "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.\n\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.\n\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n",
+              "similarity_score": 0.4808017,
+              "rerank_score": 0.74609375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "We do not accept Cigna Dental Care DHMO.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W33X8PY2D677DBTMXR6GRF"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.431352Z"
+    },
+    {
+      "message_id": "01M3W340X3ZTM62HSYVYPGN1CX",
+      "chat_id": "01M3W33X6JXEYQN59J3M6987A3",
+      "sender": "assistant",
+      "content": "We do not accept Cigna Dental Care DHMO.",
+      "event": "message.persisted",
+      "turn_id": "01M3W33X8PY2D677DBTMXR6GRF",
+      "level": "info",
+      "timestamp": "2026-10-01T16:00:22.449794Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W33X8PY2D677DBTMXR6GRF": "ed1230b1c767af169b515bb0764b418b"
+  }
+}

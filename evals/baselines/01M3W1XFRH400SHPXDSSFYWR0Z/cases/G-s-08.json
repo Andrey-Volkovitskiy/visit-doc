@@ -1,0 +1,760 @@
+{
+  "case_id": "G-s-08",
+  "chat_id": "01M3W29BEAX44FRFS0GQ3MSXVX",
+  "patient_id": "01M3W29BEWJ7FHTH7W2Z3EDJQG",
+  "attempts": 1,
+  "elapsed_seconds": 3.304400195949711,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "I take Eliquis. Does the dentist need to know?",
+          "answer": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2774,
+              "chunk_index": 0,
+              "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. "
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+    "content": "I take Eliquis. Does the dentist need to know?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W29EM093R1YXWCVJM381KD",
+    "content": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "I take Eliquis. Does the dentist need to know?",
+        "answer": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2774,
+            "chunk_index": 0,
+            "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. "
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "I take Eliquis. Does the dentist need to know?",
+        "query": "Does the dentist need to know that I take Eliquis?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "chat_id": "01M3W29BEAX44FRFS0GQ3MSXVX",
+      "sender": "patient",
+      "content": "I take Eliquis. Does the dentist need to know?",
+      "event": "message.persisted",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:48.565062Z"
+    },
+    {
+      "message": "I take Eliquis. Does the dentist need to know?",
+      "message_ids_unified": [
+        "01M3W29BGB13RZQ5G01N8Q3TEK"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:48.565424Z"
+    },
+    {
+      "trace_id": "b167f246f159abeeb38bf3e09e08d3e6",
+      "event": "turn.traced",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:48.566582Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:48.569096Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3216,
+        "output": 44,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.710825Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "I take Eliquis. Does the dentist need to know?",
+          "query": "Does the dentist need to know that I take Eliquis?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.711285Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1143.29,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "I take Eliquis. Does the dentist need to know?",
+            "query": "Does the dentist need to know that I take Eliquis?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.711657Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.713964Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.984030Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.52290606,
+          "considered": true,
+          "chunk_text": "r if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment unless the doctor who prescribed them tells you to. Brush and floss as usual on the day.\n\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenever you use it. Noise-cancelling headphones are available in the treatment room. We do not offer sedation of any kind, including nitrous oxide (\"laughing gas\") and IV sedation; a patient who needs sedation for dental treatment has to be treated at a dental practice that provides it.\n\n## After a filling\n\nYour mouth may stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without noticing. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.5144545,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. ",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.42403954,
+          "considered": true,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after four hours, or if the pain gets worse rather than better after the third day. If bleeding is heavy and will not stop, go to the nearest emergency department.\n\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.38004434,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who handle billing for your visits. We share information from your record with your insurance company only as far as is needed to process claims for your care. We never share your health information with your employer, and we never sell it.\n\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.\n\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.3680852,
+          "considered": true,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.\n\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If your plan has a deductible you have not met yet, you pay the amount your plan allows for the visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\n",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.34445775,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.34160993,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.34013468,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.33683944,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.33533806,
+          "considered": false,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank detai",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.31782928,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 2,
+          "similarity_score": 0.31336665,
+          "considered": false,
+          "chunk_text": "stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without noticing. A tooth with a new filling can be sensitive to col",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.30760378,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.30656716,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.30122614,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.30057985,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.29333836,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2931894,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.29307032,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.28875154,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.2845765,
+          "considered": false,
+          "chunk_text": "r blood glucose readings to each review, and bring your inhalers if you have asthma or COPD, so the GP can check your technique.\n\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a sm",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.28453904,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.28274095,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.27808973,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.27570006,
+          "considered": false,
+          "chunk_text": "hree weeks apart. We do not remove skin tags, moles or other skin lesions for cosmetic reasons.\n\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medica",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.996943Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.52290606
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.5144545
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.42403954
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.38004434
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.3680852
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2782,
+          "chunk_index": 0,
+          "similarity_score": 0.34445775
+        },
+        {
+          "entry_id": 2765,
+          "chunk_index": 0,
+          "similarity_score": 0.34160993
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 0,
+          "similarity_score": 0.34013468
+        },
+        {
+          "entry_id": 2782,
+          "chunk_index": 1,
+          "similarity_score": 0.33683944
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 1,
+          "similarity_score": 0.33533806
+        },
+        {
+          "entry_id": 2778,
+          "chunk_index": 0,
+          "similarity_score": 0.31782928
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 2,
+          "similarity_score": 0.31336665
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 1,
+          "similarity_score": 0.30760378
+        },
+        {
+          "entry_id": 2764,
+          "chunk_index": 0,
+          "similarity_score": 0.30656716
+        },
+        {
+          "entry_id": 2769,
+          "chunk_index": 0,
+          "similarity_score": 0.30122614
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 3,
+          "similarity_score": 0.30057985
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 1,
+          "similarity_score": 0.29333836
+        },
+        {
+          "entry_id": 2777,
+          "chunk_index": 0,
+          "similarity_score": 0.2931894
+        },
+        {
+          "entry_id": 2766,
+          "chunk_index": 0,
+          "similarity_score": 0.29307032
+        },
+        {
+          "entry_id": 2779,
+          "chunk_index": 1,
+          "similarity_score": 0.28875154
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 1,
+          "similarity_score": 0.2845765
+        },
+        {
+          "entry_id": 2768,
+          "chunk_index": 0,
+          "similarity_score": 0.28453904
+        },
+        {
+          "entry_id": 2772,
+          "chunk_index": 0,
+          "similarity_score": 0.28274095
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 0,
+          "similarity_score": 0.27808973
+        },
+        {
+          "entry_id": 2781,
+          "chunk_index": 2,
+          "similarity_score": 0.27570006
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:49.999186Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 565.49,
+      "scores": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "similarity_score": 0.5144545,
+          "rerank_score": 0.84375
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "similarity_score": 0.52290606,
+          "rerank_score": 0.455078125
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "similarity_score": 0.38004434,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "similarity_score": 0.42403954,
+          "rerank_score": 0.341796875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "similarity_score": 0.3680852,
+          "rerank_score": 0.333984375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:50.566339Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 0,
+          "rerank_score": 0.84375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2774,
+          "chunk_index": 1,
+          "rerank_score": 0.455078125
+        },
+        {
+          "entry_id": 2780,
+          "chunk_index": 0,
+          "rerank_score": 0.41015625
+        },
+        {
+          "entry_id": 2774,
+          "chunk_index": 3,
+          "rerank_score": 0.341796875
+        },
+        {
+          "entry_id": 2773,
+          "chunk_index": 2,
+          "rerank_score": 0.333984375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:50.567307Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.52290606,
+      "best_rerank_score": 0.84375,
+      "event": "faq.verdict",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:50.567988Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. \n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Does the dentist need to know that I take Eliquis?\n\nQuestion: I take Eliquis. Does the dentist need to know?"
+        }
+      ],
+      "event": "faq.model_request",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-01T15:45:50.568292Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 633,
+        "output": 60,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "answer_faq",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.736319Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2023.97,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 157,
+        "answer_text": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "I take Eliquis. Does the dentist need to know?",
+            "verdict": "answered",
+            "answer_text": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.737650Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.739416Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.52,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 157,
+        "answer_text": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.739603Z"
+    },
+    {
+      "duration_ms": 3184.46,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2774,
+              "chunk_index": 0,
+              "chunk_text": "# Dental care guide\n\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.\n\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. ",
+              "similarity_score": 0.5144545,
+              "rerank_score": 0.84375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W29BGB13RZQ5G01N8Q3TEK"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.740009Z"
+    },
+    {
+      "message_id": "01M3W29EM093R1YXWCVJM381KD",
+      "chat_id": "01M3W29BEAX44FRFS0GQ3MSXVX",
+      "sender": "assistant",
+      "content": "Yes. Tell the dentist before any treatment if you take a blood-thinning medicine such as Eliquis (apixaban) — it changes how the dentist plans an extraction.",
+      "event": "message.persisted",
+      "turn_id": "01M3W29BGB13RZQ5G01N8Q3TEK",
+      "level": "info",
+      "timestamp": "2026-10-01T15:45:51.759422Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W29BGB13RZQ5G01N8Q3TEK": "b167f246f159abeeb38bf3e09e08d3e6"
+  }
+}

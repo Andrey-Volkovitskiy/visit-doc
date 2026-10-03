@@ -709,7 +709,7 @@ made deterministic by the browser's timezone rather than a faked clock — the c
 fixed-offset zone in which it is early morning — which works because every time in this system is
 the visitor's own wall clock. It runs by hand, not in CI.)*
 
-### Phase 4+ — Beyond the console (optional, if time allows)
+### Phase 4+ — Optional extensions (if time allows)
 
 #### Phase 4a — Staff in the loop from the Claude app
 The console only helps a staff member who is looking at it. This phase lets them stay in the loop
@@ -782,7 +782,127 @@ out of it silently. And the log redaction gained the credential keys by name (`c
 `pairing_code`, `code_verifier`) rather than the substring `code`, which would have redacted every
 `status_code` either service logs.)*
 
-#### Phase 4b — Kubernetes
+#### Phase 4b — Retrieval under a realistic corpus, then hybrid search
+1e built the pipeline and 2b measured it, but on a corpus too small to say anything about
+retrieval: the golden corpus is 9 entries of 136-364 characters, each one chunk, so the 25-wide
+pool returns the whole corpus on every search. The v2 baseline reads similarity hit@3 1.0, MRR
+0.988, rerank hit@1 43/43, no answerable request unserved and no wrong abstention. Hybrid search
+added now would move none of those numbers, so this phase makes the problem hard first and only
+then changes the retriever, in that order.
+
+*(Outcome, branch `018-hybrid-retrieval`: the corpus was extended and the set given cases aimed at
+retrieval weaknesses, and what they exposed was not ranking. Four changes shipped, each on its own
+measurement - no similarity floor in front of the reranker, a fallback floor of its own for a
+reranker outage, an answerer that gives a no the information states, and chunks cut by heading
+section - plus a classifier fix for the routing misses that remained. Unserved answerable requests
+went from 12/87 to 1/87 with no answer on a labelled gap (baseline `01M3WD842TTD1Q9FX8TDRTMFAB`). **Hybrid search was not built**: dense
+search put the cited chunk in the reranker's shortlist for every answerable request and the
+reranker ranked it first every time, so fusion had nothing to move. The plan below is kept as
+written, with notes on what happened to each part; the measurements and the decision are in
+`specs/018-hybrid-retrieval/evaluation/findings.md`.)*
+
+- **A realistic corpus, by extension rather than replacement.** The 9 entries stay as they are,
+  and documents the size a clinic actually has are added beside them — a patient handbook,
+  insurance and billing policy, preparation instructions per procedure, records and privacy policy
+  — tens of documents, several pages each, including near-duplicates that differ in one detail.
+  Keeping the 9 keeps every existing FAQ label meaningful, and the existing cases run against the
+  larger corpus measure what distractors alone cost. Long documents are what make 1e's chunking
+  matter for the first time: today the 1,000-character splitter never triggers.
+  *(It did matter, and was replaced: a fixed window ran across sections, so a chunk could end on a
+  bare heading and set one section's sentence beside another's. An entry with headings is now
+  chunked per section with its heading path as a prefix, and a headless entry exactly as before.
+  `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
+  *(First increment on branch `018-hybrid-retrieval`: ten documents of 1.0-2.9k characters,
+  bringing the corpus to 19 entries and 36 chunks. Smaller than planned, and grown further only if
+  the new baseline shows retrieval still saturated. The tenth, a price list by procedure code, was
+  added after the first targeted run showed dense search ranking every exact-term case first.)*
+- **Every existing FAQ label re-checked against the additions**, as `PROVENANCE.md` requires when
+  the corpus moves. An `answerable: false` label was checked against nine entries and may now be
+  answered by a new document; an `answerable: true` label may now be answered by a second one too,
+  and a label citing only the old entry would score a correct retrieval as a miss. A new document
+  that disagrees with an old entry is either fixed or kept deliberately as a conflict case — never
+  left by accident.
+- **Golden cases aimed at known retrieval weaknesses**, declared in `golden_harness.golden_set` and
+  rendered with `make eval-build-set` like every other change to the set:
+  - *exact terms* a dense embedding blurs — plan names, form numbers, procedure codes, drug names;
+  - *paraphrase and colloquial wording*, where dense search is strong and lexical search is not;
+  - *a fact deep inside a long document*;
+  - *near-miss distractors* — two sections on neighbouring subjects ("cancellation policy" against
+    "late arrival policy"), where the wrong one is a confident wrong answer.
+- **A new baseline and a noise band for it.** The new corpus and cases are a new set, so the v2
+  baseline no longer compares and the v1 bands never did. Take the baseline, then five full runs of
+  that one build through `make eval-band`, before any retriever change — a band measured earlier
+  ranges over a different corpus and stops applying the moment the corpus changes.
+  *(Done in a different order than planned: the floor, the answer prompt and the chunker changed
+  first, each judged on replays and on movements a band could not have explained, and the band
+  was measured on the build they produced - five runs, `evals/baselines/bands/`. Classification
+  and retrieval did not move across them at all; only the answerer did, by ±1 request.)*
+- **Hybrid retrieval: dense + BM25, fused by Reciprocal Rank Fusion.** A sparse BM25 vector is
+  stored on the same Qdrant point as the dense one and written in the same upsert, so a save stays
+  additive and 007's revision scheme is unchanged. One Query API call runs two `prefetch` searches
+  and fuses them with `Fusion.RRF`. **The session and live-revision filter goes on both
+  prefetches**: a lexical branch without it would reach points Postgres no longer vouches for.
+  *(Not built. On the extended corpus dense search left BM25 nothing to rescue - rerank hit@1
+  83/83, and the offline probe ranked the cited entry first by dense search in 7 of the 8 cases
+  written to favour lexical matching against BM25's 4. A larger corpus, where the 25-wide pool
+  stops reaching the right chunk, is what would reopen it.)*
+- **The fused score is a rank, not a relevance score.** RRF scores `1/(k + rank)`, so the top result
+  gets the same number whether it is a perfect match or the least bad of nothing. No floor can be
+  put on it: fusion decides only the order of what reaches the reranker, and the rerank floor stays
+  where the abstention is decided.
+- **No similarity floor; the rerank floor is the only abstention gate.** The floor is a dense
+  cosine threshold, and BM25 earns its place on exactly the chunks dense search scores low — an
+  exact plan name or form number the embedding blurs — so a floor applied to the fused candidates
+  would drop the chunk BM25 rescued. It turned out to be dropping dense search's own right answers
+  first: on the extended corpus it stopped "PR-4", "braces" and "HC-9" with the right chunk ranked
+  first. *(Shipped ahead of hybrid, on that evidence: `SIMILARITY_FLOOR` defaults to -1.0, so the
+  cap alone picks the shortlist; measured, it answered all three and let no labelled gap through,
+  at four more rerank calls in 146 cases. `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
+- **No unchecked fallback.** A reranker outage used to answer from the ≤5 chunks that cleared the
+  similarity floor (`answered_unreranked`). Without the floor nothing in the shortlist has passed a
+  relevance check, so answering from it would serve the least bad of nothing whenever the reranker
+  is down. *(Shipped as a floor of the fallback's own rather than a new verdict:
+  `UNRERANKED_SIMILARITY_FLOOR`, 0.25, applies only when no rerank score was obtained. The fallback
+  answers from the chunks at or above it - so `answered_unreranked` keeps meaning a floor-checked
+  answer - and abstains at the similarity floor when none is, which still never reads an outage as
+  a rerank-floor corpus gap. It is a run condition, so a comparison names it.)*
+- **An ablation, not a switch.** Which branches run is a setting recorded in `service.configured`,
+  so it becomes a run condition and a comparison names it as the thing that changed. Each branch's
+  rank is logged alongside the fused one in `faq.retrieval_completed`, so the harness scores each
+  stage on its own. The result is a table — dense only, BM25 only, fused, each with and without the
+  reranker — split by case family, and read against the band. Hybrid is kept only if the table
+  says it pays for itself; "no measurable effect" is a result the README records, not one it hides.
+  *(Not run: with hybrid unbuilt there is no fused row. The predicted "no measurable effect" is
+  recorded in the README's technology choices, with the evidence it rests on, rather than
+  measured.)*
+- **A "dense, no floor" row, so removing the floor is not credited to BM25.** Hybrid changes two
+  things at once - it adds a lexical branch and it drops the similarity floor - and the first
+  targeted run on the extended set put every retrieval miss on the second: "PR-4" and "braces"
+  ranked the right chunk first and the floor dropped it, and an offline probe put two of family
+  `w`'s billing-code questions below the floor the same way. The same probe found dense search
+  ranking the cited entry first in seven of family `w`'s eight cases and BM25 in four. So the table
+  carries dense retrieval with the floor removed and the rerank floor as the only gate, beside
+  today's pipeline and the fused one: what separates "dense, no floor" from "fused" is BM25's own
+  contribution, and what separates today's pipeline from "dense, no floor" is the floor's.
+  *(Measured, and now the default: run `01M3VZWB0SA7P17DQD8S827T21` against the baseline took
+  unserved answerable requests from 12/87 to 8/87, with no answer on a labelled gap. That makes
+  "dense, no floor" the row hybrid has to beat, and on this corpus dense search already hands the
+  reranker the right chunk every time - so "no measurable effect" is the expected outcome, and
+  worth recording as one.)*
+#### Phase 4c — Starter corpus seeding cost
+Deferred until it is measured. Every new session is planted with the starter corpus, and planting
+embeds every chunk through Voyage in one call, awaited inside the first `POST /chats` - so a new
+visitor's first chat, every eval run and every e2e journey pay for it. At 36 chunks that was about
+5k tokens and one request, and at 62 since 4b's section chunking it is still one request: not
+worth a mechanism yet. Caching vectors is a new invariant - a vector is valid only for one text,
+one embedding model and one chunker - and one broken silently degrades retrieval rather than
+failing, so it is built only for a measured need: the corpus growing toward hundreds of chunks,
+first-chat latency a visitor can notice, or Voyage rate limits biting during eval or e2e runs.
+When it is built, the likelier shape is a template copy of the starter corpus's points kept in
+Qdrant and copied into each new session under its own `session_id` and revisions - no embedding
+call at all.
+
+#### Phase 4d — Kubernetes
 Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
 in the README like every other technology choice.
 

@@ -287,6 +287,7 @@ class RunConditions(BaseModel):
     retrieval_pool_size: int
     similarity_floor: float
     similarity_cap: int
+    unreranked_similarity_floor: float
     rerank_floor: float
     rerank_cap: int
     max_segments: int
@@ -307,6 +308,25 @@ class RunConditions(BaseModel):
             and "classification_model" in data
         ):
             return {**data, "small_talk_model": data["classification_model"]}
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _the_fallback_answered_through_the_shortlist_floor_before_it_had_one(
+        cls, data: Any
+    ) -> Any:
+        """Fill `unreranked_similarity_floor` from `similarity_floor` when unstated.
+
+        A service that stated no unreranked floor predates the setting, and until it
+        existed a turn whose reranker was unavailable answered from the shortlist the
+        similarity floor had cut - so that floor is what its fallback ran through.
+        """
+        if (
+            isinstance(data, dict)
+            and "unreranked_similarity_floor" not in data
+            and "similarity_floor" in data
+        ):
+            return {**data, "unreranked_similarity_floor": data["similarity_floor"]}
         return data
 
     @classmethod

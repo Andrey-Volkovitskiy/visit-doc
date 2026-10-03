@@ -1,0 +1,1327 @@
+{
+  "case_id": "G-q-08",
+  "chat_id": "01M3W2ZRR1WE2HTKWHAG66M8PT",
+  "patient_id": "01M3W2ZRRK7EX3KNSN7BA9MJMS",
+  "attempts": 1,
+  "elapsed_seconds": 11.625463181990199,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What is your address?",
+          "answer": "We are located at 15a Willson St.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2809,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+    "content": "What is your address, and can you move my Wednesday visit to the same time next week?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W303ZZHV8PJEZY7HBB5YNP",
+    "content": "We're located at 15a Willson St.\n\nYour appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What is your address?",
+        "answer": "We are located at 15a Willson St.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 2809,
+            "chunk_index": 0,
+            "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.)."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What is your address?",
+        "query": "What is your address?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Can you move my Wednesday visit to the same time next week?",
+        "query": "Can you move my Wednesday visit to the same time next week?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "chat_id": "01M3W2ZRR1WE2HTKWHAG66M8PT",
+      "sender": "patient",
+      "content": "What is your address, and can you move my Wednesday visit to the same time next week?",
+      "event": "message.persisted",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:03.120233Z"
+    },
+    {
+      "message": "What is your address, and can you move my Wednesday visit to the same time next week?",
+      "message_ids_unified": [
+        "01M3W2ZRV3EEBYACFF1TA0D9XB"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:03.120674Z"
+    },
+    {
+      "trace_id": "6a341518035b0c43e3258fcd5e2365c2",
+      "event": "turn.traced",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:03.125002Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:03.132006Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3220,
+        "output": 58,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.255556Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What is your address?",
+          "query": "What is your address?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Can you move my Wednesday visit to the same time next week?",
+          "query": "Can you move my Wednesday visit to the same time next week?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.256244Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1125.88,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What is your address?",
+            "query": "What is your address?"
+          },
+          {
+            "position": 1,
+            "intent": "booking",
+            "text": "Can you move my Wednesday visit to the same time next week?",
+            "query": "Can you move my Wednesday visit to the same time next week?"
+          }
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.256930Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.259635Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.263337Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.274830Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.275361Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Wednesday visit to the same time next week?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:04.275543Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.531934Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33394596,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.28096098,
+          "considered": true,
+          "chunk_text": "only the clinic's name, a callback number and your first name - never the reason for the call or any health details.\n\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.\n\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in kiosk. Reminders are sent to the phone number we hold when the reminder goes out.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.24642861,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.23502971,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.21548586,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.20046173,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.19575968,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.194148,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.19247572,
+          "considered": false,
+          "chunk_text": "ltation for your personal use, as long as you tell the practitioner before you start. Staff and other patients must not be recorded or photographed.\n\n## How long we keep records\n\nWe keep adult medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.17269443,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.16469389,
+          "considered": false,
+          "chunk_text": "# General practice services\n\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; y",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.16141461,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.15506738,
+          "considered": false,
+          "chunk_text": " is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.\n\n## Medicare and Medicaid\n\nWe accept Original Medic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.14967096,
+          "considered": false,
+          "chunk_text": " your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.\n\n## Language interpreters\n\nFree telephone interpreting is available in more t",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.14875498,
+          "considered": false,
+          "chunk_text": "# Running late\n\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered M",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.14518332,
+          "considered": false,
+          "chunk_text": "have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate the sample. Unless you were told otherwise, collect the first ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.1445627,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who ha",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.14410856,
+          "considered": false,
+          "chunk_text": "re not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aet",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.1432618,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact a",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.14075464,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.13787167,
+          "considered": false,
+          "chunk_text": " visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.\n\n## Updating your insurance\n\nIf your insurance has changed since your last visi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.13445178,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.12965707,
+          "considered": false,
+          "chunk_text": " a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.12545717,
+          "considered": false,
+          "chunk_text": "d on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.12429784,
+          "considered": false,
+          "chunk_text": " room has to be prepared and cleaned between patients.\n\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minut",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.542917Z"
+    },
+    {
+      "floor": -1.0,
+      "cap": 5,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33394596
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.28096098
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.24642861
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.23502971
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.21548586
+        }
+      ],
+      "dropped_by_floor": [],
+      "dropped_by_cap": [
+        {
+          "entry_id": 2805,
+          "chunk_index": 0,
+          "similarity_score": 0.20046173
+        },
+        {
+          "entry_id": 2810,
+          "chunk_index": 0,
+          "similarity_score": 0.19575968
+        },
+        {
+          "entry_id": 2808,
+          "chunk_index": 0,
+          "similarity_score": 0.194148
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 1,
+          "similarity_score": 0.19247572
+        },
+        {
+          "entry_id": 2802,
+          "chunk_index": 0,
+          "similarity_score": 0.17269443
+        },
+        {
+          "entry_id": 2819,
+          "chunk_index": 0,
+          "similarity_score": 0.16469389
+        },
+        {
+          "entry_id": 2807,
+          "chunk_index": 0,
+          "similarity_score": 0.16141461
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 2,
+          "similarity_score": 0.15506738
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 1,
+          "similarity_score": 0.14967096
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 0,
+          "similarity_score": 0.14875498
+        },
+        {
+          "entry_id": 2813,
+          "chunk_index": 2,
+          "similarity_score": 0.14518332
+        },
+        {
+          "entry_id": 2818,
+          "chunk_index": 0,
+          "similarity_score": 0.1445627
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 1,
+          "similarity_score": 0.14410856
+        },
+        {
+          "entry_id": 2817,
+          "chunk_index": 0,
+          "similarity_score": 0.1432618
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 0,
+          "similarity_score": 0.14075464
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 3,
+          "similarity_score": 0.13787167
+        },
+        {
+          "entry_id": 2811,
+          "chunk_index": 0,
+          "similarity_score": 0.13445178
+        },
+        {
+          "entry_id": 2820,
+          "chunk_index": 1,
+          "similarity_score": 0.12965707
+        },
+        {
+          "entry_id": 2812,
+          "chunk_index": 3,
+          "similarity_score": 0.12545717
+        },
+        {
+          "entry_id": 2815,
+          "chunk_index": 1,
+          "similarity_score": 0.12429784
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.545022Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 398.46,
+      "scores": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "similarity_score": 0.33394596,
+          "rerank_score": 0.6015625
+        },
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "similarity_score": 0.28096098,
+          "rerank_score": 0.3984375
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "similarity_score": 0.21548586,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "similarity_score": 0.23502971,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "similarity_score": 0.24642861,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.945004Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 2809,
+          "chunk_index": 0,
+          "rerank_score": 0.6015625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 2816,
+          "chunk_index": 1,
+          "rerank_score": 0.3984375
+        },
+        {
+          "entry_id": 2806,
+          "chunk_index": 0,
+          "rerank_score": 0.388671875
+        },
+        {
+          "entry_id": 2803,
+          "chunk_index": 0,
+          "rerank_score": 0.376953125
+        },
+        {
+          "entry_id": 2804,
+          "chunk_index": 0,
+          "rerank_score": 0.373046875
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.945989Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.33394596,
+      "best_rerank_score": 0.6015625,
+      "event": "faq.verdict",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:04.946759Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).\n\nQuestion: What is your address?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:04.947010Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 66,
+        "cache_read": 5834,
+        "cache_write": 136,
+        "cache_write_1h": 0,
+        "thinking": 34
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:05.939486Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1664.91,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:05.940694Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:05.941167Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:05.960890Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 20.7,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:05.962214Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Wednesday visit to the same time next week?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "content": "{\"future\": [{\"id\": \"01M3W2ZRTCEGJDWEK61QSWGNQK\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-04T10:00:00\", \"ends_at\": \"2026-03-04T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:05.963009Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 341,
+        "output": 14,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "segment": 0,
+      "node": "answer_faq",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:06.243102Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1984.67,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 33,
+        "answer_text": "We are located at 15a Willson St.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What is your address?",
+            "verdict": "answered",
+            "answer_text": "We are located at 15a Willson St."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:06.243969Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 258,
+        "cache_read": 5970,
+        "cache_write": 251,
+        "cache_write_1h": 0,
+        "thinking": 71
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:08.812403Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2849.93,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:08.813512Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "arguments": {
+        "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+        "from_date": "2026-03-11",
+        "to_date": "2026-03-11",
+        "excluded_appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:08.813791Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:08.831330Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 17.94,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:08.831901Z"
+    },
+    {
+      "iteration": 3,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Wednesday visit to the same time next week?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "content": "{\"future\": [{\"id\": \"01M3W2ZRTCEGJDWEK61QSWGNQK\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-04T10:00:00\", \"ends_at\": \"2026-03-04T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01KVFAERMgv8mL9J5S4SMLj4",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+                "from_date": "2026-03-11",
+                "to_date": "2026-03-11",
+                "excluded_appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01KVFAERMgv8mL9J5S4SMLj4",
+              "content": "{\"available_starts\": [\"2026-03-11T09:00:00\", \"2026-03-11T10:00:00\", \"2026-03-11T11:00:00\", \"2026-03-11T12:00:00\", \"2026-03-11T13:00:00\", \"2026-03-11T14:00:00\", \"2026-03-11T15:00:00\", \"2026-03-11T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:08.832419Z"
+    },
+    {
+      "call": "handle_booking.model[3]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 273,
+        "cache_read": 6221,
+        "cache_write": 406,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:11.589939Z"
+    },
+    {
+      "iteration": 3,
+      "duration_ms": 2758.38,
+      "tool_names": [
+        "reschedule_appointment"
+      ],
+      "text": "10am on March 11 is available with Dr. William Osler (General Practice), so I'll move your appointment from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:11.591364Z"
+    },
+    {
+      "tool_name": "reschedule_appointment",
+      "iteration": 3,
+      "arguments": {
+        "appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK",
+        "new_starts_at": "2026-03-11T10:00:00",
+        "expected_starts_at": "2026-03-04T10:00:00",
+        "expected_practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:11.591641Z"
+    },
+    {
+      "method": "RescheduleAppointment",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:11.637522Z"
+    },
+    {
+      "tool_name": "reschedule_appointment",
+      "iteration": 3,
+      "status": "changed",
+      "reason": null,
+      "duration_ms": 55.33,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:11.647158Z"
+    },
+    {
+      "iteration": 4,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Can you move my Wednesday visit to the same time next week?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_0116ESqqkeqi3seQegjKQjYJ",
+              "content": "{\"future\": [{\"id\": \"01M3W2ZRTCEGJDWEK61QSWGNQK\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-04T10:00:00\", \"ends_at\": \"2026-03-04T11:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01KVFAERMgv8mL9J5S4SMLj4",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6",
+                "from_date": "2026-03-11",
+                "to_date": "2026-03-11",
+                "excluded_appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01KVFAERMgv8mL9J5S4SMLj4",
+              "content": "{\"available_starts\": [\"2026-03-11T09:00:00\", \"2026-03-11T10:00:00\", \"2026-03-11T11:00:00\", \"2026-03-11T12:00:00\", \"2026-03-11T13:00:00\", \"2026-03-11T14:00:00\", \"2026-03-11T15:00:00\", \"2026-03-11T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "citations": null,
+              "text": "10am on March 11 is available with Dr. William Osler (General Practice), so I'll move your appointment from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_01UzLF25TkhxuRgGyDXb5qc6",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK",
+                "new_starts_at": "2026-03-11T10:00:00",
+                "expected_starts_at": "2026-03-04T10:00:00",
+                "expected_practitioner_id": "01M3W2MA6E3S5T0T5ZCBHM02W6"
+              },
+              "name": "reschedule_appointment",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01UzLF25TkhxuRgGyDXb5qc6",
+              "content": "{\"status\": \"changed\", \"change\": \"rescheduled\", \"appointment\": {\"id\": \"01M3W2ZRTCEGJDWEK61QSWGNQK\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-11T10:00:00\", \"ends_at\": \"2026-03-11T11:00:00\", \"status\": \"standing\"}, \"previous_starts_at\": \"2026-03-04T10:00:00\", \"previous_practitioner_full_name\": \"William Osler\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T15:58:11.647493Z"
+    },
+    {
+      "call": "handle_booking.model[4]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 60,
+        "cache_read": 6627,
+        "cache_write": 451,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:12.972670Z"
+    },
+    {
+      "iteration": 4,
+      "duration_ms": 1325.5,
+      "tool_names": [],
+      "text": "Done! Your appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+      "event": "booking.model_call",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:12.973312Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 8710.63,
+      "result": {
+        "outcome": "rescheduled",
+        "appointment_id": "01M3W2ZRTCEGJDWEK61QSWGNQK",
+        "iterations": 4,
+        "tool_calls": 3,
+        "answer_chars": 143,
+        "answer_text": "Done! Your appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:12.973584Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:12.975391Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1090,
+        "output": 70,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:14.519385Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1544.98,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "rescheduled",
+        "citation_count": 1,
+        "answer_chars": 171,
+        "answer_text": "We're located at 15a Willson St.\n\nYour appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:14.520071Z"
+    },
+    {
+      "duration_ms": 11413.53,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 2809,
+              "chunk_index": 0,
+              "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+              "similarity_score": 0.33394596,
+              "rerank_score": 0.6015625
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We're located at 15a Willson St.\n\nYour appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+      "booking_outcome": "rescheduled",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M3W2ZRV3EEBYACFF1TA0D9XB"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:14.520917Z"
+    },
+    {
+      "message_id": "01M3W303ZZHV8PJEZY7HBB5YNP",
+      "chat_id": "01M3W2ZRR1WE2HTKWHAG66M8PT",
+      "sender": "assistant",
+      "content": "We're located at 15a Willson St.\n\nYour appointment with Dr. William Osler (General Practice) has been moved from Wednesday, March 4 at 10am to Wednesday, March 11 at 10am.",
+      "event": "message.persisted",
+      "turn_id": "01M3W2ZRV3EEBYACFF1TA0D9XB",
+      "level": "info",
+      "timestamp": "2026-10-01T15:58:14.547534Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-11T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "reply_skipped": true,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-11T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-11T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W2ZRV3EEBYACFF1TA0D9XB": "6a341518035b0c43e3258fcd5e2365c2"
+  }
+}

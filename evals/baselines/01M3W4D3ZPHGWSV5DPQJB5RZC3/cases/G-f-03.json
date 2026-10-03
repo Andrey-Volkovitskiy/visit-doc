@@ -1,0 +1,227 @@
+{
+  "case_id": "G-f-03",
+  "chat_id": "01M3W4HGQXJ1BCVDWCSM08XRAG",
+  "patient_id": "01M3W4HGRR1BPXWKYWR4JH40KZ",
+  "attempts": 1,
+  "elapsed_seconds": 1.310843754094094,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+    "content": "Put me through to the front desk, please.",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4HHXX48EE50T6KE3ZYMQ6",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "call_staff",
+        "text": "Put me through to the front desk, please.",
+        "query": "Put me through to the front desk, please."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "chat_id": "01M3W4HGQXJ1BCVDWCSM08XRAG",
+      "sender": "patient",
+      "content": "Put me through to the front desk, please.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:13.333606Z"
+    },
+    {
+      "message": "Put me through to the front desk, please.",
+      "message_ids_unified": [
+        "01M3W4HGV1QX8T8QSVQH2HES1W"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:13.334250Z"
+    },
+    {
+      "trace_id": "40f7f91f62d80139465b7982b7ba5887",
+      "event": "turn.traced",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:13.336846Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:13.342205Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3211,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.410031Z"
+    },
+    {
+      "intents": [
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "call_staff",
+          "text": "Put me through to the front desk, please.",
+          "query": "Put me through to the front desk, please."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.410902Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1070.7,
+      "result": {
+        "intents": [
+          "call_staff"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "call_staff",
+            "text": "Put me through to the front desk, please.",
+            "query": "Put me through to the front desk, please."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.411590Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.415792Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 1.05,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.416247Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.419352Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.79,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.419702Z"
+    },
+    {
+      "duration_ms": 1108.18,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M3W4HGV1QX8T8QSVQH2HES1W"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.421810Z"
+    },
+    {
+      "message_id": "01M3W4HHXX48EE50T6KE3ZYMQ6",
+      "chat_id": "01M3W4HGQXJ1BCVDWCSM08XRAG",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.446512Z"
+    },
+    {
+      "chat_id": "01M3W4HGQXJ1BCVDWCSM08XRAG",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M3W4HGV1QX8T8QSVQH2HES1W",
+      "level": "info",
+      "timestamp": "2026-10-01T16:25:14.470368Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M3W4HGV1QX8T8QSVQH2HES1W": "40f7f91f62d80139465b7982b7ba5887"
+  }
+}

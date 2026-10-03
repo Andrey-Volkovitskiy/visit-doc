@@ -1,0 +1,395 @@
+{
+  "case_id": "G-a-06",
+  "chat_id": "01M3W4DGH9JKF6FH2ANWFFFHT1",
+  "patient_id": "01M3W4DGHZSN09BTPS80NF7NTR",
+  "attempts": 1,
+  "elapsed_seconds": 6.78497898101341,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+    "content": "When could I see the dentist on Tuesday morning?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M3W4DQ3240K8KY9YMBMK30WM",
+    "content": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "When could I see the dentist on Tuesday morning?",
+        "query": "When does the dentist have a free slot on Tuesday morning?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "chat_id": "01M3W4DGH9JKF6FH2ANWFFFHT1",
+      "sender": "patient",
+      "content": "When could I see the dentist on Tuesday morning?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:02.029507Z"
+    },
+    {
+      "message": "When could I see the dentist on Tuesday morning?",
+      "message_ids_unified": [
+        "01M3W4DGKTSCQS7SXFTBBGFRBZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:02.029942Z"
+    },
+    {
+      "trace_id": "77bead6702bca84ef22d553925528b8a",
+      "event": "turn.traced",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:02.034921Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:02.038813Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3212,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.120184Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "When could I see the dentist on Tuesday morning?",
+          "query": "When does the dentist have a free slot on Tuesday morning?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.121008Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1083.48,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "When could I see the dentist on Tuesday morning?",
+            "query": "When does the dentist have a free slot on Tuesday morning?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.121664Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.124703Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.137423Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:03.138388Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When could I see the dentist on Tuesday morning?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:23:03.138934Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 184,
+        "cache_read": 5831,
+        "cache_write": 128,
+        "cache_write_1h": 0,
+        "thinking": 52
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:05.696446Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2558.0,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:05.697169Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:05.697486Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:05.716929Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 20.01,
+      "event": "booking.tool_result",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:05.717916Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When could I see the dentist on Tuesday morning?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_016S5dU31ukmSkmvf2VDsmbT",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M3W4D3Y9284NF93CTXCND5A4",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_016S5dU31ukmSkmvf2VDsmbT",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-01T16:23:05.718461Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 123,
+        "cache_read": 5959,
+        "cache_write": 289,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.631048Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2912.83,
+      "tool_names": [],
+      "text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.631868Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 5507.94,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 281,
+        "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.632310Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.634864Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.73,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 281,
+        "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.635085Z"
+    },
+    {
+      "duration_ms": 6625.25,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M3W4DGKTSCQS7SXFTBBGFRBZ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.636144Z"
+    },
+    {
+      "message_id": "01M3W4DQ3240K8KY9YMBMK30WM",
+      "chat_id": "01M3W4DGH9JKF6FH2ANWFFFHT1",
+      "sender": "assistant",
+      "content": "On Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning appointment times open:\n\n- 9:00am\n- 10:00am\n- 11:00am\n\n(He's also free at 12:00pm and 1:00pm, if those would suit you better.)\n\nEach appointment is 60 minutes. Would you like me to book one of these for you?",
+      "event": "message.persisted",
+      "turn_id": "01M3W4DGKTSCQS7SXFTBBGFRBZ",
+      "level": "info",
+      "timestamp": "2026-10-01T16:23:08.651731Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M3W4DGKTSCQS7SXFTBBGFRBZ": "77bead6702bca84ef22d553925528b8a"
+  }
+}

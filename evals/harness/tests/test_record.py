@@ -34,6 +34,7 @@ _CONDITIONS: dict[str, Any] = {
     "retrieval_pool_size": 25,
     "similarity_floor": 0.3,
     "similarity_cap": 5,
+    "unreranked_similarity_floor": 0.25,
     "rerank_floor": 0.58,
     "rerank_cap": 3,
     "max_segments": 3,
@@ -515,9 +516,13 @@ def test_a_run_refuses_a_recorded_case_it_did_not_select() -> None:
         Run.model_validate(_run(cases=["G001", "G099"]))
 
 
-# Every field but the one a run recorded before it existed may leave out: that run's
-# small talk ran on the classification model, which the run did state.
-@pytest.mark.parametrize("field", sorted(set(_CONDITIONS) - {"small_talk_model"}))
+# Every field but the two a run recorded before they existed may leave out: that run's
+# small talk ran on the classification model, and its reranker fallback answered
+# through the similarity floor, both of which the run did state.
+_BACK_FILLED = {"small_talk_model", "unreranked_similarity_floor"}
+
+
+@pytest.mark.parametrize("field", sorted(set(_CONDITIONS) - _BACK_FILLED))
 def test_run_conditions_require_every_field_of_the_settings_event(field: str) -> None:
     raw = _run()
     del raw["conditions"][field]
@@ -543,6 +548,28 @@ def test_a_run_that_stated_no_small_talk_model_ran_small_talk_on_the_classifier(
     conditions = RunConditions.model_validate(stated)
 
     assert conditions.small_talk_model == "claude-classifier"
+
+
+def test_a_run_stating_no_unreranked_floor_fell_back_through_its_similarity_floor() -> (
+    None
+):
+    stated = {
+        key: value
+        for key, value in _CONDITIONS.items()
+        if key != "unreranked_similarity_floor"
+    }
+
+    conditions = RunConditions.model_validate(stated)
+
+    assert conditions.unreranked_similarity_floor == stated["similarity_floor"]
+
+
+def test_a_stated_unreranked_floor_is_kept_apart_from_the_similarity_floor() -> None:
+    stated = {**_CONDITIONS, "similarity_floor": -1.0}
+
+    conditions = RunConditions.model_validate(stated)
+
+    assert conditions.unreranked_similarity_floor == 0.25
 
 
 def test_a_stated_small_talk_model_is_kept_when_it_differs_from_the_classifier() -> (

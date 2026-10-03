@@ -84,6 +84,85 @@ the eleven cases after it would rename labels that had not changed and make ever
 selected them unscoreable. v1 left `G103` as a hole for the same reason. The loader enforces the
 family letter and that the numbers ascend, and deliberately not that they are contiguous.
 
+## The corpus extended, and four retrieval families added (2026-10-01, by the reviewer's decision)
+
+ROADMAP Phase 4b. The 9 entries were too few and too unlike each other to measure retrieval: the
+v2 baseline read similarity hit@3 1.0 and MRR 0.988. Nine of the clinic's longer documents were
+added after them, **extending** the corpus rather than replacing it, so that every label resting on
+the original nine keeps its meaning: `insurance-plan-guide`, `dental-care-guide`,
+`test-preparation`, `vaccinations`, `running-late`, `reminders-and-messages`,
+`check-in-and-registration`, `privacy`, `gp-services`. 18 entries, 34 chunks where there were 9,
+so the 25-wide pool no longer returns the whole corpus. The documents were written against three
+rules: nothing in them contradicts one of the nine; none names a practitioner, a specialty on the
+roster or anyone's hours, which are live records data; and none answers an existing gap.
+
+The labels below were drafted by the assistant and adjudicated by the reviewer, who approved
+every one of them as written on 2026-10-01.
+
+### What moved in existing labels
+
+Every existing label was re-checked against the nine new documents.
+
+- **Six answerable labels gained a second citation**, `insurance-plan-guide`, because the plan guide
+  now answers them too and a label citing only the old entry would score a correct retrieval as a
+  miss: `G-j-08` (Aetna), `G-l-04` (Blue Cross), `G-m-02` and `G-q-03` (which plans), `G-m-06`
+  (Cigna), `G-o-06` (Medicare). Their scored digests changed, and scoring refuses a whole run,
+  not just the case, when any case it selected has a moved label - so `eval-score` and
+  `eval-compare` refuse every earlier run that selected one of the six, the v2 baseline among
+  them.
+- **Two were left alone, and are the first to re-read**: "when is payment due" in `G-m-04` and
+  `G-m-06`. The plan guide says a copay is collected at check-in, which is part of an answer and
+  not the whole of one, so it was not added as a citation.
+- **Every gap still holds.** None of the new documents answers one. Three sit deliberately close,
+  and are the ones to re-read whenever their document changes: `G-k-04` (cancellation and no-show)
+  against `running-late`, which says what happens to a late arrival and nothing about cancelling
+  or not turning up; `G-k-07` (fasting before a blood test) against `test-preparation`, whose
+  spirometry section says to avoid a large meal - and which mentions no blood test; and `G-n-06`
+  (whether a scan is included) against `vaccinations`, which says a vaccine is charged in addition
+  to the visit. `G-k-02`/`G-n-02` (wheelchair access) are also what the e2e tier's abstention
+  journey asks, so no document may mention step-free access without moving that test too.
+
+### What was added
+
+- **Five gaps in `k`** (`G-k-17` to `G-k-21`), near misses against the new documents: a charge for
+  arriving too late, the shingles vaccine, the length of a filling appointment, Humana, reminders by
+  WhatsApp. Each is a subject a document is close to and does not cover, and the notes say which
+  sentence each is close to.
+- **Four families**, each aimed at one retrieval weakness, so the Phase 4b ablation can be read per
+  family: `s` exact terms (12), `t` paraphrase (9), `u` an answer deep in a long document (7),
+  `v` a near-miss distractor (6, after `G-v-06` below). `s` and `t` are each other's counterweight - lexical search should
+  help the first and dense search the second, and a fusion is judged on both.
+- **`G-v-03` reworded the same day, by the reviewer's decision**, after the first targeted run of
+  family `v`: *"Will my Aetna plan pay for a dental cleaning?"* became *"Can I use my Aetna medical
+  insurance for a dental cleaning?"*. Aetna also sells dental plans, so "my Aetna plan" did not say
+  which kind the patient held, and the dental guide answers only the medical one - the answerer's
+  abstention on the old wording was defensible. The id is kept: no baseline had been taken on it.
+- **`G-v-06` removed the same day, by the reviewer's decision.** *"Will you email me my test
+  results?"* was classified `not_authorized` and handed off, which is a defensible reading: it can
+  be heard as a request for results, which the assistant may never serve, as much as a question
+  about the clinic's email policy. A case whose right intent depends on that reading measures the
+  wording, not the routing. Its number is not reused, so family `v` runs 01-05 and 07.
+- **A tenth document, `procedure-prices`, and family `w`, by the reviewer's decision.** The first
+  targeted run showed dense search ranking the cited entry first in every case of family `s`:
+  each exact term there has its category to itself, so the category alone picks the entry and BM25
+  has nothing to win. `w` puts the token where it is the only discriminator - bare billing codes
+  from a new price list beside the entries about receipts and rates, and plan qualifiers (Cigna
+  DHMO, an AARP HMO, Blue Essentials) beside the insurance entries that accept the brand - plus
+  `G-k-22`, a code the list does not hold. The document prices procedures only, never a visit, a
+  scan, an MRI or a follow-up, so every gap still holds and no existing label gains a citation;
+  its last section was reworded before pinning, because "a code not in this list is part of the
+  visit" would have answered `G-n-06`'s scan half and `G-k-22` both. An offline probe ranked the
+  cited entry under dense search and a plain BM25 over the 36 chunks: dense first in seven of
+  eight, BM25 in four, BM25 alone in one (`G-w-05`). Every case was kept regardless - selecting
+  cases by which retriever fails them would decide the ablation before it ran.
+
+### What it means for stored runs
+
+The corpus pin changed and six labels moved, so the v2 baseline
+(`evals/baselines/01M321DWRXSVSY7GW9RY3CR9YW`) no longer re-scores and is evidence of the 9-entry
+build rather than a baseline for this one. A new baseline, and a noise band for it, are
+taken next.
+
 ## What the set depends on, and what to re-check when each moves
 
 ### The corpus
