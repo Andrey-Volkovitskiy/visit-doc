@@ -278,8 +278,25 @@ already shows it doing. Nothing else moved. The run is the baseline that closes 
 
 - **`G-w-02`** ("How much is 93000 if I'm paying myself?") - a bare billing code still routes to
   `small_talk`.
-- **`G-w-05`** ("Cigna DHMO") is answered 5 times in 10: its chunks look contradictory - the
-  insurance entry accepts Cigna, the dental guide refuses Cigna's DHMO.
+- **`G-w-05`** ("Cigna DHMO") is answered about half the time, and is left open deliberately.
+  Retrieval is identical in every run - the dental guide's "we do not accept … Cigna Dental Care
+  DHMO" ranked first - but the original Q&A entry's "we accept … Cigna" sits beside it, and the
+  answerer sometimes reads the pair as a contradiction and declines. It never answers yes, so the
+  failure is a needless hand-off, not a wrong answer. A "specific beats general" clause in the
+  answer prompt was replayed against the closing baseline, over every request that reached
+  generation and every gap the rerank floor stopped (2026-10-03):
+
+  | | current | S1: "the one that names the exact thing outweighs one that speaks in general" | S2: "a statement that names exactly what was asked outweighs a general one" |
+  |---|---|---|---|
+  | `G-w-05` answered | 6/20 | 20/20 | 17/20 |
+  | guards / stress gaps declined | 70/70, 160/160 | 70/70, 160/160 | 70/70, 160/160 |
+  | controls answered | 253/255 | 249/255 | 249/255 |
+
+  S1 fixed the target and broke its twin: `G-s-02` ("UnitedHealthcare Navigate HMO") has the same
+  general-against-specific shape and the current prompt answers it every time, but under S1 it
+  declined 3 in 3, and `G-v-03`, whose prompt holds one chunk and no conflict at all, 2 in 3.
+  Naming disagreement taught the model to look for it rather than to resolve it. Neither wording
+  shipped. Fixing the old entry instead would remove the conflict the case exists to test.
 - **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
   rerank floor used to stop.
 - **The corpus is still small** - 62 chunks against a 25-wide pool. Section 7's decision holds for
