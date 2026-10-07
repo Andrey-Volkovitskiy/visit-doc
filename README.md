@@ -1093,7 +1093,7 @@ tokens of tool definitions and system prompt. Five choices carried a real tradeo
 
 The first step of Phase 4d: each service is an image, and the whole stack runs from them under
 Docker Compose before anything is deployed to Kubernetes, so a problem of containers working
-together is found apart from a problem of Kubernetes. Six choices carried a tradeoff.
+together is found apart from a problem of Kubernetes. Seven choices carried a tradeoff.
 
 - **One image per service.** `services/chat/Dockerfile`, `services/scheduler/Dockerfile` and
   `services/frontend/Dockerfile`, all built from the repo root - the Python services need
@@ -1121,3 +1121,11 @@ together is found apart from a problem of Kubernetes. Six choices carried a trad
   containers the services wait for, from the same image as the service they migrate - the shape a
   Kubernetes Job will take. The first switch from one file to the other recreated the Postgres
   container once (its data is in a named volume, which was untouched); switching back did not.
+- **A local cluster from k3d, running k3s.** `make cluster-up` creates it from `deploy/k3d.yaml`:
+  one control-plane node and one worker as Docker containers, with Traefik - k3s's built-in
+  Ingress - at `http://localhost:8080`. k3s is the distribution planned for the public deployment,
+  so the cluster learnt on is the one deployed to; minikube, kind and Docker Desktop's built-in
+  cluster were the alternatives, and each would differ from production in its Ingress and
+  storage. The images reach the nodes by `k3d image import`, not through a registry, which keeps
+  a local cluster free of one until a public deployment needs it. Requires `k3d` on the `PATH`;
+  `kubectl` comes with Docker Desktop.

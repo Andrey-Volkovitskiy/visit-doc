@@ -195,6 +195,13 @@ databases. `make stack-down` removes the services and leaves Postgres and Qdrant
 `docker compose -f docker-compose.full.yml down`**, which stops the included datastores too. A
 container's code is the image's, so an edit reaches it only through another `make stack-up`.
 
+**A local Kubernetes cluster** comes from `make cluster-up` (k3d, defined in `deploy/k3d.yaml`,
+Ingress at `http://localhost:8080`) and goes with `make cluster-down`. `k3d` is installed in
+`~/.local/bin`; `kubectl` comes from Docker Desktop. The nodes have their own image store, so a
+locally built image must be imported (`k3d image import <image> -c visitdoc`) and run with
+`imagePullPolicy: Never` or `IfNotPresent` - with a `:latest` tag Kubernetes otherwise tries to
+pull it from Docker Hub.
+
 `scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a
 turn and stream the reply, read the thread or the staff console, post as staff, flip the assistant
 switch, add a FAQ entry. It exists so that exercising a flow by hand doesn't start with rebuilding

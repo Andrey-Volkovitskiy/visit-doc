@@ -1,0 +1,38 @@
+# The local Kubernetes cluster: k3s (the distribution planned for the public deployment)
+# running as Docker containers through k3d.
+#
+#   make cluster-up      # k3d cluster create --config deploy/k3d.yaml
+#   make cluster-down    # k3d cluster delete visitdoc
+#
+# Disposable by design: everything the cluster runs is declared in files, so deleting it
+# and creating it again loses nothing that matters.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: visitdoc
+
+# One control-plane node and one worker, so pods visibly land on different nodes. The
+# control-plane node also runs ordinary pods, as k3s does by default.
+servers: 1
+agents: 1
+
+# Pinned, so a k3d upgrade does not silently change the Kubernetes version under us.
+image: rancher/k3s:v1.35.5-k3s1
+
+kubeAPI:
+  hostPort: "6550"
+
+# k3d puts a small load balancer container in front of the nodes; publishing its port 80
+# makes the cluster's Ingress (Traefik, built into k3s) reachable at http://localhost:8080.
+# Not :80, which needs root, and not any port the compose stack or the dev services use.
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+
+options:
+  k3d:
+    wait: true
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

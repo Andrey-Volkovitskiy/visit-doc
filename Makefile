@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -137,6 +137,14 @@ stack-down:
 
 stack-logs:
 	$(STACK) logs -f $(STACK_APPS)
+
+# The local Kubernetes cluster (deploy/k3d.yaml): k3s in Docker through k3d, Ingress on
+# http://localhost:8080. Disposable - `cluster-down` deletes it and everything running in it.
+cluster-up:
+	k3d cluster create --config deploy/k3d.yaml
+
+cluster-down:
+	k3d cluster delete visitdoc
 
 alembic-chat-history:
 	uv run --directory services/chat alembic history
