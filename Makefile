@@ -2,7 +2,8 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset alembic-chat-history alembic-scheduler-history \
+        db-up db-down db-reset stack-up stack-down stack-logs \
+        alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
 sync:
@@ -120,6 +121,22 @@ db-down:
 # Destructive: wipes Postgres + Qdrant data volumes. Confirm before running.
 db-reset:
 	docker compose down -v
+
+# The whole stack in containers (docker-compose.full.yml): both migrations, then scheduler, chat
+# and the frontend, at the same ports as `services-up` - so stop one before starting the other.
+STACK := docker compose -f docker-compose.full.yml
+# The services the full file adds to docker-compose.yml, read from the two files rather than
+# listed here, so `stack-down` leaves Postgres and Qdrant running as `services-down` does.
+STACK_APPS = $$($(STACK) config --services | grep -vxF "$$(docker compose config --services)")
+
+stack-up:
+	$(STACK) up -d --build
+
+stack-down:
+	$(STACK) rm --stop --force $(STACK_APPS)
+
+stack-logs:
+	$(STACK) logs -f $(STACK_APPS)
 
 alembic-chat-history:
 	uv run --directory services/chat alembic history

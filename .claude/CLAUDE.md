@@ -187,6 +187,14 @@ the phone. Run `ngrok http --url=<static-domain> 8000` in front of the chat serv
 startup. Without it the console's gear tab says pairing is unavailable and why, and nothing else
 changes. The walk against a real Claude account is `specs/017-staff-mcp-connector/quickstart.md`.
 
+**The same stack also runs in containers** (Phase 4d's first step): `make stack-up` builds the
+three images from their `Dockerfile`s and starts `docker-compose.full.yml`, which `include`s
+`docker-compose.yml` and adds both migrations as one-off containers plus the three services, at the
+same host ports as `services-up` - so only one of the two runs at a time, and both use the same
+databases. `make stack-down` removes the services and leaves Postgres and Qdrant running; **never
+`docker compose -f docker-compose.full.yml down`**, which stops the included datastores too. A
+container's code is the image's, so an edit reaches it only through another `make stack-up`.
+
 `scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a
 turn and stream the reply, read the thread or the staff console, post as staff, flip the assistant
 switch, add a FAQ entry. It exists so that exercising a flow by hand doesn't start with rebuilding

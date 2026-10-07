@@ -1,0 +1,112 @@
+# The whole stack in containers: the two datastores from docker-compose.yml, both
+# migrations, and the three services built from their Dockerfiles.
+#
+#   docker compose -f docker-compose.full.yml up -d --build     (or: make stack-up)
+#
+# It publishes the same host ports as `make services-up` (frontend :5173, chat :8000,
+# scheduler :8001/:50051), so it is the same app at the same addresses - and so the two
+# cannot run at once. Both use the same databases and Qdrant collection.
+
+include:
+  - docker-compose.yml
+
+# Database URLs as the services see them: `postgres` is that container's hostname on the
+# compose network, where `localhost` would mean the service's own container. Credentials
+# follow docker-compose.yml's, which read the same variables.
+x-chat-database-url: &chat-database-url
+  postgresql+asyncpg://${POSTGRES_USER:-visitdoc}:${POSTGRES_PASSWORD:-visitdoc}@postgres:5432/visitdoc_chat
+x-scheduler-database-url: &scheduler-database-url
+  postgresql+asyncpg://${POSTGRES_USER:-visitdoc}:${POSTGRES_PASSWORD:-visitdoc}@postgres:5432/visitdoc_scheduler
+
+# One image per Python service, shared by the server and its migration, so a migration
+# always runs the code it ships with.
+x-chat-image: &chat-image
+  image: visitdoc-chat
+  build:
+    context: .
+    dockerfile: services/chat/Dockerfile
+x-scheduler-image: &scheduler-image
+  image: visitdoc-scheduler
+  build:
+    context: .
+    dockerfile: services/scheduler/Dockerfile
+
+services:
+  # One-off: bring the database to head, then exit. The service below waits for it.
+  scheduler-migrate:
+    <<: *scheduler-image
+    working_dir: /app/services/scheduler
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      SCHEDULER_DATABASE_URL: *scheduler-database-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  scheduler:
+    <<: *scheduler-image
+    restart: unless-stopped
+    # Only what the scheduler reads - not `.env`, which also holds chat's API keys.
+    environment:
+      SCHEDULER_DATABASE_URL: *scheduler-database-url
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8001:8001"   # HTTP
+      - "50051:50051" # gRPC (the e2e tier plants appointments through it)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      scheduler-migrate:
+        condition: service_completed_successfully
+
+  chat-migrate:
+    <<: *chat-image
+    working_dir: /app/services/chat
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: *chat-database-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  chat:
+    <<: *chat-image
+    restart: unless-stopped
+    # API keys and settings from `.env`; `environment` wins over it, and replaces every
+    # address that names localhost.
+    env_file: .env
+    environment:
+      DATABASE_URL: *chat-database-url
+      QDRANT_URL: http://qdrant:6333
+      SCHEDULING_GRPC_TARGET: scheduler:50051
+      SCHEDULING_HTTP_BASE_URL: http://scheduler:8001
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      chat-migrate:
+        condition: service_completed_successfully
+      qdrant:
+        condition: service_started
+      scheduler:
+        condition: service_healthy
+
+  frontend:
+    image: visitdoc-frontend
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:8080"
+    # nginx resolves `chat` when it starts, so chat has to exist first.
+    depends_on:
+      chat:
+        condition: service_healthy

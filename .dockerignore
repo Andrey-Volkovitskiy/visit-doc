@@ -1,0 +1,15 @@
+# What `docker build .` from the repo root never sends to the builder. `.env` above
+# all: an image must not carry the secrets - they arrive as environment variables.
+.env
+.git
+.venv
+.run
+**/node_modules
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/.ruff_cache
+specs
+# The frontend image builds these itself; a stale local copy must not stand in for them.
+**/dist
+**/*.tsbuildinfo

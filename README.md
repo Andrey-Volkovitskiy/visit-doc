@@ -64,6 +64,12 @@ Qdrant gets the same treatment: tests use a `faq_chunks_test` collection (derive
 the existing idempotent `ensure_collection` — no volume/init-script step needed, since a collection
 is just an API-created resource, not something that has to pre-exist like a Postgres database.
 
+The same five pieces also run entirely in containers, from images built out of each service's
+`Dockerfile`: `make stack-up` builds them, runs both migrations and serves the app at the same
+addresses as above (`docker-compose.full.yml`); `make stack-down` stops the three services and
+leaves the datastores running. It uses the same ports as the hand-run services, so stop those
+first. See "Running in Containers" below.
+
 See the [`Makefile`](Makefile) for shortcuts (`make sync`, `make lint`, `make format`,
 `make typecheck`, `make precommit`, `make install-hooks`, `make run-chat`, `make run-chat-dev`,
 `make run-scheduler`, `make run-scheduler-dev`, `make run-frontend-dev`, `make db-up`,
@@ -1082,3 +1088,36 @@ tokens of tool definitions and system prompt. Five choices carried a real tradeo
 - **No effort tuning.** Sonnet 5 thinks by default, but thinking was under $0.02 of a run: output
   of every kind was about a tenth of the spend. Lowering `effort` would trade answer quality for a
   saving the measurements do not show.
+
+## Running in Containers: technology choices
+
+The first step of Phase 4d: each service is an image, and the whole stack runs from them under
+Docker Compose before anything is deployed to Kubernetes, so a problem of containers working
+together is found apart from a problem of Kubernetes. Six choices carried a tradeoff.
+
+- **One image per service.** `services/chat/Dockerfile`, `services/scheduler/Dockerfile` and
+  `services/frontend/Dockerfile`, all built from the repo root - the Python services need
+  `packages/` and the workspace's one `uv.lock`. The two Python ones are near copies differing in
+  the package, the port and the migrations, which was preferred to one parameterised file: the
+  copies are short, and a reader sees one service's whole image in one place.
+- **Two stages, the second holding only what runs.** The builder stage has uv and the source; the
+  final image receives the installed virtualenv and the migration scripts and nothing else. Our
+  own packages are installed from wheels (`--no-editable`) rather than copied in as source, so
+  which workspace packages an image carries is read from `pyproject.toml`, not restated in the
+  Dockerfile where it could fall behind. The cost is a build step a plain copy would not need.
+- **`uv sync --locked`, not `--frozen`.** The build fails when `uv.lock` is stale against any
+  `pyproject.toml`, rather than quietly installing what an old lock says. That check needs the
+  whole workspace's manifests, so every image copies the other members' `pyproject.toml` files
+  too, though it installs none of their code.
+- **Not root, and unable to rewrite its own code.** The Python images run as uid 1000, by number so
+  Kubernetes' `runAsNonRoot` can verify it, over files owned by root; the frontend is the
+  unprivileged nginx build. A process that is compromised can read the app but not change it.
+- **The frontend is a static bundle behind nginx**, which forwards the same API prefixes
+  `vite.config.ts` proxies in development, with response buffering off so a reply still streams.
+  The two lists of prefixes have to be kept in step by hand.
+- **Two compose files, one including the other.** `docker-compose.yml` stays the datastores alone,
+  for running the services by hand; `docker-compose.full.yml` includes it and adds the services, so
+  Postgres and Qdrant are declared once and both modes use the same data. Migrations are one-off
+  containers the services wait for, from the same image as the service they migrate - the shape a
+  Kubernetes Job will take. The first switch from one file to the other recreated the Postgres
+  container once (its data is in a named volume, which was untouched); switching back did not.
