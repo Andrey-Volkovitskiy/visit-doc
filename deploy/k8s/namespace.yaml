@@ -1,0 +1,6 @@
+# Everything the app runs in the cluster lives in this one namespace, apart from
+# Kubernetes' own components in kube-system. Deleting it deletes all of it, data included.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: visitdoc

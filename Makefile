@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -145,6 +145,28 @@ cluster-up:
 
 cluster-down:
 	k3d cluster delete visitdoc
+
+# The app in that cluster (deploy/k8s/). Pinned to its context, so these never act on
+# another cluster kubectl happens to point at. The Secret and the init ConfigMap are made
+# here, not committed: one holds a password, the other is read from docker/postgres-init/.
+# `create --dry-run | apply` makes both safe to re-run.
+K8S := kubectl --context k3d-visitdoc
+POSTGRES_USER ?= visitdoc
+POSTGRES_PASSWORD ?= visitdoc
+
+k8s-up:
+	$(K8S) apply -f deploy/k8s/namespace.yaml
+	@echo "creating Secret postgres (not echoed: it holds the password)"
+	@$(K8S) -n visitdoc create secret generic postgres \
+		--from-literal=POSTGRES_USER=$(POSTGRES_USER) --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
+		--dry-run=client -o yaml | $(K8S) apply -f -
+	$(K8S) -n visitdoc create configmap postgres-init --from-file=docker/postgres-init \
+		--dry-run=client -o yaml | $(K8S) apply -f -
+	$(K8S) apply -f deploy/k8s/
+
+# Deletes the namespace and everything in it - the databases' volumes too.
+k8s-down:
+	$(K8S) delete namespace visitdoc --ignore-not-found
 
 alembic-chat-history:
 	uv run --directory services/chat alembic history

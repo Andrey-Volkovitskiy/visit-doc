@@ -1,0 +1,90 @@
+# Postgres, as docker-compose.yml runs it: the same image, the same databases (from the
+# same docker/postgres-init scripts), its data on a volume that outlives the pod. Two
+# objects it needs come from `make k8s-up` rather than from this file:
+#   - Secret `postgres`: the user and password, so no password is committed;
+#   - ConfigMap `postgres-init`: built from docker/postgres-init/, so that list of
+#     databases has one source.
+
+# The name other pods reach it by: `postgres:5432`, as on the compose network. Headless
+# (no virtual IP of its own), so the name resolves straight to the one pod, as a
+# StatefulSet expects.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: visitdoc
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+# A StatefulSet rather than a Deployment: its pod keeps one name (postgres-0) and the same
+# volume across restarts, where a Deployment's pods are interchangeable and would each
+# want storage of their own.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: visitdoc
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          envFrom:
+            - secretRef:
+                name: postgres # POSTGRES_USER, POSTGRES_PASSWORD
+          env:
+            - name: POSTGRES_DB
+              value: visitdoc_chat
+          ports:
+            - name: postgres
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          # The compose healthcheck's counterpart: until it passes, the Service sends this
+          # pod no traffic. No liveness probe - restarting a database that is slow to answer
+          # (recovering after a crash, say) would only make it slower.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\""]
+            periodSeconds: 5
+            timeoutSeconds: 5
+          # What the scheduler reserves for it on a node, and the most it may use.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: init
+          configMap:
+            name: postgres-init
+  # One claim per pod, created with it and kept when the pod is replaced. k3s's local-path
+  # provisioner backs it with a directory on whichever node the pod lands on. The size is a
+  # request local-path does not enforce.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
