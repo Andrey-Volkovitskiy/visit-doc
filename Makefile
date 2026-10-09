@@ -146,8 +146,9 @@ cluster-up:
 cluster-down:
 	k3d cluster delete visitdoc
 
-# The app in that cluster (deploy/k8s/). Pinned to its context, so these never act on
-# another cluster kubectl happens to point at. The Secrets and the init ConfigMap are made
+# The app in that cluster: the datastores and settings (deploy/k8s/), then the migrations,
+# then the services (deploy/k8s/apps/) - each waited for before the next. Pinned to its
+# context, so these never act on another cluster kubectl happens to point at. The Secrets and the init ConfigMap are made
 # here, not committed: the Secrets hold a password and the API keys, the ConfigMap is read
 # from docker/postgres-init/.
 # `create --dry-run | apply` makes each safe to re-run.
@@ -171,6 +172,9 @@ k8s-up:
 		| $(K8S) -n visitdoc create secret generic chat --from-env-file=/dev/stdin \
 		--dry-run=client -o yaml | $(K8S) apply -f -
 	$(K8S) apply -f deploy/k8s/
+	$(MAKE) k8s-migrate
+	$(K8S) apply -f deploy/k8s/apps/
+	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat --timeout=180s
 
 # The three images, built as `make stack-up` builds them, then copied into the nodes' own
 # image store: the cluster pulls from no registry, and cannot see this machine's images.

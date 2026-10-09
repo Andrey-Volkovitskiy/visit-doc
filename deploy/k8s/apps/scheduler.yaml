@@ -1,0 +1,92 @@
+# The scheduling service: HTTP on 8001 and, from the same process, gRPC on 50051 - the
+# `scheduler` service of docker-compose.full.yml. A Deployment, not a StatefulSet: it keeps
+# nothing on disk and nothing in memory between requests (double-booking is refused by
+# Postgres, not by this process), so any of its pods is as good as another.
+
+# Reached as `scheduler:8001` and `scheduler:50051`. An ordinary Service, with a virtual IP
+# that forwards to whichever pods are ready - unlike the datastores' headless ones, there
+# is no particular pod a caller needs.
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+  namespace: visitdoc
+spec:
+  selector:
+    app: scheduler
+  ports:
+    - name: http
+      port: 8001
+      targetPort: http
+    - name: grpc
+      port: 50051
+      targetPort: grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: visitdoc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: scheduler
+          image: visitdoc-scheduler:latest
+          imagePullPolicy: Never
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_PASSWORD}
+            # Assembled as in the migration Jobs: the password is stored once.
+            - name: SCHEDULER_DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/visitdoc_scheduler
+            - name: LOG_LEVEL
+              value: INFO
+          ports:
+            - name: http
+              containerPort: 8001
+            - name: grpc
+              containerPort: 50051
+          # `/health` answers "is this process serving" and touches no dependency - so a
+          # database outage takes no scheduler pod out of service and restarts none.
+          # Startup: up to 60s to come up, during which the other two are held off.
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 2
+            failureThreshold: 30
+          # Readiness: no traffic until it answers, nor while it stops answering.
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 5
+          # Liveness: a process alive but unanswering for 30s is restarted. Unlike the
+          # datastores', a stuck web process is what this cures, and restarting one loses
+          # nothing.
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

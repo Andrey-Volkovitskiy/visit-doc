@@ -207,7 +207,10 @@ built from `docker/postgres-init/`, and Secret `chat` - only the API keys and `A
 k8s-images` builds the three images and imports them; `make k8s-migrate` re-creates the two
 migration Jobs (`deploy/k8s/migrations/`, kept out of the plain `apply`, since a finished Job never
 runs again) and waits for them - on a failure it prints their logs, but only once its 3-minute
-wait runs out. `make k8s-down` deletes the namespace - **its databases'
+wait runs out. `make k8s-up` runs it between the datastores and the services
+(`deploy/k8s/apps/`). Chat runs as exactly one pod, replaced with `strategy: Recreate`, because
+its running turns live in process memory (`generation_registry`) - don't scale it or switch it to
+a rolling update. `make k8s-down` deletes the namespace - **its databases'
 volumes included**. The cluster's Postgres is its own, empty one, never the compose one.
 
 `scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a

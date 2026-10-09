@@ -1,0 +1,95 @@
+# The chat service on 8000 - the `chat` service of docker-compose.full.yml. Its settings
+# come from ConfigMap `chat` (the cluster's addresses) and Secret `chat` (the API keys),
+# and its database URL from Secret `postgres`.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat
+  namespace: visitdoc
+spec:
+  selector:
+    app: chat
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat
+  namespace: visitdoc
+spec:
+  # Exactly one process, always. Chat keeps the turns it is generating in its own memory
+  # (`chat.agent.generation_registry`), and a new message or a staff post cancels the
+  # chat's running turn through it - so a second process would let a turn it cannot see
+  # run on, and its reply arrive after the one that should have replaced it.
+  replicas: 1
+  # For the same reason, an update stops the old pod before starting the new one, rather
+  # than overlapping the two as the default rolling update does: a few seconds without
+  # chat, in place of two processes each unaware of the other's turns.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: chat
+  template:
+    metadata:
+      labels:
+        app: chat
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: chat
+          image: visitdoc-chat:latest
+          imagePullPolicy: Never
+          # Every key of each becomes an environment variable.
+          envFrom:
+            - configMapRef:
+                name: chat
+            - secretRef:
+                name: chat
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_PASSWORD}
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/visitdoc_chat
+          ports:
+            - name: http
+              containerPort: 8000
+          # Chat has no health endpoint; the compose healthcheck's `/openapi.json` stands
+          # in for one. It touches no dependency, and is built once and then cached.
+          #
+          # Startup: up to 90s. Chat checks its Qdrant collection while it starts and
+          # exits if it cannot; it is then restarted, and starts once Qdrant answers.
+          startupProbe:
+            httpGet: {path: /openapi.json, port: http}
+            periodSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /openapi.json, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 5
+          # A long streamed reply does not hold the event loop, so a probe still gets an
+          # answer while one is being written; 30s without one is a stuck process.
+          livenessProbe:
+            httpGet: {path: /openapi.json, port: http}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
