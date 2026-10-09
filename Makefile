@@ -147,12 +147,15 @@ cluster-down:
 	k3d cluster delete visitdoc
 
 # The app in that cluster (deploy/k8s/). Pinned to its context, so these never act on
-# another cluster kubectl happens to point at. The Secret and the init ConfigMap are made
-# here, not committed: one holds a password, the other is read from docker/postgres-init/.
-# `create --dry-run | apply` makes both safe to re-run.
+# another cluster kubectl happens to point at. The Secrets and the init ConfigMap are made
+# here, not committed: the Secrets hold a password and the API keys, the ConfigMap is read
+# from docker/postgres-init/.
+# `create --dry-run | apply` makes each safe to re-run.
 K8S := kubectl --context k3d-visitdoc
 POSTGRES_USER ?= visitdoc
 POSTGRES_PASSWORD ?= visitdoc
+# The only keys of `.env` the cluster receives: its addresses point at localhost.
+CHAT_SECRET_KEYS := ANTHROPIC_API_KEY VOYAGE_API_KEY ADMIN_SECRET LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY
 
 k8s-up:
 	$(K8S) apply -f deploy/k8s/namespace.yaml
@@ -161,6 +164,11 @@ k8s-up:
 		--from-literal=POSTGRES_USER=$(POSTGRES_USER) --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
 		--dry-run=client -o yaml | $(K8S) apply -f -
 	$(K8S) -n visitdoc create configmap postgres-init --from-file=docker/postgres-init \
+		--dry-run=client -o yaml | $(K8S) apply -f -
+	@echo "creating Secret chat from .env: $(CHAT_SECRET_KEYS)"
+	@# Read into a variable first: in a plain pipe a failed read would still be applied.
+	@keys="$$(uv run python scripts/env-subset.py $(CHAT_SECRET_KEYS))" && printf '%s\n' "$$keys" \
+		| $(K8S) -n visitdoc create secret generic chat --from-env-file=/dev/stdin \
 		--dry-run=client -o yaml | $(K8S) apply -f -
 	$(K8S) apply -f deploy/k8s/
 

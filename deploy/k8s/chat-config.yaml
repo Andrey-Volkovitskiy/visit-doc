@@ -1,0 +1,23 @@
+# Chat's settings in the cluster that are not secret - in compose, the `environment:`
+# overrides. Every address names a Service instead of localhost, which in a pod means
+# the pod itself. Settings left out keep the defaults in chat's `Settings`.
+#
+# The rest of chat's environment comes from elsewhere:
+#   - Secret `chat` (made by `make k8s-up` from `.env`): the API keys and ADMIN_SECRET;
+#   - DATABASE_URL: assembled in chat's Deployment from Secret `postgres`, so the
+#     database password is stored once.
+# PUBLIC_BASE_URL is not set, so the staff connector is unavailable in the cluster: the
+# ngrok address in `.env` leads to the chat service run on the host, not to this one.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat
+  namespace: visitdoc
+data:
+  QDRANT_URL: http://qdrant:6333
+  SCHEDULING_GRPC_TARGET: scheduler:50051
+  SCHEDULING_HTTP_BASE_URL: http://scheduler:8001
+  # Not DEBUG, which logs every conversation the specialists send a model.
+  LOG_LEVEL: INFO
+  # Files the cluster's traces apart from those of the services run on the host.
+  LANGFUSE_ENVIRONMENT: local-cluster
