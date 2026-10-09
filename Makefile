@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -171,6 +171,22 @@ k8s-up:
 		| $(K8S) -n visitdoc create secret generic chat --from-env-file=/dev/stdin \
 		--dry-run=client -o yaml | $(K8S) apply -f -
 	$(K8S) apply -f deploy/k8s/
+
+# The three images, built as `make stack-up` builds them, then copied into the nodes' own
+# image store: the cluster pulls from no registry, and cannot see this machine's images.
+k8s-images:
+	$(STACK) build chat scheduler frontend
+	k3d image import visitdoc-chat visitdoc-scheduler visitdoc-frontend -c visitdoc
+
+# Both migrations, as Jobs (deploy/k8s/migrations/). A finished Job does not run again, so
+# the previous ones are deleted first; on failure, their pods' logs are printed.
+k8s-migrate:
+	$(K8S) -n visitdoc rollout status statefulset/postgres --timeout=180s
+	$(K8S) -n visitdoc delete job chat-migrate scheduler-migrate --ignore-not-found
+	$(K8S) apply -f deploy/k8s/migrations/
+	@$(K8S) -n visitdoc wait --for=condition=complete job/chat-migrate job/scheduler-migrate --timeout=180s \
+		|| { $(K8S) -n visitdoc logs --prefix --tail=30 \
+			-l 'batch.kubernetes.io/job-name in (chat-migrate,scheduler-migrate)'; exit 1; }
 
 # Deletes the namespace and everything in it - the databases' volumes too.
 k8s-down:

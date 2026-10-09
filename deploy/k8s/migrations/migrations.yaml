@@ -1,0 +1,85 @@
+# Both databases brought to head - the one-off `chat-migrate` / `scheduler-migrate`
+# containers of docker-compose.full.yml, as Jobs: a pod that runs to completion, from the
+# same image as the service it migrates.
+#
+# Applied by `make k8s-migrate`, not with the rest of deploy/k8s/ (a plain `apply -f`
+# does not descend into this folder). A Job runs once: applying it again unchanged does
+# nothing, and a changed one is refused, since its pod template cannot be edited. So the
+# target deletes the previous Jobs and creates them afresh, and that is what re-runs a
+# migration.
+#
+# The images are the locally built ones, imported into the nodes by `make k8s-images`.
+# `Never` pull: a `:latest` tag would otherwise send Kubernetes to Docker Hub for them.
+#
+# DATABASE_URL is assembled from Secret `postgres`, so the password is stored once:
+# Kubernetes substitutes `$(NAME)` with a variable defined earlier in the same list. The
+# values go into a URL unescaped, so the password must not contain `@`, `:` or `/`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chat-migrate
+  namespace: visitdoc
+spec:
+  # Retried twice, each attempt a new pod. Safe to repeat: Postgres runs each Alembic
+  # migration in a transaction, so a failed attempt leaves nothing half-applied.
+  backoffLimit: 2
+  template:
+    spec:
+      # `Never`: a failed attempt keeps its pod, and its logs, instead of being
+      # restarted in place.
+      restartPolicy: Never
+      securityContext:
+        # Checked against the image's numeric USER (1000) - the reason the Dockerfile
+        # names the user by number.
+        runAsNonRoot: true
+      containers:
+        - name: migrate
+          image: visitdoc-chat:latest
+          imagePullPolicy: Never
+          workingDir: /app/services/chat
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_PASSWORD}
+            - name: DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/visitdoc_chat
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: scheduler-migrate
+  namespace: visitdoc
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: migrate
+          image: visitdoc-scheduler:latest
+          imagePullPolicy: Never
+          workingDir: /app/services/scheduler
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: postgres, key: POSTGRES_PASSWORD}
+            - name: SCHEDULER_DATABASE_URL
+              value: postgresql+asyncpg://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/visitdoc_scheduler
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
