@@ -1,0 +1,67 @@
+# Qdrant, as docker-compose.yml runs it: the same pinned image, its storage on a volume
+# that outlives the pod. Shaped like postgres.yaml, for the same reasons - one pod with
+# a fixed name, tied to its own disk.
+
+# Reached as `qdrant:6333`. Only the REST port: chat's client speaks REST, and nothing
+# in the cluster uses Qdrant's gRPC port (6334), so it is not published.
+apiVersion: v1
+kind: Service
+metadata:
+  name: qdrant
+  namespace: visitdoc
+spec:
+  clusterIP: None
+  selector:
+    app: qdrant
+  ports:
+    - name: http
+      port: 6333
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: qdrant
+  namespace: visitdoc
+spec:
+  serviceName: qdrant
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qdrant
+  template:
+    metadata:
+      labels:
+        app: qdrant
+    spec:
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:v1.18.3
+          ports:
+            - name: http
+              containerPort: 6333
+          volumeMounts:
+            - name: data
+              mountPath: /qdrant/storage
+          # Ready once every shard has loaded from disk. Readiness only, as for Postgres:
+          # a crash ends the process and is restarted without a probe, and a liveness
+          # probe would restart a store that is merely slow while it loads.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
