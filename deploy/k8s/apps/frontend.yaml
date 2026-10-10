@@ -1,0 +1,66 @@
+# The frontend: nginx serving the built bundle and forwarding the API prefixes to chat
+# (services/frontend/nginx.conf) - the `frontend` service of docker-compose.full.yml. Its
+# `proxy_pass http://chat:8000` needs no change here: `chat` is chat's Service, found
+# through the pod's DNS search path, and a Service's address stays fixed as chat's pods
+# come and go - so nginx resolving it once, at start, is safe. It does need the Service
+# to exist when nginx starts, which `make k8s-up` sees to by applying chat first.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: visitdoc
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: visitdoc
+spec:
+  # Two, because it can: nginx here holds no state, so either pod serves any request,
+  # and the Service spreads requests between them.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      securityContext:
+        # The unprivileged nginx image runs as uid 101.
+        runAsNonRoot: true
+      containers:
+        - name: frontend
+          image: visitdoc-frontend:latest
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          # `/` is the bundle's index.html, served from the image: it involves chat in no
+          # way, so chat being down neither unreadies nor restarts the frontend.
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

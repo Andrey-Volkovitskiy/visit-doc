@@ -1,0 +1,25 @@
+# The cluster's front door: every request reaching Traefik - k3s's built-in Ingress
+# controller, published at http://localhost:8080 by deploy/k3d.yaml - goes to the
+# frontend, whose nginx serves the page and forwards the API prefixes to chat. The same
+# one entry point the browser has in compose (:5173) and in development (Vite's proxy),
+# so the page and the API share one origin: no CORS, and the session cookie is sent.
+#
+# No `host`: any hostname matches, so localhost works as it is. A public deployment
+# names its domain here.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: visitdoc
+  namespace: visitdoc
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http

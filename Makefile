@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -174,7 +174,7 @@ k8s-up:
 	$(K8S) apply -f deploy/k8s/
 	$(MAKE) k8s-migrate
 	$(K8S) apply -f deploy/k8s/apps/
-	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat --timeout=180s
+	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat deployment/frontend --timeout=180s
 
 # The three images, built as `make stack-up` builds them, then copied into the nodes' own
 # image store: the cluster pulls from no registry, and cannot see this machine's images.
@@ -191,6 +191,14 @@ k8s-migrate:
 	@$(K8S) -n visitdoc wait --for=condition=complete job/chat-migrate job/scheduler-migrate --timeout=180s \
 		|| { $(K8S) -n visitdoc logs --prefix --tail=30 \
 			-l 'batch.kubernetes.io/job-name in (chat-migrate,scheduler-migrate)'; exit 1; }
+
+# Follows chat's and scheduler's logs, each line prefixed with its pod, as `stack-logs` does
+# for the containers. It follows the pods running when it starts: a replaced pod (a restart, a
+# rollout) ends its stream, so run it again after one. The probes' requests are left out:
+# they would otherwise be most of what it shows.
+k8s-logs:
+	$(K8S) -n visitdoc logs -f --prefix --tail=50 -l 'app in (chat,scheduler)' \
+		| grep --line-buffered -vE '"GET /(openapi\.json|health) HTTP'
 
 # Deletes the namespace and everything in it - the databases' volumes too.
 k8s-down:

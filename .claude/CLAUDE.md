@@ -208,9 +208,12 @@ k8s-images` builds the three images and imports them; `make k8s-migrate` re-crea
 migration Jobs (`deploy/k8s/migrations/`, kept out of the plain `apply`, since a finished Job never
 runs again) and waits for them - on a failure it prints their logs, but only once its 3-minute
 wait runs out. `make k8s-up` runs it between the datastores and the services
-(`deploy/k8s/apps/`). Chat runs as exactly one pod, replaced with `strategy: Recreate`, because
+(`deploy/k8s/apps/`), whose Ingress sends everything at `http://localhost:8080` to the frontend's
+nginx, as compose's `:5173` does - so `GET /chats` there is free, and only `POST /chats` (which the
+page sends on a first arrival) mints a session and spends Voyage calls seeding it. Chat runs as exactly one pod, replaced with `strategy: Recreate`, because
 its running turns live in process memory (`generation_registry`) - don't scale it or switch it to
-a rolling update. `make k8s-down` deletes the namespace - **its databases'
+a rolling update. `make k8s-logs` follows chat's and scheduler's logs with the probes' requests
+filtered out, until their pods are replaced. `make k8s-down` deletes the namespace - **its databases'
 volumes included**. The cluster's Postgres is its own, empty one, never the compose one.
 
 `scripts/dev-chat.sh` drives a conversation against a running chat service — mint a session, post a
