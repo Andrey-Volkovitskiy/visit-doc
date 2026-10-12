@@ -68,7 +68,9 @@ The same five pieces also run entirely in containers, from images built out of e
 `Dockerfile`: `make stack-up` builds them, runs both migrations and serves the app at the same
 addresses as above (`docker-compose.full.yml`); `make stack-down` stops the three services and
 leaves the datastores running. It uses the same ports as the hand-run services, so stop those
-first. See "Running in Containers" below.
+first. See "Running in Containers" below. They also run in a local Kubernetes cluster: `make
+cluster-up`, then `make k8s-deploy`, serves the app at `http://localhost:8080` - see "Running in
+Kubernetes" below.
 
 See the [`Makefile`](Makefile) for shortcuts (`make sync`, `make lint`, `make format`,
 `make typecheck`, `make precommit`, `make install-hooks`, `make run-chat`, `make run-chat-dev`,
@@ -1129,3 +1131,47 @@ together is found apart from a problem of Kubernetes. Seven choices carried a tr
   storage. The images reach the nodes by `k3d image import`, not through a registry, which keeps
   a local cluster free of one until a public deployment needs it. Requires `k3d` on the `PATH`;
   `kubectl` comes with Docker Desktop.
+
+## Running in Kubernetes: technology choices
+
+The second step of Phase 4d: the same three images and both datastores in the k3d cluster, from
+plain manifests under `deploy/k8s/`. `make cluster-up` then `make k8s-deploy` builds, imports,
+migrates and serves the app at `http://localhost:8080`; `make k8s-logs` follows chat and the
+scheduler; `make k8s-down` deletes all of it, data included. Seven choices carried a tradeoff.
+
+- **Plain manifests, applied by `make`.** No Helm chart and no Kustomize overlay: with one
+  environment there is nothing to parameterise, and each object reads as Kubernetes itself sees it.
+  The public deployment is the point at which a second environment would justify one.
+- **Postgres and Qdrant as StatefulSets, each on its own volume.** One pod each, with a stable
+  name, a headless Service and a volume claim of its own on k3s's `local-path` storage, which
+  keeps the data in a directory of the node the pod first ran on. It survives a pod being
+  replaced, not the namespace or the cluster being deleted, and it pins each datastore to its
+  node. Neither has a liveness probe: a crash ends the process, which is restarted without one,
+  and restarting a store that is merely slow - recovering, or loading from disk - only makes it
+  slower. They gate traffic on readiness alone. Managed databases were the alternative,
+  and are out of scope for a local cluster.
+- **Secrets made at deploy time, never committed.** `make k8s-up` creates the Postgres Secret and
+  Secret `chat` - only the API keys and `ADMIN_SECRET`, read from `.env` by
+  `scripts/env-subset.py`, since `.env`'s addresses point at localhost - and the addresses the
+  cluster does differ in are a committed ConfigMap. Each database URL is assembled in the manifest
+  from the Secret, so the password is stored once; the cost is that it must not contain `@`, `:`
+  or `/`. A Secret is base64, not encryption: anyone who can read the namespace can read the keys.
+- **Migrations as Jobs, re-created on every deploy.** `make k8s-migrate` deletes and re-applies
+  them, since a finished Job never runs again, and waits for both before any service starts -
+  from the service's own image, as the compose migrations run. The wait is a fixed three minutes,
+  so a failing migration reports its logs only once it has run out.
+- **Probes that touch no dependency.** The scheduler is probed on `/health` and chat on
+  `/openapi.json`, which it has no `/health` to replace; the frontend on `/`, a file in its own
+  image. A database or chat outage therefore takes nothing out of service and restarts nothing
+  that a restart cannot fix. Their readiness says the process answers, not that it can serve.
+- **Chat as exactly one pod, replaced with `Recreate`.** Its running turns live in its own memory
+  (`generation_registry`), through which a newer message cancels an older turn, so two processes
+  would each miss the other's turns. An update therefore stops the old pod before starting the new
+  one - a few seconds without chat - and chat cannot be scaled until that registry moves out of
+  the process. The frontend, which holds nothing, runs as two.
+- **`:latest` images, rolled by their ID.** The images are tagged `:latest` and run with
+  `imagePullPolicy: Never`, so the nodes never reach for a registry. An unchanged tag gives
+  Kubernetes no reason to replace a pod, so `make k8s-up` stamps each Deployment's pod template
+  with the ID of the image the node holds: a rebuilt image rolls its pods, an unchanged one rolls
+  none. A unique tag per build is the usual answer and what a registry-backed deployment will use;
+  here it would have meant rewriting the manifests on every build.

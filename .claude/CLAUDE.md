@@ -212,7 +212,9 @@ wait runs out. `make k8s-up` runs it between the datastores and the services
 nginx, as compose's `:5173` does - so `GET /chats` there is free, and only `POST /chats` (which the
 page sends on a first arrival) mints a session and spends Voyage calls seeding it. Chat runs as exactly one pod, replaced with `strategy: Recreate`, because
 its running turns live in process memory (`generation_registry`) - don't scale it or switch it to
-a rolling update. `make k8s-logs` follows chat's and scheduler's logs with the probes' requests
+a rolling update. `make k8s-deploy` is the whole round - images, then `k8s-up`, which stamps each
+Deployment's pod template with the ID of the image the node holds (`visitdoc/image-id`), so a
+rebuilt `:latest` image rolls its pods and an unchanged one rolls none. `make k8s-logs` follows chat's and scheduler's logs with the probes' requests
 filtered out, until their pods are replaced. `make k8s-down` deletes the namespace - **its databases'
 volumes included**. The cluster's Postgres is its own, empty one, never the compose one.
 

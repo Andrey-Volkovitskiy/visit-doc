@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -157,6 +157,9 @@ POSTGRES_USER ?= visitdoc
 POSTGRES_PASSWORD ?= visitdoc
 # The only keys of `.env` the cluster receives: its addresses point at localhost.
 CHAT_SECRET_KEYS := ANTHROPIC_API_KEY VOYAGE_API_KEY ADMIN_SECRET LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY
+K8S_APPS := chat scheduler frontend
+# `k8s-images` imports every image into each node, so either node's copy is the one pods run.
+K8S_NODE := k3d-visitdoc-server-0
 
 k8s-up:
 	$(K8S) apply -f deploy/k8s/namespace.yaml
@@ -174,6 +177,16 @@ k8s-up:
 	$(K8S) apply -f deploy/k8s/
 	$(MAKE) k8s-migrate
 	$(K8S) apply -f deploy/k8s/apps/
+	@# Every image is tagged `:latest`, so a re-imported one leaves the pod template
+	@# unchanged and starts no rollout. Stamping the template with the ID of the image the
+	@# node holds changes it exactly when the image did: a new image replaces the pods, an
+	@# unchanged one is a no-op ("patched (no change)").
+	@for app in $(K8S_APPS); do \
+		id="$$(docker exec $(K8S_NODE) crictl inspecti -o go-template --template '{{.status.id}}' visitdoc-$$app:latest)" \
+			|| { echo "visitdoc-$$app is not on the nodes: run make k8s-images"; exit 1; }; \
+		$(K8S) -n visitdoc patch deployment/$$app \
+			-p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"visitdoc/image-id\":\"$$id\"}}}}}" || exit 1; \
+	done
 	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat deployment/frontend --timeout=180s
 
 # The three images, built as `make stack-up` builds them, then copied into the nodes' own
@@ -181,6 +194,13 @@ k8s-up:
 k8s-images:
 	$(STACK) build chat scheduler frontend
 	k3d image import visitdoc-chat visitdoc-scheduler visitdoc-frontend -c visitdoc
+
+# The whole round after a code change, or the first time on a fresh cluster: build and import
+# the images, then apply everything - migrating the databases, and replacing exactly the pods
+# whose image changed.
+k8s-deploy:
+	$(MAKE) k8s-images
+	$(MAKE) k8s-up
 
 # Both migrations, as Jobs (deploy/k8s/migrations/). A finished Job does not run again, so
 # the previous ones are deleted first; on failure, their pods' logs are printed.
