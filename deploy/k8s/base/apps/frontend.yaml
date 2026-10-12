@@ -3,7 +3,8 @@
 # `proxy_pass http://chat:8000` needs no change here: `chat` is chat's Service, found
 # through the pod's DNS search path, and a Service's address stays fixed as chat's pods
 # come and go - so nginx resolving it once, at start, is safe. It does need the Service
-# to exist when nginx starts, which `make k8s-up` sees to by applying chat first.
+# to exist when nginx starts, which Kustomize sees to: it applies every Service before
+# any Deployment.
 
 apiVersion: v1
 kind: Service
@@ -40,8 +41,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: frontend
-          image: visitdoc-frontend:latest
-          imagePullPolicy: Never
+          image: visitdoc-frontend
           ports:
             - name: http
               containerPort: 8080

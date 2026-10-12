@@ -43,8 +43,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: chat
-          image: visitdoc-chat:latest
-          imagePullPolicy: Never
+          image: visitdoc-chat
           # Every key of each becomes an environment variable.
           envFrom:
             - configMapRef:

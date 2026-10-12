@@ -2,14 +2,13 @@
 # containers of docker-compose.full.yml, as Jobs: a pod that runs to completion, from the
 # same image as the service it migrates.
 #
-# Applied by `make k8s-migrate`, not with the rest of deploy/k8s/ (a plain `apply -f`
-# does not descend into this folder). A Job runs once: applying it again unchanged does
-# nothing, and a changed one is refused, since its pod template cannot be edited. So the
-# target deletes the previous Jobs and creates them afresh, and that is what re-runs a
-# migration.
+# Applied by `make k8s-migrate`, as a stage of its own between the datastores and the
+# apps. A Job runs once: applying it again unchanged does nothing, and a changed one is
+# refused, since its pod template cannot be edited. So the target deletes the previous
+# Jobs and creates them afresh, and that is what re-runs a migration.
 #
-# The images are the locally built ones, imported into the nodes by `make k8s-images`.
-# `Never` pull: a `:latest` tag would otherwise send Kubernetes to Docker Hub for them.
+# The images are named without a tag: each overlay says which tag, and where they come
+# from (deploy/k8s/overlays/).
 #
 # DATABASE_URL is assembled from Secret `postgres`, so the password is stored once:
 # Kubernetes substitutes `$(NAME)` with a variable defined earlier in the same list. The
@@ -34,8 +33,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: migrate
-          image: visitdoc-chat:latest
-          imagePullPolicy: Never
+          image: visitdoc-chat
           workingDir: /app/services/chat
           command: ["alembic", "upgrade", "head"]
           env:
@@ -66,8 +64,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: migrate
-          image: visitdoc-scheduler:latest
-          imagePullPolicy: Never
+          image: visitdoc-scheduler
           workingDir: /app/services/scheduler
           command: ["alembic", "upgrade", "head"]
           env:

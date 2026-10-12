@@ -1,0 +1,26 @@
+# The k3d cluster's images: built on this machine and imported into the nodes by
+# `make k8s-images`, as `:latest`. `Never` pull - there is no registry, and a `:latest`
+# tag would otherwise send Kubernetes to Docker Hub for them. A Component, because the
+# migrations and the apps both need it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+images:
+  - name: visitdoc-chat
+    newTag: latest
+  - name: visitdoc-scheduler
+    newTag: latest
+  - name: visitdoc-frontend
+    newTag: latest
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never
+  - target:
+      kind: Job
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Never

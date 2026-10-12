@@ -1,0 +1,8 @@
+# Stage 3: the three services and the Ingress, once the databases are migrated.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - scheduler.yaml
+  - chat.yaml
+  - frontend.yaml
+  - ingress.yaml

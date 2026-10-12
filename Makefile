@@ -146,15 +146,17 @@ cluster-up:
 cluster-down:
 	k3d cluster delete visitdoc
 
-# The app in that cluster: the datastores and settings (deploy/k8s/), then the migrations,
-# then the services (deploy/k8s/apps/) - each waited for before the next. Pinned to its
-# context, so these never act on another cluster kubectl happens to point at. The Secrets and the init ConfigMap are made
-# here, not committed: the Secrets hold a password and the API keys, the ConfigMap is read
-# from docker/postgres-init/.
+# The app in that cluster, in three Kustomize stages (deploy/k8s/overlays/local/): the
+# datastores and settings, then the migrations, then the services - each waited for before
+# the next. Pinned to its context, so these never act on another cluster kubectl happens to
+# point at. The Secrets and the init ConfigMap are made here, not committed: the Secrets
+# hold a password and the API keys, the ConfigMap is read from docker/postgres-init/.
 # `create --dry-run | apply` makes each safe to re-run.
 K8S := kubectl --context k3d-visitdoc
 POSTGRES_USER ?= visitdoc
 POSTGRES_PASSWORD ?= visitdoc
+# Which variant of deploy/k8s/base/ to apply: the overlay for this cluster.
+K8S_OVERLAY := deploy/k8s/overlays/local
 # The only keys of `.env` the cluster receives: its addresses point at localhost.
 CHAT_SECRET_KEYS := ANTHROPIC_API_KEY VOYAGE_API_KEY ADMIN_SECRET LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY
 K8S_APPS := chat scheduler frontend
@@ -162,7 +164,7 @@ K8S_APPS := chat scheduler frontend
 K8S_NODE := k3d-visitdoc-server-0
 
 k8s-up:
-	$(K8S) apply -f deploy/k8s/namespace.yaml
+	$(K8S) apply -f deploy/k8s/base/namespace.yaml
 	@echo "creating Secret postgres (not echoed: it holds the password)"
 	@$(K8S) -n visitdoc create secret generic postgres \
 		--from-literal=POSTGRES_USER=$(POSTGRES_USER) --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
@@ -174,9 +176,9 @@ k8s-up:
 	@keys="$$(uv run python scripts/env-subset.py $(CHAT_SECRET_KEYS))" && printf '%s\n' "$$keys" \
 		| $(K8S) -n visitdoc create secret generic chat --from-env-file=/dev/stdin \
 		--dry-run=client -o yaml | $(K8S) apply -f -
-	$(K8S) apply -f deploy/k8s/
+	$(K8S) apply -k $(K8S_OVERLAY)/datastores
 	$(MAKE) k8s-migrate
-	$(K8S) apply -f deploy/k8s/apps/
+	$(K8S) apply -k $(K8S_OVERLAY)/apps
 	@# Every image is tagged `:latest`, so a re-imported one leaves the pod template
 	@# unchanged and starts no rollout. Stamping the template with the ID of the image the
 	@# node holds changes it exactly when the image did: a new image replaces the pods, an
@@ -202,12 +204,12 @@ k8s-deploy:
 	$(MAKE) k8s-images
 	$(MAKE) k8s-up
 
-# Both migrations, as Jobs (deploy/k8s/migrations/). A finished Job does not run again, so
+# Both migrations, as Jobs (the overlay's migrations stage). A finished Job does not run again, so
 # the previous ones are deleted first; on failure, their pods' logs are printed.
 k8s-migrate:
 	$(K8S) -n visitdoc rollout status statefulset/postgres --timeout=180s
 	$(K8S) -n visitdoc delete job chat-migrate scheduler-migrate --ignore-not-found
-	$(K8S) apply -f deploy/k8s/migrations/
+	$(K8S) apply -k $(K8S_OVERLAY)/migrations
 	@$(K8S) -n visitdoc wait --for=condition=complete job/chat-migrate job/scheduler-migrate --timeout=180s \
 		|| { $(K8S) -n visitdoc logs --prefix --tail=30 \
 			-l 'batch.kubernetes.io/job-name in (chat-migrate,scheduler-migrate)'; exit 1; }

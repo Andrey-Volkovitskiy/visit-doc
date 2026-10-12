@@ -1,0 +1,5 @@
+# Stage 2: both migrations, as Jobs - re-created on every deploy by `make k8s-migrate`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - migrations.yaml

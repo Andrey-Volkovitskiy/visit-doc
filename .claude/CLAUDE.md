@@ -152,15 +152,18 @@ Ingress at `http://localhost:8080`) and goes with `make cluster-down`. `k3d` is 
 `~/.local/bin`; `kubectl` comes from Docker Desktop. The nodes have their own image store, so a
 locally built image must be imported (`k3d image import <image> -c visitdoc`) and run with
 `imagePullPolicy: Never` or `IfNotPresent` - with a `:latest` tag Kubernetes otherwise tries to
-pull it from Docker Hub. `make k8s-up` applies `deploy/k8s/` to it, in the `visitdoc` namespace,
+pull it from Docker Hub. The manifests are Kustomize: `deploy/k8s/base/` names the images untagged,
+and `deploy/k8s/overlays/local/` adds the `:latest` tag and `Never` pull (Makefile's `K8S_OVERLAY`);
+both come as three stages, `datastores`, `migrations` and `apps`, applied in that order with
+`kubectl apply -k`, and `kubectl kustomize <dir>` prints what one renders to. `make k8s-up`
+applies them to the cluster, in the `visitdoc` namespace,
 after creating the objects that are not committed (the Postgres Secret, the init-script ConfigMap
 built from `docker/postgres-init/`, and Secret `chat` - only the API keys and `ADMIN_SECRET` from
 `.env`, read by `scripts/env-subset.py`, since `.env`'s addresses point at localhost). `make
 k8s-images` builds the three images and imports them; `make k8s-migrate` re-creates the two
-migration Jobs (`deploy/k8s/migrations/`, kept out of the plain `apply`, since a finished Job never
-runs again) and waits for them - on a failure it prints their logs, but only once its 3-minute
-wait runs out. `make k8s-up` runs it between the datastores and the services
-(`deploy/k8s/apps/`), whose Ingress sends everything at `http://localhost:8080` to the frontend's
+migration Jobs (the `migrations` stage, since a finished Job never runs again) and waits for them - on a failure it prints their logs, but only once its 3-minute
+wait runs out. `make k8s-up` runs it between the datastores and the services (the `apps`
+stage), whose Ingress sends everything at `http://localhost:8080` to the frontend's
 nginx, as compose's `:5173` does - so `GET /chats` there is free, and only `POST /chats` (which the
 page sends on a first arrival) mints a session and spends Voyage calls seeding it. Chat runs as exactly one pod, replaced with `strategy: Recreate`, because
 its running turns live in process memory (`generation_registry`) - don't scale it or switch it to

@@ -1,0 +1,6 @@
+# The local k3d cluster (deploy/k3d.yaml). Each stage is the base's, the images changed
+# as ../images says; the datastores' images come from Docker Hub, so this one is as is.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/datastores

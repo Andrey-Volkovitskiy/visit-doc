@@ -1135,13 +1135,19 @@ together is found apart from a problem of Kubernetes. Seven choices carried a tr
 ## Running in Kubernetes: technology choices
 
 The second step of Phase 4d: the same three images and both datastores in the k3d cluster, from
-plain manifests under `deploy/k8s/`. `make cluster-up` then `make k8s-deploy` builds, imports,
+manifests under `deploy/k8s/`. `make cluster-up` then `make k8s-deploy` builds, imports,
 migrates and serves the app at `http://localhost:8080`; `make k8s-logs` follows chat and the
 scheduler; `make k8s-down` deletes all of it, data included. Seven choices carried a tradeoff.
 
-- **Plain manifests, applied by `make`.** No Helm chart and no Kustomize overlay: with one
-  environment there is nothing to parameterise, and each object reads as Kubernetes itself sees it.
-  The public deployment is the point at which a second environment would justify one.
+- **Kustomize, not Helm: a base and an overlay per cluster.** `deploy/k8s/base/` holds every
+  object as Kubernetes itself sees it, with the images named but untagged; an overlay says what
+  one cluster changes - for the k3d one (`overlays/local/`), the `:latest` tag and `Never` pull,
+  in a Component the migrations and the apps share. The public deployment adds a second overlay
+  rather than a copy of the manifests. Helm's templates would have made the objects unreadable
+  without rendering, for options only a chart installed by other people needs. Each of base and
+  overlay comes in three stages - datastores, migrations, apps - which `make` applies in turn,
+  because a Job cannot simply be re-applied and the apps must not start before the migrations
+  have run; a single kustomization would have applied them all at once.
 - **Postgres and Qdrant as StatefulSets, each on its own volume.** One pod each, with a stable
   name, a headless Service and a volume claim of its own on k3s's `local-path` storage, which
   keeps the data in a directory of the node the pod first ran on. It survives a pod being
