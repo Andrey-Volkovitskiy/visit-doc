@@ -22,6 +22,10 @@ RUN npm run build
 # reason the Python images do not run as root.
 FROM nginxinc/nginx-unprivileged:1.30-alpine
 
+# Links the image to this repository when it is pushed to ghcr.io, so the package is listed
+# on the repository's page and takes its permissions from it.
+LABEL org.opencontainers.image.source=https://github.com/Andrey-Volkovitskiy/visit-doc
+
 COPY services/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 

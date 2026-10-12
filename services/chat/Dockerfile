@@ -43,6 +43,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ---------- Stage 2: the image that runs ----------
 FROM python:3.12-slim
 
+# Links the image to this repository when it is pushed to ghcr.io, so the package is listed
+# on the repository's page and takes its permissions from it.
+LABEL org.opencontainers.image.source=https://github.com/Andrey-Volkovitskiy/visit-doc
+
 RUN useradd --create-home --uid 1000 app
 
 # Same path as in the builder: the venv's scripts carry it in their shebangs.

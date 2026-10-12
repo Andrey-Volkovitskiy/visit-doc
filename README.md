@@ -1137,7 +1137,7 @@ together is found apart from a problem of Kubernetes. Seven choices carried a tr
 The second step of Phase 4d: the same three images and both datastores in the k3d cluster, from
 manifests under `deploy/k8s/`. `make cluster-up` then `make k8s-deploy` builds, imports,
 migrates and serves the app at `http://localhost:8080`; `make k8s-logs` follows chat and the
-scheduler; `make k8s-down` deletes all of it, data included. Seven choices carried a tradeoff.
+scheduler; `make k8s-down` deletes all of it, data included. Eight choices carried a tradeoff.
 
 - **Kustomize, not Helm: a base and an overlay per cluster.** `deploy/k8s/base/` holds every
   object as Kubernetes itself sees it, with the images named but untagged; an overlay says what
@@ -1181,3 +1181,12 @@ scheduler; `make k8s-down` deletes all of it, data included. Seven choices carri
   with the ID of the image the node holds: a rebuilt image rolls its pods, an unchanged one rolls
   none. A unique tag per build is the usual answer and what a registry-backed deployment will use;
   here it would have meant rewriting the manifests on every build.
+- **For a cluster that pulls, GitHub's registry and a tag per commit.** `make k8s-push` builds the
+  images and pushes them to `ghcr.io`, tagged with the commit they were built from, and refuses
+  while anything is uncommitted - an image named for a commit but built from other edits would
+  make the tag a lie that nothing catches. A deploy then names exactly what it runs, and a new tag
+  is what rolls the pods. GitHub's registry is free for a public repository and sits beside the
+  code, each image linked to the repository by its `org.opencontainers.image.source` label;
+  Docker Hub would have meant a second account and its pull limits. The images are pushed from
+  this machine, not built by CI: one person deploys, and a workflow pushing on every commit would
+  publish images nobody deploys.

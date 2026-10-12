@@ -169,7 +169,11 @@ page sends on a first arrival) mints a session and spends Voyage calls seeding i
 its running turns live in process memory (`generation_registry`) - don't scale it or switch it to
 a rolling update. `make k8s-deploy` is the whole round - images, then `k8s-up`, which stamps each
 Deployment's pod template with the ID of the image the node holds (`visitdoc/image-id`), so a
-rebuilt `:latest` image rolls its pods and an unchanged one rolls none. `make k8s-logs` follows chat's and scheduler's logs with the probes' requests
+rebuilt `:latest` image rolls its pods and an unchanged one rolls none. `make k8s-push` builds
+the images and pushes them to `ghcr.io/andrey-volkovitskiy/visitdoc-<app>:<12-char commit>`, for a
+cluster that pulls - it refuses while the tree is dirty, and needs a one-time `docker login ghcr.io`
+with a token that can write packages. The images are verified to carry no `.env` value
+(`.dockerignore`); pushing publishes them. `make k8s-logs` follows chat's and scheduler's logs with the probes' requests
 filtered out, until their pods are replaced. `make k8s-down` deletes the namespace - **its databases'
 volumes included**. The cluster's Postgres is its own, empty one, never the compose one.
 

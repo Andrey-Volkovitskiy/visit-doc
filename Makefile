@@ -2,7 +2,7 @@
         test test-unit test-frontend test-integration test-e2e test-db-prune \
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy \
+        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy k8s-push \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -203,6 +203,26 @@ k8s-images:
 k8s-deploy:
 	$(MAKE) k8s-images
 	$(MAKE) k8s-up
+
+# The images for a cluster that pulls from a registry - the public one - pushed to GitHub's
+# (ghcr.io; lower case, which registries require). Each is tagged with the commit it was built
+# from, so a deploy names exactly what it runs and a new tag is what rolls the pods. Hence
+# the clean-tree check: an image built from uncommitted edits would carry a commit's name
+# without its content. Needs `docker login ghcr.io` once, with a token that can write
+# packages.
+REGISTRY := ghcr.io/andrey-volkovitskiy
+IMAGE_TAG = $(shell git rev-parse --short=12 HEAD)
+
+k8s-push:
+	@test -z "$$(git status --porcelain)" \
+		|| { echo "commit first - the images are tagged with HEAD, and would not be what it holds:"; \
+			git status --short; exit 1; }
+	$(STACK) build chat scheduler frontend
+	@for app in $(K8S_APPS); do \
+		docker tag visitdoc-$$app $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) \
+			&& docker push $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) || exit 1; \
+	done
+	@echo "pushed $(K8S_APPS) as $(REGISTRY)/visitdoc-<app>:$(IMAGE_TAG)"
 
 # Both migrations, as Jobs (the overlay's migrations stage). A finished Job does not run again, so
 # the previous ones are deleted first; on failure, their pods' logs are printed.
