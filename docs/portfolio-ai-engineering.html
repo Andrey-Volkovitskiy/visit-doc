@@ -29,7 +29,7 @@
   .stat .l { font-size:8pt; color:var(--muted); line-height:1.25; }
   .stack { font-size:8.5pt; color:var(--muted); margin-top:3px; border-top:1px solid var(--line); padding-top:4px; }
   .peek { position:relative; border-bottom:1px dotted var(--accent); cursor:help; outline:none; }
-  .peek img { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:10; width:560px; max-width:88vw;
+  .peek img { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:10; width:672px; max-width:88vw;
               border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.18); }
   .peek:hover img, .peek:focus img { display:block; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
@@ -99,18 +99,6 @@
       agent, the Claude mobile app, gets staff tools over <b>MCP</b> (OAuth 2.1), so staff away from the desk see which chats need attention.</li>
   </ul>
 
-  <h2>Data-driven decisions</h2>
-  <ul>
-    <li><b>A golden set</b> of 146 labelled cases and an <b>evaluation harness</b> that drives them through the real stack, so every change
-      to the flow, a prompt or a setting gets a <b>side-by-side comparison</b> with the baseline. A <b>measured noise band</b> 
-      separates a real improvement or regression from the model's ordinary run-to-run variation.</li>
-    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt fixes, the retrieval thresholds (the rerank floor
-      calibrated at 0.58, the similarity floor removed) and a temperature of 0 for the classifier. <b>Unserved answerable requests fell from
-      12/87 to 1/87</b>.</li>
-    <li><b class="peek" tabindex="0">Langfuse<img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></b> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
-      spend, <b>cut model costs by 45%</b>.</li>
-  </ul>
-
   <h2>RAG flow: answer only when it's grounded</h2>
   <svg viewBox="0 0 720 112" role="img" aria-label="RAG flow from query rewriting to answer or escalation">
     <defs>
@@ -155,6 +143,18 @@
       heading path, so a retrieved chunk keeps the context of the section it came from.</li>
     <li><b>Citations come from the retrieval structure, not from the LLM</b>, so the model can't invent a source. A verdict is stored
       <b>per request</b>, so a two-question message can answer one and pass the other to staff.</li>
+  </ul>
+
+  <h2>Data-driven decisions</h2>
+  <ul>
+    <li><b>A golden set</b> of 146 labelled cases and an <b>evaluation harness</b> that drives them through the real stack, so every change
+      to the flow, a prompt or a setting gets a <b>side-by-side comparison</b> with the baseline. A <b>measured noise band</b> 
+      separates a real improvement or regression from the model's ordinary run-to-run variation.</li>
+    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt fixes, the retrieval thresholds (the rerank floor
+      calibrated at 0.58, the similarity floor removed) and a temperature of 0 for the classifier. <b>Unserved answerable requests fell from
+      12/87 to 1/87</b>.</li>
+    <li><b class="peek" tabindex="0">Langfuse<img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></b> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
+      spend, <b>cut model costs by 45%</b>.</li>
   </ul>
 
   <h2>Escalation flow: when a person is called</h2>
