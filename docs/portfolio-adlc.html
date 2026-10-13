@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisitDoc · Agentic Development</title>
+<style>
+  :root { --ink:#1c2430; --muted:#5b6675; --accent:#3b4fa8; --soft:#ebeefa; --line:#d7dee5; }
+  @page { size: A4; margin: 11mm 13mm; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f6f8; color:var(--ink);
+         font: 9.6pt/1.4 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  .page { max-width:210mm; margin:16px auto; background:#fff; padding:12mm 14mm;
+          box-shadow:0 1px 6px rgba(0,0,0,.08); }
+  nav { font-size:8.5pt; color:var(--muted); margin-bottom:6px; }
+  nav a { color:var(--muted); margin-right:10px; }
+  nav a.on { color:var(--accent); font-weight:600; text-decoration:none; }
+  h1 { font-size:18pt; margin:0; letter-spacing:-.2px; }
+  .sub { color:var(--muted); margin:2px 0 10px; }
+  .lede { background:var(--soft); border-left:3px solid var(--accent); padding:7px 10px; margin:0 0 10px; }
+  h2 { font-size:10.5pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
+       margin:11px 0 4px; border-bottom:1px solid var(--line); padding-bottom:2px; }
+  ul { margin:0; padding-left:16px; } li { margin:2px 0; }
+  b { font-weight:600; }
+  .flow { display:flex; gap:4px; align-items:stretch; margin:6px 0 2px; font-size:8.6pt; }
+  .flow div { flex:1; border:1px solid var(--line); border-radius:6px; padding:4px 6px; background:#fafbfd; line-height:1.25; }
+  .flow div b { display:block; color:var(--accent); }
+  .flow span { align-self:center; color:var(--muted); }
+  .stats { display:flex; gap:8px; margin:8px 0 2px; }
+  .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
+  .stat .n { font-size:13pt; font-weight:700; color:var(--accent); }
+  .stat .l { font-size:8.3pt; color:var(--muted); line-height:1.25; }
+  .stack { font-size:8.8pt; color:var(--muted); margin-top:10px; border-top:1px solid var(--line); padding-top:5px; }
+  code { font: 8.8pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
+  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .flow, .stats { flex-wrap:wrap; } .flow span { display:none; } .flow div, .stat { flex:1 1 45%; } }
+  @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
+  <h1>VisitDoc: agentic development lifecycle</h1>
+  <div class="sub">How the project was built · Andrey Volkovitskiy · github.com/Andrey-Volkovitskiy/visit-doc</div>
+  <p class="lede">Every line of code was written by a coding agent (Claude Code). My job was the engineer's part: decide <b>what</b> to build
+  and <b>why</b>, set guardrails so the agent couldn't drift, review the result, and make the decisions only a human should make.
+  The result is a production-shaped multi-service AI app, built in 11 weeks: <b>~39k lines of application code</b>
+  (Python and TypeScript), <b>~66k lines of tests</b> (~4,700 tests) and ~37k lines of specs and design docs.</p>
+
+  <h2>The loop: intent → spec → guarded implementation → measured result</h2>
+  <div class="flow">
+    <div><b>Intent</b>Roadmap phase, scope and the "why"</div><span>→</span>
+    <div><b>Spec</b>spec, plan, contracts, tasks; analysed until consistent</div><span>→</span>
+    <div><b>Build</b>TDD; hooks check every edit</div><span>→</span>
+    <div><b>Converge</b>code re-checked against the spec</div><span>→</span>
+    <div><b>Verify</b>review loop, CI, e2e, golden-set eval</div>
+  </div>
+
+  <h2>Guardrails I designed for the agent</h2>
+  <ul>
+    <li><b>Spec-driven development (GitHub spec-kit).</b> 17 features, each with a spec, plan, research notes, data model, API
+      contracts, tasks and quickstart. A <b>constitution</b> with eight principles binds every plan. Two of them are non-negotiable:
+      <b>phase-gated scope</b> (no infrastructure the current phase doesn't need) and <b>TDD</b>.</li>
+    <li><b>A binding roadmap as the statement of intent.</b> Each phase states what to build and the reasoning behind it. Every technology
+      choice and its tradeoff is recorded in the README (23 sections).</li>
+    <li><b>Hooks.</b> After every edit, Python is auto-formatted, linted and type-checked with strict mypy, and TypeScript runs
+      <code>tsc -b</code>. Errors go straight back to the agent, so a type error never survives to the next step.</li>
+    <li><b>Custom skills that automate the cycle:</b> <code>speckit-analyze-loop</code> (cross-check the spec documents until they agree),
+      <code>speckit-implement-loop</code> (implement → converge until nothing is left), <code>review-loop</code> (rounds of
+      high-effort code review and fixes) and <code>commit-changes</code> (conventional commits).</li>
+    <li><b>Layered agent instructions.</b> Each directory has its own CLAUDE.md, loaded only when the agent works there. Project-wide
+      principles (e.g. "one value, one meaning", "a timeout never proves the server did nothing") turn hard-won lessons into rules the agent follows.</li>
+    <li><b>UI sketches before UI code.</b> Three static HTML mockups filled with the product's real content, from conventional to
+      experimental. One was chosen and made the visual reference; the agent implemented against it.</li>
+  </ul>
+
+  <h2>Verification I don't delegate</h2>
+  <ul>
+    <li><b>Test pyramid:</b> unit, integration (real Postgres and Qdrant) and <b>end-to-end in a real Chromium</b> via Playwright.
+      CI on GitHub Actions runs pre-commit, unit, frontend and integration tests on every push.</li>
+    <li><b>Isolated test runs, so several agents can work at once.</b> Each coding-agent session, and each parallel test worker,
+      gets its own Postgres databases and Qdrant collections, named automatically. Several agents can run the full suite
+      at the same time without clearing each other's data.</li>
+    <li><b>AI behaviour is gated by evaluation, not by opinion.</b> A prompt change is replayed offline first, then run on only the
+      golden cases it can affect, and only then on the full set, compared with the baseline and its noise band.</li>
+    <li><b>Lessons become rules:</b> each costly mistake (e.g. a full eval run spent where a targeted one would do) becomes a written rule the agent follows.</li>
+  </ul>
+
+  <div class="stats">
+    <div class="stat"><div class="n">17</div><div class="l">spec-kit features, spec to shipped</div></div>
+    <div class="stat"><div class="n">~4,700</div><div class="l">automated tests, written test-first</div></div>
+    <div class="stat"><div class="n">39k / 66k</div><div class="l">lines of app code / lines of tests</div></div>
+    <div class="stat"><div class="n">204</div><div class="l">conventional commits in 11 weeks</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">lines of code typed by hand</div></div>
+  </div>
+
+  <div class="stack"><b>Tooling:</b> Claude Code (skills, hooks, subagents, memory) · GitHub spec-kit · pytest · Vitest · Playwright ·
+  ruff · mypy strict · pre-commit · GitHub Actions · Langfuse</div>
+</div>
+</body>
+</html>

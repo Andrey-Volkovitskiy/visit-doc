@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisitDoc · Architecture</title>
+<style>
+  :root { --ink:#1c2430; --muted:#5b6675; --accent:#8a4b12; --soft:#f8efe6; --line:#d7dee5; }
+  @page { size: A4; margin: 11mm 13mm; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f4f6f8; color:var(--ink);
+         font: 10pt/1.42 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  .page { max-width:210mm; margin:16px auto; background:#fff; padding:12mm 14mm;
+          box-shadow:0 1px 6px rgba(0,0,0,.08); }
+  nav { font-size:8.5pt; color:var(--muted); margin-bottom:6px; }
+  nav a { color:var(--muted); margin-right:10px; }
+  nav a.on { color:var(--accent); font-weight:600; text-decoration:none; }
+  h1 { font-size:18pt; margin:0; letter-spacing:-.2px; }
+  .sub { color:var(--muted); margin:2px 0 8px; }
+  h2 { font-size:10.5pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
+       margin:10px 0 4px; border-bottom:1px solid var(--line); padding-bottom:2px; }
+  ul { margin:0; padding-left:16px; } li { margin:2px 0; }
+  b { font-weight:600; }
+  svg { width:100%; height:auto; display:block; font-family:"Segoe UI", system-ui, sans-serif; }
+  .cols { display:flex; gap:14px; } .cols > div { flex:1; }
+  .stack { font-size:8.8pt; color:var(--muted); margin-top:9px; border-top:1px solid var(--line); padding-top:5px; }
+  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .cols { flex-direction:column; gap:0; } }
+  @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav><a href="portfolio-ai-engineering.html">AI engineering</a><a href="portfolio-adlc.html">Agentic development</a><a class="on" href="portfolio-architecture.html">Architecture</a></nav>
+  <h1>VisitDoc: architecture</h1>
+  <div class="sub">Two services, one deliberate boundary · Andrey Volkovitskiy · github.com/Andrey-Volkovitskiy/visit-doc</div>
+
+  <svg viewBox="0 0 720 262" role="img" aria-label="VisitDoc architecture diagram">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#5b6675"/></marker>
+      <style>
+        .box{fill:#fff;stroke:#c9d1da;stroke-width:1.2;rx:7}
+        .core{fill:#f8efe6;stroke:#8a4b12;stroke-width:1.4}
+        .ext{fill:#f4f6f8;stroke:#c9d1da;stroke-dasharray:4 3}
+        .t{font-size:12.5px;font-weight:600;fill:#1c2430}
+        .s{font-size:10.5px;fill:#5b6675}
+        .l{font-size:10px;fill:#5b6675}
+        .ln{stroke:#5b6675;stroke-width:1.2;fill:none;marker-end:url(#a)}
+      </style>
+    </defs>
+    <!-- users -->
+    <rect class="box" x="6" y="20" width="130" height="62" rx="7"/>
+    <text class="t" x="16" y="40">React SPA</text>
+    <text class="s" x="16" y="56">patient chat · staff</text>
+    <text class="s" x="16" y="70">console (one screen)</text>
+    <rect class="box ext" x="6" y="150" width="130" height="50" rx="7"/>
+    <text class="t" x="16" y="171">Claude app</text>
+    <text class="s" x="16" y="187">staff, via MCP</text>
+    <!-- chat service -->
+    <rect class="box core" x="186" y="8" width="270" height="214" rx="8"/>
+    <text class="t" x="198" y="28">chat service · FastAPI</text>
+    <rect class="box" x="198" y="38" width="246" height="52" rx="6"/>
+    <text class="t" x="208" y="56" style="font-size:11.5px">LangGraph agent</text>
+    <text class="s" x="208" y="71">classify (Haiku) → FAQ ∥ booking → compose</text>
+    <text class="s" x="208" y="84">tool registry · escalation rules</text>
+    <rect class="box" x="198" y="98" width="120" height="50" rx="6"/>
+    <text class="t" x="207" y="116" style="font-size:11.5px">RAG pipeline</text>
+    <text class="s" x="207" y="131">embed · rerank</text>
+    <text class="s" x="207" y="143">abstain · cite</text>
+    <rect class="box" x="324" y="98" width="120" height="50" rx="6"/>
+    <text class="t" x="333" y="116" style="font-size:11.5px">APIs</text>
+    <text class="s" x="333" y="131">/chat · /faq</text>
+    <text class="s" x="333" y="143">/console · /admin</text>
+    <rect class="box" x="198" y="156" width="246" height="56" rx="6"/>
+    <text class="t" x="207" y="174" style="font-size:11.5px">Staff connector</text>
+    <text class="s" x="207" y="189">/mcp + /oauth (OAuth 2.1, pairing code)</text>
+    <text class="s" x="207" y="203">read-only, session from the verified token</text>
+    <!-- scheduler -->
+    <rect class="box core" x="520" y="8" width="194" height="96" rx="8"/>
+    <text class="t" x="532" y="28">scheduler · FastAPI</text>
+    <text class="s" x="532" y="45">patients · practitioners</text>
+    <text class="s" x="532" y="59">availability · appointments</text>
+    <text class="s" x="532" y="73">gRPC :50051 · HTTP :8001</text>
+    <text class="s" x="532" y="91">exclusion constraints</text>
+    <!-- datastores -->
+    <rect class="box" x="520" y="122" width="194" height="34" rx="7"/>
+    <text class="t" x="532" y="143" style="font-size:11.5px">Postgres · scheduler DB</text>
+    <rect class="box" x="186" y="232" width="128" height="26" rx="7"/>
+    <text class="t" x="196" y="250" style="font-size:11px">Postgres · chat DB</text>
+    <rect class="box" x="328" y="232" width="128" height="26" rx="7"/>
+    <text class="t" x="338" y="250" style="font-size:11px">Qdrant · vectors</text>
+    <rect class="box ext" x="520" y="174" width="194" height="84" rx="7"/>
+    <text class="t" x="532" y="193" style="font-size:11.5px">External AI services</text>
+    <text class="s" x="532" y="209">Anthropic: Sonnet 5, Haiku 4.5</text>
+    <text class="s" x="532" y="224">Voyage: embeddings, rerank</text>
+    <text class="s" x="532" y="239">Langfuse Cloud: traces</text>
+    <!-- arrows -->
+    <path class="ln" d="M136,51 H184"/><text class="l" x="142" y="45">HTTP</text>
+    <path class="ln" d="M136,175 H184"/><text class="l" x="142" y="169">MCP</text>
+    <path class="ln" d="M456,56 H518"/><text class="l" x="468" y="50">gRPC</text>
+    <path class="ln" d="M617,104 V120"/>
+    <path class="ln" d="M456,200 H518"/>
+    <path class="ln" d="M250,222 V230"/><path class="ln" d="M392,222 V230"/>
+  </svg>
+
+  <h2>Strongest architectural decisions</h2>
+  <div class="cols">
+  <div><ul>
+    <li><b>One deliberate service boundary.</b> Scheduling is split out because its invariants need the schedule and
+      the appointments in one transaction. Each service has its own database, and the two refer to each other only by opaque id, with no cross-database foreign key.</li>
+    <li><b>Integrity lives in the database.</b> Double-booking is ruled out by <b>PostgreSQL exclusion constraints</b> on time ranges.
+      A reschedule is <b>one conditional UPDATE</b> whose WHERE clause carries the staleness check, never a read followed by a write.</li>
+    <li><b>Postgres decides what Qdrant may answer from.</b> FAQ writes add new revisions and publish them in one commit, so a
+      half-failed write never leaves a stale or orphaned chunk that can be retrieved.</li>
+    <li><b>Tenant scoping on every query</b>, as a WHERE predicate, never as a filter applied afterwards, even for lookups by a unique id.</li>
+  </ul></div>
+  <div><ul>
+    <li><b>Failure semantics are designed in.</b> A timeout never proves the server did nothing: an unknown write outcome is
+      stored and shown as unknown, not retried. Any turn that ends without a reply calls a person.</li>
+    <li><b>Dependency inversion around providers.</b> The agent graph sees only domain types. Each provider call converts to its own
+      wire format internally, and tracing goes through one module that is the only place allowed to import Langfuse.</li>
+    <li><b>"One value, one meaning".</b> No status or empty result stands for two different situations. Distinct
+      outcomes get distinct types, so the agent can't turn an ambiguity into a confident false statement.</li>
+    <li><b>Typed contracts across the boundary:</b> a shared gRPC proto and shared Pydantic models live in workspace packages
+      of a uv monorepo, so both services use the same definitions.</li>
+  </ul></div>
+  </div>
+
+  <h2>Delivery and operations</h2>
+  <ul>
+    <li><b>Test pyramid:</b> <b>4,660 unit</b> (4,072 Python + 588 frontend), <b>74 integration</b> (real Postgres,
+      Qdrant and gRPC) and <b>8 end-to-end</b> journeys in a real Chromium against the running stack. Coverage:
+      <b>96%</b> of Python statements and <b>94%</b> of frontend lines.</li>
+    <li><b>Run locally three ways:</b> as plain processes with hot reload, as Docker Compose (three images, migrations as one-off
+      containers), or in a local <b>Kubernetes</b> cluster (k3d) behind a Traefik Ingress, with Kustomize base and overlays.
+      Images are pushed to GHCR tagged by commit, and a deploy restarts only the services whose image changed.</li>
+    <li><b>Observable by construction:</b> structured JSON logs with secrets redacted by key name and by value, Langfuse traces per agent step,
+      and the token cost of every model call logged.</li>
+  </ul>
+
+  <div class="stack"><b>Stack:</b> Python 3.12 · FastAPI · SQLAlchemy async · Alembic · PostgreSQL 16 · Qdrant · gRPC/protobuf ·
+  LangGraph · React + Vite · Docker · Kubernetes (k3d, Kustomize) · GitHub Actions</div>
+</div>
+</body>
+</html>
