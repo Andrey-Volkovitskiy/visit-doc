@@ -30,7 +30,7 @@
   .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
   .stat .n { font-size:13pt; font-weight:700; color:var(--accent); }
   .stat .l { font-size:8.3pt; color:var(--muted); line-height:1.25; }
-  .stack { font-size:8.8pt; color:var(--muted); margin-top:10px; border-top:1px solid var(--line); padding-top:5px; }
+  .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
   code { font: 8.8pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .flow, .stats { flex-wrap:wrap; } .flow span { display:none; } .flow div, .stat { flex:1 1 45%; } }
   @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
@@ -93,8 +93,7 @@
     <div class="stat"><div class="n">0</div><div class="l">lines of code typed by hand</div></div>
   </div>
 
-  <div class="stack"><b>Tooling:</b> Claude Code (skills, hooks, subagents, memory) · GitHub spec-kit · pytest · Vitest · Playwright ·
-  ruff · mypy strict · pre-commit · GitHub Actions · Langfuse</div>
+  <div class="stack"><b>Tooling:</b> <b>Coding&nbsp;agent:</b>&nbsp;Claude Code&nbsp;· <b>Specs:</b>&nbsp;GitHub spec-kit&nbsp;· <b>Testing:</b>&nbsp;pytest + xdist, Vitest, Playwright&nbsp;· <b>Quality&nbsp;gates&nbsp;&amp;&nbsp;CI:</b>&nbsp;ruff, mypy strict, tsc, pre-commit, GitHub Actions&nbsp;· <b>AI&nbsp;evaluation:</b>&nbsp;golden-set harness, Langfuse</div>
 </div>
 </body>
 </html>
