@@ -23,7 +23,7 @@
   b { font-weight:600; }
   svg { width:100%; height:auto; display:block; font-family:"Segoe UI", system-ui, sans-serif; }
   .cols { display:flex; gap:14px; } .cols > div { flex:1; }
-  .stack { font-size:8.8pt; color:var(--muted); margin-top:9px; border-top:1px solid var(--line); padding-top:5px; }
+  .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .cols { flex-direction:column; gap:0; } }
   @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
@@ -137,8 +137,7 @@
       and the token cost of every model call logged.</li>
   </ul>
 
-  <div class="stack"><b>Stack:</b> Python 3.12 · FastAPI · SQLAlchemy async · Alembic · PostgreSQL 16 · Qdrant · gRPC/protobuf ·
-  LangGraph · React + Vite · Docker · Kubernetes (k3d, Kustomize) · GitHub Actions</div>
+  <div class="stack"><b>Stack:</b> <b>Backend:</b>&nbsp;Python 3.12, FastAPI, Pydantic, SQLAlchemy (async), Alembic&nbsp;· <b>Data:</b>&nbsp;PostgreSQL 16, Qdrant&nbsp;· <b>Services:</b>&nbsp;gRPC/protobuf, uv-workspace monorepo&nbsp;· <b>AI:</b>&nbsp;LangGraph, Claude, Voyage&nbsp;· <b>Frontend:</b>&nbsp;React + Vite, TypeScript&nbsp;· <b>Delivery:</b>&nbsp;Docker Compose, Kubernetes (k3d, Kustomize, Traefik), GHCR, GitHub Actions</div>
 </div>
 </body>
 </html>
