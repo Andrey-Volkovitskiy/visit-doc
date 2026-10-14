@@ -153,7 +153,7 @@
       to the flow, a prompt or a setting gets a <b>side-by-side comparison</b> with the baseline. A <b>measured noise band</b> 
       separates a real improvement or regression from the model's ordinary run-to-run variation.</li>
     <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt improvements, the retrieval thresholds (the rerank floor
-      calibrated at 0.58, the similarity floor removed) and a temperature for the classifier. <b>Unserved answerable requests fell from
+      calibrated at 0.58) and a temperature for the classifier. <b>Unserved answerable requests fell from
       12/87 to 1/87</b>.</li>
     <li><a class="peek" href="img/langfuse-trace.png" target="_blank" rel="noopener"><b>Langfuse</b><img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></a> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
       spend, <b>cut model costs by 45%</b>.</li>

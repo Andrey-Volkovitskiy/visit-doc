@@ -40,11 +40,10 @@
 <div class="page">
   <nav><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
   <h1>VisitDoc: agentic development lifecycle</h1>
-  <div class="sub">How the project was built · Andrey Volkovitskiy · github.com/Andrey-Volkovitskiy/visit-doc</div>
+  <div class="sub">How the project was built</div>
   <p class="lede">Every line of code was written by a coding agent (Claude Code). My job was the engineer's part: decide <b>what</b> to build
   and <b>why</b>, set guardrails so the agent couldn't drift, review the result, and make the decisions only a human should make.
-  The result is a production-shaped multi-service AI app, built in 11 weeks: <b>~39k lines of application code</b>
-  (Python and TypeScript), <b>~66k lines of tests</b> (~4,700 tests) and ~37k lines of specs and design docs.</p>
+  The result is a production-shaped multi-service AI app, built with <b>spec-driven development (SDD)</b>.</p>
 
   <h2>The loop: intent → spec → guarded implementation → measured result</h2>
   <div class="flow">
@@ -57,9 +56,9 @@
 
   <h2>Guardrails I designed for the agent</h2>
   <ul>
-    <li><b>Spec-driven development (GitHub spec-kit).</b> 17 features, each with a spec, plan, research notes, data model, API
-      contracts, tasks and quickstart. A <b>constitution</b> with eight principles binds every plan. Two of them are non-negotiable:
-      <b>phase-gated scope</b> (no infrastructure the current phase doesn't need) and <b>TDD</b>.</li>
+    <li><b>Spec-driven development (spec-kit).</b> 17 features, each with a spec, plan, research notes, data model, API
+      contracts, tasks and quickstart. A <b>constitution</b> with eight principles binds every plan and makes
+      <b>TDD non-negotiable</b>: every behaviour starts as a failing test.</li>
     <li><b>A binding roadmap as the statement of intent.</b> Each phase states what to build and the reasoning behind it. Every technology
       choice and its tradeoff is recorded in the README (23 sections).</li>
     <li><b>Hooks.</b> After every edit, Python is auto-formatted, linted and type-checked with strict mypy, and TypeScript runs
