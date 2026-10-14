@@ -23,15 +23,16 @@
   ul { margin:3px 0 0; padding-left:16px; } li { margin:1px 0; }
   b { font-weight:600; }
   svg { width:100%; height:auto; display:block; font-family:"Segoe UI", system-ui, sans-serif; }
-  .stats { display:flex; gap:8px; margin:3px 0 0; }
+  .stats { display:flex; gap:8px; margin:24px 0 0; }
   .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:4px 8px; }
   .stat .n { font-size:12pt; font-weight:700; color:var(--accent); }
   .stat .l { font-size:8pt; color:var(--muted); line-height:1.25; }
   .stack { font-size:8.5pt; color:var(--muted); margin-top:3px; border-top:1px solid var(--line); padding-top:4px; }
-  .peek { position:relative; border-bottom:1px dotted var(--accent); cursor:help; outline:none; }
+  .stack code { font: 8.2pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
+  .peek { position:relative; color:inherit; text-decoration:none; border-bottom:1px dotted var(--accent); cursor:zoom-in; }
   .peek img { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:10; width:672px; max-width:88vw;
               border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.18); }
-  .peek:hover img, .peek:focus img { display:block; }
+  .peek:hover img, .peek:focus-visible img { display:block; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
   @media print { .peek img { display:none !important; } .peek { border-bottom:0; } body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
@@ -41,9 +42,10 @@
   <nav><a class="on" href="portfolio-ai-engineering.html">AI engineering</a><a href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
   <h1>VisitDoc: AI engineering</h1>
   <!-- <div class="sub">A chat assistant for a medical clinic · github.com/Andrey-Volkovitskiy/visit-doc</div> -->
-  <p class="lede">Patients book, reschedule and cancel appointments in plain language and ask the clinic's policy questions.
-  The assistant answers <b>only from retrieved, cited sources</b>, says what it doesn't know, and passes the conversation to
-  staff instead of guessing. Every behaviour change is <b>measured against a labelled golden set</b> before it ships.</p>
+  <p class="lede">A chat assistant for a medical clinic: patients manage appointments and ask policy questions in plain language.
+  A <b>LangGraph agent</b> splits each message into requests and handles them in parallel, each on the cheapest model that can do the job.
+  Answers come <b>only from retrieved, cited sources</b>, every change is <b>measured against a golden set</b>, and when the assistant
+  can't answer safely, <b>a person is called instead of a guess</b>.</p>
 
   <h2>Agent flow (LangGraph)</h2>
   <svg viewBox="0 0 720 152" role="img" aria-label="Agent flow: classifier, three parallel specialists, composer">
@@ -93,8 +95,8 @@
     <path class="ln" d="M618,76 H638"/>
   </svg>
   <ul>
-    <li>The specialist nodes run <b>in parallel</b>, and each sees only its own requests, so one question can't leak into another's answer.
-      The <b>model is chosen</b> per node for cost: cheap and fast Haiku for classifying and chatting, more accurate and expensive Sonnet for anything that states a fact or changes a booking.</li>
+    <li><b>The specialist nodes</b> run in parallel, and each sees only its own requests, so one question can't leak into another's answer.
+      The model is chosen per node for <b>cost</b>: cheap and fast Haiku for classifying and chatting, more capable Sonnet for anything that states a fact or changes a booking.</li>
     <li><b>Tools over two transports:</b> the in-house agent's seven tools reach the scheduling service over <b>gRPC</b>. An external
       agent, the Claude mobile app, gets staff tools over <b>MCP</b> (OAuth 2.1), so staff away from the desk see which chats need attention.</li>
   </ul>
@@ -141,7 +143,7 @@
   <ul>
     <li><b>Structure-aware chunking:</b> documents are cut at their headings, one chunk per section, each prefixed with its
       heading path, so a retrieved chunk keeps the context of the section it came from.</li>
-    <li><b>Citations come from the retrieval structure, not from the LLM</b>, so the model can't invent a source. A verdict is stored
+    <li><b><a class="peek" href="img/citation.png" target="_blank" rel="noopener">FAQ citations<img src="img/citation.png" alt="The staff console showing an assistant answer with the FAQ entry it was retrieved from" onerror="this.remove()"></a> come from the retrieval structure, not from the LLM</b>, so the model can't invent a source. A verdict is stored
       <b>per request</b>, so a two-question message can answer one and pass the other to staff.</li>
   </ul>
 
@@ -150,14 +152,14 @@
     <li><b>A golden set</b> of 146 labelled cases and an <b>evaluation harness</b> that drives them through the real stack, so every change
       to the flow, a prompt or a setting gets a <b>side-by-side comparison</b> with the baseline. A <b>measured noise band</b> 
       separates a real improvement or regression from the model's ordinary run-to-run variation.</li>
-    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt fixes, the retrieval thresholds (the rerank floor
-      calibrated at 0.58, the similarity floor removed) and a temperature of 0 for the classifier. <b>Unserved answerable requests fell from
+    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt improvements, the retrieval thresholds (the rerank floor
+      calibrated at 0.58, the similarity floor removed) and a temperature for the classifier. <b>Unserved answerable requests fell from
       12/87 to 1/87</b>.</li>
-    <li><b class="peek" tabindex="0">Langfuse<img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></b> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
+    <li><a class="peek" href="img/langfuse-trace.png" target="_blank" rel="noopener"><b>Langfuse</b><img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></a> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
       spend, <b>cut model costs by 45%</b>.</li>
   </ul>
 
-  <h2>Escalation flow: when a person is called</h2>
+  <!-- <h2>Escalation flow: when a person is called</h2>
   <svg viewBox="0 0 720 96" role="img" aria-label="Escalation flow">
     <defs>
       <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5b6675"/></marker>
@@ -188,17 +190,18 @@
     <text class="s3" x="590" y="64">with the cause;</text><text class="s3" x="590" y="76">staff reply in thread</text>
     <path class="ln3" d="M302,24 H328"/><path class="ln3" d="M302,72 H328"/>
     <path class="ln3" d="M556,24 C568,24 568,40 580,40"/><path class="ln3" d="M556,72 C568,72 568,58 580,58"/>
-  </svg>
+  </svg> -->
 
   <div class="stats">
     <div class="stat"><div class="n">146</div><div class="l">golden cases, scored per request</div></div>
-    <div class="stat"><div class="n">12 → 1</div><div class="l">unserved answerable requests (of 87)</div></div>
     <div class="stat"><div class="n">−45%</div><div class="l">model spend after prompt caching</div></div>
-    <div class="stat"><div class="n">gRPC + MCP</div><div class="l">7 agent tools · 2 read-only staff tools for the Claude app</div></div>
+    <div class="stat"><div class="n">12 → 1</div><div class="l">unserved answerable requests (of 87)</div></div>
+    <div class="stat"><div class="n">Tools + MCP</div><div class="l">7 agent tools · 2 read-only staff tools for the Claude app</div></div>
   </div>
 
-  <div class="stack"><b>Stack:</b> Python 3.12 · FastAPI · LangGraph · Claude Sonnet 5 / Haiku 4.5 · Voyage embeddings + rerank ·
-  Qdrant · PostgreSQL · gRPC · Langfuse · MCP · React + Vite (streamed replies)</div>
+  <div class="stack"><b>Stack:</b> <b>LLMs:</b>&nbsp;Claude Sonnet 5 / Haiku 4.5, structured outputs, tool calling,
+  prompt caching · <b>Agent:</b>&nbsp;LangGraph · <b>RAG:</b>&nbsp;voyage-4-lite embedder + voyage-rerank-3 cross-encoder, Qdrant ·
+  <b>Eval &amp; observability:</b>&nbsp;custom golden-set harness with noise band, Langfuse · <b>Integration:</b>&nbsp;MCP (OAuth 2.1), gRPC</div>
 </div>
 </body>
 </html>
