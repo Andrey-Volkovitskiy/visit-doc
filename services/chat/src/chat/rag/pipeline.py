@@ -1,4 +1,4 @@
-"""Fusing the two retrieval branches, the two gates, and the verdict they produce.
+"""Merging the two retrieval branches, the two gates, and the verdict they produce.
 
 Pure functions and frozen records - no client, no clock, no I/O. Everything retrieval
 decides about which chunks an answer may stand on is decided here, which is what lets
@@ -9,21 +9,15 @@ deliberately apart, so "no scores were obtained" and "scores were obtained and n
 cleared the floor" can stay two different answers.
 """
 
-import math
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 from chat.domain.schemas import FaqVerdict
 
-# Reciprocal Rank Fusion's constant: a chunk at rank r in a branch contributes
-# 1 / (RRF_K + r). 60 is the value the method was published with; a larger k flattens
-# the difference between ranks, a smaller one lets one branch's top hit dominate.
-RRF_K = 60
-
 
 @dataclass(frozen=True)
 class ScoredChunk:
-    """A retrieved chunk carried through fusion and both gates, accumulating scores.
+    """A retrieved chunk carried through the merge and both gates, accumulating scores.
 
     Every optional score is None when the stage that gives it did not score this
     chunk, and never means "scored zero":
@@ -32,7 +26,6 @@ class ScoredChunk:
       did not return the chunk; `lexical_score`, its BM25 score, and `lexical_rank`
       when the lexical one did not. The two scores are on different scales and are
       never compared with each other.
-    - `fused_score` is None before fusion.
     - `rerank_score` is None when no rerank score was obtained - the reranker did not
       run, or failed. A chunk the cross-encoder scored at 0.0 was judged irrelevant,
       and a chunk it never saw was not judged at all.
@@ -46,7 +39,6 @@ class ScoredChunk:
     lexical_score: float | None = None
     dense_rank: int | None = None
     lexical_rank: int | None = None
-    fused_score: float | None = None
 
     def with_rerank_score(self, score: float) -> "ScoredChunk":
         """Return a copy carrying `score`, leaving this instance untouched."""
@@ -105,24 +97,25 @@ def _split(
     )
 
 
-def fuse_rrf(
-    dense: list[ScoredChunk], lexical: list[ScoredChunk], *, k: int
+def merge_branches(
+    dense: list[ScoredChunk], lexical: list[ScoredChunk]
 ) -> list[ScoredChunk]:
-    """Merge the two branches' hits into one list by Reciprocal Rank Fusion.
+    """Merge the two branches' hits into one pool: the dense order, then BM25's extras.
 
     Args:
         dense: the dense branch's hits, best first, each carrying its cosine.
         lexical: the lexical branch's hits, best first, each carrying its BM25 score.
 
-    Returns: every chunk either branch returned, once each, best fused score first,
-        carrying its rank and score in each branch that returned it and its fused
-        score - the sum of `1 / (k + rank)` over those branches.
+    Returns: every chunk either branch returned, once each, carrying its rank and score
+        in each branch that returned it. The dense hits come first in dense order, then
+        the chunks only the lexical branch found, in lexical order.
 
-    Only ranks are fused, never scores: a cosine and a BM25 score are on different
-    scales, and RRF exists so they never have to be put on one. A chunk is identified
-    by its entry and chunk index, which the search's live-revision filter makes unique.
-    A tie goes to the better dense rank, then the better lexical rank, then the entry
-    and chunk index, so the order never depends on how a dict happened to iterate.
+    The lexical branch never reorders what dense search found. Fusing the two ranks
+    (Reciprocal Rank Fusion, measured in 018) let a chunk both branches returned on
+    common words outrank dense search's top hit, and lost the right chunk on requests
+    dense retrieval had answered; BM25 is here to add candidates, and the reranker
+    decides between them. A chunk is identified by its entry and chunk index, which the
+    search's live-revision filter makes unique.
     """
     merged: dict[tuple[int, int], ScoredChunk] = {}
     for rank, chunk in enumerate(dense, start=1):
@@ -140,38 +133,36 @@ def fuse_rrf(
             merged[key] = replace(
                 found, lexical_rank=rank, lexical_score=chunk.lexical_score
             )
-
-    def fused(chunk: ScoredChunk) -> float:
-        return sum(
-            1 / (k + rank)
-            for rank in (chunk.dense_rank, chunk.lexical_rank)
-            if rank is not None
-        )
-
-    scored = [replace(c, fused_score=fused(c)) for c in merged.values()]
-    return sorted(
-        scored,
-        key=lambda c: (
-            -(c.fused_score or 0.0),
-            c.dense_rank if c.dense_rank is not None else math.inf,
-            c.lexical_rank if c.lexical_rank is not None else math.inf,
-            c.faq_entry_id,
-            c.chunk_index,
-        ),
-    )
+    # Insertion order is the dense order, then lexical-only chunks as first met.
+    return list(merged.values())
 
 
-def apply_shortlist_gate(pool: list[ScoredChunk], *, cap: int) -> GateResult:
-    """Keep the first `cap` chunks of `pool`, in the order the pool arrived in.
+def apply_shortlist_gate(
+    pool: list[ScoredChunk], *, dense_cap: int, lexical_cap: int
+) -> GateResult:
+    """Keep the dense top `dense_cap` and the lexical top `lexical_cap` chunks.
 
     Args:
-        pool: the fused observation pool, best first.
+        pool: the merged observation pool, each chunk carrying its branch ranks.
 
-    Returns: the survivors in pool order, plus those the cap dropped. Nothing is
-        dropped by a floor: the pool's order is a fused rank, which no cosine bar can
-        be read against, and the rerank floor is what decides an abstention.
+    Returns: the survivors in pool order, plus those the caps dropped. A lexical top
+        hit already on the dense top takes no extra place, so the shortlist holds
+        between `dense_cap` and `dense_cap + lexical_cap` chunks of a full pool.
+        Nothing is dropped by a floor: the rerank floor is what decides an abstention.
+
+    The dense top is kept whatever the lexical branch returned, so adding BM25 cannot
+    lose a chunk dense retrieval would have shortlisted.
     """
-    return _split(pool, lambda _chunk: True, cap)
+
+    def on_a_top(chunk: ScoredChunk) -> bool:
+        return (chunk.dense_rank is not None and chunk.dense_rank <= dense_cap) or (
+            chunk.lexical_rank is not None and chunk.lexical_rank <= lexical_cap
+        )
+
+    return GateResult(
+        kept=[c for c in pool if on_a_top(c)],
+        dropped_by_cap=[c for c in pool if not on_a_top(c)],
+    )
 
 
 def apply_rerank_gate(

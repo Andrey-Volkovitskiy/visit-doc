@@ -33,8 +33,8 @@ _CONDITIONS: dict[str, Any] = {
     "embedding_model": "voyage-3.5",
     "rerank_model": "rerank-3",
     "retrieval_pool_size": 25,
-    "retrieval": "hybrid_rrf",
-    "rrf_k": 60,
+    "retrieval": "dense_plus_bm25",
+    "lexical_cap": 3,
     "similarity_floor": 0.3,
     "similarity_cap": 5,
     "unreranked_similarity_floor": 0.25,
@@ -577,22 +577,22 @@ def _without(*fields: str) -> dict[str, Any]:
     return {key: value for key, value in _CONDITIONS.items() if key not in fields}
 
 
-def test_a_run_that_stated_no_retrieval_was_dense_with_no_fusion_constant() -> None:
+def test_a_run_that_stated_no_retrieval_was_dense_with_no_lexical_cap() -> None:
     # Every run before 018's hybrid build searched the dense vector alone, and stated
-    # neither field; a dense search has no RRF constant, so none is filled in.
-    conditions = RunConditions.model_validate(_without("retrieval", "rrf_k"))
+    # neither field; a dense search has no lexical branch, so no cap is filled in.
+    conditions = RunConditions.model_validate(_without("retrieval", "lexical_cap"))
 
     assert conditions.retrieval is RetrievalMethod.DENSE
-    assert conditions.rrf_k is None
+    assert conditions.lexical_cap is None
 
 
-def test_a_hybrid_run_must_state_its_fusion_constant() -> None:
+def test_a_hybrid_run_must_state_its_lexical_cap() -> None:
     with pytest.raises(ValidationError):
-        RunConditions.model_validate(_without("rrf_k"))
+        RunConditions.model_validate(_without("lexical_cap"))
 
 
-def test_a_dense_run_stating_a_fusion_constant_is_refused() -> None:
-    # The two fields describe one thing; a dense run with a k is a record that
+def test_a_dense_run_stating_a_lexical_cap_is_refused() -> None:
+    # The two fields describe one thing; a dense run with a lexical cap is a record that
     # contradicts itself, and scoring it would have to guess which half to believe.
     with pytest.raises(ValidationError):
         RunConditions.model_validate({**_CONDITIONS, "retrieval": "dense"})

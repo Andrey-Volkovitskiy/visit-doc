@@ -195,11 +195,11 @@ class FaqVerdict(StrEnum):
 
     `ABSTAINED_SIMILARITY_FLOOR` is reached one way: the reranker was unavailable and
     no chunk of the shortlist had a cosine at or above the floor its fallback answers
-    through. The shortlist itself has no similarity floor - it is cut from the fused
-    order by the cap alone.
+    through. The shortlist itself has no similarity floor - it is cut by each branch's
+    rank alone.
 
     `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
-    because the answer rests on different evidence: up to five chunks that cleared a
+    because the answer rests on different evidence: shortlisted chunks that cleared a
     similarity floor and that no cross-encoder approved, rather than at most three it
     did.
 

@@ -1,24 +1,26 @@
-"""The fusion, gate and verdict contract.
+"""The merge, gate and verdict contract.
 
 The gates and the decision table come from `specs/008-*/contracts/pipeline-gates.md`;
-since 018 the first gate is a cap over the fused order, so its floor cases are gone.
+since 018 the first gate keeps the dense top and adds the lexical top, with no floor.
 These functions are pure, so the contract is testable in full without a client, a
 clock, or a network call.
 """
 
+from dataclasses import replace
+
 import pytest
 from chat.domain.schemas import FaqVerdict
 from chat.rag.pipeline import (
+    GateResult,
     PipelineOutcome,
     ScoredChunk,
     apply_rerank_gate,
     apply_shortlist_gate,
     decide,
-    fuse_rrf,
+    merge_branches,
 )
 
 _CAP = 5
-_K = 60
 _RERANK_FLOOR = 0.4
 _RERANK_CAP = 3
 
@@ -44,7 +46,7 @@ def _ids(chunks: list[ScoredChunk]) -> list[int]:
 
 
 # --------------------------------------------------------------------------
-# fuse_rrf
+# merge_branches
 # --------------------------------------------------------------------------
 
 
@@ -67,60 +69,55 @@ def _lexical(*indexes: int) -> list[ScoredChunk]:
     ]
 
 
-def test_a_chunk_both_branches_found_outranks_one_only_a_single_branch_found() -> None:
-    # Rank 2 in both beats rank 1 in one: agreement is what fusion rewards.
-    fused = fuse_rrf(_dense(0, 1), _lexical(2, 1), k=_K)
+def test_the_merged_pool_keeps_the_dense_order_whatever_the_lexical_branch_says() -> (
+    None
+):
+    # The lexical branch ranks them the other way round. It adds candidates; it never
+    # reorders what dense search found, which is what let it displace the right chunk.
+    merged = merge_branches(_dense(0, 1, 2), _lexical(2, 1, 0))
 
-    assert _ids(fused)[0] == 1
-
-
-def test_the_fused_score_is_the_sum_of_each_branch_reciprocal_rank() -> None:
-    fused = {c.chunk_index: c for c in fuse_rrf(_dense(0, 1), _lexical(1), k=_K)}
-
-    assert fused[1].fused_score == pytest.approx(1 / (_K + 2) + 1 / (_K + 1))
-    assert fused[0].fused_score == pytest.approx(1 / (_K + 1))
+    assert _ids(merged) == [0, 1, 2]
 
 
-def test_each_fused_chunk_keeps_its_rank_and_score_in_each_branch() -> None:
-    fused = {c.chunk_index: c for c in fuse_rrf(_dense(0, 1), _lexical(1, 2), k=_K)}
+def test_chunks_only_the_lexical_branch_found_follow_in_lexical_order() -> None:
+    merged = merge_branches(_dense(0), _lexical(4, 0, 3))
 
-    assert (fused[0].dense_rank, fused[0].lexical_rank) == (1, None)
-    assert (fused[1].dense_rank, fused[1].lexical_rank) == (2, 1)
-    assert (fused[2].dense_rank, fused[2].lexical_rank) == (None, 2)
-    assert fused[1].similarity_score == pytest.approx(0.8)
-    assert fused[1].lexical_score == 10.0
+    assert _ids(merged) == [0, 4, 3]
+
+
+def test_each_merged_chunk_keeps_its_rank_and_score_in_each_branch() -> None:
+    merged = {c.chunk_index: c for c in merge_branches(_dense(0, 1), _lexical(1, 2))}
+
+    assert (merged[0].dense_rank, merged[0].lexical_rank) == (1, None)
+    assert (merged[1].dense_rank, merged[1].lexical_rank) == (2, 1)
+    assert (merged[2].dense_rank, merged[2].lexical_rank) == (None, 2)
+    assert merged[1].similarity_score == pytest.approx(0.8)
+    assert merged[1].lexical_score == 10.0
+    assert merged[0].lexical_score is None
 
 
 def test_a_chunk_only_the_lexical_branch_found_has_no_cosine_score() -> None:
     # Not 0.0 and not its BM25 score: the dense branch never scored it, and a cosine
     # floor read against a made-up number would pass or fail it for no reason.
-    fused = fuse_rrf(_dense(0), _lexical(5), k=_K)
+    merged = merge_branches(_dense(0), _lexical(5))
 
-    lexical_only = next(c for c in fused if c.chunk_index == 5)
+    lexical_only = next(c for c in merged if c.chunk_index == 5)
     assert lexical_only.similarity_score is None
 
 
-def test_a_tie_between_branches_goes_to_the_dense_one() -> None:
-    # Rank 1 in one branch each scores the same, so the order needs a rule rather than
-    # whatever order a dict happened to keep. Dense first, then lexical, then identity.
-    fused = fuse_rrf(_dense(0), _lexical(1), k=_K)
+def test_merging_never_returns_a_chunk_twice() -> None:
+    merged = merge_branches(_dense(0, 1, 2), _lexical(2, 1, 0, 3))
 
-    assert _ids(fused) == [0, 1]
+    assert sorted(_ids(merged)) == [0, 1, 2, 3]
 
 
-def test_fusion_never_returns_a_chunk_twice() -> None:
-    fused = fuse_rrf(_dense(0, 1, 2), _lexical(2, 1, 0), k=_K)
-
-    assert sorted(_ids(fused)) == [0, 1, 2]
+def test_merging_two_empty_branches_is_empty() -> None:
+    assert merge_branches([], []) == []
 
 
-def test_fusion_of_two_empty_branches_is_empty() -> None:
-    assert fuse_rrf([], [], k=_K) == []
-
-
-def test_fusion_of_one_empty_branch_keeps_the_other_in_its_own_order() -> None:
-    assert _ids(fuse_rrf(_dense(3, 1, 2), [], k=_K)) == [3, 1, 2]
-    assert _ids(fuse_rrf([], _lexical(3, 1, 2), k=_K)) == [3, 1, 2]
+def test_merging_one_empty_branch_keeps_the_other_in_its_own_order() -> None:
+    assert _ids(merge_branches(_dense(3, 1, 2), [])) == [3, 1, 2]
+    assert _ids(merge_branches([], _lexical(3, 1, 2))) == [3, 1, 2]
 
 
 # --------------------------------------------------------------------------
@@ -128,42 +125,85 @@ def test_fusion_of_one_empty_branch_keeps_the_other_in_its_own_order() -> None:
 # --------------------------------------------------------------------------
 
 
-def test_the_shortlist_keeps_the_pool_in_its_fused_order() -> None:
-    # The pool arrives in fused order, which is not cosine order: re-sorting it by
-    # similarity would undo the fusion and drop a chunk only the lexical branch found.
-    pool = [_chunk(0.2, index=0), _chunk(None, index=1), _chunk(0.9, index=2)]
-
-    result = apply_shortlist_gate(pool, cap=_CAP)
-
-    assert _ids(result.kept) == [0, 1, 2]
+def _gate(
+    pool: list[ScoredChunk], dense_cap: int = _CAP, lexical_cap: int = 3
+) -> GateResult:
+    return apply_shortlist_gate(pool, dense_cap=dense_cap, lexical_cap=lexical_cap)
 
 
-def test_the_shortlist_cap_drops_the_tail_of_the_fused_order() -> None:
-    pool = [_chunk(0.9 - i / 100, index=i) for i in range(8)]
+def test_the_shortlist_keeps_the_dense_top_whatever_the_lexical_branch_returned() -> (
+    None
+):
+    # The guarantee the variant exists for: BM25 adds to the shortlist and never takes
+    # a dense hit's place, so nothing dense retrieval finds can be lost to it.
+    pool = merge_branches(_dense(*range(8)), _lexical(7, 6, 5, 4, 3, 2, 1, 0))
 
-    result = apply_shortlist_gate(pool, cap=3)
+    result = _gate(pool, lexical_cap=3)
 
-    assert _ids(result.kept) == [0, 1, 2]
-    assert _ids(result.dropped_by_cap) == [3, 4, 5, 6, 7]
-    assert result.dropped_by_floor == []
+    assert {0, 1, 2, 3, 4} <= set(_ids(result.kept))
+
+
+def test_the_shortlist_adds_the_lexical_top_dense_search_ranked_lower() -> None:
+    pool = merge_branches(_dense(*range(10)), _lexical(9, 8, 0, 7))
+
+    result = _gate(pool, lexical_cap=3)
+
+    assert _ids(result.kept) == [0, 1, 2, 3, 4, 8, 9]
+    assert _ids(result.dropped_by_cap) == [5, 6, 7]
+
+
+def test_the_shortlist_adds_a_lexical_top_chunk_dense_search_never_returned() -> None:
+    pool = merge_branches(_dense(0, 1), _lexical(7))
+
+    result = _gate(pool)
+
+    assert _ids(result.kept) == [0, 1, 7]
+
+
+def test_a_lexical_top_chunk_already_on_the_dense_top_takes_no_extra_place() -> None:
+    # The lexical top is counted by rank, not topped up from further down: when both
+    # branches agree, the shortlist is just the dense top.
+    pool = merge_branches(_dense(*range(8)), _lexical(0, 1, 2, 6))
+
+    result = _gate(pool, lexical_cap=3)
+
+    assert _ids(result.kept) == [0, 1, 2, 3, 4]
+
+
+def test_the_shortlist_keeps_the_pool_order() -> None:
+    pool = merge_branches(_dense(0, 1, 2), _lexical(9, 2))
+
+    assert _ids(_gate(pool, dense_cap=1, lexical_cap=2).kept) == [0, 2, 9]
 
 
 def test_the_shortlist_admits_a_chunk_with_no_cosine_score() -> None:
-    result = apply_shortlist_gate([_chunk(None)], cap=_CAP)
+    result = _gate(merge_branches([], _lexical(0)))
 
     assert len(result.kept) == 1
+    assert result.kept[0].similarity_score is None
+
+
+def test_the_shortlist_drops_nothing_by_a_floor() -> None:
+    # A low cosine on the dense top is still on the dense top; the rerank floor is what
+    # decides an abstention.
+    low = [replace(c, similarity_score=-0.5) for c in merge_branches(_dense(0), [])]
+
+    result = _gate(low)
+
+    assert len(result.kept) == 1
+    assert result.dropped_by_floor == []
 
 
 def test_the_shortlist_on_an_empty_pool_returns_empty() -> None:
-    result = apply_shortlist_gate([], cap=_CAP)
+    result = _gate([])
 
     assert result.kept == []
     assert result.dropped_by_cap == []
 
 
 def test_the_shortlist_never_raises_on_a_short_pool() -> None:
-    # A pool smaller than the cap is the ordinary case for a small corpus, not an error.
-    result = apply_shortlist_gate([_chunk(0.5)], cap=25)
+    # A pool smaller than the caps is the ordinary case for a small corpus.
+    result = _gate(merge_branches(_dense(0), []), dense_cap=25)
 
     assert len(result.kept) == 1
 
@@ -515,8 +555,8 @@ def test_an_answered_verdict_respects_the_rerank_cap() -> None:
 
 
 def test_an_unreranked_verdict_respects_the_similarity_cap() -> None:
-    pool = [_chunk(0.9, index=i) for i in range(8)]
-    gate = apply_shortlist_gate(pool, cap=_CAP)
+    pool = merge_branches([_chunk(0.9, index=i) for i in range(8)], [])
+    gate = _gate(pool)
 
     outcome = decide(
         pool, gate.kept, None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR

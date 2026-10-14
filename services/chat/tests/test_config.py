@@ -20,6 +20,7 @@ _NEW_FIELDS = (
     "SCHEDULING_HTTP_BASE_URL",
     "RETRIEVAL_POOL_SIZE",
     "SIMILARITY_CAP",
+    "LEXICAL_CAP",
     "RERANK_FLOOR",
     "RERANK_CAP",
     "RERANK_TIMEOUT_SECONDS",
@@ -103,6 +104,8 @@ def test_retrieval_pool_is_wider_than_the_similarity_cap(
     assert unconfigured.RETRIEVAL_POOL_SIZE == 25
     assert unconfigured.SIMILARITY_CAP == 5
     assert unconfigured.RETRIEVAL_POOL_SIZE > unconfigured.SIMILARITY_CAP
+    assert unconfigured.LEXICAL_CAP == 3
+    assert unconfigured.RETRIEVAL_POOL_SIZE > unconfigured.LEXICAL_CAP
 
 
 def test_pipeline_gate_defaults(unconfigured: Settings) -> None:
@@ -112,8 +115,8 @@ def test_pipeline_gate_defaults(unconfigured: Settings) -> None:
 
 
 def test_the_shortlist_has_no_similarity_floor_to_set() -> None:
-    # The shortlist is cut from a fused order, where a cosine bar would drop exactly
-    # the chunks only the lexical branch found. The rerank floor decides abstention,
+    # The shortlist is cut by branch rank, and a cosine bar would drop exactly the
+    # chunks only the lexical branch found. The rerank floor decides abstention,
     # and the one cosine floor left is the reranker-outage fallback's.
     assert "SIMILARITY_FLOOR" not in Settings.model_fields
 
@@ -150,6 +153,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
         RETRIEVAL_POOL_SIZE=40,
         UNRERANKED_SIMILARITY_FLOOR=0.4,
         SIMILARITY_CAP=8,
+        LEXICAL_CAP=4,
         RERANK_FLOOR=0.55,
         RERANK_CAP=2,
         RERANK_TIMEOUT_SECONDS=1.5,
@@ -159,6 +163,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
     assert overridden.RETRIEVAL_POOL_SIZE == 40
     assert overridden.UNRERANKED_SIMILARITY_FLOOR == 0.4
     assert overridden.SIMILARITY_CAP == 8
+    assert overridden.LEXICAL_CAP == 4
     assert overridden.RERANK_FLOOR == 0.55
     assert overridden.RERANK_CAP == 2
     assert overridden.RERANK_TIMEOUT_SECONDS == 1.5
@@ -170,6 +175,7 @@ def test_every_pipeline_setting_is_overridable_from_the_environment() -> None:
     [
         ("RETRIEVAL_POOL_SIZE", 0),
         ("SIMILARITY_CAP", 0),
+        ("LEXICAL_CAP", 0),
         ("RERANK_CAP", -1),
         ("RERANK_FLOOR", 1.5),
         ("UNRERANKED_SIMILARITY_FLOOR", 1.5),

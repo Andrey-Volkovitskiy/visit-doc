@@ -34,7 +34,7 @@ from chat.domain.schemas import (
     RequestSegment,
 )
 from chat.rag.embeddings import EMBEDDING_MODEL
-from chat.rag.pipeline import RRF_K, ScoredChunk
+from chat.rag.pipeline import ScoredChunk
 from chat.rag.reranking import rerank_chunks as real_rerank_chunks
 from chat.repositories.qdrant_repository import RetrievedChunk, SearchBranches
 from opentelemetry.sdk.trace import ReadableSpan
@@ -81,14 +81,25 @@ def _bursts(question: str = "what should I bring?") -> list[list[Message]]:
 
 
 def _chunk(
-    index: int, similarity: float | None = 0.9, rerank: float | None = None
+    index: int,
+    similarity: float | None = 0.9,
+    rerank: float | None = None,
+    *,
+    lexical_rank: int | None = None,
 ) -> ScoredChunk:
+    """A pool member at dense rank `index + 1`, or, with no cosine, only lexical.
+
+    A pool built in index order is then in the order `merge_branches` gives it.
+    """
+    dense = similarity is not None
     return ScoredChunk(
         faq_entry_id=index + 1,
         chunk_index=index,
         chunk_text=f"chunk text {index}",
         similarity_score=similarity,
         rerank_score=rerank,
+        dense_rank=index + 1 if dense else None,
+        lexical_rank=lexical_rank or (None if dense else index + 1),
     )
 
 
@@ -271,6 +282,17 @@ async def test_a_chunk_with_no_cosine_score_reaches_the_reranker() -> None:
 
     sent = rerank.await_args.args[2]
     assert [c.chunk_index for c in sent] == [0, 1]
+
+
+async def test_the_lexical_top_is_sent_to_the_reranker_beside_the_dense_top() -> None:
+    # Dense rank 9 but BM25's best: dense retrieval alone would never have shown it.
+    pool = [_chunk(i, similarity=0.9 - i / 100) for i in range(8)]
+    pool.append(_chunk(8, similarity=0.5, lexical_rank=1))
+
+    _, _, rerank, _ = await _run(pool=pool, reranked=[_chunk(0, rerank=0.9)])
+
+    sent = rerank.await_args.args[2]
+    assert [c.chunk_index for c in sent] == [0, 1, 2, 3, 4, 8]
 
 
 # --- FR-035: the retrieval query is still the trailing patient message --------------
@@ -512,6 +534,7 @@ async def test_considered_text_is_full_and_excluded_text_is_a_preview() -> None:
             chunk_index=i,
             chunk_text=long_text,
             similarity_score=0.9 - i / 100,
+            dense_rank=i + 1,
         )
         for i in range(8)
     ]
@@ -550,10 +573,11 @@ async def test_the_shortlist_gate_reports_its_cap_and_what_the_cap_dropped() -> 
 
     gate = events["faq.similarity_gate"]
     assert gate["cap"] == get_settings().SIMILARITY_CAP
+    assert gate["lexical_cap"] == get_settings().LEXICAL_CAP
     assert gate["pool_returned"] == 8
     assert [c["chunk_index"] for c in gate["kept"]] == [0, 1, 2, 3, 4]
     assert [c["chunk_index"] for c in gate["dropped_by_cap"]] == [5, 6, 7]
-    # There is no floor to report: a cosine bar means nothing against a fused order.
+    # There is no floor to report: the rerank floor decides an abstention.
     assert "floor" not in gate
     assert "dropped_by_floor" not in gate
 
@@ -712,6 +736,7 @@ async def test_a_wider_pool_costs_log_lines_not_log_volume() -> None:
             chunk_index=i,
             chunk_text=long_text,
             similarity_score=0.9 - i / 200,
+            dense_rank=i + 1,
         )
         for i in range(25)
     ]
@@ -725,10 +750,10 @@ async def test_a_wider_pool_costs_log_lines_not_log_volume() -> None:
     assert logged_chars < 25 * 1000 / 2
 
 
-async def test_considered_follows_the_fused_order_not_the_cosine_order() -> None:
-    """`considered` means "the shortlist gate kept it", which is the top of the pool as
-    fusion ordered it. Re-reading it as the top cosine scores would mark a chunk the
-    lexical branch promoted as excluded while its text was in the prompt.
+async def test_considered_follows_the_branch_ranks_not_the_cosine_order() -> None:
+    """`considered` means "the shortlist gate kept it", which is read from the gate's
+    survivors. Re-reading it as the top cosine scores would mark a chunk the lexical
+    branch added as excluded while its text was in the prompt.
     """
     pool = [_chunk(i, similarity=0.1 + i / 100) for i in range(7)]
 
@@ -739,9 +764,7 @@ async def test_considered_follows_the_fused_order_not_the_cosine_order() -> None
     assert considered == [0, 1, 2, 3, 4]
 
 
-async def test_each_candidate_logs_its_rank_in_each_branch_and_its_fused_score() -> (
-    None
-):
+async def test_each_candidate_logs_its_rank_and_score_in_each_branch() -> None:
     # Diagnostic only - the harness scores the logged order - but it is what says, for
     # a request that moved, which branch moved it.
     pool = [
@@ -753,7 +776,6 @@ async def test_each_candidate_logs_its_rank_in_each_branch_and_its_fused_score()
             lexical_score=6.5,
             dense_rank=2,
             lexical_rank=1,
-            fused_score=0.0325,
         ),
         ScoredChunk(
             faq_entry_id=2,
@@ -762,7 +784,6 @@ async def test_each_candidate_logs_its_rank_in_each_branch_and_its_fused_score()
             similarity_score=None,
             lexical_score=3.0,
             lexical_rank=2,
-            fused_score=0.0161,
         ),
     ]
 
@@ -771,7 +792,7 @@ async def test_each_candidate_logs_its_rank_in_each_branch_and_its_fused_score()
     both, lexical_only = events["faq.retrieval_completed"]["candidates"]
     assert (both["dense_rank"], both["lexical_rank"]) == (2, 1)
     assert (both["similarity_score"], both["lexical_score"]) == (0.8, 6.5)
-    assert both["fused_score"] == 0.0325
+    assert "fused_score" not in both
     assert lexical_only["dense_rank"] is None
     assert lexical_only["similarity_score"] is None
     assert lexical_only["lexical_rank"] == 2
@@ -1904,7 +1925,6 @@ async def test_the_search_step_is_a_retriever_whose_output_is_the_pool(
                 "chunk_index": c.chunk_index,
                 "dense_rank": rank,
                 "lexical_rank": None,
-                "fused_score": pytest.approx(1 / (RRF_K + rank)),
             }
             for rank, c in enumerate(_TRACED_POOLS["a?"], start=1)
         ],

@@ -275,17 +275,21 @@ class CorpusRecord(BaseModel):
 
 
 class RetrievalMethod(StrEnum):
-    """How the chat service retrieved: the dense vector alone, or fused with BM25."""
+    """How the chat service retrieved: the dense vector alone, or with BM25's top added.
+
+    `DENSE_PLUS_BM25` shortlists the dense top and adds BM25's top beside it, never in
+    place of a dense hit.
+    """
 
     DENSE = "dense"
-    HYBRID_RRF = "hybrid_rrf"
+    DENSE_PLUS_BM25 = "dense_plus_bm25"
 
 
 class RunConditions(BaseModel):
     """The settings the chat service stated in its `service.configured` event.
 
-    `rrf_k` is the Reciprocal Rank Fusion constant, None exactly when `retrieval` is
-    dense - a single branch has nothing to fuse.
+    `lexical_cap` is how many of BM25's top hits the shortlist adds, None exactly when
+    `retrieval` is dense - a run with no lexical branch has nothing to add from.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -297,7 +301,7 @@ class RunConditions(BaseModel):
     rerank_model: str
     retrieval_pool_size: int
     retrieval: RetrievalMethod
-    rrf_k: int | None
+    lexical_cap: int | None
     similarity_floor: float
     similarity_cap: int
     unreranked_similarity_floor: float
@@ -345,15 +349,19 @@ class RunConditions(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _retrieval_was_dense_before_it_was_stated(cls, data: Any) -> Any:
-        """Fill `retrieval` as dense, with no `rrf_k`, when neither was stated.
+        """Fill `retrieval` as dense, with no `lexical_cap`, when neither was stated.
 
         A service that stated no retrieval predates hybrid search, and until it existed
         every search was the dense vector alone - so that is what the run was measured
         under. A run stating one of the pair is left as stated, so a hybrid run missing
-        its constant is refused rather than read as dense.
+        its lexical cap is refused rather than read as dense.
         """
-        if isinstance(data, dict) and "retrieval" not in data and "rrf_k" not in data:
-            return {**data, "retrieval": RetrievalMethod.DENSE, "rrf_k": None}
+        if (
+            isinstance(data, dict)
+            and "retrieval" not in data
+            and "lexical_cap" not in data
+        ):
+            return {**data, "retrieval": RetrievalMethod.DENSE, "lexical_cap": None}
         return data
 
     @model_validator(mode="before")
@@ -371,12 +379,13 @@ class RunConditions(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _only_a_fused_retrieval_has_a_fusion_constant(self) -> "RunConditions":
-        """Refuse an `rrf_k` beside dense retrieval, or none beside fused retrieval."""
-        if (self.rrf_k is None) != (self.retrieval is RetrievalMethod.DENSE):
+    def _only_a_lexical_branch_has_a_lexical_cap(self) -> "RunConditions":
+        """Refuse a `lexical_cap` beside dense retrieval, or none beside hybrid."""
+        if (self.lexical_cap is None) != (self.retrieval is RetrievalMethod.DENSE):
             raise ValueError(
-                f"retrieval {self.retrieval.value!r} with rrf_k {self.rrf_k!r}: "
-                "a fusion constant belongs to fused retrieval and only to it"
+                f"retrieval {self.retrieval.value!r} with lexical_cap "
+                f"{self.lexical_cap!r}: a lexical cap belongs to a lexical branch "
+                "and only to it"
             )
         return self
 

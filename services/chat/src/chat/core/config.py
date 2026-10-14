@@ -66,21 +66,27 @@ class Settings(BaseSettings):
     # wider than the cap below: the cap can only be tuned against candidates something
     # recorded, and one that discards only what it never fetched cannot be argued up
     # or down. The extra candidates are logged and otherwise ignored - they reach no
-    # gate, no prompt and no reranker. Unlike before fusion, widening this can change
-    # the shortlist: a chunk's fused rank depends on how deep each branch reached.
+    # gate, no prompt and no reranker: the shortlist is cut by each branch's own rank,
+    # which no deeper fetch changes.
     #
     # Bounded, as are the gate numbers below it. An out-of-range value here does
     # not fail loudly - a cap of zero or less silently empties a gate, and a floor above
     # every score silently abstains on every turn - so the range is enforced at startup
     # rather than discovered from a week of abstentions.
     RETRIEVAL_POOL_SIZE: int = Field(default=25, gt=0)
-    # How many of the fused pool's best candidates the reranker is handed. The cap is
-    # the shortlist's only cut: there is no similarity floor, because the pool is in
-    # fused order and a cosine bar would drop exactly the chunks only the BM25 branch
-    # found. Even before fusion a 0.25 floor dropped chunks dense search had ranked
-    # first - "PR-4", "braces", "HC-9" (specs/018-hybrid-retrieval/evaluation/) - so
-    # the rerank floor is what decides an abstention.
+    # How many of the dense branch's best candidates the reranker is handed. With
+    # `LEXICAL_CAP` it is the shortlist's only cut: there is no similarity floor, since
+    # a cosine bar would drop exactly the chunks only the BM25 branch found, and even
+    # with dense search alone a 0.25 floor dropped chunks it had ranked first - "PR-4",
+    # "braces", "HC-9" (specs/018-hybrid-retrieval/evaluation/) - so the rerank floor
+    # is what decides an abstention.
     SIMILARITY_CAP: int = Field(default=5, gt=0)
+    # How many of the BM25 branch's best candidates the reranker is handed beside the
+    # dense ones. They are added, never put in place of a dense hit: fusing the two
+    # rankings instead pushed the right chunk off the shortlist on requests dense
+    # retrieval had answered (018's offline probe). One already on the dense top takes
+    # no extra place, so a turn reranks between 5 and 8 chunks.
+    LEXICAL_CAP: int = Field(default=3, gt=0)
     # The floor a turn answers through when the reranker is unavailable, and only then.
     # Without a rerank score nothing has judged the shortlist, so the fallback answers
     # from the chunks at or above this and abstains when none is - never from the

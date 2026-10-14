@@ -100,7 +100,7 @@ async def _top_match(session_id: str, query: str) -> int:
     """Return the entry retrieval reaches first for `query`, filtered as production is.
 
     The live revisions come from Postgres and the search carries them, so a chunk no
-    row vouches for cannot be what this returns. Both branches are searched and fused
+    row vouches for cannot be what this returns. Both branches are searched and merged
     by production's own `search_faq`, with only the embedding faked: a lexical branch
     is as able to reach a dead revision's words as the dense one is its vector.
     """

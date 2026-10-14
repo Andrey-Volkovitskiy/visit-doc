@@ -38,7 +38,6 @@ from chat.domain.schemas import MAX_SEGMENTS
 from chat.observability.client import build_tracer
 from chat.observability.log_bridge import install_log_bridge, uninstall_log_bridge
 from chat.rag.embeddings import EMBEDDING_MODEL
-from chat.rag.pipeline import RRF_K
 from chat.rag.retriever import RETRIEVAL_METHOD
 from chat.repositories.qdrant_repository import (
     CollectionShapeMismatchError,
@@ -67,7 +66,7 @@ def _log_configuration(settings: Settings) -> None:
         rerank_model=settings.RERANK_MODEL,
         retrieval_pool_size=settings.RETRIEVAL_POOL_SIZE,
         retrieval=RETRIEVAL_METHOD,
-        rrf_k=RRF_K,
+        lexical_cap=settings.LEXICAL_CAP,
         similarity_cap=settings.SIMILARITY_CAP,
         unreranked_similarity_floor=settings.UNRERANKED_SIMILARITY_FLOOR,
         rerank_floor=settings.RERANK_FLOOR,

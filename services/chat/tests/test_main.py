@@ -11,7 +11,6 @@ from chat.domain.schemas import MAX_SEGMENTS
 from chat.main import app
 from chat.observability.client import Tracer
 from chat.rag.embeddings import EMBEDDING_MODEL
-from chat.rag.pipeline import RRF_K
 from chat.rag.retriever import RETRIEVAL_METHOD
 from chat.repositories.qdrant_repository import COLLECTION_NAME
 from fastapi import FastAPI
@@ -108,7 +107,7 @@ def _expected_conditions(settings: Settings) -> dict[str, object]:
         "rerank_model": settings.RERANK_MODEL,
         "retrieval_pool_size": settings.RETRIEVAL_POOL_SIZE,
         "retrieval": RETRIEVAL_METHOD,
-        "rrf_k": RRF_K,
+        "lexical_cap": settings.LEXICAL_CAP,
         "similarity_cap": settings.SIMILARITY_CAP,
         "unreranked_similarity_floor": settings.UNRERANKED_SIMILARITY_FLOOR,
         "rerank_floor": settings.RERANK_FLOOR,

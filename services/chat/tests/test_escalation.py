@@ -897,6 +897,7 @@ def _chunk(index: int, *, rerank: float | None = None) -> ScoredChunk:
         chunk_text=f"chunk {index}",
         similarity_score=0.9,
         rerank_score=rerank,
+        dense_rank=index + 1,
     )
 
 

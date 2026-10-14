@@ -595,7 +595,9 @@ async def _run_pipeline(
     )
     corpus_empty = not live_revisions
 
-    similarity = apply_shortlist_gate(pool, cap=settings.SIMILARITY_CAP)
+    similarity = apply_shortlist_gate(
+        pool, dense_cap=settings.SIMILARITY_CAP, lexical_cap=settings.LEXICAL_CAP
+    )
     # Neither event is raised when the corpus is empty: no search was issued and no gate
     # decided anything, so "retrieval completed" and "the gate ran" would both be false.
     # `turn.retrieval_skipped_empty_corpus` is what records that case, and conflating it
@@ -613,6 +615,7 @@ async def _run_pipeline(
                 "faq.similarity_gate",
                 {
                     "cap": settings.SIMILARITY_CAP,
+                    "lexical_cap": settings.LEXICAL_CAP,
                     # `pool_returned`, not `pool_size`: the gate saw what the search
                     # actually returned, and `pool_size` already names the configured
                     # ceiling on the retrieval event beside this one.
@@ -734,12 +737,11 @@ def _log_retrieval(
                 "entry_id": chunk.faq_entry_id,
                 "chunk_index": chunk.chunk_index,
                 # Each branch's rank and score, None where that branch did not return
-                # the chunk; the candidates are logged in fused order.
+                # the chunk; the candidates are logged in pool order.
                 "similarity_score": chunk.similarity_score,
                 "dense_rank": chunk.dense_rank,
                 "lexical_score": chunk.lexical_score,
                 "lexical_rank": chunk.lexical_rank,
-                "fused_score": chunk.fused_score,
                 "considered": considered,
                 "chunk_text": text,
                 "text_truncated": not considered

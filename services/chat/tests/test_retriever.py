@@ -1,7 +1,7 @@
-"""`search_faq` returns the fused observation pool whole, for the gates to narrow.
+"""`search_faq` returns the merged observation pool whole, for the gates to narrow.
 
-It runs both branches - dense and BM25 - fuses them, and hands back everything they
-returned, so the shortlist cap discards only candidates something recorded.
+It runs both branches - dense and BM25 - merges them, and hands back everything they
+returned, so the shortlist gate discards only candidates something recorded.
 """
 
 from unittest.mock import AsyncMock, patch
@@ -70,14 +70,14 @@ async def test_a_chunk_only_the_lexical_branch_found_reaches_the_pool() -> None:
     assert lexical_only.lexical_rank == 1
 
 
-async def test_the_pool_is_returned_in_fused_order() -> None:
-    # Chunk 1 is second in both branches, chunk 0 and chunk 2 first in one each.
+async def test_the_pool_is_the_dense_order_then_what_only_bm25_found() -> None:
     dense = [_retrieved(0.9, 0), _retrieved(0.8, 1)]
     lexical = [_retrieved(9.0, 2), _retrieved(8.0, 1)]
 
     chunks, _ = await _run(dense, lexical)
 
-    assert [c.chunk_index for c in chunks] == [1, 0, 2]
+    assert [c.chunk_index for c in chunks] == [0, 1, 2]
+    assert chunks[1].lexical_rank == 2
 
 
 async def test_retrieved_chunks_are_lifted_into_scored_chunks() -> None:
