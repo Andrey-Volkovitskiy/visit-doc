@@ -1,4 +1,4 @@
-"""FAQ retrieval: embed a query and fetch the turn's observation pool from Qdrant."""
+"""FAQ retrieval: embed a query, search both branches, and fuse them into one pool."""
 
 from qdrant_client import AsyncQdrantClient
 from voyageai.client_async import AsyncClient
@@ -8,8 +8,12 @@ from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
 from chat.observability import ObservationType, step
 from chat.rag.embeddings import EMBEDDING_MODEL, embed_texts
-from chat.rag.pipeline import ScoredChunk
-from chat.repositories.qdrant_repository import search
+from chat.rag.pipeline import RRF_K, ScoredChunk, fuse_rrf
+from chat.repositories.qdrant_repository import RetrievedChunk, search
+
+# What this build's retrieval is, as `service.configured` states it: dense and BM25
+# branches fused by Reciprocal Rank Fusion. There is no other path to choose.
+RETRIEVAL_METHOD = "hybrid_rrf"
 
 
 async def search_faq(
@@ -19,7 +23,7 @@ async def search_faq(
     session_id: str,
     live_revisions: list[str],
 ) -> list[ScoredChunk]:
-    """Embed `query` and return the turn's whole observation pool, in score order.
+    """Embed `query`, search both branches, and return the fused observation pool.
 
     Args:
         session_id: The session whose corpus this search may reach. Passed beside the
@@ -29,10 +33,11 @@ async def search_faq(
             means the session has no corpus, which is the ordinary starting state of
             every session - not a failed read, which raises instead.
 
-    Returns: every candidate the search returned, unfiltered, each carrying its
-        similarity score and no rerank score yet. Nothing is dropped here: the
-        similarity gate drops what it drops, after recording it, so a threshold can be
-        argued about against candidates that were actually seen.
+    Returns: every candidate either branch returned, once each, best fused rank first,
+        each carrying its rank and score in each branch and no rerank score yet.
+        Nothing is dropped here: the shortlist gate drops what it drops, after
+        recording it, so the cap can be argued about against candidates that were
+        actually seen.
 
     Raises: TurnPipelineError wrapping any failure in embedding or retrieval.
 
@@ -41,7 +46,8 @@ async def search_faq(
     empty list already said.
 
     The embedding and the search are each a step of the request's trace; the search's
-    output is the pool exactly as it came back.
+    output is the fused pool, with each candidate's rank in each branch. Each branch
+    returns up to `RETRIEVAL_POOL_SIZE`, so the fused pool holds at most twice that.
     """
     logger = get_logger()
     if not live_revisions:
@@ -68,31 +74,53 @@ async def search_faq(
         input={"query": query, "pool_size": limit},
     ) as searched:
         try:
-            chunks = await search(
-                qdrant_client, session_id, vectors[0], live_revisions, limit=limit
+            branches = await search(
+                qdrant_client,
+                session_id,
+                vectors[0],
+                query,
+                live_revisions,
+                limit=limit,
             )
         except Exception as exc:
             raise TurnPipelineError("retrieval", exc) from exc
+        pool = fuse_rrf(
+            [_scored(c, dense=True) for c in branches.dense],
+            [_scored(c, dense=False) for c in branches.lexical],
+            k=RRF_K,
+        )
         searched.set_output(
             {
-                "pool_returned": len(chunks),
+                "dense_returned": len(branches.dense),
+                "lexical_returned": len(branches.lexical),
+                "pool_returned": len(pool),
                 "candidates": [
                     {
                         "entry_id": chunk.faq_entry_id,
                         "chunk_index": chunk.chunk_index,
-                        "similarity_score": chunk.score,
+                        "dense_rank": chunk.dense_rank,
+                        "lexical_rank": chunk.lexical_rank,
+                        "fused_score": chunk.fused_score,
                     }
-                    for chunk in chunks
+                    for chunk in pool
                 ],
             }
         )
 
-    return [
-        ScoredChunk(
-            faq_entry_id=chunk.faq_entry_id,
-            chunk_index=chunk.chunk_index,
-            chunk_text=chunk.chunk_text,
-            similarity_score=chunk.score,
-        )
-        for chunk in chunks
-    ]
+    return pool
+
+
+def _scored(chunk: RetrievedChunk, *, dense: bool) -> ScoredChunk:
+    """Lift one branch's hit into the pipeline's type, its score in that branch's field.
+
+    Args:
+        dense: whether the dense branch returned it, which makes its score a cosine;
+            otherwise it is a BM25 score.
+    """
+    return ScoredChunk(
+        faq_entry_id=chunk.faq_entry_id,
+        chunk_index=chunk.chunk_index,
+        chunk_text=chunk.chunk_text,
+        similarity_score=chunk.score if dense else None,
+        lexical_score=None if dense else chunk.score,
+    )

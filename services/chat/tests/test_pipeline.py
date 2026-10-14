@@ -1,9 +1,9 @@
-"""The gate and verdict contract, from `specs/008-*/contracts/pipeline-gates.md`.
+"""The fusion, gate and verdict contract.
 
-Every case here is derived from that document's tables, not from the implementation:
-the floor/cap boundaries, the five rows of the decision table, and one test per stated
-invariant. These functions are pure, so the contract is testable in full without a
-client, a clock, or a network call.
+The gates and the decision table come from `specs/008-*/contracts/pipeline-gates.md`;
+since 018 the first gate is a cap over the fused order, so its floor cases are gone.
+These functions are pure, so the contract is testable in full without a client, a
+clock, or a network call.
 """
 
 import pytest
@@ -12,18 +12,23 @@ from chat.rag.pipeline import (
     PipelineOutcome,
     ScoredChunk,
     apply_rerank_gate,
-    apply_similarity_gate,
+    apply_shortlist_gate,
     decide,
+    fuse_rrf,
 )
 
-_FLOOR = 0.3
 _CAP = 5
+_K = 60
 _RERANK_FLOOR = 0.4
 _RERANK_CAP = 3
 
 
 def _chunk(
-    similarity: float, *, index: int = 0, rerank: float | None = None, text: str = "t"
+    similarity: float | None,
+    *,
+    index: int = 0,
+    rerank: float | None = None,
+    text: str = "t",
 ) -> ScoredChunk:
     return ScoredChunk(
         faq_entry_id=1,
@@ -39,74 +44,126 @@ def _ids(chunks: list[ScoredChunk]) -> list[int]:
 
 
 # --------------------------------------------------------------------------
-# apply_similarity_gate
+# fuse_rrf
 # --------------------------------------------------------------------------
 
 
-def test_similarity_floor_is_inclusive_at_the_boundary() -> None:
-    result = apply_similarity_gate([_chunk(_FLOOR)], floor=_FLOOR, cap=_CAP)
-
-    assert len(result.kept) == 1
-
-
-def test_similarity_floor_rejects_just_below_the_boundary() -> None:
-    result = apply_similarity_gate([_chunk(_FLOOR - 0.001)], floor=_FLOOR, cap=_CAP)
-
-    assert result.kept == []
-    assert len(result.dropped_by_floor) == 1
+def _dense(*indexes: int) -> list[ScoredChunk]:
+    """The dense branch's hits, best first, each carrying a cosine score."""
+    return [_chunk(0.9 - rank / 10, index=i) for rank, i in enumerate(indexes)]
 
 
-def test_similarity_floor_applies_per_chunk_not_to_the_best_one() -> None:
-    # The defect this replaces: one chunk at 0.9 used to admit four weak ones with it.
-    pool = [_chunk(0.9, index=0), _chunk(0.1, index=1), _chunk(0.2, index=2)]
+def _lexical(*indexes: int) -> list[ScoredChunk]:
+    """The lexical branch's hits, best first, carrying a BM25 score and no cosine."""
+    return [
+        ScoredChunk(
+            faq_entry_id=1,
+            chunk_index=i,
+            chunk_text="t",
+            similarity_score=None,
+            lexical_score=10.0 - rank,
+        )
+        for rank, i in enumerate(indexes)
+    ]
 
-    result = apply_similarity_gate(pool, floor=_FLOOR, cap=_CAP)
 
-    assert _ids(result.kept) == [0]
-    assert sorted(_ids(result.dropped_by_floor)) == [1, 2]
+def test_a_chunk_both_branches_found_outranks_one_only_a_single_branch_found() -> None:
+    # Rank 2 in both beats rank 1 in one: agreement is what fusion rewards.
+    fused = fuse_rrf(_dense(0, 1), _lexical(2, 1), k=_K)
+
+    assert _ids(fused)[0] == 1
 
 
-def test_similarity_cap_is_applied_after_the_floor() -> None:
+def test_the_fused_score_is_the_sum_of_each_branch_reciprocal_rank() -> None:
+    fused = {c.chunk_index: c for c in fuse_rrf(_dense(0, 1), _lexical(1), k=_K)}
+
+    assert fused[1].fused_score == pytest.approx(1 / (_K + 2) + 1 / (_K + 1))
+    assert fused[0].fused_score == pytest.approx(1 / (_K + 1))
+
+
+def test_each_fused_chunk_keeps_its_rank_and_score_in_each_branch() -> None:
+    fused = {c.chunk_index: c for c in fuse_rrf(_dense(0, 1), _lexical(1, 2), k=_K)}
+
+    assert (fused[0].dense_rank, fused[0].lexical_rank) == (1, None)
+    assert (fused[1].dense_rank, fused[1].lexical_rank) == (2, 1)
+    assert (fused[2].dense_rank, fused[2].lexical_rank) == (None, 2)
+    assert fused[1].similarity_score == pytest.approx(0.8)
+    assert fused[1].lexical_score == 10.0
+
+
+def test_a_chunk_only_the_lexical_branch_found_has_no_cosine_score() -> None:
+    # Not 0.0 and not its BM25 score: the dense branch never scored it, and a cosine
+    # floor read against a made-up number would pass or fail it for no reason.
+    fused = fuse_rrf(_dense(0), _lexical(5), k=_K)
+
+    lexical_only = next(c for c in fused if c.chunk_index == 5)
+    assert lexical_only.similarity_score is None
+
+
+def test_a_tie_between_branches_goes_to_the_dense_one() -> None:
+    # Rank 1 in one branch each scores the same, so the order needs a rule rather than
+    # whatever order a dict happened to keep. Dense first, then lexical, then identity.
+    fused = fuse_rrf(_dense(0), _lexical(1), k=_K)
+
+    assert _ids(fused) == [0, 1]
+
+
+def test_fusion_never_returns_a_chunk_twice() -> None:
+    fused = fuse_rrf(_dense(0, 1, 2), _lexical(2, 1, 0), k=_K)
+
+    assert sorted(_ids(fused)) == [0, 1, 2]
+
+
+def test_fusion_of_two_empty_branches_is_empty() -> None:
+    assert fuse_rrf([], [], k=_K) == []
+
+
+def test_fusion_of_one_empty_branch_keeps_the_other_in_its_own_order() -> None:
+    assert _ids(fuse_rrf(_dense(3, 1, 2), [], k=_K)) == [3, 1, 2]
+    assert _ids(fuse_rrf([], _lexical(3, 1, 2), k=_K)) == [3, 1, 2]
+
+
+# --------------------------------------------------------------------------
+# apply_shortlist_gate
+# --------------------------------------------------------------------------
+
+
+def test_the_shortlist_keeps_the_pool_in_its_fused_order() -> None:
+    # The pool arrives in fused order, which is not cosine order: re-sorting it by
+    # similarity would undo the fusion and drop a chunk only the lexical branch found.
+    pool = [_chunk(0.2, index=0), _chunk(None, index=1), _chunk(0.9, index=2)]
+
+    result = apply_shortlist_gate(pool, cap=_CAP)
+
+    assert _ids(result.kept) == [0, 1, 2]
+
+
+def test_the_shortlist_cap_drops_the_tail_of_the_fused_order() -> None:
     pool = [_chunk(0.9 - i / 100, index=i) for i in range(8)]
 
-    result = apply_similarity_gate(pool, floor=_FLOOR, cap=3)
+    result = apply_shortlist_gate(pool, cap=3)
 
     assert _ids(result.kept) == [0, 1, 2]
     assert _ids(result.dropped_by_cap) == [3, 4, 5, 6, 7]
     assert result.dropped_by_floor == []
 
 
-def test_dropped_by_floor_and_dropped_by_cap_are_not_conflated() -> None:
-    # One says the bar is too high, the other says it is too low. A reader tuning a
-    # threshold looks at exactly one of them.
-    pool = [_chunk(0.9, index=0), _chunk(0.8, index=1), _chunk(0.05, index=2)]
+def test_the_shortlist_admits_a_chunk_with_no_cosine_score() -> None:
+    result = apply_shortlist_gate([_chunk(None)], cap=_CAP)
 
-    result = apply_similarity_gate(pool, floor=_FLOOR, cap=1)
-
-    assert _ids(result.kept) == [0]
-    assert _ids(result.dropped_by_cap) == [1]
-    assert _ids(result.dropped_by_floor) == [2]
+    assert len(result.kept) == 1
 
 
-def test_similarity_gate_returns_descending_score_order() -> None:
-    pool = [_chunk(0.4, index=0), _chunk(0.9, index=1), _chunk(0.6, index=2)]
-
-    result = apply_similarity_gate(pool, floor=_FLOOR, cap=_CAP)
-
-    assert _ids(result.kept) == [1, 2, 0]
-
-
-def test_similarity_gate_on_an_empty_pool_returns_empty() -> None:
-    result = apply_similarity_gate([], floor=_FLOOR, cap=_CAP)
+def test_the_shortlist_on_an_empty_pool_returns_empty() -> None:
+    result = apply_shortlist_gate([], cap=_CAP)
 
     assert result.kept == []
-    assert result.dropped_by_floor == []
     assert result.dropped_by_cap == []
 
 
-def test_similarity_gate_never_raises_on_a_short_pool() -> None:
+def test_the_shortlist_never_raises_on_a_short_pool() -> None:
     # A pool smaller than the cap is the ordinary case for a small corpus, not an error.
-    result = apply_similarity_gate([_chunk(0.5)], floor=_FLOOR, cap=25)
+    result = apply_shortlist_gate([_chunk(0.5)], cap=25)
 
     assert len(result.kept) == 1
 
@@ -242,6 +299,39 @@ def test_row_4_an_unreranked_answer_keeps_only_chunks_above_the_fallback_floor()
     assert outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED
     assert outcome.survivors == [above]
     assert outcome.considered == [above, below]
+
+
+def test_row_4_an_unreranked_answer_never_stands_on_a_chunk_with_no_cosine() -> None:
+    # A chunk only the lexical branch found has no cosine score, and a missing score is
+    # not a passing one: with the reranker down nothing else has judged it.
+    scored = _chunk(_FALLBACK_FLOOR + 0.1, index=0)
+    lexical_only = _chunk(None, index=1)
+
+    outcome = decide(
+        [lexical_only, scored],
+        [lexical_only, scored],
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
+
+    assert outcome.verdict is FaqVerdict.ANSWERED_UNRERANKED
+    assert outcome.survivors == [scored]
+
+
+def test_row_4_an_unreranked_shortlist_of_lexical_only_chunks_abstains() -> None:
+    considered = [_chunk(None, index=0), _chunk(None, index=1)]
+
+    outcome = decide(
+        considered,
+        considered,
+        None,
+        corpus_empty=False,
+        unreranked_floor=_FALLBACK_FLOOR,
+    )
+
+    assert outcome.verdict is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
+    assert outcome.survivors == []
 
 
 def test_row_4_an_unreranked_shortlist_wholly_below_the_fallback_floor_abstains() -> (
@@ -426,7 +516,7 @@ def test_an_answered_verdict_respects_the_rerank_cap() -> None:
 
 def test_an_unreranked_verdict_respects_the_similarity_cap() -> None:
     pool = [_chunk(0.9, index=i) for i in range(8)]
-    gate = apply_similarity_gate(pool, floor=_FLOOR, cap=_CAP)
+    gate = apply_shortlist_gate(pool, cap=_CAP)
 
     outcome = decide(
         pool, gate.kept, None, corpus_empty=False, unreranked_floor=_FALLBACK_FLOOR

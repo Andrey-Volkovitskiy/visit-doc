@@ -11,6 +11,7 @@ from chat.rag.indexing import (
     sweep_entry,
 )
 from chat.rag.retriever import search_faq
+from chat.repositories.qdrant_repository import SearchBranches
 from structlog.testing import capture_logs
 
 
@@ -163,9 +164,13 @@ async def test_search_faq_with_live_revisions_passes_them_to_the_search() -> Non
     revisions = ["01REVISIONAAA", "01REVISIONBBB"]
     with (
         patch("chat.rag.retriever.embed_texts", return_value=[[0.1]]),
-        patch("chat.rag.retriever.search", return_value=[]) as search_points,
+        patch(
+            "chat.rag.retriever.search",
+            return_value=SearchBranches(dense=[], lexical=[]),
+        ) as search_points,
     ):
         await search_faq(MagicMock(), MagicMock(), "anything", "01SESSION", revisions)
 
     assert search_points.call_args.args[1] == "01SESSION"
-    assert search_points.call_args.args[3] == revisions
+    assert search_points.call_args.args[3] == "anything"
+    assert search_points.call_args.args[4] == revisions

@@ -38,8 +38,10 @@ from chat.domain.schemas import MAX_SEGMENTS
 from chat.observability.client import build_tracer
 from chat.observability.log_bridge import install_log_bridge, uninstall_log_bridge
 from chat.rag.embeddings import EMBEDDING_MODEL
+from chat.rag.pipeline import RRF_K
+from chat.rag.retriever import RETRIEVAL_METHOD
 from chat.repositories.qdrant_repository import (
-    CollectionVectorSizeMismatchError,
+    CollectionShapeMismatchError,
     create_client,
     ensure_collection,
 )
@@ -64,7 +66,8 @@ def _log_configuration(settings: Settings) -> None:
         embedding_model=EMBEDDING_MODEL,
         rerank_model=settings.RERANK_MODEL,
         retrieval_pool_size=settings.RETRIEVAL_POOL_SIZE,
-        similarity_floor=settings.SIMILARITY_FLOOR,
+        retrieval=RETRIEVAL_METHOD,
+        rrf_k=RRF_K,
         similarity_cap=settings.SIMILARITY_CAP,
         unreranked_similarity_floor=settings.UNRERANKED_SIMILARITY_FLOOR,
         rerank_floor=settings.RERANK_FLOOR,
@@ -82,8 +85,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     instead of paying fresh HTTP client setup cost per request.
 
     Raises:
-        CollectionVectorSizeMismatchError: if Qdrant already holds a collection whose
-            vectors are a different width than this build embeds.
+        CollectionShapeMismatchError: if Qdrant already holds a collection that
+            cannot hold the vectors this build writes.
         Exception: propagated from `ensure_collection` if the Qdrant collection can't be
             created or verified during startup.
 
@@ -120,7 +123,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         stack.push_async_callback(qdrant_client.close)
         try:
             await ensure_collection(qdrant_client)
-        except CollectionVectorSizeMismatchError as exc:
+        except CollectionShapeMismatchError as exc:
             # Not an outage, and filing it as one sends an operator to a datastore that
             # is up and answering. Qdrant replied; what it said is that the collection
             # it already holds cannot store this build's vectors, which is fixed by

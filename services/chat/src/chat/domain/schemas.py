@@ -177,8 +177,8 @@ class FaqVerdict(StrEnum):
     """What the FAQ half of a turn did, and for an abstention, where it stopped.
 
     Seven values, each one situation. An abstention names where it stopped, because
-    they call for different fixes - add entries, re-index the corpus, rewrite the
-    entry or lower the similarity floor, lower the rerank floor, or write an entry
+    they call for different fixes - add entries, re-index the corpus, restore the
+    reranker or lower its fallback's floor, lower the rerank floor, or write an entry
     that covers what the nearest one does not.
 
     `ABSTAINED_GENERATION` is the only one decided after the gates rather than by
@@ -193,10 +193,10 @@ class FaqVerdict(StrEnum):
     live revisions and the search still matched no chunk of them, which says the index
     is behind the rows, not that the bar is too high. Lowering the floor cannot fix it.
 
-    `ABSTAINED_SIMILARITY_FLOOR` is reached in two ways: no candidate cleared a
-    configured shortlist floor, or the reranker was unavailable and none of the
-    shortlist cleared the floor its fallback answers through. With the shortlist floor
-    at its default of -1.0 only the second happens.
+    `ABSTAINED_SIMILARITY_FLOOR` is reached one way: the reranker was unavailable and
+    no chunk of the shortlist had a cosine at or above the floor its fallback answers
+    through. The shortlist itself has no similarity floor - it is cut from the fused
+    order by the cap alone.
 
     `ANSWERED_UNRERANKED` is a separate value rather than a flag beside `ANSWERED`
     because the answer rests on different evidence: up to five chunks that cleared a

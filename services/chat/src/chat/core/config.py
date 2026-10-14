@@ -62,26 +62,24 @@ class Settings(BaseSettings):
     # How many trailing turns of history every model call is given. One number, so the
     # specialists cannot disagree about what "recent" means within a single turn.
     CONTEXT_TURNS: int = 5
-    # How many candidates the vector search fetches. Deliberately wider than the cap
-    # below: the cap can only be tuned against candidates something recorded, and one
-    # that discards only what it never fetched cannot be argued up or down. The extra
-    # candidates are logged and otherwise ignored - they reach no gate, no prompt and
-    # no reranker, so widening this changes what a turn records and never what it says.
+    # How many candidates each search branch - dense and BM25 - fetches. Deliberately
+    # wider than the cap below: the cap can only be tuned against candidates something
+    # recorded, and one that discards only what it never fetched cannot be argued up
+    # or down. The extra candidates are logged and otherwise ignored - they reach no
+    # gate, no prompt and no reranker. Unlike before fusion, widening this can change
+    # the shortlist: a chunk's fused rank depends on how deep each branch reached.
     #
-    # Bounded, as are the four gate numbers below it. An out-of-range value here does
+    # Bounded, as are the gate numbers below it. An out-of-range value here does
     # not fail loudly - a cap of zero or less silently empties a gate, and a floor above
     # every score silently abstains on every turn - so the range is enforced at startup
     # rather than discovered from a week of abstentions.
     RETRIEVAL_POOL_SIZE: int = Field(default=25, gt=0)
-    # The floor the shortlist handed to the reranker is cut at, per chunk. -1.0, the
-    # lowest a cosine can be, so by default it admits every candidate and the cap alone
-    # picks the shortlist: the rerank floor decides the abstention. Measured on the
-    # extended corpus (specs/018-hybrid-retrieval/evaluation/): at 0.25 it dropped the
-    # chunk dense search had ranked first for "PR-4", "braces" and "HC-9" - short
-    # questions turning on one token score low against a long section - and with it
-    # removed all three were answered while every labelled gap still abstained, at the
-    # cost of a rerank call on the few queries it used to stop.
-    SIMILARITY_FLOOR: float = Field(default=-1.0, ge=-1.0, le=1.0)
+    # How many of the fused pool's best candidates the reranker is handed. The cap is
+    # the shortlist's only cut: there is no similarity floor, because the pool is in
+    # fused order and a cosine bar would drop exactly the chunks only the BM25 branch
+    # found. Even before fusion a 0.25 floor dropped chunks dense search had ranked
+    # first - "PR-4", "braces", "HC-9" (specs/018-hybrid-retrieval/evaluation/) - so
+    # the rerank floor is what decides an abstention.
     SIMILARITY_CAP: int = Field(default=5, gt=0)
     # The floor a turn answers through when the reranker is unavailable, and only then.
     # Without a rerank score nothing has judged the shortlist, so the fallback answers

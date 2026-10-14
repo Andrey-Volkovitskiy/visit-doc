@@ -11,6 +11,7 @@ from golden_harness.record import (
     CaseRun,
     ExclusionReason,
     ReplyTurn,
+    RetrievalMethod,
     Run,
     RunConditions,
     RunTracing,
@@ -32,6 +33,8 @@ _CONDITIONS: dict[str, Any] = {
     "embedding_model": "voyage-3.5",
     "rerank_model": "rerank-3",
     "retrieval_pool_size": 25,
+    "retrieval": "hybrid_rrf",
+    "rrf_k": 60,
     "similarity_floor": 0.3,
     "similarity_cap": 5,
     "unreranked_similarity_floor": 0.25,
@@ -516,10 +519,16 @@ def test_a_run_refuses_a_recorded_case_it_did_not_select() -> None:
         Run.model_validate(_run(cases=["G001", "G099"]))
 
 
-# Every field but the two a run recorded before they existed may leave out: that run's
-# small talk ran on the classification model, and its reranker fallback answered
-# through the similarity floor, both of which the run did state.
-_BACK_FILLED = {"small_talk_model", "unreranked_similarity_floor"}
+# Every field but those a run may leave out because it was recorded before they existed
+# or after they stopped: its small talk ran on the classification model, its reranker
+# fallback answered through the similarity floor, its retrieval was dense, and a build
+# stating no similarity floor had none. Each is what that run was measured under.
+_BACK_FILLED = {
+    "small_talk_model",
+    "unreranked_similarity_floor",
+    "retrieval",
+    "similarity_floor",
+}
 
 
 @pytest.mark.parametrize("field", sorted(set(_CONDITIONS) - _BACK_FILLED))
@@ -562,6 +571,45 @@ def test_a_run_stating_no_unreranked_floor_fell_back_through_its_similarity_floo
     conditions = RunConditions.model_validate(stated)
 
     assert conditions.unreranked_similarity_floor == stated["similarity_floor"]
+
+
+def _without(*fields: str) -> dict[str, Any]:
+    return {key: value for key, value in _CONDITIONS.items() if key not in fields}
+
+
+def test_a_run_that_stated_no_retrieval_was_dense_with_no_fusion_constant() -> None:
+    # Every run before 018's hybrid build searched the dense vector alone, and stated
+    # neither field; a dense search has no RRF constant, so none is filled in.
+    conditions = RunConditions.model_validate(_without("retrieval", "rrf_k"))
+
+    assert conditions.retrieval is RetrievalMethod.DENSE
+    assert conditions.rrf_k is None
+
+
+def test_a_hybrid_run_must_state_its_fusion_constant() -> None:
+    with pytest.raises(ValidationError):
+        RunConditions.model_validate(_without("rrf_k"))
+
+
+def test_a_dense_run_stating_a_fusion_constant_is_refused() -> None:
+    # The two fields describe one thing; a dense run with a k is a record that
+    # contradicts itself, and scoring it would have to guess which half to believe.
+    with pytest.raises(ValidationError):
+        RunConditions.model_validate({**_CONDITIONS, "retrieval": "dense"})
+
+
+def test_an_unknown_retrieval_method_is_refused() -> None:
+    with pytest.raises(ValidationError):
+        RunConditions.model_validate({**_CONDITIONS, "retrieval": "sparse"})
+
+
+def test_a_run_that_stated_no_similarity_floor_had_none() -> None:
+    # The hybrid build cuts its shortlist by the cap alone and states no floor; -1.0,
+    # the lowest a cosine can be, is the floor that admits every candidate - the value
+    # the dense build ran with, so the two compare as unchanged on this field.
+    conditions = RunConditions.model_validate(_without("similarity_floor"))
+
+    assert conditions.similarity_floor == -1.0
 
 
 def test_a_stated_unreranked_floor_is_kept_apart_from_the_similarity_floor() -> None:

@@ -97,6 +97,8 @@ _CONDITIONS: dict[str, Any] = {
     "embedding_model": "voyage-3.5",
     "rerank_model": "rerank-3",
     "retrieval_pool_size": 25,
+    "retrieval": "hybrid_rrf",
+    "rrf_k": 60,
     "similarity_floor": 0.3,
     "similarity_cap": 5,
     "unreranked_similarity_floor": 0.25,
@@ -2058,7 +2060,7 @@ async def test_a_restart_whose_settings_cannot_be_read_stops_and_releases_as_oth
     # A build that renamed or dropped a condition field restarted: that is a restart
     # under other settings, handled as one - not a validation error that skips the
     # release a restart owes the planted patient.
-    unreadable = {k: v for k, v in _OTHER_SETTINGS.items() if k != "similarity_floor"}
+    unreadable = {k: v for k, v in _OTHER_SETTINGS.items() if k != "rerank_floor"}
     stack = _stack(log, artifacts, restarts_during={("plant", 1): unreadable})
 
     with pytest.raises(ServiceRestartedError, match="G042") as stopped:

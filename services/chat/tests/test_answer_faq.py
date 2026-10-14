@@ -34,9 +34,9 @@ from chat.domain.schemas import (
     RequestSegment,
 )
 from chat.rag.embeddings import EMBEDDING_MODEL
-from chat.rag.pipeline import ScoredChunk
+from chat.rag.pipeline import RRF_K, ScoredChunk
 from chat.rag.reranking import rerank_chunks as real_rerank_chunks
-from chat.repositories.qdrant_repository import RetrievedChunk
+from chat.repositories.qdrant_repository import RetrievedChunk, SearchBranches
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from structlog.testing import capture_logs
@@ -53,18 +53,6 @@ from .conftest import (
 
 _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
-
-
-@pytest.fixture
-def shortlist_floor(monkeypatch: pytest.MonkeyPatch) -> float:
-    """Cut the shortlist at 0.25, the floor the pipeline ran with before 018.
-
-    The similarity floor is still a setting a deployment may turn on, and the tests
-    using this are about what it does when it is on; by default it admits every
-    candidate, which the tests without it cover.
-    """
-    monkeypatch.setattr(get_settings(), "SIMILARITY_FLOOR", 0.25)
-    return 0.25
 
 
 def _only(result: FaqResult) -> FaqSegmentAnswer:
@@ -93,7 +81,7 @@ def _bursts(question: str = "what should I bring?") -> list[list[Message]]:
 
 
 def _chunk(
-    index: int, similarity: float = 0.9, rerank: float | None = None
+    index: int, similarity: float | None = 0.9, rerank: float | None = None
 ) -> ScoredChunk:
     return ScoredChunk(
         faq_entry_id=index + 1,
@@ -275,15 +263,14 @@ async def test_the_reranker_sees_only_the_similarity_survivors() -> None:
     assert [c.chunk_index for c in sent] == [0, 1, 2, 3, 4]
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_sub_floor_candidates_never_reach_the_reranker() -> None:
-    pool = [_chunk(0, similarity=0.9), _chunk(1, similarity=0.05)]
-    survivors = [_chunk(0, rerank=0.9)]
+async def test_a_chunk_with_no_cosine_score_reaches_the_reranker() -> None:
+    # Only the lexical branch found it. The reranker judges it like any other.
+    pool = [_chunk(0, similarity=None), _chunk(1, similarity=0.9)]
 
-    _, _, rerank, _ = await _run(pool=pool, reranked=survivors)
+    _, _, rerank, _ = await _run(pool=pool, reranked=[_chunk(0, rerank=0.9)])
 
     sent = rerank.await_args.args[2]
-    assert [c.chunk_index for c in sent] == [0]
+    assert [c.chunk_index for c in sent] == [0, 1]
 
 
 # --- FR-035: the retrieval query is still the trailing patient message --------------
@@ -328,20 +315,10 @@ async def test_a_search_matching_nothing_abstains_at_the_pool_not_the_floor() ->
     assert EscalationReason.CORPUS_COULD_NOT_ANSWER in escalation.recorded
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_a_below_floor_pool_abstains_with_no_rerank_and_no_generation() -> None:
-    result, recorder, rerank, _ = await _run(
-        pool=[_chunk(0, similarity=0.05)], reranked=None
-    )
-
-    assert _verdict(result) is FaqVerdict.ABSTAINED_SIMILARITY_FLOOR
-    assert recorder.get("calls") is None
-    rerank.assert_not_awaited()
-
-
 async def test_by_default_every_candidate_reaches_the_reranker() -> None:
-    # No shortlist floor: a chunk scoring low against a short question is still the
-    # reranker's to judge, which is where "PR-4" and "braces" were lost before 018.
+    # There is no shortlist floor: a chunk scoring low against a short question is
+    # still the reranker's to judge, which is where "PR-4" and "braces" were lost
+    # before 018.
     pool = [_chunk(0, similarity=0.9), _chunk(1, similarity=0.05)]
 
     _, _, rerank, _ = await _run(pool=pool, reranked=[_chunk(0, rerank=0.9)])
@@ -360,6 +337,18 @@ async def test_a_reranker_outage_answers_only_from_chunks_above_its_own_floor() 
     assert _verdict(result) is FaqVerdict.ANSWERED_UNRERANKED
     assert [c.chunk_index for c in _citations(result)] == [0]
     assert recorder.get("calls") is not None
+
+
+async def test_a_reranker_outage_never_answers_from_a_chunk_with_no_cosine() -> None:
+    # The fallback floor is a cosine floor, and a chunk only the lexical branch found
+    # has no cosine to clear it with: nothing has judged it, so it is not answered from.
+    floor = get_settings().UNRERANKED_SIMILARITY_FLOOR
+    pool = [_chunk(0, similarity=None), _chunk(1, similarity=floor + 0.5)]
+
+    result, _, _, _ = await _run(pool=pool, reranked=None)
+
+    assert _verdict(result) is FaqVerdict.ANSWERED_UNRERANKED
+    assert [c.chunk_index for c in _citations(result)] == [1]
 
 
 async def test_a_reranker_outage_with_nothing_above_the_unreranked_floor_abstains() -> (
@@ -554,23 +543,19 @@ async def test_truncation_is_only_marked_when_the_text_was_actually_cut() -> Non
     assert not any(c["text_truncated"] for c in excluded)
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_the_similarity_gate_separates_floor_drops_from_cap_drops() -> None:
-    # One says the bar is too high, the other says it is too low. A log that conflates
-    # them cannot tune either.
-    pool = [_chunk(i, similarity=0.9 - i / 100) for i in range(8)] + [
-        _chunk(99, similarity=0.01)
-    ]
+async def test_the_shortlist_gate_reports_its_cap_and_what_the_cap_dropped() -> None:
+    pool = [_chunk(i, similarity=0.9 - i / 100) for i in range(8)]
 
     events = await _logged(pool=pool, reranked=[_chunk(0, rerank=0.9)])
 
     gate = events["faq.similarity_gate"]
-    assert gate["floor"] == get_settings().SIMILARITY_FLOOR
     assert gate["cap"] == get_settings().SIMILARITY_CAP
-    assert gate["pool_returned"] == 9
-    assert len(gate["kept"]) == 5
-    assert [c["chunk_index"] for c in gate["dropped_by_floor"]] == [99]
+    assert gate["pool_returned"] == 8
+    assert [c["chunk_index"] for c in gate["kept"]] == [0, 1, 2, 3, 4]
     assert [c["chunk_index"] for c in gate["dropped_by_cap"]] == [5, 6, 7]
+    # There is no floor to report: a cosine bar means nothing against a fused order.
+    assert "floor" not in gate
+    assert "dropped_by_floor" not in gate
 
 
 async def test_the_rerank_gate_reports_its_own_floor_cap_and_drops() -> None:
@@ -611,6 +596,7 @@ async def test_the_rerank_gate_reports_its_own_floor_cap_and_drops() -> None:
 async def test_the_verdict_event_names_the_gate_for_each_abstention() -> None:
     empty = await _logged(pool=[], reranked=None, live_revisions=[])
     unmatched = await _logged(pool=[], reranked=None)
+    # The similarity floor is now reached only through a reranker outage.
     similarity = await _logged(pool=[_chunk(0, similarity=0.01)], reranked=None)
     rerank = await _logged(pool=[_chunk(0)], reranked=[])
 
@@ -623,14 +609,26 @@ async def test_the_verdict_event_names_the_gate_for_each_abstention() -> None:
 async def test_the_verdict_event_reports_the_best_similarity_score_seen() -> None:
     # "Nothing was close" and "something was close and the floor was too high" are
     # different problems with different fixes.
-    # Just under the configured floor, whatever it is set to.
-    below_floor = round(get_settings().SIMILARITY_FLOOR - 0.01, 2)
+    # Just under the reranker-outage floor, whatever it is set to.
+    below_floor = round(get_settings().UNRERANKED_SIMILARITY_FLOOR - 0.01, 2)
     events = await _logged(pool=[_chunk(0, similarity=below_floor)], reranked=None)
 
     verdict = events["faq.verdict"]
     assert verdict["verdict"] == FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
     assert verdict["best_similarity_score"] == below_floor
     assert verdict["survivor_count"] == 0
+
+
+async def test_the_best_similarity_score_ignores_chunks_with_no_cosine() -> None:
+    # A lexical-only chunk was not scored by the dense branch; it neither lowers the
+    # best cosine seen nor stands in for one.
+    events = await _logged(
+        pool=[_chunk(0, similarity=None), _chunk(1, similarity=0.4)], reranked=None
+    )
+    only_lexical = await _logged(pool=[_chunk(0, similarity=None)], reranked=None)
+
+    assert events["faq.verdict"]["best_similarity_score"] == 0.4
+    assert only_lexical["faq.verdict"]["best_similarity_score"] is None
 
 
 async def test_the_verdict_event_reports_the_best_rerank_score_seen() -> None:
@@ -727,50 +725,56 @@ async def test_a_wider_pool_costs_log_lines_not_log_volume() -> None:
     assert logged_chars < 25 * 1000 / 2
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_considered_reflects_the_gate_not_the_candidate_position() -> None:
-    """`considered` must mean "the similarity gate kept it", not "it was in the top 5".
-
-    The two coincide only while every candidate in the cap clears the floor. When fewer
-    than the cap do, a positional flag reports chunks as considered that the floor threw
-    out - and reports their full text as though it had reached the prompt. A reader
-    tuning the floor from this log would be reading a fiction about what the floor did.
+async def test_considered_follows_the_fused_order_not_the_cosine_order() -> None:
+    """`considered` means "the shortlist gate kept it", which is the top of the pool as
+    fusion ordered it. Re-reading it as the top cosine scores would mark a chunk the
+    lexical branch promoted as excluded while its text was in the prompt.
     """
-    pool = [
-        _chunk(0, similarity=0.9),
-        _chunk(1, similarity=0.8),
-        _chunk(2, similarity=0.10),
-        _chunk(3, similarity=0.05),
-        _chunk(4, similarity=0.04),
-    ]
+    pool = [_chunk(i, similarity=0.1 + i / 100) for i in range(7)]
 
     events = await _logged(pool=pool, reranked=[_chunk(0, rerank=0.9)])
 
     candidates = events["faq.retrieval_completed"]["candidates"]
     considered = [c["chunk_index"] for c in candidates if c["considered"]]
-    assert considered == [0, 1]
+    assert considered == [0, 1, 2, 3, 4]
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_a_below_floor_candidate_inside_the_cap_is_logged_as_a_preview() -> None:
-    long_text = "x" * 400
+async def test_each_candidate_logs_its_rank_in_each_branch_and_its_fused_score() -> (
+    None
+):
+    # Diagnostic only - the harness scores the logged order - but it is what says, for
+    # a request that moved, which branch moved it.
     pool = [
         ScoredChunk(
-            faq_entry_id=1, chunk_index=0, chunk_text=long_text, similarity_score=0.9
+            faq_entry_id=1,
+            chunk_index=0,
+            chunk_text="both",
+            similarity_score=0.8,
+            lexical_score=6.5,
+            dense_rank=2,
+            lexical_rank=1,
+            fused_score=0.0325,
         ),
         ScoredChunk(
-            faq_entry_id=1, chunk_index=1, chunk_text=long_text, similarity_score=0.02
+            faq_entry_id=2,
+            chunk_index=0,
+            chunk_text="lexical only",
+            similarity_score=None,
+            lexical_score=3.0,
+            lexical_rank=2,
+            fused_score=0.0161,
         ),
     ]
 
     events = await _logged(pool=pool, reranked=[pool[0].with_rerank_score(0.9)])
 
-    by_index = {
-        c["chunk_index"]: c for c in events["faq.retrieval_completed"]["candidates"]
-    }
-    assert len(by_index[0]["chunk_text"]) == 400
-    assert len(by_index[1]["chunk_text"]) == 200
-    assert by_index[1]["text_truncated"] is True
+    both, lexical_only = events["faq.retrieval_completed"]["candidates"]
+    assert (both["dense_rank"], both["lexical_rank"]) == (2, 1)
+    assert (both["similarity_score"], both["lexical_score"]) == (0.8, 6.5)
+    assert both["fused_score"] == 0.0325
+    assert lexical_only["dense_rank"] is None
+    assert lexical_only["similarity_score"] is None
+    assert lexical_only["lexical_rank"] == 2
 
 
 async def test_an_empty_corpus_raises_no_retrieval_or_gate_event() -> None:
@@ -790,15 +794,14 @@ async def test_an_empty_corpus_raises_no_retrieval_or_gate_event() -> None:
     assert events["faq.verdict"]["blocked_gate"] == "empty_corpus"
 
 
-@pytest.mark.usefixtures("shortlist_floor")
-async def test_a_pool_rejected_by_the_floor_still_raises_both_events() -> None:
-    # The other side of the same rule: a search that ran and found nothing usable is a
-    # decision the gate made, and it has to be visible as one.
-    events = await _logged(pool=[_chunk(0, similarity=0.01)], reranked=None)
+async def test_a_search_that_matched_nothing_still_raises_both_events() -> None:
+    # The other side of the same rule: a search that ran and found nothing is a
+    # decision the gate made over an empty pool, and it has to be visible as one.
+    events = await _logged(pool=[], reranked=None)
 
-    assert events["faq.retrieval_completed"]["pool_returned"] == 1
+    assert events["faq.retrieval_completed"]["pool_returned"] == 0
     assert events["faq.similarity_gate"]["kept"] == []
-    assert events["faq.verdict"]["blocked_gate"] == "similarity_floor"
+    assert events["faq.verdict"]["blocked_gate"] == "empty_pool"
 
 
 # --- Phase 1g: one run per request ---------------------------------------------------
@@ -1732,10 +1735,8 @@ _TRACED_POOLS: dict[str, list[RetrievedChunk]] = {
     "b?": [
         RetrievedChunk(faq_entry_id=3, chunk_index=1, chunk_text="b one", score=0.8),
     ],
-    # Nothing clears the similarity floor, so this request abstains before reranking.
-    "c?": [
-        RetrievedChunk(faq_entry_id=4, chunk_index=0, chunk_text="c one", score=0.01),
-    ],
+    # The search matches nothing, so this request abstains before reranking.
+    "c?": [],
 }
 _VECTORS = {"a?": [1.0, 0.0, 0.0], "b?": [0.0, 1.0, 0.0], "c?": [0.0, 0.0, 1.0]}
 # Keys a captured entry carries from the bound context rather than from its event.
@@ -1752,12 +1753,14 @@ async def _traced_search(
     _qdrant: object,
     _session: str,
     vector: list[float],
+    text: str,
     _revisions: list[str],
     *,
     limit: int,
-) -> list[RetrievedChunk]:
+) -> SearchBranches:
     (query,) = [q for q, v in _VECTORS.items() if v == vector]
-    return _TRACED_POOLS[query]
+    assert text == query
+    return SearchBranches(dense=_TRACED_POOLS[query], lexical=[])
 
 
 def _relevant(_query: str, documents: list[str], **_kwargs: object) -> object:
@@ -1892,14 +1895,18 @@ async def test_the_search_step_is_a_retriever_whose_output_is_the_pool(
         "pool_size": get_settings().RETRIEVAL_POOL_SIZE,
     }
     assert span_output(search) == {
+        "dense_returned": 2,
+        "lexical_returned": 0,
         "pool_returned": 2,
         "candidates": [
             {
                 "entry_id": c.faq_entry_id,
                 "chunk_index": c.chunk_index,
-                "similarity_score": c.score,
+                "dense_rank": rank,
+                "lexical_rank": None,
+                "fused_score": pytest.approx(1 / (RRF_K + rank)),
             }
-            for c in _TRACED_POOLS["a?"]
+            for rank, c in enumerate(_TRACED_POOLS["a?"], start=1)
         ],
     }
     embed = only_span(span_exporter, "faq.embed")
@@ -1932,7 +1939,6 @@ async def test_an_answered_request_records_its_generation_under_it(
     assert "langfuse.observation.completion_start_time" in attributes
 
 
-@pytest.mark.usefixtures("shortlist_floor")
 async def test_an_abstention_records_no_generation_and_no_rerank(
     span_exporter: InMemorySpanExporter,
 ) -> None:
@@ -1946,9 +1952,7 @@ async def test_an_abstention_records_no_generation_and_no_rerank(
         "faq.similarity_gate",
         "faq.verdict",
     }
-    assert span_output(request)["verdict"] == (
-        FaqVerdict.ABSTAINED_SIMILARITY_FLOOR.value
-    )
+    assert span_output(request)["verdict"] == FaqVerdict.ABSTAINED_EMPTY_POOL.value
 
 
 async def test_an_empty_corpus_records_no_retrieval_steps(

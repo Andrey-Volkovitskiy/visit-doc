@@ -274,8 +274,19 @@ class CorpusRecord(BaseModel):
     matched: bool
 
 
+class RetrievalMethod(StrEnum):
+    """How the chat service retrieved: the dense vector alone, or fused with BM25."""
+
+    DENSE = "dense"
+    HYBRID_RRF = "hybrid_rrf"
+
+
 class RunConditions(BaseModel):
-    """The settings the chat service stated in its `service.configured` event."""
+    """The settings the chat service stated in its `service.configured` event.
+
+    `rrf_k` is the Reciprocal Rank Fusion constant, None exactly when `retrieval` is
+    dense - a single branch has nothing to fuse.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -285,6 +296,8 @@ class RunConditions(BaseModel):
     embedding_model: str
     rerank_model: str
     retrieval_pool_size: int
+    retrieval: RetrievalMethod
+    rrf_k: int | None
     similarity_floor: float
     similarity_cap: int
     unreranked_similarity_floor: float
@@ -328,6 +341,44 @@ class RunConditions(BaseModel):
         ):
             return {**data, "unreranked_similarity_floor": data["similarity_floor"]}
         return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _retrieval_was_dense_before_it_was_stated(cls, data: Any) -> Any:
+        """Fill `retrieval` as dense, with no `rrf_k`, when neither was stated.
+
+        A service that stated no retrieval predates hybrid search, and until it existed
+        every search was the dense vector alone - so that is what the run was measured
+        under. A run stating one of the pair is left as stated, so a hybrid run missing
+        its constant is refused rather than read as dense.
+        """
+        if isinstance(data, dict) and "retrieval" not in data and "rrf_k" not in data:
+            return {**data, "retrieval": RetrievalMethod.DENSE, "rrf_k": None}
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_stated_similarity_floor_admitted_every_candidate(cls, data: Any) -> Any:
+        """Fill `similarity_floor` as -1.0 when the service stated none.
+
+        A service that states no similarity floor cuts its shortlist by the cap alone.
+        -1.0, the lowest a cosine can be, is the floor that admits every candidate,
+        which is the value the dense build ran with by default - so the two compare as
+        unchanged on this field rather than as a condition that moved.
+        """
+        if isinstance(data, dict) and "similarity_floor" not in data:
+            return {**data, "similarity_floor": -1.0}
+        return data
+
+    @model_validator(mode="after")
+    def _only_a_fused_retrieval_has_a_fusion_constant(self) -> "RunConditions":
+        """Refuse an `rrf_k` beside dense retrieval, or none beside fused retrieval."""
+        if (self.rrf_k is None) != (self.retrieval is RetrievalMethod.DENSE):
+            raise ValueError(
+                f"retrieval {self.retrieval.value!r} with rrf_k {self.rrf_k!r}: "
+                "a fusion constant belongs to fused retrieval and only to it"
+            )
+        return self
 
     @classmethod
     def from_event(cls, event: dict[str, JsonValue]) -> "RunConditions":

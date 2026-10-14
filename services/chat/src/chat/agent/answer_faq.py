@@ -1,4 +1,4 @@
-"""`answer_faq`: retrieve -> similarity gate -> rerank -> rerank gate -> generate.
+"""`answer_faq`: hybrid retrieve -> shortlist gate -> rerank -> rerank gate -> generate.
 
 Plain async function, no agent-framework dependency of its own - `agent/graph.py`'s
 `answer_faq_node` wraps it as a LangGraph node, forwarding its yielded events via the
@@ -57,7 +57,7 @@ from chat.rag.pipeline import (
     PipelineOutcome,
     ScoredChunk,
     apply_rerank_gate,
-    apply_similarity_gate,
+    apply_shortlist_gate,
     decide,
 )
 from chat.rag.reranking import rerank_chunks
@@ -595,9 +595,7 @@ async def _run_pipeline(
     )
     corpus_empty = not live_revisions
 
-    similarity = apply_similarity_gate(
-        pool, floor=settings.SIMILARITY_FLOOR, cap=settings.SIMILARITY_CAP
-    )
+    similarity = apply_shortlist_gate(pool, cap=settings.SIMILARITY_CAP)
     # Neither event is raised when the corpus is empty: no search was issued and no gate
     # decided anything, so "retrieval completed" and "the gate ran" would both be false.
     # `turn.retrieval_skipped_empty_corpus` is what records that case, and conflating it
@@ -614,14 +612,12 @@ async def _run_pipeline(
                 gated,
                 "faq.similarity_gate",
                 {
-                    "floor": settings.SIMILARITY_FLOOR,
                     "cap": settings.SIMILARITY_CAP,
                     # `pool_returned`, not `pool_size`: the gate saw what the search
                     # actually returned, and `pool_size` already names the configured
                     # ceiling on the retrieval event beside this one.
                     "pool_returned": len(pool),
                     "kept": _identify(similarity.kept),
-                    "dropped_by_floor": _identify(similarity.dropped_by_floor),
                     "dropped_by_cap": _identify(similarity.dropped_by_cap),
                 },
             )
@@ -681,12 +677,19 @@ async def _run_pipeline(
                 "blocked_gate": _gate_of(outcome.verdict),
                 # One best score per floor, because the two floors are tuned separately
                 # and a single number could not say which bar was too high. Each is the
-                # best its whole stage saw - the pool before the similarity floor, every
-                # scored candidate before the rerank floor - which is what separates
-                # "nothing was close" from "something was close and the floor was too
-                # high".
+                # best its whole stage saw - every cosine in the pool, which is what
+                # the reranker-outage floor is read against, and every scored candidate
+                # before the rerank floor - which is what separates "nothing was close"
+                # from "something was close and the floor was too high". A chunk only
+                # the lexical branch found has no cosine and is not counted; None means
+                # no chunk had one.
                 "best_similarity_score": max(
-                    (c.similarity_score for c in pool), default=None
+                    (
+                        c.similarity_score
+                        for c in pool
+                        if c.similarity_score is not None
+                    ),
+                    default=None,
                 ),
                 # None means no chunk carries a rerank score at all: the reranker did
                 # not run, or it failed. Never 0.0, which is the cross-encoder judging a
@@ -717,11 +720,9 @@ def _log_retrieval(
     Returns: the payload `faq.retrieval_completed` was logged with.
 
     Args:
-        kept: the similarity gate's survivors. `considered` is read from this rather
-            than from a candidate's position, because the two only agree while every
-            candidate inside the cap also clears the floor. When fewer do, a positional
-            flag would report chunks as considered that the floor threw out, and print
-            their full text as though it had reached the prompt.
+        kept: the shortlist gate's survivors. `considered` is read from this rather
+            than from a candidate's position, so it says what reached the reranker
+            whatever the gate's rule is, rather than restating that rule here.
     """
     survivors = {(c.faq_entry_id, c.chunk_index) for c in kept}
     candidates = []
@@ -732,7 +733,13 @@ def _log_retrieval(
             {
                 "entry_id": chunk.faq_entry_id,
                 "chunk_index": chunk.chunk_index,
+                # Each branch's rank and score, None where that branch did not return
+                # the chunk; the candidates are logged in fused order.
                 "similarity_score": chunk.similarity_score,
+                "dense_rank": chunk.dense_rank,
+                "lexical_score": chunk.lexical_score,
+                "lexical_rank": chunk.lexical_rank,
+                "fused_score": chunk.fused_score,
                 "considered": considered,
                 "chunk_text": text,
                 "text_truncated": not considered

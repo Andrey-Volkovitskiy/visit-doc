@@ -15,7 +15,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from chat.api import faq as faq_api
@@ -25,6 +25,7 @@ from chat.domain.models import FaqEntry
 from chat.main import app
 from chat.rag import indexing
 from chat.rag.chunking import ChunkedText
+from chat.rag.retriever import search_faq
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.qdrant_repository import (
     COLLECTION_NAME,
@@ -32,7 +33,6 @@ from chat.repositories.qdrant_repository import (
     ChunkPayload,
     create_client,
     ensure_collection,
-    search,
     upsert_chunks,
 )
 from fastapi.testclient import TestClient
@@ -100,19 +100,22 @@ async def _top_match(session_id: str, query: str) -> int:
     """Return the entry retrieval reaches first for `query`, filtered as production is.
 
     The live revisions come from Postgres and the search carries them, so a chunk no
-    row vouches for cannot be what this returns. `fake_embed_texts` ignores its client
-    argument, which is why one is not built here.
+    row vouches for cannot be what this returns. Both branches are searched and fused
+    by production's own `search_faq`, with only the embedding faked: a lexical branch
+    is as able to reach a dead revision's words as the dense one is its vector.
     """
     async with session_factory() as session:
         revisions = await faq_repository.live_revisions(session, session_id)
     await engine.dispose()
-    [vector] = await fake_embed_texts(None, [query], input_type="query")
     qdrant_client = create_client(Settings())
     try:
-        retrieved = await search(qdrant_client, session_id, vector, revisions)
+        with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+            pool = await search_faq(
+                qdrant_client, MagicMock(), query, session_id, revisions
+            )
     finally:
         await qdrant_client.close()
-    return retrieved[0].faq_entry_id
+    return pool[0].faq_entry_id
 
 
 @asynccontextmanager

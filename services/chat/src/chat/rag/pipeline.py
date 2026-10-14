@@ -1,6 +1,6 @@
-"""The two retrieval gates and the verdict they produce.
+"""Fusing the two retrieval branches, the two gates, and the verdict they produce.
 
-Pure functions and frozen records - no client, no clock, no I/O. Everything this phase
+Pure functions and frozen records - no client, no clock, no I/O. Everything retrieval
 decides about which chunks an answer may stand on is decided here, which is what lets
 the whole decision table be tested without a network call.
 
@@ -9,26 +9,44 @@ deliberately apart, so "no scores were obtained" and "scores were obtained and n
 cleared the floor" can stay two different answers.
 """
 
+import math
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 from chat.domain.schemas import FaqVerdict
 
+# Reciprocal Rank Fusion's constant: a chunk at rank r in a branch contributes
+# 1 / (RRF_K + r). 60 is the value the method was published with; a larger k flattens
+# the difference between ranks, a smaller one lets one branch's top hit dominate.
+RRF_K = 60
+
 
 @dataclass(frozen=True)
 class ScoredChunk:
-    """A retrieved chunk carried through both gates, accumulating scores.
+    """A retrieved chunk carried through fusion and both gates, accumulating scores.
 
-    `rerank_score` is None when no rerank score was obtained - the reranker did not
-    run, or failed. It never means "scored zero": a chunk the cross-encoder scored at
-    0.0 was judged irrelevant, and a chunk it never saw was not judged at all.
+    Every optional score is None when the stage that gives it did not score this
+    chunk, and never means "scored zero":
+
+    - `similarity_score`, the cosine, and `dense_rank` are None when the dense branch
+      did not return the chunk; `lexical_score`, its BM25 score, and `lexical_rank`
+      when the lexical one did not. The two scores are on different scales and are
+      never compared with each other.
+    - `fused_score` is None before fusion.
+    - `rerank_score` is None when no rerank score was obtained - the reranker did not
+      run, or failed. A chunk the cross-encoder scored at 0.0 was judged irrelevant,
+      and a chunk it never saw was not judged at all.
     """
 
     faq_entry_id: int
     chunk_index: int
     chunk_text: str
-    similarity_score: float
+    similarity_score: float | None
     rerank_score: float | None = None
+    lexical_score: float | None = None
+    dense_rank: int | None = None
+    lexical_rank: int | None = None
+    fused_score: float | None = None
 
     def with_rerank_score(self, score: float) -> "ScoredChunk":
         """Return a copy carrying `score`, leaving this instance untouched."""
@@ -87,19 +105,73 @@ def _split(
     )
 
 
-def apply_similarity_gate(
-    pool: list[ScoredChunk], *, floor: float, cap: int
-) -> GateResult:
-    """Keep the `cap` highest-scoring chunks at or above `floor`.
+def fuse_rrf(
+    dense: list[ScoredChunk], lexical: list[ScoredChunk], *, k: int
+) -> list[ScoredChunk]:
+    """Merge the two branches' hits into one list by Reciprocal Rank Fusion.
 
-    The floor is applied per chunk, not to the best chunk on behalf of the rest: a
-    chunk below it is not admitted because a stronger one cleared it.
+    Args:
+        dense: the dense branch's hits, best first, each carrying its cosine.
+        lexical: the lexical branch's hits, best first, each carrying its BM25 score.
 
-    Returns: the survivors in descending similarity order, plus the two rejection
-        lists - those the floor dropped and those the cap dropped.
+    Returns: every chunk either branch returned, once each, best fused score first,
+        carrying its rank and score in each branch that returned it and its fused
+        score - the sum of `1 / (k + rank)` over those branches.
+
+    Only ranks are fused, never scores: a cosine and a BM25 score are on different
+    scales, and RRF exists so they never have to be put on one. A chunk is identified
+    by its entry and chunk index, which the search's live-revision filter makes unique.
+    A tie goes to the better dense rank, then the better lexical rank, then the entry
+    and chunk index, so the order never depends on how a dict happened to iterate.
     """
-    ordered = sorted(pool, key=lambda c: c.similarity_score, reverse=True)
-    return _split(ordered, lambda c: c.similarity_score >= floor, cap)
+    merged: dict[tuple[int, int], ScoredChunk] = {}
+    for rank, chunk in enumerate(dense, start=1):
+        key = (chunk.faq_entry_id, chunk.chunk_index)
+        if key not in merged:
+            merged[key] = replace(chunk, dense_rank=rank, lexical_score=None)
+    for rank, chunk in enumerate(lexical, start=1):
+        key = (chunk.faq_entry_id, chunk.chunk_index)
+        found = merged.get(key)
+        if found is None:
+            merged[key] = replace(
+                chunk, similarity_score=None, dense_rank=None, lexical_rank=rank
+            )
+        elif found.lexical_rank is None:
+            merged[key] = replace(
+                found, lexical_rank=rank, lexical_score=chunk.lexical_score
+            )
+
+    def fused(chunk: ScoredChunk) -> float:
+        return sum(
+            1 / (k + rank)
+            for rank in (chunk.dense_rank, chunk.lexical_rank)
+            if rank is not None
+        )
+
+    scored = [replace(c, fused_score=fused(c)) for c in merged.values()]
+    return sorted(
+        scored,
+        key=lambda c: (
+            -(c.fused_score or 0.0),
+            c.dense_rank if c.dense_rank is not None else math.inf,
+            c.lexical_rank if c.lexical_rank is not None else math.inf,
+            c.faq_entry_id,
+            c.chunk_index,
+        ),
+    )
+
+
+def apply_shortlist_gate(pool: list[ScoredChunk], *, cap: int) -> GateResult:
+    """Keep the first `cap` chunks of `pool`, in the order the pool arrived in.
+
+    Args:
+        pool: the fused observation pool, best first.
+
+    Returns: the survivors in pool order, plus those the cap dropped. Nothing is
+        dropped by a floor: the pool's order is a fused rank, which no cosine bar can
+        be read against, and the rerank floor is what decides an abstention.
+    """
+    return _split(pool, lambda _chunk: True, cap)
 
 
 def apply_rerank_gate(
@@ -147,10 +219,11 @@ def decide(
             empty list standing for both would make a fallback and an abstention
             indistinguishable, and the difference between them is whether the patient
             gets an answer.
-        unreranked_floor: the similarity a considered chunk must reach for the
-            fallback to answer from it. With no rerank score nothing has judged the
+        unreranked_floor: the cosine similarity a considered chunk must reach for
+            the fallback to answer from it. With no rerank score nothing has judged the
             shortlist, so a fallback answers only from the chunks at or above this, and
-            abstains at the similarity floor when none is.
+            abstains at the similarity floor when none is. A chunk with no cosine -
+            one only the lexical branch found - never reaches it.
         corpus_empty: True when the session publishes no live revisions, so no search
             was issued. Recorded separately from a search that returned nothing usable,
             because the two call for different fixes.
@@ -169,7 +242,9 @@ def decide(
         )
     if reranked is None:
         floor_checked = [
-            c for c in considered if c.similarity_score >= unreranked_floor
+            c
+            for c in considered
+            if c.similarity_score is not None and c.similarity_score >= unreranked_floor
         ]
         if not floor_checked:
             return PipelineOutcome(

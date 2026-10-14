@@ -9,9 +9,11 @@ from chat.core.config import Settings
 from chat.rag.chunking import ChunkedText
 from chat.repositories import qdrant_repository
 from chat.repositories.qdrant_repository import (
+    SPARSE_VECTOR,
     VECTOR_SIZE,
     ChunkPayload,
-    CollectionVectorSizeMismatchError,
+    CollectionShapeMismatchError,
+    SearchBranches,
     delete_by_entry,
     ensure_collection,
     search,
@@ -21,7 +23,16 @@ from chat.repositories.qdrant_repository import (
 from httpx import AsyncClient, Headers
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
-from qdrant_client.http.models import Distance, VectorParams
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    Modifier,
+    SparseVector,
+    SparseVectorParams,
+    VectorParams,
+)
 from ulid import ULID
 
 _TEST_ENTRY_ID = 999999
@@ -30,6 +41,14 @@ _TEST_VECTOR = [0.1] * VECTOR_SIZE
 
 def _client() -> AsyncQdrantClient:
     return AsyncQdrantClient(url=Settings().QDRANT_URL)
+
+
+def _texts(found: SearchBranches) -> tuple[list[str], list[str]]:
+    """Return the dense branch's texts, then the lexical branch's."""
+    return (
+        [c.chunk_text for c in found.dense],
+        [c.chunk_text for c in found.lexical],
+    )
 
 
 async def test_ensure_collection_is_idempotent() -> None:
@@ -50,15 +69,16 @@ async def test_upsert_search_delete_round_trip() -> None:
     await upsert_chunks(
         client, session_id, _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR]
     )
-    found = await search(client, session_id, _TEST_VECTOR, [revision], limit=10)
-    matches = [r for r in found if r.faq_entry_id == _TEST_ENTRY_ID]
-    assert matches and matches[0].chunk_text == chunks[0].chunk_text
+    found = await search(
+        client, session_id, _TEST_VECTOR, "visiting hours", [revision], limit=10
+    )
+    assert _texts(found) == ([chunks[0].chunk_text], [chunks[0].chunk_text])
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     found_after_delete = await search(
-        client, session_id, _TEST_VECTOR, [revision], limit=10
+        client, session_id, _TEST_VECTOR, "visiting hours", [revision], limit=10
     )
-    assert all(r.faq_entry_id != _TEST_ENTRY_ID for r in found_after_delete)
+    assert _texts(found_after_delete) == ([], [])
 
     await client.close()
 
@@ -94,9 +114,14 @@ async def test_search_returns_only_chunks_of_the_revisions_it_was_given() -> Non
         [_TEST_VECTOR],
     )
 
-    found = await search(client, session_id, _TEST_VECTOR, [live], limit=10)
+    # The query names the superseded text word for word, so the lexical branch would
+    # rank it first if its own filter did not exclude it.
+    found = await search(
+        client, session_id, _TEST_VECTOR, "superseded text", [live], limit=10
+    )
 
-    assert [chunk.chunk_text for chunk in found] == ["live text"]
+    assert found.dense and [c.chunk_text for c in found.dense] == ["live text"]
+    assert "superseded text" not in _texts(found)[1]
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
@@ -110,18 +135,23 @@ async def test_search_cannot_reach_another_sessions_chunks() -> None:
     client = _client()
     await ensure_collection(client)
     owner, intruder, theirs = str(ULID()), str(ULID()), str(ULID())
+    text = "parking validation desk"
     await upsert_chunks(
         client,
         owner,
         _TEST_ENTRY_ID,
         theirs,
-        [ChunkedText(chunk_index=0, chunk_text="theirs")],
+        [ChunkedText(chunk_index=0, chunk_text=text)],
         [_TEST_VECTOR],
     )
 
-    assert await search(client, intruder, _TEST_VECTOR, [theirs], limit=10) == []
-    still_theirs = await search(client, owner, _TEST_VECTOR, [theirs], limit=10)
-    assert [chunk.chunk_text for chunk in still_theirs] == ["theirs"]
+    # Both branches, and a query matching the chunk exactly: a lexical branch without
+    # the session term would find it on its words alone. Not a stopword ("theirs"):
+    # BM25 drops those, and a branch that found nothing would pass for the wrong reason.
+    intruding = await search(client, intruder, _TEST_VECTOR, text, [theirs])
+    assert _texts(intruding) == ([], [])
+    still_theirs = await search(client, owner, _TEST_VECTOR, text, [theirs])
+    assert _texts(still_theirs) == ([text], [text])
 
     await delete_by_entry(client, owner, _TEST_ENTRY_ID)
     await client.close()
@@ -146,8 +176,8 @@ async def test_delete_by_entry_cannot_reach_another_sessions_chunks() -> None:
 
     await delete_by_entry(client, intruder, _TEST_ENTRY_ID)
 
-    survived = await search(client, owner, _TEST_VECTOR, [revision], limit=10)
-    assert [chunk.chunk_text for chunk in survived] == ["theirs"]
+    survived = await search(client, owner, _TEST_VECTOR, "theirs", [revision])
+    assert _texts(survived)[0] == ["theirs"]
 
     await delete_by_entry(client, owner, _TEST_ENTRY_ID)
     await client.close()
@@ -175,8 +205,8 @@ async def test_the_sweep_cannot_reach_another_sessions_chunks() -> None:
 
     await sweep_chunks(client, intruder, _TEST_ENTRY_ID, newer)
 
-    survived = await search(client, owner, _TEST_VECTOR, [theirs], limit=10)
-    assert [chunk.chunk_text for chunk in survived] == ["theirs"]
+    survived = await search(client, owner, _TEST_VECTOR, "theirs", [theirs])
+    assert _texts(survived)[0] == ["theirs"]
 
     await delete_by_entry(client, owner, _TEST_ENTRY_ID)
     await client.close()
@@ -194,9 +224,12 @@ async def test_search_returns_more_than_five_when_asked_for_more() -> None:
         client, session_id, _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR] * 12
     )
 
-    found = await search(client, session_id, _TEST_VECTOR, [revision], limit=12)
+    found = await search(
+        client, session_id, _TEST_VECTOR, "chunk", [revision], limit=12
+    )
 
-    assert len(found) == 12
+    assert len(found.dense) == 12
+    assert len(found.lexical) == 12
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
@@ -223,10 +256,11 @@ async def test_search_returns_candidates_in_descending_score_order() -> None:
         [far, near, mid],
     )
 
-    found = await search(client, session_id, near, [revision], limit=10)
+    found = await search(client, session_id, near, "unrelated", [revision], limit=10)
 
-    assert [c.chunk_text for c in found] == ["near", "mid", "far"]
-    assert [c.score for c in found] == sorted((c.score for c in found), reverse=True)
+    assert [c.chunk_text for c in found.dense] == ["near", "mid", "far"]
+    scores = [c.score for c in found.dense]
+    assert scores == sorted(scores, reverse=True)
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
@@ -245,7 +279,67 @@ async def test_search_with_no_live_revisions_returns_nothing() -> None:
         [_TEST_VECTOR],
     )
 
-    assert await search(client, session_id, _TEST_VECTOR, [], limit=10) == []
+    found = await search(client, session_id, _TEST_VECTOR, "anything", [], limit=10)
+
+    assert found == SearchBranches(dense=[], lexical=[])
+
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_the_lexical_branch_ranks_an_exact_code_first_whatever_the_vectors() -> (
+    None
+):
+    # Every chunk carries the same dense vector, so dense search cannot tell them apart:
+    # only the chunk's words can put the form code first.
+    client = _client()
+    await ensure_collection(client)
+    session_id, revision = str(ULID()), str(ULID())
+    texts = (
+        "Bring photo identification to reception.",
+        "Form PR-4 releases your records to another provider.",
+        "Parking is free for the first hour.",
+    )
+    await upsert_chunks(
+        client,
+        session_id,
+        _TEST_ENTRY_ID,
+        revision,
+        [ChunkedText(chunk_index=i, chunk_text=t) for i, t in enumerate(texts)],
+        [_TEST_VECTOR] * len(texts),
+    )
+
+    found = await search(
+        client, session_id, _TEST_VECTOR, "What is the PR-4?", [revision], limit=10
+    )
+
+    assert [c.chunk_index for c in found.lexical] == [1]
+    assert len(found.dense) == len(texts)
+
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_the_lexical_branch_returns_nothing_for_a_query_sharing_no_term() -> None:
+    # BM25 scores only shared terms. A chunk with none in common is not a weak match to
+    # be ranked last; it is no match, and the branch says so by leaving it out.
+    client = _client()
+    await ensure_collection(client)
+    session_id, revision = str(ULID()), str(ULID())
+    await upsert_chunks(
+        client,
+        session_id,
+        _TEST_ENTRY_ID,
+        revision,
+        [ChunkedText(chunk_index=0, chunk_text="Parking is free for the first hour.")],
+        [_TEST_VECTOR],
+    )
+
+    found = await search(
+        client, session_id, _TEST_VECTOR, "vaccination schedule", [revision], limit=10
+    )
+
+    assert _texts(found) == (["Parking is free for the first hour."], [])
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
@@ -273,9 +367,9 @@ async def test_the_sweep_removes_older_revisions_and_spares_a_newer_one() -> Non
     await sweep_chunks(client, session_id, _TEST_ENTRY_ID, given)
 
     found = await search(
-        client, session_id, _TEST_VECTOR, [older, given, newer], limit=10
+        client, session_id, _TEST_VECTOR, "anything", [older, given, newer], limit=10
     )
-    assert {chunk.chunk_text for chunk in found} == {given, newer}
+    assert {chunk.chunk_text for chunk in found.dense} == {given, newer}
 
     await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
     await client.close()
@@ -487,7 +581,7 @@ async def test_ensure_collection_refuses_a_collection_of_the_wrong_vector_width(
             ),
         )
 
-        with pytest.raises(CollectionVectorSizeMismatchError) as mismatch:
+        with pytest.raises(CollectionShapeMismatchError) as mismatch:
             await ensure_collection(client)
 
     assert str(VECTOR_SIZE // 2) in str(mismatch.value)
@@ -496,7 +590,94 @@ async def test_ensure_collection_refuses_a_collection_of_the_wrong_vector_width(
     await client.close()
 
 
-async def test_ensure_collection_accepts_a_collection_of_the_right_vector_width(
+_RIGHT_SPARSE_VECTORS = {SPARSE_VECTOR: SparseVectorParams(modifier=Modifier.IDF)}
+
+
+@pytest.mark.parametrize(
+    "sparse_vectors",
+    [
+        None,
+        {SPARSE_VECTOR: SparseVectorParams()},
+        {"lexical": SparseVectorParams(modifier=Modifier.IDF)},
+    ],
+    ids=["no-sparse-vector", "sparse-vector-without-idf", "sparse-vector-misnamed"],
+)
+async def test_ensure_collection_refuses_a_collection_without_the_bm25_vector(
+    monkeypatch: pytest.MonkeyPatch,
+    sparse_vectors: dict[str, SparseVectorParams] | None,
+) -> None:
+    # A chunk with no sparse vector is not an error to Qdrant: it is simply absent from
+    # the lexical search, which reads as "no lexical match". So a collection created
+    # before this build has to stop the start rather than be searched.
+    client = _client()
+    async with _own_collection(monkeypatch) as name:
+        await client.create_collection(
+            collection_name=name,
+            vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+            sparse_vectors_config=sparse_vectors,
+        )
+
+        with pytest.raises(CollectionShapeMismatchError) as mismatch:
+            await ensure_collection(client)
+
+    assert SPARSE_VECTOR in str(mismatch.value)
+
+    await client.close()
+
+
+async def test_ensure_collection_creates_both_vectors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _client()
+    async with _own_collection(monkeypatch) as name:
+        await ensure_collection(client)
+
+        params = (await client.get_collection(name)).config.params
+
+    assert isinstance(params.vectors, VectorParams)
+    assert params.vectors.size == VECTOR_SIZE
+    assert params.sparse_vectors is not None
+    assert params.sparse_vectors[SPARSE_VECTOR].modifier == Modifier.IDF
+
+    await client.close()
+
+
+async def test_upsert_writes_a_bm25_vector_computed_from_the_chunk_text() -> None:
+    # Qdrant derives the sparse vector from the text it is handed, so a point whose
+    # text has more distinct terms carries more of them - which a vector built from
+    # anything but this chunk's own text would not.
+    client = _client()
+    await ensure_collection(client)
+    session_id, revision = str(ULID()), str(ULID())
+    chunks = [
+        ChunkedText(chunk_index=0, chunk_text="form PR-4"),
+        ChunkedText(chunk_index=1, chunk_text="spirometry 94010 costs $85 self-pay"),
+    ]
+    await upsert_chunks(
+        client, session_id, _TEST_ENTRY_ID, revision, chunks, [_TEST_VECTOR] * 2
+    )
+
+    records, _ = await client.scroll(
+        qdrant_repository.COLLECTION_NAME,
+        scroll_filter=Filter(
+            must=[FieldCondition(key="session_id", match=MatchValue(value=session_id))]
+        ),
+        with_payload=["chunk_index"],
+        with_vectors=True,
+    )
+    terms: dict[int, int] = {}
+    for record in records:
+        assert isinstance(record.vector, dict)
+        sparse = record.vector[SPARSE_VECTOR]
+        assert isinstance(sparse, SparseVector)
+        terms[(record.payload or {})["chunk_index"]] = len(sparse.indices)
+    assert 0 < terms[0] < terms[1]
+
+    await delete_by_entry(client, session_id, _TEST_ENTRY_ID)
+    await client.close()
+
+
+async def test_ensure_collection_accepts_a_collection_of_the_right_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     client = _client()
@@ -504,6 +685,7 @@ async def test_ensure_collection_accepts_a_collection_of_the_right_vector_width(
         await client.create_collection(
             collection_name=name,
             vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+            sparse_vectors_config=_RIGHT_SPARSE_VECTORS,
         )
 
         await ensure_collection(client)

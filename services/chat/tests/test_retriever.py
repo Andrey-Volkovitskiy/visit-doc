@@ -1,9 +1,7 @@
-"""`search_faq` returns the observation pool whole, for the gates to narrow.
+"""`search_faq` returns the fused observation pool whole, for the gates to narrow.
 
-The retriever stopped being a filter in this phase. It fetches wider than the
-similarity cap and hands back everything it got, including candidates that will not
-survive the floor - because a gate can only be calibrated against candidates something
-recorded, and one that discards only what it never fetched cannot be argued up or down.
+It runs both branches - dense and BM25 - fuses them, and hands back everything they
+returned, so the shortlist cap discards only candidates something recorded.
 """
 
 from unittest.mock import AsyncMock, patch
@@ -11,7 +9,11 @@ from unittest.mock import AsyncMock, patch
 from chat.core.config import get_settings
 from chat.rag.pipeline import ScoredChunk
 from chat.rag.retriever import search_faq
-from chat.repositories.qdrant_repository import VECTOR_SIZE, RetrievedChunk
+from chat.repositories.qdrant_repository import (
+    VECTOR_SIZE,
+    RetrievedChunk,
+    SearchBranches,
+)
 
 _SESSION = "01JQ0000000000000000000000"
 _REVISIONS = ["01JQ1111111111111111111111"]
@@ -23,8 +25,10 @@ def _retrieved(score: float, index: int) -> RetrievedChunk:
     )
 
 
-async def _run(found: list[RetrievedChunk]) -> tuple[list[ScoredChunk], AsyncMock]:
-    search = AsyncMock(return_value=found)
+async def _run(
+    dense: list[RetrievedChunk], lexical: list[RetrievedChunk] | None = None
+) -> tuple[list[ScoredChunk], AsyncMock]:
+    search = AsyncMock(return_value=SearchBranches(dense=dense, lexical=lexical or []))
     embed = AsyncMock(return_value=[[0.1] * VECTOR_SIZE])
     with (
         patch("chat.rag.retriever.embed_texts", embed),
@@ -36,29 +40,44 @@ async def _run(found: list[RetrievedChunk]) -> tuple[list[ScoredChunk], AsyncMoc
     return chunks, search
 
 
-async def test_search_faq_asks_for_the_configured_pool_size() -> None:
+async def test_search_faq_asks_each_branch_for_the_configured_pool_size() -> None:
     _, search = await _run([])
 
     assert search.await_args.kwargs["limit"] == get_settings().RETRIEVAL_POOL_SIZE
 
 
-async def test_the_pool_is_wider_than_the_similarity_cap() -> None:
-    # Otherwise the cap discards only candidates it never fetched, which is the state
-    # this phase exists to leave behind.
+async def test_search_faq_hands_the_query_text_to_the_lexical_branch() -> None:
+    # BM25 is computed from the words, not the embedding, so the text must reach it.
+    _, search = await _run([])
+
+    assert "a question" in search.await_args.args
+
+
+async def test_the_pool_is_wider_than_the_shortlist_cap() -> None:
+    # Otherwise the cap discards only candidates it never fetched.
     settings = get_settings()
 
     assert settings.RETRIEVAL_POOL_SIZE > settings.SIMILARITY_CAP
 
 
-async def test_sub_floor_candidates_are_returned_not_dropped() -> None:
-    # The gate drops them, not the search - and only after logging what it dropped.
-    floor = get_settings().SIMILARITY_FLOOR
-    found = [_retrieved(0.9, 0), _retrieved(floor - 0.2, 1), _retrieved(0.01, 2)]
+async def test_a_chunk_only_the_lexical_branch_found_reaches_the_pool() -> None:
+    # The reason the branch exists: a chunk dense search did not return at all.
+    chunks, _ = await _run([_retrieved(0.9, 0)], [_retrieved(7.5, 4)])
 
-    chunks, _ = await _run(found)
+    lexical_only = next(c for c in chunks if c.chunk_index == 4)
+    assert lexical_only.similarity_score is None
+    assert lexical_only.lexical_score == 7.5
+    assert lexical_only.lexical_rank == 1
 
-    assert [c.chunk_index for c in chunks] == [0, 1, 2]
-    assert any(c.similarity_score < floor for c in chunks)
+
+async def test_the_pool_is_returned_in_fused_order() -> None:
+    # Chunk 1 is second in both branches, chunk 0 and chunk 2 first in one each.
+    dense = [_retrieved(0.9, 0), _retrieved(0.8, 1)]
+    lexical = [_retrieved(9.0, 2), _retrieved(8.0, 1)]
+
+    chunks, _ = await _run(dense, lexical)
+
+    assert [c.chunk_index for c in chunks] == [1, 0, 2]
 
 
 async def test_retrieved_chunks_are_lifted_into_scored_chunks() -> None:
@@ -68,12 +87,13 @@ async def test_retrieved_chunks_are_lifted_into_scored_chunks() -> None:
 
     assert isinstance(chunks[0], ScoredChunk)
     assert chunks[0].similarity_score == 0.9
+    assert chunks[0].dense_rank == 1
     assert chunks[0].rerank_score is None
     assert chunks[0].chunk_text == "chunk 0"
 
 
 async def test_an_empty_corpus_costs_no_embedding_and_no_search() -> None:
-    search = AsyncMock(return_value=[])
+    search = AsyncMock(return_value=SearchBranches(dense=[], lexical=[]))
     embed = AsyncMock(return_value=[[0.1] * VECTOR_SIZE])
     with (
         patch("chat.rag.retriever.embed_texts", embed),
