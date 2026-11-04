@@ -1,0 +1,939 @@
+{
+  "case_id": "G-a-09",
+  "chat_id": "01M4X2YJMTCKCN70NV7FFMWCPZ",
+  "patient_id": "01M4X2YJP1X3M00C9AAEXMTVMS",
+  "attempts": 1,
+  "elapsed_seconds": 14.45318644299914,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X2YJQYRVVT34SV99184Y4M",
+    "content": "I need a dental appointment on Tuesday morning, please.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X2YRJGNC8ZRWNJ5CZSQW0F",
+    "content": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "I need a dental appointment on Tuesday morning, please.",
+        "query": "I need a dental appointment on Tuesday morning, please."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "chat_id": "01M4X2YJMTCKCN70NV7FFMWCPZ",
+      "sender": "patient",
+      "content": "I need a dental appointment on Tuesday morning, please.",
+      "event": "message.persisted",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:20.360788Z"
+    },
+    {
+      "message": "I need a dental appointment on Tuesday morning, please.",
+      "message_ids_unified": [
+        "01M4X2YJQYRVVT34SV99184Y4M"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:20.361048Z"
+    },
+    {
+      "trace_id": "06ebc5494b5250a081c01925991278c0",
+      "event": "turn.traced",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:20.362104Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:20.364760Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3329,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.837708Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "I need a dental appointment on Tuesday morning, please.",
+          "query": "I need a dental appointment on Tuesday morning, please."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.838188Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1474.66,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "I need a dental appointment on Tuesday morning, please.",
+            "query": "I need a dental appointment on Tuesday morning, please."
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.838561Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.840765Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.851621Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:21.852166Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I need a dental appointment on Tuesday morning, please."
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:32:21.852366Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 215,
+        "cache_read": 5831,
+        "cache_write": 128,
+        "cache_write_1h": 0,
+        "thinking": 82
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:24.404829Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2553.35,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:24.405909Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+        "from_date": "2026-03-03",
+        "to_date": "2026-03-03"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:24.406485Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:24.429009Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 22.55,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:24.429575Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I need a dental appointment on Tuesday morning, please."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_016pPFm8NQpMfXPBAxaYy3mp",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                "from_date": "2026-03-03",
+                "to_date": "2026-03-03"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_016pPFm8NQpMfXPBAxaYy3mp",
+              "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:32:24.429881Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 115,
+        "cache_read": 5959,
+        "cache_write": 322,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.313969Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1884.21,
+      "tool_names": [],
+      "text": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.314344Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4474.07,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 228,
+        "answer_text": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.314594Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.316057Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.37,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 228,
+        "answer_text": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.316193Z"
+    },
+    {
+      "duration_ms": 5965.49,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M4X2YJQYRVVT34SV99184Y4M"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.316509Z"
+    },
+    {
+      "message_id": "01M4X2YRJGNC8ZRWNJ5CZSQW0F",
+      "chat_id": "01M4X2YJMTCKCN70NV7FFMWCPZ",
+      "sender": "assistant",
+      "content": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?",
+      "event": "message.persisted",
+      "turn_id": "01M4X2YJQYRVVT34SV99184Y4M",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:26.327026Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+      "content": "The earliest of those works - please book it.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M4X2Z0PATRBVJW9YRGFHD40W",
+      "content": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "chat_id": "01M4X2YJMTCKCN70NV7FFMWCPZ",
+        "sender": "patient",
+        "content": "The earliest of those works - please book it.",
+        "event": "message.persisted",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:26.372108Z"
+      },
+      {
+        "message": "The earliest of those works - please book it.",
+        "message_ids_unified": [
+          "01M4X2YRKTM9CWBJT2ADKSWYRF"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:26.372337Z"
+      },
+      {
+        "trace_id": "c46bb4c7fc8eccbd1b65851c625a85d1",
+        "event": "turn.traced",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:26.373376Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:26.376065Z"
+      },
+      {
+        "call": "classify_intent.model",
+        "model": "claude-haiku-4-5-20251001",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 3433,
+          "output": 49,
+          "cache_read": 0,
+          "cache_write": 0,
+          "cache_write_1h": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.913163Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "The earliest of those works - please book it.",
+            "query": "Book a dental appointment on Tuesday morning at 9:00 AM with Dr. Andreas Vesalius."
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.913611Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 1538.91,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "segments": [
+            {
+              "position": 0,
+              "intent": "booking",
+              "text": "The earliest of those works - please book it.",
+              "query": "Book a dental appointment on Tuesday morning at 9:00 AM with Dr. Andreas Vesalius."
+            }
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.913969Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.915628Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.923987Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:27.924549Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need a dental appointment on Tuesday morning, please."
+          },
+          {
+            "role": "assistant",
+            "content": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?"
+          },
+          {
+            "role": "user",
+            "content": "The earliest of those works - please book it."
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:27.924737Z"
+      },
+      {
+        "call": "handle_booking.model[1]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 279,
+          "cache_read": 5959,
+          "cache_write": 129,
+          "cache_write_1h": 0,
+          "thinking": 145
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:31.549248Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 3624.75,
+        "tool_names": [
+          "check_availability"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:31.549688Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "arguments": {
+          "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+          "from_date": "2026-03-03",
+          "to_date": "2026-03-03"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:31.549942Z"
+      },
+      {
+        "method": "CheckAvailability",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:31.567853Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "status": "ok",
+        "reason": null,
+        "duration_ms": 18.36,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:31.568643Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need a dental appointment on Tuesday morning, please."
+          },
+          {
+            "role": "assistant",
+            "content": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?"
+          },
+          {
+            "role": "user",
+            "content": "The earliest of those works - please book it."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_0152fKxmcXroxdDwJq1dJc7G",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                  "from_date": "2026-03-03",
+                  "to_date": "2026-03-03"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_0152fKxmcXroxdDwJq1dJc7G",
+                "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:31.569139Z"
+      },
+      {
+        "call": "handle_booking.model[2]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 113,
+          "cache_read": 6088,
+          "cache_write": 385,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:33.287505Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 1718.51,
+        "tool_names": [
+          "book_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:33.287952Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "arguments": {
+          "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+          "starts_at": "2026-03-03T09:00:00"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:33.288138Z"
+      },
+      {
+        "method": "BookAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:33.311733Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "status": "booked",
+        "reason": null,
+        "duration_ms": 31.13,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:33.319413Z"
+      },
+      {
+        "iteration": 3,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need a dental appointment on Tuesday morning, please."
+          },
+          {
+            "role": "assistant",
+            "content": "For Tuesday, March 3rd, Dr. Andreas Vesalius (Dentistry) has these morning openings:\n\n- 9:00 AM\n- 10:00 AM\n- 11:00 AM\n\n(There are also slots at 12:00 PM and 1:00 PM, if you'd prefer midday.)\n\nWould you like to book one of these?"
+          },
+          {
+            "role": "user",
+            "content": "The earliest of those works - please book it."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_0152fKxmcXroxdDwJq1dJc7G",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                  "from_date": "2026-03-03",
+                  "to_date": "2026-03-03"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_0152fKxmcXroxdDwJq1dJc7G",
+                "content": "{\"available_starts\": [\"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "id": "toolu_01Et8qwXh2o1NDGsDbmER6nt",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                  "starts_at": "2026-03-03T09:00:00"
+                },
+                "name": "book_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Et8qwXh2o1NDGsDbmER6nt",
+                "content": "{\"status\": \"booked\", \"appointment\": {\"id\": \"01M4X2YZCTS43DRK4GW9BD85G8\", \"practitioner_full_name\": \"Andreas Vesalius\", \"starts_at\": \"2026-03-03T09:00:00\", \"ends_at\": \"2026-03-03T10:00:00\"}}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:33.319718Z"
+      },
+      {
+        "call": "handle_booking.model[3]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 2,
+          "output": 61,
+          "cache_read": 6473,
+          "cache_write": 223,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.627457Z"
+      },
+      {
+        "iteration": 3,
+        "duration_ms": 1307.93,
+        "tool_names": [],
+        "text": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM.",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.627851Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 6712.66,
+        "result": {
+          "outcome": "booked",
+          "appointment_id": "01M4X2YZCTS43DRK4GW9BD85G8",
+          "iterations": 3,
+          "tool_calls": 2,
+          "answer_chars": 135,
+          "answer_text": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.628086Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.629519Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.36,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "booked",
+          "citation_count": 0,
+          "answer_chars": 135,
+          "answer_text": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM."
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.629674Z"
+      },
+      {
+        "duration_ms": 8267.28,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM.",
+        "booking_outcome": "booked",
+        "message_ids_unified": [
+          "01M4X2YRKTM9CWBJT2ADKSWYRF"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.629944Z"
+      },
+      {
+        "message_id": "01M4X2Z0PATRBVJW9YRGFHD40W",
+        "chat_id": "01M4X2YJMTCKCN70NV7FFMWCPZ",
+        "sender": "assistant",
+        "content": "You're all set — your dental appointment with Dr. Andreas Vesalius is booked for Tuesday, March 3rd at 9:00 AM, running until 10:00 AM.",
+        "event": "message.persisted",
+        "turn_id": "01M4X2YRKTM9CWBJT2ADKSWYRF",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:34.640609Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [],
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-03T09:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-03T09:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X2YJQYRVVT34SV99184Y4M": "06ebc5494b5250a081c01925991278c0",
+    "01M4X2YRKTM9CWBJT2ADKSWYRF": "c46bb4c7fc8eccbd1b65851c625a85d1"
+  }
+}

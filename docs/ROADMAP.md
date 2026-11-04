@@ -795,10 +795,13 @@ retrieval weaknesses, and what they exposed was not ranking. Four changes shippe
 measurement - no similarity floor in front of the reranker, a fallback floor of its own for a
 reranker outage, an answerer that gives a no the information states, and chunks cut by heading
 section - plus a classifier fix for the routing misses that remained. Unserved answerable requests
-went from 12/87 to 1/87 with no answer on a labelled gap (baseline `01M3WD842TTD1Q9FX8TDRTMFAB`). **Hybrid search was not built**: dense
-search put the cited chunk in the reranker's shortlist for every answerable request and the
-reranker ranked it first every time, so fusion had nothing to move. The plan below is kept as
-written, with notes on what happened to each part; the measurements and the decision are in
+went from 12/87 to 1/87 with no answer on a labelled gap (baseline `01M3WD842TTD1Q9FX8TDRTMFAB`). Hybrid search was
+first left unbuilt - dense search put the cited chunk in the reranker's shortlist for every
+answerable request and the reranker ranked it first every time - and then built on
+`018-hybrid-retrieval-bm25`, with no eval regression as its bar. Reciprocal Rank Fusion failed it;
+**the shipped form adds BM25's top 3 to the dense top 5** that the reranker sees, and changed no
+verdict (baseline `01M4X2XC19QBJWH8RQ9B81SAX6`). The plan below is kept as written, with notes on
+what happened to each part; the measurements are in
 `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
 
 - **A realistic corpus, by extension rather than replacement.** The 9 entries stay as they are,
@@ -842,21 +845,25 @@ written, with notes on what happened to each part; the measurements and the deci
   additive and 007's revision scheme is unchanged. One Query API call runs two `prefetch` searches
   and fuses them with `Fusion.RRF`. **The session and live-revision filter goes on both
   prefetches**: a lexical branch without it would reach points Postgres no longer vouches for.
-  *(Not built. On the extended corpus dense search left BM25 nothing to rescue - rerank hit@1
-  83/83, and the offline probe ranked the cited entry first by dense search in 7 of the 8 cases
-  written to favour lexical matching against BM25's 4. A larger corpus, where the 25-wide pool
-  stops reaching the right chunk, is what would reopen it.)*
+  *(Built, but not fused. The sparse vector is on the same point, computed by Qdrant from the
+  chunk text, and both searches carry the filter - as one `query_batch_points` call of two
+  requests, so each branch's ranks reach the pipeline. Fused by RRF, an offline replay of the
+  baseline lost three answered requests: a chunk both branches returned on common words outranked
+  dense search's top hit. The shipped shortlist is the dense top 5 plus BM25's top 3, never in
+  place of a dense hit; replayed and then run in full it changed no verdict and no top reranked
+  chunk, at 680 chunks reranked against 545. findings.md section 11.)*
 - **The fused score is a rank, not a relevance score.** RRF scores `1/(k + rank)`, so the top result
   gets the same number whether it is a perfect match or the least bad of nothing. No floor can be
   put on it: fusion decides only the order of what reaches the reranker, and the rerank floor stays
-  where the abstention is decided.
+  where the abstention is decided. *(Moot: nothing is fused. The shortlist is cut by each branch's
+  own rank, and the rerank floor still decides the abstention.)*
 - **No similarity floor; the rerank floor is the only abstention gate.** The floor is a dense
   cosine threshold, and BM25 earns its place on exactly the chunks dense search scores low — an
   exact plan name or form number the embedding blurs — so a floor applied to the fused candidates
   would drop the chunk BM25 rescued. It turned out to be dropping dense search's own right answers
   first: on the extended corpus it stopped "PR-4", "braces" and "HC-9" with the right chunk ranked
-  first. *(Shipped ahead of hybrid, on that evidence: `SIMILARITY_FLOOR` defaults to -1.0, so the
-  cap alone picks the shortlist; measured, it answered all three and let no labelled gap through,
+  first. *(Shipped ahead of hybrid, on that evidence: `SIMILARITY_FLOOR` defaulted to -1.0, and
+  the setting went with the BM25 build, so the cap alone picks the shortlist; measured, it answered all three and let no labelled gap through,
   at four more rerank calls in 146 cases. `specs/018-hybrid-retrieval/evaluation/findings.md`.)*
 - **No unchecked fallback.** A reranker outage used to answer from the ≤5 chunks that cleared the
   similarity floor (`answered_unreranked`). Without the floor nothing in the shortlist has passed a
@@ -872,9 +879,11 @@ written, with notes on what happened to each part; the measurements and the deci
   stage on its own. The result is a table — dense only, BM25 only, fused, each with and without the
   reranker — split by case family, and read against the band. Hybrid is kept only if the table
   says it pays for itself; "no measurable effect" is a result the README records, not one it hides.
-  *(Not run: with hybrid unbuilt there is no fused row. The predicted "no measurable effect" is
-  recorded in the README's technology choices, with the evidence it rests on, rather than
-  measured.)*
+  *(Not run as a table, and not a switch: there is one retrieval path. Each candidate's rank in
+  each branch is logged in `faq.retrieval_completed`, and `retrieval`/`lexical_cap` are run
+  conditions. The rows that were measured - RRF, dense plus BM25's top, and a dense-only control,
+  each by offline replay of the baseline - are in findings.md section 11; "no measurable effect"
+  is the result, and the README records it.)*
 - **A "dense, no floor" row, so removing the floor is not credited to BM25.** Hybrid changes two
   things at once - it adds a lexical branch and it drops the similarity floor - and the first
   targeted run on the extended set put every retrieval miss on the second: "PR-4" and "braces"

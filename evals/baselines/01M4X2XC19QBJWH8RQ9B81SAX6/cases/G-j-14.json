@@ -1,0 +1,968 @@
+{
+  "case_id": "G-j-14",
+  "chat_id": "01M4X33JZ0VAGBW9RW3MFWH9AA",
+  "patient_id": "01M4X33JZFBTZMWBY5PKV6G63W",
+  "attempts": 1,
+  "elapsed_seconds": 3.385335214999941,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What happens if you don't take my insurance?",
+          "answer": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 24,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X33K0SWF61XE9TY24VN1C1",
+    "content": "What happens if you don't take my insurance?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X33P7F26MWTEDZGWCAK96R",
+    "content": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What happens if you don't take my insurance?",
+        "answer": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 24,
+            "chunk_index": 0,
+            "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What happens if you don't take my insurance?",
+        "query": "What happens if you don't take my insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "chat_id": "01M4X33JZ0VAGBW9RW3MFWH9AA",
+      "sender": "patient",
+      "content": "What happens if you don't take my insurance?",
+      "event": "message.persisted",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.482998Z"
+    },
+    {
+      "message": "What happens if you don't take my insurance?",
+      "message_ids_unified": [
+        "01M4X33K0SWF61XE9TY24VN1C1"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.483233Z"
+    },
+    {
+      "trace_id": "717d65190a62b197bd38b968e8321ec0",
+      "event": "turn.traced",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.484228Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.486666Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3328,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:05.942798Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What happens if you don't take my insurance?",
+          "query": "What happens if you don't take my insurance?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:05.943536Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1457.49,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What happens if you don't take my insurance?",
+            "query": "What happens if you don't take my insurance?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:05.943950Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:05.946365Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.203070Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 32,
+      "candidates": [
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.40964746,
+          "dense_rank": 1,
+          "lexical_score": 2.4075644,
+          "lexical_rank": 10,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.32433784,
+          "dense_rank": 2,
+          "lexical_score": 5.605544,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim goes to the right plan. A new card can take up to two business days to verify. If you give us the new details at least two business days before your appointment, we can confirm your coverage before you arrive.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.3110597,
+          "dense_rank": 3,
+          "lexical_score": 2.3377013,
+          "lexical_rank": 12,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.30427623,
+          "dense_rank": 4,
+          "lexical_score": 2.5491362,
+          "lexical_rank": 9,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.30338752,
+          "dense_rank": 5,
+          "lexical_score": 2.3075686,
+          "lexical_rank": 13,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.3002373,
+          "dense_rank": 6,
+          "lexical_score": 2.0721292,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.29077354,
+          "dense_rank": 7,
+          "lexical_score": 1.9853177,
+          "lexical_rank": 19,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.28553092,
+          "dense_rank": 8,
+          "lexical_score": 2.040636,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.28406805,
+          "dense_rank": 9,
+          "lexical_score": 2.3445046,
+          "lexical_rank": 11,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.27242327,
+          "dense_rank": 10,
+          "lexical_score": 1.9902223,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.26801312,
+          "dense_rank": 11,
+          "lexical_score": 1.9100053,
+          "lexical_rank": 23,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.26050907,
+          "dense_rank": 12,
+          "lexical_score": 1.9951515,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.25987202,
+          "dense_rank": 13,
+          "lexical_score": 1.9659383,
+          "lexical_rank": 20,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.24612214,
+          "dense_rank": 14,
+          "lexical_score": 2.015114,
+          "lexical_rank": 16,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.22744551,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 2,
+          "similarity_score": 0.223467,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 5,
+          "similarity_score": 0.21966374,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.21394596,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.20777258,
+          "dense_rank": 19,
+          "lexical_score": 1.9329193,
+          "lexical_rank": 22,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 1,
+          "similarity_score": 0.20693155,
+          "dense_rank": 20,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.19732043,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.19560248,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.19478145,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.18758678,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 1,
+          "similarity_score": 0.18514347,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.7564807,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact and insurance information;\n- Form PR-4, Medical History Questionnaire: your past illnesses, operations, current medicines and allergies;\n- Form HC-9, Consent to Treatment.\n\nYou can fill them in on the tablet at the self-check-in kiosk, or on paper at the front desk. Most people take about 10 minutes over them. Returning patients update Form PR-1 only when their details have changed, and complete Form PR-4 again once a year.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.6558864,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have ever taken a bisphosphonate such as alendronate (Fosamax) for bone density. These medicines change how the dentist plans an extraction. Do not stop taking them before your appointment unless the doctor who prescribed them tells you to. Brush and floss as usual on the day.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.609031,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 5,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1151428,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.7802384,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.9516501,
+          "lexical_rank": 21,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.221056Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 32,
+      "kept": [
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.40964746
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.32433784
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.3110597
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.30427623
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.30338752
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": null
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.3002373
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.29077354
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.28553092
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.28406805
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.27242327
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.26801312
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.26050907
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.25987202
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.24612214
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.22744551
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 2,
+          "similarity_score": 0.223467
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 5,
+          "similarity_score": 0.21966374
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.21394596
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.20777258
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 1,
+          "similarity_score": 0.20693155
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.19732043
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.19560248
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.19478145
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.18758678
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 1,
+          "similarity_score": 0.18514347
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 3,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.224840Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 7,
+      "duration_ms": 286.84,
+      "scores": [
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.40964746,
+          "rerank_score": 0.63671875
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.30338752,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.3110597,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.32433784,
+          "rerank_score": 0.39453125
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "rerank_score": 0.369140625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.30427623,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "rerank_score": 0.28515625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.513617Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "rerank_score": 0.63671875
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "rerank_score": 0.47265625
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "rerank_score": 0.44921875
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "rerank_score": 0.39453125
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "rerank_score": 0.369140625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "rerank_score": 0.28515625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.514716Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.40964746,
+      "best_rerank_score": 0.63671875,
+      "event": "faq.verdict",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:06.515631Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.\n\nQuestion: What happens if you don't take my insurance?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:35:06.515987Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 333,
+        "output": 59,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.749818Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1804.82,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 177,
+        "answer_text": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What happens if you don't take my insurance?",
+            "verdict": "answered",
+            "answer_text": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.750794Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.752670Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.56,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 177,
+        "answer_text": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.752863Z"
+    },
+    {
+      "duration_ms": 3280.04,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 24,
+              "chunk_index": 0,
+              "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+              "similarity_score": 0.40964746,
+              "rerank_score": 0.63671875
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X33K0SWF61XE9TY24VN1C1"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.753202Z"
+    },
+    {
+      "message_id": "01M4X33P7F26MWTEDZGWCAK96R",
+      "chat_id": "01M4X33JZ0VAGBW9RW3MFWH9AA",
+      "sender": "assistant",
+      "content": "If we don't take your insurance, you can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+      "event": "message.persisted",
+      "turn_id": "01M4X33K0SWF61XE9TY24VN1C1",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:07.772542Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X33K0SWF61XE9TY24VN1C1": "717d65190a62b197bd38b968e8321ec0"
+  }
+}

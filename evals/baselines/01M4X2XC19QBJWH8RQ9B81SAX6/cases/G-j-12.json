@@ -1,0 +1,904 @@
+{
+  "case_id": "G-j-12",
+  "chat_id": "01M4X33FF8Z01WHCW914HE6E0J",
+  "patient_id": "01M4X33FFWX1Q3ZWZ1FW9F1WS2",
+  "attempts": 1,
+  "elapsed_seconds": 3.5687663889984833,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I pay with my HSA card?",
+          "answer": "Yes, we accept Health Savings Account (HSA) cards.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 26,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X33FH6QV95F7P514HHZEH7",
+    "content": "Can I pay with my HSA card?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X33JXM93HKKRBCH29MR1XR",
+    "content": "Yes, we accept Health Savings Account (HSA) cards.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I pay with my HSA card?",
+        "answer": "Yes, we accept Health Savings Account (HSA) cards.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 26,
+            "chunk_index": 0,
+            "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I pay with my HSA card?",
+        "query": "Can I pay with my HSA card?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "chat_id": "01M4X33FF8Z01WHCW914HE6E0J",
+      "sender": "patient",
+      "content": "Can I pay with my HSA card?",
+      "event": "message.persisted",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:00.912199Z"
+    },
+    {
+      "message": "Can I pay with my HSA card?",
+      "message_ids_unified": [
+        "01M4X33FH6QV95F7P514HHZEH7"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:00.912617Z"
+    },
+    {
+      "trace_id": "c53ee949a9b178363e7f82c7907bc6d0",
+      "event": "turn.traced",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:00.913600Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:00.916420Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3327,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.585332Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I pay with my HSA card?",
+          "query": "Can I pay with my HSA card?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.585917Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1670.42,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I pay with my HSA card?",
+            "query": "Can I pay with my HSA card?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.586276Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.588312Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.866762Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 28,
+      "candidates": [
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.54325527,
+          "dense_rank": 1,
+          "lexical_score": 9.827519,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": 0.33439642,
+          "dense_rank": 2,
+          "lexical_score": 2.6380072,
+          "lexical_rank": 16,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or type in your last name and date of birth. The kiosk cannot take payments: any copay or self-pay amount is paid at the front desk.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.32418,
+          "dense_rank": 3,
+          "lexical_score": 2.7888374,
+          "lexical_rank": 13,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.30605316,
+          "dense_rank": 4,
+          "lexical_score": 3.109383,
+          "lexical_rank": 6,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If your plan has a deductible you have not met yet, you pay the amount your plan allows for the visit at check-in. The front desk can estimate that amount for you if you give them your plan details before the visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.30126038,
+          "dense_rank": 5,
+          "lexical_score": 3.0043566,
+          "lexical_rank": 11,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.30076778,
+          "dense_rank": 6,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 5,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.2910437,
+          "dense_rank": 7,
+          "lexical_score": 2.7961044,
+          "lexical_rank": 12,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.28495148,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.28475228,
+          "dense_rank": 9,
+          "lexical_score": 3.0848086,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.27521348,
+          "dense_rank": 10,
+          "lexical_score": 3.1048849,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.27406424,
+          "dense_rank": 11,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.25863287,
+          "dense_rank": 12,
+          "lexical_score": 3.062443,
+          "lexical_rank": 10,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.25809512,
+          "dense_rank": 13,
+          "lexical_score": 2.6186943,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.25720757,
+          "dense_rank": 14,
+          "lexical_score": 2.5933793,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.25473934,
+          "dense_rank": 15,
+          "lexical_score": 3.1460793,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.25400695,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.24635303,
+          "dense_rank": 17,
+          "lexical_score": 2.5624156,
+          "lexical_rank": 19,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.24372661,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.23884907,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 2,
+          "similarity_score": 0.23755571,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.23688526,
+          "dense_rank": 21,
+          "lexical_score": 2.7530627,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 22,
+          "chunk_index": 0,
+          "similarity_score": 0.23650569,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.23455328,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": 0.23004784,
+          "dense_rank": 24,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": 0.22996274,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.2593703,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.0781655,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.6976938,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simpl",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.880587Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 28,
+      "kept": [
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.54325527
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": 0.33439642
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.32418
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.30605316
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.30126038
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.25473934
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": null
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.30076778
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.2910437
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.28495148
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.28475228
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.27521348
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.27406424
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.25863287
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.25809512
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.25720757
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.25400695
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.24635303
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.24372661
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.23884907
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 2,
+          "similarity_score": 0.23755571
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.23688526
+        },
+        {
+          "entry_id": 22,
+          "chunk_index": 0,
+          "similarity_score": 0.23650569
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.23455328
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": 0.23004784
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": 0.22996274
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:02.883064Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 7,
+      "duration_ms": 288.55,
+      "scores": [
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.54325527,
+          "rerank_score": 0.80859375
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.32418,
+          "rerank_score": 0.4453125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.30605316,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": 0.33439642,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "rerank_score": 0.37890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.30126038,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.25473934,
+          "rerank_score": 0.322265625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:03.173035Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "rerank_score": 0.80859375
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "rerank_score": 0.4453125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "rerank_score": 0.419921875
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "rerank_score": 0.40625
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "rerank_score": 0.37890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "rerank_score": 0.3359375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "rerank_score": 0.322265625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:03.174072Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.54325527,
+      "best_rerank_score": 0.80859375,
+      "event": "faq.verdict",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:03.174900Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.\n\nQuestion: Can I pay with my HSA card?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:35:03.175385Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 350,
+        "output": 24,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.365533Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1778.52,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 50,
+        "answer_text": "Yes, we accept Health Savings Account (HSA) cards.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I pay with my HSA card?",
+            "verdict": "answered",
+            "answer_text": "Yes, we accept Health Savings Account (HSA) cards."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.366595Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.368339Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.45,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 50,
+        "answer_text": "Yes, we accept Health Savings Account (HSA) cards."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.368546Z"
+    },
+    {
+      "duration_ms": 3466.03,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 26,
+              "chunk_index": 0,
+              "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express), and Flexible Spending Account (FSA) / Health Savings Account (HSA) cards.",
+              "similarity_score": 0.54325527,
+              "rerank_score": 0.80859375
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Yes, we accept Health Savings Account (HSA) cards.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X33FH6QV95F7P514HHZEH7"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.368810Z"
+    },
+    {
+      "message_id": "01M4X33JXM93HKKRBCH29MR1XR",
+      "chat_id": "01M4X33FF8Z01WHCW914HE6E0J",
+      "sender": "assistant",
+      "content": "Yes, we accept Health Savings Account (HSA) cards.",
+      "event": "message.persisted",
+      "turn_id": "01M4X33FH6QV95F7P514HHZEH7",
+      "level": "info",
+      "timestamp": "2026-10-14T11:35:04.379697Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X33FH6QV95F7P514HHZEH7": "c53ee949a9b178363e7f82c7907bc6d0"
+  }
+}

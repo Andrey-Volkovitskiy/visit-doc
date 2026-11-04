@@ -1,0 +1,1021 @@
+{
+  "case_id": "G-v-03",
+  "chat_id": "01M4X3DPTHWCRSG5ZCKHZ0NG1B",
+  "patient_id": "01M4X3DPV3ACHCH9RSDE7T3Y0C",
+  "attempts": 1,
+  "elapsed_seconds": 3.9737592809979105,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I use my Aetna medical insurance for a dental cleaning?",
+          "answer": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 30,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+    "content": "Can I use my Aetna medical insurance for a dental cleaning?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X3DTNABAV15TRHEMHJF67B",
+    "content": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I use my Aetna medical insurance for a dental cleaning?",
+        "answer": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 30,
+            "chunk_index": 1,
+            "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I use my Aetna medical insurance for a dental cleaning?",
+        "query": "Can I use my Aetna medical insurance for a dental cleaning?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "chat_id": "01M4X3DPTHWCRSG5ZCKHZ0NG1B",
+      "sender": "patient",
+      "content": "Can I use my Aetna medical insurance for a dental cleaning?",
+      "event": "message.persisted",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:36.120178Z"
+    },
+    {
+      "message": "Can I use my Aetna medical insurance for a dental cleaning?",
+      "message_ids_unified": [
+        "01M4X3DPWFS7XNJHATFCJVADBZ"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:36.120487Z"
+    },
+    {
+      "trace_id": "fece6d9ac455433e4a10cffbf2894338",
+      "event": "turn.traced",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:36.122334Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:36.124195Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3333,
+        "output": 44,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:37.636186Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I use my Aetna medical insurance for a dental cleaning?",
+          "query": "Can I use my Aetna medical insurance for a dental cleaning?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:37.636923Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1513.96,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I use my Aetna medical insurance for a dental cleaning?",
+            "query": "Can I use my Aetna medical insurance for a dental cleaning?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:37.637937Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:37.641624Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.135587Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 36,
+      "candidates": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.51092577,
+          "dense_rank": 1,
+          "lexical_score": 8.261966,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 0,
+          "similarity_score": 0.5023114,
+          "dense_rank": 2,
+          "lexical_score": 8.610002,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## What a dental appointment covers\n\nA routine dental appointment includes an examination of your teeth and gums and a professional cleaning. Fillings and extractions are usually done at a separate appointment, once the dentist has examined you and explained the treatment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.4758665,
+          "dense_rank": 3,
+          "lexical_score": 7.732973,
+          "lexical_rank": 5,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "similarity_score": 0.44567603,
+          "dense_rank": 4,
+          "lexical_score": 2.6976938,
+          "lexical_rank": 23,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.43677062,
+          "dense_rank": 5,
+          "lexical_score": 8.129175,
+          "lexical_rank": 4,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.4308213,
+          "dense_rank": 6,
+          "lexical_score": 3.2069547,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": 0.42638242,
+          "dense_rank": 7,
+          "lexical_score": 2.6251004,
+          "lexical_rank": 24,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.4219889,
+          "dense_rank": 8,
+          "lexical_score": 5.8502827,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.38091463,
+          "dense_rank": 9,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.3692777,
+          "dense_rank": 10,
+          "lexical_score": 7.4768996,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 5,
+          "similarity_score": 0.35995597,
+          "dense_rank": 11,
+          "lexical_score": 4.7399974,
+          "lexical_rank": 12,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently wi",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.3571971,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.3558637,
+          "dense_rank": 13,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 2,
+          "similarity_score": 0.34687185,
+          "dense_rank": 14,
+          "lexical_score": 5.379701,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Ear wax removal\n\nWe remove ear wax by microsuction, which uses a small medical vacuum instead of water. For three to five days before the appointment, put two or three d",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.34537256,
+          "dense_rank": 15,
+          "lexical_score": 11.464054,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.33815238,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 4,
+          "similarity_score": 0.32534418,
+          "dense_rank": 17,
+          "lexical_score": 2.6059752,
+          "lexical_rank": 25,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a filling\n\nYour mouth may stay numb for two to four hours. Do not eat or drink anything hot until the numbness wears off, so you do not burn or bite yourself without notic",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.31085718,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.3080956,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 0,
+          "similarity_score": 0.30425006,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.29881173,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.29583085,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.2835214,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.28219512,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.28050792,
+          "dense_rank": 25,
+          "lexical_score": 5.2434225,
+          "lexical_rank": 10,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 7.708477,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 5.074187,
+          "lexical_rank": 11,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.3991647,
+          "lexical_rank": 13,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.261947,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.2114234,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.076125,
+          "lexical_rank": 16,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1664736,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Spirometry (breathing test)\n\nSpirometry measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1034398,
+          "lexical_rank": 19,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.7460177,
+          "lexical_rank": 20,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.7460177,
+          "lexical_rank": 21,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.7390087,
+          "lexical_rank": 22,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.149040Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 36,
+      "kept": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.51092577
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 0,
+          "similarity_score": 0.5023114
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.4758665
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "similarity_score": 0.44567603
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.43677062
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.34537256
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.4308213
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": 0.42638242
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.4219889
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.38091463
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.3692777
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 5,
+          "similarity_score": 0.35995597
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.3571971
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.3558637
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 2,
+          "similarity_score": 0.34687185
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.33815238
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 4,
+          "similarity_score": 0.32534418
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.31085718
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.3080956
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 0,
+          "similarity_score": 0.30425006
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.29881173
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.29583085
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.2835214
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.28219512
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.28050792
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 2,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 2,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.151935Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 6,
+      "duration_ms": 213.35,
+      "scores": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.51092577,
+          "rerank_score": 0.7525271773338318
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.34537256,
+          "rerank_score": 0.5446584224700928
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.4758665,
+          "rerank_score": 0.5222257375717163
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 0,
+          "similarity_score": 0.5023114,
+          "rerank_score": 0.4865936040878296
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.43677062,
+          "rerank_score": 0.45436516404151917
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "similarity_score": 0.44567603,
+          "rerank_score": 0.4098442792892456
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.366950Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "rerank_score": 0.7525271773338318
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "rerank_score": 0.5446584224700928
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "rerank_score": 0.5222257375717163
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 0,
+          "rerank_score": 0.4865936040878296
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "rerank_score": 0.45436516404151917
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 2,
+          "rerank_score": 0.4098442792892456
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.368288Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.51092577,
+      "best_rerank_score": 0.7525271773338318,
+      "event": "faq.verdict",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:38.369433Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\nQuestion: Can I use my Aetna medical insurance for a dental cleaning?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:40:38.369792Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 410,
+        "output": 95,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.971092Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 2330.87,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 245,
+        "answer_text": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I use my Aetna medical insurance for a dental cleaning?",
+            "verdict": "answered",
+            "answer_text": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.971822Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.973275Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.37,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 245,
+        "answer_text": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.973421Z"
+    },
+    {
+      "duration_ms": 3862.4,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 30,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+              "similarity_score": 0.51092577,
+              "rerank_score": 0.7525271773338318
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X3DPWFS7XNJHATFCJVADBZ"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.973779Z"
+    },
+    {
+      "message_id": "01M4X3DTNABAV15TRHEMHJF67B",
+      "chat_id": "01M4X3DPTHWCRSG5ZCKHZ0NG1B",
+      "sender": "assistant",
+      "content": "Medical insurance plans do not cover dental care. For dental appointments, we only accept Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred — Aetna medical insurance is not accepted, so your dental cleaning would be self-pay.",
+      "event": "message.persisted",
+      "turn_id": "01M4X3DPWFS7XNJHATFCJVADBZ",
+      "level": "info",
+      "timestamp": "2026-10-14T11:40:39.991689Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X3DPWFS7XNJHATFCJVADBZ": "fece6d9ac455433e4a10cffbf2894338"
+  }
+}

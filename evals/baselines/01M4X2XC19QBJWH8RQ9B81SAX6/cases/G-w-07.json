@@ -1,0 +1,958 @@
+{
+  "case_id": "G-w-07",
+  "chat_id": "01M4X3EQ70GTFGKYWRFP7AEERZ",
+  "patient_id": "01M4X3EQ7FDKDPWFTFN1CPM46M",
+  "attempts": 1,
+  "elapsed_seconds": 3.625841307999508,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you take Blue Essentials?",
+          "answer": "No, we are not in-network with Blue Essentials HMO plans.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 29,
+              "chunk_index": 1,
+              "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups."
+            },
+            {
+              "entry_id": 23,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+    "content": "Do you take Blue Essentials?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X3ETPZHBSD6SWXTN7X5XAX",
+    "content": "No, we are not in-network with Blue Essentials HMO plans.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you take Blue Essentials?",
+        "answer": "No, we are not in-network with Blue Essentials HMO plans.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 29,
+            "chunk_index": 1,
+            "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups."
+          },
+          {
+            "entry_id": 23,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you take Blue Essentials?",
+        "query": "Do you take Blue Essentials insurance?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "chat_id": "01M4X3EQ70GTFGKYWRFP7AEERZ",
+      "sender": "patient",
+      "content": "Do you take Blue Essentials?",
+      "event": "message.persisted",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:09.282457Z"
+    },
+    {
+      "message": "Do you take Blue Essentials?",
+      "message_ids_unified": [
+        "01M4X3EQ8SZZPHV1P4XB8GZS3Q"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:09.282860Z"
+    },
+    {
+      "trace_id": "ee4b8e22ea0e20bf29017cedbf7325b0",
+      "event": "turn.traced",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:09.284695Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:09.286773Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3326,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:10.864462Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you take Blue Essentials?",
+          "query": "Do you take Blue Essentials insurance?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:10.865053Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1579.29,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you take Blue Essentials?",
+            "query": "Do you take Blue Essentials insurance?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:10.865809Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:10.868381Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.129590Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 31,
+      "candidates": [
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.49974155,
+          "dense_rank": 1,
+          "lexical_score": 14.4828,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.4590708,
+          "dense_rank": 2,
+          "lexical_score": 8.374167,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.39284194,
+          "dense_rank": 3,
+          "lexical_score": 2.5491362,
+          "lexical_rank": 11,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.37173456,
+          "dense_rank": 4,
+          "lexical_score": 2.4075644,
+          "lexical_rank": 12,
+          "considered": true,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insurer for potential reimbursement.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.3422085,
+          "dense_rank": 5,
+          "lexical_score": 2.3445046,
+          "lexical_rank": 13,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.3398642,
+          "dense_rank": 6,
+          "lexical_score": 5.605544,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim goes to the right plan. A new card can take up to two business days to verify. If you give us the new details at least two business days before your appointment, we can confirm your coverage before you arrive.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.3392421,
+          "dense_rank": 7,
+          "lexical_score": 2.3075686,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.33353215,
+          "dense_rank": 8,
+          "lexical_score": 2.015114,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.33110243,
+          "dense_rank": 9,
+          "lexical_score": 1.9659383,
+          "lexical_rank": 21,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.32978812,
+          "dense_rank": 10,
+          "lexical_score": 2.040636,
+          "lexical_rank": 16,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.31839168,
+          "dense_rank": 11,
+          "lexical_score": 1.9853177,
+          "lexical_rank": 20,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.31579795,
+          "dense_rank": 12,
+          "lexical_score": 2.0721292,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.2908978,
+          "dense_rank": 13,
+          "lexical_score": 1.9329193,
+          "lexical_rank": 23,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.28204903,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.27969122,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.278926,
+          "dense_rank": 16,
+          "lexical_score": 1.9951515,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.27183217,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.27130967,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 22,
+          "chunk_index": 0,
+          "similarity_score": 0.26809797,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.23383507,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": 0.23224072,
+          "dense_rank": 21,
+          "lexical_score": 4.7564807,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": 0.23207255,
+          "dense_rank": 22,
+          "lexical_score": 1.9516501,
+          "lexical_rank": 22,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 0,
+          "similarity_score": 0.23191649,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.2316859,
+          "dense_rank": 24,
+          "lexical_score": 1.9902223,
+          "lexical_rank": 19,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": 0.23122089,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.6558864,
+          "lexical_rank": 5,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Before your appointment\n\nTell the dentist before any treatment if you take a blood-thinning medicine such as warfarin, apixaban (Eliquis) or clopidogrel (Plavix), or if you have",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.609031,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1305344,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1151428,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.7802384,
+          "lexical_rank": 10,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring ",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.143329Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 31,
+      "kept": [
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.49974155
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.4590708
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.39284194
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.37173456
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.3422085
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.3398642
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.3392421
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.33353215
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.33110243
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.32978812
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.31839168
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.31579795
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.2908978
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.28204903
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.27969122
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.278926
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.27183217
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.27130967
+        },
+        {
+          "entry_id": 22,
+          "chunk_index": 0,
+          "similarity_score": 0.26809797
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.23383507
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": 0.23224072
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": 0.23207255
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 0,
+          "similarity_score": 0.23191649
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.2316859
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": 0.23122089
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 2,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 31,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 3,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.145776Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 6,
+      "duration_ms": 541.17,
+      "scores": [
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.49974155,
+          "rerank_score": 0.78125
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.4590708,
+          "rerank_score": 0.67578125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.39284194,
+          "rerank_score": 0.427734375
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.37173456,
+          "rerank_score": 0.42578125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.3422085,
+          "rerank_score": 0.392578125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.3398642,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.688549Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "rerank_score": 0.78125
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "rerank_score": 0.67578125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "rerank_score": 0.427734375
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "rerank_score": 0.42578125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "rerank_score": 0.392578125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "rerank_score": 0.3515625
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.689887Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 2,
+      "blocked_gate": null,
+      "best_similarity_score": 0.49974155,
+      "best_rerank_score": 0.78125,
+      "event": "faq.verdict",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:11.691604Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.\n\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: Do you take Blue Essentials insurance?\n\nQuestion: Do you take Blue Essentials?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:41:11.692075Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 597,
+        "output": 24,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.792093Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1924.82,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 2,
+        "answer_chars": 57,
+        "answer_text": "No, we are not in-network with Blue Essentials HMO plans.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you take Blue Essentials?",
+            "verdict": "answered",
+            "answer_text": "No, we are not in-network with Blue Essentials HMO plans."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.792900Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.794353Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.41,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 2,
+        "answer_chars": 57,
+        "answer_text": "No, we are not in-network with Blue Essentials HMO plans."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.794554Z"
+    },
+    {
+      "duration_ms": 3521.59,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 29,
+              "chunk_index": 1,
+              "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+              "similarity_score": 0.49974155,
+              "rerank_score": 0.78125
+            },
+            {
+              "entry_id": 23,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.4590708,
+              "rerank_score": 0.67578125
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "No, we are not in-network with Blue Essentials HMO plans.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X3EQ8SZZPHV1P4XB8GZS3Q"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.794882Z"
+    },
+    {
+      "message_id": "01M4X3ETPZHBSD6SWXTN7X5XAX",
+      "chat_id": "01M4X3EQ70GTFGKYWRFP7AEERZ",
+      "sender": "assistant",
+      "content": "No, we are not in-network with Blue Essentials HMO plans.",
+      "event": "message.persisted",
+      "turn_id": "01M4X3EQ8SZZPHV1P4XB8GZS3Q",
+      "level": "info",
+      "timestamp": "2026-10-14T11:41:12.812941Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X3EQ8SZZPHV1P4XB8GZS3Q": "ee4b8e22ea0e20bf29017cedbf7325b0"
+  }
+}

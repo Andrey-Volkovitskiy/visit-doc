@@ -1,7 +1,8 @@
 # 018 — Retrieval under a realistic corpus: findings
 
 What was measured from extending the starter corpus to the decision not to build hybrid search,
-2026-10-01, on branch `018-hybrid-retrieval`. ROADMAP Phase 4b is the plan this follows; this file
+2026-10-01, on branch `018-hybrid-retrieval` - and, from section 11, what was measured when it was
+built after all, 2026-10-14, on branch `018-hybrid-retrieval-bm25`. ROADMAP Phase 4b is the plan this follows; this file
 is what the measurements said, so a later reader can tell a decision from a guess.
 
 Every number below comes from a stored run under `.run/evals/` (the baseline is committed under
@@ -16,9 +17,11 @@ build.
 
 Phase 4b set out to make retrieval hard enough to measure and then add hybrid search. Making it
 hard worked; the weaknesses it exposed were not where hybrid search reaches. Every change below
-shipped on its own evidence, and hybrid search was not built (section 7). Unserved answerable
-requests went from 12/87 on the extended corpus to 1/87, with no answer on a labelled gap at any
-step; the closing baseline is `01M3WD842TTD1Q9FX8TDRTMFAB`.
+shipped on its own evidence. Unserved answerable requests went from 12/87 on the extended corpus to
+1/87, with no answer on a labelled gap at any step. Hybrid search was first left unbuilt on a
+predicted null (section 7), then built and measured (section 11): fusing the two rankings
+regressed, and adding BM25's top to the dense shortlist instead changed nothing the set measures.
+The baseline is `01M4X2XC19QBJWH8RQ9B81SAX6`.
 
 | change | why | evidence | commit |
 |---|---|---|---|
@@ -29,6 +32,7 @@ step; the closing baseline is `01M3WD842TTD1Q9FX8TDRTMFAB`.
 | Chunk by heading section, each chunk prefixed with its heading path | a fixed window ran across sections and set one section's sentence beside another's | section 6: 10/10 on the two replayed cases it broke | `a171078` |
 | Noise band on that build | to tell a real movement from the answerer's run-to-run variation | section 8: only the answerer varies, ±1 | `fcc024b` |
 | Classifier: what the clinic sent, billed or treated is `faq_question`; arriving late is a term, not a booking | four of the five remaining misses were routing | section 9: 142 to 145 of 146 exact on replay, and on the full run | `009d4ff` |
+| A BM25 branch beside the dense one; the reranker gets the dense top 5 plus BM25's top 3 | cover for exact terms a larger corpus would push out of the dense pool - not a measured miss | section 11: RRF lost three answers on replay; this changed no verdict, live or replayed | `07ff68d`, `cd84c89` |
 
 ## 1. Why the corpus had to change first
 
@@ -206,6 +210,9 @@ the answer prompt next changes.
 
 ## 7. Decision: hybrid search is not built
 
+*Superseded by section 11, which built it. Kept as the prediction it was: the measured result
+matched it - no outcome moved - and RRF, the fusion this section assumed, did worse than predicted.*
+
 The "dense, no floor" row the ablation was to carry became the default pipeline, so hybrid would
 have had to beat it rather than the pipeline it was planned against. It had nothing to beat:
 
@@ -299,5 +306,88 @@ already shows it doing. Nothing else moved. The run is the baseline that closes 
   shipped. Fixing the old entry instead would remove the conflict the case exists to test.
 - **The answerer now carries more of the abstention** (section 6) - three gaps reach it that the
   rerank floor used to stop.
-- **The corpus is still small** - 62 chunks against a 25-wide pool. Section 7's decision holds for
-  this size; a larger corpus is what would reopen it.
+- **The corpus is still small** - 62 chunks against a 25-wide pool, so nothing in the set needs
+  BM25 (section 11). A larger corpus is where its value, and the right `LEXICAL_CAP`, can be
+  measured.
+
+## 11. Hybrid search, built after all
+
+Section 7 left hybrid search unbuilt on a predicted null. It was built anyway, on a second branch
+(`018-hybrid-retrieval-bm25`), with one bar: the eval must not regress. Every chunk point carries a
+sparse BM25 vector beside the dense one, computed by Qdrant from the chunk's text (`Qdrant/bm25`,
+IDF modifier) and written in the same upsert, and one `query_batch_points` call runs both searches,
+each carrying the session and live-revision filter. All databases were cleaned rather than
+back-filled, and there is one retrieval path - no dense-only switch.
+
+Each build was judged first by an offline probe (`probe/`): every one of the 109 FAQ searches in
+`01M3WD842TTD1Q9FX8TDRTMFAB` replayed through production's own pipeline - both searches, the
+shortlist gate, the real reranker and the rerank gate - against a fresh collection seeded with the
+baseline's entry ids, and scored with `make eval-compare`. Generation is not replayed, so a
+comparison's serving rows are the baseline's; `probe/diff_verdicts.py` reads the replayed verdicts
+and rerank survivors chunk by chunk instead. The same replay with the BM25 branch emptied
+(`probe/dense-only-control.md`) reproduced the baseline exactly - no metric, verdict or survivor
+moved - so every movement below is BM25's.
+
+### Reciprocal Rank Fusion regressed
+
+Fused client-side (k = 60, so the cosine survived for the fallback floor), the top 5 of the fused
+order went to the reranker (`07ff68d`, `probe/rrf-k60.md`):
+
+| | baseline | RRF |
+|---|---|---|
+| similarity hit@1 / @5 | 82 / 86 of 86 | 74 / 83 of 86 |
+| similarity MRR | 0.968 | 0.910 |
+| answered requests that abstained | - | 3: `G-j-06`, `G-o-06`, `G-t-03` |
+| requests answered from a different chunk | - | `G-m-06` [2] ("When do I pay?") |
+| requests that moved toward answered | - | none |
+
+RRF rewards agreement. A chunk ranked 10th by both branches scores 2/70 = 0.029 and outranks
+dense search's top hit with no BM25 match, at 1/61 = 0.016. With each branch returning 25 of 62
+chunks, and BM25 matching ordinary words ("appointment", "call", "pay"), many mediocre chunks sit
+in both lists: "video call" (`G-j-06`) fell from dense rank 1 to fused rank 16. `G-t-03` shows the
+harness's blind spot - its "Language interpreters" section was pushed out by another section of
+the same entry, so the entry-level metrics did not move and only its verdict did.
+
+A weighted RRF cannot repair this. Protecting the dense top 5 from a chunk at dense rank 6 and
+BM25 rank 1 needs a BM25 weight under 0.014 of the dense one; letting a BM25 top hit at dense
+rank 15 into the top 5 needs one over 0.125. No weight does both, and the set could not choose one
+anyway: dense search already shortlists every cited entry, so it shows BM25's cost and never its
+benefit.
+
+### Dense top 5 plus BM25's top 3
+
+So the lexical branch adds candidates instead of reordering them (`cd84c89`): the shortlist is
+the dense top `SIMILARITY_CAP` (5) and the BM25 top `LEXICAL_CAP` (3), a BM25 hit already on the
+dense top taking no extra place. Nothing dense search shortlists can be lost, and the reranker -
+which ranked the cited entry first in all 86 requests that reached it - decides between them.
+
+| | probe (`probe/dense-plus-bm25.md`) | full live run `01M4X2XC19QBJWH8RQ9B81SAX6` |
+|---|---|---|
+| any metric moved | no | no, and no case moved |
+| verdict changes, of 109 | 0 | 0 |
+| top reranked chunk changed | 0 | 0 |
+| a different 2nd or 3rd survivor | 6 | the same 6 |
+| chunks sent to the reranker | 545 to 680 | 545 to 680 |
+
+The six (`G-l-02`, `G-m-02` [1], `G-o-01` [1], `G-o-05`, `G-q-02`, `G-q-03`) were run live on
+their own first; all seven requests in them stayed answered, each from the chunks it was given. Two read differently: "Which insurance plans do you
+accept?" now lists the dental plans the BM25 extra brought in, and `G-m-02` [1] lost the Cigna
+network detail of the chunk it displaced. Claude spend was unchanged ($0.94); the cost is a
+quarter more documents per rerank call.
+
+The result matches section 7's prediction: on this corpus BM25 helps no request, because dense
+search already shortlists every cited entry. It is kept as cover for what the set cannot show yet
+- an exact plan name, code or drug name that a larger corpus pushes out of the dense top 5 - at a
+cost the run measured, and with no effect on any answer the set checks.
+
+### What it shares across sessions
+
+BM25's IDF is computed over the whole collection, so one session's chunks shift the term weights
+another session's search is scored with. Only the statistic crosses: the filter on both searches
+means no session can retrieve, rank on or cite another's text. A session that writes unusual
+words can make them slightly rarer or commoner for everyone, which moves BM25's order and at most
+which three chunks it adds - never what the dense top 5 is.
+
+The noise band was measured under dense retrieval and does not apply to this baseline; a new one
+is five full runs of `cd84c89`, not yet taken.
+

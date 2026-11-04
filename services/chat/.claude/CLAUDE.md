@@ -65,17 +65,33 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   self-reported by the LLM (avoids hallucinated citations) — and an explicit **abstention path**.
   Since 008 the "groundedness check" is **two gates before generation**, not a boolean after it:
   a per-chunk similarity floor, then a cross-encoder rerank floor, either of which abstains without
-  spending a generation call. Since 018 the similarity floor defaults to -1.0, so the first gate
-  is its cap alone and the rerank floor is the one that decides an abstention: measured on the
-  extended corpus, a 0.25 floor dropped chunks dense search had ranked first. The floor that
-  remains is `UNRERANKED_SIMILARITY_FLOOR`, applied only when the reranker is unavailable, so a
-  fallback never answers from a shortlist nothing has judged
+  spending a generation call. Since 018 the first gate has no floor at all (`SIMILARITY_FLOOR` is
+  gone): measured on the extended corpus, a 0.25 floor dropped chunks dense search had ranked
+  first, so the shortlist is cut by rank and the rerank floor is the one that decides an
+  abstention. The floor that remains is `UNRERANKED_SIMILARITY_FLOOR`, a cosine floor applied only
+  when the reranker is unavailable, so a fallback never answers from a shortlist nothing has
+  judged - and never from a chunk only BM25 found, which has no cosine
   (`specs/018-hybrid-retrieval/evaluation/`). `rag/groundedness.py` and the `grounded` flag are
   gone; a turn now carries a five-value `FaqVerdict` naming which gate stopped it, because "an
   answered turn is grounded" made `true` uninformative while `false` covered three situations
   needing three different fixes.
   Per-turn *post-generation* groundedness verification is deliberately not done — `docs/ROADMAP.md`
   assigns answer groundedness to Phase 2's offline eval harness.
+- **BM25 adds candidates; it never reorders the dense ones** (018). Every chunk point carries a
+  sparse `bm25` vector beside its dense one (Qdrant computes it from the chunk text, IDF modifier)
+  in the same upsert, and `qdrant_repository.search` runs both searches in one
+  `query_batch_points` call, each carrying the session and live-revision filter - a lexical branch
+  without it would reach text Postgres no longer vouches for. `merge_branches` keeps the dense
+  order, and `apply_shortlist_gate` sends the reranker the dense top `SIMILARITY_CAP` plus the BM25
+  top `LEXICAL_CAP`, a chunk on both tops counted once. **Do not fuse the rankings** (RRF, weighted
+  or not): replayed against the baseline, RRF let chunks both branches returned on common words
+  outrank dense search's top hit and lost three answered requests, and no weight protects the
+  dense top while still letting BM25 promote a chunk into the shortlist. A BM25-only chunk has
+  `similarity_score` None - never 0.0 or its BM25 score - and its BM25 score lives in
+  `lexical_score`, on another scale. `service.configured` states `retrieval` and `lexical_cap`. BM25's IDF is collection-wide,
+  so term statistics cross sessions; text never does. The collection is created with both vectors,
+  and startup refuses one whose shape differs (`CollectionShapeMismatchError`) rather than
+  serving a branch that cannot run.
 - **Postgres decides what Qdrant may answer from.** For any entity with both a Postgres row and a
   derived Qdrant index (e.g. `FaqEntry`/`FaqChunk`), the row is the sole authority on which indexed
   content is live, and retrieval carries that as a predicate on the search itself. Points the row

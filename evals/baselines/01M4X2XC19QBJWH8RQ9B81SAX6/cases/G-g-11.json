@@ -1,0 +1,247 @@
+{
+  "case_id": "G-g-11",
+  "chat_id": "01M4X32DJ9E1FFF6E1K76BSFHR",
+  "patient_id": "01M4X32DJT67HP87D0X8P66Q9S",
+  "attempts": 1,
+  "elapsed_seconds": 2.6009356629983813,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+    "content": "Let me think about it a bit.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X32G23YQMQ2VGZV6RZ5YZJ",
+    "content": "Of course, take your time! Feel free to reach out whenever you're ready, and we're happy to help.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Let me think about it a bit.",
+        "query": "Let me think about it a bit."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "chat_id": "01M4X32DJ9E1FFF6E1K76BSFHR",
+      "sender": "patient",
+      "content": "Let me think about it a bit.",
+      "event": "message.persisted",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:26.195798Z"
+    },
+    {
+      "message": "Let me think about it a bit.",
+      "message_ids_unified": [
+        "01M4X32DM6AMWN6VYTWW0SQ7SY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:26.196065Z"
+    },
+    {
+      "trace_id": "c54913fe2855413c3eb7cee9f97376ea",
+      "event": "turn.traced",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:26.197318Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:26.199408Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3326,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:27.768301Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Let me think about it a bit.",
+          "query": "Let me think about it a bit."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:27.768880Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1570.16,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Let me think about it a bit.",
+            "query": "Let me think about it a bit."
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:27.769344Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:27.771762Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Let me think about it a bit."
+        }
+      ],
+      "event": "small_talk.model_request",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "node": "small_talk",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:34:27.771972Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 259,
+        "output": 27,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "node": "small_talk",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.667123Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 896.31,
+      "result": {
+        "answer_chars": 97,
+        "answer_text": "Of course, take your time! Feel free to reach out whenever you're ready, and we're happy to help.",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.667814Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.669616Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.52,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 97,
+        "answer_text": "Of course, take your time! Feel free to reach out whenever you're ready, and we're happy to help."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.669828Z"
+    },
+    {
+      "duration_ms": 2487.78,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Of course, take your time! Feel free to reach out whenever you're ready, and we're happy to help.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X32DM6AMWN6VYTWW0SQ7SY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.670178Z"
+    },
+    {
+      "message_id": "01M4X32G23YQMQ2VGZV6RZ5YZJ",
+      "chat_id": "01M4X32DJ9E1FFF6E1K76BSFHR",
+      "sender": "assistant",
+      "content": "Of course, take your time! Feel free to reach out whenever you're ready, and we're happy to help.",
+      "event": "message.persisted",
+      "turn_id": "01M4X32DM6AMWN6VYTWW0SQ7SY",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:28.689602Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X32DM6AMWN6VYTWW0SQ7SY": "c54913fe2855413c3eb7cee9f97376ea"
+  }
+}

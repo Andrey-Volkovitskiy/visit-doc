@@ -1,0 +1,400 @@
+{
+  "case_id": "G-b-09",
+  "chat_id": "01M4X30DKPFGXPPKSBKVPZRPAG",
+  "patient_id": "01M4X30DM7FE0GRXSYPSB626BP",
+  "attempts": 1,
+  "elapsed_seconds": 5.440999024998746,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+    "content": "My tooth is absolutely killing me, I need to be seen.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X30JW55N9E865JF3QG7Y7E",
+    "content": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "My tooth is absolutely killing me, I need to be seen.",
+        "query": "I need to be seen for a tooth problem"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "chat_id": "01M4X30DKPFGXPPKSBKVPZRPAG",
+      "sender": "patient",
+      "content": "My tooth is absolutely killing me, I need to be seen.",
+      "event": "message.persisted",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.705729Z"
+    },
+    {
+      "message": "My tooth is absolutely killing me, I need to be seen.",
+      "message_ids_unified": [
+        "01M4X30DNR5Q9QSB4V8Y26DZK5"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.705981Z"
+    },
+    {
+      "trace_id": "d242a956c7c6ed9f82ba67f745b7244a",
+      "event": "turn.traced",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.707969Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.710029Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3331,
+        "output": 35,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.686545Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "My tooth is absolutely killing me, I need to be seen.",
+          "query": "I need to be seen for a tooth problem"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.687190Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 977.9,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "My tooth is absolutely killing me, I need to be seen.",
+            "query": "I need to be seen for a tooth problem"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.687585Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.690611Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.699423Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:21.700009Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My tooth is absolutely killing me, I need to be seen."
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:33:21.700186Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 220,
+        "cache_read": 5831,
+        "cache_write": 133,
+        "cache_write_1h": 0,
+        "thinking": 31
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:24.094999Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2395.12,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "I'm sorry you're in pain. We have Dr. Andreas Vesalius, who specializes in Dentistry. Let me check his earliest available appointments for you.",
+      "event": "booking.model_call",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:24.095429Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+        "from_date": "2026-03-02",
+        "to_date": "2026-03-05"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:24.095617Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:24.107588Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 12.45,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:24.108156Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My tooth is absolutely killing me, I need to be seen."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "citations": null,
+              "text": "I'm sorry you're in pain. We have Dr. Andreas Vesalius, who specializes in Dentistry. Let me check his earliest available appointments for you.",
+              "type": "text"
+            },
+            {
+              "id": "toolu_01YXsRjLwgDnumMA2zSsrqcg",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                "from_date": "2026-03-02",
+                "to_date": "2026-03-05"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01YXsRjLwgDnumMA2zSsrqcg",
+              "content": "{\"available_starts\": [\"2026-03-02T09:00:00\", \"2026-03-02T10:00:00\", \"2026-03-02T11:00:00\", \"2026-03-02T12:00:00\", \"2026-03-02T13:00:00\", \"2026-03-03T09:00:00\", \"2026-03-03T10:00:00\", \"2026-03-03T11:00:00\", \"2026-03-03T12:00:00\", \"2026-03-03T13:00:00\", \"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-05T09:00:00\", \"2026-03-05T10:00:00\", \"2026-03-05T11:00:00\", \"2026-03-05T12:00:00\", \"2026-03-05T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:33:24.108376Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 100,
+        "cache_read": 5964,
+        "cache_write": 535,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.013139Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1905.08,
+      "tool_names": [],
+      "text": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days.",
+      "event": "booking.model_call",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.013724Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 4324.0,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 275,
+        "answer_text": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.014132Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.016078Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.48,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 275,
+        "answer_text": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.016286Z"
+    },
+    {
+      "duration_ms": 5320.54,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days.",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M4X30DNR5Q9QSB4V8Y26DZK5"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.016610Z"
+    },
+    {
+      "message_id": "01M4X30JW55N9E865JF3QG7Y7E",
+      "chat_id": "01M4X30DKPFGXPPKSBKVPZRPAG",
+      "sender": "assistant",
+      "content": "Good news — Dr. Vesalius has several openings today, March 2nd: 9am, 10am, 11am, noon, and 1pm (each a 60-minute appointment). Would you like me to book one of these for you? If today doesn't work, he also has the same time slots available tomorrow and in the following days.",
+      "event": "message.persisted",
+      "turn_id": "01M4X30DNR5Q9QSB4V8Y26DZK5",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:26.029031Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X30DNR5Q9QSB4V8Y26DZK5": "d242a956c7c6ed9f82ba67f745b7244a"
+  }
+}

@@ -1,0 +1,939 @@
+{
+  "case_id": "G-a-08",
+  "chat_id": "01M4X2Y754K03H8YJ0M8FF0TBW",
+  "patient_id": "01M4X2Y75QHNED368MV2APN7SH",
+  "attempts": 1,
+  "elapsed_seconds": 12.731768544999795,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+    "content": "Book me in with William Osler on Wednesday at 10am.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X2YBSVT83NJG1381KWX0MD",
+    "content": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Book me in with William Osler on Wednesday at 10am.",
+        "query": "Book an appointment with William Osler on Wednesday at 10am."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "chat_id": "01M4X2Y754K03H8YJ0M8FF0TBW",
+      "sender": "patient",
+      "content": "Book me in with William Osler on Wednesday at 10am.",
+      "event": "message.persisted",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:08.554486Z"
+    },
+    {
+      "message": "Book me in with William Osler on Wednesday at 10am.",
+      "message_ids_unified": [
+        "01M4X2Y770VE1FNFCFAS8F0DTB"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:08.554795Z"
+    },
+    {
+      "trace_id": "05a15cbfdfaa04d67481481aa90a2860",
+      "event": "turn.traced",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:08.556866Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:08.559015Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3333,
+        "output": 41,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.046631Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Book me in with William Osler on Wednesday at 10am.",
+          "query": "Book an appointment with William Osler on Wednesday at 10am."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.047112Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1488.72,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Book me in with William Osler on Wednesday at 10am.",
+            "query": "Book an appointment with William Osler on Wednesday at 10am."
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.047484Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.049482Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.060420Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:10.060963Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Book me in with William Osler on Wednesday at 10am."
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:32:10.061199Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 192,
+        "cache_read": 5831,
+        "cache_write": 132,
+        "cache_write_1h": 0,
+        "thinking": 61
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:12.082079Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 2021.26,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:12.082620Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "arguments": {
+        "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:12.082818Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:12.095561Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 13.14,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:12.096089Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Book me in with William Osler on Wednesday at 10am."
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_018Ce8oUU2H1E3Huz6DpwZMo",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_018Ce8oUU2H1E3Huz6DpwZMo",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:32:12.096324Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 47,
+        "cache_read": 5963,
+        "cache_write": 340,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.235508Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1139.42,
+      "tool_names": [],
+      "text": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.235901Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 3186.91,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 125,
+        "answer_text": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.236135Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.237755Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.44,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 125,
+        "answer_text": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.237909Z"
+    },
+    {
+      "duration_ms": 4694.1,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M4X2Y770VE1FNFCFAS8F0DTB"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.238289Z"
+    },
+    {
+      "message_id": "01M4X2YBSVT83NJG1381KWX0MD",
+      "chat_id": "01M4X2Y754K03H8YJ0M8FF0TBW",
+      "sender": "assistant",
+      "content": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?",
+      "event": "message.persisted",
+      "turn_id": "01M4X2Y770VE1FNFCFAS8F0DTB",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:13.249919Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+      "content": "OK",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M4X2YJHR1DJQXJM563GRVAC5",
+      "content": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "chat_id": "01M4X2Y754K03H8YJ0M8FF0TBW",
+        "sender": "patient",
+        "content": "OK",
+        "event": "message.persisted",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:13.300825Z"
+      },
+      {
+        "message": "OK",
+        "message_ids_unified": [
+          "01M4X2YBV70KKCEB5TFESNY0FZ"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:13.301087Z"
+      },
+      {
+        "trace_id": "f5fd0f5ee6bac900b27bc343cfa9bf04",
+        "event": "turn.traced",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:13.302281Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:13.304262Z"
+      },
+      {
+        "call": "classify_intent.model",
+        "model": "claude-haiku-4-5-20251001",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 3375,
+          "output": 40,
+          "cache_read": 0,
+          "cache_write": 0,
+          "cache_write_1h": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.067865Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "OK",
+            "query": "Book an appointment with William Osler on Wednesday at 10am"
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.068909Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 1765.46,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "segments": [
+            {
+              "position": 0,
+              "intent": "booking",
+              "text": "OK",
+              "query": "Book an appointment with William Osler on Wednesday at 10am"
+            }
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.069511Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.072302Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.082393Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:15.082943Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Book me in with William Osler on Wednesday at 10am."
+          },
+          {
+            "role": "assistant",
+            "content": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?"
+          },
+          {
+            "role": "user",
+            "content": "OK"
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:15.083178Z"
+      },
+      {
+        "call": "handle_booking.model[1]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 264,
+          "cache_read": 5963,
+          "cache_write": 51,
+          "cache_write_1h": 0,
+          "thinking": 132
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:18.264829Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 3184.64,
+        "tool_names": [
+          "check_availability"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:18.268066Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "arguments": {
+          "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+          "from_date": "2026-03-04",
+          "to_date": "2026-03-04"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:18.272813Z"
+      },
+      {
+        "method": "CheckAvailability",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:18.293779Z"
+      },
+      {
+        "tool_name": "check_availability",
+        "iteration": 1,
+        "status": "ok",
+        "reason": null,
+        "duration_ms": 21.54,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:18.294821Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Book me in with William Osler on Wednesday at 10am."
+          },
+          {
+            "role": "assistant",
+            "content": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?"
+          },
+          {
+            "role": "user",
+            "content": "OK"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_012PqvBDAXsB9Xzo1q4c2E93",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+                  "from_date": "2026-03-04",
+                  "to_date": "2026-03-04"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_012PqvBDAXsB9Xzo1q4c2E93",
+                "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:18.295212Z"
+      },
+      {
+        "call": "handle_booking.model[2]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 110,
+          "cache_read": 6014,
+          "cache_write": 411,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:19.724232Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 1429.7,
+        "tool_names": [
+          "book_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:19.725390Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "arguments": {
+          "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+          "starts_at": "2026-03-04T10:00:00"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:19.726055Z"
+      },
+      {
+        "method": "BookAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:19.772676Z"
+      },
+      {
+        "tool_name": "book_appointment",
+        "iteration": 2,
+        "status": "booked",
+        "reason": null,
+        "duration_ms": 57.74,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:19.784156Z"
+      },
+      {
+        "iteration": 3,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Book me in with William Osler on Wednesday at 10am."
+          },
+          {
+            "role": "assistant",
+            "content": "10am on Wednesday, March 4th, is available with Dr. William Osler (General Practice). Shall I go ahead and book that for you?"
+          },
+          {
+            "role": "user",
+            "content": "OK"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_012PqvBDAXsB9Xzo1q4c2E93",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+                  "from_date": "2026-03-04",
+                  "to_date": "2026-03-04"
+                },
+                "name": "check_availability",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_012PqvBDAXsB9Xzo1q4c2E93",
+                "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\", \"2026-03-04T14:00:00\", \"2026-03-04T15:00:00\", \"2026-03-04T16:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "id": "toolu_01BhggsJqWWvt1QFNEg5bmjf",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "practitioner_id": "01M4X2XBZCHJVX834P30E2F2TK",
+                  "starts_at": "2026-03-04T10:00:00"
+                },
+                "name": "book_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01BhggsJqWWvt1QFNEg5bmjf",
+                "content": "{\"status\": \"booked\", \"appointment\": {\"id\": \"01M4X2YJ5MZW95ZHQTY8FN5B87\", \"practitioner_full_name\": \"William Osler\", \"starts_at\": \"2026-03-04T10:00:00\", \"ends_at\": \"2026-03-04T11:00:00\"}}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:32:19.784485Z"
+      },
+      {
+        "call": "handle_booking.model[3]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 2,
+          "output": 52,
+          "cache_read": 6425,
+          "cache_write": 217,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.145508Z"
+      },
+      {
+        "iteration": 3,
+        "duration_ms": 1340.08,
+        "tool_names": [],
+        "text": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am.",
+        "event": "booking.model_call",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.145991Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 6053.28,
+        "result": {
+          "outcome": "booked",
+          "appointment_id": "01M4X2YJ5MZW95ZHQTY8FN5B87",
+          "iterations": 3,
+          "tool_calls": 2,
+          "answer_chars": 135,
+          "answer_text": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.146225Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.148268Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.48,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "booked",
+          "citation_count": 0,
+          "answer_chars": 135,
+          "answer_text": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am."
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.148456Z"
+      },
+      {
+        "duration_ms": 7840.71,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am.",
+        "booking_outcome": "booked",
+        "message_ids_unified": [
+          "01M4X2YBV70KKCEB5TFESNY0FZ"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.148814Z"
+      },
+      {
+        "message_id": "01M4X2YJHR1DJQXJM563GRVAC5",
+        "chat_id": "01M4X2Y754K03H8YJ0M8FF0TBW",
+        "sender": "assistant",
+        "content": "You're all set — your appointment with Dr. William Osler (General Practice) is booked for Wednesday, March 4th at 10am, ending at 11am.",
+        "event": "message.persisted",
+        "turn_id": "01M4X2YBV70KKCEB5TFESNY0FZ",
+        "level": "info",
+        "timestamp": "2026-10-14T11:32:20.160358Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [],
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T10:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T10:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X2Y770VE1FNFCFAS8F0DTB": "05a15cbfdfaa04d67481481aa90a2860",
+    "01M4X2YBV70KKCEB5TFESNY0FZ": "f5fd0f5ee6bac900b27bc343cfa9bf04"
+  }
+}

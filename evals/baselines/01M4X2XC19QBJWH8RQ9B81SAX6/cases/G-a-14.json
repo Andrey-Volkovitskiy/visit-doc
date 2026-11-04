@@ -1,0 +1,1072 @@
+{
+  "case_id": "G-a-14",
+  "chat_id": "01M4X2ZRTXKKJ4K9W592HS2W9D",
+  "patient_id": "01M4X2ZRVDZQP4ETFYYDAG58WC",
+  "attempts": 1,
+  "elapsed_seconds": 15.147183459001099,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+    "content": "Could I push my dentist visit back a couple of hours?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X300V7AA7E4EFZHF2ET80A",
+    "content": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "Could I push my dentist visit back a couple of hours?",
+        "query": "reschedule my dentist visit back a couple of hours"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "chat_id": "01M4X2ZRTXKKJ4K9W592HS2W9D",
+      "sender": "patient",
+      "content": "Could I push my dentist visit back a couple of hours?",
+      "event": "message.persisted",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:59.446142Z"
+    },
+    {
+      "message": "Could I push my dentist visit back a couple of hours?",
+      "message_ids_unified": [
+        "01M4X2ZRXCQF0PYQS5T07Z86FN"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:59.446407Z"
+    },
+    {
+      "trace_id": "804b0d783be4d8f229e40169b72125b0",
+      "event": "turn.traced",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:59.447526Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:32:59.449853Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3331,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.026717Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "Could I push my dentist visit back a couple of hours?",
+          "query": "reschedule my dentist visit back a couple of hours"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.027942Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1579.43,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Could I push my dentist visit back a couple of hours?",
+            "query": "reschedule my dentist visit back a couple of hours"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.028761Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.032711Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.047760Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:01.048510Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Could I push my dentist visit back a couple of hours?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:33:01.048768Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 44,
+        "cache_read": 5831,
+        "cache_write": 128,
+        "cache_write_1h": 0,
+        "thinking": 12
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:02.329986Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1281.32,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:02.330409Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:02.330533Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:02.343064Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 13.5,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:02.344150Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Could I push my dentist visit back a couple of hours?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01BVYv1XqHYxaT6mEmYaDHt5",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01BVYv1XqHYxaT6mEmYaDHt5",
+              "content": "{\"future\": [{\"id\": \"01M4X2ZRWW6916ABCFWRD9EP4Y\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:33:02.344645Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 245,
+        "cache_read": 5959,
+        "cache_write": 235,
+        "cache_write_1h": 0,
+        "thinking": 58
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:05.062140Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 2717.67,
+      "tool_names": [
+        "check_availability"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:05.062534Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "arguments": {
+        "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+        "from_date": "2026-03-04",
+        "to_date": "2026-03-04",
+        "excluded_appointment_id": "01M4X2ZRWW6916ABCFWRD9EP4Y"
+      },
+      "event": "booking.tool_called",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:05.062862Z"
+    },
+    {
+      "method": "CheckAvailability",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:05.078243Z"
+    },
+    {
+      "tool_name": "check_availability",
+      "iteration": 2,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 15.7,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:05.078763Z"
+    },
+    {
+      "iteration": 3,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Could I push my dentist visit back a couple of hours?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_01BVYv1XqHYxaT6mEmYaDHt5",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01BVYv1XqHYxaT6mEmYaDHt5",
+              "content": "{\"future\": [{\"id\": \"01M4X2ZRWW6916ABCFWRD9EP4Y\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_0177qRCCor2gyG7JvfaYDvPq",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {
+                "practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7",
+                "from_date": "2026-03-04",
+                "to_date": "2026-03-04",
+                "excluded_appointment_id": "01M4X2ZRWW6916ABCFWRD9EP4Y"
+              },
+              "name": "check_availability",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_0177qRCCor2gyG7JvfaYDvPq",
+              "content": "{\"available_starts\": [\"2026-03-04T09:00:00\", \"2026-03-04T10:00:00\", \"2026-03-04T11:00:00\", \"2026-03-04T12:00:00\", \"2026-03-04T13:00:00\"], \"appointment_duration_minutes\": 60, \"truncated\": false}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:33:05.079045Z"
+    },
+    {
+      "call": "handle_booking.model[3]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 135,
+        "cache_read": 6194,
+        "cache_write": 351,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.551930Z"
+    },
+    {
+      "iteration": 3,
+      "duration_ms": 2473.23,
+      "tool_names": [],
+      "text": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?",
+      "event": "booking.model_call",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.552508Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 6520.77,
+      "result": {
+        "outcome": "awaiting_confirmation",
+        "appointment_id": null,
+        "iterations": 3,
+        "tool_calls": 2,
+        "answer_chars": 329,
+        "answer_text": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.552840Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.555369Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.69,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": "awaiting_confirmation",
+        "citation_count": 0,
+        "answer_chars": 329,
+        "answer_text": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.555771Z"
+    },
+    {
+      "duration_ms": 8119.58,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?",
+      "booking_outcome": "awaiting_confirmation",
+      "message_ids_unified": [
+        "01M4X2ZRXCQF0PYQS5T07Z86FN"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.556253Z"
+    },
+    {
+      "message_id": "01M4X300V7AA7E4EFZHF2ET80A",
+      "chat_id": "01M4X2ZRTXKKJ4K9W592HS2W9D",
+      "sender": "assistant",
+      "content": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?",
+      "event": "message.persisted",
+      "turn_id": "01M4X2ZRXCQF0PYQS5T07Z86FN",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:07.573003Z"
+    }
+  ],
+  "reply_turn": {
+    "terminal": {
+      "kind": "done",
+      "payload": {
+        "type": "done",
+        "request_outcomes": null,
+        "message": null,
+        "answer_source": "booking"
+      }
+    },
+    "stream_broke_contract": false,
+    "patient_message": {
+      "id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+      "content": "Yes, 11 o'clock suits me.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "assistant_message": {
+      "id": "01M4X307HKNRP6SAG0WDH5MNAZ",
+      "content": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit.",
+      "attention_mark": null,
+      "request_outcomes": null
+    },
+    "events": [
+      {
+        "message_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "chat_id": "01M4X2ZRTXKKJ4K9W592HS2W9D",
+        "sender": "patient",
+        "content": "Yes, 11 o'clock suits me.",
+        "event": "message.persisted",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:07.616413Z"
+      },
+      {
+        "message": "Yes, 11 o'clock suits me.",
+        "message_ids_unified": [
+          "01M4X300WQHFVJQ1FDYBNYBDFP"
+        ],
+        "event": "turn.message_received",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:07.616689Z"
+      },
+      {
+        "trace_id": "a0e881d6bef8c93903c03b1096df7ebe",
+        "event": "turn.traced",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:07.617760Z"
+      },
+      {
+        "node": "classify_intent",
+        "event": "node.started",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:07.620561Z"
+      },
+      {
+        "call": "classify_intent.model",
+        "model": "claude-haiku-4-5-20251001",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 3458,
+          "output": 60,
+          "cache_read": 0,
+          "cache_write": 0,
+          "cache_write_1h": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.322595Z"
+      },
+      {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "Yes, 11 o'clock suits me.",
+            "query": "reschedule my dentist appointment with Dr. Andreas Vesalius from 9:00am on Wednesday, March 4 to 11:00am"
+          }
+        ],
+        "cap_bound": false,
+        "event": "intent.classified",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "classify_intent",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.323092Z"
+      },
+      {
+        "node": "classify_intent",
+        "duration_ms": 1703.5,
+        "result": {
+          "intents": [
+            "booking"
+          ],
+          "segments": [
+            {
+              "position": 0,
+              "intent": "booking",
+              "text": "Yes, 11 o'clock suits me.",
+              "query": "reschedule my dentist appointment with Dr. Andreas Vesalius from 9:00am on Wednesday, March 4 to 11:00am"
+            }
+          ],
+          "specialists": [
+            "handle_booking"
+          ],
+          "specialists_collect": false,
+          "stopping_cause": null,
+          "notice_required": false
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.323394Z"
+      },
+      {
+        "node": "handle_booking",
+        "event": "node.started",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.325333Z"
+      },
+      {
+        "method": "ListPractitioners",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.334286Z"
+      },
+      {
+        "practitioner_count": 2,
+        "event": "booking.roster_read",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:09.334887Z"
+      },
+      {
+        "iteration": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Could I push my dentist visit back a couple of hours?"
+          },
+          {
+            "role": "assistant",
+            "content": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, 11 o'clock suits me."
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:33:09.335126Z"
+      },
+      {
+        "call": "handle_booking.model[1]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 72,
+          "cache_read": 5959,
+          "cache_write": 152,
+          "cache_write_1h": 0,
+          "thinking": 40
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:10.883949Z"
+      },
+      {
+        "iteration": 1,
+        "duration_ms": 1549.2,
+        "tool_names": [
+          "list_my_appointments"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:10.884461Z"
+      },
+      {
+        "tool_name": "list_my_appointments",
+        "iteration": 1,
+        "arguments": {},
+        "event": "booking.tool_called",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:10.884652Z"
+      },
+      {
+        "method": "ListAppointments",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:10.895440Z"
+      },
+      {
+        "tool_name": "list_my_appointments",
+        "iteration": 1,
+        "status": "ok",
+        "reason": null,
+        "duration_ms": 11.26,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:10.896037Z"
+      },
+      {
+        "iteration": 2,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Could I push my dentist visit back a couple of hours?"
+          },
+          {
+            "role": "assistant",
+            "content": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, 11 o'clock suits me."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01JyYqgJv3AfJFhT8WwYgwDK",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {},
+                "name": "list_my_appointments",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01JyYqgJv3AfJFhT8WwYgwDK",
+                "content": "{\"future\": [{\"id\": \"01M4X2ZRWW6916ABCFWRD9EP4Y\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:33:10.896374Z"
+      },
+      {
+        "call": "handle_booking.model[2]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "tool_use",
+        "usage": {
+          "input": 2,
+          "output": 208,
+          "cache_read": 6111,
+          "cache_write": 263,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:13.049584Z"
+      },
+      {
+        "iteration": 2,
+        "duration_ms": 2153.23,
+        "tool_names": [
+          "reschedule_appointment"
+        ],
+        "text": "",
+        "event": "booking.model_call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:13.050090Z"
+      },
+      {
+        "tool_name": "reschedule_appointment",
+        "iteration": 2,
+        "arguments": {
+          "appointment_id": "01M4X2ZRWW6916ABCFWRD9EP4Y",
+          "new_starts_at": "2026-03-04T11:00:00",
+          "expected_starts_at": "2026-03-04T09:00:00",
+          "expected_practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7"
+        },
+        "event": "booking.tool_called",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:13.050249Z"
+      },
+      {
+        "method": "RescheduleAppointment",
+        "attempt": 1,
+        "status": "OK",
+        "event": "scheduling.call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:13.087512Z"
+      },
+      {
+        "tool_name": "reschedule_appointment",
+        "iteration": 2,
+        "status": "changed",
+        "reason": null,
+        "duration_ms": 45.39,
+        "event": "booking.tool_result",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:13.095779Z"
+      },
+      {
+        "iteration": 3,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Could I push my dentist visit back a couple of hours?"
+          },
+          {
+            "role": "assistant",
+            "content": "Your dentist appointment with Dr. Andreas Vesalius is currently on Wednesday, March 4 at 9:00am. For that day, I can move it to 10:00am, 11:00am, 12:00pm, or 1:00pm — all with Dr. Vesalius, same 60-minute length.\n\nA couple of hours later would be around 11:00am — would you like me to move it there, or to one of the other times?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, 11 o'clock suits me."
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "thinking": "",
+                "type": "thinking"
+              },
+              {
+                "id": "toolu_01JyYqgJv3AfJFhT8WwYgwDK",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {},
+                "name": "list_my_appointments",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01JyYqgJv3AfJFhT8WwYgwDK",
+                "content": "{\"future\": [{\"id\": \"01M4X2ZRWW6916ABCFWRD9EP4Y\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T09:00:00\", \"ends_at\": \"2026-03-04T10:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "id": "toolu_01Bx4Xgb8Y7CeJWGAje3NxyU",
+                "caller": {
+                  "type": "direct"
+                },
+                "input": {
+                  "appointment_id": "01M4X2ZRWW6916ABCFWRD9EP4Y",
+                  "new_starts_at": "2026-03-04T11:00:00",
+                  "expected_starts_at": "2026-03-04T09:00:00",
+                  "expected_practitioner_id": "01M4X2XBZNSDSE7YP6DRNE0QN7"
+                },
+                "name": "reschedule_appointment",
+                "type": "tool_use"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01Bx4Xgb8Y7CeJWGAje3NxyU",
+                "content": "{\"status\": \"changed\", \"change\": \"rescheduled\", \"appointment\": {\"id\": \"01M4X2ZRWW6916ABCFWRD9EP4Y\", \"practitioner_full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"starts_at\": \"2026-03-04T11:00:00\", \"ends_at\": \"2026-03-04T12:00:00\", \"status\": \"standing\"}, \"previous_starts_at\": \"2026-03-04T09:00:00\", \"previous_practitioner_full_name\": \"Andreas Vesalius\"}"
+              }
+            ]
+          }
+        ],
+        "event": "booking.model_request",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "debug",
+        "timestamp": "2026-10-14T11:33:13.096056Z"
+      },
+      {
+        "call": "handle_booking.model[3]",
+        "model": "claude-sonnet-5",
+        "stop_reason": "end_turn",
+        "usage": {
+          "input": 2,
+          "output": 64,
+          "cache_read": 6374,
+          "cache_write": 397,
+          "cache_write_1h": 0,
+          "thinking": 0
+        },
+        "event": "model.usage",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.408936Z"
+      },
+      {
+        "iteration": 3,
+        "duration_ms": 1313.32,
+        "tool_names": [],
+        "text": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit.",
+        "event": "booking.model_call",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "node": "handle_booking",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.409654Z"
+      },
+      {
+        "node": "handle_booking",
+        "duration_ms": 5085.0,
+        "result": {
+          "outcome": "rescheduled",
+          "appointment_id": "01M4X2ZRWW6916ABCFWRD9EP4Y",
+          "iterations": 3,
+          "tool_calls": 2,
+          "answer_chars": 142,
+          "answer_text": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit.",
+          "mode": "streamed"
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.410106Z"
+      },
+      {
+        "node": "compose_answer",
+        "event": "node.started",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.413172Z"
+      },
+      {
+        "node": "compose_answer",
+        "duration_ms": 0.63,
+        "result": {
+          "answer_source": "booking",
+          "merged": false,
+          "collapsed_to_one_part": false,
+          "booking_outcome": "rescheduled",
+          "citation_count": 0,
+          "answer_chars": 142,
+          "answer_text": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit."
+        },
+        "event": "node.completed",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.413460Z"
+      },
+      {
+        "duration_ms": 6807.06,
+        "segment_count": 1,
+        "outcome": "booking",
+        "answer_text": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit.",
+        "booking_outcome": "rescheduled",
+        "message_ids_unified": [
+          "01M4X300WQHFVJQ1FDYBNYBDFP"
+        ],
+        "event": "turn.completed",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.414155Z"
+      },
+      {
+        "message_id": "01M4X307HKNRP6SAG0WDH5MNAZ",
+        "chat_id": "01M4X2ZRTXKKJ4K9W592HS2W9D",
+        "sender": "assistant",
+        "content": "Done! Your dentist appointment with Dr. Andreas Vesalius has been moved from 9:00am to 11:00am on Wednesday, March 4, still a 60-minute visit.",
+        "event": "message.persisted",
+        "turn_id": "01M4X300WQHFVJQ1FDYBNYBDFP",
+        "level": "info",
+        "timestamp": "2026-10-14T11:33:14.436160Z"
+      }
+    ]
+  },
+  "scheduling_before_reply": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-04T09:00:00",
+      "status": "standing"
+    }
+  ],
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-04T11:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "Andreas Vesalius",
+      "starts_at": "2026-03-04T11:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X2ZRXCQF0PYQS5T07Z86FN": "804b0d783be4d8f229e40169b72125b0",
+    "01M4X300WQHFVJQ1FDYBNYBDFP": "a0e881d6bef8c93903c03b1096df7ebe"
+  }
+}

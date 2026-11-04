@@ -98,8 +98,8 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   FAQ path, and therefore one more thing that can be down. That is bounded by a 5-second deadline and
   absorbed rather than propagated — a failed or slow reranker costs the answer its precision stage,
   never the turn (`specs/008-reranked-retrieval-pipeline/`).
-- **No similarity floor in front of the reranker** (018): the shortlist is the top 5 of the dense
-  search by rank alone, and the rerank floor is the one gate that decides whether a question is
+- **No similarity floor in front of the reranker** (018): the shortlist is cut by rank alone (the
+  dense top 5 and BM25's top 3, below), and the rerank floor is the one gate that decides whether a question is
   answered. A cosine floor of 0.25 sat there before, as a cheap early abstention. Measured on the
   extended corpus it was dropping right answers - "PR-4", "braces", "HC-9", short questions whose
   chunk dense search had ranked *first* but scored 0.22-0.24 against a long section - and removing
@@ -108,20 +108,22 @@ choices, each with a tradeoff — full rationale and alternatives considered liv
   a 146-case run. A reranker outage is the one place a floor still applies
   (`UNRERANKED_SIMILARITY_FLOOR`), because with no rerank score nothing else has judged the
   shortlist (`specs/018-hybrid-retrieval/evaluation/findings.md`).
-- **Dense retrieval only - no BM25, no hybrid fusion** (018): planned as dense + BM25 fused by
-  Reciprocal Rank Fusion, and not built, on measurement. A lexical branch earns its place on the
-  chunks dense search ranks too low to reach the reranker - exact plan names, form numbers,
-  procedure codes - so the extended set was given 42 cases in five families aimed at retrieval
-  weaknesses, eight of them written to favour lexical matching. Dense search put the right chunk
-  in the reranker's shortlist for every answerable request that reached retrieval (similarity
-  hit@5 83/83), and the reranker ranked it first every time (rerank hit@1 83/83). Offline, local
-  BM25 ranked the cited entry first in 4 of the 8 lexical cases against dense search's 7, and the
-  one case BM25 won alone the reranker recovered anyway. With the retrieval stages already perfect
-  there is nothing for fusion to move, and every remaining miss was the classifier routing or the
-  answerer declining. The tradeoff accepted: a sparse vector per point, a second prefetch carrying
-  the session filter and an ablation setting are left unbuilt, and the claim that dense search
-  suffices holds for a 19-entry, 62-chunk corpus, not beyond it - a corpus large enough for the
-  25-wide pool to stop reaching the right chunk is when to reconsider
+- **BM25 beside dense search, adding candidates rather than fused with it** (018): every chunk
+  carries a sparse BM25 vector next to its embedding, Qdrant computing it from the text, and both
+  searches run in one call under the same session and live-revision filter. The reranker gets the
+  dense top 5 plus BM25's top 3, so an exact plan name, form number or procedure code that dense
+  search ranks too low still reaches it, and nothing dense search shortlists can be lost.
+  Reciprocal Rank Fusion, the usual way to combine the two, was built first and failed the eval:
+  replayed over the baseline, it let chunks both branches returned on common words outrank dense
+  search's top hit, and three answered requests abstained. A weighted RRF cannot fix that - any
+  weight low enough to protect the dense top is too low for BM25 to promote a chunk into the
+  shortlist. The shipped
+  form changed no verdict and no top reranked chunk across the 146-case set, live and replayed.
+  It also improved nothing: on a 62-chunk corpus dense search already shortlists every cited entry,
+  so BM25 is insurance for a larger corpus, not a measured win. The tradeoff accepted: a sparse
+  vector per point, a quarter more documents per rerank call (680 against 545 over the set), and
+  BM25 term statistics that are computed across every session's chunks - statistics only, since
+  the filter keeps every session's text its own
   (`specs/018-hybrid-retrieval/evaluation/findings.md`).
 - **Postgres drivers**: `asyncpg` for the app, `psycopg` v3 (sync) for Alembic migrations —
   the conventional SQLAlchemy 2.0 pairing, rather than forcing Alembic's sync runner through

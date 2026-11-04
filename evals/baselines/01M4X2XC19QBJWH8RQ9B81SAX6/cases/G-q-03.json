@@ -1,0 +1,1136 @@
+{
+  "case_id": "G-q-03",
+  "chat_id": "01M4X397KHKYZAAQ4QM7XASDZC",
+  "patient_id": "01M4X397M273EG3QGZ4FHH460F",
+  "attempts": 1,
+  "elapsed_seconds": 10.959884613002941,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Which insurers do you accept?",
+          "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B) for medical visits. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team.\n\nFor dental care, medical insurance does not cover dental services. We accept these dental plans: Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't hold one of these accepted dental plans, dental appointments are self-pay, including for Medicare patients whose Medicare does not cover routine dental care.\n\nWe do not currently accept Medicaid or Medicaid managed care plans.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 23,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+            },
+            {
+              "entry_id": 30,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+            },
+            {
+              "entry_id": 29,
+              "chunk_index": 5,
+              "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X397NDBC7Z8RGJ05CG61QA",
+    "content": "Which insurers do you accept, and which practitioners do you have?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X39J8CHW8TFECA4SB24CR2",
+    "content": "We accept most major insurance providers for medical visits, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B). If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team.\n\nFor dental care, medical insurance doesn't apply - dental services are covered separately. We accept Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred, but we do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't have one of our accepted dental plans, dental visits are self-pay, which also applies to Medicare patients since Medicare does not cover routine dental care.\n\nPlease note we do not currently accept Medicaid or Medicaid managed care plans.\n\nAs for appointments, we currently have two practitioners available: Dr. William Osler for General Practice (60-minute appointments) and Dr. Andreas Vesalius for Dentistry (60-minute appointments). Both are currently accepting new appointments - let me know if you'd like to book with either of them.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Which insurers do you accept?",
+        "answer": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B) for medical visits. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team.\n\nFor dental care, medical insurance does not cover dental services. We accept these dental plans: Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't hold one of these accepted dental plans, dental appointments are self-pay, including for Medicare patients whose Medicare does not cover routine dental care.\n\nWe do not currently accept Medicaid or Medicaid managed care plans.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 23,
+            "chunk_index": 0,
+            "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage."
+          },
+          {
+            "entry_id": 30,
+            "chunk_index": 1,
+            "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay."
+          },
+          {
+            "entry_id": 29,
+            "chunk_index": 5,
+            "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Which insurers do you accept?",
+        "query": "Which insurers do you accept?"
+      },
+      {
+        "position": 1,
+        "intent": "booking",
+        "text": "Which practitioners do you have?",
+        "query": "Which practitioners do you have?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "chat_id": "01M4X397KHKYZAAQ4QM7XASDZC",
+      "sender": "patient",
+      "content": "Which insurers do you accept, and which practitioners do you have?",
+      "event": "message.persisted",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:09.462148Z"
+    },
+    {
+      "message": "Which insurers do you accept, and which practitioners do you have?",
+      "message_ids_unified": [
+        "01M4X397NDBC7Z8RGJ05CG61QA"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:09.462384Z"
+    },
+    {
+      "trace_id": "d71958065ab873caa3eed206bb208690",
+      "event": "turn.traced",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:09.463338Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:09.465638Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3332,
+        "output": 53,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.286427Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Which insurers do you accept?",
+          "query": "Which insurers do you accept?"
+        },
+        {
+          "position": 1,
+          "intent": "booking",
+          "text": "Which practitioners do you have?",
+          "query": "Which practitioners do you have?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.287041Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1822.58,
+      "result": {
+        "intents": [
+          "faq_question",
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Which insurers do you accept?",
+            "query": "Which insurers do you accept?"
+          },
+          {
+            "position": 1,
+            "intent": "booking",
+            "text": "Which practitioners do you have?",
+            "query": "Which practitioners do you have?"
+          }
+        ],
+        "specialists": [
+          "answer_faq",
+          "handle_booking"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.287547Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.289832Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.291274Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.300348Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.300910Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:38:11.301316Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.567440Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 26,
+      "candidates": [
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.5202656,
+          "dense_rank": 1,
+          "lexical_score": 7.219278,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.46450886,
+          "dense_rank": 2,
+          "lexical_score": 2.015114,
+          "lexical_rank": 11,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.45275587,
+          "dense_rank": 3,
+          "lexical_score": 2.3445046,
+          "lexical_rank": 8,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.4513886,
+          "dense_rank": 4,
+          "lexical_score": 2.040636,
+          "lexical_rank": 10,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.45119223,
+          "dense_rank": 5,
+          "lexical_score": 2.5491362,
+          "lexical_rank": 5,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.4427451,
+          "dense_rank": 6,
+          "lexical_score": 7.4433246,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.42578262,
+          "dense_rank": 7,
+          "lexical_score": 1.9100053,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.41770416,
+          "dense_rank": 8,
+          "lexical_score": 6.812356,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.36824447,
+          "dense_rank": 9,
+          "lexical_score": 2.4075644,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.34835252,
+          "dense_rank": 10,
+          "lexical_score": 2.5431008,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Updating your insurance\n\nIf your insurance has changed since your last visit, tell the front desk at check-in and fill in Form IC-2, the Insurance Update Form, so the claim g",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.3444442,
+          "dense_rank": 11,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.32245475,
+          "dense_rank": 12,
+          "lexical_score": 1.9951515,
+          "lexical_rank": 12,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.31748098,
+          "dense_rank": 13,
+          "lexical_score": 4.917249,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.29196274,
+          "dense_rank": 14,
+          "lexical_score": 1.9853177,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.28531897,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.27578247,
+          "dense_rank": 16,
+          "lexical_score": 2.0721292,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.25912178,
+          "dense_rank": 17,
+          "lexical_score": 1.9902223,
+          "lexical_rank": 13,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.2512432,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.25120872,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": 0.24444953,
+          "dense_rank": 20,
+          "lexical_score": 1.9516501,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Self-pay vaccine prices\n\nIf your insurance does not cover a vaccine, these are the self-pay prices: flu vaccine $35, high-dose flu vaccine $70, Tdap $55, hepatitis A $85 per dose, ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": 0.2442335,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Tetanus, diphtheria and whooping cough (Tdap)\n\nAdults need a tetanus booster every 10 years. We use Boostrix, which also protects against diphtheria and whooping cough (pertussis).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.23525989,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.23365015,
+          "dense_rank": 23,
+          "lexical_score": 1.9329193,
+          "lexical_rank": 16,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 2,
+          "similarity_score": 0.22560371,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.22041626,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: How much will my visit cost if I am paying out-of-pocket?\nAnswer: Out-of-pocket rates are $120 for a General Practitioner (GP) visit, $180 for a Dentist appointment, and $160 for all other s",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.8486437,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.578718Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 26,
+      "kept": [
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.5202656
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.46450886
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.45275587
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.4513886
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.45119223
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.4427451
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.41770416
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.42578262
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": 0.36824447
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 7,
+          "similarity_score": 0.34835252
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.3444442
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 0,
+          "similarity_score": 0.32245475
+        },
+        {
+          "entry_id": 26,
+          "chunk_index": 0,
+          "similarity_score": 0.31748098
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.29196274
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 4,
+          "similarity_score": 0.28531897
+        },
+        {
+          "entry_id": 21,
+          "chunk_index": 0,
+          "similarity_score": 0.27578247
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.25912178
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.2512432
+        },
+        {
+          "entry_id": 20,
+          "chunk_index": 0,
+          "similarity_score": 0.25120872
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 4,
+          "similarity_score": 0.24444953
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 2,
+          "similarity_score": 0.2442335
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.23525989
+        },
+        {
+          "entry_id": 37,
+          "chunk_index": 0,
+          "similarity_score": 0.23365015
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 2,
+          "similarity_score": 0.22560371
+        },
+        {
+          "entry_id": 25,
+          "chunk_index": 0,
+          "similarity_score": 0.22041626
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 0,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.581099Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 7,
+      "duration_ms": 346.23,
+      "scores": [
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.5202656,
+          "rerank_score": 0.859375
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "similarity_score": 0.4427451,
+          "rerank_score": 0.7109375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "similarity_score": 0.41770416,
+          "rerank_score": 0.65625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.46450886,
+          "rerank_score": 0.62890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.45275587,
+          "rerank_score": 0.62890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.4513886,
+          "rerank_score": 0.6171875
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.45119223,
+          "rerank_score": 0.54296875
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.928475Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "rerank_score": 0.859375
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 1,
+          "rerank_score": 0.7109375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 5,
+          "rerank_score": 0.65625
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "rerank_score": 0.54296875
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "rerank_score": 0.62890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "rerank_score": 0.62890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "rerank_score": 0.6171875
+        }
+      ],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.929508Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.5202656,
+      "best_rerank_score": 0.859375,
+      "event": "faq.verdict",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:11.930151Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.\n\n# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.\n\n# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.\n\nQuestion: Which insurers do you accept?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:38:11.930404Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 42,
+        "cache_read": 5831,
+        "cache_write": 122,
+        "cache_write_1h": 0,
+        "thinking": 11
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:12.406169Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 1105.24,
+      "tool_names": [
+        "list_practitioners"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:12.406714Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:12.406892Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:12.415675Z"
+    },
+    {
+      "tool_name": "list_practitioners",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 9.33,
+      "event": "booking.tool_result",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:12.416338Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Which practitioners do you have?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "thinking": "",
+              "type": "thinking"
+            },
+            {
+              "id": "toolu_016ECbUbkzMpDjR7cNop64of",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_practitioners",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_016ECbUbkzMpDjR7cNop64of",
+              "content": "{\"practitioners\": [{\"id\": \"01M4X2XBZCHJVX834P30E2F2TK\", \"full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"appointment_duration_minutes\": 60, \"bookable\": true}, {\"id\": \"01M4X2XBZNSDSE7YP6DRNE0QN7\", \"full_name\": \"Andreas Vesalius\", \"specialty\": \"Dentistry\", \"appointment_duration_minutes\": 60, \"bookable\": true}]}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "debug",
+      "timestamp": "2026-10-14T11:38:12.416619Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 100,
+        "cache_read": 5953,
+        "cache_write": 210,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:14.122445Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1706.05,
+      "tool_names": [],
+      "text": "We currently have two practitioners:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nBoth are currently taking appointments. Let me know if you'd like to book with either of them!",
+      "event": "booking.model_call",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "handle_booking",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:14.122831Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 2831.94,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 267,
+        "answer_text": "We currently have two practitioners:\n\n1. **Dr. William Osler** – General Practice (60-minute appointments)\n2. **Dr. Andreas Vesalius** – Dentistry (60-minute appointments)\n\nBoth are currently taking appointments. Let me know if you'd like to book with either of them!",
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:14.123070Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 647,
+        "output": 452,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:16.434777Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 5146.18,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 786,
+        "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B) for medical visits. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team.\n\nFor dental care, medical insurance does not cover dental services. We accept these dental plans: Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't hold one of these accepted dental plans, dental appointments are self-pay, including for Medicare patients whose Medicare does not cover routine dental care.\n\nWe do not currently accept Medicaid or Medicaid managed care plans.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Which insurers do you accept?",
+            "verdict": "answered",
+            "answer_text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B) for medical visits. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team.\n\nFor dental care, medical insurance does not cover dental services. We accept these dental plans: Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't hold one of these accepted dental plans, dental appointments are self-pay, including for Medicare patients whose Medicare does not cover routine dental care.\n\nWe do not currently accept Medicaid or Medicaid managed care plans."
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:16.435819Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:16.437329Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1402,
+        "output": 381,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "node": "compose_answer",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:20.295591Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 3859.02,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice_included": false,
+        "booking_outcome": "informational",
+        "citation_count": 3,
+        "answer_chars": 1095,
+        "answer_text": "We accept most major insurance providers for medical visits, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B). If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team.\n\nFor dental care, medical insurance doesn't apply - dental services are covered separately. We accept Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred, but we do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't have one of our accepted dental plans, dental visits are self-pay, which also applies to Medicare patients since Medicare does not cover routine dental care.\n\nPlease note we do not currently accept Medicaid or Medicaid managed care plans.\n\nAs for appointments, we currently have two practitioners available: Dr. William Osler for General Practice (60-minute appointments) and Dr. Andreas Vesalius for Dentistry (60-minute appointments). Both are currently accepting new appointments - let me know if you'd like to book with either of them."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:20.296117Z"
+    },
+    {
+      "duration_ms": 10843.16,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 23,
+              "chunk_index": 0,
+              "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, you can ask me to connect you with a member of our friendly front desk team. They'll be happy to help clarify your coverage.",
+              "similarity_score": 0.5202656,
+              "rerank_score": 0.859375
+            },
+            {
+              "entry_id": 30,
+              "chunk_index": 1,
+              "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalGuard Preferred. We do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you do not hold one of the accepted dental plans, dental appointments are self-pay.",
+              "similarity_score": 0.4427451,
+              "rerank_score": 0.7109375
+            },
+            {
+              "entry_id": 29,
+              "chunk_index": 5,
+              "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare patients unless they also hold one of the dental plans listed in our dental care guide. We do not currently accept Medicaid or Medicaid managed care plans.",
+              "similarity_score": 0.41770416,
+              "rerank_score": 0.65625
+            }
+          ]
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We accept most major insurance providers for medical visits, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B). If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team.\n\nFor dental care, medical insurance doesn't apply - dental services are covered separately. We accept Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred, but we do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't have one of our accepted dental plans, dental visits are self-pay, which also applies to Medicare patients since Medicare does not cover routine dental care.\n\nPlease note we do not currently accept Medicaid or Medicaid managed care plans.\n\nAs for appointments, we currently have two practitioners available: Dr. William Osler for General Practice (60-minute appointments) and Dr. Andreas Vesalius for Dentistry (60-minute appointments). Both are currently accepting new appointments - let me know if you'd like to book with either of them.",
+      "booking_outcome": "informational",
+      "notice_included": false,
+      "message_ids_unified": [
+        "01M4X397NDBC7Z8RGJ05CG61QA"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:20.296700Z"
+    },
+    {
+      "message_id": "01M4X39J8CHW8TFECA4SB24CR2",
+      "chat_id": "01M4X397KHKYZAAQ4QM7XASDZC",
+      "sender": "assistant",
+      "content": "We accept most major insurance providers for medical visits, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare (Original Medicare Part B). If you're unsure whether your specific plan is covered, just let me know and I can connect you with our front desk team.\n\nFor dental care, medical insurance doesn't apply - dental services are covered separately. We accept Delta Dental PPO, MetLife PDP Plus, and Guardian DentalGuard Preferred, but we do not accept dental HMO (DHMO) plans, including Cigna Dental Care DHMO. If you don't have one of our accepted dental plans, dental visits are self-pay, which also applies to Medicare patients since Medicare does not cover routine dental care.\n\nPlease note we do not currently accept Medicaid or Medicaid managed care plans.\n\nAs for appointments, we currently have two practitioners available: Dr. William Osler for General Practice (60-minute appointments) and Dr. Andreas Vesalius for Dentistry (60-minute appointments). Both are currently accepting new appointments - let me know if you'd like to book with either of them.",
+      "event": "message.persisted",
+      "turn_id": "01M4X397NDBC7Z8RGJ05CG61QA",
+      "level": "info",
+      "timestamp": "2026-10-14T11:38:20.314910Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [],
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X397NDBC7Z8RGJ05CG61QA": "d71958065ab873caa3eed206bb208690"
+  }
+}

@@ -1,0 +1,893 @@
+{
+  "case_id": "G-s-09",
+  "chat_id": "01M4X3B7056QSD7BJPZGGYJPGN",
+  "patient_id": "01M4X3B70RCEVJDDGS381RZAN9",
+  "attempts": 1,
+  "elapsed_seconds": 3.4537190449991613,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "What's the Wi-Fi network called?",
+          "answer": "The Wi-Fi network is called VisitDoc-Guest.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 35,
+              "chunk_index": 4,
+              "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X3B7238M92ZHC4MRMEM662",
+    "content": "What's the Wi-Fi network called?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X3BAAPQP1W0012RAVCCZ0V",
+    "content": "The Wi-Fi network is called VisitDoc-Guest.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "What's the Wi-Fi network called?",
+        "answer": "The Wi-Fi network is called VisitDoc-Guest.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 35,
+            "chunk_index": 4,
+            "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "What's the Wi-Fi network called?",
+        "query": "What is the Wi-Fi network called?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "chat_id": "01M4X3B7056QSD7BJPZGGYJPGN",
+      "sender": "patient",
+      "content": "What's the Wi-Fi network called?",
+      "event": "message.persisted",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:14.382218Z"
+    },
+    {
+      "message": "What's the Wi-Fi network called?",
+      "message_ids_unified": [
+        "01M4X3B7238M92ZHC4MRMEM662"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:14.382457Z"
+    },
+    {
+      "trace_id": "1998752649265efcb4eae1794d7855c1",
+      "event": "turn.traced",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:14.385515Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:14.387623Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3327,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:15.906912Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "What's the Wi-Fi network called?",
+          "query": "What is the Wi-Fi network called?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:15.907554Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1520.54,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "What's the Wi-Fi network called?",
+            "query": "What is the Wi-Fi network called?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:15.907931Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:15.910350Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.169824Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 28,
+      "candidates": [
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": 0.47778228,
+          "dense_rank": 1,
+          "lexical_score": 19.607353,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.31020564,
+          "dense_rank": 2,
+          "lexical_score": 4.128022,
+          "lexical_rank": 6,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company does not mean being in-network with every plan it sells. Check the plan name printed on the front of your insurance card - it usually appears next to the company logo or under \"Plan\" - and compare it with the lists below.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.27875638,
+          "dense_rank": 3,
+          "lexical_score": 4.1748996,
+          "lexical_rank": 5,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.2680355,
+          "dense_rank": 4,
+          "lexical_score": 4.292705,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.24684955,
+          "dense_rank": 5,
+          "lexical_score": 4.082186,
+          "lexical_rank": 7,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase logo with the letters \"PPO\" on your card. The Federal Employee Program (FEP) Basic Option and Standard Option plans are in-network too. We are not in-network with Blue Essentials HMO or Blue Advantage HMO plans, because those plans only cover care from their own medical groups.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.2305754,
+          "dense_rank": 6,
+          "lexical_score": 4.3202195,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advantage plans from UnitedHealthcare are in-network when the plan is a PPO, and not in-network when it is an HMO.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 2,
+          "similarity_score": 0.21216461,
+          "dense_rank": 7,
+          "lexical_score": 4.2616363,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.19437236,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.19338417,
+          "dense_rank": 9,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 3,
+          "similarity_score": 0.19142263,
+          "dense_rank": 10,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 2,
+          "similarity_score": 0.1906083,
+          "dense_rank": 11,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Running late\n## Checking in on time\n\nCheck in at the front desk or at the self-check-in kiosk as soon as you arrive. Your arrival is recorded when you check in, not when you enter the building.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": 0.18366814,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.18357748,
+          "dense_rank": 13,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.17706516,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.17575797,
+          "dense_rank": 15,
+          "lexical_score": 3.5774233,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": 0.17462415,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.17343608,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 0,
+          "similarity_score": 0.17167144,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.17160937,
+          "dense_rank": 19,
+          "lexical_score": 3.5597472,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.16879556,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.1657272,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 27,
+          "chunk_index": 0,
+          "similarity_score": 0.16188529,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 2,
+          "similarity_score": 0.15962,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.15669917,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.15638986,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.503395,
+          "lexical_rank": 10,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.2839096,
+          "lexical_rank": 11,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 5,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.1823704,
+          "lexical_rank": 12,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently wi",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.182213Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 28,
+      "kept": [
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": 0.47778228
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.31020564
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.27875638
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.2680355
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.24684955
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.2305754
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 34,
+          "chunk_index": 2,
+          "similarity_score": 0.21216461
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 3,
+          "similarity_score": 0.19437236
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 3,
+          "similarity_score": 0.19338417
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 3,
+          "similarity_score": 0.19142263
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 2,
+          "similarity_score": 0.1906083
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 1,
+          "similarity_score": 0.18366814
+        },
+        {
+          "entry_id": 32,
+          "chunk_index": 1,
+          "similarity_score": 0.18357748
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 1,
+          "similarity_score": 0.17706516
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 1,
+          "similarity_score": 0.17575797
+        },
+        {
+          "entry_id": 36,
+          "chunk_index": 4,
+          "similarity_score": 0.17462415
+        },
+        {
+          "entry_id": 23,
+          "chunk_index": 0,
+          "similarity_score": 0.17343608
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 0,
+          "similarity_score": 0.17167144
+        },
+        {
+          "entry_id": 34,
+          "chunk_index": 3,
+          "similarity_score": 0.17160937
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 6,
+          "similarity_score": 0.16879556
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 1,
+          "similarity_score": 0.1657272
+        },
+        {
+          "entry_id": 27,
+          "chunk_index": 0,
+          "similarity_score": 0.16188529
+        },
+        {
+          "entry_id": 35,
+          "chunk_index": 2,
+          "similarity_score": 0.15962
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 6,
+          "similarity_score": 0.15669917
+        },
+        {
+          "entry_id": 38,
+          "chunk_index": 0,
+          "similarity_score": 0.15638986
+        },
+        {
+          "entry_id": 24,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 33,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 30,
+          "chunk_index": 5,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.185360Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 6,
+      "duration_ms": 267.69,
+      "scores": [
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "similarity_score": 0.47778228,
+          "rerank_score": 0.80078125
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "similarity_score": 0.27875638,
+          "rerank_score": 0.2890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "similarity_score": 0.2680355,
+          "rerank_score": 0.28515625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "similarity_score": 0.24684955,
+          "rerank_score": 0.255859375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "similarity_score": 0.2305754,
+          "rerank_score": 0.2490234375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "similarity_score": 0.31020564,
+          "rerank_score": 0.24609375
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.454330Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 35,
+          "chunk_index": 4,
+          "rerank_score": 0.80078125
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 29,
+          "chunk_index": 2,
+          "rerank_score": 0.2890625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 3,
+          "rerank_score": 0.28515625
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 1,
+          "rerank_score": 0.255859375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 4,
+          "rerank_score": 0.2490234375
+        },
+        {
+          "entry_id": 29,
+          "chunk_index": 0,
+          "rerank_score": 0.24609375
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.455351Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.47778228,
+      "best_rerank_score": 0.80078125,
+      "event": "faq.verdict",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:16.456050Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: What is the Wi-Fi network called?\n\nQuestion: What's the Wi-Fi network called?"
+        }
+      ],
+      "event": "faq.model_request",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "debug",
+      "timestamp": "2026-10-14T11:39:16.456387Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 408,
+        "output": 24,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "node": "answer_faq",
+      "segment": 0,
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.709500Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1800.51,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 43,
+        "answer_text": "The Wi-Fi network is called VisitDoc-Guest.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "What's the Wi-Fi network called?",
+            "verdict": "answered",
+            "answer_text": "The Wi-Fi network is called VisitDoc-Guest."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.710582Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.712463Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.46,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 43,
+        "answer_text": "The Wi-Fi network is called VisitDoc-Guest."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.712657Z"
+    },
+    {
+      "duration_ms": 3341.17,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 35,
+              "chunk_index": 4,
+              "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Please set your phone to silent and take calls outside. Photography and video recording are not allowed in the waiting area, to protect other patients' privacy.",
+              "similarity_score": 0.47778228,
+              "rerank_score": 0.80078125
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "The Wi-Fi network is called VisitDoc-Guest.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X3B7238M92ZHC4MRMEM662"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.713039Z"
+    },
+    {
+      "message_id": "01M4X3BAAPQP1W0012RAVCCZ0V",
+      "chat_id": "01M4X3B7056QSD7BJPZGGYJPGN",
+      "sender": "assistant",
+      "content": "The Wi-Fi network is called VisitDoc-Guest.",
+      "event": "message.persisted",
+      "turn_id": "01M4X3B7238M92ZHC4MRMEM662",
+      "level": "info",
+      "timestamp": "2026-10-14T11:39:17.732586Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {
+    "01M4X3B7238M92ZHC4MRMEM662": "1998752649265efcb4eae1794d7855c1"
+  }
+}

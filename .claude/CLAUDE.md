@@ -70,22 +70,26 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M3WD842TTD1Q9FX8TDRTMFAB`** - the whole set at 146 cases, taken on `009d4ff`
-after Phase 4b extended the corpus to 19 entries, dropped the similarity floor, let the answerer
-give a no the information states, chunked documents by heading section and fixed the
-classifier's routing of what the clinic sent, billed or treated - 1 of 87 answerable requests
-unserved;
+`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`** - the whole set at 146 cases, taken on `cd84c89`,
+which adds a BM25 branch whose top 3 join the dense top 5 the reranker sees; it measured
+identically to the dense build before it, 1 of 87 answerable requests unserved.
+`01M3WD842TTD1Q9FX8TDRTMFAB`, that dense build (`009d4ff`) - after Phase 4b extended the corpus to
+19 entries, dropped the similarity floor, let the answerer give a no the information states,
+chunked documents by heading section and fixed the classifier's routing of what the clinic sent,
+billed or treated - stays as the record of retrieval without BM25;
 `01M3VYV0RYA8N8RF2S1RQE5PSF`, the same set under the 0.25 floor, stays as the record of what the
 floor cost. The earlier
 v2 baseline `01M321DWRXSVSY7GW9RY3CR9YW` no longer re-scores - the corpus pin changed and six of
 its labels gained a citation - and stays as the record of the 9-entry build, as the 2b record
 under `specs/012-golden-set-metrics/evaluation/` stays frozen as FR-048a made it. `evals/baselines/README.md` says what a committed run is for, and why a baseline
 is evidence rather than a threshold. **The noise band is
-`evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`**, five runs of the previous baseline's
-build (`a171078`, which differs only in the classifier prompt): classification,
+`evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`**, five runs of the dense build
+`a171078` (which differs from `01M3WD84…`'s only in the classifier prompt): classification,
 retrieval and booking did not move at all across them, and unserved answerable ranged 4-6 of 87 -
 so a classifier or retrieval movement against it is real, and a ±1 in answered requests is not.
-It is still a range, never a number a later run has to beat.
+It is still a range, never a number a later run has to beat. It was measured under
+`retrieval=dense`, so a comparison against the current baseline marks nothing against it; no band
+of the BM25 build has been taken yet.
 **Never start a full `make eval-run` to check a fix before the cases it touches have passed on
 their own.** The full set spends live calls on every case; a fix is checked first offline where it
 can be (replaying stored prompts from a run's case files), then with `make eval-run CASES=...` over
@@ -295,5 +299,6 @@ anywhere else - `tests/`, `evals/` or `specs/`.
 
 See `docs/ROADMAP.md` for the full phased plan (Phase 0 walking skeleton → Phase 1 agent → Phase 2
 eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, retrieval under a
-realistic corpus (hybrid search planned there, measured as unneeded and not built), the
+realistic corpus (hybrid search planned there, then built as BM25's top added to the dense
+shortlist, measured as changing nothing on this corpus), the
 starter corpus's seeding cost (deferred until measured), then Kubernetes).

@@ -1,0 +1,227 @@
+{
+  "case_id": "G-b-04",
+  "chat_id": "01M4X30BWRYB2Y6XZF1JEAF7J1",
+  "patient_id": "01M4X30BXAFF41TBVDJ86DFMEW",
+  "attempts": 1,
+  "elapsed_seconds": 1.749219470002572,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+    "content": "I've taken too many of my tablets.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X30DHC0YM0XH65WW5JRR05",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I've taken too many of my tablets.",
+        "query": "I've taken too many of my tablets."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "chat_id": "01M4X30BWRYB2Y6XZF1JEAF7J1",
+      "sender": "patient",
+      "content": "I've taken too many of my tablets.",
+      "event": "message.persisted",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:18.947312Z"
+    },
+    {
+      "message": "I've taken too many of my tablets.",
+      "message_ids_unified": [
+        "01M4X30BYQ7TZ3YV4QPPHKSHVR"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:18.947823Z"
+    },
+    {
+      "trace_id": "d7c2c3da3b4eb0798a68a43a0f01ef9f",
+      "event": "turn.traced",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:18.949304Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:18.953091Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3327,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.546051Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I've taken too many of my tablets.",
+          "query": "I've taken too many of my tablets."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.546483Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1594.31,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "urgent_condition",
+            "text": "I've taken too many of my tablets.",
+            "query": "I've taken too many of my tablets."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.546874Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.548763Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.42,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.548934Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.550673Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.65,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.550968Z"
+    },
+    {
+      "duration_ms": 1615.65,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X30BYQ7TZ3YV4QPPHKSHVR"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.551543Z"
+    },
+    {
+      "message_id": "01M4X30DHC0YM0XH65WW5JRR05",
+      "chat_id": "01M4X30BWRYB2Y6XZF1JEAF7J1",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.575932Z"
+    },
+    {
+      "chat_id": "01M4X30BWRYB2Y6XZF1JEAF7J1",
+      "reason": "urgent_condition",
+      "message_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M4X30BYQ7TZ3YV4QPPHKSHVR",
+      "level": "info",
+      "timestamp": "2026-10-14T11:33:20.592148Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M4X30BYQ7TZ3YV4QPPHKSHVR": "d7c2c3da3b4eb0798a68a43a0f01ef9f"
+  }
+}

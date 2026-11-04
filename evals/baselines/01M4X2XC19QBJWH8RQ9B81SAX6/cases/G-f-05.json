@@ -1,0 +1,227 @@
+{
+  "case_id": "G-f-05",
+  "chat_id": "01M4X31TPPA7M9HD2632G4E26W",
+  "patient_id": "01M4X31TQ85AP9TJVYXK0WH5C9",
+  "attempts": 1,
+  "elapsed_seconds": 1.8417076689984242,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M4X31TRRMFWA06FF0YBMM1FV",
+    "content": "You said you could put me through to someone about my coverage - please do that.",
+    "attention_mark": "patient_asked_for_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M4X31WEECX42CBA0G9HXGSW7",
+    "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "call_staff",
+        "text": "You said you could put me through to someone about my coverage - please do that.",
+        "query": "Please put me through to someone about my coverage."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "chat_id": "01M4X31TPPA7M9HD2632G4E26W",
+      "sender": "patient",
+      "content": "You said you could put me through to someone about my coverage - please do that.",
+      "event": "message.persisted",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:06.883898Z"
+    },
+    {
+      "message": "You said you could put me through to someone about my coverage - please do that.",
+      "message_ids_unified": [
+        "01M4X31TRRMFWA06FF0YBMM1FV"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:06.884138Z"
+    },
+    {
+      "trace_id": "52383eefdf4e585122da47bef3a84a0e",
+      "event": "turn.traced",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:06.886097Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:06.888142Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3504,
+        "output": 38,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.580488Z"
+    },
+    {
+      "intents": [
+        "call_staff"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "call_staff",
+          "text": "You said you could put me through to someone about my coverage - please do that.",
+          "query": "Please put me through to someone about my coverage."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "node": "classify_intent",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.580992Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1693.8,
+      "result": {
+        "intents": [
+          "call_staff"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "call_staff",
+            "text": "You said you could put me through to someone about my coverage - please do that.",
+            "query": "Please put me through to someone about my coverage."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "patient_asked_for_person",
+        "notice_required": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.581712Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.584208Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.5,
+      "result": {
+        "cause": "patient_asked_for_person",
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.584429Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.585824Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.41,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 93,
+        "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly."
+      },
+      "event": "node.completed",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.585987Z"
+    },
+    {
+      "duration_ms": 1714.18,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "booking_outcome": null,
+      "message_ids_unified": [
+        "01M4X31TRRMFWA06FF0YBMM1FV"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.586306Z"
+    },
+    {
+      "message_id": "01M4X31WEECX42CBA0G9HXGSW7",
+      "chat_id": "01M4X31TPPA7M9HD2632G4E26W",
+      "sender": "assistant",
+      "content": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you shortly.",
+      "event": "message.persisted",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.601356Z"
+    },
+    {
+      "chat_id": "01M4X31TPPA7M9HD2632G4E26W",
+      "reason": "patient_asked_for_person",
+      "message_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "silenced": true,
+      "event": "escalation.raised",
+      "turn_id": "01M4X31TRRMFWA06FF0YBMM1FV",
+      "level": "info",
+      "timestamp": "2026-10-14T11:34:08.619111Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {
+    "01M4X31TRRMFWA06FF0YBMM1FV": "52383eefdf4e585122da47bef3a84a0e"
+  }
+}
