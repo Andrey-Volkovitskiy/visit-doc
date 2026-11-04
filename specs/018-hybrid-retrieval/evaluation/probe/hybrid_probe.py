@@ -18,8 +18,8 @@ embed and rerank calls, a few cents):
         evals/baselines/01M3WD842TTD1Q9FX8TDRTMFAB <out_dir>
 
 `PROBE_DENSE_ONLY=1` empties the lexical branch: the control, whose movement against
-the baseline is the replay's own rather than BM25's. The RRF probe ran on `07ff68d`,
-the dense-plus-BM25 one on `cd84c89`; the comparisons are beside this file.
+the baseline is the replay's own rather than BM25's. The RRF probe ran on `9c059ba`,
+the dense-plus-BM25 one on `583aaa8`; the comparisons are beside this file.
 
 This file is a reconstruction: the scratch copy those probes ran from was lost, and it was
 rebuilt from the session that wrote it, running the replays in a plain loop and reading the

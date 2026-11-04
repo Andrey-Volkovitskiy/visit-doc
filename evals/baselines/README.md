@@ -43,7 +43,7 @@ finding out, not a thing to repair by editing the run.
 | [`01M3W2MA7Y1BBTG2Y9F5W1NCKN`](01M3W2MA7Y1BBTG2Y9F5W1NCKN/) | 146 (all) | `957f240` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3W4D3ZPHGWSV5DPQJB5RZC3`](01M3W4D3ZPHGWSV5DPQJB5RZC3/) | 146 (all) | `a171078` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3WD842TTD1Q9FX8TDRTMFAB`](01M3WD842TTD1Q9FX8TDRTMFAB/) | 146 (all) | `009d4ff` on `018-hybrid-retrieval` | 2026-10-01 |
-| [`01M4X2XC19QBJWH8RQ9B81SAX6`](01M4X2XC19QBJWH8RQ9B81SAX6/) | 146 (all) | `cd84c89` on `018-hybrid-retrieval-bm25` | 2026-10-14 |
+| [`01M4X2XC19QBJWH8RQ9B81SAX6`](01M4X2XC19QBJWH8RQ9B81SAX6/) | 146 (all) | `583aaa8` on `main` | 2026-10-14 |
 
 The first run of the golden set at v2 that is scoreable. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not: it selects v1 case ids the set no longer holds,

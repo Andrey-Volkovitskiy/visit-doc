@@ -32,7 +32,7 @@ The baseline is `01M4X2XC19QBJWH8RQ9B81SAX6`.
 | Chunk by heading section, each chunk prefixed with its heading path | a fixed window ran across sections and set one section's sentence beside another's | section 6: 10/10 on the two replayed cases it broke | `a171078` |
 | Noise band on that build | to tell a real movement from the answerer's run-to-run variation | section 8: only the answerer varies, ±1 | `fcc024b` |
 | Classifier: what the clinic sent, billed or treated is `faq_question`; arriving late is a term, not a booking | four of the five remaining misses were routing | section 9: 142 to 145 of 146 exact on replay, and on the full run | `009d4ff` |
-| A BM25 branch beside the dense one; the reranker gets the dense top 5 plus BM25's top 3 | cover for exact terms a larger corpus would push out of the dense pool - not a measured miss | section 11: RRF lost three answers on replay; this changed no verdict, live or replayed | `07ff68d`, `cd84c89` |
+| A BM25 branch beside the dense one; the reranker gets the dense top 5 plus BM25's top 3 | cover for exact terms a larger corpus would push out of the dense pool - not a measured miss | section 11: RRF lost three answers on replay; this changed no verdict, live or replayed | `9c059ba`, `583aaa8` |
 
 ## 1. Why the corpus had to change first
 
@@ -331,7 +331,7 @@ moved - so every movement below is BM25's.
 ### Reciprocal Rank Fusion regressed
 
 Fused client-side (k = 60, so the cosine survived for the fallback floor), the top 5 of the fused
-order went to the reranker (`07ff68d`, `probe/rrf-k60.md`):
+order went to the reranker (`9c059ba`, `probe/rrf-k60.md`):
 
 | | baseline | RRF |
 |---|---|---|
@@ -356,7 +356,7 @@ benefit.
 
 ### Dense top 5 plus BM25's top 3
 
-So the lexical branch adds candidates instead of reordering them (`cd84c89`): the shortlist is
+So the lexical branch adds candidates instead of reordering them (`583aaa8`): the shortlist is
 the dense top `SIMILARITY_CAP` (5) and the BM25 top `LEXICAL_CAP` (3), a BM25 hit already on the
 dense top taking no extra place. Nothing dense search shortlists can be lost, and the reranker -
 which ranked the cited entry first in all 86 requests that reached it - decides between them.
@@ -389,5 +389,5 @@ words can make them slightly rarer or commoner for everyone, which moves BM25's 
 which three chunks it adds - never what the dense top 5 is.
 
 The noise band was measured under dense retrieval and does not apply to this baseline; a new one
-is five full runs of `cd84c89`, not yet taken.
+is five full runs of `583aaa8`, not yet taken.
 

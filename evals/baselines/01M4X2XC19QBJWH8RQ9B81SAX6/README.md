@@ -2,7 +2,7 @@
 
 The whole golden set at 146 cases, driven and scored on 2026-10-14, on the build that searches a
 BM25 branch beside the dense one and hands the reranker the dense top 5 with BM25's top 3 added,
-never in place of a dense hit (`cd84c89`). Everything else is `01M3WD842TTD1Q9FX8TDRTMFAB`'s
+never in place of a dense hit (`583aaa8`). Everything else is `01M3WD842TTD1Q9FX8TDRTMFAB`'s
 build. It supersedes that run as the baseline. Committed as the harness wrote it.
 
 ```bash
@@ -18,7 +18,7 @@ share and marks nothing against it.
 | | |
 |---|---|
 | Run id | `01M4X2XC19QBJWH8RQ9B81SAX6`, 2026-10-14 11:31:40Z – 11:41:16Z (591 s of driving) |
-| Code | `cd84c89` on `018-hybrid-retrieval-bm25`; service source clean |
+| Code | `583aaa8` on `main` (driven from `cd84c89`, the same commit before it was rebased onto `main`; only portfolio pages differ); service source clean |
 | Selection | all 146 cases, 168 labelled requests |
 | Run clock | `2026-03-02T08:00:00` (a Monday) |
 | Corpus | `3af64fc8…28a236d0f`, matching `evals/golden/corpus.json`'s pin; 62 chunks |

@@ -70,7 +70,7 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`** - the whole set at 146 cases, taken on `cd84c89`,
+`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`** - the whole set at 146 cases, taken on `583aaa8`,
 which adds a BM25 branch whose top 3 join the dense top 5 the reranker sees; it measured
 identically to the dense build before it, 1 of 87 answerable requests unserved.
 `01M3WD842TTD1Q9FX8TDRTMFAB`, that dense build (`009d4ff`) - after Phase 4b extended the corpus to
