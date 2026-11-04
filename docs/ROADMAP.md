@@ -915,6 +915,55 @@ call at all.
 Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
 in the README like every other technology choice.
 
+*(Status: containers and a local cluster are done; the public deployment is under way. The three
+services run from their own images under Docker Compose and in a local k3s cluster, deployed in
+one command, and the images are published to GitHub's registry for a cluster that pulls. Nothing
+is deployed to a public address yet. The tradeoffs are in the README's "Running in Containers"
+and "Running in Kubernetes" sections.)*
+
+- **Containers first, under Compose.** One image per service, built from the repo root, so a
+  problem of containers working together is found apart from a problem of Kubernetes.
+  *(Done: two-stage `Dockerfile`s whose final image holds only the installed virtualenv and the
+  migration scripts, `uv sync --locked`, a non-root uid that cannot rewrite its own code, and the
+  frontend as a static bundle behind nginx. `make stack-up` runs `docker-compose.full.yml`, which
+  includes `docker-compose.yml`'s datastores and adds both migrations as one-off containers.
+  `.dockerignore` keeps `.env` out of the images.)*
+- **A local cluster of the distribution deployed to.** k3s, run through k3d, so the Ingress and
+  storage learnt on are production's. *(Done: `deploy/k3d.yaml`, one control-plane node and one
+  worker, Traefik at `http://localhost:8080`; `make cluster-up` / `make cluster-down`. Images reach
+  the nodes by `k3d image import`, not a registry.)*
+- **The datastores, the migrations and the apps as three stages.** *(Done, in `deploy/k8s/`:
+  Postgres and Qdrant as StatefulSets, each on its own `local-path` volume, gated on readiness
+  only; both migrations as Jobs re-created and waited for on every deploy; chat, the scheduler
+  and the frontend as Deployments with readiness and liveness probes (chat and the scheduler a
+  startup probe too) that touch no dependency. Chat runs as exactly one pod replaced with `Recreate`, because its running turns
+  live in process memory; the frontend runs as two. The Ingress sends everything to the frontend's
+  nginx. Secrets are made at deploy time from `.env` - only the API keys and `ADMIN_SECRET` -
+  and never committed; the cluster's addresses are a committed ConfigMap.)*
+- **One command to deploy, and only what changed rolls.** *(Done: `make k8s-deploy` builds the
+  images, imports them, applies the datastores, migrates and applies the apps, stamping each
+  Deployment's pod template with the ID of the image the node holds, so a rebuilt `:latest` image
+  rolls its pods and an unchanged one rolls none. `make k8s-logs` follows chat and the scheduler
+  without the probes' requests; `make k8s-down` deletes the namespace, data included.)*
+- **Kustomize, a base and an overlay per cluster.** *(Done: `deploy/k8s/base/` names the images
+  untagged; `overlays/local/` adds the `:latest` tag and `Never` pull. The public cluster gets a
+  second overlay, not a copy of the manifests.)*
+- **Images a remote cluster can pull.** *(Done: `make k8s-push` pushes
+  `ghcr.io/andrey-volkovitskiy/visitdoc-<app>:<12-char commit>`, refusing while the tree is dirty
+  so a tag always names the code it was built from. The three packages are public, so a cluster
+  needs no pull secret. Pushed from this machine, not by CI.)*
+- **A public deployment.** *(Not built yet; planned in this order.)*
+  - `deploy/k8s/overlays/public/`: the ghcr images at a commit tag, the domain on the Ingress, TLS
+    from Let's Encrypt through k3s's Traefik, a rate-limit Middleware, and chat's
+    `PUBLIC_BASE_URL` and `LANGFUSE_ENVIRONMENT`.
+  - A VPS running k3s, open on 80 and 443 only, its API reached over an SSH tunnel, as a second
+    kube context the Makefile can select.
+  - Spending caps in the Anthropic and Voyage consoles before the address is shared: a public demo
+    spends real money on every chat.
+  - Deploy, check the certificate, smoke-test, and walk the staff connector's quickstart
+    (`specs/017-staff-mcp-connector/quickstart.md`) against the public HTTPS address instead of
+    ngrok.
+
 ---
 
 ## Practices for an AI role
