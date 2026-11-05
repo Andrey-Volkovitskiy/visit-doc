@@ -132,6 +132,16 @@ class Settings(BaseSettings):
     # `service.configured`: that event's fields are the eval harness's contract, and
     # this setting changes no turn.
     PUBLIC_BASE_URL: str = ""
+    # Whether the session cookie carries `Secure`, so a browser sends it over HTTPS
+    # only - true wherever the app is served over HTTPS, which the public deployment
+    # sets. Off by default because every other way the app runs serves plain HTTP (the
+    # dev servers, compose, the local cluster, the test clients), and over HTTP a client
+    # does not send a `Secure` cookie back - browsers excepting `localhost`, but not the
+    # WSL address or the test clients - so every request would arrive as a first visit,
+    # and mint a session of its own. Its own setting rather than read off
+    # `PUBLIC_BASE_URL`, which names where Claude's servers reach chat: locally an ngrok
+    # tunnel that is HTTPS while the browser is still at http://localhost.
+    SESSION_COOKIE_SECURE: bool = False
     # Langfuse tracing: one trace per turn, exported to the project these keys belong
     # to. Blank by default, and blank means off - both keys have to be set for anything
     # to leave the process. Read here and handed to the SDK explicitly, never left to

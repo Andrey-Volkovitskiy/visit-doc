@@ -56,6 +56,8 @@ os.environ["QDRANT_COLLECTION_NAME"] = isolated_name(
 # conftest is not a dependency of another's.
 os.environ["LANGFUSE_PUBLIC_KEY"] = ""
 os.environ["LANGFUSE_SECRET_KEY"] = ""
+# The test clients talk plain HTTP and would not send a `Secure` cookie back over it.
+os.environ["SESSION_COOKIE_SECURE"] = "false"
 
 
 @pytest.fixture(scope="session", autouse=True)

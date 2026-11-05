@@ -15,6 +15,11 @@ patches:
       - op: add
         path: /data/PUBLIC_BASE_URL
         value: https://visitdoc.app
+      # Served over HTTPS only, so the session cookie is marked `Secure`: a browser never
+      # sends the session id in the clear.
+      - op: add
+        path: /data/SESSION_COOKIE_SECURE
+        value: "true"
       # Files the public demo's traces apart from development's and the local cluster's.
       - op: replace
         path: /data/LANGFUSE_ENVIRONMENT

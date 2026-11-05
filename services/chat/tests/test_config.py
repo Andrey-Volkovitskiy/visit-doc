@@ -26,6 +26,7 @@ _NEW_FIELDS = (
     "RERANK_TIMEOUT_SECONDS",
     "RERANK_MODEL",
     "LOG_FORMAT",
+    "SESSION_COOKIE_SECURE",
 )
 
 
@@ -51,6 +52,22 @@ def unconfigured(monkeypatch: pytest.MonkeyPatch) -> Settings:
     for field in _NEW_FIELDS:
         monkeypatch.delenv(field, raising=False)
     return _settings(_env_file=None)
+
+
+def test_session_cookie_secure_defaults_to_off(unconfigured: Settings) -> None:
+    # Every way the app runs but the public deployment serves plain HTTP, over which a
+    # `Secure` cookie is never sent back: on by default, each of them would start every
+    # request a new session.
+    assert unconfigured.SESSION_COOKIE_SECURE is False
+
+
+def test_session_cookie_secure_is_read_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The public overlay sets it as the ConfigMap string "true".
+    monkeypatch.setenv("SESSION_COOKIE_SECURE", "true")
+
+    assert _settings(_env_file=None).SESSION_COOKIE_SECURE is True
 
 
 def test_admin_secret_defaults_to_empty(unconfigured: Settings) -> None:

@@ -138,6 +138,10 @@ os.environ["LANGFUSE_SECRET_KEY"] = ""
 # the suite starts with the connector unavailable and a test that needs it configures
 # an address of its own - `connector_configured` below.
 os.environ["PUBLIC_BASE_URL"] = ""
+# The test clients talk plain HTTP, and do not send a `Secure` cookie back over it - so
+# a `.env` that turned it on would make every request a first visit. A test about the
+# flag sets it on the settings it reads - `test_session_cookie.py`.
+os.environ["SESSION_COOKIE_SECURE"] = "false"
 
 
 @pytest.fixture(scope="session", autouse=True)

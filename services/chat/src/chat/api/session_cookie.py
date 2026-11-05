@@ -1,12 +1,15 @@
 """`visitdoc_session_id` cookie: read/mint helpers.
 
 `HttpOnly` keeps the value unreadable from frontend JavaScript (the frontend never
-needs it - the browser attaches it automatically); `Secure=False` is deliberate for
-this phase's local-HTTP-only deployment and MUST be revisited once the app is served
-over HTTPS.
+needs it - the browser attaches it automatically). `Secure` follows
+`SESSION_COOKIE_SECURE`: set where the app is served over HTTPS, so the session id
+never crosses the network in the clear, and unset where it is served over plain HTTP,
+which would otherwise never get the cookie back.
 """
 
 from fastapi import Request, Response
+
+from chat.core.config import get_settings
 
 COOKIE_NAME = "visitdoc_session_id"
 _MAX_AGE_SECONDS = 400 * 24 * 60 * 60  # ~400 days, the practical browser-enforced cap
@@ -29,5 +32,5 @@ def set_session_cookie(response: Response, session_id: str) -> None:
         max_age=_MAX_AGE_SECONDS,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=get_settings().SESSION_COOKIE_SECURE,
     )

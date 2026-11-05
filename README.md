@@ -1197,7 +1197,7 @@ scheduler; `make k8s-down` deletes all of it, data included. Eight choices carri
 
 The public deployment's manifests: `deploy/k8s/overlays/public/` runs the base on one k3s server
 at `https://visitdoc.app`, open to anyone with the link. The overlay is written and renders; the
-Makefile does not apply it yet, and nothing is served there yet. Five choices carried a tradeoff.
+Makefile does not apply it yet, and nothing is served there yet. Six choices carried a tradeoff.
 
 - **The images at the commit being deployed, filled in at apply time.** The overlay names the
   `ghcr.io` images with the tag `unset-deploy-tag`, which the deploy replaces in the rendered
@@ -1227,6 +1227,13 @@ Makefile does not apply it yet, and nothing is served there yet. Five choices ca
   the base Ingress to chat's Service rather than more prefixes for nginx and Vite to keep in step.
   Locally they answer 503, the connector being unavailable without a `PUBLIC_BASE_URL`;
   `/admin` is in neither list, and is reached only through the cluster.
+- **The session cookie marked `Secure` by a setting, not by detecting HTTPS.**
+  `SESSION_COOKIE_SECURE` is off by default and on in the public overlay. Every other way the app
+  runs serves plain HTTP, over which a `Secure` cookie is never sent back - so on by default, each
+  of them would start every request a new session. Reading the scheme off the request was the
+  alternative, but chat sits behind two proxies, and nginx reports its own hop from Traefik, which
+  is plain HTTP; nor is `PUBLIC_BASE_URL` the answer, being HTTPS (an ngrok tunnel) in development,
+  where the browser is still at `http://localhost`.
 - **One server, its datastores on its own disk.** Postgres and Qdrant keep their `local-path`
   volumes on the server's disk, as in the local cluster, and nothing is replicated or backed up.
   A demo can afford that: every session is disposable, and each new one is given the starter
