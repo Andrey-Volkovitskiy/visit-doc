@@ -1,0 +1,46 @@
+# k3s installs Traefik from a Helm chart (39.0.7, Traefik 3.6, in k3s v1.35) with its own
+# values. A HelmChartConfig named after that chart is k3s's way to add values to it: k3s
+# merges these over its own and upgrades the release, so nothing here replaces k3s's
+# install. The local cluster has none of this - it serves plain HTTP on localhost.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      # Port 80 serves Let's Encrypt's HTTP-01 challenge - Traefik answers it ahead of
+      # this redirect - and sends every other request to HTTPS, permanently.
+      web:
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+              permanent: true
+
+    # The certificate for every host a router names with `certresolver: letsencrypt`,
+    # proven over HTTP-01: Let's Encrypt fetches a token from http://visitdoc.app, so the
+    # domain's A record must point at this server and port 80 be open. Renewed by Traefik
+    # before it expires. No email: Let's Encrypt no longer sends expiry notices.
+    certificatesResolvers:
+      letsencrypt:
+        acme:
+          storage: /data/acme.json
+          httpChallenge:
+            entryPoint: web
+
+    # /data on a volume (k3s's local-path), so the certificate survives Traefik's pod
+    # being replaced. Without it every restart asks Let's Encrypt again, and it issues at
+    # most 5 certificates for the same name a week.
+    persistence:
+      enabled: true
+
+    service:
+      spec:
+        # Keep the visitor's address. With the default `Cluster`, a request may be
+        # forwarded between nodes with its source rewritten, and every client would share
+        # one rate-limit bucket. `Local` sends a request only to a Traefik pod on the node
+        # it arrived at, which on a one-node cluster is no restriction.
+        externalTrafficPolicy: Local

@@ -1,0 +1,21 @@
+# The public cluster: k3s on one VPS, serving https://visitdoc.app. Each stage is the
+# base's, with what this cluster changes; the datastores' images come from Docker Hub, so
+# only chat's settings differ here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/datastores
+patches:
+  - target:
+      kind: ConfigMap
+      name: chat
+    patch: |-
+      # The address Claude's servers reach chat at, from which the staff connector's
+      # issuer and endpoints derive: setting it is what makes the connector available.
+      - op: add
+        path: /data/PUBLIC_BASE_URL
+        value: https://visitdoc.app
+      # Files the public demo's traces apart from development's and the local cluster's.
+      - op: replace
+        path: /data/LANGFUSE_ENVIRONMENT
+        value: production

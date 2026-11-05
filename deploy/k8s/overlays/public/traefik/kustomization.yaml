@@ -1,0 +1,7 @@
+# Not a stage of the app, and outside its namespace: the public cluster's Traefik, which
+# k3s installs and runs in kube-system. Applied before the stages, and changes nothing
+# while it is unchanged.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - traefik-config.yaml

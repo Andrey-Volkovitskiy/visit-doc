@@ -6,8 +6,9 @@
 #   - Secret `chat` (made by `make k8s-up` from `.env`): the API keys and ADMIN_SECRET;
 #   - DATABASE_URL: assembled in chat's Deployment from Secret `postgres`, so the
 #     database password is stored once.
-# PUBLIC_BASE_URL is not set, so the staff connector is unavailable in the cluster: the
-# ngrok address in `.env` leads to the chat service run on the host, not to this one.
+# PUBLIC_BASE_URL is not set, so the staff connector is unavailable in the local cluster:
+# the ngrok address in `.env` leads to the chat service run on the host, not to this one.
+# The public overlay sets it, and LANGFUSE_ENVIRONMENT, to its own.
 apiVersion: v1
 kind: ConfigMap
 metadata:

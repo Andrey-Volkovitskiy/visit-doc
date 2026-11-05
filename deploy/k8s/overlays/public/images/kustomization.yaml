@@ -1,0 +1,23 @@
+# The public cluster's images: pulled from GitHub's registry, where `make k8s-push` puts
+# them, each tagged with the 12-character commit it was built from. A Component, because
+# the migrations and the apps both need it.
+#
+# The tag is the commit being deployed, so it changes on every deploy and cannot be
+# written here. `unset-deploy-tag` stands in for it, and the Makefile replaces it in the
+# rendered output before applying. Applied without that, the pods fail to pull an image
+# by that name - which says what was missed - rather than run something unintended.
+#
+# No pull policy: a tag other than `latest` defaults to `IfNotPresent`, so a node pulls a
+# commit's image once. The packages are public, so no pull secret either.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+images:
+  - name: visitdoc-chat
+    newName: ghcr.io/andrey-volkovitskiy/visitdoc-chat
+    newTag: unset-deploy-tag
+  - name: visitdoc-scheduler
+    newName: ghcr.io/andrey-volkovitskiy/visitdoc-scheduler
+    newTag: unset-deploy-tag
+  - name: visitdoc-frontend
+    newName: ghcr.io/andrey-volkovitskiy/visitdoc-frontend
+    newTag: unset-deploy-tag

@@ -1192,3 +1192,42 @@ scheduler; `make k8s-down` deletes all of it, data included. Eight choices carri
   Docker Hub would have meant a second account and its pull limits. The images are pushed from
   this machine, not built by CI: one person deploys, and a workflow pushing on every commit would
   publish images nobody deploys.
+
+## Serving the Public Demo: technology choices
+
+The public deployment's manifests: `deploy/k8s/overlays/public/` runs the base on one k3s server
+at `https://visitdoc.app`, open to anyone with the link. The overlay is written and renders; the
+Makefile does not apply it yet, and nothing is served there yet. Five choices carried a tradeoff.
+
+- **The images at the commit being deployed, filled in at apply time.** The overlay names the
+  `ghcr.io` images with the tag `unset-deploy-tag`, which the deploy replaces in the rendered
+  output with the commit it deploys. Kustomize reads no variables, so the alternative was
+  committing the tag: a commit per deploy that changes nothing but which build runs. The cost is that `kubectl apply -k` alone
+  deploys nothing usable; it fails to pull an image whose name says why, rather than running
+  something unintended.
+- **TLS from Let's Encrypt through k3s's own Traefik, not cert-manager.** A `HelmChartConfig`
+  (`overlays/public/traefik/`) adds values to the Traefik k3s installs: an ACME resolver proving
+  the domain over HTTP-01, a permanent redirect from port 80 to 443, and a volume for the
+  certificate, since Let's Encrypt issues at most five for one name a week and a lost file would
+  ask again on every restart. cert-manager is the usual answer, and stores certificates as
+  Secrets any number of Traefik pods can read; for one domain behind one Traefik pod it would be
+  a second component to run for nothing this one lacks.
+- **Rate limits in Traefik, per client address, two of them.** A general limit against floods
+  covers every request; a tight one - ten a minute - covers only the requests that call Claude or
+  Voyage: a patient's turn, a new chat (and on a first arrival a new session, seeded by Voyage),
+  and adding or changing a FAQ entry. An Ingress cannot match a method, and `GET /chats` spends
+  nothing where `POST /chats` does, so the tight one is a Traefik `IngressRoute` of its own. At
+  the edge, a request over the limit is refused before it reaches nginx or chat, and chat stays
+  unaware of a deployment's limits; the cost is that the limits are a Traefik feature, and an
+  open demo is bounded by them and by the providers' spending caps, not by an access code. Each
+  client gets its own bucket only because Traefik's Service keeps the visitor's address
+  (`externalTrafficPolicy: Local`); with the default, all of them could share one.
+- **The staff connector's addresses routed to chat by the Ingress, not by nginx.** `/mcp`,
+  `/oauth` and `/.well-known` are called by Claude's servers, not the page, so they are paths of
+  the base Ingress to chat's Service rather than more prefixes for nginx and Vite to keep in step.
+  Locally they answer 503, the connector being unavailable without a `PUBLIC_BASE_URL`;
+  `/admin` is in neither list, and is reached only through the cluster.
+- **One server, its datastores on its own disk.** Postgres and Qdrant keep their `local-path`
+  volumes on the server's disk, as in the local cluster, and nothing is replicated or backed up.
+  A demo can afford that: every session is disposable, and each new one is given the starter
+  corpus afresh.

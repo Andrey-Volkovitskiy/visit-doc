@@ -1,0 +1,64 @@
+# Rate limits for the open demo, enforced by Traefik before a request reaches nginx or
+# chat - so a request over the limit is answered 429 and costs no model call. Each client
+# address has its own bucket: Traefik sees the visitor's address because its Service
+# keeps it (`externalTrafficPolicy: Local`, ../traefik/).
+#
+# Two limits. The general one covers every request, and is only against floods: one
+# visitor loading the page and polling both panes stays far below it. The spending one
+# covers the requests that call Claude or Voyage - what a public address costs money on.
+
+# Every request: 20 a second on average, in bursts of up to 100 (a first page load
+# fetches the bundle's files at once).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit-general
+  namespace: visitdoc
+spec:
+  rateLimit:
+    average: 20
+    burst: 100
+---
+# The requests that spend: 10 a minute on average, in bursts of up to 10 - a visitor
+# sending a message every few seconds stays inside it, a script does not.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ratelimit-spend
+  namespace: visitdoc
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+---
+# Which requests those are, as a Traefik route of its own: an Ingress can match a path
+# but not a method, and `GET /chats` (the listing) spends nothing while `POST /chats`
+# (a first arrival's session, seeded with the starter corpus by Voyage) does.
+#   POST /chat          a patient's turn - Claude, and Voyage for retrieval
+#   POST /chats         a new chat, and on a first arrival a new session
+#   POST/PUT /faq...    an entry added or changed is embedded by Voyage
+# Traefik ranks a longer rule first, so this one takes these requests from the Ingress's
+# `/`, and they go on to nginx as every other page request does. Only the spending limit
+# applies to them: the general one is far looser, so it would never be what stops one.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: visitdoc-spend
+  namespace: visitdoc
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: >-
+        Host(`visitdoc.app`)
+        && (Method(`POST`) || Method(`PUT`))
+        && (Path(`/chat`) || Path(`/chats`) || PathPrefix(`/faq`))
+      middlewares:
+        - name: ratelimit-spend
+      services:
+        - name: frontend
+          port: http
+  tls:
+    certResolver: letsencrypt

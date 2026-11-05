@@ -1,0 +1,28 @@
+# The base's apps on https://visitdoc.app: the Ingress given the domain, served over HTTPS
+# only with Let's Encrypt's certificate (resolver `letsencrypt`, configured in
+# ../traefik/), and rate-limited per client address (rate-limits.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/apps
+  - rate-limits.yaml
+components:
+  - ../images
+patches:
+  - target:
+      kind: Ingress
+      name: visitdoc
+    patch: |-
+      - op: add
+        path: /spec/rules/0/host
+        value: visitdoc.app
+      # Traefik reads these annotations, not `spec.tls`: on `websecure` (443) only - port
+      # 80 redirects every request to it - with the certificate requested from the
+      # resolver, and every request through the general limit.
+      - op: add
+        path: /metadata/annotations
+        value:
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+          traefik.ingress.kubernetes.io/router.middlewares: visitdoc-ratelimit-general@kubernetescrd

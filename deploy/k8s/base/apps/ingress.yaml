@@ -4,7 +4,13 @@
 # one entry point the browser has in compose (:5173) and in development (Vite's proxy),
 # so the page and the API share one origin: no CORS, and the session cookie is sent.
 #
-# No `host`: any hostname matches, so localhost works as it is. A public deployment
+# Except the staff connector's addresses (spec 017), which go to chat directly. Claude's
+# servers call them, not the page, and nginx forwards only the page's prefixes - so through
+# nginx they would get the page's index.html. The connector is unavailable while chat's
+# PUBLIC_BASE_URL is unset, as it is in the local cluster: there they answer 503, saying why.
+# `/admin` is in neither list, and so reachable only from inside the cluster.
+#
+# No `host`: any hostname matches, so localhost works as it is. The public overlay
 # names its domain here.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -21,5 +27,27 @@ spec:
             backend:
               service:
                 name: frontend
+                port:
+                  name: http
+          # The longest matching path wins, so these take their prefixes from `/`.
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: chat
+                port:
+                  name: http
+          - path: /oauth
+            pathType: Prefix
+            backend:
+              service:
+                name: chat
+                port:
+                  name: http
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: chat
                 port:
                   name: http

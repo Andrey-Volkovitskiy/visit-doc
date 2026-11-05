@@ -159,7 +159,11 @@ locally built image must be imported (`k3d image import <image> -c visitdoc`) an
 pull it from Docker Hub. The manifests are Kustomize: `deploy/k8s/base/` names the images untagged,
 and `deploy/k8s/overlays/local/` adds the `:latest` tag and `Never` pull (Makefile's `K8S_OVERLAY`);
 both come as three stages, `datastores`, `migrations` and `apps`, applied in that order with
-`kubectl apply -k`, and `kubectl kustomize <dir>` prints what one renders to. `make k8s-up`
+`kubectl apply -k`, and `kubectl kustomize <dir>` prints what one renders to.
+`deploy/k8s/overlays/public/` is the public cluster's (`https://visitdoc.app`): the same three
+stages with the ghcr images at the tag `unset-deploy-tag`, which the deploy must replace in the
+rendered output with the commit it deploys, plus `traefik/` - a `HelmChartConfig` for k3s's own
+Traefik in `kube-system`, applied before the stages. The Makefile does not apply it yet. `make k8s-up`
 applies them to the cluster, in the `visitdoc` namespace,
 after creating the objects that are not committed (the Postgres Secret, the init-script ConfigMap
 built from `docker/postgres-init/`, and Secret `chat` - only the API keys and `ADMIN_SECRET` from

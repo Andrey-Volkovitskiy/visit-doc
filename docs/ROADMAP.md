@@ -952,12 +952,19 @@ and "Running in Kubernetes" sections.)*
   `ghcr.io/andrey-volkovitskiy/visitdoc-<app>:<12-char commit>`, refusing while the tree is dirty
   so a tag always names the code it was built from. The three packages are public, so a cluster
   needs no pull secret. Pushed from this machine, not by CI.)*
-- **A public deployment.** *(Not built yet; planned in this order.)*
+- **A public deployment**, at `https://visitdoc.app`, open to anyone with the link. *(Under way;
+  planned in this order.)*
   - `deploy/k8s/overlays/public/`: the ghcr images at a commit tag, the domain on the Ingress, TLS
-    from Let's Encrypt through k3s's Traefik, a rate-limit Middleware, and chat's
-    `PUBLIC_BASE_URL` and `LANGFUSE_ENVIRONMENT`.
+    from Let's Encrypt through k3s's Traefik, rate limits, and chat's `PUBLIC_BASE_URL` and
+    `LANGFUSE_ENVIRONMENT`. *(Written, not yet applied: the tag is a placeholder the deploy fills
+    in; a `HelmChartConfig` gives k3s's Traefik the ACME resolver, the redirect to HTTPS, a
+    volume for the certificate and the visitor's address; a general per-address limit covers
+    every request and a tight one the requests that call Claude or Voyage. The staff connector's
+    paths go from the base Ingress straight to chat, which nginx would not forward.)*
   - A VPS running k3s, open on 80 and 443 only, its API reached over an SSH tunnel, as a second
-    kube context the Makefile can select.
+    kube context the Makefile can select - with `make k8s-admin`, a port-forward to chat, as the
+    way to `/admin`, which no public route reaches. *(The server, its firewall and the domain's
+    DNS record are in place; k3s is not installed yet.)*
   - Spending caps in the Anthropic and Voyage consoles before the address is shared: a public demo
     spends real money on every chat.
   - Deploy, check the certificate, smoke-test, and walk the staff connector's quickstart
