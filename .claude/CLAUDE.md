@@ -58,7 +58,8 @@ a second Node project ever appears, extract it then.
 
 ## Commands
 
-Common commands are in the [`Makefile`](../Makefile).
+Common commands are in the [`Makefile`](../Makefile); a plain `make` lists them by section -
+running locally, in Docker and in Kubernetes - each with one line on what it does.
 
 The golden harness has its own four: `make eval-run` (optionally `CASES=G-a-01,G-j-03` or
 `FAMILY=<name>`) drives cases against the running stack, **spending live Claude and Voyage calls**,

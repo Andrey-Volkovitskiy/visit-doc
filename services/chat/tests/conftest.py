@@ -482,9 +482,18 @@ def _reranking_agrees_with_the_toy_embedding() -> Iterator[None]:
         chunks: list[ScoredChunk],
         **_kwargs: object,
     ) -> list[ScoredChunk]:
-        # The toy embedding scores a chunk 1.0 on the question's axis and 0.0 off it.
+        # The toy embedding scores a chunk 1.0 on the question's axis and 0.0 off
+        # it. A chunk only the BM25 branch found has no similarity score at all, so
+        # the toy has not put it on the question's axis, and it is judged as off it.
+        # Which chunks BM25 adds depends on what else is in the collection - its IDF
+        # is collection-wide, and a worker's tests share one - so a fake that cannot
+        # score one fails by test order.
         return [
-            chunk.with_rerank_score(0.9 if chunk.similarity_score >= 0.5 else 0.1)
+            chunk.with_rerank_score(
+                0.9
+                if chunk.similarity_score is not None and chunk.similarity_score >= 0.5
+                else 0.1
+            )
             for chunk in chunks
         ]
 

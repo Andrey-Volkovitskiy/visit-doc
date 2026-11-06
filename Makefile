@@ -1,32 +1,59 @@
-.PHONY: sync lint format typecheck typecheck-python typecheck-frontend \
-        test test-unit test-frontend test-integration test-e2e test-db-prune \
-        precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
-        services-up services-down services-status services-free-ports migrate \
-        db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy k8s-push \
-        k8s-admin k8s-db k8s-public-env k8s-public-context k8s-tunnel \
-        alembic-chat-history alembic-scheduler-history \
-        eval-run eval-score eval-compare eval-band eval-cost eval-build-set
+# VisitDoc's commands. `make` (or `make help`) lists every target, by section.
+#
+# The app is three services - chat (:8000), the scheduler (:8001) and the frontend (:5173) -
+# over two datastores, Postgres and Qdrant. They run in one of three ways, each a section below:
+#
+#   1. Locally, from source:   make db-up && make migrate && make services-up
+#   2. In Docker:              make stack-up
+#   3. In Kubernetes:          make cluster-up && make k8s-deploy                 (local k3d)
+#                              make k8s-tunnel, then make k8s-deploy CLUSTER=public
+#
+# Run one at a time: the first two use the same ports and the same databases (the Kubernetes
+# clusters have their own). First time: `make sync`, `npm install` in services/frontend,
+# `make install-hooks`, and a `.env` copied from `.env.example`.
 
-sync:
+.DEFAULT_GOAL := help
+
+##@ Help
+
+.PHONY: help
+help: ## List every target, by section
+	@awk 'BEGIN { FS = ":.*## " } \
+		/^##@ / { printf "\n%s\n", substr($$0, 5) } \
+		/^[a-zA-Z0-9_-]+:.*## / { printf "  %-26s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+##@ Setup and code quality
+
+.PHONY: sync install-hooks lint format typecheck typecheck-python typecheck-frontend precommit
+sync: ## Install the Python workspace into .venv (one uv.lock for every member)
 	uv sync
 
-lint:
+install-hooks: ## Install the pre-commit hooks into .git
+	uv run pre-commit install
+
+lint: ## Lint the Python code (ruff)
 	uv run ruff check .
 
-format:
+format: ## Format the Python code (ruff)
 	uv run ruff format .
 
 # Both languages: `tsc` is the only thing that typechecks the frontend - vitest
 # transpiles without checking, so a type error is invisible to `make test`.
-typecheck: typecheck-python typecheck-frontend
+typecheck: typecheck-python typecheck-frontend ## Typecheck Python (mypy) and the frontend (tsc)
 
-typecheck-python:
+typecheck-python: ## Typecheck the Python code (mypy)
 	uv run mypy .
 
-typecheck-frontend:
+typecheck-frontend: ## Typecheck the frontend (tsc)
 	cd services/frontend && npm run typecheck
 
-test: test-unit test-frontend
+precommit: ## Run every pre-commit hook over every file
+	uv run pre-commit run --all-files
+
+##@ Tests (the database-backed tiers need `make db-up`)
+
+.PHONY: test test-unit test-frontend test-integration test-e2e test-db-prune
+test: test-unit test-frontend ## The unit and frontend tiers
 
 # Distributed across processes, since every test in these suites talks to real Postgres
 # and real Qdrant and spends most of its time waiting on one of them. Each worker gets
@@ -36,19 +63,14 @@ test: test-unit test-frontend
 # alongside this one (another terminal, another Claude Code session) has to fit on the
 # same machine. `--dist loadfile` keeps a file's tests together, so a suite's
 # within-file ordering survives.
-test-unit:
+test-unit: ## Every member's unit tests, on two workers
 	uv run pytest -n 2 --dist loadfile
 
-test-frontend:
+test-frontend: ## The frontend's tests (vitest)
 	cd services/frontend && npm test
 
-test-integration:
+test-integration: ## The integration tier (tests/integration)
 	uv run pytest tests/integration
-
-# Drop the per-session test databases/collections the suites create automatically
-# (one set per Claude Code session, never reaped). Leaves the plain `_test` ones alone.
-test-db-prune:
-	@./scripts/prune-test-stores.sh
 
 # A real browser against the stack `make services-up` runs, spending live Claude and Voyage
 # calls - so it is never part of `make test` or CI's per-push gate. A failing journey
@@ -57,32 +79,44 @@ test-db-prune:
 # (PLAYWRIGHT_CHROMIUM_EXECUTABLE, LD_LIBRARY_PATH), gitignored with the rest of .run/, and
 # a sibling of .run/e2e/ rather than inside it, since pytest-playwright empties that folder
 # at the start of every run. ARGS passes through to pytest, e.g. ARGS="-k booking --headed".
-test-e2e:
+test-e2e: ## A real browser against `make services-up` - spends live calls; ARGS=... to pytest
 	set -a; if [ -f .run/e2e.env ]; then . ./.run/e2e.env; fi; set +a; \
 	uv run pytest tests/e2e --tracing retain-on-failure --output .run/e2e $(ARGS)
 
-precommit:
-	uv run pre-commit run --all-files
+# Drop the per-session test databases/collections the suites create automatically
+# (one set per Claude Code session, never reaped). Leaves the plain `_test` ones alone.
+test-db-prune: ## Drop the per-session test databases and collections
+	@./scripts/prune-test-stores.sh
 
-install-hooks:
-	uv run pre-commit install
+##@ Datastores: Postgres and Qdrant in Docker, for running locally and in Docker
 
-run-chat:
-	uv run --package chat -- python -m chat.main
+.PHONY: db-up db-down db-reset migrate alembic-chat-history alembic-scheduler-history
+db-up: ## Start Postgres (:5432) and Qdrant (:6333)
+	docker compose up -d
 
-run-chat-dev:
-	uv run --directory services/chat alembic upgrade head
-	uv run --package chat -- uvicorn chat.main:app --reload --reload-dir services/chat/src --host 0.0.0.0 --port 8000
+db-down: ## Stop them, keeping their data
+	docker compose down
 
-run-scheduler:
-	uv run --package scheduler -- python -m scheduler.main
+# Destructive: wipes Postgres + Qdrant data volumes. Confirm before running.
+db-reset: ## Stop them and DELETE their data
+	docker compose down -v
 
-run-scheduler-dev:
+# Bring both dev databases to head. `run-chat-dev`/`run-scheduler-dev` each do their own half;
+# this is for the background services below, which deliberately don't migrate on start.
+migrate: ## Bring both databases to the latest migration
 	uv run --directory services/scheduler alembic upgrade head
-	uv run --package scheduler -- uvicorn scheduler.main:app --reload --reload-dir services/scheduler/src --host 0.0.0.0 --port 8001
+	uv run --directory services/chat alembic upgrade head
 
-run-frontend-dev:
-	cd services/frontend && npm run dev
+alembic-chat-history: ## List chat's migrations
+	uv run --directory services/chat alembic history
+
+alembic-scheduler-history: ## List the scheduler's migrations
+	uv run --directory services/scheduler alembic history
+
+##@ 1. Run locally: the services from source, on this machine (needs `make db-up`)
+
+.PHONY: services-up services-down services-status services-free-ports \
+        run-chat-dev run-scheduler-dev run-frontend-dev run-chat run-scheduler ngrok
 
 # All three services in the background at once, for manual testing. Each records its pid under
 # .run/ and is stopped by that pid - never with `pkill -f "chat.main"`, whose pattern also matches
@@ -92,36 +126,46 @@ run-frontend-dev:
 # build off the new source. The other side is a reload mid-run: the harness stops the run when the
 # restart states different settings, but cannot see one stating the same - a prompt edit changes no
 # logged setting - so don't save files under a service's `src/` while `make eval-run` is going.
-services-up:
+services-up: ## Start all three in the background, reloading on edits (logs in .run/)
 	@./scripts/dev-services.sh up all
 
-services-down:
+services-down: ## Stop them
 	@./scripts/dev-services.sh down all
 
-services-status:
+services-status: ## Show which are running
 	@./scripts/dev-services.sh status all
 
 # Stop chat and scheduler by what holds their ports, not by a recorded pid - for when
 # `services-down` cannot help because .run/*.pid is gone or the service was started by hand with
 # `run-chat-dev`. A port whose listener is some other program is reported, never killed.
-services-free-ports:
+services-free-ports: ## Stop whatever chat or the scheduler left holding their ports
 	@./scripts/dev-services.sh free-ports all
 
-# Bring both dev databases to head. `run-chat-dev`/`run-scheduler-dev` each do their own half;
-# this is for the background services above, which deliberately don't migrate on start.
-migrate:
-	uv run --directory services/scheduler alembic upgrade head
+run-chat-dev: ## Migrate, then run chat in this terminal, reloading on edits
 	uv run --directory services/chat alembic upgrade head
+	uv run --package chat -- uvicorn chat.main:app --reload --reload-dir services/chat/src --host 0.0.0.0 --port 8000
 
-db-up:
-	docker compose up -d
+run-scheduler-dev: ## Migrate, then run the scheduler in this terminal, reloading on edits
+	uv run --directory services/scheduler alembic upgrade head
+	uv run --package scheduler -- uvicorn scheduler.main:app --reload --reload-dir services/scheduler/src --host 0.0.0.0 --port 8001
 
-db-down:
-	docker compose down
+run-frontend-dev: ## Run the frontend's Vite dev server in this terminal
+	cd services/frontend && npm run dev
 
-# Destructive: wipes Postgres + Qdrant data volumes. Confirm before running.
-db-reset:
-	docker compose down -v
+run-chat: ## Run chat in this terminal, without reload or migrations
+	uv run --package chat -- python -m chat.main
+
+run-scheduler: ## Run the scheduler in this terminal, without reload or migrations
+	uv run --package scheduler -- python -m scheduler.main
+
+# The staff connector needs a public HTTPS address, because Claude's servers call it: this one
+# goes with PUBLIC_BASE_URL in .env (see .env.example).
+ngrok: ## Expose the local chat at its public ngrok address, for the staff connector
+	ngrok http 8000 --url https://ship-pellet-unranked.ngrok-free.dev
+
+##@ 2. Run in Docker: the services as containers (docker-compose.full.yml)
+
+.PHONY: stack-up stack-down stack-logs
 
 # The whole stack in containers (docker-compose.full.yml): both migrations, then scheduler, chat
 # and the frontend, at the same ports as `services-up` - so stop one before starting the other.
@@ -130,28 +174,24 @@ STACK := docker compose -f docker-compose.full.yml
 # listed here, so `stack-down` leaves Postgres and Qdrant running as `services-down` does.
 STACK_APPS = $$($(STACK) config --services | grep -vxF "$$(docker compose config --services)")
 
-stack-up:
+stack-up: ## Build the images, start the datastores, migrate, start the services
 	$(STACK) up -d --build
 
-stack-down:
+stack-down: ## Remove the services' containers, leaving the datastores running
 	$(STACK) rm --stop --force $(STACK_APPS)
 
-stack-logs:
+stack-logs: ## Follow the services' logs
 	$(STACK) logs -f $(STACK_APPS)
 
-# The local Kubernetes cluster (deploy/k3d.yaml): k3s in Docker through k3d, Ingress on
-# http://localhost:8080. Disposable - `cluster-down` deletes it and everything running in it.
-cluster-up:
-	k3d cluster create --config deploy/k3d.yaml
-
-cluster-down:
-	k3d cluster delete visitdoc
+##@ 3. Run in Kubernetes: every k8s-* target takes CLUSTER=local (default) or CLUSTER=public
 
 # The app in a cluster, in three Kustomize stages (deploy/k8s/overlays/<cluster>/): the
 # datastores and settings, then the migrations, then the services - each waited for before
-# the next. `CLUSTER` says which cluster, and every target below acts on it alone:
-#   CLUSTER=local   (the default) the k3d cluster above; images built here and imported.
+# the next. `CLUSTER` says which cluster, and every k8s-* target acts on it alone:
+#   CLUSTER=local   (the default) the k3d cluster `make cluster-up` creates; images built
+#                   here and imported. Ingress at http://localhost:8080.
 #   CLUSTER=public  k3s on the VPS behind https://visitdoc.app; images pulled from ghcr.io.
+#                   Its API is reached only through `make k8s-tunnel`, open in another terminal.
 # Pinned to that cluster's context, so these never act on another cluster kubectl happens to
 # point at; any other value stops Make rather than guess. The Secrets and the init ConfigMap
 # are made here, not committed: the Secrets hold a password and the API keys, the ConfigMap
@@ -171,6 +211,10 @@ K8S_ENV_FILES = --from .env $(if $(filter public,$(CLUSTER)),--from .env.public)
 K8S_APPS := chat scheduler frontend
 # `k8s-images` imports every image into each node, so either node's copy is the one pods run.
 K8S_NODE := k3d-visitdoc-server-0
+# Where `k8s-push` publishes the images, each tagged with the commit it was built from - HEAD
+# unless IMAGE_TAG names another, so an earlier commit's images can be deployed again.
+REGISTRY := ghcr.io/andrey-volkovitskiy
+IMAGE_TAG ?= $(shell git rev-parse --short=12 HEAD)
 # The public server. Its API (6443) is closed to the internet and reached through an SSH
 # tunnel to it (`make k8s-tunnel`), which is where the `visitdoc-public` context points.
 PUBLIC_HOST := 2.29.132.205
@@ -187,7 +231,79 @@ k8s_apply = rendered="$$($(K8S) kustomize $(K8S_OVERLAY)/$(1))" \
 k8s_reachable = $(if $(filter public,$(CLUSTER)),@nc -z -w 2 127.0.0.1 6443 \
 	|| { echo "no tunnel to the public cluster's API on localhost:6443: run make k8s-tunnel in another terminal"; exit 1; })
 
-k8s-up:
+##@ 3a. Kubernetes, the local cluster: k3d, k3s in Docker
+
+.PHONY: cluster-up cluster-down k8s-images
+
+# The local Kubernetes cluster (deploy/k3d.yaml): k3s in Docker through k3d, Ingress on
+# http://localhost:8080. Disposable - `cluster-down` deletes it and everything running in it.
+cluster-up: ## Create the local cluster (Ingress at http://localhost:8080)
+	k3d cluster create --config deploy/k3d.yaml
+
+cluster-down: ## Delete the local cluster and everything in it
+	k3d cluster delete visitdoc
+
+# The three images, built as `make stack-up` builds them, then copied into the nodes' own
+# image store: the local cluster pulls from no registry, and cannot see this machine's images.
+k8s-images: ## Build the images and import them into the local cluster's nodes
+	@test "$(CLUSTER)" = local || { echo "k8s-images is the local cluster's; the public one pulls what make k8s-push pushed"; exit 1; }
+	$(STACK) build chat scheduler frontend
+	k3d image import visitdoc-chat visitdoc-scheduler visitdoc-frontend -c visitdoc
+
+##@ 3b. Kubernetes, the public cluster: k3s on the VPS at https://visitdoc.app
+
+.PHONY: k8s-tunnel k8s-public-env k8s-public-context k8s-push
+
+# The tunnel the public cluster's API is reached through: this machine's port 6443 to the
+# server's, over SSH, since 6443 is closed to the internet. Holds the terminal; Ctrl+C closes
+# it. Fails at once if 6443 is taken here, rather than forwarding nothing.
+k8s-tunnel: ## Open the SSH tunnel to the public cluster's API; keep it open in its own terminal
+	ssh -N -o ExitOnForwardFailure=yes -L 6443:127.0.0.1:6443 root@$(PUBLIC_HOST)
+
+# The public cluster's own secrets - its Postgres password and ADMIN_SECRET - written once to
+# .env.public (gitignored, dockerignored), never overwritten: Postgres keeps the password it
+# was initialised with. See scripts/public-env.py.
+k8s-public-env: ## Once: write .env.public, the public cluster's own secrets - never regenerate
+	uv run python scripts/public-env.py create
+
+# Adds the public cluster to ~/.kube/config as context `visitdoc-public`, from the kubeconfig
+# k3s wrote on the server (scripts/public-kubeconfig.sh). Re-run after k3s is reinstalled.
+k8s-public-context: ## Once: add the public cluster to ~/.kube/config as context visitdoc-public
+	./scripts/public-kubeconfig.sh $(PUBLIC_HOST)
+
+# The images for a cluster that pulls from a registry - the public one - pushed to GitHub's
+# (ghcr.io; lower case, which registries require). Each is tagged with the commit it was built
+# from, so a deploy names exactly what it runs and a new tag is what rolls the pods. Hence
+# the clean-tree check: an image built from uncommitted edits would carry a commit's name
+# without its content. Needs `docker login ghcr.io` once, with a token that can write
+# packages. Independent of CLUSTER: it touches no cluster.
+k8s-push: ## Build the images and push them to ghcr.io at HEAD's commit (publishes them)
+	@test -z "$$(git status --porcelain)" \
+		|| { echo "commit first - the images are tagged with HEAD, and would not be what it holds:"; \
+			git status --short; exit 1; }
+	$(STACK) build chat scheduler frontend
+	@for app in $(K8S_APPS); do \
+		docker tag visitdoc-$$app $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) \
+			&& docker push $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) || exit 1; \
+	done
+	@echo "pushed $(K8S_APPS) as $(REGISTRY)/visitdoc-<app>:$(IMAGE_TAG)"
+
+##@ 3c. Kubernetes, either cluster: deploy, inspect, delete
+
+.PHONY: k8s-deploy k8s-up k8s-migrate k8s-logs k8s-admin k8s-db k8s-down
+
+# The whole round after a code change, or the first time on a fresh cluster: build the images
+# and get them to the cluster - imported into the local one, pushed for the public one - then
+# apply everything, migrating the databases and replacing exactly the pods whose image changed.
+k8s-deploy: ## The whole round: build the images, get them to the cluster, then k8s-up
+ifeq ($(CLUSTER),public)
+	$(MAKE) k8s-push
+else
+	$(MAKE) k8s-images
+endif
+	$(MAKE) k8s-up
+
+k8s-up: ## Apply everything (secrets, datastores, migrations, services) and wait for it
 	$(k8s_reachable)
 ifeq ($(CLUSTER),public)
 	uv run python scripts/public-env.py check
@@ -236,47 +352,9 @@ ifeq ($(CLUSTER),local)
 endif
 	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat deployment/frontend --timeout=180s
 
-# The three images, built as `make stack-up` builds them, then copied into the nodes' own
-# image store: the local cluster pulls from no registry, and cannot see this machine's images.
-k8s-images:
-	@test "$(CLUSTER)" = local || { echo "k8s-images is the local cluster's; the public one pulls what make k8s-push pushed"; exit 1; }
-	$(STACK) build chat scheduler frontend
-	k3d image import visitdoc-chat visitdoc-scheduler visitdoc-frontend -c visitdoc
-
-# The whole round after a code change, or the first time on a fresh cluster: build the images
-# and get them to the cluster - imported into the local one, pushed for the public one - then
-# apply everything, migrating the databases and replacing exactly the pods whose image changed.
-k8s-deploy:
-ifeq ($(CLUSTER),public)
-	$(MAKE) k8s-push
-else
-	$(MAKE) k8s-images
-endif
-	$(MAKE) k8s-up
-
-# The images for a cluster that pulls from a registry - the public one - pushed to GitHub's
-# (ghcr.io; lower case, which registries require). Each is tagged with the commit it was built
-# from, so a deploy names exactly what it runs and a new tag is what rolls the pods. Hence
-# the clean-tree check: an image built from uncommitted edits would carry a commit's name
-# without its content. Needs `docker login ghcr.io` once, with a token that can write
-# packages. Independent of CLUSTER: it touches no cluster.
-REGISTRY := ghcr.io/andrey-volkovitskiy
-IMAGE_TAG ?= $(shell git rev-parse --short=12 HEAD)
-
-k8s-push:
-	@test -z "$$(git status --porcelain)" \
-		|| { echo "commit first - the images are tagged with HEAD, and would not be what it holds:"; \
-			git status --short; exit 1; }
-	$(STACK) build chat scheduler frontend
-	@for app in $(K8S_APPS); do \
-		docker tag visitdoc-$$app $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) \
-			&& docker push $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) || exit 1; \
-	done
-	@echo "pushed $(K8S_APPS) as $(REGISTRY)/visitdoc-<app>:$(IMAGE_TAG)"
-
 # Both migrations, as Jobs (the overlay's migrations stage). A finished Job does not run again, so
 # the previous ones are deleted first; on failure, their pods' logs are printed.
-k8s-migrate:
+k8s-migrate: ## Re-run both migrations as Jobs and wait for them (k8s-up runs this)
 	$(k8s_reachable)
 	$(K8S) -n visitdoc rollout status statefulset/postgres --timeout=180s
 	$(K8S) -n visitdoc delete job chat-migrate scheduler-migrate --ignore-not-found
@@ -289,7 +367,7 @@ k8s-migrate:
 # for the containers. It follows the pods running when it starts: a replaced pod (a restart, a
 # rollout) ends its stream, so run it again after one. The probes' requests are left out:
 # they would otherwise be most of what it shows.
-k8s-logs:
+k8s-logs: ## Follow chat's and the scheduler's logs, without the probes' requests
 	$(k8s_reachable)
 	$(K8S) -n visitdoc logs -f --prefix --tail=50 -l 'app in (chat,scheduler)' \
 		| grep --line-buffered -vE '"GET /(openapi\.json|health) HTTP'
@@ -298,7 +376,7 @@ k8s-logs:
 # port to chat's Service through the cluster's API. Holds the terminal; Ctrl+C closes it. Port
 # 8090, clear of every port the dev services use. Each call needs the cluster's ADMIN_SECRET
 # (.env's for the local cluster, .env.public's for the public one) as `X-Admin-Secret`.
-k8s-admin:
+k8s-admin: ## Forward chat to localhost:8090, the only way to /admin
 	$(k8s_reachable)
 	@echo "chat at http://localhost:8090 - e.g. curl -H 'X-Admin-Secret: <secret>' http://localhost:8090/admin/sessions"
 	$(K8S) -n visitdoc port-forward svc/chat 8090:8000
@@ -309,7 +387,7 @@ k8s-admin:
 # beside them. Postgres's user is `visitdoc`, its password the local cluster's default or
 # .env.public's; its databases are visitdoc_chat and visitdoc_scheduler. Qdrant's dashboard is
 # at /dashboard. Holds the terminal; Ctrl+C closes both, and either one failing closes the other.
-k8s-db:
+k8s-db: ## Forward Postgres to localhost:15432 and Qdrant to :16333, for DBeaver
 	$(k8s_reachable)
 	@echo "Postgres at localhost:15432, Qdrant at http://localhost:16333 - Ctrl+C closes both"
 	@$(K8S) -n visitdoc port-forward pod/postgres-0 15432:5432 & pg=$$!; \
@@ -320,7 +398,7 @@ k8s-db:
 
 # Deletes the namespace and everything in it - the databases' volumes too. On the public
 # cluster that is every visitor's data, so it asks first.
-k8s-down:
+k8s-down: ## Delete the app and its DATA from the cluster (asks first on the public one)
 	$(k8s_reachable)
 ifeq ($(CLUSTER),public)
 	@printf 'This deletes the PUBLIC deployment, its databases included. Type "public" to go on: '; \
@@ -328,28 +406,9 @@ ifeq ($(CLUSTER),public)
 endif
 	$(K8S) delete namespace visitdoc --ignore-not-found
 
-# The public cluster's own secrets - its Postgres password and ADMIN_SECRET - written once to
-# .env.public (gitignored, dockerignored), never overwritten: Postgres keeps the password it
-# was initialised with. See scripts/public-env.py.
-k8s-public-env:
-	uv run python scripts/public-env.py create
+##@ Evals: the golden harness (live calls only in eval-run; the rest are offline)
 
-# Adds the public cluster to ~/.kube/config as context `visitdoc-public`, from the kubeconfig
-# k3s wrote on the server (scripts/public-kubeconfig.sh). Re-run after k3s is reinstalled.
-k8s-public-context:
-	./scripts/public-kubeconfig.sh $(PUBLIC_HOST)
-
-# The tunnel the public cluster's API is reached through: this machine's port 6443 to the
-# server's, over SSH, since 6443 is closed to the internet. Holds the terminal; Ctrl+C closes
-# it. Fails at once if 6443 is taken here, rather than forwarding nothing.
-k8s-tunnel:
-	ssh -N -o ExitOnForwardFailure=yes -L 6443:127.0.0.1:6443 root@$(PUBLIC_HOST)
-
-alembic-chat-history:
-	uv run --directory services/chat alembic history
-
-alembic-scheduler-history:
-	uv run --directory services/scheduler alembic history
+.PHONY: eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
 # The golden harness (spec 012; see its quickstart.md). `eval-run` drives the golden set against the
 # running stack, spending live model calls; `CASES=G-a-01,G-j-03` or `FAMILY=<name>` narrows it,
@@ -360,11 +419,11 @@ alembic-scheduler-history:
 # cannot trace a run that asked not to be. `eval-score RUN=<run_id>` re-scores a stored run offline.
 eval_trace_flag = $(if $(filter-out 0 1,$(TRACE))$(word 2,$(TRACE)),$(error TRACE must be 0 (untraced) or 1 (traced), not '$(TRACE)'),$(if $(filter 0,$(TRACE)),--no-trace))
 
-eval-run:
+eval-run: ## Drive the golden set against the running stack - spends live calls; CASES= FAMILY= TRACE=0
 	uv run --package golden-harness -- python -m golden_harness run \
 		$(if $(CASES),--cases $(CASES)) $(if $(FAMILY),--family $(FAMILY)) $(eval_trace_flag)
 
-eval-score:
+eval-score: ## Re-score a stored run: RUN=<run_id>
 	uv run --package golden-harness -- python -m golden_harness score --run $(RUN)
 
 # Comparing runs (spec 013; see its quickstart.md). Both are offline: they read stored runs and the
@@ -372,24 +431,21 @@ eval-score:
 # what moved between two stored runs, with an optional `BAND=<band id or file>` marking each
 # movement against measured noise; `eval-band RUNS=<id>,<id>,<id>,<id>,<id>` builds that band from
 # five full runs of one unchanged build.
-eval-compare:
+eval-compare: ## What moved between two runs: BASE=<run> NEW=<run> [BAND=<band>]
 	uv run --package golden-harness -- python -m golden_harness compare \
 		--base $(BASE) --new $(NEW) $(if $(BAND),--band $(BAND))
 
-eval-band:
+eval-band: ## Measure run-to-run noise from five runs: RUNS=<id>,<id>,<id>,<id>,<id>
 	uv run --package golden-harness -- python -m golden_harness band --runs $(RUNS)
 
 # What a stored run's model calls spent, by call site: tokens, cache hits, thinking and dollars,
 # read from the `model.usage` entries each case stored. Offline, it spends nothing, and a run
 # recorded before the chat service logged those entries reports no spend.
-eval-cost:
+eval-cost: ## What a stored run's model calls cost: RUN=<run_id>
 	uv run --package golden-harness -- python -m golden_harness cost --run $(RUN)
 
 # Re-render `evals/golden/cases.json` from its declaration in `golden_harness.golden_set`, which is
 # where the set is actually written - the JSON is an artifact, and `tests/test_golden_set.py` fails
 # when the two disagree. Offline, and it spends nothing.
-eval-build-set:
+eval-build-set: ## Re-render evals/golden/cases.json from its declaration
 	uv run --package golden-harness -- python -m golden_harness build-set
-
-ngrok:
-	ngrok http 8000 --url https://ship-pellet-unranked.ngrok-free.dev

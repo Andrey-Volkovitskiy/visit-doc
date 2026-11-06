@@ -196,6 +196,23 @@ async def _run(
     return result, recorder, rerank, escalation
 
 
+# --- The suite's default reranker (conftest's autouse fake) --------------------------
+
+
+async def test_the_default_reranker_judges_a_chunk_only_bm25_found() -> None:
+    # Which chunks BM25 adds depends on what else a worker's collection holds, so a
+    # fake that could not score one failed the suite by test order instead of here.
+    from chat.agent import answer_faq as module
+
+    lexical_only = _chunk(1, similarity=None)
+    judged = await module.rerank_chunks(None, "q", [_chunk(0), lexical_only])
+
+    floor = get_settings().RERANK_FLOOR
+    assert [c.rerank_score is not None for c in judged] == [True, True]
+    assert judged[0].rerank_score is not None and judged[0].rerank_score >= floor
+    assert judged[1].rerank_score is not None and judged[1].rerank_score < floor
+
+
 # --- US1: an answer stands only on the reranked survivors ---------------------------
 
 
