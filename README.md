@@ -1195,9 +1195,14 @@ scheduler; `make k8s-down` deletes all of it, data included. Eight choices carri
 
 ## Serving the Public Demo: technology choices
 
-The public deployment's manifests: `deploy/k8s/overlays/public/` runs the base on one k3s server
-at `https://visitdoc.app`, open to anyone with the link. The overlay is written and renders; the
-Makefile does not apply it yet, and nothing is served there yet. Six choices carried a tradeoff.
+The public deployment: `deploy/k8s/overlays/public/` runs the base on one k3s server at
+`https://visitdoc.app`, open to anyone with the link, and every `k8s-*` target takes
+`CLUSTER=public` to act on it instead of the local cluster. Once: `make k8s-public-env` writes the
+cluster's own secrets, and `make k8s-public-context` adds it to `~/.kube/config`. Then, with
+`make k8s-tunnel` open in another terminal, `make k8s-deploy CLUSTER=public` pushes the images
+and applies everything; `make k8s-admin CLUSTER=public` reaches `/admin`. The server runs k3s
+`v1.35.5+k3s1`, the version the local cluster runs. Nothing is deployed there yet. Eight choices
+carried a tradeoff.
 
 - **The images at the commit being deployed, filled in at apply time.** The overlay names the
   `ghcr.io` images with the tag `unset-deploy-tag`, which the deploy replaces in the rendered
@@ -1234,6 +1239,21 @@ Makefile does not apply it yet, and nothing is served there yet. Six choices car
   alternative, but chat sits behind two proxies, and nginx reports its own hop from Traefik, which
   is plain HTTP; nor is `PUBLIC_BASE_URL` the answer, being HTTPS (an ngrok tunnel) in development,
   where the browser is still at `http://localhost`.
+- **The cluster's API behind an SSH tunnel, not open to the internet.** The server's firewall
+  admits 22, 80 and 443 only, so the Kubernetes API on 6443 - from which anyone with a credential,
+  or an exploit, runs any container - is reached through `make k8s-tunnel`, and the
+  `visitdoc-public` context points at the tunnel's local end. A public API needs only a client
+  certificate, which is what the context holds anyway; the tunnel adds the SSH key in front of
+  it. The cost is a terminal held open while deploying, and every target against the public
+  cluster stops first, saying so, when it is not.
+- **The public cluster's own secrets in `.env.public`.** Its Postgres password and `ADMIN_SECRET`
+  are random values written once (`make k8s-public-env`), gitignored and dockerignored like
+  `.env`; the API keys still come from `.env`, read before it. `make k8s-up CLUSTER=public`
+  refuses a missing file, the local default password, a password a database URL cannot hold, or
+  `.env`'s admin secret. Written once and never regenerated, because Postgres keeps the password
+  it was initialised with: a new one would lock the services out of the existing database.
+  Keeping the values in the cluster alone was the alternative, and would leave nothing to read
+  `ADMIN_SECRET` from but the cluster itself.
 - **One server, its datastores on its own disk.** Postgres and Qdrant keep their `local-path`
   volumes on the server's disk, as in the local cluster, and nothing is replicated or backed up.
   A demo can afford that: every session is disposable, and each new one is given the starter

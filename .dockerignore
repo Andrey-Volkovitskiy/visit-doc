@@ -1,6 +1,7 @@
 # What `docker build .` from the repo root never sends to the builder. `.env` above
 # all: an image must not carry the secrets - they arrive as environment variables.
 .env
+.env.public
 .git
 .venv
 .run

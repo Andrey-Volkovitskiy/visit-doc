@@ -3,6 +3,7 @@
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
         db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy k8s-push \
+        k8s-admin k8s-public-env k8s-public-context k8s-tunnel \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -146,62 +147,111 @@ cluster-up:
 cluster-down:
 	k3d cluster delete visitdoc
 
-# The app in that cluster, in three Kustomize stages (deploy/k8s/overlays/local/): the
+# The app in a cluster, in three Kustomize stages (deploy/k8s/overlays/<cluster>/): the
 # datastores and settings, then the migrations, then the services - each waited for before
-# the next. Pinned to its context, so these never act on another cluster kubectl happens to
-# point at. The Secrets and the init ConfigMap are made here, not committed: the Secrets
-# hold a password and the API keys, the ConfigMap is read from docker/postgres-init/.
-# `create --dry-run | apply` makes each safe to re-run.
-K8S := kubectl --context k3d-visitdoc
-POSTGRES_USER ?= visitdoc
-POSTGRES_PASSWORD ?= visitdoc
+# the next. `CLUSTER` says which cluster, and every target below acts on it alone:
+#   CLUSTER=local   (the default) the k3d cluster above; images built here and imported.
+#   CLUSTER=public  k3s on the VPS behind https://visitdoc.app; images pulled from ghcr.io.
+# Pinned to that cluster's context, so these never act on another cluster kubectl happens to
+# point at; any other value stops Make rather than guess. The Secrets and the init ConfigMap
+# are made here, not committed: the Secrets hold a password and the API keys, the ConfigMap
+# is read from docker/postgres-init/. `create --dry-run | apply` makes each safe to re-run.
+CLUSTER ?= local
+k8s_context = $(if $(word 2,$(CLUSTER)),,$(if $(filter local,$(CLUSTER)),k3d-visitdoc,$(if $(filter public,$(CLUSTER)),visitdoc-public)))
+K8S = kubectl --context $(or $(k8s_context),$(error CLUSTER must be local or public, not '$(CLUSTER)'))
 # Which variant of deploy/k8s/base/ to apply: the overlay for this cluster.
-K8S_OVERLAY := deploy/k8s/overlays/local
-# The only keys of `.env` the cluster receives: its addresses point at localhost.
+K8S_OVERLAY = deploy/k8s/overlays/$(CLUSTER)
+POSTGRES_USER ?= visitdoc
+# The local cluster's only. The public one's is in .env.public (`make k8s-public-env`).
+POSTGRES_PASSWORD ?= visitdoc
+# The only keys of `.env` the cluster receives: its addresses point at localhost. The public
+# cluster reads `.env.public` after it, which replaces ADMIN_SECRET.
 CHAT_SECRET_KEYS := ANTHROPIC_API_KEY VOYAGE_API_KEY ADMIN_SECRET LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY
+K8S_ENV_FILES = --from .env $(if $(filter public,$(CLUSTER)),--from .env.public)
 K8S_APPS := chat scheduler frontend
 # `k8s-images` imports every image into each node, so either node's copy is the one pods run.
 K8S_NODE := k3d-visitdoc-server-0
+# The public server. Its API (6443) is closed to the internet and reached through an SSH
+# tunnel to it (`make k8s-tunnel`), which is where the `visitdoc-public` context points.
+PUBLIC_HOST := 2.29.132.205
+
+# Renders stage $(1) of this cluster's overlay and applies it, with the public overlay's tag
+# placeholder replaced by the commit deployed - IMAGE_TAG, HEAD unless named, so an earlier
+# commit's images can be deployed again (the local overlay has no placeholder). Rendered into
+# a variable first: in a plain pipe a failed render would still be applied, as nothing.
+k8s_apply = rendered="$$($(K8S) kustomize $(K8S_OVERLAY)/$(1))" \
+	&& printf '%s\n' "$$rendered" | sed 's/unset-deploy-tag/$(IMAGE_TAG)/g' | $(K8S) apply -f -
+
+# The first line of every target that talks to the cluster: for the public one, stop with
+# what to do when the tunnel is not open, rather than let kubectl time out against nothing.
+k8s_reachable = $(if $(filter public,$(CLUSTER)),@nc -z -w 2 127.0.0.1 6443 \
+	|| { echo "no tunnel to the public cluster's API on localhost:6443: run make k8s-tunnel in another terminal"; exit 1; })
 
 k8s-up:
+	$(k8s_reachable)
+ifeq ($(CLUSTER),public)
+	uv run python scripts/public-env.py check
+	@# A tag the registry lacks would leave every pod pulling forever; say so before applying.
+	@for app in $(K8S_APPS); do \
+		docker manifest inspect $(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) >/dev/null 2>&1 \
+			|| { echo "$(REGISTRY)/visitdoc-$$app:$(IMAGE_TAG) is not in the registry: run make k8s-push"; exit 1; }; \
+	done
+	@# k3s's own Traefik, in kube-system: TLS, the redirect to HTTPS, the visitor's address.
+	$(K8S) apply -k $(K8S_OVERLAY)/traefik
+endif
 	$(K8S) apply -f deploy/k8s/base/namespace.yaml
 	@echo "creating Secret postgres (not echoed: it holds the password)"
+ifeq ($(CLUSTER),public)
+	@pw="$$(uv run python scripts/env-subset.py --from .env.public POSTGRES_PASSWORD | cut -d= -f2-)" \
+		&& test -n "$$pw" && $(K8S) -n visitdoc create secret generic postgres \
+		--from-literal=POSTGRES_USER=$(POSTGRES_USER) --from-literal=POSTGRES_PASSWORD="$$pw" \
+		--dry-run=client -o yaml | $(K8S) apply -f -
+else
 	@$(K8S) -n visitdoc create secret generic postgres \
 		--from-literal=POSTGRES_USER=$(POSTGRES_USER) --from-literal=POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
 		--dry-run=client -o yaml | $(K8S) apply -f -
+endif
 	$(K8S) -n visitdoc create configmap postgres-init --from-file=docker/postgres-init \
 		--dry-run=client -o yaml | $(K8S) apply -f -
-	@echo "creating Secret chat from .env: $(CHAT_SECRET_KEYS)"
+	@echo "creating Secret chat from $(strip $(subst --from ,,$(K8S_ENV_FILES))): $(CHAT_SECRET_KEYS)"
 	@# Read into a variable first: in a plain pipe a failed read would still be applied.
-	@keys="$$(uv run python scripts/env-subset.py $(CHAT_SECRET_KEYS))" && printf '%s\n' "$$keys" \
+	@keys="$$(uv run python scripts/env-subset.py $(K8S_ENV_FILES) $(CHAT_SECRET_KEYS))" && printf '%s\n' "$$keys" \
 		| $(K8S) -n visitdoc create secret generic chat --from-env-file=/dev/stdin \
 		--dry-run=client -o yaml | $(K8S) apply -f -
-	$(K8S) apply -k $(K8S_OVERLAY)/datastores
+	@$(call k8s_apply,datastores)
 	$(MAKE) k8s-migrate
-	$(K8S) apply -k $(K8S_OVERLAY)/apps
+	@$(call k8s_apply,apps)
+ifeq ($(CLUSTER),local)
 	@# Every image is tagged `:latest`, so a re-imported one leaves the pod template
 	@# unchanged and starts no rollout. Stamping the template with the ID of the image the
 	@# node holds changes it exactly when the image did: a new image replaces the pods, an
-	@# unchanged one is a no-op ("patched (no change)").
+	@# unchanged one is a no-op ("patched (no change)"). The public cluster needs none of
+	@# this: its images are tagged by commit, and a new tag is itself what rolls the pods.
 	@for app in $(K8S_APPS); do \
 		id="$$(docker exec $(K8S_NODE) crictl inspecti -o go-template --template '{{.status.id}}' visitdoc-$$app:latest)" \
 			|| { echo "visitdoc-$$app is not on the nodes: run make k8s-images"; exit 1; }; \
 		$(K8S) -n visitdoc patch deployment/$$app \
 			-p "{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"visitdoc/image-id\":\"$$id\"}}}}}" || exit 1; \
 	done
+endif
 	$(K8S) -n visitdoc rollout status deployment/scheduler deployment/chat deployment/frontend --timeout=180s
 
 # The three images, built as `make stack-up` builds them, then copied into the nodes' own
-# image store: the cluster pulls from no registry, and cannot see this machine's images.
+# image store: the local cluster pulls from no registry, and cannot see this machine's images.
 k8s-images:
+	@test "$(CLUSTER)" = local || { echo "k8s-images is the local cluster's; the public one pulls what make k8s-push pushed"; exit 1; }
 	$(STACK) build chat scheduler frontend
 	k3d image import visitdoc-chat visitdoc-scheduler visitdoc-frontend -c visitdoc
 
-# The whole round after a code change, or the first time on a fresh cluster: build and import
-# the images, then apply everything - migrating the databases, and replacing exactly the pods
-# whose image changed.
+# The whole round after a code change, or the first time on a fresh cluster: build the images
+# and get them to the cluster - imported into the local one, pushed for the public one - then
+# apply everything, migrating the databases and replacing exactly the pods whose image changed.
 k8s-deploy:
+ifeq ($(CLUSTER),public)
+	$(MAKE) k8s-push
+else
 	$(MAKE) k8s-images
+endif
 	$(MAKE) k8s-up
 
 # The images for a cluster that pulls from a registry - the public one - pushed to GitHub's
@@ -209,9 +259,9 @@ k8s-deploy:
 # from, so a deploy names exactly what it runs and a new tag is what rolls the pods. Hence
 # the clean-tree check: an image built from uncommitted edits would carry a commit's name
 # without its content. Needs `docker login ghcr.io` once, with a token that can write
-# packages.
+# packages. Independent of CLUSTER: it touches no cluster.
 REGISTRY := ghcr.io/andrey-volkovitskiy
-IMAGE_TAG = $(shell git rev-parse --short=12 HEAD)
+IMAGE_TAG ?= $(shell git rev-parse --short=12 HEAD)
 
 k8s-push:
 	@test -z "$$(git status --porcelain)" \
@@ -227,9 +277,10 @@ k8s-push:
 # Both migrations, as Jobs (the overlay's migrations stage). A finished Job does not run again, so
 # the previous ones are deleted first; on failure, their pods' logs are printed.
 k8s-migrate:
+	$(k8s_reachable)
 	$(K8S) -n visitdoc rollout status statefulset/postgres --timeout=180s
 	$(K8S) -n visitdoc delete job chat-migrate scheduler-migrate --ignore-not-found
-	$(K8S) apply -k $(K8S_OVERLAY)/migrations
+	@$(call k8s_apply,migrations)
 	@$(K8S) -n visitdoc wait --for=condition=complete job/chat-migrate job/scheduler-migrate --timeout=180s \
 		|| { $(K8S) -n visitdoc logs --prefix --tail=30 \
 			-l 'batch.kubernetes.io/job-name in (chat-migrate,scheduler-migrate)'; exit 1; }
@@ -239,12 +290,45 @@ k8s-migrate:
 # rollout) ends its stream, so run it again after one. The probes' requests are left out:
 # they would otherwise be most of what it shows.
 k8s-logs:
+	$(k8s_reachable)
 	$(K8S) -n visitdoc logs -f --prefix --tail=50 -l 'app in (chat,scheduler)' \
 		| grep --line-buffered -vE '"GET /(openapi\.json|health) HTTP'
 
-# Deletes the namespace and everything in it - the databases' volumes too.
+# `/admin` is in no route into the cluster, so it is reached from here, by forwarding a local
+# port to chat's Service through the cluster's API. Holds the terminal; Ctrl+C closes it. Port
+# 8090, clear of every port the dev services use. Each call needs the cluster's ADMIN_SECRET
+# (.env's for the local cluster, .env.public's for the public one) as `X-Admin-Secret`.
+k8s-admin:
+	$(k8s_reachable)
+	@echo "chat at http://localhost:8090 - e.g. curl -H 'X-Admin-Secret: <secret>' http://localhost:8090/admin/sessions"
+	$(K8S) -n visitdoc port-forward svc/chat 8090:8000
+
+# Deletes the namespace and everything in it - the databases' volumes too. On the public
+# cluster that is every visitor's data, so it asks first.
 k8s-down:
+	$(k8s_reachable)
+ifeq ($(CLUSTER),public)
+	@printf 'This deletes the PUBLIC deployment, its databases included. Type "public" to go on: '; \
+		read answer; test "$$answer" = public || { echo "nothing deleted"; exit 1; }
+endif
 	$(K8S) delete namespace visitdoc --ignore-not-found
+
+# The public cluster's own secrets - its Postgres password and ADMIN_SECRET - written once to
+# .env.public (gitignored, dockerignored), never overwritten: Postgres keeps the password it
+# was initialised with. See scripts/public-env.py.
+k8s-public-env:
+	uv run python scripts/public-env.py create
+
+# Adds the public cluster to ~/.kube/config as context `visitdoc-public`, from the kubeconfig
+# k3s wrote on the server (scripts/public-kubeconfig.sh). Re-run after k3s is reinstalled.
+k8s-public-context:
+	./scripts/public-kubeconfig.sh $(PUBLIC_HOST)
+
+# The tunnel the public cluster's API is reached through: this machine's port 6443 to the
+# server's, over SSH, since 6443 is closed to the internet. Holds the terminal; Ctrl+C closes
+# it. Fails at once if 6443 is taken here, rather than forwarding nothing.
+k8s-tunnel:
+	ssh -N -o ExitOnForwardFailure=yes -L 6443:127.0.0.1:6443 root@$(PUBLIC_HOST)
 
 alembic-chat-history:
 	uv run --directory services/chat alembic history

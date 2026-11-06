@@ -963,10 +963,12 @@ and "Running in Kubernetes" sections.)*
     paths go from the base Ingress straight to chat, which nginx would not forward.)*
   - A VPS running k3s, open on 80 and 443 only, its API reached over an SSH tunnel, as a second
     kube context the Makefile can select - with `make k8s-admin`, a port-forward to chat, as the
-    way to `/admin`, which no public route reaches. *(The server, its firewall and the domain's
-    DNS record are in place; k3s is not installed yet.)*
+    way to `/admin`, which no public route reaches. *(Done: a Hetzner server running k3s
+    `v1.35.5+k3s1`, its firewall admitting 22, 80 and 443 only, `visitdoc.app` pointing at it.
+    Every `k8s-*` target takes `CLUSTER=public`, needing `make k8s-tunnel` open; the cluster's own
+    Postgres password and `ADMIN_SECRET` are in a gitignored `.env.public`, written once.)*
   - Spending caps in the Anthropic and Voyage consoles before the address is shared: a public demo
-    spends real money on every chat.
+    spends real money on every chat. *(Done.)*
   - Deploy, check the certificate, smoke-test, and walk the staff connector's quickstart
     (`specs/017-staff-mcp-connector/quickstart.md`) against the public HTTPS address instead of
     ngrok.

@@ -163,7 +163,16 @@ both come as three stages, `datastores`, `migrations` and `apps`, applied in tha
 `deploy/k8s/overlays/public/` is the public cluster's (`https://visitdoc.app`): the same three
 stages with the ghcr images at the tag `unset-deploy-tag`, which the deploy must replace in the
 rendered output with the commit it deploys, plus `traefik/` - a `HelmChartConfig` for k3s's own
-Traefik in `kube-system`, applied before the stages. The Makefile does not apply it yet. `make k8s-up`
+Traefik in `kube-system`, applied before the stages. **Every `k8s-*` target takes
+`CLUSTER=local|public`** (default `local`), which picks the context (`k3d-visitdoc` or
+`visitdoc-public`) and the overlay; `make k8s-deploy CLUSTER=public` pushes the images and applies
+them at HEAD's tag (`IMAGE_TAG=<commit>` redeploys an earlier one). The public cluster's API is
+closed to the internet: its targets need `make k8s-tunnel` (an SSH tunnel to 6443) open in
+another terminal, and stop saying so when it is not. Its own Postgres password and `ADMIN_SECRET`
+live in the gitignored `.env.public` (`make k8s-public-env`, once - never regenerate it, Postgres
+keeps the password it was initialised with); `make k8s-public-context` adds the context to
+`~/.kube/config`. `make k8s-admin` port-forwards chat to `localhost:8090`, the only way to
+`/admin`. `make k8s-down CLUSTER=public` asks first - it deletes every visitor's data. `make k8s-up`
 applies them to the cluster, in the `visitdoc` namespace,
 after creating the objects that are not committed (the Postgres Secret, the init-script ConfigMap
 built from `docker/postgres-init/`, and Secret `chat` - only the API keys and `ADMIN_SECRET` from
