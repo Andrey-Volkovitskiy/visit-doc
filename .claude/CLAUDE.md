@@ -172,7 +172,8 @@ another terminal, and stop saying so when it is not. Its own Postgres password a
 live in the gitignored `.env.public` (`make k8s-public-env`, once - never regenerate it, Postgres
 keeps the password it was initialised with); `make k8s-public-context` adds the context to
 `~/.kube/config`. `make k8s-admin` port-forwards chat to `localhost:8090`, the only way to
-`/admin`. `make k8s-down CLUSTER=public` asks first - it deletes every visitor's data. `make k8s-up`
+`/admin`. `make k8s-db` forwards its Postgres to `localhost:15432` and Qdrant to
+`localhost:16333`, for DBeaver. `make k8s-down CLUSTER=public` asks first - it deletes every visitor's data. `make k8s-up`
 applies them to the cluster, in the `visitdoc` namespace,
 after creating the objects that are not committed (the Postgres Secret, the init-script ConfigMap
 built from `docker/postgres-init/`, and Secret `chat` - only the API keys and `ADMIN_SECRET` from

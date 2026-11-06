@@ -1200,7 +1200,8 @@ The public deployment: `deploy/k8s/overlays/public/` runs the base on one k3s se
 `CLUSTER=public` to act on it instead of the local cluster. Once: `make k8s-public-env` writes the
 cluster's own secrets, and `make k8s-public-context` adds it to `~/.kube/config`. Then, with
 `make k8s-tunnel` open in another terminal, `make k8s-deploy CLUSTER=public` pushes the images
-and applies everything; `make k8s-admin CLUSTER=public` reaches `/admin`. The server runs k3s
+and applies everything; `make k8s-admin CLUSTER=public` reaches `/admin`, and `make k8s-db CLUSTER=public` the
+datastores, for a database client. The server runs k3s
 `v1.35.5+k3s1`, the version the local cluster runs. Eight choices
 carried a tradeoff.
 

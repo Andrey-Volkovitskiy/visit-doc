@@ -3,7 +3,7 @@
         precommit install-hooks run-chat run-chat-dev run-scheduler run-scheduler-dev run-frontend-dev \
         services-up services-down services-status services-free-ports migrate \
         db-up db-down db-reset stack-up stack-down stack-logs cluster-up cluster-down k8s-up k8s-down k8s-images k8s-migrate k8s-logs k8s-deploy k8s-push \
-        k8s-admin k8s-public-env k8s-public-context k8s-tunnel \
+        k8s-admin k8s-db k8s-public-env k8s-public-context k8s-tunnel \
         alembic-chat-history alembic-scheduler-history \
         eval-run eval-score eval-compare eval-band eval-cost eval-build-set
 
@@ -302,6 +302,21 @@ k8s-admin:
 	$(k8s_reachable)
 	@echo "chat at http://localhost:8090 - e.g. curl -H 'X-Admin-Secret: <secret>' http://localhost:8090/admin/sessions"
 	$(K8S) -n visitdoc port-forward svc/chat 8090:8000
+
+# The cluster's Postgres and Qdrant on this machine, for a database client such as DBeaver:
+# neither is in any route into the cluster, so they are forwarded through its API as /admin
+# is. Ports 15432 and 16333, clear of compose's 5432 and 6333, so the dev datastores can run
+# beside them. Postgres's user is `visitdoc`, its password the local cluster's default or
+# .env.public's; its databases are visitdoc_chat and visitdoc_scheduler. Qdrant's dashboard is
+# at /dashboard. Holds the terminal; Ctrl+C closes both, and either one failing closes the other.
+k8s-db:
+	$(k8s_reachable)
+	@echo "Postgres at localhost:15432, Qdrant at http://localhost:16333 - Ctrl+C closes both"
+	@$(K8S) -n visitdoc port-forward pod/postgres-0 15432:5432 & pg=$$!; \
+		$(K8S) -n visitdoc port-forward pod/qdrant-0 16333:6333 & qd=$$!; \
+		trap 'kill $$pg $$qd 2>/dev/null' EXIT INT TERM; \
+		while kill -0 $$pg 2>/dev/null && kill -0 $$qd 2>/dev/null; do sleep 1; done; \
+		echo "a forward stopped (see above), so both are closed"; exit 1
 
 # Deletes the namespace and everything in it - the databases' volumes too. On the public
 # cluster that is every visitor's data, so it asks first.
