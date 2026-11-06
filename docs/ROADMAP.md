@@ -5,7 +5,7 @@ through chat, get grounded, cited answers to policy/FAQ questions, and are escal
 when the assistant can't confidently resolve a request.
 
 This page says only what was built in which phase. The design principles, the architecture and the
-reasoning behind every phase are in [`roadmap_details.md`](roadmap_details.md).
+reasoning behind every phase are in [`roadmap-details.md`](roadmap-details.md).
 
 | Phase | Theme |
 |---|---|

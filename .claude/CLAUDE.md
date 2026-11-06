@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-`docs/roadmap_details.md` is the authoritative design document — read it before starting any implementation
+`docs/roadmap-details.md` is the authoritative design document — read it before starting any implementation
 work, since it defines the architecture, phased build plan, and the reasoning behind each technology
 choice. Treat its "Design principles" and "Phased build plan" sections as binding scope guidance,
 not just background: don't add services/infra beyond what the current phase calls for.
@@ -310,10 +310,10 @@ anywhere else - `tests/`, `evals/` or `specs/`.
 - Scheduling failure handling (timeouts, retries, agent behavior when Scheduling is unreachable) is
   part of the design, not an afterthought.
 - Each significant technology choice should be documented with its tradeoff in
-  `docs/roadmap_details.md`, in a "technology choices" section under the phase that made it, so
+  `docs/roadmap-details.md`, in a "technology choices" section under the phase that made it, so
   later additions should follow that pattern rather than going undocumented.
 
-See `docs/roadmap_details.md` for the full phased plan, and `docs/ROADMAP.md` for its
+See `docs/roadmap-details.md` for the full phased plan, and `docs/ROADMAP.md` for its
 one-page summary (Phase 0 walking skeleton → Phase 1 agent → Phase 2
 eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, retrieval under a
 realistic corpus (hybrid search planned there, then built as BM25's top added to the dense
