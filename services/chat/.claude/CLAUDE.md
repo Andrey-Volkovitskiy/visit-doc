@@ -56,7 +56,7 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   `cancel_appointment`, `escalate_to_staff`. The agent knows only names and schemas, so a handler
   can change transport without touching agent code. FAQ retrieval is not a tool: it is the
   `answer_faq` graph node. MCP is a transport for a consumer in *another* process, and nothing
-  consumes one yet — `docs/ROADMAP.md` defers it until a second consumer justifies it. Putting an
+  consumes one yet — `docs/roadmap_details.md` defers it until a second consumer justifies it. Putting an
   MCP server and client between the agent and handlers in one process is the rejected option
   (`specs/005-scheduling-and-booking/research.md` #1), not a pending upgrade.
 - RAG must include defensible chunking (since 018: one chunk per heading section, prefixed with
@@ -75,7 +75,7 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   gone; a turn now carries a five-value `FaqVerdict` naming which gate stopped it, because "an
   answered turn is grounded" made `true` uninformative while `false` covered three situations
   needing three different fixes.
-  Per-turn *post-generation* groundedness verification is deliberately not done — `docs/ROADMAP.md`
+  Per-turn *post-generation* groundedness verification is deliberately not done — `docs/roadmap_details.md`
   assigns answer groundedness to Phase 2's offline eval harness.
 - **BM25 adds candidates; it never reorders the dense ones** (018). Every chunk point carries a
   sparse `bm25` vector beside its dense one (Qdrant computes it from the chunk text, IDF modifier)

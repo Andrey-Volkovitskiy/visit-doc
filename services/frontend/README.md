@@ -47,5 +47,5 @@ npm run test      # run the Vitest suite once
 ## Notes
 
 - Streaming transport is NDJSON over a plain `fetch` + `ReadableStream` (not SSE/WebSocket) — see
-  the "Grounded FAQ Chat: technology choices" section in the repo root `README.md` for the rationale.
+  the "Grounded FAQ Chat: technology choices" section in `docs/roadmap_details.md` for the rationale.
 - `dist/` (build output) and `node_modules/` are gitignored; `*.tsbuildinfo` files are gitignored too.

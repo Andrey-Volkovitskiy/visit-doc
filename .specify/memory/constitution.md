@@ -40,7 +40,7 @@ Sync Impact Report
 ## Core Principles
 
 ### I. Phase-Gated Scope Discipline (NON-NEGOTIABLE)
-`docs/ROADMAP.md` is the authoritative, binding build plan, not background reading. Work MUST
+`docs/roadmap_details.md` is the authoritative, binding build plan, not background reading. Work MUST
 proceed in phase order — walking skeleton, then the real agent, then evaluation/observability —
 before any optional platform/infrastructure layer is introduced, and only as deliberate,
 individually-justified evolution. Do not add services, infrastructure, or platform layers beyond
@@ -116,7 +116,7 @@ than reintroducing conflicting rules.
 ## Governance
 
 This constitution supersedes ad hoc practice for any conflict between "how we've been doing it" and
-what is written here; `docs/ROADMAP.md` and `.claude/CLAUDE.md` remain the detailed reference this
+what is written here; `docs/roadmap_details.md` and `.claude/CLAUDE.md` remain the detailed reference this
 file summarizes into binding rules, and this file governs when the two diverge. Amendments are made
 by editing this file directly, updating the Sync Impact Report at its top, and propagating any
 consequential changes to `.specify/templates/*.md` and to `README.md` / `.claude/CLAUDE.md` in the
