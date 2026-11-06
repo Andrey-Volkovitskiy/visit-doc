@@ -1201,7 +1201,7 @@ The public deployment: `deploy/k8s/overlays/public/` runs the base on one k3s se
 cluster's own secrets, and `make k8s-public-context` adds it to `~/.kube/config`. Then, with
 `make k8s-tunnel` open in another terminal, `make k8s-deploy CLUSTER=public` pushes the images
 and applies everything; `make k8s-admin CLUSTER=public` reaches `/admin`. The server runs k3s
-`v1.35.5+k3s1`, the version the local cluster runs. Nothing is deployed there yet. Eight choices
+`v1.35.5+k3s1`, the version the local cluster runs. Eight choices
 carried a tradeoff.
 
 - **The images at the commit being deployed, filled in at apply time.** The overlay names the

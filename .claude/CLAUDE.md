@@ -313,5 +313,4 @@ anywhere else - `tests/`, `evals/` or `specs/`.
 See `docs/ROADMAP.md` for the full phased plan (Phase 0 walking skeleton → Phase 1 agent → Phase 2
 eval/observability → Phase 3 frontend → Phase 4+ optional: the staff connector, retrieval under a
 realistic corpus (hybrid search planned there, then built as BM25's top added to the dense
-shortlist, measured as changing nothing on this corpus), the
-starter corpus's seeding cost (deferred until measured), then Kubernetes).
+shortlist, measured as changing nothing on this corpus), then Kubernetes).

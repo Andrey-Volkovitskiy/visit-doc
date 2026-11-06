@@ -898,27 +898,14 @@ what happened to each part; the measurements are in
   "dense, no floor" the row hybrid has to beat, and on this corpus dense search already hands the
   reranker the right chunk every time - so "no measurable effect" is the expected outcome, and
   worth recording as one.)*
-#### Phase 4c — Starter corpus seeding cost
-Deferred until it is measured. Every new session is planted with the starter corpus, and planting
-embeds every chunk through Voyage in one call, awaited inside the first `POST /chats` - so a new
-visitor's first chat, every eval run and every e2e journey pay for it. At 36 chunks that was about
-5k tokens and one request, and at 62 since 4b's section chunking it is still one request: not
-worth a mechanism yet. Caching vectors is a new invariant - a vector is valid only for one text,
-one embedding model and one chunker - and one broken silently degrades retrieval rather than
-failing, so it is built only for a measured need: the corpus growing toward hundreds of chunks,
-first-chat latency a visitor can notice, or Voyage rate limits biting during eval or e2e runs.
-When it is built, the likelier shape is a template copy of the starter corpus's points kept in
-Qdrant and copied into each new session under its own `session_id` and revisions - no embedding
-call at all.
 
 #### Phase 4d — Kubernetes
 Containerize the services and deploy them to Kubernetes, with the rationale and tradeoff recorded
 in the README like every other technology choice.
 
-*(Status: containers and a local cluster are done; the public deployment is under way. The three
-services run from their own images under Docker Compose and in a local k3s cluster, deployed in
-one command, and the images are published to GitHub's registry for a cluster that pulls. Nothing
-is deployed to a public address yet. The tradeoffs are in the README's "Running in Containers"
+*(Status: done. The three services run from their own images under Docker Compose, in a local
+k3s cluster and on a public one at `https://visitdoc.app`, each deployed in one command; the
+public cluster pulls the images from GitHub's registry. The tradeoffs are in the README's "Running in Containers"
 and "Running in Kubernetes" sections.)*
 
 - **Containers first, under Compose.** One image per service, built from the repo root, so a
@@ -952,11 +939,11 @@ and "Running in Kubernetes" sections.)*
   `ghcr.io/andrey-volkovitskiy/visitdoc-<app>:<12-char commit>`, refusing while the tree is dirty
   so a tag always names the code it was built from. The three packages are public, so a cluster
   needs no pull secret. Pushed from this machine, not by CI.)*
-- **A public deployment**, at `https://visitdoc.app`, open to anyone with the link. *(Under way;
-  planned in this order.)*
+- **A public deployment**, at `https://visitdoc.app`, open to anyone with the link. *(Done, in
+  this order.)*
   - `deploy/k8s/overlays/public/`: the ghcr images at a commit tag, the domain on the Ingress, TLS
     from Let's Encrypt through k3s's Traefik, rate limits, and chat's `PUBLIC_BASE_URL` and
-    `LANGFUSE_ENVIRONMENT`. *(Written, not yet applied: the tag is a placeholder the deploy fills
+    `LANGFUSE_ENVIRONMENT`. *(Done: the tag is a placeholder the deploy fills
     in; a `HelmChartConfig` gives k3s's Traefik the ACME resolver, the redirect to HTTPS, a
     volume for the certificate and the visitor's address; a general per-address limit covers
     every request and a tight one the requests that call Claude or Voyage. The staff connector's
@@ -971,7 +958,11 @@ and "Running in Kubernetes" sections.)*
     spends real money on every chat. *(Done.)*
   - Deploy, check the certificate, smoke-test, and walk the staff connector's quickstart
     (`specs/017-staff-mcp-connector/quickstart.md`) against the public HTTPS address instead of
-    ngrok.
+    ngrok. *(Done, first deployed on 2026-11-06: a Let's Encrypt certificate, HTTP redirected to
+    HTTPS, `/admin` answered by the page rather than chat; the spend limit refusing the eleventh
+    request a minute from one address while another's still passed; the session cookie `Secure`
+    and `HttpOnly` in a browser, a conversation surviving a reload, and the Claude app paired
+    through `https://visitdoc.app/mcp`.)*
 
 ---
 
