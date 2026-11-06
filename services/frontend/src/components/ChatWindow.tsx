@@ -428,8 +428,8 @@ export function ChatWindow({
               practitioners, and answer questions from the clinic’s FAQ.
             </p>
             <p className="mt-2">
-              If I can’t help with your request,  I'll connect you with a member of our staff 
-              to make sure you get the assistance you need.
+              If I can’t help with your request, I’ll connect you with a member of our
+              staff to make sure you get the assistance you need.
             </p>
           </div>
         )}
