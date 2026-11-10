@@ -642,3 +642,20 @@ describe("OutcomeDisclosure: booking acts on a patient message (016 FR-017 to FR
     expect(screen.queryByTestId("booking-outcome-stub")).toBeNull();
   });
 });
+
+describe("a turn holding nothing but its mark", () => {
+  it("points at the reason under the patient's message rather than claiming a retrieval", () => {
+    // A booking reply beside a detail added to a request already with staff: no
+    // request outcomes, no booking acts, only the mark. The panel has no reason of its
+    // own to state, and "nothing was retrieved" read as a failure of a reply that was
+    // fully served from the schedule.
+    renderDisclosure(null, true);
+
+    fireEvent.click(screen.getByTestId("outcome-marker"));
+
+    expect(
+      screen.getByText("Needs a person for the reason shown under the patient's message."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/retrieved/)).toBeNull();
+  });
+});

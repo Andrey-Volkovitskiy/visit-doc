@@ -364,12 +364,14 @@ export function OutcomeDisclosure({
                 <OutcomeView key={outcome.position} outcome={outcome} />
               ))
             : acts.length === 0 && (
-                // No FAQ half ran and nothing was attempted — a patient message carrying
-                // only a mark. Saying so beats rendering an empty request list, which
-                // would claim a half ran and answered nothing. A message with acts has
-                // them to show instead.
+                // No FAQ half ran and nothing was attempted, so the mark is all this
+                // turn holds - a booking reply beside a request forwarded to staff, say.
+                // The reason is already printed in words under the patient's message, so
+                // this points there rather than repeating it; an empty request list would
+                // claim a half ran and answered nothing. A message with acts has them to
+                // show instead.
                 <p className="text-ink-muted text-sm">
-                  Nothing was retrieved for this message.
+                  Needs a person for the reason shown under the patient&apos;s message.
                 </p>
               )}
           {/*
