@@ -44,16 +44,15 @@ interface StaffThreadProps {
   /** The conversation to read and reply in. Null when none is open. */
   chatId: string | null;
   /**
-   * Whether the assistant may speak here, derived server-side from the escalation and
-   * the pause together — so the switch cannot disagree with the gate a turn obeys.
+   * Whether the assistant may speak here, derived server-side from the pause — so the
+   * switch cannot disagree with the gate a turn obeys.
    */
   assistantMayReply: boolean;
   /**
    * Seconds left on a running pause, or null when none is running.
    *
-   * Null while escalated too: an escalation has no deadline, and a zero would claim a
-   * countdown had run out. Computed server-side and re-read on every poll, which is
-   * what makes two open tabs agree instead of each counting from when it loaded.
+   * Computed server-side and re-read on every poll, which is what makes two open tabs
+   * agree instead of each counting from when it loaded.
    */
   pauseSecondsRemaining: number | null;
   /**

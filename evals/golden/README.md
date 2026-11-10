@@ -88,11 +88,11 @@ than a per-case citation of another spec's set.
 | | Family | n | What it tests |
 |---|---|---|---|
 | a | `single-booking` | 13 | One booking request the booking node serves alone, across its whole range. Writes carry a scripted second turn, so a bare "OK" has to read as the booking it answers. |
-| b | `urgent_condition` | 5 | Something an emergency department exists for. Takes the whole turn; ends it. Carries the hyperbole counter-case. |
+| b | `urgent_condition` | 5 | Something an emergency department exists for. Calls a person; the assistant keeps answering. Carries the hyperbole counter-case. |
 | c | `distress` | 3 | Real fear or acute upset. Carries the brief-exclamation counter-case. |
 | d | `booking_for_another` | 4 | The appointment is plainly for someone else. Nothing may be written. |
 | e | `not_authorized` | 9 | A request the assistant may never serve, whatever the corpus grows to hold. |
-| f | `call_staff` | 4 | An explicit request for a human — the one cause that owes the patient silence. |
+| f | `call_staff` | 4 | An explicit request for a human, and nothing else. |
 | g | `small-talk` | 8 | Messages asking for nothing. None may page a person or search the corpus. |
 | i | `out-of-topic` | 2 | Clearly outside the clinic's domain: nothing to retrieve and nobody to page. |
 | j | `single-faq-answered` | 11 | One answerable FAQ question: both gates cleared, answer generated, right entry cited. |
@@ -109,6 +109,7 @@ than a per-case citation of another spec's set.
 | u | `faq-deep-in-a-document` | 7 | Answered by a late section of a long document, far from its title. |
 | v | `faq-near-miss-distractor` | 6 | A neighbouring entry looks like the answer and is not; only the real one is cited. |
 | w | `faq-lexical-discriminator` | 8 | An exact token — a billing code, a plan qualifier — is the only thing separating the answer from entries on the same subject. |
+| x | `forwarded-follow-up` | 8 | A message sent while an earlier one is with staff, planted with its mark: a detail or a chaser is a follow-up; a thank-you, a new question and a new emergency are not. |
 
 There is no family `h`: the letters follow the order the set was specified in, and `h` was not used.
 
@@ -146,12 +147,12 @@ Derived at read time rather than labelled, so the two cannot disagree:
 | `call_staff` | `PATIENT_ASKED_FOR_PERSON` |
 | `booking_for_another` | `BOOKING_FOR_ANOTHER_PERSON` |
 | `not_authorized` | `NOT_AUTHORIZED` |
+| `forwarded_follow_up` | `FORWARDED_FOLLOW_UP` |
 | `faq_question` with `answerable: false` | `CORPUS_COULD_NOT_ANSWER` |
 | anything else | none |
 
 A turn raises **every** cause its requests contribute; the *mark* is the first of them in
-`escalation._PRECEDENCE` order, and whether the assistant falls silent is `_SILENCING`'s separate
-question. `ASSISTANT_FAILED` is the one cause no case can carry: it is a property of a broken run,
+`escalation._PRECEDENCE` order. No cause silences the assistant. `ASSISTANT_FAILED` is the one cause no case can carry: it is a property of a broken run,
 not of a message.
 
 ## The scheduling fixture

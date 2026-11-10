@@ -96,6 +96,17 @@
                       "text": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "mark": {
+                        "enum": [
+                          "urgent_condition",
+                          "distress",
+                          "patient_asked_for_person",
+                          "booking_for_another_person",
+                          "not_authorized",
+                          "forwarded_follow_up"
+                        ],
+                        "description": "Plants this patient turn as a request already with staff and not yet answered. Must be one of chat.domain.models.OPEN_REQUEST_MARKS."
                       }
                     }
                   }
@@ -121,7 +132,8 @@
                           "distress",
                           "booking_for_another",
                           "call_staff",
-                          "not_authorized"
+                          "not_authorized",
+                          "forwarded_follow_up"
                         ],
                         "description": "Must match chat.domain.schemas.IntentLabel."
                       },

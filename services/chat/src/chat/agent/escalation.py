@@ -1,77 +1,63 @@
 """Calling a person: one implementation, four callers, one application point.
 
 Four things can decide a conversation needs a person - the classifier labelling the
-message as one of five causes that call one (an urgent condition, evident distress, a
-request for a human, a booking for someone else, or a request the assistant is not
-authorized to serve), the model calling `escalate_to_staff`, the FAQ path abstaining,
-and a booking tool failing - and none of them writes the transition.
+message as one of six causes that call one (an urgent condition, evident distress, a
+request for a human, a booking for someone else, a request the assistant is not
+authorized to serve, or a follow-up to a request already with staff), the model calling
+`escalate_to_staff`, the FAQ path abstaining, and a booking tool failing - and none of
+them writes the transition.
 
-Seven causes exist in all, and calling staff and silencing the assistant are separate
-consequences of one act: every cause calls staff, and `_SILENCING`'s four also stop the
-assistant replying. A corpus gap, a failure and a not-authorized request leave it
-answering whatever else the patient asks while staff follow up (FR-003d, spec 009
-FR-022b). Each caller *records a request* into one per-turn `EscalationRequests`
-collector - every applicable cause, not only the strongest, so the log keeps what
-precedence discards (spec 009 FR-047) - and `turn.py` applies the collected result once,
-after the graph has completed.
+Calling staff never silences the assistant. Every cause marks the message that caused
+it and puts the conversation in the staff queue, and the patient is told so by a fixed
+sentence (`HANDOFF_TEXT`) while the assistant goes on answering whatever else they ask.
+Only a staff member's own gesture - a post, or the console's switch - stops it
+replying, and that is the pause, not this module.
 
-Only that shape satisfies both of the requirements that govern this (research #5):
-
-- **FR-001a**: one implementation reachable by several callers, producing the same
-  state, the same record and the same reason handling - so the three cannot each write
-  their own.
-- **FR-006**: the turn runs to completion first and the state takes effect at the end of
-  it - so no caller may write the transition at the moment it decides. Within the turn
-  that escalates, the assistant still speaks; silence begins with the *next* message.
+Each caller *records a request* into one per-turn `EscalationRequests` collector -
+every applicable cause, not only the strongest, so the log keeps what precedence
+discards (spec 009 FR-047) - and `turn.py` applies the collected result once, after the
+graph has completed (FR-006).
 
 The collector is a plain mutable object rather than a LangGraph state key, deliberately:
 the specialists can run concurrently, and concurrent writes to one state key are
 exactly what LangGraph rejects. Appending to a shared object is not a state write, and
 the resolution below is a precedence over a *set*, so the order two branches happened to
-record in cannot change what the patient's conversation ends up in.
+record in cannot change what the patient's message ends up marked with.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from chat.core.logging import get_logger
-from chat.domain.models import AttentionMark, EscalationReason
+from chat.domain.models import (
+    OPEN_REQUEST_MARKS,
+    SOMBRE_MARKS,
+    AttentionMark,
+    EscalationReason,
+    Message,
+    MessageSender,
+)
 from chat.repositories import chat_repository
 
 # Strongest claim on a person first. Safety outranks everything: a patient describing
 # an urgent condition, then one in evident distress. A patient asking for a human *is* a
 # person wanting a person; a booking the assistant may not make and a request it is not
-# authorized to serve both need a person to do the thing; a corpus gap is a hole in the
-# clinic's own documents; a failure is a thing to retry, and the one whose "they can
-# just try again" is the weaker claim to give up (research #6, spec 009 FR-047). This
-# orders the *mark*, which every reason sets; whether silence follows is `_SILENCING`'s
-# separate question.
+# authorized to serve both need a person to do the thing; a follow-up adds to something
+# a person already holds; a corpus gap is a hole in the clinic's own documents; a
+# failure is a thing to retry, and the one whose "they can just try again" is the
+# weaker claim to give up (research #6, spec 009 FR-047). This orders the *mark* and
+# the one notice a turn carries.
 _PRECEDENCE: tuple[EscalationReason, ...] = (
     EscalationReason.URGENT_CONDITION,
     EscalationReason.DISTRESS,
     EscalationReason.PATIENT_ASKED_FOR_PERSON,
     EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
     EscalationReason.NOT_AUTHORIZED,
+    EscalationReason.FORWARDED_FOLLOW_UP,
     EscalationReason.CORPUS_COULD_NOT_ANSWER,
     EscalationReason.ASSISTANT_FAILED,
-)
-
-# The reasons that stop the assistant replying - four of the seven. The other three are
-# absent by requirement, not by omission (FR-003d, spec 009 FR-022b): a failure raises
-# attention without silencing because the thing that broke may already be working again;
-# a corpus gap because it is a hole in *one* answer, not in the assistant; and a
-# not-authorized request because its own sentence invites the next question. The four
-# that silence are the ones where more assistant is the thing the patient must not get
-# next - a patient who asked for a human, and the three a person has to handle before
-# anything else is said.
-_SILENCING = frozenset(
-    {
-        EscalationReason.URGENT_CONDITION,
-        EscalationReason.DISTRESS,
-        EscalationReason.PATIENT_ASKED_FOR_PERSON,
-        EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
-    }
 )
 
 
@@ -94,27 +80,37 @@ _MARK_BY_REASON = {reason: AttentionMark(reason.value) for reason in _PRECEDENCE
 
 # What the visitor is told when a person is fetched because they asked for one. Fixed
 # text rather than a generated sentence: there is nothing here for a model to decide,
-# and the two things it must not do - promise a time, or imply the assistant will keep
-# handling this - are exactly what a generated one could get wrong.
+# and the two things it must not do - promise a time, or imply the assistant has handed
+# the conversation over and stopped - are exactly what a generated one could get wrong.
 #
 # Deliberately not the same string as `escalate_to_staff`'s tool result, which is
 # written for the model reading it back rather than for the person reading it.
 HANDOFF_MESSAGE = (
     "Sure. I've passed this to a member of the clinic's staff. "
-    "They'll follow up with you shortly."
+    "They'll follow up with you here shortly. In the meantime, I can still help "
+    "with anything else."
 )
 
-# One constant per cause that ends a turn by fetching a person, in one table beside the
-# precedence and the silencing set (spec 009 FR-043, contracts/replies.md). One table
-# rather than one node each: every row has to have a text, a mark and a silencing
-# answer, and five near-identical nodes would drift until one of them forgot one.
+# What a patient is told when a message adds to a request staff already hold - so a
+# detail sent after the hand-off is not one they have to wonder about.
+FOLLOW_UP_MESSAGE = (
+    "I've added this to the request already with our staff, so it won't get lost. "
+    "They'll follow up with you here."
+)
+
+# One constant per cause the patient is told about, in one table beside the
+# precedence. A corpus gap and a failure have none: a gap is named by the reply that
+# could not answer it, and a failure has no reply to carry one.
 #
-# What each must convey is the contract; the wording is a copy decision. None of them
-# promises a time, and none claims the assistant will handle the thing after all.
+# Every text is appended to the reply verbatim, never paraphrased: a turn that hands
+# off and nothing else sends the text alone, and a turn that also answered something
+# sends it after the answer. What each must convey is the contract; the wording is a
+# copy decision. None of them promises a time, and none claims the assistant will
+# handle the thing after all.
 #
-# The urgent one points at emergency services rather than judging whether this is an
-# emergency: the assistant does not triage (FR-044), so the only safe sentence is the
-# one that is right under every reading of the message.
+# The urgent one does not judge whether this is an emergency: the assistant does not
+# triage (FR-044), so the only safe sentence is the one that is right under every
+# reading of the message.
 HANDOFF_TEXT: dict[EscalationReason, str] = {
     EscalationReason.PATIENT_ASKED_FOR_PERSON: HANDOFF_MESSAGE,
     EscalationReason.NOT_AUTHORIZED: (
@@ -135,7 +131,101 @@ HANDOFF_TEXT: dict[EscalationReason, str] = {
         "someone else. I've passed this to the clinic's staff and a member of the "
         "team will arrange it with you."
     ),
+    EscalationReason.FORWARDED_FOLLOW_UP: FOLLOW_UP_MESSAGE,
 }
+
+# What separates a notice from the reply it follows.
+NOTICE_SEPARATOR = "\n\n"
+
+
+def notice_for(reasons: Iterable[EscalationReason]) -> EscalationReason | None:
+    """Return the cause whose notice a turn raising `reasons` carries, or None.
+
+    The strongest cause that has a text, and only that one: two notices about one
+    hand-off read as two hand-offs, and the stronger one already says that staff have
+    the message. None when no cause raised has a text - nothing, a corpus gap, a
+    failure.
+    """
+    return next(
+        (reason for reason in in_precedence_order(reasons) if reason in HANDOFF_TEXT),
+        None,
+    )
+
+
+def with_notice(reply: str, reason: EscalationReason | None) -> str:
+    """Return `reply` with `reason`'s notice appended, or unchanged when there is none.
+
+    The one place a notice is joined to a reply, so a streamed reply and the stored one
+    put the same separator between the two.
+    """
+    if reason is None:
+        return reply
+    notice = HANDOFF_TEXT[reason]
+    return f"{reply}{NOTICE_SEPARATOR}{notice}" if reply else notice
+
+
+@dataclass(frozen=True)
+class ForwardedRequest:
+    """A patient message staff hold and have not answered yet.
+
+    `mark` says why it was forwarded; `text` is the message as the patient wrote it,
+    which is what a later message is compared against to decide whether it adds to it.
+    """
+
+    text: str
+    mark: AttentionMark
+
+
+def open_requests(messages: Sequence[Message]) -> list[ForwardedRequest]:
+    """Return every request in `messages` with staff and still open, oldest first.
+
+    Read off the marks rather than stored beside them: a request is open exactly while
+    its message carries one of `OPEN_REQUEST_MARKS`, and a staff message clears those,
+    so "staff answered it" and "it is no longer open" are one write, not two to keep in
+    step. A stored mark this build does not name is not an open request.
+    """
+    forwarded: list[ForwardedRequest] = []
+    for message in messages:
+        if message.sender != MessageSender.PATIENT.value:
+            continue
+        mark = _OPEN_MARK_BY_VALUE.get(message.attention_mark or "")
+        if mark is not None:
+            forwarded.append(ForwardedRequest(text=message.content, mark=mark))
+    return forwarded
+
+
+_OPEN_MARK_BY_VALUE = {mark.value: mark for mark in OPEN_REQUEST_MARKS}
+
+
+# What every generated reply is told while `calls_for_calm` holds. One sentence for
+# every prompt that writes to the patient, appended after its own instructions, so the
+# small-talk reply, an FAQ answer, a booking reply and a merged reply all keep the same
+# register. It names no symptom and quotes nothing: the FAQ answerer is shown no
+# conversation, and this does not hand it one.
+CALM_TONE = (
+    "A message earlier in this conversation described an urgent condition or showed "
+    "distress, and a member of the clinic's staff has it. Keep this reply plain and "
+    "calm: no cheerfulness, no exclamation marks, no emoji, no pleasantries."
+)
+
+
+def with_calm_tone(system_prompt: str, *, calm: bool) -> str:
+    """Return `system_prompt`, followed by `CALM_TONE` when `calm`."""
+    return f"{system_prompt}\n\n{CALM_TONE}" if calm else system_prompt
+
+
+def calls_for_calm(
+    forwarded: Sequence[ForwardedRequest], reasons: Iterable[EscalationReason]
+) -> bool:
+    """Whether everything the assistant says this turn must be plain and calm.
+
+    True while an urgent condition or evident distress is with staff - raised by an
+    earlier message and still open, or raised by this one. A cheerful pleasantry right
+    after "I can't breathe" is the reply this exists to prevent.
+    """
+    return any(request.mark in SOMBRE_MARKS for request in forwarded) or any(
+        _MARK_BY_REASON[reason] in SOMBRE_MARKS for reason in reasons
+    )
 
 
 class EscalationRequests:
@@ -163,23 +253,6 @@ class EscalationRequests:
         happened, and still has to be accounted for.
         """
         return tuple(self._recorded)
-
-    @property
-    def conversation_reason(self) -> EscalationReason | None:
-        """The reason this turn silences the conversation for, or None if it does not.
-
-        None is a real answer rather than an absent one: a turn whose only calls were
-        `assistant_failed` or `corpus_could_not_answer` needs a person without the
-        assistant going quiet.
-        """
-        return next(
-            (
-                reason
-                for reason in in_precedence_order(self._recorded)
-                if reason in _SILENCING
-            ),
-            None,
-        )
 
     @property
     def message_mark(self) -> AttentionMark | None:
@@ -229,9 +302,8 @@ async def apply_escalation(
 
     if taken_over:
         # A person answered while this turn was still running. Applying anything now
-        # would put the conversation back in the queue they just took it out of, and
-        # re-silence the patient against the very staff member handling them.
-        _record_taken_over(requests, chat_id, message_id)
+        # would put the conversation back in the queue they just took it out of.
+        _record_unchanged(requests.recorded, chat_id, message_id)
         return
 
     await chat_repository.set_attention_mark(
@@ -240,94 +312,47 @@ async def apply_escalation(
     # Set only if unset: the conversation has been waiting since the first thing that
     # needed a person, and re-stamping would send it to the back of a queue ordered by
     # how long each has waited. The answer says whether this call was the one that put
-    # it there, which is the transition a non-silencing request has to point at.
+    # it there, which is the transition `escalation.raised` points at.
     emphasized = await chat_repository.mark_attention(session, chat_id, session_id)
-
-    silencing = requests.conversation_reason
-    transitioned = False
-    existing_reason: str | None = None
-    if silencing is not None:
-        # The guard is in the write's own `WHERE`, so a second call cannot overwrite the
-        # reason that first silenced the conversation (FR-007).
-        transitioned = await chat_repository.set_escalated(
-            session, chat_id, session_id, silencing
-        )
-        existing_reason = (
-            silencing.value
-            if transitioned
-            else await _existing_reason(session, chat_id, session_id)
-        )
-
-    _record(
-        requests,
-        chat_id,
-        message_id,
-        silencing,
-        transitioned,
-        emphasized,
-        existing_reason,
-    )
+    _record(requests, chat_id, message_id, emphasized=emphasized)
 
 
-async def _existing_reason(
-    session: AsyncSession, chat_id: str, session_id: str
-) -> str | None:
-    """Return the reason a conversation is already escalated for, for the record."""
-    state = await chat_repository.get_conversation_state(session, chat_id, session_id)
-    return None if state is None else state.escalation_reason
-
-
-def _record_taken_over(
-    requests: EscalationRequests, chat_id: str, message_id: str
+def _record_unchanged(
+    reasons: Iterable[EscalationReason], chat_id: str, message_id: str
 ) -> None:
-    """Record every request a person's takeover left unapplied, best-effort.
+    """Record every request as having transitioned nothing, best-effort.
 
-    `escalation.unchanged` rather than a kind of its own: what the record has to keep
-    true is that one `escalation.raised` means one handoff, and a call that transitioned
-    nothing is what that event already stands for. `existing_reason` is None because
-    there is no escalation here - a person simply has the conversation.
-
-    Wrapped whole in a `try` for `_record`'s reason: recording follows a decision and
-    never gates one.
+    Wrapped whole in a `try`: recording follows a decision and never gates one, and
+    there is nowhere left to report a failure of the reporting path itself.
     """
     try:
         logger = get_logger()
-        for reason in requests.recorded:
+        for reason in reasons:
             logger.info(
                 "escalation.unchanged",
                 chat_id=chat_id,
                 requested_reason=reason,
-                existing_reason=None,
                 message_id=message_id,
             )
-    except Exception:  # noqa: BLE001, S110 - see the docstring: recording follows a
-        # decision and never gates one, and there is nowhere left to report a failure
-        # of the reporting path itself.
+    except Exception:  # noqa: BLE001, S110 - see the docstring.
         pass
 
 
 def _record(
-    requests: EscalationRequests,
-    chat_id: str,
-    message_id: str,
-    silencing: EscalationReason | None,
-    transitioned: bool,
-    emphasized: bool,
-    existing_reason: str | None,
+    requests: EscalationRequests, chat_id: str, message_id: str, *, emphasized: bool
 ) -> None:
     """Record one entry per request, best-effort.
 
     Args:
-        transitioned: Whether this turn silenced the conversation.
         emphasized: Whether this turn was the one that put the conversation in the
             queue, rather than finding it waiting there already.
 
     `escalation.raised` and `escalation.unchanged` are mutually exclusive for one
     request, and that is the point of having both: `escalation.raised` is what a count
     of handoffs is drawn from, and a no-op logged as a raise would over-count every
-    conversation that was already escalated. A request is therefore raised only when it
-    can point at a transition of its own - a silencing one at the escalation, a failure
-    at the emphasis - and each transition is claimed once, which leaves every other
+    conversation that was already waiting. A request is therefore raised only when it
+    can point at the transition - the conversation entering the queue - and that
+    transition is claimed once, by the strongest cause, which leaves every other
     request unchanged.
 
     Wrapped whole in a `try`: recording follows a transition and never gates one, so a
@@ -335,43 +360,22 @@ def _record(
     occurred.
     """
     try:
+        ordered = in_precedence_order(requests.recorded)
+        raising = ordered[0] if emphasized and ordered else None
         logger = get_logger()
-        raised_silencing = False
-        raised_emphasis = False
+        raised = False
+        unchanged: list[EscalationReason] = []
         for reason in requests.recorded:
-            if reason not in _SILENCING and emphasized and not raised_emphasis:
-                # It transitioned something - the conversation became emphasized - but
-                # it did not silence, and `silenced` is the field that says so.
+            if reason is raising and not raised:
                 logger.info(
                     "escalation.raised",
                     chat_id=chat_id,
                     reason=reason,
                     message_id=message_id,
-                    silenced=False,
                 )
-                raised_emphasis = True
-            elif transitioned and not raised_silencing and reason is silencing:
-                logger.info(
-                    "escalation.raised",
-                    chat_id=chat_id,
-                    reason=reason,
-                    message_id=message_id,
-                    silenced=True,
-                )
-                raised_silencing = True
+                raised = True
             else:
-                # The conversation was already escalated, or already waiting for a
-                # person, or this was the weaker of two silencing calls in one turn.
-                # Both reasons are carried, because the point of the record is that the
-                # second did not overwrite the first.
-                logger.info(
-                    "escalation.unchanged",
-                    chat_id=chat_id,
-                    requested_reason=reason,
-                    existing_reason=existing_reason,
-                    message_id=message_id,
-                )
-    except Exception:  # noqa: BLE001, S110 - see the docstring: recording follows a
-        # transition and never gates one, and there is nowhere left to report a failure
-        # of the reporting path itself.
+                unchanged.append(reason)
+        _record_unchanged(unchanged, chat_id, message_id)
+    except Exception:  # noqa: BLE001, S110 - see the docstring.
         pass

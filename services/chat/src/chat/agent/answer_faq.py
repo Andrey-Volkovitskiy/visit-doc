@@ -39,7 +39,7 @@ from chat.agent.compose_answer import (
     FaqSegmentAnswer,
     deduplicate_chunks,
 )
-from chat.agent.escalation import EscalationRequests
+from chat.agent.escalation import EscalationRequests, with_calm_tone
 from chat.agent.history import to_loggable_messages
 from chat.core.config import get_settings
 from chat.core.errors import TurnPipelineError
@@ -146,9 +146,9 @@ _RESTATED_HEADING = (
 # The abstention and the handoff are one outcome, so they are one sentence: an
 # abstention that then attempted a speculative answer, or that left the patient at a
 # dead end, is the failure this wording exists to prevent. The closing invitation is
-# not politeness: a corpus gap raises attention without silencing the conversation, so
-# the patient really may go on asking while staff follow up, and the sentence has to
-# say so or the silence it implies is a lie about the state.
+# not politeness: calling staff never silences the conversation, so the patient really
+# may go on asking while staff follow up, and the sentence has to say so or the silence
+# it implies is a lie about the state.
 #
 # One message for all four abstentions. Which gate stopped the turn is a fact about
 # the clinic's corpus, not about the patient's question, and telling them apart here
@@ -182,6 +182,7 @@ class _TurnContext:
     anthropic_client: AsyncAnthropic
     session_id: str
     live_revisions: list[str]
+    calm: bool = False
 
 
 async def answer_faq(
@@ -197,6 +198,7 @@ async def answer_faq(
     positions: list[int] | None = None,
     escalation: EscalationRequests,
     stream: bool = True,
+    calm: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent | FaqResult]:
     """Answer each of this turn's questions from its own retrieval, or abstain.
 
@@ -227,6 +229,8 @@ async def answer_faq(
             turn.
         stream: True to stream tokens and emit the terminal event; False to yield a
             single `FaqResult` for a later composing step instead.
+        calm: True while an urgent condition or distress is with staff: every answer
+            is written under `CALM_TONE`.
 
     Yields: in streaming mode, `ChatTokenEvent`s then one `ChatDoneEvent`, then the
         result; in collect mode, exactly one `FaqResult`.
@@ -257,6 +261,7 @@ async def answer_faq(
         anthropic_client=anthropic_client,
         session_id=session_id,
         live_revisions=live_revisions,
+        calm=calm,
     )
 
     requests = list(zip(positions, segments, strict=True))
@@ -461,17 +466,18 @@ async def _answer_one_bound(
     # delayed by a few characters and never by the whole generation.
     withheld = True
     model = get_settings().GENERATION_MODEL
+    system = with_calm_tone(_SYSTEM_PROMPT, calm=context.calm)
     try:
         with generation(
             "answer_faq.model",
             model=model,
-            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            input={"system": system, "messages": messages},
             model_parameters={"max_tokens": _MAX_TOKENS},
         ) as observed:
             async with context.anthropic_client.messages.stream(
                 model=model,
                 max_tokens=_MAX_TOKENS,
-                system=_SYSTEM_PROMPT,
+                system=system,
                 messages=messages,
             ) as stream_response:
                 async for event in stream_response:

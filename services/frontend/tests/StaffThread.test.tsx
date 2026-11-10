@@ -462,22 +462,6 @@ describe("StaffThread: the assistant switch", () => {
     expect(control).toBeChecked();
   });
 
-  it("reads as off on a conversation the patient just escalated", () => {
-    // US2 scenario 9: the staff member does not have to work out that the assistant
-    // has gone quiet - the switch already says so.
-    renderWithSwitch({ assistantMayReply: false, pauseSecondsRemaining: null });
-
-    expect(screen.getByTestId("assistant-switch")).not.toBeChecked();
-  });
-
-  it("shows no deadline while escalated, because there is none", () => {
-    // Rendering a zero would claim a countdown had run out; an escalation never had
-    // one to run out.
-    renderWithSwitch({ assistantMayReply: false, pauseSecondsRemaining: null });
-
-    expect(screen.queryByTestId("pause-countdown")).toBeNull();
-  });
-
   it("shows the remaining time while a pause is running", () => {
     renderWithSwitch({ assistantMayReply: false, pauseSecondsRemaining: 118 });
 

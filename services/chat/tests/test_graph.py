@@ -18,7 +18,7 @@ from anthropic import APITimeoutError, OverloadedError
 from chat.agent import graph as graph_module
 from chat.agent.answer_faq import _ABSTENTION_MESSAGE
 from chat.agent.compose_answer import FaqResult, FaqSegmentAnswer
-from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests
+from chat.agent.escalation import HANDOFF_MESSAGE, EscalationRequests, ForwardedRequest
 from chat.agent.history import (
     OPENING_CLINIC_NOTE,
     split_into_bursts,
@@ -127,6 +127,7 @@ _LOCAL_NOW = datetime(2026, 8, 14, 9, 0)
 def _tool_context(
     patient_id: str | None = "01PATENT000000000000000000",
     channel: MagicMock | None = None,
+    escalation: EscalationRequests | None = None,
 ) -> ToolContext:
     """Build the turn's ambient facts over a channel no test ever dials.
 
@@ -141,6 +142,9 @@ def _tool_context(
         channel: the scheduling channel to hand the turn. Passed in by a test that
             asserts nothing dialled it - a mock the test made and did not give the turn
             is untouched whatever the turn does.
+        escalation: the turn's collector, the same one the graph records into - as
+            `turn.py` hands both the one object, so a tool's call to staff and the
+            router's land in one place.
     """
     return ToolContext(
         channel=channel if channel is not None else MagicMock(),
@@ -148,6 +152,7 @@ def _tool_context(
         session_id="01SESS00000000000000000000",
         patient_id=patient_id,
         local_now=_LOCAL_NOW,
+        escalation=escalation if escalation is not None else EscalationRequests(),
     )
 
 
@@ -160,12 +165,15 @@ async def _run_turn(
     escalation: EscalationRequests | None = None,
     bursts: list[list[Message]] | None = None,
     channel: MagicMock | None = None,
+    forwarded: list[ForwardedRequest] | None = None,
 ) -> list[ChatTokenEvent | ChatDoneEvent]:
     qdrant_client = create_client(Settings())
     if bursts is None:
         bursts = [[_patient_message(message, id="turn-1")]]
     if live_revisions is None:
         live_revisions = list(_seeded_revisions)
+    if escalation is None:
+        escalation = EscalationRequests()
     events = [
         event
         async for event in graph_module.run_turn(
@@ -177,10 +185,11 @@ async def _run_turn(
             ["turn-1"],
             _retrieving_session(),
             live_revisions,
-            escalation=escalation if escalation is not None else EscalationRequests(),
+            escalation=escalation,
+            forwarded=forwarded if forwarded is not None else [],
             patient_name="Ada Lovelace",
             local_now=_LOCAL_NOW,
-            tool_context=_tool_context(patient_id, channel),
+            tool_context=_tool_context(patient_id, channel, escalation),
         )
     ]
     await qdrant_client.close()
@@ -438,6 +447,7 @@ async def test_cancelling_mid_classification_suppresses_the_log_and_the_faq_repl
                 seeded_session_id(),
                 list(_seeded_revisions),
                 escalation=EscalationRequests(),
+                forwarded=[],
                 patient_name="Ada Lovelace",
                 local_now=_LOCAL_NOW,
                 tool_context=_tool_context(),
@@ -706,11 +716,8 @@ def test_faq_events_carry_their_own_node_name_under_the_fan_out(
 
 
 def test_call_staff_takes_the_whole_turn(seeded_entry: int) -> None:
-    # The only outcome is the handoff. Nothing is retrieved and nothing is generated,
-    # even for a question this corpus could have answered - a visitor who has asked for
-    # a person is going to get one, and the conversation falls silent from their next
-    # message, so answering half of what they said and then going quiet is worse than
-    # handing over cleanly.
+    # A message that asks for a person and nothing else is handed off whole: nothing is
+    # retrieved and nothing is generated, since there is nothing else to answer.
     collector = EscalationRequests()
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
@@ -765,12 +772,11 @@ def test_a_handed_off_turn_costs_one_classification_and_nothing_else(
     assert anthropic_client.messages.stream.call_count == 0
 
 
-def test_call_staff_suppresses_a_booking_on_the_same_message(
+def test_call_staff_beside_a_booking_still_books_then_says_staff_have_it(
     seeded_entry: int,
 ) -> None:
-    # "book me Friday and have someone call me" books nothing. The accepted cost of
-    # the rule above, and the safer half of it: writing an appointment for a patient
-    # who has just asked to stop talking to a machine is the harder thing to undo.
+    # "book me Friday and have someone call me" asks for both, and gets both: the
+    # booking loop runs, and the request for a person is told after its reply.
     with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
         anthropic_client = fake_anthropic_client(
             intents=[IntentLabel.CALL_STAFF, IntentLabel.BOOKING]
@@ -779,15 +785,16 @@ def test_call_staff_suppresses_a_booking_on_the_same_message(
             _run_turn(anthropic_client, "book me Friday, and have someone call me")
         )
 
-    # No tool-bearing model call was made at all, so nothing was booked.
-    assert not [
+    assert [
         call
         for call in anthropic_client.messages.create.await_args_list
         if call.kwargs.get("tools")
     ]
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.answer_source == "hand_off"
+    assert done_event.answer_source is AnswerSource.BOOKING
+    assert done_event.message is not None
+    assert done_event.message.endswith(HANDOFF_MESSAGE)
 
 
 def test_a_handed_off_turn_is_reported_as_its_own_outcome(
@@ -1000,7 +1007,6 @@ async def test_a_small_talk_turn_calls_nobody() -> None:
 
     assert escalation.recorded == ()
     assert escalation.message_mark is None
-    assert escalation.conversation_reason is None
 
 
 async def test_a_small_talk_reply_carries_no_verdict_and_no_citations() -> None:
@@ -1148,22 +1154,30 @@ _STOPPING = (
 
 
 @pytest.mark.parametrize(("label", "reason"), _STOPPING)
-async def test_a_stopping_label_takes_the_whole_turn(
+async def test_a_calling_label_beside_a_booking_still_books_then_tells_the_patient(
     label: IntentLabel, reason: EscalationReason
 ) -> None:
-    # Alongside a booking, which must not run: answering half a message and then
-    # falling silent is worse than handing over cleanly (FR-046).
+    # Calling staff never silences, so it never costs the patient the rest of their
+    # answer: the booking runs, and the cause's fixed sentence follows its reply.
+    from chat.agent.escalation import HANDOFF_TEXT
+
     client = fake_anthropic_client(
         ["never generated"], intents=[label, IntentLabel.BOOKING]
     )
 
     with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
-        await _run_turn(client, "my chest hurts, can I see someone today?")
+        events = await _run_turn(client, "my chest hurts, can I see someone today?")
 
-    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
-    events = [entry["event"] for entry in logs]
-    assert "faq.retrieval_completed" not in events
-    assert "faq.verdict" not in events
+    assert _started_nodes(logs) == [
+        "classify_intent",
+        "handle_booking",
+        "compose_answer",
+    ]
+    done = events[-1]
+    assert isinstance(done, ChatDoneEvent)
+    assert done.answer_source is AnswerSource.BOOKING
+    assert done.message is not None
+    assert done.message.endswith(f"\n\n{HANDOFF_TEXT[reason]}")
 
 
 @pytest.mark.parametrize(("label", "reason"), _STOPPING)
@@ -1208,7 +1222,6 @@ async def test_urgency_outranks_distress_and_a_request_for_a_person() -> None:
     await _run_turn(client, "I can't breathe and I'm terrified", escalation=escalation)
 
     assert escalation.message_mark is AttentionMark.URGENT_CONDITION
-    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
 
 
 async def test_urgency_outranks_a_third_party_booking() -> None:
@@ -1222,7 +1235,7 @@ async def test_urgency_outranks_a_third_party_booking() -> None:
         client, "I'm booking for my daughter, she can't breathe", escalation=escalation
     )
 
-    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
+    assert escalation.message_mark is AttentionMark.URGENT_CONDITION
 
 
 async def test_distress_outranks_a_request_for_a_person() -> None:
@@ -1340,7 +1353,7 @@ async def test_an_unauthorized_request_retrieves_nothing_and_says_so() -> None:
     assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
 
 
-async def test_an_unauthorized_request_does_not_silence_the_conversation() -> None:
+async def test_an_unauthorized_request_marks_its_message() -> None:
     escalation = EscalationRequests()
     client = fake_anthropic_client(
         ["never generated"], intents=[IntentLabel.NOT_AUTHORIZED]
@@ -1348,8 +1361,6 @@ async def test_an_unauthorized_request_does_not_silence_the_conversation() -> No
 
     await _run_turn(client, "please renew my prescription", escalation=escalation)
 
-    # A person is needed for this request; the next one may be perfectly ordinary.
-    assert escalation.conversation_reason is None
     assert escalation.message_mark is AttentionMark.NOT_AUTHORIZED
 
 
@@ -1374,15 +1385,21 @@ async def test_an_unauthorized_request_beside_a_question_answers_and_forwards(
 
     routing = _node_result(logs, "classify_intent")
     assert routing["specialists"] == ["answer_faq"]
-    assert routing["notice_required"] is True
-    # Merged, because the notice is owed alongside an answer - and no fixed sentence
-    # was stapled on: the composer wrote one reply (FR-022c1).
+    assert routing["notice_owed"] is True
+    # Collected, because the notice follows the answer - and appended verbatim, with
+    # no composing call: one answer and a constant are not two parts to merge.
     assert routing["specialists_collect"] is True
     assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
-    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
     from chat.agent.escalation import HANDOFF_TEXT
 
-    assert HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED] not in streamed
+    done = events[-1]
+    assert isinstance(done, ChatDoneEvent)
+    assert done.answer_source is AnswerSource.FAQ
+    assert done.message == (
+        f"Visiting hours are 8am to 5pm.\n\n"
+        f"{HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]}"
+    )
+    assert _composing_calls(client) == 0
 
 
 async def test_a_classification_failure_reaches_none_of_the_new_routes(
@@ -1423,7 +1440,7 @@ async def test_the_routing_record_names_the_stopping_cause(seeded_entry: int) ->
         await _run_turn(stopping, "I can't breathe")
 
     assert _node_result(ordinary_logs, "classify_intent")["stopping_cause"] is None
-    assert _node_result(ordinary_logs, "classify_intent")["notice_required"] is False
+    assert _node_result(ordinary_logs, "classify_intent")["notice_owed"] is False
     assert _node_result(logs, "classify_intent")["stopping_cause"] == "urgent_condition"
 
 
@@ -1505,7 +1522,7 @@ async def test_small_talk_beside_an_unauthorized_request_is_dropped() -> None:
 
     routing = _node_result(logs, "classify_intent")
     assert routing["specialists"] == ["hand_off"]
-    assert routing["notice_required"] is False
+    assert routing["notice_owed"] is False
     assert routing["specialists_collect"] is False
     assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
 
@@ -1549,9 +1566,8 @@ async def test_every_applicable_stopping_cause_reaches_the_record() -> None:
         EscalationReason.URGENT_CONDITION,
         EscalationReason.DISTRESS,
     )
-    # Unchanged: one mark, one silence, chosen by precedence.
+    # Unchanged: one mark, chosen by precedence.
     assert escalation.message_mark is AttentionMark.URGENT_CONDITION
-    assert escalation.conversation_reason is EscalationReason.URGENT_CONDITION
 
 
 async def test_a_request_for_a_person_inside_an_emergency_is_not_lost() -> None:
@@ -1592,32 +1608,41 @@ async def test_an_unauthorized_request_inside_a_stopping_turn_is_recorded_too() 
         EscalationReason.DISTRESS,
         EscalationReason.NOT_AUTHORIZED,
     )
-    # Distress still takes the turn, silences it, and writes its own sentence.
-    assert escalation.conversation_reason is EscalationReason.DISTRESS
+    # Distress is the stronger claim, so it marks the message.
+    assert escalation.message_mark is AttentionMark.DISTRESS
 
 
 # --- what a merged turn merged, and a reply that ran out of room ---------------------
 
 
-async def test_the_compose_record_says_whether_a_notice_was_merged_in(
+async def test_the_compose_record_names_the_notice_it_appended(
     seeded_entry: int,
 ) -> None:
     client = fake_anthropic_client(
-        ["Hours are 8-5, and the sick note has gone to staff."],
-        intents=[IntentLabel.NOT_AUTHORIZED, IntentLabel.FAQ_QUESTION],
+        ["Hours are 8-5, and you're booked."],
+        intents=[
+            IntentLabel.NOT_AUTHORIZED,
+            IntentLabel.FAQ_QUESTION,
+            IntentLabel.BOOKING,
+        ],
     )
 
     with (
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs,
     ):
-        await _run_turn(client, "When can I visit, and write me a sick note?")
+        events = await _run_turn(
+            client, "When can I visit, can I book Friday, and write me a sick note?"
+        )
+
+    from chat.agent.escalation import HANDOFF_TEXT
 
     composed = _node_result(logs, "compose_answer")
     assert composed["merged"] is True
-    # One specialist ran, so `merged` alone would count this with the two-specialist
-    # turns. This is what tells them apart on the same line.
-    assert composed["notice_included"] is True
+    assert composed["notice"] == EscalationReason.NOT_AUTHORIZED
+    # The composed text, then the constant - streamed as the last token, verbatim.
+    tokens = [e.text for e in events if isinstance(e, ChatTokenEvent)]
+    assert tokens[-1] == f"\n\n{HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]}"
 
 
 async def test_a_two_specialist_merge_records_no_notice(seeded_entry: int) -> None:
@@ -1634,7 +1659,7 @@ async def test_a_two_specialist_merge_records_no_notice(seeded_entry: int) -> No
 
     composed = _node_result(logs, "compose_answer")
     assert composed["merged"] is True
-    assert composed["notice_included"] is False
+    assert composed["notice"] is None
 
 
 async def test_a_truncated_pleasantry_is_visible_in_the_turns_record() -> None:
@@ -2065,11 +2090,10 @@ def test_a_three_request_turn_still_classifies_once(seeded_entry: int) -> None:
         ),
     ],
 )
-def test_an_overriding_request_takes_the_whole_turn(
+def test_a_calling_request_leaves_the_rest_of_the_message_answered(
     seeded_entry: int, label: IntentLabel, reason: EscalationReason
 ) -> None:
-    # Answering half a message and then falling silent is worse than handing over
-    # cleanly, so every other request on the turn is suppressed.
+    # The question is answered, and the cause's fixed sentence follows the answer.
     queries: list[str] = []
     escalation = EscalationRequests()
     with (
@@ -2091,13 +2115,17 @@ def test_an_overriding_request_takes_the_whole_turn(
             )
         )
 
-    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
-    assert queries == []
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
+    assert queries == ["when can I visit?"]
     assert escalation.recorded == (reason,)
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.answer_source is AnswerSource.HAND_OFF
-    assert done_event.request_outcomes is None
+    assert done_event.answer_source is AnswerSource.FAQ
+    assert _verdicts(done_event) == [FaqVerdict.ANSWERED]
+    assert done_event.message is not None
+    assert done_event.message.endswith(HANDOFF_TEXT[reason])
 
 
 def test_a_pleasantry_beside_a_request_routes_nowhere(seeded_entry: int) -> None:
@@ -2140,11 +2168,11 @@ def test_an_unauthorized_request_beside_a_question_is_a_notice(
             _run_turn(anthropic_client, "when can I visit? also a sick note please")
         )
 
-    assert _node_result(logs, "classify_intent")["notice_required"] is True
+    assert _node_result(logs, "classify_intent")["notice_owed"] is True
     assert _started_nodes(logs) == ["classify_intent", "answer_faq", "compose_answer"]
     done_event = events[-1]
     assert isinstance(done_event, ChatDoneEvent)
-    assert done_event.answer_source is AnswerSource.MERGED
+    assert done_event.answer_source is AnswerSource.FAQ
 
 
 def test_an_unauthorized_request_alone_hands_the_turn_over(seeded_entry: int) -> None:
@@ -2600,13 +2628,11 @@ def test_a_turn_never_produces_more_parts_than_its_route_expected(
         "booking_result": None,
         "small_talk_result": None,
         "handoff_reason": None,
-        "notice_required": False,
+        "notice_owed": False,
         "segments": segments,
     }
 
-    expected = graph_module._expected_parts(
-        ["answer_faq"], segments, notice_required=False
-    )
+    expected = graph_module._expected_parts(["answer_faq"], segments, notice_owed=False)
     assert graph_module._actual_parts(state) <= expected
 
 
@@ -2719,3 +2745,148 @@ def test_a_node_that_answers_no_request_of_its_own_is_handed_none() -> None:
 
     assert graph_module.indexed_segments_for("hand_off", segments) == []
     assert graph_module.segments_for("small_talk", segments) == []
+
+
+# --- forwarding without going quiet: follow-ups, the calm tone, a mid-loop call -----
+
+_OPEN_DISTRESS = [ForwardedRequest("I'm so scared.", AttentionMark.DISTRESS)]
+_OPEN_SICK_NOTE = [
+    ForwardedRequest("Write me a sick note.", AttentionMark.NOT_AUTHORIZED)
+]
+
+
+async def test_a_follow_up_alone_is_told_it_reached_staff_and_nothing_else() -> None:
+    from chat.agent.escalation import FOLLOW_UP_MESSAGE
+
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.FORWARDED_FOLLOW_UP]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(
+            client,
+            "My employer needs it by Friday.",
+            escalation=escalation,
+            forwarded=_OPEN_SICK_NOTE,
+        )
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == FOLLOW_UP_MESSAGE
+    assert escalation.message_mark is AttentionMark.FORWARDED_FOLLOW_UP
+    assert client.messages.stream.call_count == 0
+
+
+async def test_the_classifier_is_shown_what_is_open_with_staff() -> None:
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.FORWARDED_FOLLOW_UP]
+    )
+
+    await _run_turn(client, "Any update?", forwarded=_OPEN_SICK_NOTE)
+
+    classification = next(
+        call
+        for call in client.messages.create.call_args_list
+        if call.kwargs.get("tools") is None
+    )
+    assert '"Write me a sick note."' in classification.kwargs["system"]
+
+
+async def test_small_talk_while_distress_is_open_is_written_calm() -> None:
+    from chat.agent.escalation import CALM_TONE
+
+    client = fake_anthropic_client(["Take care."], intents=[IntentLabel.SMALL_TALK])
+
+    await _run_turn(client, "ok", forwarded=_OPEN_DISTRESS)
+
+    (call,) = client.messages.stream.call_args_list
+    assert call.kwargs["system"].endswith(CALM_TONE)
+
+
+async def test_small_talk_with_nothing_sombre_open_keeps_its_own_prompt() -> None:
+    from chat.agent.escalation import CALM_TONE
+
+    client = fake_anthropic_client(
+        ["You're welcome!"], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    await _run_turn(client, "thanks", forwarded=_OPEN_SICK_NOTE)
+
+    (call,) = client.messages.stream.call_args_list
+    assert CALM_TONE not in call.kwargs["system"]
+
+
+async def test_an_answer_beside_a_new_emergency_is_written_calm(
+    seeded_entry: int,
+) -> None:
+    from chat.agent.escalation import CALM_TONE
+
+    client = fake_anthropic_client(
+        ["Visiting hours are 8am to 5pm."],
+        segments=[
+            (IntentLabel.FAQ_QUESTION, "when can I visit?"),
+            (IntentLabel.URGENT_CONDITION, "my chest hurts"),
+        ],
+    )
+
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        await _run_turn(client, "when can I visit? my chest hurts")
+
+    (call,) = client.messages.stream.call_args_list
+    assert call.kwargs["system"].endswith(CALM_TONE)
+
+
+async def test_a_booking_reply_while_distress_is_open_is_written_calm() -> None:
+    from chat.agent.escalation import CALM_TONE
+
+    client = fake_anthropic_client(intents=[IntentLabel.BOOKING])
+
+    await _run_turn(client, "can I book Friday?", forwarded=_OPEN_DISTRESS)
+
+    booking_call = next(
+        call
+        for call in client.messages.create.call_args_list
+        if call.kwargs.get("tools") is not None
+    )
+    assert booking_call.kwargs["system"][-1] == {"type": "text", "text": CALM_TONE}
+
+
+async def test_escalate_to_staff_mid_booking_is_told_after_the_reply() -> None:
+    # The booking loop is the turn's only specialist, so it streams and ends its own
+    # turn: the notice is its to append, after the reply and before the ending.
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        intents=[IntentLabel.BOOKING],
+        booking_tool_calls=[[("escalate_to_staff", {})]],
+    )
+
+    events = await _run_turn(
+        client, "none of these work, can I just talk to someone?", escalation=escalation
+    )
+
+    tokens = [e.text for e in events if isinstance(e, ChatTokenEvent)]
+    assert tokens == [DEFAULT_BOOKING_REPLY, f"\n\n{HANDOFF_MESSAGE}"]
+    assert escalation.message_mark is AttentionMark.PATIENT_ASKED_FOR_PERSON
+    done = events[-1]
+    assert isinstance(done, ChatDoneEvent)
+    assert done.answer_source is AnswerSource.BOOKING
+
+
+async def test_escalate_to_staff_mid_booking_in_a_merged_turn_is_told_once(
+    seeded_entry: int,
+) -> None:
+    client = fake_anthropic_client(
+        ["Hours are 8-5, and I've noted that."],
+        intents=[IntentLabel.FAQ_QUESTION, IntentLabel.BOOKING],
+        booking_tool_calls=[[("escalate_to_staff", {})]],
+    )
+
+    with patch("chat.rag.retriever.embed_texts", fake_embed_texts):
+        events = await _run_turn(
+            client, "when can I visit, and let me talk to someone about booking"
+        )
+
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed.endswith(f"\n\n{HANDOFF_MESSAGE}")
+    assert streamed.count(HANDOFF_MESSAGE) == 1

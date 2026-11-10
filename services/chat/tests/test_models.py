@@ -129,26 +129,28 @@ def test_message_sender_has_exactly_three_members() -> None:
     }
 
 
-def test_attention_mark_has_exactly_the_eight_kinds() -> None:
-    """007's FR-027a four, plus 009's four causes - and nothing else."""
+def test_attention_mark_has_exactly_the_nine_kinds() -> None:
+    """007's FR-027a four, 009's four causes and the follow-up - and nothing else."""
     assert {member.value for member in AttentionMark} == {
         "urgent_condition",
         "distress",
         "patient_asked_for_person",
         "booking_for_another_person",
         "not_authorized",
+        "forwarded_follow_up",
         "corpus_could_not_answer",
         "assistant_failed",
         "unanswered",
     }
 
 
-def test_escalation_reason_has_exactly_the_seven_triggers() -> None:
+def test_escalation_reason_has_exactly_the_eight_triggers() -> None:
     """FR-007a as spec 009 FR-020 restates it: the reasons are the triggers.
 
-    Seven values for four situations - asked for a person, asked for something the
-    assistant cannot provide, needs a person on safety or authority grounds, something
-    failed - because the middle two are recorded by what would fix them.
+    Eight values for five situations - asked for a person, asked for something the
+    assistant cannot provide, needs a person on safety or authority grounds, added to a
+    request already with staff, something failed - because the middle two are recorded
+    by what would fix them.
     """
     assert {member.value for member in EscalationReason} == {
         "urgent_condition",
@@ -156,6 +158,7 @@ def test_escalation_reason_has_exactly_the_seven_triggers() -> None:
         "patient_asked_for_person",
         "booking_for_another_person",
         "not_authorized",
+        "forwarded_follow_up",
         "corpus_could_not_answer",
         "assistant_failed",
     }
@@ -172,7 +175,7 @@ def test_escalation_reasons_are_a_subset_of_mark_kinds() -> None:
         assert reason.value in {member.value for member in AttentionMark}
 
 
-def test_clearable_marks_are_exactly_the_six_a_staff_message_clears() -> None:
+def test_clearable_marks_are_exactly_the_seven_a_staff_message_clears() -> None:
     """FR-027c's lifetime column, as one constant, widened by spec 009 FR-048.
 
     This is the `IN` list of the clearing statement. A permanent mark appearing here
@@ -188,6 +191,7 @@ def test_clearable_marks_are_exactly_the_six_a_staff_message_clears() -> None:
             AttentionMark.DISTRESS,
             AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
             AttentionMark.NOT_AUTHORIZED,
+            AttentionMark.FORWARDED_FOLLOW_UP,
         }
     )
 
@@ -233,18 +237,16 @@ def test_every_reason_has_a_mark_of_the_same_name() -> None:
     }
 
 
-def test_every_cause_fits_the_columns_that_store_it() -> None:
-    # This is why Phase 1f needs no migration: both columns are String(32) and
-    # deliberately not database enums, so a new value is a code change alone.
-    reason_length = Chat.__table__.c.escalation_reason.type.length
+def test_every_cause_fits_the_column_that_stores_it() -> None:
+    # The mark column is String(32) and deliberately not a database enum, so a new
+    # value is a code change alone. Every reason is stored as the mark of its name.
     mark_length = Message.__table__.c.attention_mark.type.length
-    longest = max(len(value) for value in EscalationReason)
-    assert longest <= reason_length
+    assert max(len(value) for value in EscalationReason) <= mark_length
     assert max(len(mark.value) for mark in AttentionMark) <= mark_length
 
 
 def test_clearable_marks_are_exactly_the_ones_a_staff_reply_answers() -> None:
-    # A staff reply *is* the whole of what these six asked for. A corpus gap survives
+    # A staff reply *is* the whole of what these seven asked for. A corpus gap survives
     # its answer because the document is still missing; a failure because it happened.
     assert CLEARABLE_MARKS == frozenset(
         {
@@ -254,6 +256,7 @@ def test_clearable_marks_are_exactly_the_ones_a_staff_reply_answers() -> None:
             AttentionMark.DISTRESS,
             AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
             AttentionMark.NOT_AUTHORIZED,
+            AttentionMark.FORWARDED_FOLLOW_UP,
         }
     )
 

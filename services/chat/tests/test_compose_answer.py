@@ -21,6 +21,7 @@ from chat.agent.handle_booking import BookingOutcome
 from chat.agent.node_logging import node_span
 from chat.core.correlation import bind_turn_id
 from chat.core.errors import TurnPipelineError
+from chat.domain.models import EscalationReason
 from chat.domain.schemas import (
     MAX_SEGMENTS,
     AnswerSource,
@@ -489,37 +490,71 @@ async def test_cancelling_a_merged_turn_is_still_a_cancellation() -> None:
         await task
 
 
-# --- Phase 1f: the notice owed alongside an answer -----------------------------------
+# --- the notice: appended after the composed reply, never composed ------------------
 
 
-def test_the_composer_is_told_when_a_notice_is_owed() -> None:
+def test_the_composer_is_never_handed_a_request_staff_hold() -> None:
     from chat.agent.compose_answer import _build_prompt
 
-    prompt = _build_prompt(None, "Monday at 9am is booked.", None, notice_required=True)
-
-    lowered = prompt.lower()
-    assert "not authorized" in lowered
-    assert "staff" in lowered
-
-
-def test_no_notice_is_mentioned_when_none_is_owed() -> None:
-    from chat.agent.compose_answer import _build_prompt
-
-    prompt = _build_prompt(
-        None, "Monday at 9am is booked.", None, notice_required=False
-    )
+    prompt = _build_prompt(None, "Monday at 9am is booked.", None)
 
     assert "not authorized" not in prompt.lower()
+    assert "staff" not in prompt.lower()
 
 
-def test_the_composing_prompt_forbids_claiming_the_request_was_served() -> None:
+def test_the_composing_prompt_leaves_what_went_to_staff_to_the_fixed_sentence() -> None:
     from chat.agent.compose_answer import _SYSTEM_PROMPT
 
-    lowered = _SYSTEM_PROMPT.lower()
-    assert "not authorized" in lowered
-    # The three obligations, and the two things it must never do (FR-022c1).
-    assert "never promise" in lowered or "never say when" in lowered
-    assert "never claim" in lowered or "never suggest" in lowered
+    lowered = " ".join(_SYSTEM_PROMPT.lower().split())
+    assert (
+        "a fixed sentence telling the patient so is added after your reply" in lowered
+    )
+    assert "never write about it" in lowered
+
+
+async def test_the_notice_follows_the_composed_reply_verbatim() -> None:
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    client = _client(["Hours are 8-5, and you're booked."])
+    completion = TurnCompletion()
+    events = [
+        event
+        async for event in compose_answer(
+            client,
+            segments=_SEGMENTS,
+            faq_result=_answered_faq(),
+            booking_reply="Booked for Friday.",
+            booking_outcome=None,
+            reply_to_message_ids=_REPLY_IDS,
+            completion=completion,
+            notice=EscalationReason.DISTRESS,
+        )
+    ]
+
+    tokens = [e.text for e in events if isinstance(e, ChatTokenEvent)]
+    assert tokens[-1] == f"\n\n{HANDOFF_TEXT[EscalationReason.DISTRESS]}"
+    # The notice is not the composer's to write, so it is not in what it was sent.
+    prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
+    assert HANDOFF_TEXT[EscalationReason.DISTRESS] not in prompt
+
+
+async def test_the_composer_writes_calm_when_told_to() -> None:
+    from chat.agent.escalation import CALM_TONE
+
+    client = _client(["Hours are 8-5."])
+    async for _event in compose_answer(
+        client,
+        segments=_SEGMENTS,
+        faq_result=_answered_faq(),
+        booking_reply="Booked for Friday.",
+        booking_outcome=None,
+        reply_to_message_ids=_REPLY_IDS,
+        completion=TurnCompletion(),
+        calm=True,
+    ):
+        pass
+
+    assert client.messages.stream.call_args.kwargs["system"].endswith(CALM_TONE)
 
 
 def test_the_prompt_forbids_an_opening_line_before_the_first_answer() -> None:
@@ -536,12 +571,10 @@ def test_the_prompt_forbids_an_opening_line_before_the_first_answer() -> None:
 
 
 def test_the_prompt_describes_the_parts_it_is_actually_given() -> None:
-    """FR-022d's path supplies one specialist plus a notice, not two halves.
+    """The prompt used to open by telling the model its input "had two parts".
 
-    The prompt used to open by telling the model its input "had two parts: a question,
-    and something about an appointment" and that "two specialists have already handled
-    them". On a not-authorized merge neither is true, and a model told something false
-    about its own input is free to invent the half it was promised.
+    A turn may merge two FAQ answers and no appointment at all, and a model told
+    something false about its own input is free to invent the half it was promised.
     """
     from chat.agent.compose_answer import _SYSTEM_PROMPT
 
@@ -553,7 +586,7 @@ def test_the_prompt_describes_the_parts_it_is_actually_given() -> None:
     # It must still say the parts are labelled and that only the labelled ones were in
     # the message - otherwise "more than one part" invites the same invention.
     assert "labelled" in lowered
-    assert "only the parts labelled below were in the message" in lowered
+    assert "never write about a part that is not labelled below" in lowered
 
 
 # --- what the composer merged, not just that it merged -------------------------------
@@ -564,7 +597,7 @@ async def _completion_fields(
     *,
     faq_result: FaqResult | None,
     booking_reply: str | None,
-    notice_required: bool,
+    notice: EscalationReason | None,
 ) -> dict[str, object]:
     """Compose one turn and return the fields its `turn.completed` carried."""
     completion = TurnCompletion()
@@ -577,31 +610,29 @@ async def _completion_fields(
             booking_outcome=None,
             reply_to_message_ids=_REPLY_IDS,
             completion=completion,
-            notice_required=notice_required,
+            notice=notice,
         ):
             pass
         completion.emit()
     return next(e for e in logs if e["event"] == "turn.completed")
 
 
-async def test_a_merge_records_whether_a_notice_was_part_of_it() -> None:
-    """`merged` says the composer wrote the reply; it does not say what went into it.
+async def test_a_merge_records_the_notice_it_appended() -> None:
+    """`merged` says the composer wrote the reply; `notice` says what followed it."""
+    from chat.agent.escalation import HANDOFF_TEXT
 
-    One specialist plus a notice and two specialists are different turns that record
-    the same `answer_source`, so a reader counting mixed-intent merges over-counts
-    unless the notice is on the record too. It cannot be another `answer_source` value:
-    a notice can accompany one specialist *or* two, so the two facts are orthogonal and
-    an enum that tried to carry both would need a value per combination.
-    """
     fields = await _completion_fields(
-        _client(["Hours are 8-5, and the receipt has gone to staff."]),
+        _client(["Hours are 8-5, and you're booked."]),
         faq_result=_answered_faq(),
-        booking_reply=None,
-        notice_required=True,
+        booking_reply="Booked for Friday.",
+        notice=EscalationReason.NOT_AUTHORIZED,
     )
 
     assert fields["outcome"] == "merged"
-    assert fields["notice_included"] is True
+    assert fields["notice"] == EscalationReason.NOT_AUTHORIZED
+    assert str(fields["answer_text"]).endswith(
+        HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]
+    )
 
 
 async def test_a_genuine_two_specialist_merge_records_no_notice() -> None:
@@ -609,11 +640,11 @@ async def test_a_genuine_two_specialist_merge_records_no_notice() -> None:
         _client(["Hours are 8-5, and you're booked for Friday."]),
         faq_result=_answered_faq(),
         booking_reply="Booked for Friday.",
-        notice_required=False,
+        notice=None,
     )
 
     assert fields["outcome"] == "merged"
-    assert fields["notice_included"] is False
+    assert fields["notice"] is None
 
 
 # --- Phase 1g: several answers from one specialist -----------------------------------
@@ -1115,11 +1146,6 @@ def test_every_constraint_the_prompt_already_carried_survives() -> None:
     for outcome in BookingOutcome:
         assert f'"{outcome.value}"' in system
     assert "never write anything that\n  suggests one exists" in system
-    # The not-authorized notice's three requirements.
-    assert "NOT AUTHORIZED" in system
-    assert "not authorized to handle that request" in system
-    assert "forwarded to the clinic's staff who will follow up" in system
-    assert "ask you\n  about anything else in the meantime" in system
 
 
 async def test_an_unanswered_question_reaches_the_composer_labelled_as_unanswered() -> (

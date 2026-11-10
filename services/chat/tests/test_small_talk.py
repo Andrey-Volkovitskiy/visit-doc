@@ -122,7 +122,7 @@ async def test_it_is_given_no_way_to_call_staff_at_all() -> None:
     parameters = inspect.signature(answer_small_talk).parameters
 
     assert "escalation" not in parameters
-    assert set(parameters) == {"anthropic_client", "bursts"}
+    assert set(parameters) == {"anthropic_client", "bursts", "calm"}
 
 
 async def test_the_prompt_states_what_the_reply_may_never_contain() -> None:

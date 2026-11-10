@@ -78,6 +78,7 @@ class IntentLabel(StrEnum):
     BOOKING_FOR_ANOTHER = "booking_for_another"
     CALL_STAFF = "call_staff"
     NOT_AUTHORIZED = "not_authorized"
+    FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CLASSIFICATION_FAILED = "classification_failed"
 
 
@@ -356,8 +357,8 @@ class ChatCancelledEvent(BaseModel):
 class ChatSilentEvent(BaseModel):
     """Terminal NDJSON event: the assistant may not speak in this conversation.
 
-    Emitted instead of `ChatDoneEvent` when the conversation is escalated or the
-    assistant is paused in it. The message was accepted and stored, and it carries the
+    Emitted instead of `ChatDoneEvent` when the assistant is paused in the
+    conversation. The message was accepted and stored, and it carries the
     mark saying nothing answered it - so a client renders nothing for this and leaves
     the message in the thread.
 
@@ -432,6 +433,7 @@ class MessageOut(BaseModel):
             "patient_asked_for_person",
             "booking_for_another_person",
             "not_authorized",
+            "forwarded_follow_up",
             "corpus_could_not_answer",
             "assistant_failed",
             "unanswered",
@@ -466,8 +468,7 @@ class ConsoleConversationOut(BaseModel):
 
     `emphasized`, `assistant_may_reply` and `pause_seconds_remaining` are derived rather
     than stored, so the switch a staff member sees and the gate a turn obeys are the
-    same answer. `pause_seconds_remaining` is null whenever no pause is running -
-    including while escalated, which has no deadline for a countdown to show.
+    same answer. `pause_seconds_remaining` is null whenever no pause is running.
 
     Carries no session id: no response on this surface repeats the credential the
     browser is not allowed to read.
@@ -482,8 +483,6 @@ class ConsoleConversationOut(BaseModel):
     patient_name: str | None
     last_message_at: datetime | None
     emphasized: bool
-    escalated: bool
-    escalation_reason: str | None
     attention_since: datetime | None
     assistant_may_reply: bool
     pause_seconds_remaining: int | None

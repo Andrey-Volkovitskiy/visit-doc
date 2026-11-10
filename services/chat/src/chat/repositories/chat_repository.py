@@ -40,7 +40,6 @@ from chat.domain.models import (
     AttentionMark,
     BookingAct,
     Chat,
-    EscalationReason,
     FaqEntry,
     Message,
     MessageSender,
@@ -533,7 +532,7 @@ _PAUSE_IS_RUNNING = and_(
     Chat.assistant_paused_until.is_not(None),
     Chat.assistant_paused_until > func.now(),
 )
-_MAY_ASSISTANT_REPLY = and_(Chat.escalated_at.is_(None), ~_PAUSE_IS_RUNNING)
+_MAY_ASSISTANT_REPLY = ~_PAUSE_IS_RUNNING
 _PAUSE_SECONDS_REMAINING = case(
     (
         _PAUSE_IS_RUNNING,
@@ -546,22 +545,20 @@ _PAUSE_SECONDS_REMAINING = case(
 
 
 # A person is needed here and none has spoken since. Deliberately not the same question
-# as whether the assistant may speak: a failure raises this without silencing, and the
-# console's switch ends a silence without answering anybody.
-_EMPHASIZED = or_(Chat.escalated_at.is_not(None), Chat.attention_since.is_not(None))
+# as whether the assistant may speak: a call to staff raises this without silencing, and
+# the console's switch silences without calling anybody.
+_EMPHASIZED = Chat.attention_since.is_not(None)
 
 
 @dataclass(frozen=True)
 class ConversationState:
-    """One conversation's escalation, pause and attention, plus what they imply.
+    """One conversation's pause and attention, plus what they imply.
 
     `may_assistant_reply` and `pause_seconds_remaining` are computed from the stored
     columns in the same statement that reads them, never stored beside them - so the
     answer a console renders and the answer a turn acts on cannot disagree.
     """
 
-    escalated_at: datetime | None
-    escalation_reason: str | None
     assistant_paused_until: datetime | None
     attention_since: datetime | None
     may_assistant_reply: bool
@@ -570,15 +567,13 @@ class ConversationState:
     @property
     def emphasized(self) -> bool:
         """Whether this conversation still needs a person."""
-        return self.escalated_at is not None or self.attention_since is not None
+        return self.attention_since is not None
 
 
 # Everything a `ConversationState` is built from, in its field order. Named once so a
 # read of the state and a write that reports the state it left select the same things:
 # two lists would be one edit away from describing the same conversation differently.
 _CONVERSATION_STATE = (
-    Chat.escalated_at,
-    Chat.escalation_reason,
     Chat.assistant_paused_until,
     Chat.attention_since,
     _MAY_ASSISTANT_REPLY,
@@ -679,44 +674,6 @@ async def get_takeover_since(
     if row is None:
         return TakeoverRead.CHAT_GONE
     return TakeoverRead.TAKEN_OVER if bool(row[0]) else TakeoverRead.NOT_TAKEN_OVER
-
-
-async def set_escalated(
-    session: AsyncSession, chat_id: str, session_id: str, reason: EscalationReason
-) -> bool:
-    """Escalate `chat_id` for `reason`, unless it is escalated already.
-
-    Returns: True if this call transitioned the conversation, False if it was already
-        escalated and nothing changed.
-
-    The guard is part of the write, so a second escalation cannot overwrite the reason
-    that first silenced the conversation.
-    """
-    result = await session.execute(
-        update(Chat)
-        .where(
-            Chat.id == chat_id,
-            Chat.session_id == session_id,
-            Chat.escalated_at.is_(None),
-        )
-        .values(escalated_at=func.now(), escalation_reason=reason.value)
-        .returning(Chat.id)
-    )
-    transitioned = result.scalars().first() is not None
-    await session.commit()
-    return transitioned
-
-
-async def clear_escalation(
-    session: AsyncSession, chat_id: str, session_id: str
-) -> None:
-    """End `chat_id`'s escalation, leaving its attention and marks untouched."""
-    await session.execute(
-        update(Chat)
-        .where(Chat.id == chat_id, Chat.session_id == session_id)
-        .values(escalated_at=None, escalation_reason=None)
-    )
-    await session.commit()
 
 
 @dataclass(frozen=True)
@@ -920,8 +877,6 @@ class ConsoleConversation:
     chat_id: str
     patient_name: str | None
     last_message_at: datetime | None
-    escalated_at: datetime | None
-    escalation_reason: str | None
     attention_since: datetime | None
     emphasized: bool
     may_assistant_reply: bool
@@ -959,8 +914,6 @@ async def list_conversations_for_console(
             Chat.id,
             Chat.patient_name,
             last_message_at,
-            Chat.escalated_at,
-            Chat.escalation_reason,
             Chat.attention_since,
             emphasized,
             _MAY_ASSISTANT_REPLY,

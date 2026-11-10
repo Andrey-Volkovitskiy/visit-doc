@@ -16,6 +16,9 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
+from chat.agent.escalation import HANDOFF_MESSAGE, HANDOFF_TEXT
+from chat.domain.models import EscalationReason
+
 # `src/golden_harness/golden_set.py` -> `evals/golden/`.
 GOLDEN_DIR: Final = Path(__file__).resolve().parents[3] / "golden"
 CASES_JSON: Final = GOLDEN_DIR / "cases.json"
@@ -108,9 +111,15 @@ def sch(
     return fixture
 
 
-def turn(role: str, text: str) -> dict[str, Any]:
-    """One prior turn of a case's planted history."""
-    return {"role": role, "text": text}
+def turn(role: str, text: str, mark: str | None = None) -> dict[str, Any]:
+    """One prior turn of a case's planted history, a patient one optionally marked.
+
+    A `mark` plants the turn as a request already with staff and not yet answered.
+    """
+    entry = {"role": role, "text": text}
+    if mark is not None:
+        entry["mark"] = mark
+    return entry
 
 
 def case(
@@ -314,7 +323,7 @@ family(
     "urgent_condition",
     "A message describing something an emergency department exists for. It takes the "
     "whole turn, whatever else it is wrapped in: the reply is the fixed text pointing "
-    "at emergency services, a person is called, and the assistant falls silent. The "
+    "at emergency services and a person is called; the assistant keeps answering. The "
     "assistant does not triage, so no case here expects a judgement about severity.",
     [
         case(
@@ -356,7 +365,8 @@ family(
     "c",
     "distress",
     "Real fear, panic or acute upset about the patient's health or care, whether or "
-    "not the message asks for anything. It calls a person and stops the assistant. A "
+    "not the message asks for anything. It calls a person; the assistant keeps "
+    "answering anything else the patient asks. A "
     "brief exclamation is small talk instead, so the family carries that "
     "counter-case too.",
     [
@@ -487,8 +497,8 @@ family(
 family(
     "f",
     "call_staff",
-    "An explicit request for a human, and nothing else. It is the one cause that owes "
-    "the patient silence afterwards, so the assistant stops. The label must not "
+    "An explicit request for a human, and nothing else. A person is called and the "
+    "assistant keeps answering anything else the patient asks. The label must not "
     "collect the staff-handled issues that have causes of their own - a billing "
     "problem is not_authorized, an emergency is urgent_condition.",
     [
@@ -1599,11 +1609,144 @@ family(
     ],
 )
 
+
+# === x - forwarded-follow-up ========================================================
+
+family(
+    "x",
+    "forwarded-follow-up",
+    "A message sent while an earlier one is with staff and unanswered - planted as a "
+    "patient turn carrying its mark. Calling staff does not silence the assistant, so "
+    "the message is classified: a detail, a change or a chaser about the open request "
+    "is forwarded_follow_up, and the patient is told it went to staff too; a thank-you "
+    "is small_talk; a new question on another subject is labelled as it would be with "
+    "nothing open; and a new emergency is urgent_condition, never a follow-up.",
+    [
+        case(
+            "G-x-01",
+            "It's the $120 line from my March visit.",
+            [req("forwarded_follow_up", "the detail of the charge")],
+            history=[
+                turn(
+                    "user",
+                    "I'd like to speak to a person about a charge on my bill.",
+                    mark="patient_asked_for_person",
+                ),
+                turn("assistant", HANDOFF_MESSAGE),
+            ],
+        ),
+        case(
+            "G-x-02",
+            "Any update?",
+            [req("forwarded_follow_up", "chases the open request")],
+            history=[
+                turn(
+                    "user",
+                    "I'd like to speak to a person about a charge on my bill.",
+                    mark="patient_asked_for_person",
+                ),
+                turn("assistant", HANDOFF_MESSAGE),
+            ],
+        ),
+        case(
+            "G-x-03",
+            "Thanks.",
+            [req("small_talk", "thanks")],
+            history=[
+                turn(
+                    "user",
+                    "I'd like to speak to a person about a charge on my bill.",
+                    mark="patient_asked_for_person",
+                ),
+                turn("assistant", HANDOFF_MESSAGE),
+            ],
+            note="an acknowledgement adds nothing to the request, so it is not a "
+            "follow-up - telling the patient a thank-you went to staff is absurd",
+        ),
+        case(
+            "G-x-04",
+            "Do you have parking?",
+            [faq("is there parking", "hours-location")],
+            history=[
+                turn(
+                    "user",
+                    "I'd like to speak to a person about a charge on my bill.",
+                    mark="patient_asked_for_person",
+                ),
+                turn("assistant", HANDOFF_MESSAGE),
+            ],
+            note="a question on another subject is answered as usual",
+        ),
+        case(
+            "G-x-05",
+            "My employer needs it by Friday. Also, do you have parking?",
+            [
+                req("forwarded_follow_up", "deadline for the sick note"),
+                faq("is there parking", "hours-location"),
+            ],
+            history=[
+                turn(
+                    "user",
+                    "I'd like you to write me a sick note for my employer.",
+                    mark="not_authorized",
+                ),
+                turn("assistant", HANDOFF_TEXT[EscalationReason.NOT_AUTHORIZED]),
+            ],
+        ),
+        case(
+            "G-x-06",
+            "He's eight, and a Tuesday afternoon would suit him best.",
+            [req("forwarded_follow_up", "details for the son's booking")],
+            history=[
+                turn(
+                    "user",
+                    "Please book my son in with a dentist.",
+                    mark="booking_for_another_person",
+                ),
+                turn(
+                    "assistant",
+                    HANDOFF_TEXT[EscalationReason.BOOKING_FOR_ANOTHER_PERSON],
+                ),
+            ],
+        ),
+        case(
+            "G-x-07",
+            "It's spreading to my left arm now and I feel faint.",
+            [req("urgent_condition", "worsening chest pain")],
+            history=[
+                turn(
+                    "user",
+                    "I've had a crushing pain in my chest for twenty minutes.",
+                    mark="urgent_condition",
+                ),
+                turn("assistant", HANDOFF_TEXT[EscalationReason.URGENT_CONDITION]),
+            ],
+            note="a new emergency outranks a follow-up even about the same thing: "
+            "the patient gets the emergency notice, not the note that a detail was "
+            "added",
+        ),
+        case(
+            "G-x-08",
+            "ok",
+            [req("small_talk", "acknowledges")],
+            history=[
+                turn(
+                    "user",
+                    "I'm so scared, I can't stop shaking since the results came.",
+                    mark="distress",
+                ),
+                turn("assistant", HANDOFF_TEXT[EscalationReason.DISTRESS]),
+            ],
+            note="small talk while distress is open - written under the calm tone",
+        ),
+    ],
+)
+
 # --- the checks JSON Schema cannot make ---------------------------------------------
 
 # The family letters, in the order the set is meant to read. There is no `h`: the
 # letters follow the order the set was specified in, and that one was not used.
-EXPECTED_LETTERS: Final = list("abcdefgijklmnopqrstuvw")
+EXPECTED_LETTERS: Final = list("abcdefgijklmnopqrstuvwx")
 
 # Each seeded practitioner's working week and the hours a 60-minute slot may start in:
 # first weekday, last weekday, first hour, last hour.

@@ -19,7 +19,11 @@ from voyageai.client_async import AsyncClient as VoyageAsyncClient
 
 from chat.agent import history
 from chat.agent.booking_acts import DatabaseBookingActRecorder
-from chat.agent.escalation import EscalationRequests, apply_escalation
+from chat.agent.escalation import (
+    EscalationRequests,
+    apply_escalation,
+    open_requests,
+)
 from chat.agent.generation_registry import (
     clear_if_current,
     register_and_cancel_previous,
@@ -236,16 +240,13 @@ def _log_chat_vanished(
 def _silenced_by(state: chat_repository.ConversationState | None) -> str | None:
     """Return which state stops the assistant replying here, or None if none does.
 
-    Returns: `"escalation"` while staff have been called and nobody has answered,
-        `"pause"` while a staff member is leading the conversation, or None when the
-        assistant may speak.
-
-    The two are distinguished because the mark left on the message does not record
-    which was in force, and they end in different ways.
+    Returns: `"pause"` while a staff member is leading the conversation, or None when
+        the assistant may speak. Calling staff never silences: only a staff member's
+        own gesture does, and that is the pause.
     """
     if state is None or state.may_assistant_reply:
         return None
-    return "escalation" if state.escalated_at is not None else "pause"
+    return "pause"
 
 
 async def _resolve_chat(request: Request, chat_id: str) -> Chat:
@@ -306,8 +307,8 @@ async def _persist_outcome(
     Holds the lock a staff post takes, for the whole of both writes: the reply and the
     transition either both precede a staff member taking the conversation over or both
     follow it, never one of each. Without it the transition lands on top of the clears
-    that post just made, and the conversation falls silent again with a person already
-    in it.
+    that post just made, and the conversation is back in the queue with a person
+    already in it.
 
     The lock is not on its own enough to decide the reply, though - it is taken *after*
     this turn has deregistered itself, so a staff member can post in between and find no
@@ -370,8 +371,8 @@ async def _persist_outcome(
             #
             # A `DECLINED` write did not answer it: it says the reply was not stored and
             # nothing beyond that, so reading it as "and nobody took the conversation"
-            # would be a guess - one that re-silences a patient against the very staff
-            # member handling them when it is wrong.
+            # would be a guess - one that puts a conversation back in the queue the very
+            # staff member handling it just took it out of when it is wrong.
             answered_by_the_write = (
                 done_event is not None and outcome is not ReplyOutcome.DECLINED
             )
@@ -394,8 +395,8 @@ async def _persist_outcome(
                 taken_over = read is chat_repository.TakeoverRead.TAKEN_OVER
             # Last, and after the reply above has been both written and shown: the turn
             # runs to its end and the conversation transitions at the end of it, so a
-            # mixed-intent message whose halves both ran delivers both before anything
-            # is silenced.
+            # mixed-intent message whose halves both ran delivers both before the
+            # message is marked.
             await apply_escalation(
                 db_session,
                 chat.id,
@@ -425,9 +426,9 @@ async def _settle_the_failure(
             its `done` has been taken by the stream.
 
     A turn that ended *without* a reply is a message nobody answered, so a person is
-    fetched for it - the weakest of the seven claims on one, and one of the three that
-    do not silence: the thing that broke may already be working again, and the patient
-    may keep asking while staff follow up.
+    fetched for it - the weakest of the eight claims on one. Like every call to staff it
+    does not silence: the thing that broke may already be working again, and the
+    patient may keep asking while staff follow up.
 
     A turn that ended *with* one records no failure at all. The only writes that can
     fail after the reply is on the stream are the escalation's own - the lock's release
@@ -548,6 +549,9 @@ async def _event_stream(
                 history.split_into_bursts([*history_rows, patient_message])
             )
             reply_to_message_ids = history.derive_reply_to_message_ids(bursts)
+            # Read off the whole stored thread, not the bounded window: a request staff
+            # still hold is open however many turns ago it was forwarded.
+            forwarded = open_requests(history_rows)
             # Fires unconditionally, before the cancellable graph task below even
             # exists - unlike intent.classified/turn.completed, not gated on the turn
             # completing (research.md #8), and ahead of classification rather than only
@@ -656,6 +660,7 @@ async def _event_stream(
                             chat.session_id,
                             live_revisions,
                             escalation=escalation,
+                            forwarded=forwarded,
                             patient_name=chat.patient_name or _PATIENT_PLACEHOLDER_NAME,
                             local_now=local_now,
                             tool_context=tool_context,

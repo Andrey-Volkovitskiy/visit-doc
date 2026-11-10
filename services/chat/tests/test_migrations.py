@@ -69,64 +69,29 @@ def _check_constraints(engine: sa.Engine, table: str) -> dict[str, str]:
 # --- 007: the conversation's two axes, and the message mark ------------------------
 
 
-def test_chats_gains_the_four_conversation_state_columns() -> None:
+def test_chats_keeps_the_two_conversation_state_columns() -> None:
     engine, inspector = _inspector()
     columns = {col["name"]: col for col in inspector.get_columns("chats")}
     engine.dispose()
 
-    for name in (
-        "escalated_at",
-        "escalation_reason",
-        "assistant_paused_until",
-        "attention_since",
-    ):
+    for name in ("assistant_paused_until", "attention_since"):
         assert name in columns, f"{name} missing from chats"
         # Nullable by nature, not by omission: an ordinary open conversation is one
-        # where every single one of these is NULL.
+        # where both are NULL.
         assert columns[name]["nullable"] is True
 
 
-def test_an_escalation_cannot_exist_without_its_reason() -> None:
-    # The datastore carries the invariant, not application code: an escalation always
-    # carries exactly one reason, and a reason never outlives the escalation.
-    engine, _ = _inspector()
+def test_calling_staff_left_no_silence_of_its_own_behind() -> None:
+    # Calling staff never silences, so the columns that held that silence - and
+    # the check pairing them - are gone, and only the pause can stop the assistant.
+    engine, inspector = _inspector()
+    columns = {col["name"] for col in inspector.get_columns("chats")}
     definitions = " ".join(_check_constraints(engine, "chats").values()).lower()
     engine.dispose()
 
-    assert "escalated_at" in definitions
-    assert "escalation_reason" in definitions
-
-
-def test_the_reason_check_rejects_each_half_of_the_pair_alone() -> None:
-    engine, _ = _inspector()
-    with engine.begin() as connection:
-        connection.execute(
-            sa.text("INSERT INTO sessions (id) VALUES ('01MIGRATIONSESSION000000AA')")
-        )
-        connection.execute(
-            sa.text(
-                "INSERT INTO chats (id, session_id) "
-                "VALUES ('01MIGRATIONCHAT0000000000A', '01MIGRATIONSESSION000000AA')"
-            )
-        )
-
-    for column, value in (
-        ("escalated_at", "now()"),
-        ("escalation_reason", "'patient_asked_for_person'"),
-    ):
-        with pytest.raises(IntegrityError), engine.begin() as connection:
-            connection.execute(
-                sa.text(
-                    f"UPDATE chats SET {column} = {value} "
-                    "WHERE id = '01MIGRATIONCHAT0000000000A'"
-                )
-            )
-
-    with engine.begin() as connection:
-        connection.execute(
-            sa.text("DELETE FROM sessions WHERE id = '01MIGRATIONSESSION000000AA'")
-        )
-    engine.dispose()
+    assert "escalated_at" not in columns
+    assert "escalation_reason" not in columns
+    assert "escalat" not in definitions
 
 
 def test_the_console_listing_index_exists() -> None:

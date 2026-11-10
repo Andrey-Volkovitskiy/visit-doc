@@ -1,6 +1,5 @@
 import { TriangleAlert } from "lucide-react";
 import type { ConsoleConversation } from "../lib/consoleApi";
-import { ATTENTION_MARK_LABEL } from "../lib/consoleApi";
 
 interface StaffConsoleProps {
   /** Already in display order — emphasized first, longest wait first. */
@@ -27,23 +26,6 @@ interface StaffConsoleProps {
  * meaning; only its owner changed, and the three tests that pinned it moved with it to
  * `App.test.tsx`.
  */
-
-/**
- * What to call the reason a conversation needs a person.
- *
- * A guarded lookup rather than a direct index, because `escalation_reason` is typed
- * `string`, not the `AttentionMark` union. Every cause the server names today does have
- * a label — including the two no *message* ever carries, a corpus gap and a failed turn
- * — so this is not covering for a gap that exists now. It covers the ordinary way one
- * appears: a later phase naming a new cause. An unrecognised one falls back to the plain
- * statement rather than rendering `undefined` or inventing a wording for it.
- */
-function reasonLabel(reason: string): string {
-  return (
-    (ATTENTION_MARK_LABEL as Record<string, string | undefined>)[reason] ??
-    "Needs a person"
-  );
-}
 
 function label(conversation: ConsoleConversation): string {
   // The server does not invent a name for a chat whose patient record does not exist
@@ -110,10 +92,10 @@ export function StaffConsole({
                       marked by a glyph and by weight, each of which survives a greyscale
                       screen and a reader who cannot distinguish the hue.
 
-                      The reason is no longer printed under the name: the glyph is what a
-                      staff member reads the list by, and the thread one click away says
-                      what happened in full. It is kept as the row's accessible name
-                      rather than dropped, because the glyph is a picture — take the words
+                      No reason is printed under the name: the glyph is what a staff
+                      member reads the list by, and the thread one click away says what
+                      happened in full, message by message. "Needs a person" is kept as
+                      the row's accessible name, because the glyph is a picture — take the words
                       out of the tree as well and a screen-reader user has nothing
                       distinguishing this row from a quiet one. `sr-only` is presentation
                       only: with the stylesheet thrown away the words are on screen, which
@@ -126,10 +108,8 @@ export function StaffConsole({
                         aria-hidden="true"
                       />
                     )}
-                    {conversation.escalation_reason !== null && (
-                      <span className="sr-only">
-                        {reasonLabel(conversation.escalation_reason)}
-                      </span>
+                    {conversation.emphasized && (
+                      <span className="sr-only">Needs a person</span>
                     )}
                     <span
                       className={`min-w-0 truncate ${

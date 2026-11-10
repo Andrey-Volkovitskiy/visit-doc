@@ -681,7 +681,8 @@ async def test_the_classification_call_is_a_generation_under_its_node(
         get_settings().CLASSIFICATION_MODEL
     )
     assert json.loads(attributes["langfuse.observation.input"]) == {
-        "system": _SYSTEM_PROMPT,
+        "system": f"{_SYSTEM_PROMPT}\n\nALREADY WITH STAFF: nothing. "
+        "Never use forwarded_follow_up.",
         "messages": sent["messages"],
     }
     assert json.loads(attributes["langfuse.observation.model.parameters"]) == {
@@ -709,3 +710,60 @@ async def test_a_failed_classification_call_is_an_error_generation(
     attributes = span_attributes(only_span(span_exporter, "classify_intent.model"))
     assert attributes["langfuse.observation.level"] == "ERROR"
     assert attributes["langfuse.observation.status_message"] == "RuntimeError: boom"
+
+
+# --- a follow-up to a request already with staff ----------------------------------
+
+
+def _schema_enum(client: object) -> list[str]:
+    kwargs = client.messages.create.call_args.kwargs  # type: ignore[attr-defined]
+    return kwargs["output_config"]["format"]["schema"]["$defs"]["IntentLabel"]["enum"]
+
+
+async def test_with_nothing_open_a_follow_up_cannot_be_returned() -> None:
+    client = fake_classify_intent_client([IntentLabel.FAQ_QUESTION])
+
+    await classify_intent(client, _CONTEXT)
+
+    assert "forwarded_follow_up" not in _schema_enum(client)
+    system = client.messages.create.call_args.kwargs["system"]
+    assert system.endswith("Never use forwarded_follow_up.")
+
+
+async def test_with_a_request_open_the_follow_up_label_is_offered_with_it() -> None:
+    from chat.agent.escalation import ForwardedRequest
+    from chat.domain.models import AttentionMark
+
+    client = fake_classify_intent_client([IntentLabel.FORWARDED_FOLLOW_UP])
+    forwarded = [
+        ForwardedRequest(
+            "Please book my son in.", AttentionMark.BOOKING_FOR_ANOTHER_PERSON
+        )
+    ]
+
+    result = await classify_intent(client, _CONTEXT, forwarded)
+
+    assert result.intents == [IntentLabel.FORWARDED_FOLLOW_UP]
+    assert "forwarded_follow_up" in _schema_enum(client)
+    system = client.messages.create.call_args.kwargs["system"]
+    assert '"Please book my son in."' in system.split("ALREADY WITH STAFF")[-1]
+
+
+async def test_a_follow_up_returned_with_nothing_open_is_an_invalid_result() -> None:
+    # The schema already removes the label; this is the check behind it, so a schema
+    # that regressed fails here rather than telling a patient a detail went to staff
+    # who hold nothing.
+    client = fake_classify_intent_client([IntentLabel.FORWARDED_FOLLOW_UP])
+
+    with pytest.raises(ClassificationFailedError, match="nothing open"):
+        await classify_intent(client, _CONTEXT)
+
+
+def test_the_prompt_keeps_acknowledgements_and_new_emergencies_out_of_follow_ups() -> (
+    None
+):
+    prompt = _prompt()
+    assert "only acknowledges or thanks" in prompt
+    assert "is small_talk, never this" in prompt
+    assert "urgent_condition or distress, never this" in prompt
+    assert "it is forwarded_follow_up" in prompt

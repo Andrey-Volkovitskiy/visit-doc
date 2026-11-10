@@ -44,9 +44,11 @@ async def plant_history(
     Raises: ValueError when `before` is naive; ChatNotFoundError when no chat
         `chat_id` belongs to `session_id`, in which case nothing is written.
 
-    Each row gets a fresh ULID, its role's sender, the text verbatim and strictly
-    ascending timestamps one second apart ending one second before `before`; every
-    other column is left NULL, as on a row no FAQ half, reply or mark ever touched.
+    Each row gets a fresh ULID, its role's sender, the text verbatim, its entry's mark
+    when it has one, and strictly ascending timestamps one second apart ending one
+    second before `before`; every other column is left NULL, as on a row no FAQ half or
+    reply ever touched. A mark plants a request open with staff - the message alone,
+    without the conversation's place in the staff queue, which a turn never reads.
     All rows commit together.
     """
     if before.tzinfo is None or before.utcoffset() is None:
@@ -67,6 +69,7 @@ async def plant_history(
                 chat_id=chat_id,
                 sender=_SENDER_BY_ROLE[entry.role],
                 content=entry.text,
+                attention_mark=entry.mark.value if entry.mark is not None else None,
                 created_at=before - _SPACING * (len(history) - offset),
             )
         )

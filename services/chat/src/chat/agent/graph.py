@@ -15,8 +15,13 @@ would answer half of it.
 
 Only `answer_faq` and `handle_booking` ever run together. `small_talk` answers a message
 that asked for nothing and is dropped whenever any other intent applies, so it always
-runs alone; `hand_off` writes one constant for the cause that stopped the turn and
-suppresses every other label, so it does too (spec 009 FR-008, FR-046).
+runs alone (spec 009 FR-008); `hand_off` runs only when the message asked for nothing
+but what goes to staff, and writes that cause's constant.
+
+A message that calls staff *and* asks something the assistant can answer gets both: the
+specialists answer their part, and the cause's constant follows the answer verbatim -
+calling staff never silences the assistant, and never costs the patient the rest of
+their answer.
 
 A single-specialist turn must not pay for the merge: the sole specialist emits its own
 reply and its own terminal event, and `compose_answer` detects one result and emits
@@ -31,6 +36,7 @@ cannot become the exception later.
 """
 
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import datetime
 from functools import lru_cache
 from typing import TypedDict, cast
@@ -52,8 +58,13 @@ from chat.agent.compose_answer import (
 )
 from chat.agent.escalation import (
     HANDOFF_TEXT,
+    NOTICE_SEPARATOR,
     EscalationRequests,
+    ForwardedRequest,
+    calls_for_calm,
     in_precedence_order,
+    notice_for,
+    with_notice,
 )
 from chat.agent.handle_booking import BookingResult, handle_booking
 from chat.agent.history import bound_to_last_n_turns, trailing_question
@@ -129,14 +140,20 @@ class _GraphState(TypedDict):
     `tool_context` is the turn's ambient facts, not a registry: each node that uses
     tools builds its own over these, from its own declared set.
 
-    `handoff_reason` is the cause the hand-off node writes its constant for, rather than
-    a bool: five causes now end a turn that way, and "it happened" cannot say which
-    sentence the patient is owed.
+    `forwarded` is what the conversation already has open with staff, read before the
+    turn began - what a `forwarded_follow_up` label may refer to.
 
-    `notice_required` says the turn also carried a request the assistant may not serve,
-    alongside one it can. The notice is then the composer's to render, not a constant to
-    staple on - which is why this is a flag read by the merge rather than a fifth
-    hand-off.
+    `handoff_reason` is the cause the hand-off node writes its constant for, rather than
+    a bool: six causes end a turn that way, and "it happened" cannot say which sentence
+    the patient is owed.
+
+    `notice_owed` says the turn also called staff beside something a specialist
+    answers. The cause's constant then follows the answer, appended by the merge once
+    the specialists have run - from the collector, so a call the booking loop made
+    mid-turn is told to the patient the same way.
+
+    `calm` says every generated reply this turn is written under `CALM_TONE`: an urgent
+    condition or distress is with staff, from this message or an earlier one.
 
     `segments` is what the visitor actually asked for, one entry per request. Every
     turn has at least one, a failed classification included, so nothing downstream
@@ -156,6 +173,7 @@ class _GraphState(TypedDict):
     session_id: str
     live_revisions: list[str]
     escalation: EscalationRequests
+    forwarded: list[ForwardedRequest]
     patient_name: str
     local_now: datetime
     tool_context: ToolContext | None
@@ -165,7 +183,8 @@ class _GraphState(TypedDict):
     booking_result: BookingResult | None
     small_talk_result: SmallTalkResult | None
     handoff_reason: EscalationReason | None
-    notice_required: bool
+    notice_owed: bool
+    calm: bool
 
 
 def clear_graph_cache() -> None:
@@ -178,18 +197,17 @@ def clear_graph_cache() -> None:
     _build_graph.cache_clear()
 
 
-# Which cause a label hands the turn over for. A mapping, not a ranking: the one
-# ranking is `escalation`'s precedence, and `in_precedence_order` is what orders these -
-# so the cause the router hands off for and the mark the message ends up carrying cannot
-# be two different answers. Its weakest member is `not_authorized`, which is what lets
-# "the strongest cause is this one" mean "it is the only cause": alone it hands over,
-# beside something servable it becomes a notice instead (FR-022d).
+# Which cause a label calls staff for. A mapping, not a ranking: the one ranking is
+# `escalation`'s precedence, and `in_precedence_order` is what orders these - so the
+# cause the router hands off for and the mark the message ends up carrying cannot be two
+# different answers.
 _HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
     IntentLabel.URGENT_CONDITION: EscalationReason.URGENT_CONDITION,
     IntentLabel.DISTRESS: EscalationReason.DISTRESS,
     IntentLabel.CALL_STAFF: EscalationReason.PATIENT_ASKED_FOR_PERSON,
     IntentLabel.BOOKING_FOR_ANOTHER: EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
     IntentLabel.NOT_AUTHORIZED: EscalationReason.NOT_AUTHORIZED,
+    IntentLabel.FORWARDED_FOLLOW_UP: EscalationReason.FORWARDED_FOLLOW_UP,
 }
 
 
@@ -240,14 +258,19 @@ def segments_for(node: str, segments: list[RequestSegment]) -> list[RequestSegme
 
 
 def _expected_parts(
-    specialists: list[str], segments: list[RequestSegment], *, notice_required: bool
+    specialists: list[str], segments: list[RequestSegment], *, notice_owed: bool
 ) -> int:
     """Return how many parts of a reply this route could produce.
 
     Read before anything runs, so it counts what each selected node *could* contribute
-    - one per FAQ request, one for every other node. It is an upper bound: what the
-    turn actually produced is counted again once the specialists have run, since the
-    requests that could not be answered share one gap part between them.
+    - one per FAQ request, one for every other node, and one for a notice owed. It is
+    an upper bound: what the turn actually produced is counted again once the
+    specialists have run, since the requests that could not be answered share one gap
+    part between them.
+
+    A notice is counted because it decides that the specialists collect rather than
+    stream: the merge appends it after their reply, so no specialist may have sent its
+    own ending first.
     """
     parts = (
         len(segments_for(_ANSWER_FAQ, segments)) if _ANSWER_FAQ in specialists else 0
@@ -255,15 +278,17 @@ def _expected_parts(
     parts += sum(
         1 for node in (_HANDLE_BOOKING, _SMALL_TALK, _HAND_OFF) if node in specialists
     )
-    return parts + (1 if notice_required else 0)
+    return parts + (1 if notice_owed else 0)
 
 
 def _actual_parts(state: "_GraphState") -> int:
-    """Return how many parts of the reply this turn really produced.
+    """Return how many parts of the reply this turn really produced, notice aside.
 
     The FAQ half contributes one part per question it answered, plus exactly one for
     the gap if any question could not be answered - one gap part however many fell into
-    it, which is what keeps this at or below `_expected_parts`.
+    it, which is what keeps this at or below `_expected_parts`. A notice is not a part
+    here: it is appended verbatim, never merged, so it cannot be what makes a turn
+    worth a composing call.
     """
     faq_result = state.get("faq_result")
     parts = faq_result.part_count if faq_result is not None else 0
@@ -276,14 +301,14 @@ def _actual_parts(state: "_GraphState") -> int:
         )
         if value is not None
     )
-    return parts + (1 if state["notice_required"] else 0)
+    return parts
 
 
 def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
     """Return every cause these labels call a person for, strongest first.
 
     All of them, not just the winner: precedence decides the one mark the message
-    carries and whether the conversation falls silent, and the collector keeps the rest
+    carries and the one notice the patient is told, and the collector keeps the rest
     so `apply_escalation` still writes a line per call (FR-047). A message that is both
     an emergency and a plea for a human was both, and a record naming only
     `urgent_condition` has thrown away something a person reviewing it would want.
@@ -295,53 +320,30 @@ def _handoff_reasons(intents: list[IntentLabel]) -> list[EscalationReason]:
     )
 
 
-def _select_specialists(
-    intents: list[IntentLabel], stopping: EscalationReason | None
-) -> list[str]:
+def _select_specialists(intents: list[IntentLabel], *, calls_staff: bool) -> list[str]:
     """Return the node(s) `intents` implies, in a stable order.
 
-    A cause that hands the turn to a person takes the whole turn and suppresses every
-    other label on it - an urgent condition, evident distress, a request for a human, a
-    booking for someone else, or (when nothing servable accompanies it) a request the
-    assistant is not authorized to serve. A visitor who is going to get a person gets
-    one, and for the first four the conversation falls silent from their next message -
-    so answering half of what they said and then going quiet is worse than handing over
-    cleanly, and booking something for a patient the turn is about to stop talking to is
-    worse still (spec 009 FR-046).
-
-    The exception is a not-authorized request *beside* something servable: that one owes
-    a notice rather than a hand-off, so the servable half still runs and the merge step
-    says the rest went to staff (FR-022d).
-
-    This selects *no* specialist rather than interrupting one, so the turn still runs
-    to completion: nothing is cut off mid-flight, because nothing was started.
+    A cause that calls staff never suppresses the rest of the message: the specialists
+    the other labels imply still run, and the cause's notice follows their reply. Only
+    when nothing else in the message is answerable does the turn go to the hand-off,
+    which writes the notice alone - no retrieval, no generation.
 
     Never empty: a message that matches nothing still gets the FAQ path rather than no
     answer at all.
 
     Args:
-        stopping: the strongest of `_handoff_reasons(intents)`, or None when the turn
-            calls nobody. Passed in rather than derived here, because the caller has
-            already taken it - to record every cause and to name the one the hand-off
-            node writes for - and "which cause stops this turn" answered twice from one
-            input is two answers waiting to differ.
+        calls_staff: whether any label of this message calls staff. Small talk is
+            dropped beside one, as it is beside any other intent (FR-008): a
+            pleasantry stapled to "I've passed this to staff" buys nothing.
     """
-    if stopping is not None and stopping is not EscalationReason.NOT_AUTHORIZED:
-        return [_HAND_OFF]
     selected = {
         _SPECIALIST_BY_INTENT[intent]
         for intent in intents
         if intent in _SPECIALIST_BY_INTENT
     }
-    if stopping is EscalationReason.NOT_AUTHORIZED:
-        # A request the assistant may not serve is another intent like any other, so
-        # the pleasantry is dropped here too (FR-008). Without this the turn routed to
-        # the small-talk node *and* owed a notice, and since that node has no collect
-        # mode it streamed a reply the composer then streamed a second one over.
+    if calls_staff:
         selected.discard(_SMALL_TALK)
         if not selected:
-            # Nothing servable in the message: the notice is the whole reply, so it is
-            # a hand-off like the other stopping causes - no retrieval, no generation.
             return [_HAND_OFF]
     if not selected:
         return [_ANSWER_FAQ]
@@ -453,7 +455,9 @@ def _build_graph(
                 state["bursts"], n=get_settings().CONTEXT_TURNS
             )
             try:
-                result = await classify_intent(anthropic_client, bounded_bursts)
+                result = await classify_intent(
+                    anthropic_client, bounded_bursts, state["forwarded"]
+                )
             except Exception as exc:  # noqa: BLE001 - a classification failure must
                 # never fail the request; it's recorded as CLASSIFICATION_FAILED
                 # instead, after logging the cause for visibility.
@@ -519,32 +523,17 @@ def _build_graph(
             reasons = _handoff_reasons(intents)
             for reason in reasons:
                 state["escalation"].record(reason)
-            # Taken once, here: the strongest cause is what the hand-off node writes
-            # for, what the router routes on, and what decides whether a notice is
-            # owed, and those three must be the same answer.
-            stopping = reasons[0] if reasons else None
-            specialists = _select_specialists(intents, stopping)
-            # `not_authorized` alongside something servable is a notice owed, not a
-            # hand-off: the servable half still runs, and the composer says the rest
-            # went to staff (FR-022d). Alone - which is what "the strongest cause is
-            # this one" means for the weakest cause there is - it is the whole turn.
-            #
-            # `_HAND_OFF not in`, not `!= [_HAND_OFF]`: a route that ever carried the
-            # hand-off node beside something else must not read here as a notice owed,
-            # or the turn would write its constant and then stream a composed reply
-            # over it.
-            notice_required = (
-                stopping is EscalationReason.NOT_AUTHORIZED
-                and _HAND_OFF not in specialists
-            )
-            # The turn hands over for the strongest of them - unless the only cause is
-            # a request the assistant may not serve *and* something servable ran, in
-            # which case the notice is the composer's to render (FR-022d).
-            handoff_reason = None if notice_required else stopping
+            specialists = _select_specialists(intents, calls_staff=bool(reasons))
+            # The hand-off writes the strongest cause's constant when it is the whole
+            # turn; otherwise the constant is a notice the merge appends after the
+            # answer. Every label that calls staff has a constant, so "calls staff" and
+            # "the patient is told" are one condition here.
+            handoff_reason = reasons[0] if specialists == [_HAND_OFF] else None
+            notice_owed = bool(reasons) and _HAND_OFF not in specialists
+            calm = calls_for_calm(state["forwarded"], reasons)
 
             specialists_collect = (
-                _expected_parts(specialists, segments, notice_required=notice_required)
-                > 1
+                _expected_parts(specialists, segments, notice_owed=notice_owed) > 1
             )
             span.set(
                 intents=[str(i) for i in intents],
@@ -558,14 +547,17 @@ def _build_graph(
                 stopping_cause=(
                     handoff_reason.value if handoff_reason is not None else None
                 ),
-                notice_required=notice_required,
+                notice_owed=notice_owed,
+                calm=calm,
+                forwarded_open=len(state["forwarded"]),
             )
         return {
             "segments": segments,
             "specialists": specialists,
             "specialists_collect": specialists_collect,
             "handoff_reason": handoff_reason,
-            "notice_required": notice_required,
+            "notice_owed": notice_owed,
+            "calm": calm,
         }
 
     async def answer_faq_node(state: _GraphState) -> dict[str, object]:
@@ -593,6 +585,7 @@ def _build_graph(
                 positions=[position for position, _ in requests],
                 escalation=state["escalation"],
                 stream=streaming,
+                calm=state["calm"],
             ):
                 # In streaming mode the events go to the patient and the trailing
                 # result is kept for the completion line; in collect mode the result is
@@ -641,6 +634,9 @@ def _build_graph(
         streaming = not state["specialists_collect"]
         context = state["tool_context"]
         result: BookingResult | None = None
+        # What was recorded before the loop ran, so the calls it makes are told apart
+        # from the router's: only the loop's own can be owed a notice here.
+        recorded_before = len(state["escalation"].recorded)
         async with node_span(_HANDLE_BOOKING) as span:
             if context is None:
                 raise RuntimeError("booking requires a tool context")
@@ -654,12 +650,25 @@ def _build_graph(
                 stream=streaming,
                 segments=segments_for(_HANDLE_BOOKING, state["segments"]),
                 escalation=state["escalation"],
+                calm=state["calm"],
             ):
                 if isinstance(event, BookingResult):
                     result = event
                 else:
                     writer(event)
             if streaming:
+                # The sole specialist ends its own turn, so a call to staff the loop
+                # made - `escalate_to_staff` - is told to the patient here, after the
+                # reply and before the ending. Collected, the merge appends it instead.
+                notice = notice_for(state["escalation"].recorded[recorded_before:])
+                if notice is not None:
+                    writer(
+                        ChatTokenEvent(text=f"{NOTICE_SEPARATOR}{HANDOFF_TEXT[notice]}")
+                    )
+                    if result is not None:
+                        result = replace(
+                            result, reply_text=with_notice(result.reply_text, notice)
+                        )
                 # The sole specialist ends its own turn, exactly as the FAQ path does.
                 # A booking reply was never retrieved against, so it carries no request
                 # outcome at all - null, not an empty list.
@@ -697,7 +706,9 @@ def _build_graph(
         writer = get_stream_writer()
         result: SmallTalkResult | None = None
         async with node_span(_SMALL_TALK) as span:
-            async for event in answer_small_talk(anthropic_client, state["bursts"]):
+            async for event in answer_small_talk(
+                anthropic_client, state["bursts"], calm=state["calm"]
+            ):
                 if isinstance(event, SmallTalkResult):
                     result = event
                 else:
@@ -726,8 +737,8 @@ def _build_graph(
         already recorded the call to staff that `turn.py` applies once this completes.
 
         One node for every cause that ends a turn this way, keyed by the cause the
-        router put in the state: the five texts differ, and nothing else about the turn
-        does (spec 009 FR-043).
+        router put in the state: the texts differ, and nothing else about the turn does
+        (spec 009 FR-043).
 
         Raises: RuntimeError if the turn reached this node with no cause, which would
             mean the router selected it without deciding why - a bug, not a state a
@@ -765,6 +776,15 @@ def _build_graph(
         booking_outcome = booking_result.outcome if booking_result is not None else None
         completion = TurnCompletion()
         parts = _actual_parts(state)
+        # Read from the collector, not the router: the booking loop may have called
+        # staff mid-turn. Only a collected turn takes it here - a streamed one has
+        # already ended, its sole specialist having told the patient itself - and a
+        # hand-off's constant is its whole reply already.
+        notice = (
+            notice_for(state["escalation"].recorded)
+            if state["specialists_collect"] and state["handoff_reason"] is None
+            else None
+        )
         if parts > 1 and not state["specialists_collect"]:
             # The route expected one part, so a specialist has already streamed its own
             # reply and its own terminal event. `_expected_parts` is what has to bound
@@ -787,6 +807,7 @@ def _build_graph(
                     state.get("small_talk_result"),
                     handoff_reason=state["handoff_reason"],
                 )
+                answer_text = with_notice(answer_text, notice)
                 if state["specialists_collect"]:
                     # Nothing streamed this turn's reply, because the route expected
                     # more than one part - so this node owes the patient the single
@@ -818,11 +839,13 @@ def _build_graph(
                     reply_to_message_ids=state["reply_to_message_ids"],
                     segments=state["segments"],
                     faq_result=faq_result,
+                    notice=notice,
                 )
                 span.set(
                     answer_source=str(source),
                     merged=False,
                     collapsed_to_one_part=state["specialists_collect"],
+                    notice=notice,
                     booking_outcome=booking_outcome,
                     citation_count=(
                         len(faq_result.scored_chunks) if faq_result is not None else 0
@@ -840,7 +863,8 @@ def _build_graph(
                 async for event in compose_answer(
                     anthropic_client,
                     segments=state["segments"],
-                    notice_required=state["notice_required"],
+                    notice=notice,
+                    calm=state["calm"],
                     faq_result=faq_result,
                     booking_reply=(
                         booking_result.reply_text
@@ -858,10 +882,7 @@ def _build_graph(
                 span.set(
                     answer_source=str(AnswerSource.MERGED),
                     merged=True,
-                    # `merged` says the composer wrote this; it does not say what it
-                    # merged. A turn carrying a notice beside one specialist is composed
-                    # too, so the two are only distinguishable with this beside it.
-                    notice_included=state["notice_required"],
+                    notice=notice,
                     booking_outcome=booking_outcome,
                     citation_count=len(faq_result.scored_chunks) if faq_result else 0,
                     answer_chars=len(composed_text),
@@ -929,6 +950,7 @@ async def run_turn(
     live_revisions: list[str],
     *,
     escalation: EscalationRequests,
+    forwarded: list[ForwardedRequest],
     patient_name: str,
     local_now: datetime,
     tool_context: ToolContext | None,
@@ -948,6 +970,8 @@ async def run_turn(
         escalation: The turn's collector of calls to staff, filled by whichever
             specialist decides a person is needed and applied by the caller once this
             has completed.
+        forwarded: The conversation's requests open with staff, read with the history
+            before the turn began.
         tool_context: The turn's ambient facts, or None when scheduling is not wired
             up. Each node builds its own registry over it, from its own tool set.
 
@@ -964,6 +988,7 @@ async def run_turn(
         "session_id": session_id,
         "live_revisions": live_revisions,
         "escalation": escalation,
+        "forwarded": forwarded,
         "patient_name": patient_name,
         "local_now": local_now,
         "tool_context": tool_context,
@@ -973,7 +998,8 @@ async def run_turn(
         "booking_result": None,
         "small_talk_result": None,
         "handoff_reason": None,
-        "notice_required": False,
+        "notice_owed": False,
+        "calm": False,
     }
     async for event in graph.astream(state, stream_mode="custom"):
         # `astream`'s own return type is untyped (`dict[str, Any] | Any`) - every value

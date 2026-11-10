@@ -21,7 +21,6 @@ from chat.domain.models import (
     BookingAct,
     BookingActOperation,
     BookingActOutcome,
-    EscalationReason,
     MessageSender,
 )
 from chat.main import app
@@ -44,7 +43,6 @@ async def _session() -> str:
 async def _chat(
     session_id: str,
     *,
-    escalated: EscalationReason | None = None,
     waiting: bool = False,
     paused_seconds: int | None = None,
     patient_name: str | None = None,
@@ -55,9 +53,7 @@ async def _chat(
             await chat_repository.set_patient(
                 session, chat.id, session_id, str(ULID()), patient_name
             )
-        if escalated is not None:
-            await chat_repository.set_escalated(session, chat.id, session_id, escalated)
-        if waiting or escalated is not None:
+        if waiting:
             await chat_repository.mark_attention(session, chat.id, session_id)
         if paused_seconds is not None:
             await chat_repository.set_paused_until(
@@ -118,41 +114,25 @@ async def test_every_conversation_is_listed_emphasized_or_not() -> None:
     # flagged as often as one somebody did.
     session_id = await _session()
     quiet = await _chat(session_id)
-    escalated = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
+    waiting = await _chat(session_id, waiting=True)
 
     body = (await _get(session_id)).json()
 
-    assert set(_by_id(body)) == {quiet, escalated}
+    assert set(_by_id(body)) == {quiet, waiting}
 
 
-async def test_an_escalated_conversation_is_emphasized_and_says_why() -> None:
-    session_id = await _session()
-    chat_id = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
-
-    row = _by_id((await _get(session_id)).json())[chat_id]
-
-    assert row["emphasized"] is True
-    assert row["escalated"] is True
-    assert row["escalation_reason"] == EscalationReason.PATIENT_ASKED_FOR_PERSON
-    assert row["attention_since"] is not None
-
-
-async def test_a_conversation_waiting_without_being_escalated_is_emphasized() -> None:
-    # The other half of the pair: emphasis is "a person is needed here", and being
-    # silenced is not a precondition for it.
+async def test_a_waiting_conversation_is_emphasized_and_still_answered() -> None:
+    # Emphasis is "a person is needed here", and calling one never silences.
     session_id = await _session()
     chat_id = await _chat(session_id, waiting=True)
 
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert row["emphasized"] is True
-    assert row["escalated"] is False
-    assert row["escalation_reason"] is None
+    assert row["attention_since"] is not None
     assert row["assistant_may_reply"] is True
+    assert "escalated" not in row
+    assert "escalation_reason" not in row
 
 
 async def test_an_untouched_conversation_is_neither() -> None:
@@ -162,7 +142,6 @@ async def test_an_untouched_conversation_is_neither() -> None:
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert row["emphasized"] is False
-    assert row["escalated"] is False
     assert row["attention_since"] is None
     assert row["assistant_may_reply"] is True
     assert row["pause_seconds_remaining"] is None
@@ -171,19 +150,17 @@ async def test_an_untouched_conversation_is_neither() -> None:
 # --- the two derived fields ---------------------------------------------------------
 
 
-async def test_the_switch_position_is_derived_from_both_silences() -> None:
-    # FR-017a: computed from the two states that actually decide, so it cannot disagree
-    # with either of them.
+async def test_the_switch_position_is_derived_from_the_pause_alone() -> None:
+    # FR-017a: computed from the one state that decides, so it cannot disagree with
+    # the gate. Waiting for a person is not that state.
     session_id = await _session()
-    escalated = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
+    waiting = await _chat(session_id, waiting=True)
     paused = await _chat(session_id, paused_seconds=120)
     open_chat = await _chat(session_id)
 
     rows = _by_id((await _get(session_id)).json())
 
-    assert rows[escalated]["assistant_may_reply"] is False
+    assert rows[waiting]["assistant_may_reply"] is True
     assert rows[paused]["assistant_may_reply"] is False
     assert rows[open_chat]["assistant_may_reply"] is True
 
@@ -195,20 +172,6 @@ async def test_a_running_pause_reports_its_remaining_seconds() -> None:
     row = _by_id((await _get(session_id)).json())[chat_id]
 
     assert 0 < row["pause_seconds_remaining"] <= 120
-
-
-async def test_an_escalation_shows_no_deadline_because_it_has_none() -> None:
-    # FR-017b: nothing about time passing ends an escalation, so there is no countdown
-    # to render - and rendering a zero would say there was one that had run out.
-    session_id = await _session()
-    chat_id = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
-
-    row = _by_id((await _get(session_id)).json())[chat_id]
-
-    assert row["assistant_may_reply"] is False
-    assert row["pause_seconds_remaining"] is None
 
 
 async def test_an_elapsed_pause_reports_neither_a_deadline_nor_a_silence() -> None:
@@ -228,9 +191,7 @@ async def test_a_conversation_counts_once_however_many_marks_it_holds() -> None:
     # Edge Cases: the total counts conversations needing a person, not marks - four
     # unanswered messages in one thread are one person's problem, not four.
     session_id = await _session()
-    crowded = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
+    crowded = await _chat(session_id, waiting=True)
     for _ in range(4):
         await _message(session_id, crowded, mark=AttentionMark.UNANSWERED)
     await _chat(session_id, waiting=True)
@@ -270,9 +231,7 @@ async def test_emphasized_conversations_sort_above_the_rest() -> None:
     session_id = await _session()
     quiet_but_recent = await _chat(session_id)
     await _message(session_id, quiet_but_recent)
-    needs_a_person = await _chat(
-        session_id, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
+    needs_a_person = await _chat(session_id, waiting=True)
 
     order = _order((await _get(session_id)).json())
 
@@ -302,9 +261,6 @@ async def test_a_later_call_does_not_send_a_conversation_to_the_back() -> None:
     async with session_factory() as session:
         # A second call against the one already waiting.
         await chat_repository.mark_attention(session, oldest, session_id)
-        await chat_repository.set_escalated(
-            session, oldest, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
-        )
     await engine.dispose()
 
     assert _order((await _get(session_id)).json()) == [oldest, newer]
@@ -327,9 +283,7 @@ async def test_the_listing_never_contains_another_sessions_conversation() -> Non
     mine = await _session()
     theirs = await _session()
     my_chat = await _chat(mine)
-    their_chat = await _chat(
-        theirs, escalated=EscalationReason.PATIENT_ASKED_FOR_PERSON
-    )
+    their_chat = await _chat(theirs, waiting=True)
 
     body = (await _get(mine)).json()
 

@@ -1297,14 +1297,13 @@ async def plant_counts(
 ) -> None:
     """Give `session_id` conversations needing attention and done booking changes.
 
-    Each needing-attention conversation is escalated and marked; each change is a done
-    act on a distinct appointment, settled now.
+    Each needing-attention conversation is put in the staff queue; each change is a
+    done act on a distinct appointment, settled now.
     """
     from chat.db.session import session_factory
     from chat.domain.models import (
         BookingActOperation,
         BookingActOutcome,
-        EscalationReason,
         MessageSender,
     )
     from chat.repositories import booking_act_repository, chat_repository
@@ -1312,9 +1311,6 @@ async def plant_counts(
     async with session_factory() as session:
         for _ in range(needing_attention):
             chat = await chat_repository.create_chat(session, session_id)
-            await chat_repository.set_escalated(
-                session, chat.id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
-            )
             await chat_repository.mark_attention(session, chat.id, session_id)
         chat = await chat_repository.create_chat(session, session_id)
         message = await chat_repository.create_message(

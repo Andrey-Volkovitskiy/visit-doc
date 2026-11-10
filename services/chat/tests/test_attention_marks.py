@@ -110,11 +110,11 @@ async def test_clearing_one_chats_marks_leaves_another_chats_alone() -> None:
     assert await _mark_of(other) == AttentionMark.UNANSWERED
 
 
-async def test_the_clearable_set_is_exactly_the_six_the_grid_names() -> None:
+async def test_the_clearable_set_is_exactly_the_seven_the_grid_names() -> None:
     # The predicate of the clearing statement, as a value. If a permanent kind ever
     # joined it, the two tests above would still pass for the kinds they name while a
-    # diagnostic record was being erased. Spec 009 added four, each one a request a
-    # staff reply completes.
+    # diagnostic record was being erased. Spec 009 added four and the follow-up one,
+    # each a request a staff reply completes.
     assert {mark.value for mark in CLEARABLE_MARKS} == {
         "patient_asked_for_person",
         "unanswered",
@@ -122,6 +122,7 @@ async def test_the_clearable_set_is_exactly_the_six_the_grid_names() -> None:
         "distress",
         "booking_for_another_person",
         "not_authorized",
+        "forwarded_follow_up",
     }
 
 
@@ -242,7 +243,6 @@ async def test_a_failure_emphasizes_the_conversation_without_silencing_it() -> N
     state = await _state(chat_id, session_id)
 
     assert state.emphasized is True
-    assert state.escalated_at is None
     assert state.may_assistant_reply is True
     assert await _mark_of(message_id) == AttentionMark.ASSISTANT_FAILED
 
@@ -372,12 +372,11 @@ async def test_a_staff_reply_clears_not_authorized_and_keeps_a_corpus_gap() -> N
         ),
     ],
 )
-async def test_an_overriding_intent_keeps_its_reply_mark_and_silence(
+async def test_a_calling_intent_alone_keeps_its_reply_and_mark_and_silences_nothing(
     intent: IntentLabel, mark: AttentionMark
 ) -> None:
-    # Partial serving changes what a turn does with its *requests*. A message that
-    # needs a person on safety or authority grounds has none to serve, so its reply,
-    # its cause, its mark and the silence it leaves are all untouched.
+    # A message that needs a person and asks nothing else is handed off whole: its
+    # fixed reply and its mark - and the conversation stays open to the next message.
     session_id, chat_id = await _chat()
     await engine.dispose()
 
@@ -404,4 +403,4 @@ async def test_an_overriding_intent_keeps_its_reply_mark_and_silence(
     # Nothing was retrieved for, so there is no request outcome of any kind.
     assert lines[-1]["request_outcomes"] is None
     assert [m["attention_mark"] for m in history["messages"]] == [mark, None]
-    assert (await _state(chat_id, session_id)).escalated_at is not None
+    assert (await _state(chat_id, session_id)).may_assistant_reply is True

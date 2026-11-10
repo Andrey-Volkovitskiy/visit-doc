@@ -905,19 +905,6 @@ def test_session_cookie_issued_on_first_chat_and_reused_by_every_turn(
     assert client.cookies["visitdoc_session_id"] == session_id
 
 
-async def _end_escalation(chat_id: str) -> None:
-    """Let the assistant speak again in `chat_id`, as a person taking it would.
-
-    An abstention hands the conversation to staff and silences the assistant in it, so
-    a second turn in the same chat only happens once somebody has ended that. Done
-    directly here because these two tests are about how history carries forward, not
-    about how an escalation ends.
-    """
-    session_id = await _session_of(chat_id)
-    async with session_factory() as db_session:
-        await chat_repository.clear_escalation(db_session, chat_id, session_id)
-
-
 async def test_followup_reply_uses_earlier_message_as_history(
     seeded_entry: int,
 ) -> None:
@@ -933,11 +920,10 @@ async def test_followup_reply_uses_earlier_message_as_history(
                 transport=ASGITransport(app=app), base_url="http://t"
             ) as http:
                 adopt_seeded_session(http)
-                chat_id = await async_chat_id_for(http)
+                await async_chat_id_for(http)
                 # Doesn't itself carry any FAQ-matching signal - abstains, but is still
                 # persisted and available as context for the next turn (FR-003).
                 await async_turn(http, "I'm going to come on Tuesday")
-                await _end_escalation(chat_id)
                 await async_turn(http, "what are your working hours that day?")
 
     calls = anthropic_client.messages.stream.call_args_list
@@ -972,9 +958,8 @@ async def test_followup_still_abstains_when_neither_message_is_grounded(
                 transport=ASGITransport(app=app), base_url="http://t"
             ) as http:
                 adopt_seeded_session(http)
-                chat_id = await async_chat_id_for(http)
+                await async_chat_id_for(http)
                 await async_turn(http, "hello")
-                await _end_escalation(chat_id)
                 response = await async_turn(http, "how are you")
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
@@ -1436,8 +1421,6 @@ async def test_an_abstention_hands_the_conversation_to_staff(seeded_entry: int) 
     assert AttentionMark.CORPUS_COULD_NOT_ANSWER in await _marks_in(chat_id)
     # FR-003d: staff were called, and the conversation was not silenced for it - the
     # corpus gap is one missing answer, not a reason to stop talking to this patient.
-    assert state.escalated_at is None
-    assert state.escalation_reason is None
     assert state.may_assistant_reply is True
     # Recorded before any generation call, and here that is provable rather than
     # ordered: an abstaining turn makes no generation call at all.
@@ -1554,11 +1537,11 @@ async def test_a_turn_that_calls_staff_delivers_its_whole_reply_first(
 
 
 async def test_the_handoff_turn_asks_the_patient_for_no_confirmation() -> None:
-    # FR-004: unlike a change to an appointment, an escalation alters no record the
+    # FR-004: unlike a change to an appointment, calling staff alters no record the
     # patient holds and is reversible - so one turn both answers and hands over, with
     # no "are you sure?" round trip in between.
     await engine.dispose()
-    reply = "A staff member has been notified and will reply in this conversation."
+    reply = "Is there anything else I can help you with?"
     with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
         mock_anthropic_cls.return_value = fake_anthropic_client(
             intents=[IntentLabel.BOOKING],
@@ -1577,10 +1560,11 @@ async def test_the_handoff_turn_asks_the_patient_for_no_confirmation() -> None:
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
-    # The reply reached the patient in this same turn: silence begins with the *next*
-    # message, not with the one that asked for a person (spec Edge Cases).
+    # The reply reached the patient in this same turn, the fixed sentence after it, and
+    # the conversation stays open to the next message.
     assert [m["sender"] for m in history] == ["patient", "assistant"]
-    assert (await _conversation_state(chat_id)).may_assistant_reply is False
+    assert history[-1]["content"] == f"{reply}\n\n{HANDOFF_MESSAGE}"
+    assert (await _conversation_state(chat_id)).may_assistant_reply is True
 
 
 def test_the_tool_tells_the_model_to_promise_no_response_time() -> None:
@@ -2212,7 +2196,6 @@ async def test_a_pleasantry_is_answered_and_calls_nobody() -> None:
     assert await _marks_in(chat_id) == [None, None]
     state = await _conversation_state(chat_id)
     assert state.attention_since is None
-    assert state.escalated_at is None
     assert state.may_assistant_reply is True
 
 
@@ -2248,7 +2231,7 @@ async def test_the_pleasantry_reply_is_stored_like_any_other_assistant_message()
     assert [m["sender"] for m in history["messages"]] == ["patient", "assistant"]
 
 
-# --- Phase 1f, US5: the conversation stops ------------------------------------------
+# --- Phase 1f, US5: a person is called, and the conversation goes on ----------------
 
 
 @pytest.mark.parametrize(
@@ -2259,7 +2242,7 @@ async def test_the_pleasantry_reply_is_stored_like_any_other_assistant_message()
         (IntentLabel.BOOKING_FOR_ANOTHER, "booking_for_another_person"),
     ],
 )
-async def test_a_stopping_turn_silences_the_conversation(
+async def test_a_calling_turn_hands_off_and_the_next_message_is_answered(
     label: IntentLabel, reason: str
 ) -> None:
     await engine.dispose()
@@ -2267,8 +2250,8 @@ async def test_a_stopping_turn_silences_the_conversation(
         patch("chat.rag.retriever.embed_texts", fake_embed_texts),
         patch("chat.main.AsyncAnthropic") as mock_anthropic_cls,
     ):
-        mock_anthropic_cls.return_value = fake_anthropic_client(
-            ["never generated"], intents=[label]
+        mock_anthropic_cls.return_value = fake_anthropic_client_sequence(
+            [[label], [IntentLabel.SMALL_TALK]], ["I'm here."]
         )
         with TestClient(app):
             async with AsyncClient(
@@ -2276,24 +2259,21 @@ async def test_a_stopping_turn_silences_the_conversation(
             ) as http:
                 chat_id = await async_chat_id_for(http)
                 first = await async_turn(http, "something that needs a person")
-                second = await async_turn(http, "are you still there?")
+                second = await async_turn(http, "ok")
 
-    # The reply is delivered before the silence begins: the turn that stops the
-    # conversation still speaks, and the patient is never left wondering why.
     first_lines = [json.loads(line) for line in first.text.strip().splitlines()]
     assert [line for line in first_lines if line["type"] == "token"]
     assert first_lines[-1]["answer_source"] == "hand_off"
 
     state = await _conversation_state(chat_id)
-    assert state.escalated_at is not None
-    assert state.escalation_reason == reason
-    assert state.may_assistant_reply is False
+    assert state.attention_since is not None
+    assert state.may_assistant_reply is True
     assert reason in await _marks_in(chat_id)
 
-    # The next message is stored, marked, and answered by nobody.
+    # The next message is answered, and nothing is held back unanswered.
     second_lines = [json.loads(line) for line in second.text.strip().splitlines()]
-    assert second_lines[-1]["type"] == "silent"
-    assert AttentionMark.UNANSWERED in await _marks_in(chat_id)
+    assert second_lines[-1]["type"] == "done"
+    assert AttentionMark.UNANSWERED not in await _marks_in(chat_id)
 
 
 async def test_a_third_party_booking_creates_no_appointment() -> None:
@@ -2351,7 +2331,6 @@ async def test_an_unauthorized_request_calls_staff_without_stopping_the_chat(
     assert AttentionMark.NOT_AUTHORIZED in await _marks_in(chat_id)
     # Not silenced: the sentence invites the next question, and the next question is
     # answered.
-    assert state.escalated_at is None
     assert state.may_assistant_reply is True
 
     second_lines = [json.loads(line) for line in second.text.strip().splitlines()]
@@ -2708,7 +2687,6 @@ async def test_a_failed_turn_calls_staff_and_leaves_the_conversation_open(
     state = await _conversation_state(chat_id)
     assert state.attention_since is not None
     # Emphasized, never silenced (spec 009 FR-022b).
-    assert state.escalated_at is None
     assert state.may_assistant_reply is True
     raised = [e for e in logs if e["event"] == "escalation.raised"]
     assert [e["reason"] for e in raised] == [EscalationReason.ASSISTANT_FAILED]
@@ -2718,7 +2696,7 @@ async def test_a_failure_never_outranks_the_reason_the_turn_already_had(
     seeded_entry: int,
 ) -> None:
     # A turn that already called staff for a hole in the corpus, and then broke, is
-    # triaged for the hole: a failure is the weakest of the seven claims on a person,
+    # triaged for the hole: a failure is the weakest of the eight claims on a person,
     # so it may not rewrite the mark a staff member reads.
     await engine.dispose()
     with (
@@ -2752,7 +2730,7 @@ async def test_a_failure_never_outranks_the_reason_the_turn_already_had(
     raised = [e["reason"] for e in logs if e["event"] == "escalation.raised"]
     assert raised == [EscalationReason.CORPUS_COULD_NOT_ANSWER]
     state = await _conversation_state(chat_id)
-    assert state.escalated_at is None
+    assert state.may_assistant_reply is True
 
 
 async def test_a_turn_the_patient_was_answered_in_is_not_recorded_as_a_failure(

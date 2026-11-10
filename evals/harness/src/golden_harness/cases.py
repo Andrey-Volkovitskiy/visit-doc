@@ -16,6 +16,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Final
 
+from chat.domain.models import OPEN_REQUEST_MARKS, AttentionMark
 from chat.domain.schemas import IntentLabel
 from jsonschema import Draft202012Validator
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
@@ -61,12 +62,30 @@ class BookingTool(StrEnum):
 
 
 class HistoryEntry(BaseModel):
-    """One prior turn planted before a case's message, oldest first."""
+    """One prior turn planted before a case's message, oldest first.
+
+    `mark` plants a patient turn as a request already with staff and not yet answered -
+    what a later message may be a follow-up to. Only a patient turn carries one, and
+    only a mark that keeps a request open: a turn marked for anything else would plant
+    nothing a follow-up could refer to.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     role: HistoryRole
     text: str
+    mark: AttentionMark | None = None
+
+    @model_validator(mode="after")
+    def _mark_is_an_open_patient_request(self) -> "HistoryEntry":
+        """Raises: ValueError for a mark on an assistant turn, or one not open."""
+        if self.mark is None:
+            return self
+        if self.role is not HistoryRole.USER:
+            raise ValueError("only a patient turn carries a mark")
+        if self.mark not in OPEN_REQUEST_MARKS:
+            raise ValueError(f"{self.mark} does not keep a request open with staff")
+        return self
 
 
 class LabelledRequest(BaseModel):

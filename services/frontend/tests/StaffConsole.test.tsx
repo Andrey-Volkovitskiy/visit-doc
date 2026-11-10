@@ -11,8 +11,6 @@ function conversation(
     patient_name: "Ada Lovelace",
     last_message_at: null,
     emphasized: false,
-    escalated: false,
-    escalation_reason: null,
     attention_since: null,
     assistant_may_reply: true,
     pause_seconds_remaining: null,
@@ -105,9 +103,13 @@ describe("StaffConsole: marking without relying on colour (FR-022, FR-006)", () 
       conversation({ chat_id: "c", patient_name: "Third", emphasized: true }),
     ]);
 
+    // The words a marked row carries for a screen reader are part of its text, so the
+    // name is read with them taken out.
     const names = screen
       .getAllByTestId("staff-conversation")
-      .map((el) => el.textContent?.split("\n")[0]?.trim());
+      .map((el) =>
+        el.textContent?.replace("Needs a person", "").split("\n")[0]?.trim(),
+      );
     expect(names).toEqual(["First", "Second", "Third"]);
   });
 
@@ -121,8 +123,6 @@ describe("StaffConsole: marking without relying on colour (FR-022, FR-006)", () 
         chat_id: "b",
         patient_name: "Needs help",
         emphasized: true,
-        escalated: true,
-        escalation_reason: "patient_asked_for_person",
       }),
     ]);
 
@@ -137,64 +137,23 @@ describe("StaffConsole: marking without relying on colour (FR-022, FR-006)", () 
     expect(quiet!.querySelector("svg")).toBeNull();
   });
 
-  it("shows the reason to a screen reader and not on screen", () => {
+  it("says to a screen reader, and not on screen, that a row needs a person", () => {
     // The list marks a conversation; the thread one click away explains it. So the
-    // reason is carried in the accessibility tree alone — dropping it from there too
+    // words are carried in the accessibility tree alone — dropping them from there too
     // would leave a screen-reader user with a row indistinguishable from a quiet one,
     // since the glyph beside it is a picture with no name.
     renderConsole([
-      conversation({
-        chat_id: "a",
-        patient_name: "Ada",
-        emphasized: true,
-        escalated: true,
-        escalation_reason: "patient_asked_for_person",
-      }),
+      conversation({ chat_id: "a", patient_name: "Quiet" }),
+      conversation({ chat_id: "b", patient_name: "Ada", emphasized: true }),
     ]);
 
-    const row = screen.getByTestId("staff-conversation");
-    const reason = screen.getByText("Asked for a person");
-    expect(row).toContainElement(reason);
+    const [quiet, needsHelp] = screen.getAllByTestId("staff-conversation");
+    const words = screen.getByText("Needs a person");
+    expect(needsHelp).toContainElement(words);
     // jsdom loads no stylesheet, so `sr-only` is what says "in the tree, off the
     // screen" — there is nothing else here that could say it.
-    expect(reason).toHaveClass("sr-only");
-    expect(row.querySelector(".sr-only")).toBe(reason);
-  });
-
-  it("names a corpus gap, which is a cause no message carries but the labels do cover", () => {
-    renderConsole([
-      conversation({
-        chat_id: "a",
-        patient_name: "Ada",
-        emphasized: true,
-        escalated: true,
-        escalation_reason: "corpus_could_not_answer",
-      }),
-    ]);
-
-    expect(screen.getByTestId("staff-conversation")).toHaveTextContent(
-      "No answer in the clinic's documents",
-    );
-  });
-
-  it("falls back to a plain statement for a cause it does not recognise", () => {
-    // `escalation_reason` is typed `string`, not the mark union, so the server can name
-    // a cause this build has never heard of — a later phase adding one is the ordinary
-    // way that happens. Rendering `undefined` there, or inventing a wording for it,
-    // would both be this screen claiming to know something it does not.
-    renderConsole([
-      conversation({
-        chat_id: "a",
-        patient_name: "Ada",
-        emphasized: true,
-        escalated: true,
-        escalation_reason: "a_cause_this_build_has_never_heard_of",
-      }),
-    ]);
-
-    const row = screen.getByTestId("staff-conversation");
-    expect(row).toHaveTextContent("Needs a person");
-    expect(row).not.toHaveTextContent("undefined");
+    expect(words).toHaveClass("sr-only");
+    expect(quiet!.querySelector(".sr-only")).toBeNull();
   });
 
   it("tells a rail that has not heard back from one that arrived empty", () => {
@@ -228,8 +187,6 @@ describe("StaffConsole renders no times (FR-010b)", () => {
         chat_id: "a",
         patient_name: "Ada",
         emphasized: true,
-        escalated: true,
-        escalation_reason: "patient_asked_for_person",
         attention_since: "2026-09-01T09:41:00",
         last_message_at: "2026-09-01T09:41:00",
       }),

@@ -15,11 +15,18 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
 
+from chat.agent.escalation import (
+    HANDOFF_TEXT,
+    NOTICE_SEPARATOR,
+    with_calm_tone,
+    with_notice,
+)
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.config import get_settings
 from chat.core.correlation import turn_elapsed_ms
 from chat.core.errors import TurnPipelineError
 from chat.core.logging import get_logger
+from chat.domain.models import EscalationReason
 from chat.domain.schemas import (
     MAX_SEGMENTS,
     AnswerSource,
@@ -43,10 +50,12 @@ _PART_MAX_TOKENS = 1024
 # the one step that can cut the reply off with nothing downstream to notice.
 _MAX_TOKENS = (MAX_SEGMENTS + 1) * _PART_MAX_TOKENS
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
-message had more than one part. Every part that was in it is labelled below, with what
-was done about it - a question answered from the clinic's knowledge base, something
-about an appointment, or a request this assistant is not authorized to handle. Only the
-parts labelled below were in the message: never write about one that is not there.
+message had more than one part. The parts that are yours to write about are labelled
+below, with what was done about each - a question answered from the clinic's knowledge
+base, or something about an appointment. Anything else the message asked for has been
+forwarded to the clinic's staff, and a fixed sentence telling the patient so is added
+after your reply: never write about it, and never write about a part that is not
+labelled below.
 
 Combine them into a single, natural reply. You must:
 - Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
@@ -78,11 +87,6 @@ Combine them into a single, natural reply. You must:
       never say it did not happen or that nothing happened.
     * "refused", "unavailable", "awaiting_confirmation", "informational" - nothing was
       created, moved, or cancelled.
-- If the input says a request was NOT AUTHORIZED, the reply must also say three
-  things about it: that you are not authorized to handle that request, that it has
-  been forwarded to the clinic's staff who will follow up, and that they can ask you
-  about anything else in the meantime. Never claim that request was served, and never
-  promise when staff will respond.
 - Do not mention specialists, tools, or internal steps.
 - Start with the first answer itself. No greeting, no thanks, and no line announcing
   what follows ("Thanks for reaching out!", "Here's what I can share:").
@@ -344,7 +348,8 @@ async def compose_answer(
     booking_outcome: BookingOutcome | None,
     reply_to_message_ids: list[str],
     completion: TurnCompletion,
-    notice_required: bool = False,
+    notice: EscalationReason | None = None,
+    calm: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | ChatDoneEvent]:
     """Compose and stream the merged reply, recording the turn's completion fields.
 
@@ -358,14 +363,16 @@ async def compose_answer(
             rather than by how the booking half phrased it.
         completion: Filled in with the turn's `turn.completed` fields, for the caller
             to emit once the composing node's span has closed.
-        notice_required: True when the message also carried a request the assistant is
-            not authorized to serve. The notice is rendered *by this call* rather than
-            appended verbatim: a merged turn is already paying for the composing call,
-            and a reply stitched from a paraphrase and a fixed sentence reads as two
-            voices (spec 009 FR-022c1). What is required of the composer is the three
-            things the notice must convey, not its wording.
+        notice: The cause whose fixed sentence follows the composed reply, or None
+            when the turn forwarded nothing the patient is told about. Appended
+            verbatim after the model's text rather than rendered by it: the notices are
+            constants because a model rewording "I've notified the clinic staff" is a
+            model free to drop or soften it.
+        calm: True while an urgent condition or distress is with staff: the reply is
+            written under `CALM_TONE`.
 
-    Yields: the composed reply's tokens, then exactly one `ChatDoneEvent`.
+    Yields: the composed reply's tokens, the notice when there is one, then exactly one
+        `ChatDoneEvent`.
 
     Raises: TurnPipelineError wrapping any failure of the composing call.
 
@@ -377,9 +384,8 @@ async def compose_answer(
     `compose.truncated`: the tokens have already reached the patient, and the halves
     this call merged cannot report a cut that happened here.
     """
-    prompt = _build_prompt(
-        faq_result, booking_reply, booking_outcome, notice_required=notice_required
-    )
+    prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
+    system = with_calm_tone(_SYSTEM_PROMPT, calm=calm)
 
     answer_parts: list[str] = []
     model = get_settings().GENERATION_MODEL
@@ -388,13 +394,13 @@ async def compose_answer(
         with generation(
             "compose_answer.model",
             model=model,
-            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            input={"system": system, "messages": messages},
             model_parameters={"max_tokens": _MAX_TOKENS},
         ) as observed:
             async with anthropic_client.messages.stream(
                 model=model,
                 max_tokens=_MAX_TOKENS,
-                system=_SYSTEM_PROMPT,
+                system=system,
                 messages=messages,
             ) as stream:
                 async for event in stream:
@@ -413,7 +419,10 @@ async def compose_answer(
     except Exception as exc:
         raise TurnPipelineError("generation", exc) from exc
 
-    answer_text = "".join(answer_parts)
+    composed_text = "".join(answer_parts)
+    if notice is not None:
+        yield ChatTokenEvent(text=f"{NOTICE_SEPARATOR}{HANDOFF_TEXT[notice]}")
+    answer_text = with_notice(composed_text, notice)
     if final.stop_reason == "max_tokens":
         # Logged, not raised: the tokens have already reached the patient, so there is
         # nothing left to fail cleanly. What is owed is a record - a merged reply that
@@ -422,18 +431,15 @@ async def compose_answer(
         get_logger().warning(
             "compose.truncated",
             max_tokens=_MAX_TOKENS,
-            answer_chars=len(answer_text),
+            answer_chars=len(composed_text),
         )
     fields: dict[str, object] = {
         **_segment_fields(segments, faq_result),
         "outcome": "merged",
         "answer_text": answer_text,
         "booking_outcome": booking_outcome,
-        # What was merged, beside the fact that something was. `merged` alone covers
-        # both a two-specialist turn and one specialist plus a notice, so a reader
-        # counting mixed-intent turns needs this to tell them apart - and needs it on
-        # this line, not joined from the router's (contracts/log-events.md).
-        "notice_included": notice_required,
+        # Which fixed sentence followed the reply, if any - the cause it was for.
+        "notice": notice,
         "message_ids_unified": reply_to_message_ids,
     }
     if faq_result is not None and not faq_result.any_answered:
@@ -507,6 +513,7 @@ def record_single_specialist_completion(
     reply_to_message_ids: list[str],
     segments: list[RequestSegment],
     faq_result: "FaqResult | None" = None,
+    notice: EscalationReason | None = None,
 ) -> None:
     """Record `turn.completed` for a turn whose reply came from one part.
 
@@ -519,6 +526,7 @@ def record_single_specialist_completion(
         "outcome": _single_specialist_outcome(answer_source),
         "answer_text": answer_text,
         "booking_outcome": booking_outcome,
+        "notice": notice,
         "message_ids_unified": reply_to_message_ids,
     }
     if faq_result is not None and not faq_result.any_answered:
@@ -561,8 +569,6 @@ def _build_prompt(
     faq_result: FaqResult | None,
     booking_reply: str | None,
     booking_outcome: BookingOutcome | None,
-    *,
-    notice_required: bool = False,
 ) -> str:
     """Build the composing call's single user message from the halves' outputs."""
     parts: list[str] = []
@@ -582,10 +588,4 @@ def _build_prompt(
             parts.append(_gap_block(faq_result))
     if booking_reply is not None:
         parts.append(f"Appointment part (outcome: {booking_outcome}):\n{booking_reply}")
-    if notice_required:
-        parts.append(
-            "NOT AUTHORIZED: the message also asked for something this assistant is "
-            "not authorized to do. It has been forwarded to the clinic's staff. Say so "
-            "in your reply, alongside the rest."
-        )
     return "\n\n".join(parts)

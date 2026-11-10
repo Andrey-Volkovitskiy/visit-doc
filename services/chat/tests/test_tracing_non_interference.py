@@ -212,8 +212,6 @@ async def _run(
         thread=_normalized(thread),
         conversation={
             "emphasized": conversation["emphasized"],
-            "escalated": conversation["escalated"],
-            "escalation_reason": conversation["escalation_reason"],
             "assistant_may_reply": conversation["assistant_may_reply"],
             "attention": conversation["attention_since"] is not None,
             "paused": conversation["pause_seconds_remaining"] is not None,

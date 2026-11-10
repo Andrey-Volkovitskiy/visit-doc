@@ -5,7 +5,7 @@ from itertools import pairwise
 
 import pytest
 from chat.db.session import pinned_session, session_factory
-from chat.domain.models import EscalationReason, MessageSender
+from chat.domain.models import MessageSender
 from chat.domain.schemas import Citation, FaqVerdict, RequestOutcome
 from chat.repositories import chat_repository, faq_repository
 from chat.repositories.chat_repository import ConversationState
@@ -736,44 +736,6 @@ async def test_an_ordinary_conversation_lets_the_assistant_speak() -> None:
     assert state.emphasized is False
 
 
-async def test_an_escalation_silences_and_emphasizes_with_no_deadline() -> None:
-    session_id, chat_id = await _fresh_chat()
-
-    async with session_factory() as session:
-        transitioned = await chat_repository.set_escalated(
-            session, chat_id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
-        )
-        await chat_repository.mark_attention(session, chat_id, session_id)
-
-    state = await _state(session_id, chat_id)
-    assert transitioned is True
-    assert state.may_assistant_reply is False
-    # Nothing about time passing means a patient who asked for a human got one.
-    assert state.pause_seconds_remaining is None
-    assert state.emphasized is True
-
-
-async def test_a_second_escalation_transitions_nothing_and_keeps_the_first_reason() -> (
-    None
-):
-    # The guard lives in the write's own `WHERE`, and this layer knows nothing about
-    # which reasons silence - so the two reasons here are simply two distinct values,
-    # and this is the one place that proves a second one cannot overwrite the first.
-    session_id, chat_id = await _fresh_chat()
-
-    async with session_factory() as session:
-        await chat_repository.set_escalated(
-            session, chat_id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
-        )
-        again = await chat_repository.set_escalated(
-            session, chat_id, session_id, EscalationReason.CORPUS_COULD_NOT_ANSWER
-        )
-
-    state = await _state(session_id, chat_id)
-    assert again is False
-    assert state.escalation_reason == EscalationReason.PATIENT_ASKED_FOR_PERSON
-
-
 async def test_a_pause_silences_and_counts_down() -> None:
     session_id, chat_id = await _fresh_chat()
 
@@ -798,17 +760,27 @@ async def test_an_elapsed_pause_lifts_by_itself() -> None:
     assert state.pause_seconds_remaining is None
 
 
-async def test_clearing_the_escalation_leaves_the_attention_alone() -> None:
-    # The two axes, and the one place they most obviously disagree: returning the
-    # assistant ends the silence, and nobody has answered the patient.
+async def test_waiting_for_a_person_leaves_the_assistant_free_to_reply() -> None:
+    # The two axes, and the one place they most obviously disagree: the conversation
+    # needs a person, and the assistant may still speak - only a pause stops it.
     session_id, chat_id = await _fresh_chat()
 
     async with session_factory() as session:
-        await chat_repository.set_escalated(
-            session, chat_id, session_id, EscalationReason.PATIENT_ASKED_FOR_PERSON
-        )
         await chat_repository.mark_attention(session, chat_id, session_id)
-        await chat_repository.clear_escalation(session, chat_id, session_id)
+
+    state = await _state(session_id, chat_id)
+    assert state.may_assistant_reply is True
+    assert state.emphasized is True
+
+
+async def test_ending_a_pause_leaves_the_attention_alone() -> None:
+    # Returning the assistant ends the silence, and nobody has answered the patient.
+    session_id, chat_id = await _fresh_chat()
+
+    async with session_factory() as session:
+        await chat_repository.mark_attention(session, chat_id, session_id)
+        await chat_repository.set_paused_until(session, chat_id, session_id, 120)
+        await chat_repository.clear_pause(session, chat_id, session_id)
 
     state = await _state(session_id, chat_id)
     assert state.may_assistant_reply is True
@@ -1172,30 +1144,25 @@ async def test_a_staff_post_after_the_message_is_a_takeover_whatever_the_clock()
 
 
 async def _plant_attention_state(
-    escalated: int, marked: int, both: int, neither: int
+    paused: int, waiting: int, both: int, neither: int
 ) -> str:
-    """Create a session holding chats in each of the four attention states.
+    """Create a session holding chats in each of four states of pause and attention.
 
     Returns: the session id.
     """
     async with session_factory() as session:
         owner = await chat_repository.create_session(session)
-        for index in range(escalated + marked + both + neither):
+        for index in range(paused + waiting + both + neither):
             chat = await chat_repository.create_chat(session, owner.id)
-            if index < escalated + both:
-                await chat_repository.set_escalated(
-                    session,
-                    chat.id,
-                    owner.id,
-                    EscalationReason.PATIENT_ASKED_FOR_PERSON,
-                )
-            if escalated <= index < escalated + marked + both:
+            if index < paused + both:
+                await chat_repository.set_paused_until(session, chat.id, owner.id, 120)
+            if paused <= index < paused + waiting + both:
                 await chat_repository.mark_attention(session, chat.id, owner.id)
     return owner.id
 
 
 @pytest.mark.parametrize(
-    ("escalated", "marked", "both", "neither"),
+    ("paused", "waiting", "both", "neither"),
     [
         (0, 0, 0, 0),
         (0, 0, 0, 3),
@@ -1212,22 +1179,23 @@ async def _plant_attention_state(
     ],
 )
 async def test_the_attention_count_equals_the_console_listings_emphasis(
-    escalated: int, marked: int, both: int, neither: int
+    paused: int, waiting: int, both: int, neither: int
 ) -> None:
     # SC-002: one definition, so the count the connector answers and the rows the
-    # console emphasizes cannot disagree.
-    session_id = await _plant_attention_state(escalated, marked, both, neither)
+    # console emphasizes cannot disagree - and a pause, which needs nobody, is not in
+    # it.
+    session_id = await _plant_attention_state(paused, waiting, both, neither)
 
     async with session_factory() as session:
         count = await chat_repository.count_needing_attention(session, session_id)
         rows = await chat_repository.list_conversations_for_console(session, session_id)
 
     assert count == sum(1 for row in rows if row.emphasized)
-    assert count == escalated + marked + both
+    assert count == waiting + both
 
 
 async def test_the_attention_count_is_scoped_to_its_session() -> None:
-    mine = await _plant_attention_state(1, 1, 0, 1)
+    mine = await _plant_attention_state(1, 1, 1, 1)
     await _plant_attention_state(3, 3, 3, 0)
 
     async with session_factory() as session:

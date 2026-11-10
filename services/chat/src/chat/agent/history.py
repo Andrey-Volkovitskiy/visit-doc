@@ -54,7 +54,7 @@ def exclude_silent_window(bursts: list[list[Message]]) -> list[list[Message]]:
     stay in `bursts` as context, which is why this splits rather than drops.
 
     The mark is the signal because it is the only one still available on a later turn:
-    a pause's deadline is gone by the time one runs, and an escalation never had one.
+    a pause's deadline is gone by the time one runs.
     Returns `bursts` unchanged when there is nothing marked - the ordinary case.
     """
     if not bursts:

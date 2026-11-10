@@ -27,8 +27,6 @@ export interface ConsoleConversation {
   patient_name: string | null;
   last_message_at: string | null;
   emphasized: boolean;
-  escalated: boolean;
-  escalation_reason: string | null;
   attention_since: string | null;
   assistant_may_reply: boolean;
   pause_seconds_remaining: number | null;
@@ -132,6 +130,7 @@ export const ATTENTION_MARK_LABEL: Record<AttentionMark, string> = {
   patient_asked_for_person: "Asked for a person",
   booking_for_another_person: "Booking for someone else",
   not_authorized: "Not something the assistant may do",
+  forwarded_follow_up: "Added to a request already with staff",
   corpus_could_not_answer: "No answer in the clinic's documents",
   assistant_failed: "The assistant could not complete this",
   unanswered: "Arrived while the assistant was paused",

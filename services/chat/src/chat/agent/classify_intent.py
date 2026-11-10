@@ -1,14 +1,17 @@
 """`classify_intent`: structured-output intent classification."""
 
+import copy
+from collections.abc import Sequence
 from typing import Any
 
 from anthropic import AsyncAnthropic
 
+from chat.agent.escalation import ForwardedRequest
 from chat.agent.history import to_claude_messages_separating_silence
 from chat.clients.anthropic_content import content_as_output
 from chat.clients.anthropic_failure import AnthropicFailure, classify_failure
 from chat.core.config import get_settings
-from chat.domain.models import Message
+from chat.domain.models import AttentionMark, Message
 from chat.domain.schemas import MAX_SEGMENTS, IntentClassificationResult, IntentLabel
 from chat.observability import generation
 
@@ -86,7 +89,18 @@ _SYSTEM_PROMPT = (
     "is an unclear case - both of those are booking), "
     "call_staff (the patient explicitly asks to speak to a human), not_authorized "
     "(a request the assistant is not authorized to serve, such as a sick note, a "
-    "prescription, a records transfer or a billing correction). "
+    "prescription, a records transfer or a billing correction), "
+    "forwarded_follow_up (the request adds to, asks about or chases one of the "
+    "requests listed under ALREADY WITH STAFF at the end of these instructions - a "
+    "further detail about it, a change to it, a question about its progress, or a "
+    'chaser such as "any update?" or "is anyone there?". Use it only when that list '
+    "names a request, and only for a request about one of them: a new question on "
+    "another subject is labelled exactly as it would be with no list at all. A "
+    'message that only acknowledges or thanks - "ok", "thanks", "alright" - is '
+    "small_talk, never this. A new urgent condition or new distress is "
+    "urgent_condition or distress, never this, even when it concerns a listed "
+    "request. When it is unclear whether a request belongs to a listed one, it is "
+    "forwarded_follow_up). "
     "A message may carry more than one intent at once. "
     "Three boundaries decide most borderline messages. "
     "(a) faq_question or booking: the five booking requests are a closed list - the "
@@ -221,6 +235,47 @@ for _schema in (_RESPONSE_SCHEMA, _RESPONSE_SCHEMA["$defs"]["RequestSegment"]):
 for _bound in ("minItems", "maxItems"):
     _RESPONSE_SCHEMA["properties"]["segments"].pop(_bound, None)
 
+# The schema for a conversation with nothing open with staff: `forwarded_follow_up` is
+# removed from the enum, so a follow-up to nothing is structurally unreachable rather
+# than a rule the model is trusted to keep.
+_RESPONSE_SCHEMA_NOTHING_OPEN: dict[str, Any] = copy.deepcopy(_RESPONSE_SCHEMA)
+_RESPONSE_SCHEMA_NOTHING_OPEN["$defs"]["IntentLabel"]["enum"].remove(
+    IntentLabel.FORWARDED_FOLLOW_UP.value
+)
+
+# How each open request's reason reads to the classifier. Plain words rather than the
+# mark's value: the model is deciding whether a message is *about* the request, and the
+# value is a machine's name for why it was forwarded.
+_FORWARDED_AS: dict[AttentionMark, str] = {
+    AttentionMark.URGENT_CONDITION: "an urgent condition",
+    AttentionMark.DISTRESS: "distress",
+    AttentionMark.PATIENT_ASKED_FOR_PERSON: "asked for a person",
+    AttentionMark.BOOKING_FOR_ANOTHER_PERSON: "a booking for someone else",
+    AttentionMark.NOT_AUTHORIZED: "a request the assistant may not serve",
+    AttentionMark.FORWARDED_FOLLOW_UP: "a detail added to an earlier request",
+}
+
+
+def _system_prompt(forwarded: Sequence[ForwardedRequest]) -> str:
+    """Return the classifier's instructions, ending with what is open with staff.
+
+    The list is the whole of what `forwarded_follow_up` may refer to, so it is stated
+    even when empty: "nothing" is an answer the label rule reads, not an absence.
+    """
+    if not forwarded:
+        return (
+            f"{_SYSTEM_PROMPT}\n\nALREADY WITH STAFF: nothing. "
+            "Never use forwarded_follow_up."
+        )
+    listed = "\n".join(
+        f'- ({_FORWARDED_AS.get(request.mark, "forwarded to staff")}) "{request.text}"'
+        for request in forwarded
+    )
+    return (
+        f"{_SYSTEM_PROMPT}\n\nALREADY WITH STAFF - this patient's earlier messages "
+        f"that staff hold and have not answered yet:\n{listed}"
+    )
+
 
 class ClassificationFailedError(Exception):
     """Raised when a `classify_intent()` call fails or returns an invalid result.
@@ -250,7 +305,9 @@ class ClassificationFailedError(Exception):
 
 
 async def classify_intent(
-    anthropic_client: AsyncAnthropic, bursts: list[list[Message]]
+    anthropic_client: AsyncAnthropic,
+    bursts: list[list[Message]],
+    forwarded: Sequence[ForwardedRequest] = (),
 ) -> IntentClassificationResult:
     """Classify the trailing patient message in `bursts`.
 
@@ -260,13 +317,17 @@ async def classify_intent(
             from this turn are separated from it here, exactly as every specialist
             separates them: the labels this call returns decide which cause the turn
             hands over for, which sentence the patient is owed, which mark the message
-            carries and whether the conversation falls silent, so a message still
-            waiting for a person must not be able to drive any of the four.
+            carries and which tone every reply takes, so a message still waiting for a
+            person must not be able to drive any of the four.
+        forwarded: The conversation's requests open with staff. Only a message about
+            one of them may be labelled `FORWARDED_FOLLOW_UP`; with none, the label is
+            removed from the response schema.
 
     Raises: ClassificationFailedError on any API error, timeout, a response that ran
         into `_MAX_TOKENS`, a response that fails to validate against the schema, or a
-        validated response that still contains `CLASSIFICATION_FAILED` - never returns
-        a result containing it. Its `failure` says which of those it was, and its
+        validated response that still contains `CLASSIFICATION_FAILED`, or
+        `FORWARDED_FOLLOW_UP` with nothing open - never returns a result containing
+        either. Its `failure` says which of those it was, and its
         message says which of the last three.
 
     Uses native JSON Outputs (`output_config.format`), not tool-use.
@@ -274,21 +335,21 @@ async def classify_intent(
     try:
         model = get_settings().CLASSIFICATION_MODEL
         messages = to_claude_messages_separating_silence(bursts)
+        system = _system_prompt(forwarded)
+        schema = _RESPONSE_SCHEMA if forwarded else _RESPONSE_SCHEMA_NOTHING_OPEN
         with generation(
             "classify_intent.model",
             model=model,
-            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            input={"system": system, "messages": messages},
             model_parameters={"max_tokens": _MAX_TOKENS, "temperature": _TEMPERATURE},
         ) as observed:
             response = await anthropic_client.messages.create(
                 model=model,
                 max_tokens=_MAX_TOKENS,
                 temperature=_TEMPERATURE,
-                system=_SYSTEM_PROMPT,
+                system=system,
                 messages=messages,
-                output_config={
-                    "format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}
-                },
+                output_config={"format": {"type": "json_schema", "schema": schema}},
             )
             observed.record_completion(
                 content_as_output(response.content),
@@ -317,6 +378,14 @@ async def classify_intent(
             # silently violating this function's own contract (FR-007).
             raise ClassificationFailedError(
                 "model returned CLASSIFICATION_FAILED despite schema exclusion",
+                AnthropicFailure.ANSWERED,
+            )
+        if not forwarded and IntentLabel.FORWARDED_FOLLOW_UP in result.intents:
+            # The same defense for the schema chosen above: with nothing open, a
+            # follow-up has nothing to follow, and a turn acting on one would tell the
+            # patient a detail went to staff who hold no request to add it to.
+            raise ClassificationFailedError(
+                "model returned FORWARDED_FOLLOW_UP with nothing open with staff",
                 AnthropicFailure.ANSWERED,
             )
         return result

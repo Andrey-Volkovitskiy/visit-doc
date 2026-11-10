@@ -17,8 +17,6 @@ function conversation(
     patient_name: "Ada Lovelace",
     last_message_at: null,
     emphasized: false,
-    escalated: false,
-    escalation_reason: null,
     attention_since: null,
     assistant_may_reply: true,
     pause_seconds_remaining: null,

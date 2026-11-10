@@ -232,20 +232,34 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   reason in the tab) rather than publishing an address nobody can reach. The MCP transport is
   built per lifespan, because the SDK's session manager runs once per instance, and it is routed
   to on its two paths rather than mounted at `/`, so every other path keeps FastAPI's own `404`.
-- **A person is called in four situations and no others** (009): the patient asked for one; the
-  patient asked for something the assistant cannot provide; the message needs a person on safety or
-  authority grounds; something failed. A message that requests nothing calls nobody — before 009,
-  "Thanks" took the FAQ path, abstained, and paged a human. The middle two are recorded as two
-  causes each (`corpus_could_not_answer` vs `not_authorized`; `urgent_condition` vs `distress` vs
-  `booking_for_another_person`) because they call for different fixes. `agent/escalation.py` holds
-  the structures that decide what each cause does: `_PRECEDENCE` orders them, `_SILENCING` says
-  which stop the assistant, `_MARK_BY_REASON` derives the message mark, and `HANDOFF_TEXT` gives a
-  constant to each of the five that *end* a turn — a corpus gap and a failure have none, because
-  neither ends one. Four causes
-  silence the conversation; `not_authorized`, a corpus gap and a failure do not. The four texts are
-  constants, not generated: a stopping reply makes no claim about the clinic, which is the only
-  thing retrieval could have grounded. The assistant does not triage — `urgent_condition` is a
-  routing decision whose reply points at emergency services rather than judging anything.
+- **A person is called in five situations and no others, and calling one never silences the
+  assistant** (009): the patient asked for one; the patient asked for something the
+  assistant cannot provide; the message needs a person on safety or authority grounds; the patient
+  added to a request already with staff; something failed. A message that requests nothing calls
+  nobody — before 009, "Thanks" took the FAQ path, abstained, and paged a human. The middle causes
+  are recorded separately (`corpus_could_not_answer` vs `not_authorized`; `urgent_condition` vs
+  `distress` vs `booking_for_another_person`) because they call for different fixes.
+  `agent/escalation.py` holds the structures that decide what each cause does: `_PRECEDENCE`
+  orders them, `_MARK_BY_REASON` derives the message mark, and `HANDOFF_TEXT` gives a constant to
+  each of the six the patient is told about — a corpus gap and a failure have none. A turn that
+  calls staff for nothing else goes to the hand-off node and sends the strongest cause's constant
+  alone; a turn that also asked something answerable gets the answer with that constant appended
+  **verbatim** (`with_notice`), never paraphrased by the composer — including when the booking
+  loop called `escalate_to_staff` mid-turn, whose description tells the model the conversation
+  continues and not to announce the handoff itself. The only thing that silences the assistant is
+  the pause, written by a staff post or the console's switch; `escalated_at` is gone. The
+  assistant does not triage — `urgent_condition` is a routing decision.
+- **A follow-up to a request with staff is a classifier label**. A request is open while its
+  patient message carries one of `OPEN_REQUEST_MARKS` (the calling causes minus a corpus gap and a
+  failure, plus `forwarded_follow_up`); a staff post clears them. `escalation.open_requests` reads
+  them off the stored thread, `classify_intent` lists them at the end of its system prompt, and a
+  segment adding to, asking about or chasing one is `forwarded_follow_up` — marked, and told in
+  `FOLLOW_UP_MESSAGE` that it went to staff. With nothing open the label is removed from the
+  response schema, and a result carrying it is rejected. An acknowledgement is `small_talk`; a new
+  emergency is `urgent_condition`; when it is unclear the label leans to follow-up. While an
+  `urgent_condition` or `distress` request is open (or raised this turn), every generated reply is
+  given `CALM_TONE` through `with_calm_tone` — small talk, the FAQ answerer, the booking loop (as a
+  block after the cached ones) and the composer.
 - **A turn is traced through `chat.observability` and nothing else** (014). It is the only module
   that may import `langfuse` or `opentelemetry` (`test_tracing_boundary.py` checks, and the harness's
   `scoring/` and `comparison/` purity tests forbid both), so call sites speak in turns, steps,

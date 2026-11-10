@@ -77,16 +77,16 @@ async def _resolve_chat(request: Request, chat_id: str) -> tuple[str, Chat]:
 
 
 def _waited_seconds(state: ConversationState) -> int:
-    """Return how long the conversation had been escalated, for the record.
+    """Return how long the conversation had been waiting for a person, for the record.
 
     A duration written to a log entry rather than a deadline anything acts on, so it is
     measured here rather than in SQL - and floored at zero, since a few milliseconds of
     skew between this process's clock and the database's must not produce a negative
     wait.
     """
-    if state.escalated_at is None:
+    if state.attention_since is None:
         return 0
-    return max(0, int((datetime.now(UTC) - state.escalated_at).total_seconds()))
+    return max(0, int((datetime.now(UTC) - state.attention_since).total_seconds()))
 
 
 async def _start_pause(
@@ -142,8 +142,6 @@ def _row(conversation: ConsoleConversation) -> ConsoleConversationOut:
         patient_name=conversation.patient_name,
         last_message_at=conversation.last_message_at,
         emphasized=conversation.emphasized,
-        escalated=conversation.escalated_at is not None,
-        escalation_reason=conversation.escalation_reason,
         attention_since=conversation.attention_since,
         assistant_may_reply=conversation.may_assistant_reply,
         pause_seconds_remaining=conversation.pause_seconds_remaining,
@@ -183,12 +181,13 @@ async def post_staff_message(
         another session - or stopped being this one's while the post was being written,
         the cascade that removed it having taken the post with it.
 
-    Replying *is* taking the conversation, so one post also ends any escalation, stops
-    the conversation waiting, and clears every mark a person speaking answers - the
-    permanent kinds excepted, since a staff member answering does not mean the corpus
-    gained the entry it was missing. Accepted in every conversation of the session,
-    escalated or not: there is none a staff member must escalate first in order to speak
-    in, and none they may not speak in twice.
+    Replying *is* taking the conversation, so one post also stops the conversation
+    waiting, clears every mark a person speaking answers - which closes every request
+    the patient had open with staff - and pauses the assistant. The permanent kinds of
+    mark are excepted, since a staff member answering does not mean the corpus gained
+    the entry it was missing. Accepted in every conversation of the session, waiting or
+    not: there is none a staff member must be called to first in order to speak in, and
+    none they may not speak in twice.
     """
     session_id, chat = await _resolve_chat(request, chat_id)
 
@@ -222,7 +221,6 @@ async def post_staff_message(
             state = await chat_repository.get_conversation_state(
                 db_session, chat.id, session_id
             )
-            await chat_repository.clear_escalation(db_session, chat.id, session_id)
             await chat_repository.clear_attention(db_session, chat.id, session_id)
             marks_cleared = await chat_repository.clear_clearable_marks(
                 db_session, chat.id, session_id
@@ -243,14 +241,13 @@ async def post_staff_message(
         finally:
             await chat_repository.release_chat_lock_after_commit(db_session, chat.id)
 
-    ended_escalation = state.escalated_at is not None
+    ended_attention = state.attention_since is not None
     logger = get_logger()
-    if ended_escalation:
+    if ended_attention:
         logger.info(
-            "escalation.ended",
+            "attention.ended",
             chat_id=chat.id,
             ended_by="staff_message",
-            escalated_for=state.escalation_reason,
             waited_seconds=_waited_seconds(state),
         )
     logger.info(
@@ -258,7 +255,7 @@ async def post_staff_message(
         chat_id=chat.id,
         message_id=message.id,
         marks_cleared=marks_cleared,
-        ended_escalation=ended_escalation,
+        ended_attention=ended_attention,
         cancelled_generation=cancelled_generation,
     )
     return MessageOut.model_validate(message)
@@ -274,15 +271,15 @@ async def set_assistant(
         another session - or stopped being this one's while the switch was being
         applied.
 
-    On clears both silences - the escalation and any running pause. Off writes the
-    identical pause a staff message writes, and cancels any reply in flight. Neither
+    On clears any running pause. Off writes the identical pause a staff message writes,
+    and cancels any reply in flight - the one way to keep the assistant quiet in a
+    conversation a person is about to answer, since calling staff never does. Neither
     direction touches whether the conversation still needs a person, or any mark on a
     message: taking a conversation is not answering it, and handing it back is not
     answering it either, which is what makes the control safe to use freely.
 
     Valid in every state. Turning on an assistant that is already on changes nothing and
-    is not an error, and turning off an escalated conversation changes nothing
-    observable, since an escalation has no deadline and still governs.
+    is not an error.
     """
     session_id, chat = await _resolve_chat(request, chat_id)
 
@@ -313,43 +310,26 @@ async def set_assistant(
 async def _resume(
     db_session: AsyncSession, chat_id: str, session_id: str
 ) -> ConversationState | None:
-    """Let the assistant speak here again, clearing both silences.
+    """Let the assistant speak here again, ending any running pause.
 
-    Returns: the conversation's state as the clears left it, reported by the second of
-        them, or None if `chat_id` is not this session's.
+    Returns: the conversation's state as the clear left it, or None if `chat_id` is not
+        this session's.
 
-    Reads the state once before writing, because what a resumption *ended* - and
-    whether it ended anything at all - is only knowable from the state it found. That
-    read is this direction's alone: the state afterwards comes back from the write.
+    Reads the state once before writing, because whether a resumption ended anything at
+    all is only knowable from the state it found.
 
-    Records nothing when the assistant was already speaking, and nothing when the
-    clears matched no row: a switch moved to the position it was already in resumed
-    nothing, and neither did one applied to a conversation that stopped being this
-    session's. An entry saying otherwise would put a resumption in the log that never
-    happened - and an `escalation.ended` beside it a wait that never ended, carrying a
-    duration that inflates every count and response time taken over the event.
+    Records nothing when the assistant was already speaking, and nothing when the clear
+    matched no row: a switch moved to the position it was already in resumed nothing,
+    and neither did one applied to a conversation that stopped being this session's.
     """
     before = await chat_repository.get_conversation_state(
         db_session, chat_id, session_id
     )
-    await chat_repository.clear_escalation(db_session, chat_id, session_id)
     after = await chat_repository.clear_pause(db_session, chat_id, session_id)
-    # `after` answers for both clears, not just its own: a deleted chat never comes
-    # back, so a conversation that vanished under the first is missing from the second
-    # too - and `clear_escalation` reports nothing that could be asked instead.
     if after is None or before is None or before.may_assistant_reply:
         return after
 
-    logger = get_logger()
-    if before.escalated_at is not None:
-        logger.info(
-            "escalation.ended",
-            chat_id=chat_id,
-            ended_by="switch",
-            escalated_for=before.escalation_reason,
-            waited_seconds=_waited_seconds(before),
-        )
-    logger.info("assistant.resumed", chat_id=chat_id, resumed_by="switch")
+    get_logger().info("assistant.resumed", chat_id=chat_id, resumed_by="switch")
     return after
 
 

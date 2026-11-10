@@ -3,19 +3,21 @@
 `escalate_to_staff` takes no arguments at all, and that is the contract rather than an
 omission (contracts/agent-tools.md):
 
-- **No reason.** Seven reasons exist, but this caller can only ever raise one of them -
+- **No reason.** Eight reasons exist, but this caller can only ever raise one of them -
   the others are decided by the router, by a gate and by a failure, none of which runs
   inside a model turn. A `reason` parameter would be a field with one legal value that a
-  model could nonetheless get wrong, and getting it wrong would mis-set the
-  conversation's silencing state. The caller identity *is* the reason, so it is bound
-  here and never supplied.
+  model could nonetheless get wrong, and getting it wrong would mis-mark the message.
+  The caller identity *is* the reason, so it is bound here and never supplied.
 
   That binding is exactly why the description below refuses the neighbouring cases. This
-  tool means "the patient asked for a person", which silences the conversation; a
-  request the assistant may not serve means something else and deliberately does not
-  silence (spec 009 FR-022b). A model calling this for a receipt or a letter would
-  record that the patient asked for a human when they did not, and stop a conversation
-  the router had decided to keep open.
+  tool means "the patient asked for a person"; a request the assistant may not serve
+  means something else, with a fix of its own. A model calling this for a receipt or a
+  letter would record that the patient asked for a human when they did not.
+- **No notice of its own.** Calling it does not stop the conversation: the loop carries
+  on with whatever else the patient asked, and the fixed sentence telling the patient
+  staff have it is appended after the reply by the graph, the same sentence every other
+  path that fetches a person sends. The model is told not to write one, so the patient
+  does not read it twice in two wordings.
 - **No summary.** The thread is what says what the patient wanted; a generated summary
   that can be wrong would be a second, less reliable account of it sitting beside the
   real one.
@@ -40,18 +42,22 @@ _NO_ARGUMENTS: dict[str, Any] = {
 }
 
 _DESCRIPTION = (
-    "Hands this conversation to the clinic's staff, who will reply in this same "
-    "conversation, AND stops the assistant replying until a person does. Call this "
-    "only when the visitor explicitly asks to speak to a person, a human, staff, or "
-    "the clinic itself. Do NOT call it because you are unsure of an answer, because a "
-    "booking was refused, because a tool failed, or because the visitor asked for "
-    "something outside what you can do (a receipt, a letter, a prescription, a billing "
-    "correction) - every one of those is handled elsewhere, without silencing the "
-    "conversation. After calling it, tell the visitor that a staff member has been "
-    "notified and will reply here, and do not promise a response time."
+    "Forwards this request to the clinic's staff, who will reply in this same "
+    "conversation. The conversation continues: carry on with anything else the "
+    "visitor asked. Call this only when the visitor explicitly asks to speak to a "
+    "person, a human, staff, or the clinic itself. Do NOT call it because you are "
+    "unsure of an answer, because a booking was refused, because a tool failed, or "
+    "because the visitor asked for something outside what you can do (a receipt, a "
+    "letter, a prescription, a billing correction) - every one of those is handled "
+    "elsewhere. Do not tell the visitor about the handoff yourself - a notice saying "
+    "staff have it is added to your reply for you - and do not promise a response "
+    "time."
 )
 
-_ACKNOWLEDGEMENT = "Staff have been notified and will reply in this conversation."
+_ACKNOWLEDGEMENT = (
+    "Forwarded to staff. A notice telling the visitor so is added after your reply - "
+    "do not write one. Carry on with anything else they asked."
+)
 
 
 async def escalate_to_staff(
@@ -75,7 +81,7 @@ ESCALATE_TO_STAFF = Tool(
     # all is exactly who needs to reach a person.
     requires_patient=False,
     # It creates nothing the patient cannot undo, and a failure to record it is not an
-    # unknown outcome - the conversation is escalated or it is not.
+    # unknown outcome - the call is recorded or it is not.
     writes=False,
 )
 

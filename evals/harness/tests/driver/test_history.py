@@ -7,7 +7,7 @@ from itertools import pairwise
 import pytest
 import pytest_asyncio
 from chat.api.session_cookie import COOKIE_NAME
-from chat.domain.models import Chat, Message, MessageSender, Session
+from chat.domain.models import AttentionMark, Chat, Message, MessageSender, Session
 from golden_harness.cases import HistoryEntry, HistoryRole
 from golden_harness.driver.history import plant_history
 from golden_harness.driver.session import ChatNotFoundError
@@ -98,6 +98,51 @@ async def test_planted_rows_carry_no_outcomes_no_reply_links_and_no_mark(
         assert row.request_outcomes is None
         assert row.reply_to_message_ids is None
         assert row.attention_mark is None
+
+
+async def test_a_marked_entry_plants_a_request_open_with_staff(
+    chat_in_session: async_sessionmaker[AsyncSession],
+) -> None:
+    # What a follow-up case needs: the turn reads its open requests off the marks on
+    # the stored thread, so the planted row must carry the entry's mark and only that.
+    history = [
+        HistoryEntry(
+            role=HistoryRole.USER,
+            text="Please book my son in.",
+            mark=AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        ),
+        HistoryEntry(role=HistoryRole.ASSISTANT, text="I've passed this to staff."),
+    ]
+
+    async with chat_in_session() as session:
+        await plant_history(
+            session, _SESSION_ID, _CHAT_ID, history, before=datetime.now(UTC)
+        )
+
+    marks = [row.attention_mark for row in await _rows(chat_in_session)]
+    assert marks == [AttentionMark.BOOKING_FOR_ANOTHER_PERSON, None]
+
+
+def test_only_a_patient_turn_carries_a_mark() -> None:
+    with pytest.raises(ValueError, match="only a patient turn"):
+        HistoryEntry(
+            role=HistoryRole.ASSISTANT,
+            text="anything",
+            mark=AttentionMark.NOT_AUTHORIZED,
+        )
+
+
+@pytest.mark.parametrize(
+    "mark",
+    [
+        AttentionMark.CORPUS_COULD_NOT_ANSWER,
+        AttentionMark.ASSISTANT_FAILED,
+        AttentionMark.UNANSWERED,
+    ],
+)
+def test_a_mark_that_opens_no_request_is_refused(mark: AttentionMark) -> None:
+    with pytest.raises(ValueError, match="does not keep a request open"):
+        HistoryEntry(role=HistoryRole.USER, text="anything", mark=mark)
 
 
 async def test_no_history_plants_nothing(

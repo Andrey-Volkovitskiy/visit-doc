@@ -112,6 +112,7 @@ export type AttentionMark =
   | "patient_asked_for_person"
   | "booking_for_another_person"
   | "not_authorized"
+  | "forwarded_follow_up"
   | "corpus_could_not_answer"
   | "assistant_failed"
   | "unanswered";

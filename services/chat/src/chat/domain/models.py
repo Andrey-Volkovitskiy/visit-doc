@@ -43,34 +43,35 @@ class MessageSender(StrEnum):
 
 
 class EscalationReason(StrEnum):
-    """Why staff were called - a Python-level closed set of exactly seven values.
+    """Why staff were called - a Python-level closed set of exactly eight values.
 
-    Whether a reason silences the assistant is decided by the code that applies the
-    escalation, not by membership here: `escalation._SILENCING` names the four that do.
-    That separation is deliberate and is what let this set grow from three values to
-    seven without a second mechanism (spec 009 FR-023).
+    Calling staff never silences the assistant: every reason marks the message that
+    caused it and puts the conversation in the staff queue, and the assistant goes on
+    answering whatever else the patient asks. Only a staff member's own gesture - a
+    post, or the console's switch - stops it replying.
 
-    A person is called in four situations, and the middle two are recorded by what
-    would fix them - two values and three: the patient asked for a human; the patient
-    asked for something the assistant cannot provide (the corpus has no answer, or the
-    assistant is not authorized at all); the message needs a person on safety or
-    authority grounds (an urgent condition, evident distress, or a booking for someone
-    else); something failed.
+    A person is called in five situations, and the middle two are recorded by what
+    would fix them: the patient asked for a human; the patient asked for something the
+    assistant cannot provide (the corpus has no answer, or the assistant is not
+    authorized at all); the message needs a person on safety or authority grounds (an
+    urgent condition, evident distress, or a booking for someone else); the patient
+    added to a request already with staff; something failed.
     """
 
     # Every value is a trigger, and each names a different fix. A failure is owed a
     # retry - the thing that broke may already be working. A corpus gap is owed a
-    # person for *that question* while the assistant answers the rest, and is fixed by
-    # writing an entry. `NOT_AUTHORIZED` is fixed by nothing: no entry will ever make
-    # the assistant able to write a sick note, which is why it is not a corpus gap
-    # (spec 009 FR-022a). The first four are owed a person *instead of* more
-    # assistant, which is what `_SILENCING` records.
+    # person for *that question*, and is fixed by writing an entry. `NOT_AUTHORIZED` is
+    # fixed by nothing: no entry will ever make the assistant able to write a sick note,
+    # which is why it is not a corpus gap. `FORWARDED_FOLLOW_UP` is a detail, a question
+    # or a chaser about a request staff already hold - owed nothing new, only the
+    # staff member's reading it beside the request it belongs to.
 
     URGENT_CONDITION = "urgent_condition"
     DISTRESS = "distress"
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
     BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
     NOT_AUTHORIZED = "not_authorized"
+    FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
     ASSISTANT_FAILED = "assistant_failed"
 
@@ -95,6 +96,7 @@ class AttentionMark(StrEnum):
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
     BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
     NOT_AUTHORIZED = "not_authorized"
+    FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
     ASSISTANT_FAILED = "assistant_failed"
     UNANSWERED = "unanswered"
@@ -104,7 +106,8 @@ class AttentionMark(StrEnum):
 # that clears them. Membership is decided by one question: is a staff member reading
 # the message and answering it *the whole* of what the mark asked for? For a patient
 # who asked for a person, for an urgent or distressed message, for a booking the
-# assistant may not make and for a request it is not authorized to serve, it is. The
+# assistant may not make, for a request it is not authorized to serve and for a detail
+# added to one of those, it is. The
 # other two are permanent: a staff member answering the patient does not mean the
 # corpus gained the entry it was missing, or that the failure did not happen (spec 007
 # FR-027c, spec 009 FR-023a/FR-048).
@@ -121,8 +124,22 @@ CLEARABLE_MARKS = frozenset(
         AttentionMark.DISTRESS,
         AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
         AttentionMark.NOT_AUTHORIZED,
+        AttentionMark.FORWARDED_FOLLOW_UP,
     }
 )
+
+# The marks that keep a request *open* with staff: a later message about it is a
+# follow-up, told that the detail went to staff too, rather than answered as new.
+# `CLEARABLE_MARKS` minus `UNANSWERED`, which records that the assistant was paused,
+# not that anything was forwarded. A corpus gap and a failure are absent because they
+# are not requests staff hold for the patient: a rephrased question is tried against
+# the corpus again, and a failed turn is retried rather than chased. Open until a staff
+# message clears it, which is the one thing that answers a forwarded request.
+OPEN_REQUEST_MARKS = CLEARABLE_MARKS - {AttentionMark.UNANSWERED}
+
+# The open marks whose patient is owed a calm reply from everything the assistant says
+# while a person is on the way - no cheerfulness, no exclamation marks, no emoji.
+SOMBRE_MARKS = frozenset({AttentionMark.URGENT_CONDITION, AttentionMark.DISTRESS})
 
 
 class BookingActOperation(StrEnum):
@@ -260,12 +277,6 @@ class Chat(Base):
 
     __tablename__ = "chats"
     __table_args__ = (
-        # An escalation always carries exactly one reason, and a reason never outlives
-        # the escalation that set it. Enforced here so neither half can be set alone.
-        CheckConstraint(
-            "(escalated_at IS NULL) = (escalation_reason IS NULL)",
-            name="ck_chats_escalation_reason_with_escalated_at",
-        ),
         Index("ix_chats_session_attention", "session_id", "attention_since"),
     )
 
@@ -281,13 +292,6 @@ class Chat(Base):
     patient_name: Mapped[str | None] = mapped_column(
         String(PATIENT_NAME_LENGTH), nullable=True
     )
-    # Non-NULL means the assistant is silenced here, with no deadline: it was asked to
-    # fetch a person and none has dealt with it. Cleared by the first staff message, or
-    # by the console's switch.
-    escalated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    escalation_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
     # A stored deadline, not a running timer - it has to survive a reload, a second tab
     # and a restart, and two tabs have to count down together. Compared against the
     # database's own clock rather than any client's.
@@ -295,9 +299,8 @@ class Chat(Base):
         DateTime(timezone=True), nullable=True
     )
     # Non-NULL means a person is needed here and none has spoken since. Deliberately a
-    # separate fact from `escalated_at`: the two are cleared by different things and
-    # disagree in both directions - a failure sets this without silencing, and the
-    # switch clears the silence without clearing this.
+    # separate fact from the pause: a call to staff sets this without silencing, and the
+    # switch silences without setting it.
     attention_since: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

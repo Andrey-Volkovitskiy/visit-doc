@@ -353,7 +353,7 @@
   {
    "letter": "b",
    "name": "urgent_condition",
-   "tests": "A message describing something an emergency department exists for. It takes the whole turn, whatever else it is wrapped in: the reply is the fixed text pointing at emergency services, a person is called, and the assistant falls silent. The assistant does not triage, so no case here expects a judgement about severity.",
+   "tests": "A message describing something an emergency department exists for. It takes the whole turn, whatever else it is wrapped in: the reply is the fixed text pointing at emergency services and a person is called; the assistant keeps answering. The assistant does not triage, so no case here expects a judgement about severity.",
    "cases": [
     {
      "id": "G-b-01",
@@ -419,7 +419,7 @@
   {
    "letter": "c",
    "name": "distress",
-   "tests": "Real fear, panic or acute upset about the patient's health or care, whether or not the message asks for anything. It calls a person and stops the assistant. A brief exclamation is small talk instead, so the family carries that counter-case too.",
+   "tests": "Real fear, panic or acute upset about the patient's health or care, whether or not the message asks for anything. It calls a person; the assistant keeps answering anything else the patient asks. A brief exclamation is small talk instead, so the family carries that counter-case too.",
    "cases": [
     {
      "id": "G-c-01",
@@ -614,7 +614,7 @@
   {
    "letter": "f",
    "name": "call_staff",
-   "tests": "An explicit request for a human, and nothing else. It is the one cause that owes the patient silence afterwards, so the assistant stops. The label must not collect the staff-handled issues that have causes of their own - a billing problem is not_authorized, an emergency is urgent_condition.",
+   "tests": "An explicit request for a human, and nothing else. A person is called and the assistant keeps answering anything else the patient asks. The label must not collect the staff-handled issues that have causes of their own - a billing problem is not_authorized, an emergency is urgent_condition.",
    "cases": [
     {
      "id": "G-f-01",
@@ -2574,6 +2574,197 @@
       }
      ],
      "note": "forms are named in three documents - PR-1 in the reminders one, IC-2 in the insurance guide - and HC-9 only in the check-in one"
+    }
+   ]
+  },
+  {
+   "letter": "x",
+   "name": "forwarded-follow-up",
+   "tests": "A message sent while an earlier one is with staff and unanswered - planted as a patient turn carrying its mark. Calling staff does not silence the assistant, so the message is classified: a detail, a change or a chaser about the open request is forwarded_follow_up, and the patient is told it went to staff too; a thank-you is small_talk; a new question on another subject is labelled as it would be with nothing open; and a new emergency is urgent_condition, never a follow-up.",
+   "cases": [
+    {
+     "id": "G-x-01",
+     "message": "It's the $120 line from my March visit.",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'd like to speak to a person about a charge on my bill.",
+       "mark": "patient_asked_for_person"
+      },
+      {
+       "role": "assistant",
+       "text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you here shortly. In the meantime, I can still help with anything else."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "forwarded_follow_up",
+       "gist": "the detail of the charge"
+      }
+     ]
+    },
+    {
+     "id": "G-x-02",
+     "message": "Any update?",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'd like to speak to a person about a charge on my bill.",
+       "mark": "patient_asked_for_person"
+      },
+      {
+       "role": "assistant",
+       "text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you here shortly. In the meantime, I can still help with anything else."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "forwarded_follow_up",
+       "gist": "chases the open request"
+      }
+     ]
+    },
+    {
+     "id": "G-x-03",
+     "message": "Thanks.",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'd like to speak to a person about a charge on my bill.",
+       "mark": "patient_asked_for_person"
+      },
+      {
+       "role": "assistant",
+       "text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you here shortly. In the meantime, I can still help with anything else."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "small_talk",
+       "gist": "thanks"
+      }
+     ],
+     "note": "an acknowledgement adds nothing to the request, so it is not a follow-up - telling the patient a thank-you went to staff is absurd"
+    },
+    {
+     "id": "G-x-04",
+     "message": "Do you have parking?",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'd like to speak to a person about a charge on my bill.",
+       "mark": "patient_asked_for_person"
+      },
+      {
+       "role": "assistant",
+       "text": "Sure. I've passed this to a member of the clinic's staff. They'll follow up with you here shortly. In the meantime, I can still help with anything else."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "faq_question",
+       "gist": "is there parking",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      }
+     ],
+     "note": "a question on another subject is answered as usual"
+    },
+    {
+     "id": "G-x-05",
+     "message": "My employer needs it by Friday. Also, do you have parking?",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'd like you to write me a sick note for my employer.",
+       "mark": "not_authorized"
+      },
+      {
+       "role": "assistant",
+       "text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime!"
+      }
+     ],
+     "requests": [
+      {
+       "intent": "forwarded_follow_up",
+       "gist": "deadline for the sick note"
+      },
+      {
+       "intent": "faq_question",
+       "gist": "is there parking",
+       "answerable": true,
+       "cites": [
+        "hours-location"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "G-x-06",
+     "message": "He's eight, and a Tuesday afternoon would suit him best.",
+     "history": [
+      {
+       "role": "user",
+       "text": "Please book my son in with a dentist.",
+       "mark": "booking_for_another_person"
+      },
+      {
+       "role": "assistant",
+       "text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "forwarded_follow_up",
+       "gist": "details for the son's booking"
+      }
+     ]
+    },
+    {
+     "id": "G-x-07",
+     "message": "It's spreading to my left arm now and I feel faint.",
+     "history": [
+      {
+       "role": "user",
+       "text": "I've had a crushing pain in my chest for twenty minutes.",
+       "mark": "urgent_condition"
+      },
+      {
+       "role": "assistant",
+       "text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "urgent_condition",
+       "gist": "worsening chest pain"
+      }
+     ],
+     "note": "a new emergency outranks a follow-up even about the same thing: the patient gets the emergency notice, not the note that a detail was added"
+    },
+    {
+     "id": "G-x-08",
+     "message": "ok",
+     "history": [
+      {
+       "role": "user",
+       "text": "I'm so scared, I can't stop shaking since the results came.",
+       "mark": "distress"
+      },
+      {
+       "role": "assistant",
+       "text": "I'm sorry you're going through this. I've passed your message to a member of the clinic's staff, and a person will follow up with you here."
+      }
+     ],
+     "requests": [
+      {
+       "intent": "small_talk",
+       "gist": "acknowledges"
+      }
+     ],
+     "note": "small talk while distress is open - written under the calm tone"
     }
    ]
   }

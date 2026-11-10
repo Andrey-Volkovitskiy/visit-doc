@@ -4,8 +4,9 @@ Four callers reach this capability and none of them writes it
 (contracts/agent-tools.md). Each records a request into one per-turn collector;
 `apply_escalation()` applies the resolved result once, after the turn has run. The tests
 below are about that shape - that two requests resolve the same way whichever order they
-arrived in, that a second call never overwrites the reason that first silenced a
-conversation, and that a corpus gap and a failure both emphasize without silencing.
+arrived in, that a later call never re-stamps how long a conversation has waited, and
+that no cause silences the assistant: every one marks and emphasizes, and the patient
+goes on being answered.
 """
 
 import json
@@ -124,49 +125,33 @@ async def _post_as_staff(session_id: str, chat_id: str) -> None:
 # --- The collector: precedence, and independence from arrival order ------------------
 
 
-def test_the_conversations_reason_is_the_highest_precedence_silencing_one() -> None:
-    requests = EscalationRequests()
-    requests.record(_FAILED)
-    requests.record(_CORPUS)
-    requests.record(_ASKED)
-
-    assert requests.conversation_reason is _ASKED
-
-
-def test_a_failure_alone_resolves_to_no_conversation_reason() -> None:
-    # FR-003d: it emphasizes without silencing, so there is nothing for the
-    # conversation's silencing state to be set to.
+def test_a_failure_alone_marks_its_message() -> None:
     requests = EscalationRequests()
     requests.record(_FAILED)
 
-    assert requests.conversation_reason is None
     assert requests.message_mark is AttentionMark.ASSISTANT_FAILED
 
 
-def test_a_corpus_gap_alone_resolves_to_no_conversation_reason() -> None:
-    # FR-003d: a question the documents do not cover is one answer missing, not the
-    # assistant being the wrong thing to talk to - so it calls staff and the patient
-    # goes on asking. The mark is still set: the question still needs a person.
+def test_a_corpus_gap_alone_marks_its_message() -> None:
+    # The question still needs a person, so the mark is set.
     requests = EscalationRequests()
     requests.record(_CORPUS)
 
-    assert requests.conversation_reason is None
     assert requests.message_mark is AttentionMark.CORPUS_COULD_NOT_ANSWER
 
 
-def test_a_corpus_gap_beside_a_request_for_a_person_still_silences() -> None:
-    # The one reason that silences decides for the turn, whichever half recorded first.
+def test_a_request_for_a_person_beside_a_corpus_gap_marks_the_message() -> None:
+    # The stronger claim decides the mark, whichever half recorded first.
     requests = EscalationRequests()
     requests.record(_CORPUS)
     requests.record(_ASKED)
 
-    assert requests.conversation_reason is _ASKED
+    assert requests.message_mark is AttentionMark.PATIENT_ASKED_FOR_PERSON
 
 
-def test_no_request_resolves_to_neither_a_reason_nor_a_mark() -> None:
+def test_no_request_resolves_to_no_mark() -> None:
     requests = EscalationRequests()
 
-    assert requests.conversation_reason is None
     assert requests.message_mark is None
 
 
@@ -204,7 +189,6 @@ def test_two_requests_resolve_identically_whichever_order_they_arrived_in(
     backwards.record(second)
     backwards.record(first)
 
-    assert forwards.conversation_reason is backwards.conversation_reason
     assert forwards.message_mark is backwards.message_mark
 
 
@@ -222,20 +206,23 @@ def test_every_recorded_request_is_kept_however_the_precedence_resolved() -> Non
 # --- The transition -----------------------------------------------------------------
 
 
-async def test_a_silencing_reason_sets_escalation_attention_and_the_mark() -> None:
+@pytest.mark.parametrize("reason", list(EscalationReason))
+async def test_every_cause_marks_and_emphasizes_and_none_silences(
+    reason: EscalationReason,
+) -> None:
+    # The rule this module is now built on: calling staff puts the conversation in the
+    # queue and marks the message that caused it, and the assistant goes on answering.
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
-    requests.record(_ASKED)
+    requests.record(reason)
 
     await _apply(chat_id, session_id, message_id, requests)
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is not None
-    assert state.escalation_reason == _ASKED
     assert state.attention_since is not None
-    assert state.may_assistant_reply is False
-    assert await _mark_of(message_id) == AttentionMark.PATIENT_ASKED_FOR_PERSON
+    assert state.may_assistant_reply is True
+    assert await _mark_of(message_id) == reason.value
 
 
 async def test_assistant_failed_emphasizes_without_silencing() -> None:
@@ -249,8 +236,6 @@ async def test_assistant_failed_emphasizes_without_silencing() -> None:
     await _apply(chat_id, session_id, message_id, requests)
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
-    assert state.escalation_reason is None
     assert state.attention_since is not None
     assert state.may_assistant_reply is True
     assert await _mark_of(message_id) == AttentionMark.ASSISTANT_FAILED
@@ -269,34 +254,9 @@ async def test_a_corpus_gap_emphasizes_without_silencing() -> None:
     await _apply(chat_id, session_id, message_id, requests)
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
-    assert state.escalation_reason is None
     assert state.attention_since is not None
     assert state.may_assistant_reply is True
     assert await _mark_of(message_id) == AttentionMark.CORPUS_COULD_NOT_ANSWER
-
-
-async def test_a_second_escalation_keeps_the_first_reason() -> None:
-    # FR-007: the reason that silenced the conversation is the one a staff member
-    # reads, and a later call must not rewrite the history it records - neither the
-    # reason nor the moment it started. Only one reason silences (FR-003d), so the
-    # guard against a *different* reason overwriting the stored one is exercised
-    # against the repository directly, in `test_chat_repository.py`.
-    session_id, chat_id = await _chat()
-    first_message = await _patient_message(session_id, chat_id)
-    first = EscalationRequests()
-    first.record(_ASKED)
-    await _apply(chat_id, session_id, first_message, first)
-    escalated_at = (await _state(chat_id, session_id)).escalated_at
-
-    second_message = await _patient_message(session_id, chat_id)
-    second = EscalationRequests()
-    second.record(_ASKED)
-    await _apply(chat_id, session_id, second_message, second)
-
-    state = await _state(chat_id, session_id)
-    assert state.escalation_reason == _ASKED
-    assert state.escalated_at == escalated_at
 
 
 async def test_a_later_call_does_not_restamp_how_long_it_has_waited() -> None:
@@ -322,17 +282,15 @@ async def test_an_empty_collector_transitions_nothing_and_marks_nothing() -> Non
     await _apply(chat_id, session_id, message_id, EscalationRequests())
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
     assert state.attention_since is None
     assert await _mark_of(message_id) is None
 
 
 async def test_a_call_decided_before_a_staff_post_is_not_applied_after_it() -> None:
     # The turn decides during the graph and applies once it has completed, so a staff
-    # member can answer in between. Applying it afterwards would re-escalate and
-    # re-mark a conversation a person is already handling - and since an escalation has
-    # no deadline, the patient's next message would then be stored unanswered against
-    # the very staff member replying to them.
+    # member can answer in between. Applying it afterwards would put a conversation a
+    # person is already handling back in the queue, and re-open a request they just
+    # answered.
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
@@ -342,7 +300,6 @@ async def test_a_call_decided_before_a_staff_post_is_not_applied_after_it() -> N
     await _apply(chat_id, session_id, message_id, requests)
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
     assert state.attention_since is None
     assert state.emphasized is False
     assert await _mark_of(message_id) is None
@@ -350,8 +307,9 @@ async def test_a_call_decided_before_a_staff_post_is_not_applied_after_it() -> N
 
 async def test_a_call_raised_before_the_staff_post_it_preceded_still_applies() -> None:
     # The mirror of the test above, and what stops it from being satisfied by never
-    # escalating a conversation that has ever held a staff message: only a post *newer*
-    # than the message the turn answered means a person took it over during this turn.
+    # calling staff in a conversation that has ever held a staff message: only a post
+    # *newer* than the message the turn answered means a person took it over during
+    # this turn.
     session_id, chat_id = await _chat()
     await _post_as_staff(session_id, chat_id)
     async with session_factory() as session:
@@ -363,7 +321,7 @@ async def test_a_call_raised_before_the_staff_post_it_preceded_still_applies() -
     await _apply(chat_id, session_id, message_id, requests)
 
     state = await _state(chat_id, session_id)
-    assert state.escalation_reason == _ASKED
+    assert state.attention_since is not None
     assert await _mark_of(message_id) == AttentionMark.PATIENT_ASKED_FOR_PERSON
 
 
@@ -376,7 +334,8 @@ async def test_a_chat_id_from_another_session_transitions_nothing() -> None:
 
     await _apply(chat_id, other_session_id, message_id, requests)
 
-    assert (await _state(chat_id, session_id)).escalated_at is None
+    assert (await _state(chat_id, session_id)).attention_since is None
+    assert await _mark_of(message_id) is None
 
 
 # --- The tool -----------------------------------------------------------------------
@@ -406,19 +365,20 @@ def test_escalate_to_staff_takes_no_arguments_at_all() -> None:
 def test_escalate_to_staff_refuses_the_cases_that_are_not_asking_for_a_person() -> None:
     """The description is load-bearing, because the reason is bound to the caller.
 
-    This tool records `patient_asked_for_person`, which *silences* the conversation. A
-    model calling it for something the assistant merely may not do would record that the
-    patient asked for a human when they did not, and stop a conversation the router had
-    decided to keep open (FR-022b). That is not hypothetical: it happened in the first
-    live run, where "can I book Monday, and also get a receipt reissued?" ended silenced
+    This tool records `patient_asked_for_person`. A model calling it for something the
+    assistant merely may not do would record that the patient asked for a human when
+    they did not - it happened in the first live run, where "can I book Monday, and also
+    get a receipt reissued?" was marked as asking for a person
     (`evaluation/procedure.md`, 2026-09-08, C16). The schema below cannot prevent it -
     only this text can.
     """
     description = ESCALATE_TO_STAFF.description.lower()
 
     assert "explicitly asks to speak to a person" in description
-    # The consequence, stated where the model chooses: calling this stops the assistant.
-    assert "stops the assistant replying" in description
+    # The consequence, stated where the model chooses: the conversation goes on, and
+    # the notice is not the model's to write.
+    assert "the conversation continues" in description
+    assert "do not tell the visitor about the handoff yourself" in description
     # And the four neighbouring cases it must not fire for.
     for refused in ("unsure of an answer", "booking was refused", "tool failed"):
         assert refused in description
@@ -446,15 +406,13 @@ async def test_the_handler_records_a_request_and_reports_ok() -> None:
 
 
 async def test_the_handler_writes_no_state_of_its_own() -> None:
-    # It performs no I/O: the transition belongs to the end of the turn (FR-006), and a
-    # handler that wrote it here would silence a conversation mid-reply.
+    # It performs no I/O: the transition belongs to the end of the turn (FR-006).
     session_id, chat_id = await _chat()
     registry = ToolRegistry(STAFF_TOOLS, _tool_context(EscalationRequests()))
 
     await registry.dispatch("escalate_to_staff", {})
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
     assert state.attention_since is None
 
 
@@ -462,7 +420,7 @@ async def test_the_handler_writes_no_state_of_its_own() -> None:
 
 
 async def test_an_escalation_binds_exactly_one_conversation() -> None:
-    # FR-011: a session's other chats keep working normally while one is silent.
+    # FR-011: a session's other chats are untouched by a call made in one.
     session_id, escalated_chat = await _chat()
     async with session_factory() as session:
         sibling = await chat_repository.create_chat(session, session_id)
@@ -473,7 +431,6 @@ async def test_an_escalation_binds_exactly_one_conversation() -> None:
     await _apply(escalated_chat, session_id, message_id, requests)
 
     sibling_state = await _state(sibling.id, session_id)
-    assert sibling_state.escalated_at is None
     assert sibling_state.attention_since is None
     assert sibling_state.may_assistant_reply is True
 
@@ -489,7 +446,6 @@ async def test_a_conversation_can_be_escalated_again_after_one_ended() -> None:
     first_waited_since = (await _state(chat_id, session_id)).attention_since
 
     async with session_factory() as session:
-        await chat_repository.clear_escalation(session, chat_id, session_id)
         await chat_repository.clear_attention(session, chat_id, session_id)
 
     second_message = await _patient_message(session_id, chat_id)
@@ -498,16 +454,14 @@ async def test_a_conversation_can_be_escalated_again_after_one_ended() -> None:
     await _apply(chat_id, session_id, second_message, second)
 
     state = await _state(chat_id, session_id)
-    assert state.escalation_reason == _ASKED
+    assert await _mark_of(second_message) == AttentionMark.PATIENT_ASKED_FOR_PERSON
     assert state.attention_since is not None
     assert state.attention_since != first_waited_since
 
 
-async def test_the_escalated_mark_is_a_property_of_the_stored_conversation() -> None:
+async def test_a_call_to_staff_is_a_property_of_the_stored_conversation() -> None:
     # FR-012/SC-006: it survives a reload, a second tab and a restarted process,
-    # because nothing about it lives in an open connection. T079 covers the pause's
-    # half of this; without both, persistence is tested only for the silence that
-    # expires anyway.
+    # because nothing about it lives in an open connection.
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
@@ -519,19 +473,23 @@ async def test_the_escalated_mark_is_a_property_of_the_stored_conversation() -> 
     await engine.dispose()
 
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is not None
-    assert state.escalation_reason == _ASKED
-    assert state.may_assistant_reply is False
+    assert state.attention_since is not None
+    assert await _mark_of(message_id) == AttentionMark.PATIENT_ASKED_FOR_PERSON
 
 
-async def test_a_restarted_backend_still_generates_nothing_in_that_chat() -> None:
+async def test_a_conversation_waiting_for_a_person_is_still_answered() -> None:
+    # The whole point of forwarding without a pause: a patient who asked for a person
+    # and then asks something else is answered, not stored unanswered against staff who
+    # have not read the first message yet.
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
     requests.record(_ASKED)
     await _apply(chat_id, session_id, message_id, requests)
 
-    anthropic_client = fake_anthropic_client(["never generated"])
+    anthropic_client = fake_anthropic_client(
+        ["Hello again."], intents=[IntentLabel.SMALL_TALK]
+    )
     with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
         mock_anthropic_cls.return_value = anthropic_client
         with TestClient(app):
@@ -549,38 +507,36 @@ async def test_a_restarted_backend_still_generates_nothing_in_that_chat() -> Non
                 )
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
-    assert lines == [{"type": "silent"}]
-    assert anthropic_client.messages.create.await_count == 0
-    assert anthropic_client.messages.stream.call_count == 0
+    assert lines[-1]["type"] == "done"
+    assert anthropic_client.messages.stream.call_count == 1
 
 
 # --- The records --------------------------------------------------------------------
 
 
 async def test_one_escalation_record_means_one_handoff() -> None:
-    # SC-010: `escalation.raised` is counted against conversations actually silenced,
-    # so a no-op that logged as a raise would over-count every one of them.
-    silenced = 0
+    # SC-010: `escalation.raised` is counted against conversations that entered the
+    # queue, so a no-op that logged as a raise would over-count every one of them.
+    queued = 0
     with capture_logs() as logs:
         for _ in range(3):
             session_id, chat_id = await _chat()
-            # Three calls against one conversation; only the first silences it.
+            # Three calls against one conversation; only the first queues it.
             for reason in (_ASKED, _ASKED, _ASKED):
                 message_id = await _patient_message(session_id, chat_id)
                 requests = EscalationRequests()
                 requests.record(reason)
                 await _apply(chat_id, session_id, message_id, requests)
-            silenced += 1
+            queued += 1
 
     raised = [entry for entry in logs if entry["event"] == "escalation.raised"]
     unchanged = [entry for entry in logs if entry["event"] == "escalation.unchanged"]
-    assert len(raised) == silenced
-    assert len(unchanged) == silenced * 2
-    assert all(entry["silenced"] is True for entry in raised)
-    assert all(entry["existing_reason"] == _ASKED for entry in unchanged)
+    assert len(raised) == queued
+    assert len(unchanged) == queued * 2
+    assert all(entry["requested_reason"] == _ASKED for entry in unchanged)
 
 
-async def test_a_failure_is_recorded_as_raised_but_not_silenced() -> None:
+async def test_a_failure_is_recorded_as_raised() -> None:
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
@@ -591,7 +547,6 @@ async def test_a_failure_is_recorded_as_raised_but_not_silenced() -> None:
 
     raised = [entry for entry in logs if entry["event"] == "escalation.raised"]
     assert len(raised) == 1
-    assert raised[0]["silenced"] is False
     assert raised[0]["reason"] == _FAILED
     assert raised[0]["message_id"] == message_id
 
@@ -618,8 +573,6 @@ async def test_a_second_failure_in_an_emphasized_conversation_transitions_nothin
 
     assert [entry["event"] for entry in logs] == ["escalation.unchanged"]
     assert logs[0]["requested_reason"] == _FAILED
-    # There is no escalation to name: a failure emphasizes without silencing.
-    assert logs[0]["existing_reason"] is None
     assert logs[0]["message_id"] == message_id
     # The mark is still the message's own, and the emphasis is still the first one's.
     assert await _mark_of(message_id) == AttentionMark.ASSISTANT_FAILED
@@ -641,13 +594,12 @@ async def test_a_failure_is_raised_once_however_many_times_it_is_recorded() -> N
         "escalation.raised",
         "escalation.unchanged",
     ]
-    assert logs[0]["silenced"] is False
 
 
 async def test_both_halves_of_a_mixed_turn_are_recorded() -> None:
-    # The precedence decides the mark; the log keeps every call (research #6). Two
-    # transitions happened here - the silence and the emphasis - so each is claimed by
-    # one request, and both are raised.
+    # The precedence decides the mark; the log keeps every call (research #6). One
+    # transition happened here - the conversation entered the queue - so the stronger
+    # request claims it and the other is recorded as having changed nothing.
     session_id, chat_id = await _chat()
     message_id = await _patient_message(session_id, chat_id)
     requests = EscalationRequests()
@@ -657,16 +609,20 @@ async def test_both_halves_of_a_mixed_turn_are_recorded() -> None:
     with capture_logs() as logs:
         await _apply(chat_id, session_id, message_id, requests)
 
-    raised = {
-        entry["reason"]: entry["silenced"]
+    raised = [
+        entry["reason"] for entry in logs if entry["event"] == "escalation.raised"
+    ]
+    unchanged = [
+        entry["requested_reason"]
         for entry in logs
-        if entry["event"] == "escalation.raised"
-    }
-    assert raised == {_ASKED: True, _FAILED: False}
+        if entry["event"] == "escalation.unchanged"
+    ]
+    assert raised == [_ASKED]
+    assert unchanged == [_FAILED]
     assert await _mark_of(message_id) == AttentionMark.PATIENT_ASKED_FOR_PERSON
 
 
-async def test_two_non_silencing_halves_claim_one_emphasis_between_them() -> None:
+async def test_two_halves_claim_one_emphasis_between_them() -> None:
     # A corpus gap and a failure in one turn transition exactly one thing - the
     # conversation joins the queue - so one request claims it and the other is recorded
     # as having changed nothing. Two raises here would over-count the handoffs the
@@ -682,9 +638,9 @@ async def test_two_non_silencing_halves_claim_one_emphasis_between_them() -> Non
 
     raised = [entry for entry in logs if entry["event"] == "escalation.raised"]
     unchanged = [entry for entry in logs if entry["event"] == "escalation.unchanged"]
-    assert [(e["reason"], e["silenced"]) for e in raised] == [(_CORPUS, False)]
+    assert [e["reason"] for e in raised] == [_CORPUS]
     assert [e["requested_reason"] for e in unchanged] == [_FAILED]
-    # The stronger of the two is what the message carries, and neither silenced.
+    # The stronger of the two is what the message carries.
     assert await _mark_of(message_id) == AttentionMark.CORPUS_COULD_NOT_ANSWER
     state = await _state(chat_id, session_id)
     assert state.may_assistant_reply is True
@@ -705,7 +661,7 @@ async def test_a_failed_record_never_stops_the_transition() -> None:
     ):
         await _apply(chat_id, session_id, message_id, requests)
 
-    assert (await _state(chat_id, session_id)).escalated_at is not None
+    assert (await _state(chat_id, session_id)).attention_since is not None
 
 
 # --- End of turn, through the real endpoint ------------------------------------------
@@ -713,9 +669,10 @@ async def test_a_failed_record_never_stops_the_transition() -> None:
 
 async def test_the_tool_call_escalates_the_conversation_it_was_called_in() -> None:
     # The model can only ever escalate the conversation it is in: the collector reaches
-    # the handler as ambient context, never as an argument.
+    # the handler as ambient context, never as an argument. The loop's reply is followed
+    # by the same fixed sentence every other path that fetches a person sends.
     session_id, chat_id = await _chat()
-    reply = "A staff member has been notified and will reply in this conversation."
+    reply = "Is there anything else I can help you book?"
 
     with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
         mock_anthropic_cls.return_value = fake_anthropic_client(
@@ -739,10 +696,12 @@ async def test_the_tool_call_escalates_the_conversation_it_was_called_in() -> No
 
     lines = [json.loads(line) for line in response.text.strip().splitlines()]
     assert lines[-1]["type"] == "done"
+    streamed = "".join(line["text"] for line in lines if line["type"] == "token")
+    assert streamed == f"{reply}\n\n{HANDOFF_MESSAGE}"
 
     state = await _state(chat_id, session_id)
-    assert state.escalation_reason == _ASKED
-    assert state.may_assistant_reply is False
+    assert state.attention_since is not None
+    assert state.may_assistant_reply is True
 
 
 async def test_a_classified_call_for_a_person_escalates_the_conversation() -> None:
@@ -778,8 +737,7 @@ async def test_a_classified_call_for_a_person_escalates_the_conversation() -> No
     assert "minute" not in streamed and "hour" not in streamed
 
     state = await _state(chat_id, session_id)
-    assert state.escalation_reason == _ASKED
-    assert state.may_assistant_reply is False
+    assert state.may_assistant_reply is True
     assert state.attention_since is not None
 
     # And the sentence is in the patient's own thread, not only on the wire.
@@ -806,6 +764,7 @@ def test_precedence_is_the_full_order_strongest_claim_first() -> None:
         _ASKED,
         _THIRD_PARTY,
         _NOT_AUTHORIZED,
+        EscalationReason.FORWARDED_FOLLOW_UP,
         _CORPUS,
         _FAILED,
     )
@@ -817,21 +776,22 @@ def test_precedence_covers_every_reason() -> None:
     assert set(_PRECEDENCE) == set(EscalationReason)
 
 
-def test_four_causes_silence_and_the_rest_do_not() -> None:
-    from chat.agent.escalation import _SILENCING
-
-    assert _SILENCING == frozenset({_URGENT, _DISTRESS, _ASKED, _THIRD_PARTY})
-
-
 def test_every_cause_has_a_row_in_the_table() -> None:
-    # A cause added later without its text, its mark or its silencing answer fails
+    # A cause added later without its text or its mark fails
     # here rather than at runtime, which is the point of one table.
     from chat.agent.escalation import _MARK_BY_REASON, HANDOFF_TEXT
 
     for reason in EscalationReason:
         assert reason in _MARK_BY_REASON
         assert _MARK_BY_REASON[reason].value == reason.value
-    for reason in (_ASKED, _NOT_AUTHORIZED, _URGENT, _DISTRESS, _THIRD_PARTY):
+    for reason in (
+        _ASKED,
+        _NOT_AUTHORIZED,
+        _URGENT,
+        _DISTRESS,
+        _THIRD_PARTY,
+        EscalationReason.FORWARDED_FOLLOW_UP,
+    ):
         assert HANDOFF_TEXT[reason].strip()
 
 
@@ -851,7 +811,6 @@ def test_urgent_outranks_distress_on_one_message() -> None:
     requests.record(_DISTRESS)
     requests.record(_URGENT)
     assert requests.message_mark is AttentionMark.URGENT_CONDITION
-    assert requests.conversation_reason is _URGENT
 
 
 def test_urgent_outranks_a_request_for_a_person() -> None:
@@ -861,18 +820,16 @@ def test_urgent_outranks_a_request_for_a_person() -> None:
     assert requests.message_mark is AttentionMark.URGENT_CONDITION
 
 
-def test_not_authorized_outranks_a_corpus_gap_and_does_not_silence() -> None:
+def test_not_authorized_outranks_a_corpus_gap() -> None:
     requests = EscalationRequests()
     requests.record(_CORPUS)
     requests.record(_NOT_AUTHORIZED)
     assert requests.message_mark is AttentionMark.NOT_AUTHORIZED
-    assert requests.conversation_reason is None
 
 
-def test_a_third_party_booking_silences() -> None:
+def test_a_third_party_booking_marks_its_message() -> None:
     requests = EscalationRequests()
     requests.record(_THIRD_PARTY)
-    assert requests.conversation_reason is _THIRD_PARTY
     assert requests.message_mark is AttentionMark.BOOKING_FOR_ANOTHER_PERSON
 
 
@@ -988,9 +945,6 @@ async def test_one_answered_and_one_abstained_calls_staff_exactly_once() -> None
     _, escalation = await _faq_turn([True, False])
 
     assert escalation.recorded == (_CORPUS,)
-    # A corpus gap emphasizes without silencing: the patient really may go on asking
-    # while staff follow up, and an answer has just gone out beside the gap.
-    assert escalation.conversation_reason is None
 
 
 async def test_three_abstained_requests_still_call_staff_once() -> None:

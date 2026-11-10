@@ -5,6 +5,10 @@ placed one node too late produces no reply and still fails SC-002, and it passes
 positive test in this suite while doing so. So the assertions here are mostly about what
 is *missing* from the log: no classification, no retrieval, no groundedness verdict, no
 tool dispatch, and no generation.
+
+Only the pause silences: a staff member's post or the console's switch writes it.
+Calling staff never does, so a conversation waiting for a person is answered like any
+other - which `test_a_conversation_waiting_for_a_person_is_answered` below pins.
 """
 
 import json
@@ -14,7 +18,7 @@ import pytest
 import structlog
 from chat.core.config import get_settings
 from chat.db.session import engine, session_factory
-from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
+from chat.domain.models import AttentionMark, Message, MessageSender
 from chat.domain.schemas import IntentLabel
 from chat.main import app
 from chat.repositories import chat_repository
@@ -38,27 +42,8 @@ _FORBIDDEN_EVENTS = (
 )
 
 
-async def _escalated_chat() -> tuple[str, str]:
-    """Return a `(session_id, chat_id)` the assistant has been silenced in."""
-    async with session_factory() as session:
-        session_row = await chat_repository.create_session(session)
-        chat = await chat_repository.create_chat(session, session_row.id)
-        await chat_repository.set_escalated(
-            session,
-            chat.id,
-            session_row.id,
-            EscalationReason.PATIENT_ASKED_FOR_PERSON,
-        )
-    return session_row.id, chat.id
-
-
 async def _paused_chat() -> tuple[str, str]:
-    """Return a `(session_id, chat_id)` a staff member is leading, with no escalation.
-
-    The gate's other branch, and the one every test in this file used to skip: a pause
-    silences the assistant exactly as an escalation does, and nothing about the message
-    that arrives during it is different.
-    """
+    """Return a `(session_id, chat_id)` a staff member is leading."""
     async with session_factory() as session:
         session_row = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, session_row.id)
@@ -136,44 +121,8 @@ async def _send(session_id: str, chat_id: str, message: str) -> _SilentTurn:
     return _SilentTurn(lines, list(logs))
 
 
-async def test_a_silent_turn_terminates_with_the_silent_event_and_nothing_else() -> (
-    None
-):
-    session_id, chat_id = await _escalated_chat()
-
-    turn = await _send(session_id, chat_id, "are you still there?")
-
-    assert turn.lines == [{"type": "silent"}]
-
-
-@pytest.mark.parametrize("forbidden", _FORBIDDEN_EVENTS)
-async def test_a_silent_turn_makes_none_of_the_calls_a_turn_makes(
-    forbidden: str,
-) -> None:
-    # SC-002, and the reason this file exists. Each of these is emitted by a step the
-    # gate must precede; a gate inside the graph has already made the first one.
-    session_id, chat_id = await _escalated_chat()
-
-    turn = await _send(session_id, chat_id, "are you still there?")
-
-    assert forbidden not in turn.events()
-
-
-async def test_the_patients_message_is_kept_and_marked_unanswered() -> None:
-    # FR-019: the message is not rejected and not lost - it is stored, and it carries
-    # the reason nothing answered it.
-    session_id, chat_id = await _escalated_chat()
-
-    await _send(session_id, chat_id, "are you still there?")
-
-    messages = await _messages(chat_id)
-    assert [m.content for m in messages] == ["are you still there?"]
-    assert messages[0].sender == MessageSender.PATIENT
-    assert messages[0].attention_mark == AttentionMark.UNANSWERED
-
-
 async def test_no_assistant_message_is_stored_for_a_silent_turn() -> None:
-    session_id, chat_id = await _escalated_chat()
+    session_id, chat_id = await _paused_chat()
 
     await _send(session_id, chat_id, "are you still there?")
 
@@ -182,7 +131,7 @@ async def test_no_assistant_message_is_stored_for_a_silent_turn() -> None:
 
 
 async def test_a_silent_turn_starts_the_conversation_waiting_if_it_was_not() -> None:
-    session_id, chat_id = await _escalated_chat()
+    session_id, chat_id = await _paused_chat()
     async with session_factory() as session:
         await chat_repository.clear_attention(session, chat_id, session_id)
 
@@ -194,7 +143,7 @@ async def test_a_silent_turn_starts_the_conversation_waiting_if_it_was_not() -> 
 async def test_a_silent_turn_does_not_restamp_a_conversation_already_waiting() -> None:
     # It has been waiting since the first thing that needed a person; re-stamping would
     # send it to the back of a queue ordered by how long each has waited.
-    session_id, chat_id = await _escalated_chat()
+    session_id, chat_id = await _paused_chat()
     async with session_factory() as session:
         await chat_repository.mark_attention(session, chat_id, session_id)
     waiting_since = (await _state(chat_id, session_id)).attention_since
@@ -202,17 +151,6 @@ async def test_a_silent_turn_does_not_restamp_a_conversation_already_waiting() -
     await _send(session_id, chat_id, "are you still there?")
 
     assert (await _state(chat_id, session_id)).attention_since == waiting_since
-
-
-async def test_the_unanswered_message_is_recorded_with_what_silenced_it() -> None:
-    session_id, chat_id = await _escalated_chat()
-
-    turn = await _send(session_id, chat_id, "are you still there?")
-
-    recorded = [e for e in turn.logs if e["event"] == "message.unanswered"]
-    assert len(recorded) == 1
-    assert recorded[0]["chat_id"] == chat_id
-    assert recorded[0]["silenced_by"] == "escalation"
 
 
 async def test_an_open_conversation_still_runs_the_whole_turn() -> None:
@@ -245,13 +183,58 @@ async def test_an_open_conversation_still_runs_the_whole_turn() -> None:
     assert "intent.classified" in [str(entry["event"]) for entry in logs]
     # Nothing was silenced, so nothing carries the mark that records a silence. The
     # message may still carry `corpus_could_not_answer` - this session has an empty
-    # corpus, and an abstention against one calls staff like any other (FR-003c),
-    # without silencing the conversation it called them for (FR-003d).
+    # corpus, and an abstention against one calls staff like any other (FR-003c).
     messages = await _messages(chat_id)
     assert all(m.attention_mark != AttentionMark.UNANSWERED for m in messages)
 
 
-# --- the same gate, reached by a pause rather than an escalation --------------------
+async def test_a_conversation_waiting_for_a_person_is_answered() -> None:
+    # A patient asked for a person a moment ago and nobody has replied yet: the request
+    # is open and the conversation is in the queue, and the next message is still
+    # classified and answered rather than held.
+    session_id, chat_id = await _open_chat()
+    async with session_factory() as session:
+        await chat_repository.create_message(
+            session,
+            id="01ASKEDFORAPERSON000000000",
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=MessageSender.PATIENT,
+            content="I'd like to speak to a person.",
+        )
+        await chat_repository.set_attention_mark(
+            session,
+            chat_id,
+            session_id,
+            "01ASKEDFORAPERSON000000000",
+            AttentionMark.PATIENT_ASKED_FOR_PERSON,
+        )
+        await chat_repository.mark_attention(session, chat_id, session_id)
+    await engine.dispose()
+    anthropic_client = fake_anthropic_client(
+        ["Hello."], intents=[IntentLabel.SMALL_TALK]
+    )
+
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = anthropic_client
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                http.cookies.set("visitdoc_session_id", session_id)
+                response = await http.post(
+                    "/chat",
+                    json={"chat_id": chat_id, "message": "hi", "local_now": LOCAL_NOW},
+                )
+
+    lines = [json.loads(line) for line in response.text.strip().splitlines()]
+    assert lines[-1]["type"] == "done"
+    messages = await _messages(chat_id)
+    assert messages[-1].sender == MessageSender.ASSISTANT
+    assert all(m.attention_mark != AttentionMark.UNANSWERED for m in messages)
+
+
+# --- the pause --------------------------------------------------------------------
 
 
 async def test_a_paused_turn_terminates_with_the_silent_event_and_nothing_else() -> (
@@ -268,8 +251,8 @@ async def test_a_paused_turn_terminates_with_the_silent_event_and_nothing_else()
 async def test_a_paused_turn_makes_none_of_the_calls_a_turn_makes(
     forbidden: str,
 ) -> None:
-    # SC-002 again, through the other branch. A gate that read only the escalation
-    # column would pass every test above and let the assistant talk over a staff member.
+    # SC-002, and the reason this file exists. Each of these is emitted by a step the
+    # gate must precede; a gate inside the graph has already made the first one.
     session_id, chat_id = await _paused_chat()
 
     turn = await _send(session_id, chat_id, "one more thing before you answer")
@@ -278,7 +261,7 @@ async def test_a_paused_turn_makes_none_of_the_calls_a_turn_makes(
 
 
 async def test_a_message_arriving_during_a_pause_is_kept_and_marked() -> None:
-    # SC-003: nothing is lost while the assistant is quiet, whichever silence it is.
+    # SC-003: nothing is lost while the assistant is quiet.
     session_id, chat_id = await _paused_chat()
 
     await _send(session_id, chat_id, "one more thing before you answer")
@@ -298,21 +281,6 @@ async def test_a_paused_turn_records_which_silence_was_in_force() -> None:
     recorded = [e for e in turn.logs if e["event"] == "message.unanswered"]
     assert len(recorded) == 1
     assert recorded[0]["silenced_by"] == "pause"
-
-
-async def test_an_escalation_outranks_a_pause_in_the_record() -> None:
-    # Both are in force here. `escalation` is the one reported, because it is the one
-    # that does not expire - a reader told "pause" would expect this to resolve itself.
-    session_id, chat_id = await _escalated_chat()
-    async with session_factory() as session:
-        await chat_repository.set_paused_until(
-            session, chat_id, session_id, get_settings().ASSISTANT_PAUSE_SECONDS
-        )
-
-    turn = await _send(session_id, chat_id, "are you still there?")
-
-    recorded = [e for e in turn.logs if e["event"] == "message.unanswered"]
-    assert recorded[0]["silenced_by"] == "escalation"
 
 
 async def test_a_turn_after_the_pause_expires_is_answered_normally() -> None:

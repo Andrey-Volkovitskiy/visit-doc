@@ -17,6 +17,7 @@ from dataclasses import dataclass
 
 from anthropic import AsyncAnthropic
 
+from chat.agent.escalation import with_calm_tone
 from chat.agent.history import (
     bound_to_last_n_turns,
     to_claude_messages_separating_silence,
@@ -78,6 +79,8 @@ class SmallTalkResult:
 async def answer_small_talk(
     anthropic_client: AsyncAnthropic,
     bursts: list[list[Message]],
+    *,
+    calm: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | SmallTalkResult]:
     """Reply to a message that asks for nothing, and do nothing else.
 
@@ -90,6 +93,8 @@ async def answer_small_talk(
             turn's answer are separated from it here too, exactly as every other model
             call in the turn separates them: nothing this node is told may fold a
             message still waiting for a person into the one it is replying to.
+        calm: True while an urgent condition or distress is with staff: the reply is
+            written under `CALM_TONE` rather than as reception's usual warmth.
 
     Yields: `ChatTokenEvent`s as they stream, then exactly one `SmallTalkResult`, whose
         `truncated` says whether the reply ran into `_MAX_TOKENS`.
@@ -111,18 +116,19 @@ async def answer_small_talk(
         "small_talk.model_request", messages=to_loggable_messages(messages)
     )
 
+    system = with_calm_tone(_SYSTEM_PROMPT, calm=calm)
     parts: list[str] = []
     try:
         with generation(
             "small_talk.model",
             model=settings.SMALL_TALK_MODEL,
-            input={"system": _SYSTEM_PROMPT, "messages": messages},
+            input={"system": system, "messages": messages},
             model_parameters={"max_tokens": _MAX_TOKENS},
         ) as observed:
             async with anthropic_client.messages.stream(
                 model=settings.SMALL_TALK_MODEL,
                 max_tokens=_MAX_TOKENS,
-                system=_SYSTEM_PROMPT,
+                system=system,
                 messages=messages,
             ) as stream_response:
                 async for event in stream_response:

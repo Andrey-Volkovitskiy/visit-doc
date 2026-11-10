@@ -1,9 +1,10 @@
 """`POST /console/chats/{chat_id}/messages` - a person answering, in the same thread.
 
 Replying *is* taking the conversation, so there is no separate resolve action: one post
-ends the escalation, stops the conversation waiting, and clears every mark a person
-speaking answers. The permanent marks are not among them, and that is the half of
-FR-027c an implementation gets wrong by clearing the column.
+stops the conversation waiting, clears every mark a person speaking answers - closing
+every request the patient had open with staff - and pauses the assistant. The permanent
+marks are not among them, and that is the half of FR-027c an implementation gets wrong
+by clearing the column.
 """
 
 import asyncio
@@ -16,7 +17,7 @@ import pytest
 from chat.api import turn as turn_api
 from chat.core.config import Settings
 from chat.db.session import engine, session_factory
-from chat.domain.models import AttentionMark, EscalationReason, Message, MessageSender
+from chat.domain.models import AttentionMark, Message, MessageSender
 from chat.domain.schemas import ChatDoneEvent, ChatTokenEvent, IntentLabel
 from chat.main import app
 from chat.rag.indexing import publish_revision
@@ -39,17 +40,12 @@ from .conftest import (
 _CONTENT = "I've looked at your bill - the second charge was an error, and it's gone."
 
 
-async def _chat(*, escalated: bool = False) -> tuple[str, str]:
+async def _chat(*, waiting: bool = False) -> tuple[str, str]:
+    """Return a fresh `(session_id, chat_id)`, in the staff queue when `waiting`."""
     async with session_factory() as session:
         session_row = await chat_repository.create_session(session)
         chat = await chat_repository.create_chat(session, session_row.id)
-        if escalated:
-            await chat_repository.set_escalated(
-                session,
-                chat.id,
-                session_row.id,
-                EscalationReason.PATIENT_ASKED_FOR_PERSON,
-            )
+        if waiting:
             await chat_repository.mark_attention(session, chat.id, session_row.id)
     await engine.dispose()
     return session_row.id, chat.id
@@ -140,19 +136,8 @@ async def test_no_staff_name_is_returned_anywhere() -> None:
     assert not any("name" in key for key in body)
 
 
-async def test_a_staff_message_ends_the_escalation() -> None:
-    # FR-009a: replying is taking the conversation, so there is no separate resolve.
-    session_id, chat_id = await _chat(escalated=True)
-
-    await _post(session_id, chat_id)
-
-    state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
-    assert state.escalation_reason is None
-
-
 async def test_a_staff_message_stops_the_conversation_waiting() -> None:
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
 
     await _post(session_id, chat_id)
 
@@ -160,20 +145,22 @@ async def test_a_staff_message_stops_the_conversation_waiting() -> None:
 
 
 async def test_a_staff_message_clears_every_clearable_mark_at_once() -> None:
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
     await _marked_message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
-    await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
+    await _marked_message(session_id, chat_id, AttentionMark.FORWARDED_FOLLOW_UP)
     await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
 
     await _post(session_id, chat_id)
 
+    # Every request the patient had open with staff is closed by the one reply, so the
+    # next message is no follow-up to any of them.
     assert await _marks(chat_id) == [None, None, None, None]
 
 
 async def test_a_staff_message_leaves_the_permanent_marks_alone() -> None:
     # A person answering does not mean the corpus gained the entry it was missing, or
     # that the failure did not happen.
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
     await _marked_message(session_id, chat_id, AttentionMark.CORPUS_COULD_NOT_ANSWER)
     await _marked_message(session_id, chat_id, AttentionMark.ASSISTANT_FAILED)
     await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
@@ -188,9 +175,9 @@ async def test_a_staff_message_leaves_the_permanent_marks_alone() -> None:
     ]
 
 
-async def test_a_staff_message_is_accepted_in_an_unescalated_conversation() -> None:
-    # FR-024: there is no conversation a staff member must escalate first in order to
-    # speak in, and none they may not speak in twice.
+async def test_a_staff_message_is_accepted_in_a_conversation_nobody_waits_in() -> None:
+    # FR-024: there is no conversation a staff member must be called to first in order
+    # to speak in, and none they may not speak in twice.
     session_id, chat_id = await _chat()
 
     first = await _post(session_id, chat_id, "Just checking in on this one.")
@@ -266,7 +253,7 @@ async def test_a_post_the_cascade_removed_is_recorded_as_no_post_at_all() -> Non
     # The same window, read from the log instead of the status line. A
     # `staff.message_posted` entry there names a message nothing can be found under,
     # and counts a reply the patient will never see as one they were sent.
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
 
     with (
         patch.object(
@@ -281,7 +268,7 @@ async def test_a_post_the_cascade_removed_is_recorded_as_no_post_at_all() -> Non
     assert response.status_code == 404
     events = [entry["event"] for entry in logs]
     assert "staff.message_posted" not in events
-    assert "escalation.ended" not in events
+    assert "attention.ended" not in events
 
 
 @pytest.mark.parametrize("content", ["", "   ", "a" * 2001])
@@ -294,9 +281,9 @@ async def test_a_staff_message_faces_the_same_content_rules_as_a_patients(
 
 
 async def test_the_three_effects_of_one_post_are_recorded_together() -> None:
-    # A reply that cleared four marks and ended an escalation is a different event from
-    # one that cleared none (contracts/log-events.md).
-    session_id, chat_id = await _chat(escalated=True)
+    # A reply that cleared marks and ended a wait is a different event from one that
+    # cleared none (contracts/log-events.md).
+    session_id, chat_id = await _chat(waiting=True)
     await _marked_message(session_id, chat_id, AttentionMark.UNANSWERED)
     await _marked_message(session_id, chat_id, AttentionMark.PATIENT_ASKED_FOR_PERSON)
 
@@ -304,46 +291,40 @@ async def test_the_three_effects_of_one_post_are_recorded_together() -> None:
         await _post(session_id, chat_id)
 
     posted = [e for e in logs if e["event"] == "staff.message_posted"]
-    ended = [e for e in logs if e["event"] == "escalation.ended"]
+    ended = [e for e in logs if e["event"] == "attention.ended"]
     assert len(posted) == 1
     assert posted[0]["chat_id"] == chat_id
     assert posted[0]["marks_cleared"] == 2
-    assert posted[0]["ended_escalation"] is True
+    assert posted[0]["ended_attention"] is True
     assert len(ended) == 1
     assert ended[0]["ended_by"] == "staff_message"
-    assert ended[0]["escalated_for"] == EscalationReason.PATIENT_ASKED_FOR_PERSON
     assert ended[0]["waited_seconds"] >= 0
 
 
-async def test_a_post_into_an_open_conversation_ends_no_escalation() -> None:
+async def test_a_post_into_a_conversation_nobody_waits_in_ends_no_wait() -> None:
     session_id, chat_id = await _chat()
 
     with capture_logs() as logs:
         await _post(session_id, chat_id)
 
     posted = [e for e in logs if e["event"] == "staff.message_posted"]
-    assert posted[0]["ended_escalation"] is False
+    assert posted[0]["ended_attention"] is False
     assert posted[0]["marks_cleared"] == 0
-    assert not [e for e in logs if e["event"] == "escalation.ended"]
+    assert not [e for e in logs if e["event"] == "attention.ended"]
 
 
 async def test_a_staff_message_leaves_another_conversation_untouched() -> None:
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
     async with session_factory() as session:
         sibling = await chat_repository.create_chat(session, session_id)
-        await chat_repository.set_escalated(
-            session,
-            sibling.id,
-            session_id,
-            EscalationReason.PATIENT_ASKED_FOR_PERSON,
-        )
+        await chat_repository.mark_attention(session, sibling.id, session_id)
     await engine.dispose()
 
     await _post(session_id, chat_id)
 
     sibling_state = await _state(sibling.id, session_id)
-    assert sibling_state.escalated_at is not None
-    assert sibling_state.escalation_reason == EscalationReason.PATIENT_ASKED_FOR_PERSON
+    assert sibling_state.attention_since is not None
+    assert sibling_state.may_assistant_reply is True
 
 
 # --- 007 (FR-013a): a staff message discards whatever was being generated ----------
@@ -569,9 +550,8 @@ async def test_a_staff_post_racing_a_turn_leaves_no_orphaned_reply() -> None:
 async def test_a_turn_that_completed_before_a_staff_post_transitions_nothing() -> None:
     # The window a cancellation cannot cover: by the time a turn writes what it decided,
     # it has already deregistered, so the post's `cancel_for_chat` finds nothing and its
-    # clears run first. A transition applied behind them re-escalates a conversation a
-    # person is already handling - and an escalation has no deadline, so the patient's
-    # next message would be stored unanswered against the staff member replying to them.
+    # clears run first. A transition applied behind them puts a conversation a person
+    # is already handling back in the queue, and re-opens the request they answered.
     session_id, chat_id = await _chat()
     reached_the_writes = asyncio.Event()
     staff_has_posted = asyncio.Event()
@@ -614,7 +594,6 @@ async def test_a_turn_that_completed_before_a_staff_post_transitions_nothing() -
 
     assert posted.status_code == 201
     state = await _state(chat_id, session_id)
-    assert state.escalated_at is None
     assert state.attention_since is None
     assert state.emphasized is False
     # Two messages, not three: the handoff sentence is a reply, and one written behind
@@ -633,7 +612,7 @@ async def test_a_turn_that_completed_before_a_staff_post_transitions_nothing() -
 
 
 async def test_a_failed_lock_release_does_not_unsend_a_committed_reply() -> None:
-    session_id, chat_id = await _chat(escalated=True)
+    session_id, chat_id = await _chat(waiting=True)
     not_held = chat_repository.ChatLockNotHeldError("held nothing")
 
     with patch.object(chat_repository, "unlock_chat", side_effect=not_held):
@@ -644,7 +623,7 @@ async def test_a_failed_lock_release_does_not_unsend_a_committed_reply() -> None
     async with session_factory() as session:
         messages = await chat_repository.list_messages(session, chat_id)
     assert [m.sender for m in messages] == [MessageSender.STAFF]
-    assert (await _state(chat_id, session_id)).escalated_at is None
+    assert (await _state(chat_id, session_id)).attention_since is None
 
 
 async def test_a_failed_lock_release_is_recorded_twice_over() -> None:

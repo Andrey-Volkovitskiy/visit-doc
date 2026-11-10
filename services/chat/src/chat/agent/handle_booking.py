@@ -29,7 +29,7 @@ from anthropic.types import (
 )
 from shared_models.localtime import parse_local_datetime
 
-from chat.agent.escalation import EscalationRequests
+from chat.agent.escalation import CALM_TONE, EscalationRequests
 from chat.agent.history import (
     bound_to_last_n_turns,
     to_claude_messages_separating_silence,
@@ -573,6 +573,7 @@ async def handle_booking(
     stream: bool,
     segments: list[RequestSegment],
     escalation: EscalationRequests,
+    calm: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | BookingResult]:
     """Run one booking turn, emitting its reply when streaming and always a result.
 
@@ -588,6 +589,9 @@ async def handle_booking(
             of work against one set of records, and the loop already sequences them.
         escalation: This turn's collector of calls to staff. A tool call that *failed* -
             as distinct from one that was refused - records one into it.
+        calm: True while an urgent condition or distress is with staff: the reply is
+            written under `CALM_TONE`, sent after the cached instructions so the cache
+            stays shared with every other turn.
 
     Yields: in streaming mode, one `ChatTokenEvent` carrying the whole reply, then
         exactly one `BookingResult` as the final item.
@@ -638,6 +642,8 @@ async def handle_booking(
             ),
         },
     ]
+    if calm:
+        system.append({"type": "text", "text": CALM_TONE})
     if not segments:
         raise RuntimeError("the booking loop was entered with no request")
     bounded = bound_to_last_n_turns(bursts, n=settings.CONTEXT_TURNS)
