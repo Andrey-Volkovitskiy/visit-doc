@@ -503,13 +503,60 @@ def test_the_composer_is_never_handed_a_request_staff_hold() -> None:
 
 
 def test_the_composing_prompt_leaves_what_went_to_staff_to_the_fixed_sentence() -> None:
-    from chat.agent.compose_answer import _SYSTEM_PROMPT
+    from chat.agent.compose_answer import _FORWARDED_NOTE
 
-    lowered = " ".join(_SYSTEM_PROMPT.lower().split())
+    lowered = " ".join(_FORWARDED_NOTE.lower().split())
     assert (
         "a fixed sentence telling the patient so is added after your reply" in lowered
     )
     assert "never write about it" in lowered
+
+
+async def test_a_merge_that_forwarded_nothing_is_not_told_something_was() -> None:
+    from chat.agent.compose_answer import _FORWARDED_NOTE
+
+    client = _client(["Hours are 8-5, and you're booked."])
+    async for _event in compose_answer(
+        client,
+        segments=_SEGMENTS,
+        faq_result=_answered_faq(),
+        booking_reply="Booked for Friday.",
+        booking_outcome=None,
+        reply_to_message_ids=_REPLY_IDS,
+        completion=TurnCompletion(),
+    ):
+        pass
+
+    assert client.messages.stream.call_args.kwargs["system"] == _SYSTEM_PROMPT
+    assert _FORWARDED_NOTE not in client.messages.stream.call_args.kwargs["system"]
+
+
+async def test_an_empty_composed_reply_is_followed_by_the_notice_alone() -> None:
+    # The streamed text and the recorded text are the same characters: no separator
+    # in front of a notice that follows nothing.
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    completion = TurnCompletion()
+    with capture_logs() as logs:
+        events = [
+            event
+            async for event in compose_answer(
+                _client([]),
+                segments=_SEGMENTS,
+                faq_result=_answered_faq(),
+                booking_reply="Booked for Friday.",
+                booking_outcome=None,
+                reply_to_message_ids=_REPLY_IDS,
+                completion=completion,
+                notice=EscalationReason.DISTRESS,
+            )
+        ]
+        completion.emit()
+
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    recorded = next(e for e in logs if e["event"] == "turn.completed")["answer_text"]
+    assert streamed == HANDOFF_TEXT[EscalationReason.DISTRESS]
+    assert recorded == streamed
 
 
 async def test_the_notice_follows_the_composed_reply_verbatim() -> None:
@@ -533,9 +580,13 @@ async def test_the_notice_follows_the_composed_reply_verbatim() -> None:
 
     tokens = [e.text for e in events if isinstance(e, ChatTokenEvent)]
     assert tokens[-1] == f"\n\n{HANDOFF_TEXT[EscalationReason.DISTRESS]}"
-    # The notice is not the composer's to write, so it is not in what it was sent.
+    # The notice is not the composer's to write, so it is not in what it was sent -
+    # only that something was forwarded and will follow.
+    from chat.agent.compose_answer import _FORWARDED_NOTE
+
     prompt = client.messages.stream.call_args.kwargs["messages"][0]["content"]
     assert HANDOFF_TEXT[EscalationReason.DISTRESS] not in prompt
+    assert _FORWARDED_NOTE in client.messages.stream.call_args.kwargs["system"]
 
 
 async def test_the_composer_writes_calm_when_told_to() -> None:

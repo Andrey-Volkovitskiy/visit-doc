@@ -127,9 +127,9 @@
 
   <h2>Delivery and operations</h2>
   <ul>
-    <li><b>Test pyramid:</b> <b>4,660 unit</b> (4,072 Python + 588 frontend), <b>74 integration</b> (real Postgres,
+    <li><b>Test pyramid:</b> <b>4,725 unit</b> (4,141 Python + 584 frontend), <b>74 integration</b> (real Postgres,
       Qdrant and gRPC) and <b>8 end-to-end</b> journeys in a real Chromium against the running stack. Coverage:
-      <b>96%</b> of Python statements and <b>94%</b> of frontend lines.</li>
+      <b>95%</b>.</li>
     <li><b>Run locally three ways:</b> as plain processes with hot reload, as Docker Compose (three images, migrations as one-off
       containers), or in a local <b>Kubernetes</b> cluster (k3d) behind a Traefik Ingress, with Kustomize base and overlays.
       Images are pushed to GHCR tagged by commit, and a deploy restarts only the services whose image changed.</li>

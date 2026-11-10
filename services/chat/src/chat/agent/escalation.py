@@ -116,7 +116,7 @@ HANDOFF_TEXT: dict[EscalationReason, str] = {
     EscalationReason.NOT_AUTHORIZED: (
         "I'm not authorized to handle that request, so I've forwarded it to our staff. "
         "They'll follow up with you shortly. Feel free to ask if you need help with "
-        "anything else in the meantime!"
+        "anything else in the meantime."
     ),
     EscalationReason.URGENT_CONDITION: (
         "This appears to be an emergency, I've immediately notified the clinic staff. "
@@ -152,16 +152,23 @@ def notice_for(reasons: Iterable[EscalationReason]) -> EscalationReason | None:
     )
 
 
-def with_notice(reply: str, reason: EscalationReason | None) -> str:
-    """Return `reply` with `reason`'s notice appended, or unchanged when there is none.
+def notice_suffix(reply: str, reason: EscalationReason | None) -> str:
+    """Return the text that follows `reply` to give the patient `reason`'s notice.
 
-    The one place a notice is joined to a reply, so a streamed reply and the stored one
-    put the same separator between the two.
+    Empty when there is no notice; the notice alone after an empty reply; otherwise the
+    separator and the notice. The one place this is decided, so the token streamed to
+    the patient and the text stored and logged are the same characters - a reply the
+    model left empty must not be stored opening on a blank line the log does not show.
     """
     if reason is None:
-        return reply
+        return ""
     notice = HANDOFF_TEXT[reason]
-    return f"{reply}{NOTICE_SEPARATOR}{notice}" if reply else notice
+    return f"{NOTICE_SEPARATOR}{notice}" if reply else notice
+
+
+def with_notice(reply: str, reason: EscalationReason | None) -> str:
+    """Return `reply` with `reason`'s notice appended, or unchanged without one."""
+    return f"{reply}{notice_suffix(reply, reason)}"
 
 
 @dataclass(frozen=True)

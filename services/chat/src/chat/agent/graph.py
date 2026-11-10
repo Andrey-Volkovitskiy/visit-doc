@@ -58,12 +58,12 @@ from chat.agent.compose_answer import (
 )
 from chat.agent.escalation import (
     HANDOFF_TEXT,
-    NOTICE_SEPARATOR,
     EscalationRequests,
     ForwardedRequest,
     calls_for_calm,
     in_precedence_order,
     notice_for,
+    notice_suffix,
     with_notice,
 )
 from chat.agent.handle_booking import BookingResult, handle_booking
@@ -662,12 +662,12 @@ def _build_graph(
                 # reply and before the ending. Collected, the merge appends it instead.
                 notice = notice_for(state["escalation"].recorded[recorded_before:])
                 if notice is not None:
-                    writer(
-                        ChatTokenEvent(text=f"{NOTICE_SEPARATOR}{HANDOFF_TEXT[notice]}")
-                    )
+                    reply = result.reply_text if result is not None else ""
+                    suffix = notice_suffix(reply, notice)
+                    writer(ChatTokenEvent(text=suffix))
                     if result is not None:
                         result = replace(
-                            result, reply_text=with_notice(result.reply_text, notice)
+                            result, reply_text=f"{reply}{suffix}", notice=notice
                         )
                 # The sole specialist ends its own turn, exactly as the FAQ path does.
                 # A booking reply was never retrieved against, so it carries no request
@@ -707,7 +707,10 @@ def _build_graph(
         result: SmallTalkResult | None = None
         async with node_span(_SMALL_TALK) as span:
             async for event in answer_small_talk(
-                anthropic_client, state["bursts"], calm=state["calm"]
+                anthropic_client,
+                state["bursts"],
+                calm=state["calm"],
+                staff_have_request=bool(state["forwarded"]),
             ):
                 if isinstance(event, SmallTalkResult):
                     result = event
@@ -780,9 +783,17 @@ def _build_graph(
         # staff mid-turn. Only a collected turn takes it here - a streamed one has
         # already ended, its sole specialist having told the patient itself - and a
         # hand-off's constant is its whole reply already.
-        notice = (
+        appended = (
             notice_for(state["escalation"].recorded)
             if state["specialists_collect"] and state["handoff_reason"] is None
+            else None
+        )
+        # What the record names: the notice appended here, or the one the sole booking
+        # specialist appended to its own streamed reply - the reply carries it either
+        # way, so the record says so either way.
+        notice = appended or (
+            booking_result.notice
+            if booking_result is not None and not state["specialists_collect"]
             else None
         )
         if parts > 1 and not state["specialists_collect"]:
@@ -807,7 +818,7 @@ def _build_graph(
                     state.get("small_talk_result"),
                     handoff_reason=state["handoff_reason"],
                 )
-                answer_text = with_notice(answer_text, notice)
+                answer_text = with_notice(answer_text, appended)
                 if state["specialists_collect"]:
                     # Nothing streamed this turn's reply, because the route expected
                     # more than one part - so this node owes the patient the single
@@ -863,7 +874,7 @@ def _build_graph(
                 async for event in compose_answer(
                     anthropic_client,
                     segments=state["segments"],
-                    notice=notice,
+                    notice=appended,
                     calm=state["calm"],
                     faq_result=faq_result,
                     booking_reply=(

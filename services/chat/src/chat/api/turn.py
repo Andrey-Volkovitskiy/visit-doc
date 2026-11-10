@@ -550,8 +550,14 @@ async def _event_stream(
             )
             reply_to_message_ids = history.derive_reply_to_message_ids(bursts)
             # Read off the whole stored thread, not the bounded window: a request staff
-            # still hold is open however many turns ago it was forwarded.
-            forwarded = open_requests(history_rows)
+            # still hold is open however many turns ago it was forwarded. The messages
+            # this turn answers are left out: a turn superseded after it marked its
+            # message stores no reply, so that message is answered again here - as
+            # itself, never as a follow-up to itself.
+            answering = set(reply_to_message_ids)
+            forwarded = open_requests(
+                [row for row in history_rows if row.id not in answering]
+            )
             # Fires unconditionally, before the cancellable graph task below even
             # exists - unlike intent.classified/turn.completed, not gated on the turn
             # completing (research.md #8), and ahead of classification rather than only

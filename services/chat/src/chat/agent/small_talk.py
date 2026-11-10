@@ -48,8 +48,7 @@ someone well when they say goodbye.
 
 You have no information about this clinic, this patient, or their appointments, and you
 must never imply otherwise. NEVER state or hint at a policy, a price, a date, a time, an
-appointment, or a practitioner. Never promise that anyone will follow up, and never say
-that staff have been notified - nobody has been.
+appointment, or a practitioner. {staff_rule}
 
 If the message is a greeting you may say in general terms how you can help - answering
 questions about the clinic and arranging appointments - and invite them to ask.
@@ -57,6 +56,20 @@ questions about the clinic and arranging appointments - and invite them to ask.
 If the message cannot be understood at all, say so plainly and ask them to rephrase.
 
 Never give medical advice or comment on symptoms of any kind."""
+
+# What the reply may say about staff, which depends on whether anything is with them.
+# The first is true of an ordinary conversation; the second of one where an earlier
+# request was forwarded and has not been answered - where "nobody has been notified"
+# would be false, and a reply built on it could deny a hand-off the patient was told of.
+_NOTHING_WITH_STAFF = (
+    "Never promise that anyone will follow up, and never say\n"
+    "that staff have been notified - nobody has been."
+)
+_REQUEST_WITH_STAFF = (
+    "Never promise that anyone will follow up, or when. An\n"
+    "earlier request from this patient is already with the clinic's staff and they\n"
+    "have been told so: do not repeat that, and never deny it."
+)
 
 
 @dataclass(frozen=True)
@@ -81,6 +94,7 @@ async def answer_small_talk(
     bursts: list[list[Message]],
     *,
     calm: bool = False,
+    staff_have_request: bool = False,
 ) -> AsyncIterator[ChatTokenEvent | SmallTalkResult]:
     """Reply to a message that asks for nothing, and do nothing else.
 
@@ -95,6 +109,8 @@ async def answer_small_talk(
             message still waiting for a person into the one it is replying to.
         calm: True while an urgent condition or distress is with staff: the reply is
             written under `CALM_TONE` rather than as reception's usual warmth.
+        staff_have_request: True while an earlier request of this patient is open with
+            staff, so the reply is told so rather than that nobody was notified.
 
     Yields: `ChatTokenEvent`s as they stream, then exactly one `SmallTalkResult`, whose
         `truncated` says whether the reply ran into `_MAX_TOKENS`.
@@ -116,7 +132,8 @@ async def answer_small_talk(
         "small_talk.model_request", messages=to_loggable_messages(messages)
     )
 
-    system = with_calm_tone(_SYSTEM_PROMPT, calm=calm)
+    staff_rule = _REQUEST_WITH_STAFF if staff_have_request else _NOTHING_WITH_STAFF
+    system = with_calm_tone(_SYSTEM_PROMPT.format(staff_rule=staff_rule), calm=calm)
     parts: list[str] = []
     try:
         with generation(

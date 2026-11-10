@@ -1791,7 +1791,7 @@ def _composing_calls(client: MagicMock) -> int:
     return sum(
         1
         for call in client.messages.stream.call_args_list
-        if call.kwargs.get("system") == COMPOSE_SYSTEM_PROMPT
+        if str(call.kwargs.get("system", "")).startswith(COMPOSE_SYSTEM_PROMPT)
     )
 
 
@@ -2489,7 +2489,7 @@ def _generation_calls(client: MagicMock) -> int:
     return sum(
         1
         for call in client.messages.stream.call_args_list
-        if call.kwargs.get("system") != COMPOSE_SYSTEM_PROMPT
+        if not str(call.kwargs.get("system", "")).startswith(COMPOSE_SYSTEM_PROMPT)
     )
 
 
@@ -2890,3 +2890,44 @@ async def test_escalate_to_staff_mid_booking_in_a_merged_turn_is_told_once(
     streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
     assert streamed.endswith(f"\n\n{HANDOFF_MESSAGE}")
     assert streamed.count(HANDOFF_MESSAGE) == 1
+
+
+async def test_a_streamed_booking_turn_records_the_notice_its_loop_appended() -> None:
+    client = fake_anthropic_client(
+        intents=[IntentLabel.BOOKING],
+        booking_tool_calls=[[("escalate_to_staff", {})]],
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        await _run_turn(client, "none of these work, can I just talk to someone?")
+
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert completed["notice"] == EscalationReason.PATIENT_ASKED_FOR_PERSON
+    assert str(completed["answer_text"]).endswith(HANDOFF_MESSAGE)
+
+
+async def test_an_empty_booking_reply_is_followed_by_the_notice_alone() -> None:
+    # Told not to announce the handoff, the loop can end with no text at all; what is
+    # streamed and what is recorded are then both the notice, with no blank line ahead.
+    client = fake_anthropic_client(
+        intents=[IntentLabel.BOOKING],
+        booking_tool_calls=[[("escalate_to_staff", {})]],
+        booking_reply="",
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(client, "just have someone call me")
+
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    completed = next(e for e in logs if e["event"] == "turn.completed")
+    assert streamed == HANDOFF_MESSAGE
+    assert completed["answer_text"] == streamed
+
+
+async def test_small_talk_is_told_when_a_request_is_with_staff() -> None:
+    client = fake_anthropic_client(["Take care."], intents=[IntentLabel.SMALL_TALK])
+
+    await _run_turn(client, "thanks", forwarded=_OPEN_SICK_NOTE)
+
+    (call,) = client.messages.stream.call_args_list
+    assert "nobody has been" not in call.kwargs["system"]

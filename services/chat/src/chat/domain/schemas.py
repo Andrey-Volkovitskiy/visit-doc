@@ -297,14 +297,12 @@ class AnswerSource(StrEnum):
     nothing. *Why* a person was fetched is the escalation reason's to say, not this
     field's - one fact, one field (spec 009 FR-049).
 
-    `MERGED` means the composing model wrote the reply, and nothing more. It does *not*
-    say two specialists ran: a turn carrying a not-authorized notice beside one servable
-    intent is composed too (FR-022c1). What went into the merge is recorded beside it -
-    `request_outcomes`, `booking_outcome`, and `notice_included` on the completion -
-    rather than encoded here, because those are orthogonal facts. A notice can
-    accompany one specialist or two, so folding it in would need an enum value per
-    combination, and the first reader to see `merged_with_notice` would still not know
-    how many specialists ran.
+    `MERGED` means the composing model wrote the reply, and nothing more: the turn
+    answered more than one part. A fixed sentence telling the patient that something
+    went to staff is never composed - it is appended after whichever reply the turn
+    produced, merged or not - so it is not encoded here either. What went into the
+    reply is recorded beside it - `request_outcomes`, `booking_outcome`, and `notice` on
+    the completion - because those are orthogonal facts.
     """
 
     FAQ = "faq"

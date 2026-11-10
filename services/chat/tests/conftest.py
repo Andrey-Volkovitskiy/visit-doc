@@ -796,7 +796,7 @@ def fake_anthropic_client(
             # `.messages.stream` serves two callers: the FAQ specialist and the
             # composing step, told apart by the system prompt each sends - the same
             # trick `_create` below uses for classification and the booking loop.
-            if kwargs.get("system") == COMPOSE_SYSTEM_PROMPT:
+            if str(kwargs.get("system", "")).startswith(COMPOSE_SYSTEM_PROMPT):
                 raise compose_error
             return FakeAnthropicStream(tokens or [])
 

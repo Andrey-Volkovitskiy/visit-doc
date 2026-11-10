@@ -356,13 +356,19 @@ _OUTCOME_BY_CHANGE = {
 
 @dataclass(frozen=True)
 class BookingResult:
-    """What `handle_booking` produces for the turn."""
+    """What `handle_booking` produces for the turn.
+
+    `notice` is the cause whose fixed sentence the booking node appended to
+    `reply_text` itself - set only on a streamed turn whose loop called staff, the one
+    case where no later step appends it.
+    """
 
     reply_text: str
     outcome: BookingOutcome
     appointment_id: str | None = None
     iterations: int = 0
     tool_calls: int = 0
+    notice: EscalationReason | None = None
 
 
 def _elapsed_ms(started: float) -> float:

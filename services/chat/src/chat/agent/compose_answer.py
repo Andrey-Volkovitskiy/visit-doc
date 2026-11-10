@@ -15,12 +15,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from anthropic.types import MessageParam
 
-from chat.agent.escalation import (
-    HANDOFF_TEXT,
-    NOTICE_SEPARATOR,
-    with_calm_tone,
-    with_notice,
-)
+from chat.agent.escalation import notice_suffix, with_calm_tone
 from chat.agent.handle_booking import BookingOutcome
 from chat.core.config import get_settings
 from chat.core.correlation import turn_elapsed_ms
@@ -52,10 +47,8 @@ _MAX_TOKENS = (MAX_SEGMENTS + 1) * _PART_MAX_TOKENS
 _SYSTEM_PROMPT = """You are a clinic assistant writing ONE reply to a patient whose
 message had more than one part. The parts that are yours to write about are labelled
 below, with what was done about each - a question answered from the clinic's knowledge
-base, or something about an appointment. Anything else the message asked for has been
-forwarded to the clinic's staff, and a fixed sentence telling the patient so is added
-after your reply: never write about it, and never write about a part that is not
-labelled below.
+base, or something about an appointment. Never write about a part that is not labelled
+below.
 
 Combine them into a single, natural reply. You must:
 - Preserve every factual claim exactly as given. Do not add, soften, or strengthen one.
@@ -91,6 +84,14 @@ Combine them into a single, natural reply. You must:
 - Start with the first answer itself. No greeting, no thanks, and no line announcing
   what follows ("Thanks for reaching out!", "Here's what I can share:").
 Be concise."""
+
+# Added only on a turn that carries a notice, so a merge that forwarded nothing is not
+# told that something was.
+_FORWARDED_NOTE = (
+    "Something else the message asked for has been forwarded to the clinic's staff, "
+    "and a fixed sentence telling the patient so is added after your reply: never "
+    "write about it."
+)
 
 
 class TurnCompletion:
@@ -385,7 +386,10 @@ async def compose_answer(
     this call merged cannot report a cut that happened here.
     """
     prompt = _build_prompt(faq_result, booking_reply, booking_outcome)
-    system = with_calm_tone(_SYSTEM_PROMPT, calm=calm)
+    system = _SYSTEM_PROMPT
+    if notice is not None:
+        system = f"{system}\n\n{_FORWARDED_NOTE}"
+    system = with_calm_tone(system, calm=calm)
 
     answer_parts: list[str] = []
     model = get_settings().GENERATION_MODEL
@@ -420,9 +424,10 @@ async def compose_answer(
         raise TurnPipelineError("generation", exc) from exc
 
     composed_text = "".join(answer_parts)
-    if notice is not None:
-        yield ChatTokenEvent(text=f"{NOTICE_SEPARATOR}{HANDOFF_TEXT[notice]}")
-    answer_text = with_notice(composed_text, notice)
+    suffix = notice_suffix(composed_text, notice)
+    if suffix:
+        yield ChatTokenEvent(text=suffix)
+    answer_text = f"{composed_text}{suffix}"
     if final.stop_reason == "max_tokens":
         # Logged, not raised: the tokens have already reached the patient, so there is
         # nothing left to fail cleanly. What is owed is a record - a merged reply that

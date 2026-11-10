@@ -252,14 +252,23 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
 - **A follow-up to a request with staff is a classifier label**. A request is open while its
   patient message carries one of `OPEN_REQUEST_MARKS` (the calling causes minus a corpus gap and a
   failure, plus `forwarded_follow_up`); a staff post clears them. `escalation.open_requests` reads
-  them off the stored thread, `classify_intent` lists them at the end of its system prompt, and a
-  segment adding to, asking about or chasing one is `forwarded_follow_up` — marked, and told in
-  `FOLLOW_UP_MESSAGE` that it went to staff. With nothing open the label is removed from the
-  response schema, and a result carrying it is rejected. An acknowledgement is `small_talk`; a new
-  emergency is `urgent_condition`; when it is unclear the label leans to follow-up. While an
-  `urgent_condition` or `distress` request is open (or raised this turn), every generated reply is
-  given `CALM_TONE` through `with_calm_tone` — small talk, the FAQ answerer, the booking loop (as a
-  block after the cached ones) and the composer.
+  them off the stored thread - leaving out the messages the turn itself answers, so a message whose
+  superseded turn marked it is answered again as itself - and a segment adding to, asking about or
+  chasing one is `forwarded_follow_up`: marked, and told in `FOLLOW_UP_MESSAGE` that it went to
+  staff. **The label exists for the classifier only while something is open.** Then
+  `_FOLLOW_UP_RULES` and the newest `_MAX_LISTED` open requests follow `_SYSTEM_PROMPT`, and the
+  label is in the schema; with nothing open the call is byte-for-byte the pre-follow-up one and
+  the label is out of the schema. Measured: the same rules sent on every turn, with "nothing"
+  in place of the list, moved three boundary messages that have nothing open (G-a-02, G-e-06,
+  G-k-22), 3 in 3 on replay. An acknowledgement is `small_talk`; a new emergency is
+  `urgent_condition`; when it is unclear the label leans to follow-up. The small-talk prompt is
+  told whether a request is open (`staff_have_request`), since "nobody has been notified" is false
+  then. While an `urgent_condition` or `distress` request is open (or raised this turn), every
+  generated reply is given `CALM_TONE` through `with_calm_tone` — small talk, the FAQ answerer,
+  the booking loop (as a block after the cached ones) and the composer — and the fixed sentences,
+  which it cannot reach, carry no exclamation mark. `notice_suffix` is the one place the text a
+  notice adds is decided, so the streamed token and the stored and logged reply match even when
+  the reply before it is empty.
 - **A turn is traced through `chat.observability` and nothing else** (014). It is the only module
   that may import `langfuse` or `opentelemetry` (`test_tracing_boundary.py` checks, and the harness's
   `scoring/` and `comparison/` purity tests forbid both), so call sites speak in turns, steps,

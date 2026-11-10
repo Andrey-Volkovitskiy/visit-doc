@@ -170,3 +170,26 @@ def test_a_follow_up_marks_its_message_below_every_new_cause() -> None:
     requests.record(EscalationReason.CORPUS_COULD_NOT_ANSWER)
     requests.record(EscalationReason.FORWARDED_FOLLOW_UP)
     assert requests.message_mark is AttentionMark.FORWARDED_FOLLOW_UP
+
+
+def test_no_fixed_sentence_raises_its_voice() -> None:
+    # Every one of these can reach a patient with an urgent condition or distress open,
+    # and they are sent verbatim - `CALM_TONE` cannot reach them, so they have to be
+    # calm already.
+    from chat.agent.answer_faq import _ABSTENTION_MESSAGE
+
+    for text in [*HANDOFF_TEXT.values(), _ABSTENTION_MESSAGE]:
+        assert "!" not in text
+
+
+def test_the_text_a_notice_adds_is_the_text_that_is_stored() -> None:
+    from chat.agent.escalation import notice_suffix
+
+    for reply in ("", "We're open until six."):
+        added = notice_suffix(reply, EscalationReason.DISTRESS)
+        assert f"{reply}{added}" == with_notice(reply, EscalationReason.DISTRESS)
+    assert (
+        notice_suffix("", EscalationReason.DISTRESS)
+        == HANDOFF_TEXT[EscalationReason.DISTRESS]
+    )
+    assert notice_suffix("anything", None) == ""

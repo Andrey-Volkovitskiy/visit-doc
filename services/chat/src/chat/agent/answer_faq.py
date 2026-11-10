@@ -157,7 +157,7 @@ _ABSTENTION_MESSAGE = (
     "I don't have that information in the clinic's knowledge base, so I've forwarded "
     "your question to our staff to ensure you get an accurate answer. They'll follow "
     "up with you shortly. Feel free to ask if you need help with anything else in the "
-    "meantime!"
+    "meantime."
 )
 
 

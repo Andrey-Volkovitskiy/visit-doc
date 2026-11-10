@@ -13,7 +13,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from chat.agent.history import ANSWERING_HEADING, SILENT_WINDOW_NOTE
 from chat.agent.node_logging import node_span
-from chat.agent.small_talk import _SYSTEM_PROMPT, SmallTalkResult, answer_small_talk
+from chat.agent.small_talk import (
+    _NOTHING_WITH_STAFF,
+    _SYSTEM_PROMPT,
+    SmallTalkResult,
+    answer_small_talk,
+)
 from chat.core.config import Settings
 from chat.core.errors import TurnPipelineError
 from chat.domain.models import Message, MessageSender
@@ -122,7 +127,12 @@ async def test_it_is_given_no_way_to_call_staff_at_all() -> None:
     parameters = inspect.signature(answer_small_talk).parameters
 
     assert "escalation" not in parameters
-    assert set(parameters) == {"anthropic_client", "bursts", "calm"}
+    assert set(parameters) == {
+        "anthropic_client",
+        "bursts",
+        "calm",
+        "staff_have_request",
+    }
 
 
 async def test_the_prompt_states_what_the_reply_may_never_contain() -> None:
@@ -254,7 +264,7 @@ async def test_the_reply_is_a_generation_under_its_node(
     assert attributes["langfuse.observation.type"] == "generation"
     assert attributes["langfuse.observation.model.name"] == sent["model"]
     assert json.loads(attributes["langfuse.observation.input"]) == {
-        "system": _SYSTEM_PROMPT,
+        "system": _SYSTEM_PROMPT.format(staff_rule=_NOTHING_WITH_STAFF),
         "messages": sent["messages"],
     }
     assert json.loads(attributes["langfuse.observation.model.parameters"]) == {
@@ -289,3 +299,25 @@ async def test_a_failed_reply_is_an_error_generation(
 
     attributes = span_attributes(only_span(span_exporter, "small_talk.model"))
     assert attributes["langfuse.observation.level"] == "ERROR"
+
+
+# --- while an earlier request is with staff -------------------------------------------
+
+
+def test_with_nothing_with_staff_the_reply_may_not_claim_anyone_was_notified() -> None:
+    prompt = _SYSTEM_PROMPT.format(staff_rule=_NOTHING_WITH_STAFF)
+    assert "nobody has been" in prompt
+
+
+async def test_with_a_request_with_staff_the_reply_is_told_so() -> None:
+    # "Nobody has been notified" would be false here, and a reply built on it could
+    # deny the hand-off the patient was just told about.
+    client = fake_anthropic_client(["Take care."])
+
+    async for _ in answer_small_talk(client, _bursts("ok"), staff_have_request=True):
+        pass
+
+    system = client.messages.stream.call_args.kwargs["system"]
+    assert "nobody has been" not in system
+    assert "already with the clinic's staff" in system
+    assert "never deny it" in system

@@ -3080,3 +3080,113 @@ async def test_a_turn_superseded_mid_write_leaves_its_act_unsettled() -> None:
     assert act.message_id == superseded_id
     assert act.outcome is None
     assert act.settled_at is None
+
+
+# --- what the classifier is told is open with staff -----------------------------------
+
+
+async def _plant(
+    chat_id: str, sender: MessageSender, content: str, mark: AttentionMark | None
+) -> None:
+    session_id = await _session_of(chat_id)
+    message_id = str(ULID())
+    async with session_factory() as db_session:
+        await chat_repository.create_message(
+            db_session,
+            id=message_id,
+            chat_id=chat_id,
+            session_id=session_id,
+            sender=sender,
+            content=content,
+        )
+        if mark is not None:
+            await chat_repository.set_attention_mark(
+                db_session, chat_id, session_id, message_id, mark
+            )
+
+
+def _classifications(client: MagicMock) -> list[dict[str, object]]:
+    return [
+        call.kwargs
+        for call in client.messages.create.call_args_list
+        if call.kwargs.get("tools") is None
+    ]
+
+
+def _offered_labels(call: dict[str, object]) -> list[str]:
+    schema = call["output_config"]["format"]["schema"]  # type: ignore[index]
+    return list(schema["$defs"]["IntentLabel"]["enum"])
+
+
+async def test_a_stored_open_request_reaches_the_classifier_until_staff_answer() -> (
+    None
+):
+    # The whole wiring, end to end: a mark on the stored thread is an open request, the
+    # classifier is shown it and offered the follow-up label, and a staff post - the one
+    # thing that answers it - takes both away again on the next turn.
+    from chat.agent.classify_intent import _SYSTEM_PROMPT
+
+    await engine.dispose()
+    client = fake_anthropic_client_sequence(
+        [[IntentLabel.FORWARDED_FOLLOW_UP], [IntentLabel.SMALL_TALK]], ["Hello."]
+    )
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = client
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                await _plant(
+                    chat_id,
+                    MessageSender.PATIENT,
+                    "Please write me a sick note.",
+                    AttentionMark.NOT_AUTHORIZED,
+                )
+                await _plant(chat_id, MessageSender.ASSISTANT, "Forwarded.", None)
+                await async_turn(http, "My employer needs it by Friday.")
+                posted = await http.post(
+                    f"/console/chats/{chat_id}/messages",
+                    json={"content": "I'll have it ready for you tomorrow."},
+                )
+                session_id = await _session_of(chat_id)
+                async with session_factory() as db_session:
+                    await chat_repository.clear_pause(db_session, chat_id, session_id)
+                await async_turn(http, "thanks")
+
+    assert posted.status_code == 201
+    before, after = _classifications(client)
+    assert '"Please write me a sick note."' in str(before["system"])
+    assert "forwarded_follow_up" in _offered_labels(before)
+    assert after["system"] == _SYSTEM_PROMPT
+    assert "forwarded_follow_up" not in _offered_labels(after)
+    # The follow-up itself was marked, and the staff post cleared it with the rest.
+    assert AttentionMark.FORWARDED_FOLLOW_UP not in await _marks_in(chat_id)
+
+
+async def test_a_message_this_turn_answers_is_never_listed_as_already_with_staff() -> (
+    None
+):
+    # A turn superseded after it marked its message stores no reply, so the next turn
+    # answers that message again, as itself - not as a follow-up to itself.
+    from chat.agent.classify_intent import _SYSTEM_PROMPT
+
+    await engine.dispose()
+    client = fake_anthropic_client(["Hello."], intents=[IntentLabel.SMALL_TALK])
+    with patch("chat.main.AsyncAnthropic") as mock_anthropic_cls:
+        mock_anthropic_cls.return_value = client
+        with TestClient(app):
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://t"
+            ) as http:
+                chat_id = await async_chat_id_for(http)
+                await _plant(
+                    chat_id,
+                    MessageSender.PATIENT,
+                    "I'd like to speak to a person.",
+                    AttentionMark.PATIENT_ASKED_FOR_PERSON,
+                )
+                await async_turn(http, "hello?")
+
+    (call,) = _classifications(client)
+    assert call["system"] == _SYSTEM_PROMPT
