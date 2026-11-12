@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VisitDoc · Agentic Development</title>
+<title>visitdoc.app · Agentic Development</title>
 <style>
   :root { --ink:#1c2430; --muted:#5b6675; --accent:#3b4fa8; --soft:#ebeefa; --line:#d7dee5; }
   @page { size: A4; margin: 11mm 13mm; }
@@ -16,6 +16,7 @@
   nav a { color:var(--muted); margin-right:10px; }
   nav a.on { color:var(--accent); font-weight:600; text-decoration:none; }
   h1 { font-size:18pt; margin:0; letter-spacing:-.2px; }
+  h1 a { color:var(--accent); text-decoration:none; }
   .sub { color:var(--muted); margin:2px 0 10px; }
   .lede { background:var(--soft); border-left:3px solid var(--accent); padding:7px 10px; margin:0 0 10px; }
   h2 { font-size:10.5pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
@@ -39,8 +40,8 @@
 <body>
 <div class="page">
   <nav><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
-  <h1>VisitDoc: agentic development lifecycle</h1>
-  <div class="sub">How the project was built</div>
+  <h1><a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>: agentic development lifecycle</h1>
+  <!-- <div class="sub">How the project was built</div> -->
   <p class="lede">Every line of code was written by a coding agent (Claude Code). My job was the engineer's part: decide <b>what</b> to build
   and <b>why</b>, set guardrails so the agent couldn't drift, review the result, and make the decisions only a human should make.
   The result is a production-shaped multi-service AI app, built with <b>spec-driven development (SDD)</b>.</p>
