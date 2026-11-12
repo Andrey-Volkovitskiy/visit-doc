@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VisitDoc · AI Engineering</title>
+<title>visitdoc.app · AI Engineering</title>
 <style>
   :root { --ink:#1c2430; --muted:#5b6675; --accent:#0f6b5c; --soft:#e8f3f0; --line:#d7dee5; }
   @page { size: A4; margin: 8mm 12mm; }
@@ -16,6 +16,7 @@
   nav a { color:var(--muted); margin-right:10px; }
   nav a.on { color:var(--accent); font-weight:600; text-decoration:none; }
   h1 { font-size:17pt; margin:0; letter-spacing:-.2px; }
+  h1 a { color:var(--accent); text-decoration:none; }
   .sub { color:var(--muted); margin:1px 0 4px; }
   .lede { background:var(--soft); border-left:3px solid var(--accent); padding:5px 9px; margin:0 0 6px; }
   h2 { font-size:10pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
@@ -33,6 +34,8 @@
   .peek img { display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:10; width:672px; max-width:88vw;
               border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.18); }
   .peek:hover img, .peek:focus-visible img { display:block; }
+  .peek.half img { width:336px; }
+  .peek.mid img { width:504px; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
   @media print { .peek img { display:none !important; } .peek { border-bottom:0; } body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
@@ -40,12 +43,12 @@
 <body>
 <div class="page">
   <nav><a class="on" href="portfolio-ai-engineering.html">AI engineering</a><a href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
-  <h1>VisitDoc: AI engineering</h1>
+  <h1><a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>: AI engineering</h1>
   <!-- <div class="sub">A chat assistant for a medical clinic · github.com/Andrey-Volkovitskiy/visit-doc</div> -->
-  <p class="lede">A chat assistant for a medical clinic: patients manage appointments and ask policy questions in plain language.
+  <p class="lede">A chat assistant for a medical clinic that helps patients manage appointments and answers policy questions.
   A <b>LangGraph agent</b> splits each message into requests and handles them in parallel, each on the cheapest model that can do the job.
-  Answers come <b>only from retrieved, cited sources</b>, every change is <b>measured against a golden set</b>, and when the assistant
-  can't answer safely, <b>a person is called instead of a guess</b>.</p>
+  Answers come <b>only from retrieved, cited sources</b>, every change is <b>measured</b> against a <b>golden set</b>, and when the assistant
+  can't answer safely, a person is called <b>instead of a guess</b>.</p>
 
   <h2>Agent flow (LangGraph)</h2>
   <svg viewBox="0 0 720 152" role="img" aria-label="Agent flow: classifier, three parallel specialists, composer">
@@ -65,20 +68,20 @@
     <rect class="k" x="90" y="20" width="156" height="112" rx="7"/>
     <text class="t" x="98" y="38">Intent classifier</text>
     <text class="m" x="98" y="52">Haiku · structured output</text>
-    <text class="s" x="98" y="70">• splits the message into</text>
-    <text class="s" x="106" y="82">up to 3 requests</text>
+    <text class="s" x="98" y="70">• splits the message</text>
+    <text class="s" x="106" y="82">into several requests</text>
     <text class="s" x="98" y="96">• gives each an intent</text>
-    <text class="s" x="98" y="110">• rewrites each to stand on</text>
-    <text class="s" x="106" y="122">its own (from chat history)</text>
+    <text class="s" x="98" y="110">• rewrites each to be</text>
+    <text class="s" x="106" y="122">self-contained</text>
     <rect class="b" x="296" y="4" width="160" height="44" rx="7"/>
     <text class="t" x="304" y="21">Booking</text><text class="m" x="448" y="21" text-anchor="end">Sonnet 5</text>
     <text class="s" x="304" y="38">tool calls → scheduler micro svc.</text>
     <rect class="b" x="296" y="54" width="160" height="44" rx="7"/>
-    <text class="t" x="304" y="71">FAQ</text><text class="m" x="448" y="71" text-anchor="end">Sonnet 5</text>
+    <text class="t" x="304" y="71">FAQ questions</text><text class="m" x="448" y="71" text-anchor="end">Sonnet 5</text>
     <text class="s" x="304" y="88">RAG → cited answer</text>
     <rect class="b" x="296" y="104" width="160" height="44" rx="7"/>
     <text class="t" x="304" y="121">Small talk</text><text class="m" x="448" y="121" text-anchor="end">Haiku 4.5</text>
-    <text class="s" x="304" y="138">greetings, thanks, "ok"</text>
+    <text class="s" x="304" y="138">answers to greetings, thanks, "ok"</text>
     <rect class="k" x="506" y="44" width="112" height="64" rx="7"/>
     <text class="t" x="514" y="62">Composer</text><text class="m" x="514" y="76">Sonnet 5</text>
     <text class="s" x="514" y="90">merges the parts</text>
@@ -95,113 +98,106 @@
     <path class="ln" d="M618,76 H638"/>
   </svg>
   <ul>
-    <li><b>The specialist nodes</b> run in parallel, and each sees only its own requests, so one question can't leak into another's answer.
-      The model is chosen per node for <b>cost</b>: cheap and fast Haiku for classifying and chatting, more capable Sonnet for anything that states a fact or changes a booking.</li>
+    <li><b>Multi-topic message processing:</b> the classifier <a class="peek half" href="img/multi-topic-message.png" target="_blank" rel="noopener">splits<img src="img/multi-topic-message.png" alt="A patient asks to book a GP appointment and where to park; one reply answers the parking question and confirms the booking" onerror="this.remove()"></a> a patient message into several self-contained requests,
+      each handled by a specialist node in parallel, so one reply can book an appointment and answer a clinic policy question.</li>
+    <li><b>Cost-aware model selection:</b> cheap and fast Haiku model for classifying, more capable Sonnet for stating facts and booking.</li>
     <li><b>Tools over two transports:</b> the in-house agent's seven tools reach the scheduling service over <b>gRPC</b>. An external
       agent, the Claude mobile app, gets staff tools over <b>MCP</b> (OAuth 2.1), so staff away from the desk see which chats need attention.</li>
   </ul>
 
   <h2>RAG flow: answer only when it's grounded</h2>
-  <svg viewBox="0 0 720 112" role="img" aria-label="RAG flow from query rewriting to answer or escalation">
+  <svg viewBox="0 0 720 150" role="img" aria-label="RAG flow: the rewritten query goes to a hybrid search, semantic top 5 plus BM25 keyword top 3, which are merged, reranked and either answered with citations or forwarded to staff">
     <defs>
       <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5b6675"/></marker>
       <style>
         .b2{fill:#fff;stroke:#c9d1da;stroke-width:1.2}
         .k2{fill:#e8f3f0;stroke:#0f6b5c;stroke-width:1.3}
         .w2{fill:#fdf1ec;stroke:#b4532a;stroke-width:1.2;stroke-dasharray:4 3}
+        .g2{fill:#f6faf9;stroke:#0f6b5c;stroke-width:1.1;stroke-dasharray:5 3}
         .t2{font-size:11px;font-weight:600;fill:#1c2430}
         .s2{font-size:9.4px;fill:#5b6675}
+        .m2{font-size:9.4px;fill:#0f6b5c;font-weight:600}
+        .h2{font-size:9.4px;fill:#0f6b5c;font-weight:700;letter-spacing:.5px}
         .q2{font-size:9.4px;fill:#0f6b5c;font-style:italic}
         .lb2{font-size:9.4px;fill:#0f6b5c;font-style:normal;font-weight:600}
         .ln2{stroke:#5b6675;stroke-width:1.2;fill:none;marker-end:url(#a2)}
       </style>
     </defs>
-    <rect class="k2" x="2" y="4" width="118" height="50" rx="7"/>
-    <text class="t2" x="10" y="20">Query rewrite</text>
-    <text class="s2" x="10" y="34">self-contained query</text><text class="s2" x="10" y="46">from the chat history</text>
-    <rect class="b2" x="138" y="4" width="80" height="50" rx="7"/>
-    <text class="t2" x="146" y="20">Embed</text>
-    <text class="s2" x="146" y="34">Voyage</text><text class="s2" x="146" y="46">embeddings</text>
-    <rect class="b2" x="236" y="4" width="146" height="50" rx="7"/>
-    <text class="t2" x="244" y="20">Vector search</text>
-    <text class="s2" x="244" y="34">Qdrant, cosine similarity:</text><text class="s2" x="244" y="46">25 candidates → top 5</text>
-    <rect class="k2" x="400" y="4" width="146" height="50" rx="7"/>
-    <text class="t2" x="408" y="20">Rerank</text>
-    <text class="s2" x="408" y="34">cross-encoder: top 3</text><text class="s2" x="408" y="46">scoring ≥ 0.58 (calibrated)</text>
-    <rect class="b2" x="564" y="4" width="154" height="50" rx="7"/>
-    <text class="t2" x="572" y="20">Answer · Sonnet 5</text>
-    <text class="s2" x="572" y="34">from those chunks only;</text><text class="s2" x="572" y="46">citations = chunks used</text>
-    <rect class="w2" x="400" y="72" width="318" height="36" rx="7"/>
-    <text class="t2" x="408" y="87">No grounded chunks found</text>
-    <text class="s2" x="408" y="101">abstain with no generation call; forward the question to staff</text>
-    <text class="q2" x="2" y="82"><tspan class="lb2">Patient message:</tspan> "How much is the visit?" →</text>
-    <text class="q2" x="2" y="98"><tspan class="lb2">Rewritten query:</tspan> "How much is a dentist visit?"</text>
-    <path class="ln2" d="M120,29 H136"/><path class="ln2" d="M218,29 H234"/>
-    <path class="ln2" d="M382,29 H398"/><path class="ln2" d="M546,29 H562"/>
-    <path class="ln2" d="M473,54 V70"/>
+    <!-- query -->
+    <rect class="k2" x="2" y="34" width="104" height="62" rx="7"/>
+    <text class="t2" x="10" y="51">Query</text>
+    <text class="s2" x="10" y="66">rewritten to be</text><text class="s2" x="10" y="78"> self-contained</text><text class="s2" x="10" y="90">(from chat history)</text>
+    <!-- hybrid search: two branches -->
+    <rect class="g2" x="124" y="2" width="226" height="114" rx="9"/>
+    <text class="h2" x="134" y="16">HYBRID SEARCH · QDRANT</text>
+    <rect class="b2" x="134" y="22" width="76" height="40" rx="7"/>
+    <text class="t2" x="142" y="38">Embed</text><text class="s2" x="142" y="53">Voyage</text>
+    <rect class="b2" x="224" y="22" width="116" height="40" rx="7"/>
+    <text class="t2" x="232" y="38">Semantic</text><text class="m2" x="332" y="38" text-anchor="end">top 5</text>
+    <text class="s2" x="232" y="53">cosine similarity</text>
+    <rect class="b2" x="134" y="70" width="206" height="40" rx="7"/>
+    <text class="t2" x="142" y="86">Keyword · BM25</text><text class="m2" x="332" y="86" text-anchor="end">+ top 3</text>
+    <text class="s2" x="142" y="101">exact terms: codes, names, prices</text>
+    <!-- merge, rerank, answer -->
+    <rect class="b2" x="370" y="34" width="92" height="62" rx="7"/>
+    <text class="t2" x="378" y="51">Merge</text>
+    <text class="s2" x="378" y="66">union of both</text><text class="s2" x="378" y="78">branches</text>
+    <text class="m2" x="378" y="90">5–8 chunks</text>
+    <rect class="k2" x="480" y="34" width="110" height="62" rx="7"/>
+    <text class="t2" x="488" y="51">Rerank</text>
+    <text class="s2" x="488" y="66">cross-encoder</text><text class="s2" x="488" y="78">keeps the top 3</text>
+    <text class="m2" x="488" y="90">score ≥ 0.58</text>
+    <rect class="b2" x="608" y="34" width="110" height="62" rx="7"/>
+    <text class="t2" x="616" y="51">Answer</text><text class="m2" x="616" y="64">Sonnet 5</text>
+    <text class="s2" x="616" y="78">from those chunks</text><text class="s2" x="616" y="90">only; cites them</text>
+    <!-- abstain -->
+    <rect class="w2" x="480" y="112" width="238" height="36" rx="7"/>
+    <text class="t2" x="488" y="127">Forward the question to staff</text>
+    <text class="s2" x="488" y="141">nothing scores ≥ 0.58</text>
+    <!-- example -->
+    <text class="q2" x="2" y="131"><tspan class="lb2">Patient message:</tspan> "How much is it?" →</text>
+    <text class="q2" x="2" y="145"><tspan class="lb2">Rewritten query:</tspan> "How much is a dentist visit?"</text>
+    <!-- arrows -->
+    <path class="ln2" d="M106,65 C120,65 118,42 132,42"/>
+    <path class="ln2" d="M106,65 C120,65 118,90 132,90"/>
+    <path class="ln2" d="M210,42 H222"/>
+    <path class="ln2" d="M340,42 C356,42 352,65 368,65"/>
+    <path class="ln2" d="M340,90 C356,90 352,65 368,65"/>
+    <path class="ln2" d="M462,65 H478"/>
+    <path class="ln2" d="M590,65 H606"/>
+    <path class="ln2" d="M535,96 V110"/>
   </svg>
   <ul>
+    <li><b>Hybrid search:</b> semantic + BM25 keyword search. Of the two merge strategies <b>measured</b> on the <b>golden set</b>,
+      RRF lost 3 answers and adding BM25's top 3 to the semantic top 5 lost none, so addition ships.</li>
     <li><b>Structure-aware chunking:</b> documents are cut at their headings, one chunk per section, each prefixed with its
-      heading path, so a retrieved chunk keeps the context of the section it came from.</li>
-    <li><b><a class="peek" href="img/citation.png" target="_blank" rel="noopener">FAQ citations<img src="img/citation.png" alt="The staff console showing an assistant answer with the FAQ entry it was retrieved from" onerror="this.remove()"></a> come from the retrieval structure, not from the LLM</b>, so the model can't invent a source. A verdict is stored
-      <b>per request</b>, so a two-question message can answer one and pass the other to staff.</li>
+      heading path, so a retrieved chunk keeps the <b>context</b> of the section it came from.</li>
+    <li><b>Grounded FAQ answers:</b> the model answers only from retrieved clinic policy and hands uncovered questions to staff
+      instead of guessing. <b><a class="peek mid" href="img/citation.png" target="_blank" rel="noopener">Citations<img src="img/citation.png" alt="The staff console showing an assistant answer with the FAQ entry it was retrieved from" onerror="this.remove()"></a></b>
+      show staff which policy sections each answer drew on.</li>
   </ul>
 
   <h2>Data-driven decisions</h2>
   <ul>
     <li><b>A golden set</b> of 146 labelled cases and an <b>evaluation harness</b> that drives them through the real stack, so every change
-      to the flow, a prompt or a setting gets a <b>side-by-side comparison</b> with the baseline. A <b>measured noise band</b> 
+      to the flow, a prompt or a setting gets a side-by-side comparison with the baseline. A <b>measured noise band</b> 
       separates a real improvement or regression from the model's ordinary run-to-run variation.</li>
-    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt improvements, the retrieval thresholds (the rerank floor
-      calibrated at 0.58) and a temperature for the classifier. <b>Unserved answerable requests fell from
-      12/87 to 1/87</b>.</li>
-    <li><a class="peek" href="img/langfuse-trace.png" target="_blank" rel="noopener"><b>Langfuse</b><img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></a> traces the cost and latency of every step of the flow. <b>Prompt caching</b>, added where the traces showed the
-      spend, <b>cut model costs by 45%</b>.</li>
+    <li><b>Tuned by measurement, not by intuition:</b> the evaluation drove the prompt improvements,
+      the rerank floor (calibrated at 0.58) and a temperature for the classifier.
+      Unserved answerable requests fell from 12/87 to 1/87.</li>
+    <li><a class="peek" href="img/langfuse-trace.png" target="_blank" rel="noopener"><b>Langfuse</b><img src="img/langfuse-trace.png" alt="A Langfuse trace of one turn: each step with its latency and cost" onerror="this.remove()"></a> traces cost and latency per step, and guided <b>prompt caching</b> that cut model <b>costs by 45%</b>.</li>
   </ul>
 
-  <!-- <h2>Escalation flow: when a person is called</h2>
-  <svg viewBox="0 0 720 96" role="img" aria-label="Escalation flow">
-    <defs>
-      <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5b6675"/></marker>
-      <style>
-        .r3{fill:#fdf1ec;stroke:#b4532a;stroke-width:1.3}
-        .y3{fill:#fff8e6;stroke:#b98a1d;stroke-width:1.2}
-        .b3{fill:#fff;stroke:#c9d1da;stroke-width:1.2}
-        .t3{font-size:11px;font-weight:600;fill:#1c2430}
-        .s3{font-size:9.4px;fill:#5b6675}
-        .ln3{stroke:#5b6675;stroke-width:1.2;fill:none;marker-end:url(#a3)}
-      </style>
-    </defs>
-    <rect class="r3" x="2" y="4" width="300" height="40" rx="7"/>
-    <text class="t3" x="10" y="20">Classifier: urgent symptoms · distress · asks</text>
-    <text class="t3" x="10" y="35">for a person · booking for someone else</text>
-    <rect class="y3" x="2" y="52" width="300" height="40" rx="7"/>
-    <text class="t3" x="10" y="68">No grounded FAQ answer · not authorized</text>
-    <text class="t3" x="10" y="83">(e.g. prescription) · booking tool or any error</text>
-    <rect class="r3" x="330" y="4" width="226" height="40" rx="7"/>
-    <text class="t3" x="338" y="20">Immediate hand-off · AI goes silent</text>
-    <text class="s3" x="338" y="35">fixed reply; urgent → emergency services</text>
-    <rect class="y3" x="330" y="52" width="226" height="40" rx="7"/>
-    <text class="t3" x="338" y="68">Staff called to follow up</text>
-    <text class="s3" x="338" y="83">AI keeps answering the rest of the chat</text>
-    <rect class="b3" x="582" y="18" width="136" height="70" rx="7"/>
-    <text class="t3" x="590" y="36">Staff console</text>
-    <text class="s3" x="590" y="51">conversation marked</text>
-    <text class="s3" x="590" y="64">with the cause;</text><text class="s3" x="590" y="76">staff reply in thread</text>
-    <path class="ln3" d="M302,24 H328"/><path class="ln3" d="M302,72 H328"/>
-    <path class="ln3" d="M556,24 C568,24 568,40 580,40"/><path class="ln3" d="M556,72 C568,72 568,58 580,58"/>
-  </svg> -->
-
   <div class="stats">
-    <div class="stat"><div class="n">146</div><div class="l">golden cases, scored per request</div></div>
+    <div class="stat"><div class="n">146</div><div class="l">golden cases steering development</div></div>
+    <div class="stat"><div class="n">12/87 → 1/87</div><div class="l">missed answers cut by eval-driven fixes</div></div>
     <div class="stat"><div class="n">−45%</div><div class="l">model spend after prompt caching</div></div>
-    <div class="stat"><div class="n">12 → 1</div><div class="l">unserved answerable requests (of 87)</div></div>
     <div class="stat"><div class="n">Tools + MCP</div><div class="l">7 agent tools · 2 read-only staff tools for the Claude app</div></div>
   </div>
 
-  <div class="stack"><b>Stack:</b> <b>LLMs:</b>&nbsp;Claude Sonnet 5 / Haiku 4.5, structured outputs, tool calling,
-  prompt caching · <b>Agent:</b>&nbsp;LangGraph · <b>RAG:</b>&nbsp;voyage-4-lite embedder + voyage-rerank-3 cross-encoder, Qdrant ·
-  <b>Eval &amp; observability:</b>&nbsp;custom golden-set harness with noise band, Langfuse · <b>Integration:</b>&nbsp;MCP (OAuth 2.1), gRPC</div>
+  <div class="stack"><b>Stack:</b> <b>LLMs:</b>&nbsp;Claude API, structured outputs, tool calling,
+  prompt caching · <b>Agent:</b>&nbsp;LangGraph · <b>RAG:</b>&nbsp;voyage embedder, voyage rerank cross-encoder, Qdrant hybrid search (semantic + BM25) ·
+  <b>Eval &amp; observability:</b>&nbsp;custom sgolden-set harness with noise band, Langfuse · <b>Integration:</b>&nbsp;MCP (OAuth 2.1), gRPC</div>
 </div>
 </body>
 </html>
