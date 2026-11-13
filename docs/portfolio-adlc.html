@@ -6,7 +6,7 @@
 <title>visitdoc.app · Agentic Development</title>
 <style>
   :root { --ink:#1c2430; --muted:#5b6675; --accent:#3b4fa8; --soft:#ebeefa; --line:#d7dee5; }
-  @page { size: A4; margin: 11mm 13mm; }
+  @page { size: A4; margin: 8mm 12mm; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f4f6f8; color:var(--ink);
          font: 9.6pt/1.4 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
@@ -15,45 +15,101 @@
   nav { font-size:8.5pt; color:var(--muted); margin-bottom:6px; }
   nav a { color:var(--muted); margin-right:10px; }
   nav a.on { color:var(--accent); font-weight:600; text-decoration:none; }
+  nav a.gh { float:right; margin-right:0; color:#b8bfc7; text-decoration:none; }
   h1 { font-size:18pt; margin:0; letter-spacing:-.2px; }
   h1 a { color:var(--accent); text-decoration:none; }
   .sub { color:var(--muted); margin:2px 0 10px; }
   .lede { background:var(--soft); border-left:3px solid var(--accent); padding:7px 10px; margin:0 0 10px; }
   h2 { font-size:10.5pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
-       margin:11px 0 4px; border-bottom:1px solid var(--line); padding-bottom:2px; }
+       margin:21px 0 4px; border-bottom:1px solid var(--line); padding-bottom:2px; }
   ul { margin:0; padding-left:16px; } li { margin:2px 0; }
   b { font-weight:600; }
-  .flow { display:flex; gap:4px; align-items:stretch; margin:6px 0 2px; font-size:8.6pt; }
-  .flow div { flex:1; border:1px solid var(--line); border-radius:6px; padding:4px 6px; background:#fafbfd; line-height:1.25; }
-  .flow div b { display:block; color:var(--accent); }
-  .flow span { align-self:center; color:var(--muted); }
+  svg { width:100%; height:auto; display:block; margin:6px 0 2px; font-family:"Segoe UI", system-ui, sans-serif; }
   .stats { display:flex; gap:8px; margin:8px 0 2px; }
   .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
   .stat .n { font-size:13pt; font-weight:700; color:var(--accent); }
   .stat .l { font-size:8.3pt; color:var(--muted); line-height:1.25; }
   .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
   code { font: 8.8pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
-  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .flow, .stats { flex-wrap:wrap; } .flow span { display:none; } .flow div, .stat { flex:1 1 45%; } }
+  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
   @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
 </head>
 <body>
 <div class="page">
-  <nav><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
+  <nav><a class="gh" href="https://github.com/Andrey-Volkovitskiy/visit-doc" target="_blank" rel="noopener">github.com/Andrey-Volkovitskiy/visit-doc</a><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
   <h1><a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>: Agentic Development Lifecycle</h1>
   <!-- <div class="sub">How the project was built</div> -->
   <p class="lede">Every line of code was written by a coding agent (Claude Code). My job was the engineer's part: decide <b>what</b> to build
   and <b>why</b>, set guardrails so the agent couldn't drift, review the result, and make the decisions only a human should make.
   The result is a production-shaped multi-service AI app, built with <b>spec-driven development (SDD)</b>.</p>
 
-  <h2>The loop: intent → spec → guarded implementation → measured result</h2>
-  <div class="flow">
-    <div><b>Intent</b>Roadmap phase, scope and the "why"</div><span>→</span>
-    <div><b>Spec</b>spec, plan, contracts, tasks; analysed until consistent</div><span>→</span>
-    <div><b>Build</b>TDD; hooks check every edit</div><span>→</span>
-    <div><b>Converge</b>code re-checked against the spec</div><span>→</span>
-    <div><b>Verify</b>review loop, CI, e2e, golden-set eval</div>
-  </div>
+  <h2>The loop: <span style="color:#9aa3ae">the engineer decides and verifies, the agent builds</span></h2>
+  <svg viewBox="0 0 720 152" role="img" aria-label="Five stages, with the engineer's involvement high at the first, medium at the second, low at the third and fourth, and high again at the fifth: intent and spec, plan, build and converge, agent review loop, verify">
+    <defs>
+      <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#5b6675"/></marker>
+      <style>
+        .hb{fill:#ebeefa;stroke:#3b4fa8;stroke-width:1.3}
+        .pb{fill:#f6f7fd;stroke:#8f9bd3;stroke-width:1.2}
+        .ab{fill:#fff;stroke:#c9d1da;stroke-width:1.2}
+        .t3{font-size:11px;font-weight:600;fill:#1c2430}
+        .s3{font-size:9.4px;fill:#5b6675}
+        .m3{font-size:9.4px;fill:#3b4fa8;font-weight:600}
+        .g3{font-size:9.4px;fill:#3b4fa8;font-weight:700;letter-spacing:.5px}
+        .q3{font-size:10.5px;fill:#3b4fa8;font-style:italic;font-weight:600}
+        .br3{stroke:#8f9bd3;stroke-width:1.2;fill:none}
+        .ln3{stroke:#5b6675;stroke-width:1.2;fill:none;marker-end:url(#a3)}
+        .cv{stroke:#3b4fa8;stroke-width:1.8;fill:none}
+        .ar{fill:#ebeefa;opacity:.7}
+        .bs{stroke:#c9d1da;stroke-width:1}
+      </style>
+    </defs>
+    <!-- engineer-involvement curve: high, medium, low, low, high -->
+    <path class="ar" d="M0,8 H66 C140,8 140,22 213,22 C286,22 286,36 360,36 H507 C580,36 580,8 654,8 H720 V40 H0 Z"/>
+    <path class="cv" d="M0,8 H66 C140,8 140,22 213,22 C286,22 286,36 360,36 H507 C580,36 580,8 654,8 H720"/>
+    <line class="bs" x1="0" y1="40" x2="720" y2="40"/>
+    <circle cx="66" cy="8" r="3" fill="#3b4fa8"/><circle cx="213" cy="22" r="3" fill="#3b4fa8"/>
+    <circle cx="360" cy="36" r="3" fill="#3b4fa8"/><circle cx="507" cy="36" r="3" fill="#3b4fa8"/>
+    <circle cx="654" cy="8" r="3" fill="#3b4fa8"/>
+    <text class="g3" x="433" y="28" text-anchor="middle">ENGINEER INVOLVEMENT</text>
+    <!-- stages -->
+    <rect class="hb" x="1" y="46" width="131" height="81" rx="7"/>
+    <text class="t3" x="9" y="61">Intent + Spec</text><text class="m3" x="9" y="73">engineer</text>
+    <text class="s3" x="9" y="86">what to build and why,</text>
+    <text class="s3" x="9" y="97">business requirements,</text>
+    <text class="s3" x="9" y="108">brainstorm edge cases</text>
+    <rect class="pb" x="148" y="46" width="131" height="81" rx="7"/>
+    <text class="t3" x="156" y="61">Plan</text><text class="m3" x="156" y="73">engineer + agent</text>
+    <text class="s3" x="156" y="86">contracts, data model,</text>
+    <text class="s3" x="156" y="97">tech and architecture</text>
+    <text class="s3" x="156" y="108">decisions, tasks; cross-</text>
+    <text class="s3" x="156" y="119">checked until consistent</text>
+    <rect class="ab" x="295" y="46" width="131" height="81" rx="7"/>
+    <text class="t3" x="303" y="61">Build + Converge</text><text class="m3" x="303" y="73">agent loop</text>
+    <text class="s3" x="303" y="86">TDD implementation;</text>
+    <text class="s3" x="303" y="97">hooks check every edit;</text>
+    <text class="s3" x="303" y="108">code re-checked against</text>
+    <text class="s3" x="303" y="119">the spec</text>
+    <rect class="ab" x="442" y="46" width="131" height="81" rx="7"/>
+    <text class="t3" x="450" y="61">Review</text><text class="m3" x="450" y="73">agent loop</text>
+    <text class="s3" x="450" y="86">clean-context, subagents</text>
+    <text class="s3" x="450" y="97">review from different</text>
+    <text class="s3" x="450" y="108">angles; fix and review</text>
+    <text class="s3" x="450" y="119">again; CI, e2e</text>
+    <rect class="hb" x="589" y="46" width="130" height="81" rx="7"/>
+    <text class="t3" x="597" y="61">Verify</text><text class="m3" x="597" y="73">engineer</text>
+    <text class="s3" x="597" y="86">measure on golden set,</text>
+    <text class="s3" x="597" y="97">manual testing,</text>
+    <text class="s3" x="597" y="108">human code review</text>
+    <path class="ln3" d="M132,87 H146"/><path class="ln3" d="M279,87 H293"/>
+    <path class="ln3" d="M426,87 H440"/><path class="ln3" d="M573,87 H587"/>
+    <!-- the question each stage answers -->
+    <text class="q3" x="66" y="148" text-anchor="middle">What?</text>
+    <text class="q3" x="213" y="148" text-anchor="middle">How?</text>
+    <path class="br3" d="M297,132 V136 H571 V132"/>
+    <text class="q3" x="434" y="148" text-anchor="middle">Execution</text>
+    <text class="q3" x="654" y="148" text-anchor="middle">Critical reflection</text>
+  </svg>
 
   <h2>Guardrails I designed for the agent</h2>
   <ul>
