@@ -9,7 +9,7 @@
   @page { size: A4; margin: 8mm 12mm; }
   * { box-sizing: border-box; }
   body { margin:0; background:#f4f6f8; color:var(--ink);
-         font: 9.6pt/1.4 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+         font: 9.1pt/1.34 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
   .page { max-width:210mm; margin:16px auto; background:#fff; padding:12mm 14mm;
           box-shadow:0 1px 6px rgba(0,0,0,.08); }
   nav { font-size:8.5pt; color:var(--muted); margin-bottom:6px; }
@@ -22,8 +22,9 @@
   .lede { background:var(--soft); border-left:3px solid var(--accent); padding:7px 10px; margin:0 0 10px; }
   h2 { font-size:10.5pt; color:var(--accent); text-transform:uppercase; letter-spacing:.6px;
        margin:21px 0 4px; border-bottom:1px solid var(--line); padding-bottom:2px; }
-  ul { margin:0; padding-left:16px; } li { margin:2px 0; }
+  ul { margin:3px 0 0; padding-left:16px; } li { margin:1px 0; }
   b { font-weight:600; }
+  .em { text-decoration:underline dotted var(--accent); text-decoration-thickness:1.5px; text-underline-offset:2px; }
   svg { width:100%; height:auto; display:block; margin:6px 0 2px; font-family:"Segoe UI", system-ui, sans-serif; }
   .stats { display:flex; gap:8px; margin:8px 0 2px; }
   .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
@@ -31,8 +32,12 @@
   .stat .l { font-size:8.3pt; color:var(--muted); line-height:1.25; }
   .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
   code { font: 8.8pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
+  .peek { position:relative; color:inherit; text-decoration:none; border-bottom:1px dotted var(--accent); cursor:zoom-in; }
+  .peek img { display:none; position:absolute; left:0; bottom:calc(100% + 6px); z-index:10; width:504px; max-width:88vw;
+              border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.18); }
+  .peek:hover img, .peek:focus-visible img { display:block; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
-  @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
+  @media print { .peek img { display:none !important; } .peek { border-bottom:0; } body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
 </head>
 <body>
@@ -40,9 +45,9 @@
   <nav><a class="gh" href="https://github.com/Andrey-Volkovitskiy/visit-doc" target="_blank" rel="noopener">github.com/Andrey-Volkovitskiy/visit-doc</a><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
   <h1><a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>: Agentic Development Lifecycle</h1>
   <!-- <div class="sub">How the project was built</div> -->
-  <p class="lede">Every line of code was written by a coding agent (Claude Code). My job was the engineer's part: decide <b>what</b> to build
-  and <b>why</b>, set guardrails so the agent couldn't drift, review the result, and make the decisions only a human should make.
-  The result is a production-shaped multi-service AI app, built with <b>spec-driven development (SDD)</b>.</p>
+  <p class="lede">Every line of code was written by a coding agent (Claude Code), using <b>spec-driven development (SDD)</b>.
+  I decided <b>what</b> to build and <b>why</b>, and built the guardrails that keep the agent's output production-grade,
+  so I could run several features in parallel and spend my time on design and verification.</p>
 
   <h2>The loop: <span style="color:#9aa3ae">the engineer decides and verifies, the agent builds</span></h2>
   <svg viewBox="0 0 720 152" role="img" aria-label="Five stages, with the engineer's involvement high at the first, medium at the second, low at the third and fourth, and high again at the fifth: intent and spec, plan, build and converge, agent review loop, verify">
@@ -111,44 +116,49 @@
     <text class="q3" x="654" y="148" text-anchor="middle">Critical reflection</text>
   </svg>
 
-  <h2>Guardrails I designed for the agent</h2>
+  <h2>Guardrails against agent drift</h2>
   <ul>
-    <li><b>Spec-driven development (spec-kit).</b> 18 features, each with a spec, plan, research notes, data model, API
-      contracts, tasks and quickstart. A <b>constitution</b> with eight principles binds every plan and makes
-      <b>TDD non-negotiable</b>: every behaviour starts as a failing test.</li>
-    <li><b>A binding roadmap as the statement of intent.</b> Each phase states what to build and the reasoning behind it. Every technology
-      choice and its tradeoff is recorded beside the phase that made it (21 sections).</li>
-    <li><b>Hooks.</b> After every edit, Python is auto-formatted, linted and type-checked with strict mypy, and TypeScript runs
-      <code>tsc -b</code>. Errors go straight back to the agent, so a type error never survives to the next step.</li>
-    <li><b>Custom skills that automate the cycle:</b> <code>speckit-analyze-loop</code> (cross-check the spec documents until they agree),
-      <code>speckit-implement-loop</code> (implement → converge until nothing is left), <code>review-loop</code> (rounds of
-      high-effort code review and fixes) and <code>commit-changes</code> (conventional commits).</li>
-    <li><b>Layered agent instructions.</b> Each directory has its own CLAUDE.md, loaded only when the agent works there. Project-wide
-      principles (e.g. "one value, one meaning", "a timeout never proves the server did nothing") turn hard-won lessons into rules the agent follows.</li>
-    <li><b>UI sketches before UI code.</b> Three static HTML mockups filled with the product's real content, from conventional to
-      experimental. One was chosen and made the visual reference; the agent implemented against it.</li>
+    <li><b>Spec-kit as the backbone:</b> specs, contracts, data models and task lists give parallel subagents <span class="em">one reference</span>,
+      let behaviour be checked against intent, and keep big features from <span class="em">bloating the context</span>,
+      since a fresh session picks up from the files.</li>
+    <li><b>Written principles the agent follows.</b> A spec-kit constitution, code-style and testing guides, and a CLAUDE.md per service
+      set the project's rules, e.g. <span class="em">"one value, one meaning"</span> (no status or empty result may stand for two situations) and
+      <span class="em">non-negotiable TDD</span>: tests are written from the spec before the code exists, so they have no code to mirror.</li>
+    <li><b>4,800 tests</b> (unit, integration, end-to-end) catch regressions. Each test worker gets its own Postgres databases and
+      Qdrant collections, so several coding agents can check their edits at the same time without collisions.</li>
+    <li><b>Hooks.</b> After every edit, code is auto-formatted, linted and type-checked. Errors go straight back to the agent, so a
+      type error never survives to the next step.</li>
+    <li><b>CI</b> on GitHub Actions runs pre-commit, unit, frontend and integration tests on every push.</li>
   </ul>
 
-  <h2>Verification I don't delegate</h2>
+  <h2>Token and time efficiency</h2>
   <ul>
-    <li><b>Test pyramid:</b> unit, integration (real Postgres and Qdrant) and <b>end-to-end in a real Chromium</b> via Playwright.
-      CI on GitHub Actions runs pre-commit, unit, frontend and integration tests on every push.</li>
-    <li><b>Isolated test runs, so several agents can work at once.</b> Each coding-agent session, and each parallel test worker,
-      gets its own Postgres databases and Qdrant collections, named automatically. Several agents can run the full suite
-      at the same time without clearing each other's data.</li>
-    <li><b>AI behaviour is gated by evaluation, not by opinion.</b> A prompt change is replayed offline first, then run on only the
-      golden cases it can affect, and only then on the full set, compared with the baseline and its noise band.</li>
-    <li><b>Lessons become rules:</b> each costly mistake (e.g. a full eval run spent where a targeted one would do) becomes a written rule the agent follows.</li>
+    <li><b>Context ready from the first prompt.</b> The current architecture lives in the roadmap, each feature's details in its
+      spec, and the dev tools and commands in the CLAUDE.md files, so a new session starts with the project and its environment
+      already known instead of spending time exploring.</li>
+    <li><b>Session post-mortems.</b> Coding sessions are analysed afterwards, and each lesson becomes a new agent instruction
+      (e.g. a full eval run spent where a targeted one would do), so the same pitfall isn't hit twice.</li>
+    <li><b>A custom skill for every repeated routine:</b> <code>speckit-analyze-loop</code> (cross-check the spec documents until they agree),
+      <code>speckit-implement-loop</code> (implement → converge until nothing is left), <code>review-loop</code> (rounds of
+      high-effort code review and fixes) and <code>commit-changes</code> (conventional commits).</li>
+  </ul>
+
+  <h2>While the agents run: <span style="color:#9aa3ae">where my time goes</span></h2>
+  <ul>
+    <li><b>Other features in parallel</b>, each in its own git worktree, with isolated tests.</li>
+    <li><b>UI design</b> by handing the agent a <a class="peek" href="img/ui-sketch.png" target="_blank" rel="noopener">sketch<img src="img/ui-sketch.png" alt="Wireframe sketches of the patient messenger and the staff console tabs (chats, practitioners, FAQ), with annotations" onerror="this.remove()"></a> to build from.</li>
+    <li><b>Verifying results by measurement, not opinion:</b> against golden cases, compared with the baseline and its noise band.</li>
+    <li><b>Analysing the assistant in Langfuse:</b> its behaviour, latency and cost.</li>
   </ul>
 
   <div class="stats">
-    <div class="stat"><div class="n">18</div><div class="l">spec-kit features, spec to shipped</div></div>
-    <div class="stat"><div class="n">~4,800</div><div class="l">automated tests, written test-first</div></div>
+    <div class="stat"><div class="n">18</div><div class="l">features shipped through SDD</div></div>
+    <div class="stat"><div class="n">~4,800</div><div class="l">tests, written test-first</div></div>
     <div class="stat"><div class="n">40k / 66k</div><div class="l">lines of app code / lines of tests</div></div>
     <div class="stat"><div class="n">0</div><div class="l">lines of code typed by hand</div></div>
   </div>
 
-  <div class="stack"><b>Tooling:</b> <b>Coding&nbsp;agent:</b>&nbsp;Claude Code&nbsp;· <b>Specs:</b>&nbsp;GitHub spec-kit&nbsp;· <b>Testing:</b>&nbsp;pytest + xdist, Vitest, Playwright&nbsp;· <b>Quality&nbsp;gates&nbsp;&amp;&nbsp;CI:</b>&nbsp;ruff, mypy strict, tsc, pre-commit, GitHub Actions&nbsp;· <b>AI&nbsp;evaluation:</b>&nbsp;golden-set harness, Langfuse</div>
+  <div class="stack"><b>Coding&nbsp;agent:</b>&nbsp;Claude Code&nbsp;· <b>Specs:</b>&nbsp;GitHub spec-kit&nbsp;· <b>Testing:</b>&nbsp;pytest + xdist, Vitest, Playwright&nbsp;· <b>Quality&nbsp;gates&nbsp;&amp;&nbsp;CI:</b>&nbsp;ruff, mypy strict, tsc, pre-commit, GitHub Actions&nbsp;· <b>AI&nbsp;evaluation:</b>&nbsp;golden-set harness, Langfuse</div>
 </div>
 </body>
 </html>
