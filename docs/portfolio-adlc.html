@@ -26,9 +26,9 @@
   b { font-weight:600; }
   .em { text-decoration:underline dotted var(--accent); text-decoration-thickness:1.5px; text-underline-offset:2px; }
   svg { width:100%; height:auto; display:block; margin:6px 0 2px; font-family:"Segoe UI", system-ui, sans-serif; }
-  .stats { display:flex; gap:8px; margin:8px 0 2px; }
-  .stat { flex:1; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
-  .stat .n { font-size:13pt; font-weight:700; color:var(--accent); }
+  .stats { display:flex; gap:8px; margin:24px 0 2px; }
+  .stat { flex:1 1 auto; border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
+  .stat .n { font-size:13pt; font-weight:700; color:var(--accent); white-space:nowrap; }
   .stat .l { font-size:8.3pt; color:var(--muted); line-height:1.25; }
   .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
   code { font: 8.8pt ui-monospace, Consolas, monospace; background:#f1f3f5; padding:0 3px; border-radius:3px; }
@@ -36,7 +36,7 @@
   .peek img { display:none; position:absolute; left:0; bottom:calc(100% + 6px); z-index:10; width:504px; max-width:88vw;
               border:1px solid var(--line); border-radius:6px; background:#fff; box-shadow:0 6px 24px rgba(0,0,0,.18); }
   .peek:hover img, .peek:focus-visible img { display:block; }
-  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } }
+  @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .stats { flex-wrap:wrap; } .stat { flex:1 1 45%; } .stat .n { white-space:normal; } }
   @media print { .peek img { display:none !important; } .peek { border-bottom:0; } body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
 </head>
@@ -45,7 +45,7 @@
   <nav><a class="gh" href="https://github.com/Andrey-Volkovitskiy/visit-doc" target="_blank" rel="noopener">github.com/Andrey-Volkovitskiy/visit-doc</a><a href="portfolio-ai-engineering.html">AI engineering</a><a class="on" href="portfolio-adlc.html">Agentic development</a><a href="portfolio-architecture.html">Architecture</a></nav>
   <h1><a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>: Agentic Development Lifecycle</h1>
   <!-- <div class="sub">How the project was built</div> -->
-  <p class="lede">Every line of code was written by a coding agent (Claude Code), using <b>spec-driven development (SDD)</b>.
+  <p class="lede">Every line of code was written by a coding agent (Claude Code), steered through <b>spec-driven development (SDD)</b>.
   I decided <b>what</b> to build and <b>why</b>, and built the guardrails that keep the agent's output production-grade,
   so I could run several features in parallel and spend my time on design and verification.</p>
 
@@ -152,10 +152,10 @@
   </ul>
 
   <div class="stats">
-    <div class="stat"><div class="n">18</div><div class="l">features shipped through SDD</div></div>
+    <div class="stat"><div class="n">18 feat in 10 wks</div><div class="l">major <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/tree/main/specs" target="_blank" rel="noopener" style="color:inherit">features</a>, solo, shipped through SDD</div></div>
+    <div class="stat"><div class="n">40k</div><div class="l">lines of app code</div></div>
+    <div class="stat"><div class="n">100% agent-written</div><div class="l">built from my specs, reviewed by me</div></div>
     <div class="stat"><div class="n">~4,800</div><div class="l">tests, written test-first</div></div>
-    <div class="stat"><div class="n">40k / 66k</div><div class="l">lines of app code / lines of tests</div></div>
-    <div class="stat"><div class="n">0</div><div class="l">lines of code typed by hand</div></div>
   </div>
 
   <div class="stack"><b>Coding&nbsp;agent:</b>&nbsp;Claude Code&nbsp;· <b>Specs:</b>&nbsp;GitHub spec-kit&nbsp;· <b>Testing:</b>&nbsp;pytest + xdist, Vitest, Playwright&nbsp;· <b>Quality&nbsp;gates&nbsp;&amp;&nbsp;CI:</b>&nbsp;ruff, mypy strict, tsc, pre-commit, GitHub Actions&nbsp;· <b>AI&nbsp;evaluation:</b>&nbsp;golden-set harness, Langfuse</div>
