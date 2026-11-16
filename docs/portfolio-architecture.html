@@ -26,7 +26,7 @@
   svg { width:100%; height:auto; display:block; font-family:"Segoe UI", system-ui, sans-serif; }
   .cols { display:flex; gap:14px; } .cols > div { flex:1; }
   li a { color:inherit; text-decoration:underline dotted #b8bfc7; text-underline-offset:2px; }
-  .stack { font-size:8.4pt; color:var(--muted); margin-top:5px; border-top:1px solid var(--line); padding-top:5px; }
+  .stack { font-size:8.4pt; color:var(--muted); margin-top:18px; border-top:1px solid var(--line); padding-top:5px; }
   @media (max-width:640px) { .page { margin:0; padding:16px; box-shadow:none; } .cols { flex-direction:column; gap:0; } }
   @media print { body { background:#fff; } .page { margin:0; padding:0; box-shadow:none; max-width:none; } }
 </style>
@@ -121,7 +121,8 @@
     <li><b>Failure semantics are designed in.</b> A timeout never proves the server did nothing, so a write
       whose answer never came is <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/services/chat/src/chat/clients/scheduling.py#L487-L563" target="_blank" rel="noopener">recorded as unknown</a>, not as failed.
       Retries are safe because a booking carries an <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/packages/shared-proto/protos/scheduling/v1/scheduling.proto#L367-L388" target="_blank" rel="noopener">idempotency key</a>, while a reschedule or cancel
-      <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/packages/shared-proto/protos/scheduling/v1/scheduling.proto#L90-L95" target="_blank" rel="noopener">needs none</a>: neither creates anything, so a re-send can't duplicate one. Any turn that ends without a reply <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/services/chat/src/chat/agent/escalation.py" target="_blank" rel="noopener">calls a person</a>.</li>
+      <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/packages/shared-proto/protos/scheduling/v1/scheduling.proto#L90-L95" target="_blank" rel="noopener">needs none</a>: neither creates anything, so a re-send can't duplicate one.</li>
+    <li><b>No patient is left without an answer.</b> Any turn that ends without a reply <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/services/chat/src/chat/agent/escalation.py" target="_blank" rel="noopener">calls a person</a>.</li>
     <li><b>FAQ edits are all-or-nothing.</b> Though an edit touches two stores (the entry in Postgres, its
       chunks in Qdrant), Postgres is the <b>source of truth</b>: it holds the live <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/blob/b7cba8c/services/chat/src/chat/api/faq.py#L258-L322" target="_blank" rel="noopener">revision</a>,
       and search returns only its chunks. A failed edit leaves both serving the previous version.</li>
@@ -133,6 +134,8 @@
     <li><b>Test pyramid:</b> <b>4,725 unit</b> (4,141 Python + 584 frontend), <b>74 integration</b> (real Postgres,
       Qdrant and gRPC) and <b>8 end-to-end</b> journeys in a real Chromium against the running stack. Coverage:
       <b>95%</b>.</li>
+    <li><b>CI gates:</b> every push to main runs ruff lint and format, strict mypy, a lockfile check,
+      then the Python unit, frontend (typecheck and tests) and integration tiers against real Postgres and Qdrant.</li>
     <li><b>Live in production at <a href="https://visitdoc.app" target="_blank" rel="noopener">visitdoc.app</a>:</b> single-node
       <b>k3s</b> on a Hetzner VPS, deployed from Kustomize overlays. Images are pushed to GHCR tagged by commit.
       Let's Encrypt TLS via Traefik, with HTTP redirected to HTTPS and secure session cookies.
@@ -142,7 +145,7 @@
       and the token cost of every model call logged.</li>
   </ul>
 
-  <div class="stack"><b>Stack:</b> <b>Backend:</b>&nbsp;Python 3.12, FastAPI, Pydantic, SQLAlchemy (async), Alembic&nbsp;· <b>Data:</b>&nbsp;PostgreSQL 16, Qdrant&nbsp;· <b>Services:</b>&nbsp;gRPC/protobuf, uv-workspace monorepo&nbsp;· <b>AI:</b>&nbsp;LangGraph, Claude, Voyage&nbsp;· <b>Frontend:</b>&nbsp;React + Vite, TypeScript&nbsp;· <b>Delivery:</b>&nbsp;Docker, Kubernetes (k3s, Kustomize, Traefik), Hetzner VPS, GHCR, GitHub Actions</div>
+  <div class="stack"><b>Backend:</b>&nbsp;Python 3.12, FastAPI, Pydantic, SQLAlchemy (async), Alembic&nbsp;· <b>Data:</b>&nbsp;PostgreSQL, Qdrant&nbsp;· <b>Services:</b>&nbsp;gRPC/protobuf, uv-workspace monorepo&nbsp;· <b>AI:</b>&nbsp;LangGraph, Claude, Voyage&nbsp;· <b>Frontend:</b>&nbsp;React + Vite, TypeScript&nbsp;· <b>Delivery:</b>&nbsp;Docker, Kubernetes (k3s, Kustomize, Traefik), Hetzner VPS, GHCR, GitHub Actions</div>
 </div>
 </body>
 </html>
