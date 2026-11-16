@@ -137,7 +137,7 @@
       spec, and the dev tools and commands in the CLAUDE.md files, so a new session starts with the project and its environment
       already known instead of spending time exploring.</li>
     <li><b>Session post-mortems.</b> Coding sessions are analysed afterwards, and each lesson becomes a new agent instruction
-      (e.g. a full eval run spent where a targeted one would do), so the same pitfall isn't hit twice.</li>
+      (e.g. a full eval run, about 5× the cost of a targeted one, spent where the targeted one would do), so the same pitfall isn't hit twice.</li>
     <li><b>A custom skill for every repeated routine:</b> <code>speckit-analyze-loop</code> (cross-check the spec documents until they agree),
       <code>speckit-implement-loop</code> (implement → converge until nothing is left), <code>review-loop</code> (rounds of
       high-effort code review and fixes) and <code>commit-changes</code> (conventional commits).</li>
@@ -152,8 +152,8 @@
   </ul>
 
   <div class="stats">
-    <div class="stat"><div class="n">18 feat in 10 wks</div><div class="l">major <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/tree/main/specs" target="_blank" rel="noopener" style="color:inherit">features</a>, solo, shipped through SDD</div></div>
-    <div class="stat"><div class="n">40k</div><div class="l">lines of app code</div></div>
+    <div class="stat"><div class="n">18 features / 10 weeks</div><div class="l">major <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/tree/main/specs" target="_blank" rel="noopener" style="color:inherit">features</a>, solo, shipped through SDD</div></div>
+    <div class="stat"><div class="n">45k</div><div class="l">lines of app code</div></div>
     <div class="stat"><div class="n">100% agent-written</div><div class="l">built from my specs, reviewed by me</div></div>
     <div class="stat"><div class="n">~4,800</div><div class="l">tests, written test-first</div></div>
   </div>
