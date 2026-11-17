@@ -1,19 +1,20 @@
-# visit-doc
+# VisitDoc
 **A conversational AI assistant** for medical clinics. It helps patients book, reschedule and
 cancel appointments through chat and get grounded answers to policy/FAQ questions. When the
 assistant can't answer reliably (for example, the question isn't covered by the clinic's FAQ), it
 escalates to staff rather than guessing, so patients only get information they can trust.
 
-Since this is a demo, the screen is split into two panels, so you can watch the assistant at work
+## Try it live
+**[visitdoc.app](https://visitdoc.app)**
+
+Since this is a demo, the screen is split into **two panels**, so you can watch the assistant at work
 from both sides of the conversation: as a patient and as clinic staff. Staff can follow patient
 chats as they happen, edit practitioners' schedules and the FAQ, and take over from the assistant
 when needed.
 
-<img src="docs/img/two-pannels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%">
+<a href="https://visitdoc.app"><img src="docs/img/two-pannels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
 
-**Try it live at [visitdoc.app](https://visitdoc.app).**
-
-## For hiring managers: under the hood
+## Under the hood
 
 VisitDoc is a portfolio project, and each of these one-page overviews looks under its hood from a
 different angle: the **AI engineering** behind the assistant (agent flow, RAG, evaluation), the
