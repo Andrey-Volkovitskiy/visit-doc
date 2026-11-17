@@ -20,6 +20,10 @@ production.
 embeddings + BM25, Voyage rerank) · PostgreSQL · gRPC · React + Vite · Langfuse · MCP · Docker ·
 Kubernetes (k3s)
 
+**Evaluated on** a 146-case golden set, where the current build leaves only 1 of 87 answerable
+requests unserved, and every change is compared against a committed baseline and measured
+run-to-run noise rather than a single score ([how the baselines work](evals/baselines/README.md)).
+
 ## Try it live
 **Open [visitdoc.app](https://visitdoc.app)**, no sign-up needed.
 
