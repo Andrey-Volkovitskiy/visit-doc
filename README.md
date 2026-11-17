@@ -4,16 +4,6 @@ cancel appointments through chat and get grounded answers to policy/FAQ question
 assistant can't answer reliably (for example, the question isn't covered by the clinic's FAQ), it
 escalates to staff rather than guessing, so patients only get information they can trust.
 
-## Try it live
-**[visitdoc.app](https://visitdoc.app)**
-
-Since this is a demo, the screen is split into **two panels**, so you can watch the assistant at work
-from both sides of the conversation: as a patient and as clinic staff. Staff can follow patient
-chats as they happen, edit practitioners' schedules and the FAQ, and take over from the assistant
-when needed.
-
-<a href="https://visitdoc.app"><img src="docs/img/two-pannels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
-
 ## Under the hood
 
 VisitDoc is a portfolio project, and each of these one-page overviews looks under its hood from a
@@ -25,6 +15,16 @@ production.
 <tr><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-ai-engineering.html">AI Engineering</a></th><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-adlc.html">ADLC</a></th><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-architecture.html">Architecture</a></th></tr>
 <tr><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-ai-engineering.html"><img src="docs/img/portfolio-ai-engineering.png" alt="AI Engineering one-pager"></a></td><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-adlc.html"><img src="docs/img/portfolio-adlc.png" alt="ADLC one-pager"></a></td><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-architecture.html"><img src="docs/img/portfolio-architecture.png" alt="Architecture one-pager"></a></td></tr>
 </table>
+
+## Try it live
+**Open [visitdoc.app](https://visitdoc.app)**, no sign-up needed.
+
+Since this is a demo, the screen is split into **two panels**, so you can watch the assistant at work
+from both sides of the conversation: as a patient and as clinic staff. Staff can follow patient
+chats as they happen, edit practitioners' schedules and the FAQ, and take over from the assistant
+when needed.
+
+<a href="https://visitdoc.app"><img src="docs/img/two-pannels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
 
 ## Installation
 
