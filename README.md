@@ -31,7 +31,7 @@ from both sides of the conversation: as a patient and as clinic staff. Staff can
 chats as they happen, edit practitioners' schedules and the FAQ, and take over from the assistant
 when needed.
 
-<a href="https://visitdoc.app"><img src="docs/img/two-panels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
+<a href="https://visitdoc.app"><img src="docs/img/two-panels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="100%"></a>
 
 ## Installation
 
