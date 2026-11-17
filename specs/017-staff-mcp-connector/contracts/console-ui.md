@@ -17,9 +17,8 @@
 In order:
 
 1. **Explanation** (FR-002), a short paragraph:
-   > Connect the Claude app to this console to ask, while you're away, how many conversations need
-   > attention and how many bookings changed recently. Claude can read these two counts and
-   > nothing else.
+   > Connect the Claude mobile app to this console to ask, while you're away, how many conversations need
+   > attention and how many bookings changed recently.
 2. **Pairing** block:
    - Unavailable: one line naming the reason, e.g. *"Pairing is unavailable: no public address is
      configured (PUBLIC_BASE_URL)."* No button.

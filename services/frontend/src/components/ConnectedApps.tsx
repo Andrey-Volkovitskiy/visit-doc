@@ -381,9 +381,9 @@ export function ConnectedApps({ pollTick }: { pollTick: number }) {
   return (
     <div className="flex max-w-2xl flex-col gap-6 p-4">
       <p className="text-ink">
-        Connect the Claude app to this console to ask, while you&apos;re away,
+        Connect the Claude mobile app to this console to ask, while you&apos;re away,
         how many conversations need attention and how many bookings changed
-        recently. Claude can read these two counts and nothing else.
+        recently.
       </p>
 
       {error !== null && (
