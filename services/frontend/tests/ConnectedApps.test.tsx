@@ -50,15 +50,15 @@ afterEach(() => {
 });
 
 describe("ConnectedApps: what the tab explains", () => {
-  it("says what pairing an app gives, and that it reads counts only", async () => {
+  it("says what pairing an app gives", async () => {
     vi.spyOn(consoleApi, "fetchConnectedApps").mockResolvedValue(listing());
 
     render(<ConnectedApps pollTick={1} />);
 
     // FR-002: shown whatever the connector's state, before anything is loaded.
     expect(
-      screen.getByText(/Connect the Claude app to this console/),
-    ).toHaveTextContent(/can read these two counts and nothing else/);
+      screen.getByText(/Connect the Claude mobile app to this console/),
+    ).toHaveTextContent(/how many bookings changed recently/);
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Get pairing code" }),
