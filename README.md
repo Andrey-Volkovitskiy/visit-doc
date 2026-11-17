@@ -12,9 +12,13 @@ different angle: the **AI engineering** behind the assistant (agent flow, RAG, e
 production.
 
 <table>
-<tr><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-ai-engineering.html">AI Engineering</a></th><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-adlc.html">ADLC</a></th><th width="33%"><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-architecture.html">Architecture</a></th></tr>
-<tr><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-ai-engineering.html"><img src="docs/img/portfolio-ai-engineering.png" alt="AI Engineering one-pager"></a></td><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-adlc.html"><img src="docs/img/portfolio-adlc.png" alt="ADLC one-pager"></a></td><td><a href="https://htmlpreview.github.io/?https://github.com/Andrey-Volkovitskiy/visit-doc/blob/main/docs/portfolio-architecture.html"><img src="docs/img/portfolio-architecture.png" alt="Architecture one-pager"></a></td></tr>
+<tr><th width="33%"><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-ai-engineering.html">AI Engineering</a></th><th width="33%"><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-adlc.html">ADLC</a></th><th width="33%"><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-architecture.html">Architecture</a></th></tr>
+<tr><td><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-ai-engineering.html"><img src="docs/img/portfolio-ai-engineering.png" alt="AI Engineering one-pager"></a></td><td><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-adlc.html"><img src="docs/img/portfolio-adlc.png" alt="ADLC one-pager"></a></td><td><a href="https://andrey-volkovitskiy.github.io/visit-doc/portfolio-architecture.html"><img src="docs/img/portfolio-architecture.png" alt="Architecture one-pager"></a></td></tr>
 </table>
+
+**Built with:** Python · FastAPI · Claude (Anthropic API) · LangGraph · hybrid RAG on Qdrant (Voyage
+embeddings + BM25, Voyage rerank) · PostgreSQL · gRPC · React + Vite · Langfuse · MCP · Docker ·
+Kubernetes (k3s)
 
 ## Try it live
 **Open [visitdoc.app](https://visitdoc.app)**, no sign-up needed.
@@ -24,7 +28,7 @@ from both sides of the conversation: as a patient and as clinic staff. Staff can
 chats as they happen, edit practitioners' schedules and the FAQ, and take over from the assistant
 when needed.
 
-<a href="https://visitdoc.app"><img src="docs/img/two-pannels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
+<a href="https://visitdoc.app"><img src="docs/img/two-panels.png" alt="VisitDoc's two panels: the patient chat and the staff console" width="75%"></a>
 
 ## Installation
 
