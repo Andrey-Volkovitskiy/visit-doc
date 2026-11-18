@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 from typing import Any, Final
 
-from chat.agent.escalation import HANDOFF_MESSAGE, HANDOFF_TEXT
+from chat.agent.escalation import HANDOFF_MESSAGE, HANDOFF_TEXT, with_notice
 from chat.domain.models import EscalationReason
 
 # `src/golden_harness/golden_set.py` -> `evals/golden/`.
@@ -1248,19 +1248,18 @@ family(
                     "user",
                     "What insurances do you accept and should I take Brufen if I "
                     "have a headache?",
+                    mark="medication_advice",
                 ),
                 turn(
                     "assistant",
-                    "We accept most major insurance providers, including Blue Cross "
-                    "Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If "
-                    "you're unsure whether your specific plan is covered, ask to be "
-                    "connected with a member of our front desk team, who can help "
-                    "clarify your coverage.\n\n"
-                    "As for whether you should take Brufen for a headache, I don't "
-                    "have that information in the clinic's knowledge base. That "
-                    "question has been forwarded to staff, who will follow up with "
-                    "you. In the meantime, feel free to reach out if there's anything "
-                    "else I can help with.",
+                    with_notice(
+                        "We accept most major insurance providers, including Blue "
+                        "Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and "
+                        "Medicare. If you're unsure whether your specific plan is "
+                        "covered, ask to be connected with a member of our front desk "
+                        "team, who can help clarify your coverage.",
+                        EscalationReason.MEDICATION_ADVICE,
+                    ),
                 ),
             ],
             scheduling=sch([], []),
@@ -1271,7 +1270,12 @@ family(
             " removed and only the patient's earlier question kept, and with an "
             "instruction to ignore earlier answers; with no conversation shown it "
             "answered both, 3 in 3. The staff line that followed the reply live is "
-            "left out - removing it changed nothing",
+            "left out - removing it changed nothing. The history is no longer that "
+            "turn word for word: since family y the Brufen half is medication_advice, "
+            "so it is planted as the current build leaves it - the patient message "
+            "marked, an open request, and the answer followed by the medication "
+            "notice. With a request open the classifier is also given the follow-up "
+            "rules, and none of the three requests here is a follow-up to it",
         ),
     ],
 )

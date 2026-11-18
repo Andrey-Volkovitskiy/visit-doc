@@ -1895,11 +1895,12 @@
      "history": [
       {
        "role": "user",
-       "text": "What insurances do you accept and should I take Brufen if I have a headache?"
+       "text": "What insurances do you accept and should I take Brufen if I have a headache?",
+       "mark": "medication_advice"
       },
       {
        "role": "assistant",
-       "text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, ask to be connected with a member of our front desk team, who can help clarify your coverage.\n\nAs for whether you should take Brufen for a headache, I don't have that information in the clinic's knowledge base. That question has been forwarded to staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with."
+       "text": "We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure whether your specific plan is covered, ask to be connected with a member of our front desk team, who can help clarify your coverage.\n\nI'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime."
       }
      ],
      "requests": [
@@ -1932,7 +1933,7 @@
       "given": [],
       "expect": []
      },
-     "note": "taken from a live turn (2026-09-25, message 01M3BR67WQVK44K2R2HV98127V): both FAQ requests cleared both gates on the entry that answers them, and the answerer returned NO_ANSWER for each, 5 samples in 5 on replay. It still did with the clinic's replies removed and only the patient's earlier question kept, and with an instruction to ignore earlier answers; with no conversation shown it answered both, 3 in 3. The staff line that followed the reply live is left out - removing it changed nothing"
+     "note": "taken from a live turn (2026-09-25, message 01M3BR67WQVK44K2R2HV98127V): both FAQ requests cleared both gates on the entry that answers them, and the answerer returned NO_ANSWER for each, 5 samples in 5 on replay. It still did with the clinic's replies removed and only the patient's earlier question kept, and with an instruction to ignore earlier answers; with no conversation shown it answered both, 3 in 3. The staff line that followed the reply live is left out - removing it changed nothing. The history is no longer that turn word for word: since family y the Brufen half is medication_advice, so it is planted as the current build leaves it - the patient message marked, an open request, and the answer followed by the medication notice. With a request open the classifier is also given the follow-up rules, and none of the three requests here is a follow-up to it"
     }
    ]
   },
