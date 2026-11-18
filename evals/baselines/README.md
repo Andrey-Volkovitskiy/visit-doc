@@ -59,6 +59,8 @@ that build with the answer prompt giving a no the information states, and
 was measured on. `01M3WD842TTD1Q9FX8TDRTMFAB` is that build with the classifier fix that closed
 Phase 4b, 1 of 87 answerable requests unserved, and stays as the record of retrieval without BM25.
 `01M4X2XC19QBJWH8RQ9B81SAX6` is the current baseline: that build with a BM25 branch whose top 3
-join the dense top 5 the reranker sees, which measured identically to it. It supersedes `01M321D…` in turn, which no longer
+join the dense top 5 the reranker sees, which measured identically to it. Since family `y` took
+`G-s-07` and `G-s-12` out of the set (`../golden/PROVENANCE.md`) it no longer re-scores either, and
+`compare` refuses it; a baseline of the 160-case set has not been taken yet. It supersedes `01M321D…` in turn, which no longer
 re-scores - the corpus pin changed and six of its labels gained a citation (`PROVENANCE.md`) - and
 stays as the record of the 9-entry build.

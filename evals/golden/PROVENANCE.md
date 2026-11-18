@@ -163,6 +163,23 @@ The corpus pin changed and six labels moved, so the v2 baseline
 build rather than a baseline for this one. A new baseline, and a noise band for it, are
 taken next.
 
+## Family `y` added, and `G-s-07` and `G-s-12` moved into it (2026-11-18)
+
+`medication_advice` became an intent of its own, never answered from the corpus, so two answerable
+`faq_question` cases of family `s` stopped being FAQ questions: *"How long before spirometry do I
+have to stop my Spiriva?"* (`G-s-07`, citing `test-preparation`) and *"How do I take the Vivotif
+typhoid vaccine?"* (`G-s-12`, citing `vaccinations`). Each is now a `medication_advice` request in
+family `y`, as `G-y-05` and `G-y-06`; the old numbers are not reused, so family `s` runs 01-06,
+08-11. Family `y` holds six more: four medication questions, a mixed one with an answerable
+insurance half, and the prescription-renewal counter-case, which stays `not_authorized`.
+
+### What it means for stored runs
+
+A run that selected `G-s-07` or `G-s-12` no longer re-scores: both ids are gone from the set, and
+scoring refuses a run whose selected cases it cannot find. That includes the current baseline,
+`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`, which `compare` now refuses as well. A baseline of the
+160-case set needs a fresh `make eval-run`.
+
 ## What the set depends on, and what to re-check when each moves
 
 ### The corpus

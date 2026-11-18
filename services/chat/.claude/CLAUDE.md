@@ -23,12 +23,15 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   change, how much, when or how), `not_authorized` (a request the assistant is not authorized to
   serve). `not_authorized` no longer falls through to the FAQ path, and it is named for what it
   means rather than for the classifier being unsure.
-- **Medication advice is never answered, even from the clinic's own documents.** The corpus
-  mentions medicines - a painkiller in extraction aftercare, blood thinners before one, stopping
-  an inhaler before spirometry, how an oral vaccine is taken - and the FAQ answerer would quote
-  them. Whether *this* patient takes or stops something is a clinician's decision, so a request
-  for it is `medication_advice`, its own cause (`MEDICATION_ADVICE`) and its own notice, ranked
-  just above `NOT_AUTHORIZED`. Its boundaries: asking whether the clinic should be *told* about a
+- **A request for medication advice is routed to staff, never to the FAQ answerer - when it is
+  classified.** The corpus mentions medicines - a painkiller in extraction aftercare, blood
+  thinners before one, stopping an inhaler before spirometry, how an oral vaccine is taken - and
+  the FAQ answerer would quote them. Whether *this* patient takes or stops something is a
+  clinician's decision, so a request for it is `medication_advice`, its own cause
+  (`MEDICATION_ADVICE`) and its own notice, ranked just above `NOT_AUTHORIZED`. The classifier's
+  label is the only enforcement: a failed classification falls back to the FAQ path with the
+  whole message, and the answerer's prompt has no medication rule, so that path can still answer
+  one from the corpus. Its boundaries: asking whether the clinic should be *told* about a
   medicine is `faq_question`; asking for a prescription to be issued or renewed is
   `not_authorized`; a suspected overdose is `urgent_condition`. Golden family `y` holds them.
 - **The `booking`/`faq_question` boundary is decided from the booking side, because only that side
@@ -248,7 +251,8 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   nobody — before 009, "Thanks" took the FAQ path, abstained, and paged a human. The middle causes
   are recorded separately (`corpus_could_not_answer` vs `not_authorized` vs `medication_advice`;
   `urgent_condition` vs `distress` vs `booking_for_another_person`) because they call for
-  different fixes.
+  different fixes - except `medication_advice`, which shares `not_authorized`'s fix and is kept
+  apart for what the patient is told.
   `agent/escalation.py` holds the structures that decide what each cause does: `_PRECEDENCE`
   orders them, `_MARK_BY_REASON` derives the message mark, and `HANDOFF_TEXT` gives a constant to
   each of the seven the patient is told about — a corpus gap and a failure have none. A turn that

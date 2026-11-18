@@ -2111,6 +2111,7 @@ def test_a_three_request_turn_still_classifies_once(seeded_entry: int) -> None:
             IntentLabel.BOOKING_FOR_ANOTHER,
             EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
         ),
+        (IntentLabel.MEDICATION_ADVICE, EscalationReason.MEDICATION_ADVICE),
     ],
 )
 def test_a_calling_request_leaves_the_rest_of_the_message_answered(

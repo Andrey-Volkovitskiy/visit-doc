@@ -159,6 +159,7 @@ describe("attention mark labels", () => {
       "urgent_condition",
       "distress",
       "booking_for_another_person",
+      "medication_advice",
       "not_authorized",
     ];
     for (const mark of marks) {
@@ -171,6 +172,7 @@ describe("attention mark labels", () => {
       ATTENTION_MARK_LABEL.urgent_condition,
       ATTENTION_MARK_LABEL.distress,
       ATTENTION_MARK_LABEL.booking_for_another_person,
+      ATTENTION_MARK_LABEL.medication_advice,
       ATTENTION_MARK_LABEL.not_authorized,
     ];
     expect(new Set(labels).size).toBe(labels.length);

@@ -1732,9 +1732,8 @@ family(
     ],
 )
 
-# --- the checks JSON Schema cannot make ---------------------------------------------
 
-# === y - medication-advice ==========================================================
+# === y - medication_advice ==========================================================
 
 family(
     "y",
@@ -1807,6 +1806,8 @@ family(
         ),
     ],
 )
+
+# --- the checks JSON Schema cannot make ---------------------------------------------
 
 # The family letters, in the order the set is meant to read. There is no `h`: the
 # letters follow the order the set was specified in, and that one was not used.

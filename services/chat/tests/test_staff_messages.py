@@ -907,6 +907,7 @@ async def test_a_superseding_patient_message_in_the_write_gap_keeps_the_reply() 
         AttentionMark.URGENT_CONDITION,
         AttentionMark.DISTRESS,
         AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        AttentionMark.MEDICATION_ADVICE,
         AttentionMark.NOT_AUTHORIZED,
     ],
 )

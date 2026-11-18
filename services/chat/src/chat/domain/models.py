@@ -59,16 +59,17 @@ class EscalationReason(StrEnum):
     added to a request already with staff; something failed.
     """
 
-    # Every value is a trigger, and each names a different fix. A failure is owed a
-    # retry - the thing that broke may already be working. A corpus gap is owed a person
-    # for *that question*, and is fixed by writing an entry. `NOT_AUTHORIZED` is fixed
-    # by nothing: no entry will ever make the assistant able to write a sick note, which
-    # is why it is not a corpus gap. `MEDICATION_ADVICE` is the same kind of cause kept
-    # apart from it, because the patient is told something different: what to take, stop
-    # or change is a clinician's decision, whatever the clinic's documents say about a
-    # medicine. `FORWARDED_FOLLOW_UP` is a detail, a question or a chaser about a
-    # request staff already hold - owed nothing new, only the staff member's reading it
-    # beside the request it belongs to.
+    # Every value is a trigger, and each names a different fix - all but one, which is
+    # kept apart for what the patient is told instead. A failure is owed a retry - the
+    # thing that broke may already be working. A corpus gap is owed a person for *that
+    # question*, and is fixed by writing an entry. `NOT_AUTHORIZED` is fixed by nothing:
+    # no entry will ever make the assistant able to write a sick note, which is why it
+    # is not a corpus gap. `MEDICATION_ADVICE` is the same kind of cause kept apart from
+    # it, because the patient is told something different: what to take, stop or change
+    # is a clinician's decision, whatever the clinic's documents say about a medicine.
+    # `FORWARDED_FOLLOW_UP` is a detail, a question or a chaser about a request staff
+    # already hold - owed nothing new, only the staff member's reading it beside the
+    # request it belongs to.
 
     URGENT_CONDITION = "urgent_condition"
     DISTRESS = "distress"
@@ -109,15 +110,13 @@ class AttentionMark(StrEnum):
 
 
 # The marks a staff message clears, and therefore the `IN` list of the one statement
-# that clears them. Membership is decided by one question: is a staff member reading
-# the message and answering it *the whole* of what the mark asked for? For a patient
-# who asked for a person, for an urgent or distressed message, for a booking the
-# assistant may not make, for medication advice, for a request it is not authorized to
-# serve and for a detail
-# added to one of those, it is. The
-# other two are permanent: a staff member answering the patient does not mean the
-# corpus gained the entry it was missing, or that the failure did not happen (spec 007
-# FR-027c, spec 009 FR-023a/FR-048).
+# that clears them. Membership is decided by one question: is a staff member reading the
+# message and answering it *the whole* of what the mark asked for? For a patient who
+# asked for a person, for an urgent or distressed message, for a booking the assistant
+# may not make, for medication advice, for a request it is not authorized to serve and
+# for a detail added to one of those, it is. The other two are permanent: a staff member
+# answering the patient does not mean the corpus gained the entry it was missing, or
+# that the failure did not happen (spec 007 FR-027c, spec 009 FR-023a/FR-048).
 #
 # This is deliberately a constant rather than a method on the enum or a column on the
 # row. Lifetime is a property of the *kind*, and a stored "cleared by" field would be a

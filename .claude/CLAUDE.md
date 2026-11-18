@@ -73,7 +73,10 @@ build. Both of those are offline — no stack, no model call — and `compare` t
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
 `evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`** - the whole set at 146 cases, taken on `583aaa8`,
 which adds a BM25 branch whose top 3 join the dense top 5 the reranker sees; it measured
-identically to the dense build before it, 1 of 87 answerable requests unserved.
+identically to the dense build before it, 1 of 87 answerable requests unserved. **It no longer
+scores against the current labels**: the set is 160 cases since family `y` (medication advice)
+took G-s-07 and G-s-12, so `eval-score` and `eval-compare` against it raise
+`LabelDigestMismatchError` until a run of the 160-case set is committed in its place.
 `01M3WD842TTD1Q9FX8TDRTMFAB`, that dense build (`009d4ff`) - after Phase 4b extended the corpus to
 19 entries, dropped the similarity floor, let the answerer give a no the information states,
 chunked documents by heading section and fixed the classifier's routing of what the clinic sent,

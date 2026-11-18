@@ -752,6 +752,16 @@ async def test_with_a_request_open_the_follow_up_label_is_offered_with_it() -> N
     assert '"Please book my son in."' in system.split("ALREADY WITH STAFF")[-1]
 
 
+def test_every_open_request_mark_reads_as_its_own_reason() -> None:
+    # The listing falls back to a generic "forwarded to staff" for a mark it has no
+    # words for, so a cause added later without a row would degrade silently. Equality,
+    # not inclusion: a row for a mark that is never open is one nothing reads.
+    from chat.agent.classify_intent import _FORWARDED_AS
+    from chat.domain.models import OPEN_REQUEST_MARKS
+
+    assert set(_FORWARDED_AS) == OPEN_REQUEST_MARKS
+
+
 async def test_a_follow_up_returned_with_nothing_open_is_an_invalid_result() -> None:
     # The schema already removes the label; this is the check behind it, so a schema
     # that regressed fails here rather than telling a patient a detail went to staff

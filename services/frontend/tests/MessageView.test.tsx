@@ -367,6 +367,7 @@ describe("marks the assistant's new causes leave", () => {
       ["urgent_condition", "Urgent condition"],
       ["distress", "Patient in distress"],
       ["booking_for_another_person", "Booking for someone else"],
+      ["medication_advice", "Asked for medication advice"],
       ["not_authorized", "Not something the assistant may do"],
     ];
     for (const [mark, label] of causes) {

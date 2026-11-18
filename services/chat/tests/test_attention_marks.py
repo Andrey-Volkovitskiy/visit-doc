@@ -371,6 +371,7 @@ async def test_a_staff_reply_clears_not_authorized_and_keeps_a_corpus_gap() -> N
             IntentLabel.BOOKING_FOR_ANOTHER,
             AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
         ),
+        (IntentLabel.MEDICATION_ADVICE, AttentionMark.MEDICATION_ADVICE),
     ],
 )
 async def test_a_calling_intent_alone_keeps_its_reply_and_mark_and_silences_nothing(
