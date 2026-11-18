@@ -1,11 +1,11 @@
 """Calling a person: one implementation, four callers, one application point.
 
 Four things can decide a conversation needs a person - the classifier labelling the
-message as one of six causes that call one (an urgent condition, evident distress, a
-request for a human, a booking for someone else, a request the assistant is not
-authorized to serve, or a follow-up to a request already with staff), the model calling
-`escalate_to_staff`, the FAQ path abstaining, and a booking tool failing - and none of
-them writes the transition.
+message as one of seven causes that call one (an urgent condition, evident distress, a
+request for a human, a booking for someone else, a request for medication advice, a
+request the assistant is not authorized to serve, or a follow-up to a request already
+with staff), the model calling `escalate_to_staff`, the FAQ path abstaining, and a
+booking tool failing - and none of them writes the transition.
 
 Calling staff never silences the assistant. Every cause marks the message that caused
 it and puts the conversation in the staff queue, and the patient is told so by a fixed
@@ -41,19 +41,21 @@ from chat.domain.models import (
 )
 from chat.repositories import chat_repository
 
-# Strongest claim on a person first. Safety outranks everything: a patient describing
-# an urgent condition, then one in evident distress. A patient asking for a human *is* a
-# person wanting a person; a booking the assistant may not make and a request it is not
-# authorized to serve both need a person to do the thing; a follow-up adds to something
-# a person already holds; a corpus gap is a hole in the clinic's own documents; a
-# failure is a thing to retry, and the one whose "they can just try again" is the
-# weaker claim to give up (research #6, spec 009 FR-047). This orders the *mark* and
-# the one notice a turn carries.
+# Strongest claim on a person first. Safety outranks everything: a patient describing an
+# urgent condition, then one in evident distress. A patient asking for a human *is* a
+# person wanting a person; a booking the assistant may not make, medication advice and a
+# request it is not authorized to serve all need a person to do the thing - medication
+# advice ahead of the general cause, because its notice is the more specific one; a
+# follow-up adds to something a person already holds; a corpus gap is a hole in the
+# clinic's own documents; a failure is a thing to retry, and the one whose "they can
+# just try again" is the weaker claim to give up (research #6, spec 009 FR-047). This
+# orders the *mark* and the one notice a turn carries.
 _PRECEDENCE: tuple[EscalationReason, ...] = (
     EscalationReason.URGENT_CONDITION,
     EscalationReason.DISTRESS,
     EscalationReason.PATIENT_ASKED_FOR_PERSON,
     EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    EscalationReason.MEDICATION_ADVICE,
     EscalationReason.NOT_AUTHORIZED,
     EscalationReason.FORWARDED_FOLLOW_UP,
     EscalationReason.CORPUS_COULD_NOT_ANSWER,
@@ -113,6 +115,11 @@ FOLLOW_UP_MESSAGE = (
 # reading of the message.
 HANDOFF_TEXT: dict[EscalationReason, str] = {
     EscalationReason.PATIENT_ASKED_FOR_PERSON: HANDOFF_MESSAGE,
+    EscalationReason.MEDICATION_ADVICE: (
+        "I'm not authorized to give medication advice, so I've forwarded your "
+        "question to our staff. They'll follow up with you here shortly. Feel free to "
+        "ask if you need help with anything else in the meantime."
+    ),
     EscalationReason.NOT_AUTHORIZED: (
         "I'm not authorized to handle that request, so I've forwarded it to our staff. "
         "They'll follow up with you shortly. Feel free to ask if you need help with "

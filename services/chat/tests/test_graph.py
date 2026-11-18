@@ -1353,6 +1353,29 @@ async def test_an_unauthorized_request_retrieves_nothing_and_says_so() -> None:
     assert escalation.recorded == (EscalationReason.NOT_AUTHORIZED,)
 
 
+async def test_a_medication_question_retrieves_nothing_and_says_so() -> None:
+    # The corpus may mention the medicine - this test plants none, so what is asserted
+    # is the route: no retrieval, the fixed medication notice, its own cause.
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    escalation = EscalationRequests()
+    client = fake_anthropic_client(
+        ["never generated"], intents=[IntentLabel.MEDICATION_ADVICE]
+    )
+
+    with capture_logs(processors=[structlog.contextvars.merge_contextvars]) as logs:
+        events = await _run_turn(
+            client, "what can I take for a headache?", escalation=escalation
+        )
+
+    assert _started_nodes(logs) == ["classify_intent", "hand_off", "compose_answer"]
+    assert "faq.retrieval_completed" not in [e["event"] for e in logs]
+    streamed = "".join(e.text for e in events if isinstance(e, ChatTokenEvent))
+    assert streamed == HANDOFF_TEXT[EscalationReason.MEDICATION_ADVICE]
+    assert escalation.recorded == (EscalationReason.MEDICATION_ADVICE,)
+    assert escalation.message_mark is AttentionMark.MEDICATION_ADVICE
+
+
 async def test_an_unauthorized_request_marks_its_message() -> None:
     escalation = EscalationRequests()
     client = fake_anthropic_client(

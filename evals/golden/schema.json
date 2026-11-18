@@ -103,6 +103,7 @@
                           "distress",
                           "patient_asked_for_person",
                           "booking_for_another_person",
+                          "medication_advice",
                           "not_authorized",
                           "forwarded_follow_up"
                         ],
@@ -132,6 +133,7 @@
                           "distress",
                           "booking_for_another",
                           "call_staff",
+                          "medication_advice",
                           "not_authorized",
                           "forwarded_follow_up"
                         ],

@@ -129,6 +129,7 @@ export const ATTENTION_MARK_LABEL: Record<AttentionMark, string> = {
   distress: "Patient in distress",
   patient_asked_for_person: "Asked for a person",
   booking_for_another_person: "Booking for someone else",
+  medication_advice: "Asked for medication advice",
   not_authorized: "Not something the assistant may do",
   forwarded_follow_up: "Added to a request already with staff",
   corpus_could_not_answer: "No answer in the clinic's documents",

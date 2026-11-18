@@ -110,17 +110,18 @@ async def test_clearing_one_chats_marks_leaves_another_chats_alone() -> None:
     assert await _mark_of(other) == AttentionMark.UNANSWERED
 
 
-async def test_the_clearable_set_is_exactly_the_seven_the_grid_names() -> None:
+async def test_the_clearable_set_is_exactly_the_eight_the_grid_names() -> None:
     # The predicate of the clearing statement, as a value. If a permanent kind ever
     # joined it, the two tests above would still pass for the kinds they name while a
-    # diagnostic record was being erased. Spec 009 added four and the follow-up one,
-    # each a request a staff reply completes.
+    # diagnostic record was being erased. Spec 009 added four, then the follow-up one
+    # and medication advice, each a request a staff reply completes.
     assert {mark.value for mark in CLEARABLE_MARKS} == {
         "patient_asked_for_person",
         "unanswered",
         "urgent_condition",
         "distress",
         "booking_for_another_person",
+        "medication_advice",
         "not_authorized",
         "forwarded_follow_up",
     }

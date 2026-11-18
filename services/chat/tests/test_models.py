@@ -129,13 +129,14 @@ def test_message_sender_has_exactly_three_members() -> None:
     }
 
 
-def test_attention_mark_has_exactly_the_nine_kinds() -> None:
-    """007's FR-027a four, 009's four causes and the follow-up - and nothing else."""
+def test_attention_mark_has_exactly_the_ten_kinds() -> None:
+    """007's FR-027a four, 009's four causes, the follow-up and medication advice."""
     assert {member.value for member in AttentionMark} == {
         "urgent_condition",
         "distress",
         "patient_asked_for_person",
         "booking_for_another_person",
+        "medication_advice",
         "not_authorized",
         "forwarded_follow_up",
         "corpus_could_not_answer",
@@ -144,10 +145,10 @@ def test_attention_mark_has_exactly_the_nine_kinds() -> None:
     }
 
 
-def test_escalation_reason_has_exactly_the_eight_triggers() -> None:
+def test_escalation_reason_has_exactly_the_nine_triggers() -> None:
     """FR-007a as spec 009 FR-020 restates it: the reasons are the triggers.
 
-    Eight values for five situations - asked for a person, asked for something the
+    Nine values for five situations - asked for a person, asked for something the
     assistant cannot provide, needs a person on safety or authority grounds, added to a
     request already with staff, something failed - because the middle two are recorded
     by what would fix them.
@@ -157,6 +158,7 @@ def test_escalation_reason_has_exactly_the_eight_triggers() -> None:
         "distress",
         "patient_asked_for_person",
         "booking_for_another_person",
+        "medication_advice",
         "not_authorized",
         "forwarded_follow_up",
         "corpus_could_not_answer",
@@ -175,7 +177,7 @@ def test_escalation_reasons_are_a_subset_of_mark_kinds() -> None:
         assert reason.value in {member.value for member in AttentionMark}
 
 
-def test_clearable_marks_are_exactly_the_seven_a_staff_message_clears() -> None:
+def test_clearable_marks_are_exactly_the_eight_a_staff_message_clears() -> None:
     """FR-027c's lifetime column, as one constant, widened by spec 009 FR-048.
 
     This is the `IN` list of the clearing statement. A permanent mark appearing here
@@ -190,6 +192,7 @@ def test_clearable_marks_are_exactly_the_seven_a_staff_message_clears() -> None:
             AttentionMark.URGENT_CONDITION,
             AttentionMark.DISTRESS,
             AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+            AttentionMark.MEDICATION_ADVICE,
             AttentionMark.NOT_AUTHORIZED,
             AttentionMark.FORWARDED_FOLLOW_UP,
         }
@@ -246,7 +249,7 @@ def test_every_cause_fits_the_column_that_stores_it() -> None:
 
 
 def test_clearable_marks_are_exactly_the_ones_a_staff_reply_answers() -> None:
-    # A staff reply *is* the whole of what these seven asked for. A corpus gap survives
+    # A staff reply *is* the whole of what these eight asked for. A corpus gap survives
     # its answer because the document is still missing; a failure because it happened.
     assert CLEARABLE_MARKS == frozenset(
         {
@@ -255,6 +258,7 @@ def test_clearable_marks_are_exactly_the_ones_a_staff_reply_answers() -> None:
             AttentionMark.URGENT_CONDITION,
             AttentionMark.DISTRESS,
             AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+            AttentionMark.MEDICATION_ADVICE,
             AttentionMark.NOT_AUTHORIZED,
             AttentionMark.FORWARDED_FOLLOW_UP,
         }

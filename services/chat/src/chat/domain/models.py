@@ -43,7 +43,7 @@ class MessageSender(StrEnum):
 
 
 class EscalationReason(StrEnum):
-    """Why staff were called - a Python-level closed set of exactly eight values.
+    """Why staff were called - a Python-level closed set of exactly nine values.
 
     Calling staff never silences the assistant: every reason marks the message that
     caused it and puts the conversation in the staff queue, and the assistant goes on
@@ -53,23 +53,28 @@ class EscalationReason(StrEnum):
     A person is called in five situations, and the middle two are recorded by what
     would fix them: the patient asked for a human; the patient asked for something the
     assistant cannot provide (the corpus has no answer, or the assistant is not
-    authorized at all); the message needs a person on safety or authority grounds (an
+    authorized at all - medication advice being the one such request with its own
+    cause); the message needs a person on safety or authority grounds (an
     urgent condition, evident distress, or a booking for someone else); the patient
     added to a request already with staff; something failed.
     """
 
     # Every value is a trigger, and each names a different fix. A failure is owed a
-    # retry - the thing that broke may already be working. A corpus gap is owed a
-    # person for *that question*, and is fixed by writing an entry. `NOT_AUTHORIZED` is
-    # fixed by nothing: no entry will ever make the assistant able to write a sick note,
-    # which is why it is not a corpus gap. `FORWARDED_FOLLOW_UP` is a detail, a question
-    # or a chaser about a request staff already hold - owed nothing new, only the
-    # staff member's reading it beside the request it belongs to.
+    # retry - the thing that broke may already be working. A corpus gap is owed a person
+    # for *that question*, and is fixed by writing an entry. `NOT_AUTHORIZED` is fixed
+    # by nothing: no entry will ever make the assistant able to write a sick note, which
+    # is why it is not a corpus gap. `MEDICATION_ADVICE` is the same kind of cause kept
+    # apart from it, because the patient is told something different: what to take, stop
+    # or change is a clinician's decision, whatever the clinic's documents say about a
+    # medicine. `FORWARDED_FOLLOW_UP` is a detail, a question or a chaser about a
+    # request staff already hold - owed nothing new, only the staff member's reading it
+    # beside the request it belongs to.
 
     URGENT_CONDITION = "urgent_condition"
     DISTRESS = "distress"
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
     BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
+    MEDICATION_ADVICE = "medication_advice"
     NOT_AUTHORIZED = "not_authorized"
     FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
@@ -95,6 +100,7 @@ class AttentionMark(StrEnum):
     DISTRESS = "distress"
     PATIENT_ASKED_FOR_PERSON = "patient_asked_for_person"
     BOOKING_FOR_ANOTHER_PERSON = "booking_for_another_person"
+    MEDICATION_ADVICE = "medication_advice"
     NOT_AUTHORIZED = "not_authorized"
     FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CORPUS_COULD_NOT_ANSWER = "corpus_could_not_answer"
@@ -106,7 +112,8 @@ class AttentionMark(StrEnum):
 # that clears them. Membership is decided by one question: is a staff member reading
 # the message and answering it *the whole* of what the mark asked for? For a patient
 # who asked for a person, for an urgent or distressed message, for a booking the
-# assistant may not make, for a request it is not authorized to serve and for a detail
+# assistant may not make, for medication advice, for a request it is not authorized to
+# serve and for a detail
 # added to one of those, it is. The
 # other two are permanent: a staff member answering the patient does not mean the
 # corpus gained the entry it was missing, or that the failure did not happen (spec 007
@@ -123,6 +130,7 @@ CLEARABLE_MARKS = frozenset(
         AttentionMark.URGENT_CONDITION,
         AttentionMark.DISTRESS,
         AttentionMark.BOOKING_FOR_ANOTHER_PERSON,
+        AttentionMark.MEDICATION_ADVICE,
         AttentionMark.NOT_AUTHORIZED,
         AttentionMark.FORWARDED_FOLLOW_UP,
     }

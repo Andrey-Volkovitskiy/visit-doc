@@ -77,6 +77,7 @@ class IntentLabel(StrEnum):
     DISTRESS = "distress"
     BOOKING_FOR_ANOTHER = "booking_for_another"
     CALL_STAFF = "call_staff"
+    MEDICATION_ADVICE = "medication_advice"
     NOT_AUTHORIZED = "not_authorized"
     FORWARDED_FOLLOW_UP = "forwarded_follow_up"
     CLASSIFICATION_FAILED = "classification_failed"
@@ -430,6 +431,7 @@ class MessageOut(BaseModel):
             "distress",
             "patient_asked_for_person",
             "booking_for_another_person",
+            "medication_advice",
             "not_authorized",
             "forwarded_follow_up",
             "corpus_could_not_answer",

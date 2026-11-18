@@ -38,6 +38,15 @@ _TEMPERATURE = 0.0
 # have a dentist?" off booking, so they stand or fall together. A bare billing code
 # ("how much is 93000?") still reads as unintelligible. See
 # specs/018-hybrid-retrieval/evaluation/.
+#
+# medication_advice was added after not_authorized, compact, and both places matter -
+# measured on 5 replays per message. A longer clause listed before not_authorized
+# labelled every boundary right but moved two restatements other cases depend on: "what
+# if you don't take my plan?" lost "insurance" 5 in 5, and the request fell under the
+# rerank floor 3 runs in 3. Naming eating and fasting outright keeps "should I skip
+# eating before my breathing test?" off the label; naming what results mean under
+# not_authorized keeps the test-results question there, which the medication clause
+# had otherwise pulled to faq_question 5 in 5.
 _SYSTEM_PROMPT = (
     "Split the visitor's most recent message into the requests it contains, given the "
     "conversation so far, and label each one. Return one segment per request, in the "
@@ -87,9 +96,17 @@ _SYSTEM_PROMPT = (
     'appointment is FOR: "book me in with whoever my daughter saw" books for the '
     "patient and is booking. Merely mentioning another person is not this, and neither "
     "is an unclear case - both of those are booking), "
-    "call_staff (the patient explicitly asks to speak to a human), not_authorized "
+    "call_staff (the patient explicitly asks to speak to a human), "
+    "not_authorized "
     "(a request the assistant is not authorized to serve, such as a sick note, a "
-    "prescription, a records transfer or a billing correction). "
+    "prescription, explaining what the patient's own results or diagnosis mean, a "
+    "records transfer or a billing correction), "
+    "medication_advice (advice on a medicine: which to take, whether to take, stop "
+    "or change one, its dose, timing or how to take it - an oral vaccine too - even "
+    "where the clinic's own instructions mention it. Eating, drinking or fasting "
+    "before a visit or a test is not a medicine and stays faq_question, as does "
+    "whether to tell the clinic about a medicine; issuing or renewing a prescription "
+    "is not_authorized). "
     "A message may carry more than one intent at once. "
     "Three boundaries decide most borderline messages. "
     "(a) faq_question or booking: the five booking requests are a closed list - the "
@@ -240,6 +257,7 @@ _FORWARDED_AS: dict[AttentionMark, str] = {
     AttentionMark.DISTRESS: "distress",
     AttentionMark.PATIENT_ASKED_FOR_PERSON: "asked for a person",
     AttentionMark.BOOKING_FOR_ANOTHER_PERSON: "a booking for someone else",
+    AttentionMark.MEDICATION_ADVICE: "a question asking for medication advice",
     AttentionMark.NOT_AUTHORIZED: "a request the assistant may not serve",
     AttentionMark.FORWARDED_FOLLOW_UP: "a detail added to an earlier request",
 }

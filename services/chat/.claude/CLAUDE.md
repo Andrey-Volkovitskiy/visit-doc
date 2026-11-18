@@ -19,9 +19,18 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   golden set measures - does not also change how the assistant chats. Since 009 the label set says what a message *is*
   before anything decides who handles it: `faq_question`, `booking`, `small_talk` (asks for nothing
   that can be acted on), `urgent_condition`, `distress`, `booking_for_another`, `call_staff` (an
-  explicit request for a human, and nothing else), `not_authorized` (a request the assistant is
-  not authorized to serve). `not_authorized` no longer falls through to the FAQ path, and it is
-  named for what it means rather than for the classifier being unsure.
+  explicit request for a human, and nothing else), `medication_advice` (what to take, stop or
+  change, how much, when or how), `not_authorized` (a request the assistant is not authorized to
+  serve). `not_authorized` no longer falls through to the FAQ path, and it is named for what it
+  means rather than for the classifier being unsure.
+- **Medication advice is never answered, even from the clinic's own documents.** The corpus
+  mentions medicines - a painkiller in extraction aftercare, blood thinners before one, stopping
+  an inhaler before spirometry, how an oral vaccine is taken - and the FAQ answerer would quote
+  them. Whether *this* patient takes or stops something is a clinician's decision, so a request
+  for it is `medication_advice`, its own cause (`MEDICATION_ADVICE`) and its own notice, ranked
+  just above `NOT_AUTHORIZED`. Its boundaries: asking whether the clinic should be *told* about a
+  medicine is `faq_question`; asking for a prescription to be issued or renewed is
+  `not_authorized`; a suspected overdose is `urgent_condition`. Golden family `y` holds them.
 - **The `booking`/`faq_question` boundary is decided from the booking side, because only that side
   is enumerable.** The live records answer a closed set of five requests — the roster and its
   specialties, a practitioner's free slots, making an appointment, changing or cancelling one, and
@@ -237,11 +246,12 @@ Moved here from the root `.claude/CLAUDE.md`, which keeps the cross-cutting prin
   assistant cannot provide; the message needs a person on safety or authority grounds; the patient
   added to a request already with staff; something failed. A message that requests nothing calls
   nobody — before 009, "Thanks" took the FAQ path, abstained, and paged a human. The middle causes
-  are recorded separately (`corpus_could_not_answer` vs `not_authorized`; `urgent_condition` vs
-  `distress` vs `booking_for_another_person`) because they call for different fixes.
+  are recorded separately (`corpus_could_not_answer` vs `not_authorized` vs `medication_advice`;
+  `urgent_condition` vs `distress` vs `booking_for_another_person`) because they call for
+  different fixes.
   `agent/escalation.py` holds the structures that decide what each cause does: `_PRECEDENCE`
   orders them, `_MARK_BY_REASON` derives the message mark, and `HANDOFF_TEXT` gives a constant to
-  each of the six the patient is told about — a corpus gap and a failure have none. A turn that
+  each of the seven the patient is told about — a corpus gap and a failure have none. A turn that
   calls staff for nothing else goes to the hand-off node and sends the strongest cause's constant
   alone; a turn that also asked something answerable gets the answer with that constant appended
   **verbatim** (`with_notice`), never paraphrased by the composer — including when the booking

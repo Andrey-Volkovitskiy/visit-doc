@@ -100,9 +100,10 @@ _HAND_OFF = "hand_off"
 _COMPOSE_ANSWER = "compose_answer"
 
 # Which specialist each classified intent implies. A label with no specialist either
-# calls a person - every key of `_HANDOFF_REASON_BY_INTENT`, `not_authorized` included,
-# which is not a specialist's job at all - or is `classification_failed`, the one label
-# left that falls back to the FAQ path. See `_select_specialists`.
+# calls a person - every key of `_HANDOFF_REASON_BY_INTENT`, `not_authorized` and
+# `medication_advice` included, neither of which is a specialist's job at all - or is
+# `classification_failed`, the one label left that falls back to the FAQ path. See
+# `_select_specialists`.
 _SPECIALIST_BY_INTENT = {
     IntentLabel.FAQ_QUESTION: _ANSWER_FAQ,
     IntentLabel.BOOKING: _HANDLE_BOOKING,
@@ -206,6 +207,7 @@ _HANDOFF_REASON_BY_INTENT: dict[IntentLabel, EscalationReason] = {
     IntentLabel.DISTRESS: EscalationReason.DISTRESS,
     IntentLabel.CALL_STAFF: EscalationReason.PATIENT_ASKED_FOR_PERSON,
     IntentLabel.BOOKING_FOR_ANOTHER: EscalationReason.BOOKING_FOR_ANOTHER_PERSON,
+    IntentLabel.MEDICATION_ADVICE: EscalationReason.MEDICATION_ADVICE,
     IntentLabel.NOT_AUTHORIZED: EscalationReason.NOT_AUTHORIZED,
     IntentLabel.FORWARDED_FOLLOW_UP: EscalationReason.FORWARDED_FOLLOW_UP,
 }

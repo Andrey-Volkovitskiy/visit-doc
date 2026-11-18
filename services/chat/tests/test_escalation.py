@@ -753,6 +753,7 @@ _URGENT = EscalationReason.URGENT_CONDITION
 _DISTRESS = EscalationReason.DISTRESS
 _THIRD_PARTY = EscalationReason.BOOKING_FOR_ANOTHER_PERSON
 _NOT_AUTHORIZED = EscalationReason.NOT_AUTHORIZED
+_MEDICATION = EscalationReason.MEDICATION_ADVICE
 
 
 def test_precedence_is_the_full_order_strongest_claim_first() -> None:
@@ -763,6 +764,7 @@ def test_precedence_is_the_full_order_strongest_claim_first() -> None:
         _DISTRESS,
         _ASKED,
         _THIRD_PARTY,
+        _MEDICATION,
         _NOT_AUTHORIZED,
         EscalationReason.FORWARDED_FOLLOW_UP,
         _CORPUS,
@@ -786,6 +788,7 @@ def test_every_cause_has_a_row_in_the_table() -> None:
         assert _MARK_BY_REASON[reason].value == reason.value
     for reason in (
         _ASKED,
+        _MEDICATION,
         _NOT_AUTHORIZED,
         _URGENT,
         _DISTRESS,
@@ -825,6 +828,22 @@ def test_not_authorized_outranks_a_corpus_gap() -> None:
     requests.record(_CORPUS)
     requests.record(_NOT_AUTHORIZED)
     assert requests.message_mark is AttentionMark.NOT_AUTHORIZED
+
+
+def test_medication_advice_outranks_a_request_it_may_not_serve() -> None:
+    # Both are requests a person has to take on; the medication notice is the more
+    # specific of the two, and a turn carries one notice.
+    requests = EscalationRequests()
+    requests.record(_NOT_AUTHORIZED)
+    requests.record(_MEDICATION)
+    assert requests.message_mark is AttentionMark.MEDICATION_ADVICE
+
+
+def test_the_medication_notice_names_medication_advice() -> None:
+    from chat.agent.escalation import HANDOFF_TEXT
+
+    assert "medication advice" in HANDOFF_TEXT[_MEDICATION]
+    assert HANDOFF_TEXT[_MEDICATION] != HANDOFF_TEXT[_NOT_AUTHORIZED]
 
 
 def test_a_third_party_booking_marks_its_message() -> None:
