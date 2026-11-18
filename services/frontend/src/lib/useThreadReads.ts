@@ -7,8 +7,8 @@ import { useEffect, useRef } from "react";
  * neither resolves nor rejects, so the pane that issued it sits blank with no banner
  * and no retry, and the poll goes on issuing one more every interval until the
  * browser's per-origin socket cap is full — at which point the console listing, the
- * SSE stream and the next `POST` all queue behind reads that will never answer, and
- * the page wedges rather than degrading. Chosen well above a slow-but-real read and
+ * NDJSON reply stream and the next `POST` all queue behind reads that will never
+ * answer, and the page wedges rather than degrading. Chosen well above a slow-but-real read and
  * well below the point where a person would have given up and reloaded.
  */
 export const READ_TIMEOUT_MS = 8000;
