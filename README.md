@@ -20,7 +20,7 @@ production.
 embeddings + BM25, Voyage rerank) · PostgreSQL · gRPC · React + Vite · Langfuse · MCP · Docker ·
 Kubernetes (k3s)
 
-**Evaluated on** a 160-case golden set: every change is compared against a committed baseline and
+**Evaluated on** a 146-case golden set: every change is compared against a committed baseline and
 measured run-to-run noise rather than a single score.
 
 ## Try it live
