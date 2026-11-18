@@ -1,0 +1,1676 @@
+{
+  "case_id": "G-n-02",
+  "chat_id": "01M7QQ09GAPVM83GW8WKFY49S9",
+  "patient_id": "01M7QQ09GX8D4Y5AFRY44DTW18",
+  "attempts": 1,
+  "elapsed_seconds": 4.710761907001142,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Do you offer telehealth?",
+          "answer": "No, we currently only offer in-person visits at our clinic location.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 592,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "question": "Is the clinic wheelchair accessible?",
+          "answer": null,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "message": null,
+      "answer_source": "merged"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+    "content": "Do you offer telehealth, and is the clinic wheelchair accessible?",
+    "attention_mark": "corpus_could_not_answer",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ0DHV728M1VH1NG7SZZZV",
+    "content": "We currently only offer in-person visits at our clinic location and don't provide telehealth appointments.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Do you offer telehealth?",
+        "answer": "No, we currently only offer in-person visits at our clinic location.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 592,
+            "chunk_index": 0,
+            "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location."
+          }
+        ]
+      },
+      {
+        "position": 1,
+        "question": "Is the clinic wheelchair accessible?",
+        "answer": null,
+        "verdict": "abstained_rerank_floor",
+        "citations": []
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Do you offer telehealth?",
+        "query": "Do you offer telehealth?"
+      },
+      {
+        "position": 1,
+        "intent": "faq_question",
+        "text": "Is the clinic wheelchair accessible?",
+        "query": "Is the clinic wheelchair accessible?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "chat_id": "01M7QQ09GAPVM83GW8WKFY49S9",
+      "sender": "patient",
+      "content": "Do you offer telehealth, and is the clinic wheelchair accessible?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:26.908706Z"
+    },
+    {
+      "message": "Do you offer telehealth, and is the clinic wheelchair accessible?",
+      "message_ids_unified": [
+        "01M7QQ09JHM8BSV5SYDGDT292Y"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:26.908971Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:26.912571Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3444,
+        "output": 56,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.004348Z"
+    },
+    {
+      "intents": [
+        "faq_question",
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Do you offer telehealth?",
+          "query": "Do you offer telehealth?"
+        },
+        {
+          "position": 1,
+          "intent": "faq_question",
+          "text": "Is the clinic wheelchair accessible?",
+          "query": "Is the clinic wheelchair accessible?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.004663Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1092.38,
+      "result": {
+        "intents": [
+          "faq_question",
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Do you offer telehealth?",
+            "query": "Do you offer telehealth?"
+          },
+          {
+            "position": 1,
+            "intent": "faq_question",
+            "text": "Is the clinic wheelchair accessible?",
+            "query": "Is the clinic wheelchair accessible?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": true,
+        "stopping_cause": null,
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.004845Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.006619Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.271575Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.276705Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 34,
+      "candidates": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.44329366,
+          "dense_rank": 1,
+          "lexical_score": 2.1194363,
+          "lexical_rank": 8,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.4360975,
+          "dense_rank": 2,
+          "lexical_score": 2.0240088,
+          "lexical_rank": 12,
+          "considered": true,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega Mall parking garage (9 Willson St.).",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.415779,
+          "dense_rank": 3,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4024648,
+          "dense_rank": 4,
+          "lexical_score": 2.3548532,
+          "lexical_rank": 5,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.399829,
+          "dense_rank": 5,
+          "lexical_score": 2.3931592,
+          "lexical_rank": 4,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38849175,
+          "dense_rank": 6,
+          "lexical_score": 2.410986,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instructions, follow those instead.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.38111585,
+          "dense_rank": 7,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.36953035,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "similarity_score": 0.3631358,
+          "dense_rank": 9,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.35033172,
+          "dense_rank": 10,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.3488484,
+          "dense_rank": 11,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.34123018,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 4,
+          "similarity_score": 0.33161294,
+          "dense_rank": 13,
+          "lexical_score": 2.0290842,
+          "lexical_rank": 11,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "similarity_score": 0.33026785,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.32993186,
+          "dense_rank": 15,
+          "lexical_score": 2.0759358,
+          "lexical_rank": 9,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.32879186,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 598,
+          "chunk_index": 0,
+          "similarity_score": 0.32414922,
+          "dense_rank": 17,
+          "lexical_score": 2.0393121,
+          "lexical_rank": 10,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.32076192,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.32028344,
+          "dense_rank": 19,
+          "lexical_score": 1.9990072,
+          "lexical_rank": 15,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3139643,
+          "dense_rank": 20,
+          "lexical_score": 2.291499,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.30910042,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 5,
+          "similarity_score": 0.30892873,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.30462384,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.30425912,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.30236036,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 5.351077,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Aetna\n\nWe are in-network with Aetna Choice POS II and Aetna Open Access Managed Choice. Aetna Medicare Advantage PPO plans are in-network as well. Plans administered by Aetna Signature Administrators use a separate network, and we are not part of it.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 5.3112206,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area is printed on the back of the card. Cigna Connect plans bought through the health insurance marketplace are not in-network.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.3045518,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Urine sample\n\nIf you have been asked to bring a urine sample, collect a sterile container from the front desk beforehand; household containers can contaminate th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 2.003958,
+          "lexical_rank": 13,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.9990072,
+          "lexical_rank": 14,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.936804,
+          "lexical_rank": 16,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.9321792,
+          "lexical_rank": 17,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 4,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.8827258,
+          "lexical_rank": 18,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## 24-hour blood pressure monitoring\n\nFor ambulatory blood pressure monitoring you wear a cuff on your upper arm, connected to a small recorder on a belt, for 24 ho",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 1.8070431,
+          "lexical_rank": 19,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Spirometry (breathing test)\n\nSpirometry measures how much air you can breathe out, and how fast. You will blow hard into a mouthpiece several times while sitting",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.290708Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 34,
+      "kept": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.44329366
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.4360975
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.415779
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4024648
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.399829
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38849175
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 2,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "similarity_score": null
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.38111585
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.36953035
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "similarity_score": 0.3631358
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.35033172
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.3488484
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.34123018
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 4,
+          "similarity_score": 0.33161294
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "similarity_score": 0.33026785
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.32993186
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.32879186
+        },
+        {
+          "entry_id": 598,
+          "chunk_index": 0,
+          "similarity_score": 0.32414922
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.32076192
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.32028344
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3139643
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.30910042
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 5,
+          "similarity_score": 0.30892873
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.30462384
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.30425912
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.30236036
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 3,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 4,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 2,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.291856Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 28,
+      "candidates": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.60140496,
+          "dense_rank": 1,
+          "lexical_score": 11.091678,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.4258567,
+          "dense_rank": 2,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4256761,
+          "dense_rank": 3,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, and a staff member may join a conversation to help you. Do not use the chat to report a medical emergency: call 911 or go to the nearest emergency department.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.4256223,
+          "dense_rank": 4,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never the reason for the call or any health details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "similarity_score": 0.4171725,
+          "dense_rank": 5,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Checking in and registering\n## Language interpreters\n\nFree telephone interpreting is available in more than 200 languages for any appointment. Ask for it when you book or when you check in; there is no need to bring a family member to interpret. An American Sign Language (ASL) interpreter can attend in person if you ask at least 72 hours before your appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 593,
+          "chunk_index": 0,
+          "similarity_score": 0.38816613,
+          "dense_rank": 6,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.3777156,
+          "dense_rank": 7,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.37533492,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.3750013,
+          "dense_rank": 9,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.3692023,
+          "dense_rank": 10,
+          "lexical_score": 3.5081995,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "similarity_score": 0.36563328,
+          "dense_rank": 11,
+          "lexical_score": 4.359184,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## Services we do not offer\n\nWe do not offer teeth whitening, orthodontic treatment such as braces or clear aligners, or dental implants.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.36266524,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 4,
+          "similarity_score": 0.35491163,
+          "dense_rank": 13,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Changing your phone number or email address\n\nTell the front desk at check-in, or update the contact section of Form PR-1 at the self-check-in ki",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.35263795,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.3522333,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 1,
+          "similarity_score": 0.34916952,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Running late\n## If the clinic is running late\n\nSometimes an earlier appointment takes longer than planned. If your practitioner is running more than 20 minutes behind, the front desk will tell you w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.34451193,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.3441787,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3413971,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.33889303,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.33681327,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.33646882,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.3329024,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Running late\n## If you are running late\n\nCall the front desk on (212) 555-0142 as soon as you know you will be late, so we can tell the practitioner and plan around it. The phone line is answered Mo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 4,
+          "similarity_score": 0.32747263,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## UnitedHealthcare\n\nWe are in-network with UnitedHealthcare Choice Plus and UnitedHealthcare Options PPO. UnitedHealthcare Navigate HMO is not in-network. AARP Medicare Advanta",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.3250243,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Who can see your medical record\n\nYour record can be seen only by the practitioners and staff involved in your care at the clinic, and by the staff who han",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 4.270554,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Vaccinations\n## Travel vaccinations\n\nBook a travel vaccination appointment at least six weeks before you leave, because some vaccines need more than one dose or take time to become effective. Bring your travel dates and the list of countries you are visiting. We offer:\n\n- hepatitis A (Havrix): two doses six to twelve months apart, and one dose before travel protects you for the trip;\n- typhoid, either as an injection (Typhim Vi) given at least two weeks before travel, or as an oral vaccine (Vivotif) of four capsules taken on alternate days and finished at least one week before travel;\n- hepatitis B (Engerix-B): three doses over six months.\n\nWe do not offer the yellow fever vaccine, which can only be given at a registered yellow fever vaccination centre. We also do not offer rabies or Japanese encephalitis vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 1,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.7422125,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## COVID-19 vaccine\n\nWe offer the updated COVID-19 vaccine for the current season made by Pfizer-BioNTech (Comirnaty). We do not stock the Moderna (Spikevax) or Novavax vaccines.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 3.6035361,
+          "lexical_rank": 5,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## Seasonal flu vaccine\n\nWe give the flu vaccine every year from the start of September until the end of March. Patients aged 65 and over are offered a high-dose vaccine (Fluzone High-D",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.293860Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 28,
+      "kept": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.60140496
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.4258567
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4256761
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.4256223
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "similarity_score": 0.4171725
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "similarity_score": 0.36563328
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 3,
+          "similarity_score": null
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 593,
+          "chunk_index": 0,
+          "similarity_score": 0.38816613
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.3777156
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.37533492
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.3750013
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.3692023
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.36266524
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 4,
+          "similarity_score": 0.35491163
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.35263795
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.3522333
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 1,
+          "similarity_score": 0.34916952
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.34451193
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.3441787
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.3413971
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.33889303
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.33681327
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.33646882
+        },
+        {
+          "entry_id": 603,
+          "chunk_index": 0,
+          "similarity_score": 0.3329024
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 4,
+          "similarity_score": 0.32747263
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 0,
+          "similarity_score": 0.3250243
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 1,
+          "similarity_score": null
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 0,
+          "similarity_score": null
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.294528Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 8,
+      "duration_ms": 217.49,
+      "scores": [
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.4360975,
+          "rerank_score": 0.41082489490509033
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.415779,
+          "rerank_score": 0.39523065090179443
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.44329366,
+          "rerank_score": 0.3640563488006592
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.38849175,
+          "rerank_score": 0.32419031858444214
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4024648,
+          "rerank_score": 0.3140789866447449
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.399829,
+          "rerank_score": 0.30772367119789124
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "rerank_score": 0.29146066308021545
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 2,
+          "similarity_score": null,
+          "rerank_score": 0.29075872898101807
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.509922Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [],
+      "dropped_by_floor": [
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "rerank_score": 0.41082489490509033
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "rerank_score": 0.39523065090179443
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "rerank_score": 0.3640563488006592
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "rerank_score": 0.32419031858444214
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "rerank_score": 0.3140789866447449
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "rerank_score": 0.30772367119789124
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "rerank_score": 0.29146066308021545
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 2,
+          "rerank_score": 0.29075872898101807
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.510552Z"
+    },
+    {
+      "verdict": "abstained_rerank_floor",
+      "survivor_count": 0,
+      "blocked_gate": "rerank_floor",
+      "best_similarity_score": 0.44329366,
+      "best_rerank_score": 0.41082489490509033,
+      "event": "faq.verdict",
+      "segment": 1,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.510915Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 7,
+      "duration_ms": 217.44,
+      "scores": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.60140496,
+          "rerank_score": 0.8831682801246643
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "similarity_score": 0.4171725,
+          "rerank_score": 0.46253764629364014
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.4256761,
+          "rerank_score": 0.3972603976726532
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.4258567,
+          "rerank_score": 0.3939308226108551
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.4256223,
+          "rerank_score": 0.35759803652763367
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "similarity_score": 0.36563328,
+          "rerank_score": 0.3328820765018463
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 3,
+          "similarity_score": null,
+          "rerank_score": 0.32260748744010925
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.512382Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "rerank_score": 0.8831682801246643
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 605,
+          "chunk_index": 2,
+          "rerank_score": 0.46253764629364014
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "rerank_score": 0.3972603976726532
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "rerank_score": 0.3939308226108551
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "rerank_score": 0.35759803652763367
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 6,
+          "rerank_score": 0.3328820765018463
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 3,
+          "rerank_score": 0.32260748744010925
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.512709Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.60140496,
+      "best_rerank_score": 0.8831682801246643,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:28.513009Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\nQuestion: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.\n\nQuestion: Do you offer telehealth?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:14:28.513204Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 297,
+        "output": 22,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:29.379758Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1876.03,
+      "result": {
+        "segment_count": 2,
+        "abstained": true,
+        "citation_count": 1,
+        "answer_chars": 68,
+        "answer_text": null,
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Do you offer telehealth?",
+            "verdict": "answered",
+            "answer_text": "No, we currently only offer in-person visits at our clinic location."
+          },
+          {
+            "position": 1,
+            "question": "Is the clinic wheelchair accessible?",
+            "verdict": "abstained_rerank_floor",
+            "answer_text": ""
+          }
+        ],
+        "mode": "collected"
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:29.380280Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:29.382318Z"
+    },
+    {
+      "call": "compose_answer.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 1041,
+        "output": 110,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "compose_answer",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:30.965443Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 1583.88,
+      "result": {
+        "answer_source": "merged",
+        "merged": true,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 366,
+        "answer_text": "We currently only offer in-person visits at our clinic location and don't provide telehealth appointments.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:30.965903Z"
+    },
+    {
+      "duration_ms": 4570.46,
+      "segment_count": 2,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 592,
+              "chunk_index": 0,
+              "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+              "similarity_score": 0.60140496,
+              "rerank_score": 0.8831682801246643
+            }
+          ]
+        },
+        {
+          "position": 1,
+          "verdict": "abstained_rerank_floor",
+          "citations": []
+        }
+      ],
+      "outcome": "merged",
+      "answer_text": "We currently only offer in-person visits at our clinic location and don't provide telehealth appointments.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ09JHM8BSV5SYDGDT292Y"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:30.966279Z"
+    },
+    {
+      "message_id": "01M7QQ0DHV728M1VH1NG7SZZZV",
+      "chat_id": "01M7QQ09GAPVM83GW8WKFY49S9",
+      "sender": "assistant",
+      "content": "We currently only offer in-person visits at our clinic location and don't provide telehealth appointments.\n\nAs for whether the clinic is wheelchair accessible, I don't have that information in our knowledge base. I've forwarded this question to our staff, who will follow up with you. In the meantime, feel free to reach out if there's anything else I can help with.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:30.990594Z"
+    },
+    {
+      "chat_id": "01M7QQ09GAPVM83GW8WKFY49S9",
+      "reason": "corpus_could_not_answer",
+      "message_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "event": "escalation.raised",
+      "turn_id": "01M7QQ09JHM8BSV5SYDGDT292Y",
+      "level": "info",
+      "timestamp": "2026-11-18T16:14:31.002998Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {}
+}

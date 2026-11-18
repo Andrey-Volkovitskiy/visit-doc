@@ -1,0 +1,221 @@
+{
+  "case_id": "G-x-07",
+  "chat_id": "01M7QQ7AJ56Q65P0MG92EP2FQN",
+  "patient_id": "01M7QQ7AJRKC85MF7W53A6Q19N",
+  "attempts": 1,
+  "elapsed_seconds": 1.140495212002861,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+    "content": "It's spreading to my left arm now and I feel faint.",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ7BKPX28XV8HXEAPT989G",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "It's spreading to my left arm now and I feel faint.",
+        "query": "I've had a crushing pain in my chest for twenty minutes, it's spreading to my left arm now and I feel faint."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "chat_id": "01M7QQ7AJ56Q65P0MG92EP2FQN",
+      "sender": "patient",
+      "content": "It's spreading to my left arm now and I feel faint.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:17.370401Z"
+    },
+    {
+      "message": "It's spreading to my left arm now and I feel faint.",
+      "message_ids_unified": [
+        "01M7QQ7AMFTMP7PGT1290TBSC8"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:17.370787Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:17.373751Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3749,
+        "output": 55,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.346511Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "It's spreading to my left arm now and I feel faint.",
+          "query": "I've had a crushing pain in my chest for twenty minutes, it's spreading to my left arm now and I feel faint."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.346882Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 973.66,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "urgent_condition",
+            "text": "It's spreading to my left arm now and I feel faint.",
+            "query": "I've had a crushing pain in my chest for twenty minutes, it's spreading to my left arm now and I feel faint."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_owed": false,
+        "calm": true,
+        "forwarded_open": 1
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.347330Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.349583Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.34,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.349831Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.351770Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.52,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.352191Z"
+    },
+    {
+      "duration_ms": 993.25,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ7AMFTMP7PGT1290TBSC8"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.352510Z"
+    },
+    {
+      "message_id": "01M7QQ7BKPX28XV8HXEAPT989G",
+      "chat_id": "01M7QQ7AJ56Q65P0MG92EP2FQN",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.374242Z"
+    },
+    {
+      "chat_id": "01M7QQ7AJ56Q65P0MG92EP2FQN",
+      "reason": "urgent_condition",
+      "message_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "event": "escalation.raised",
+      "turn_id": "01M7QQ7AMFTMP7PGT1290TBSC8",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:18.385999Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

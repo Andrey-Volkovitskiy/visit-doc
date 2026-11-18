@@ -1,0 +1,242 @@
+{
+  "case_id": "G-g-07",
+  "chat_id": "01M7QPWWENZ9MGF7C3NB7S3K1G",
+  "patient_id": "01M7QPWWFAV72NB4FMHB51SKYD",
+  "attempts": 1,
+  "elapsed_seconds": 1.7038598200015258,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "small_talk"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QPWWGSYPB7VT060XHC6RYH",
+    "content": "Bye",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QPWY2H8RXN4KMRMVJB5TN8",
+    "content": "Take care, and thanks for reaching out to us!",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "small_talk",
+        "text": "Bye",
+        "query": "Bye"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "chat_id": "01M7QPWWENZ9MGF7C3NB7S3K1G",
+      "sender": "patient",
+      "content": "Bye",
+      "event": "message.persisted",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:35.236178Z"
+    },
+    {
+      "message": "Bye",
+      "message_ids_unified": [
+        "01M7QPWWGSYPB7VT060XHC6RYH"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:35.236474Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:35.239970Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3432,
+        "output": 30,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.177100Z"
+    },
+    {
+      "intents": [
+        "small_talk"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "small_talk",
+          "text": "Bye",
+          "query": "Bye"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.177977Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 938.96,
+      "result": {
+        "intents": [
+          "small_talk"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "small_talk",
+            "text": "Bye",
+            "query": "Bye"
+          }
+        ],
+        "specialists": [
+          "small_talk"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.178814Z"
+    },
+    {
+      "node": "small_talk",
+      "event": "node.started",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.181784Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Bye"
+        }
+      ],
+      "event": "small_talk.model_request",
+      "node": "small_talk",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:12:36.182238Z"
+    },
+    {
+      "call": "small_talk.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 253,
+        "output": 14,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "small_talk",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.809882Z"
+    },
+    {
+      "node": "small_talk",
+      "duration_ms": 628.86,
+      "result": {
+        "answer_chars": 45,
+        "answer_text": "Take care, and thanks for reaching out to us!",
+        "truncated": false
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.810355Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.811670Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.44,
+      "result": {
+        "answer_source": "small_talk",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 45,
+        "answer_text": "Take care, and thanks for reaching out to us!"
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.811918Z"
+    },
+    {
+      "duration_ms": 1586.79,
+      "segment_count": 1,
+      "outcome": "small_talk",
+      "answer_text": "Take care, and thanks for reaching out to us!",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QPWWGSYPB7VT060XHC6RYH"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.812128Z"
+    },
+    {
+      "message_id": "01M7QPWY2H8RXN4KMRMVJB5TN8",
+      "chat_id": "01M7QPWWENZ9MGF7C3NB7S3K1G",
+      "sender": "assistant",
+      "content": "Take care, and thanks for reaching out to us!",
+      "event": "message.persisted",
+      "turn_id": "01M7QPWWGSYPB7VT060XHC6RYH",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:36.825932Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {}
+}

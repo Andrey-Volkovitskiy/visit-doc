@@ -1,0 +1,863 @@
+{
+  "case_id": "G-w-03",
+  "chat_id": "01M7QQ6JHGMV0P6WYHKAK4GKC5",
+  "patient_id": "01M7QQ6JJ5WM3H2G7REWER6S5E",
+  "attempts": 1,
+  "elapsed_seconds": 2.6229645300008997,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "My receipt lists D7140. What is that?",
+          "answer": "D7140 is a simple tooth extraction - $240.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 2,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240"
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done."
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 3,
+              "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+    "content": "My receipt lists D7140. What is that?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ6MJ3QMNGRGYKWGGJ1V46",
+    "content": "D7140 is a simple tooth extraction - $240.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "My receipt lists D7140. What is that?",
+        "answer": "D7140 is a simple tooth extraction - $240.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 608,
+            "chunk_index": 2,
+            "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240"
+          },
+          {
+            "entry_id": 608,
+            "chunk_index": 0,
+            "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done."
+          },
+          {
+            "entry_id": 608,
+            "chunk_index": 3,
+            "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "My receipt lists D7140. What is that?",
+        "query": "What does the code D7140 on my receipt mean?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "chat_id": "01M7QQ6JHGMV0P6WYHKAK4GKC5",
+      "sender": "patient",
+      "content": "My receipt lists D7140. What is that?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:52.766917Z"
+    },
+    {
+      "message": "My receipt lists D7140. What is that?",
+      "message_ids_unified": [
+        "01M7QQ6JKGK43PZA89ZJP99KRF"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:52.767229Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:52.771351Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3441,
+        "output": 42,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:53.825145Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "My receipt lists D7140. What is that?",
+          "query": "What does the code D7140 on my receipt mean?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:53.825555Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1054.55,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "My receipt lists D7140. What is that?",
+            "query": "What does the code D7140 on my receipt mean?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:53.825787Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:53.828902Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.095776Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 25,
+      "candidates": [
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.42697856,
+          "dense_rank": 1,
+          "lexical_score": 9.050673,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.36076707,
+          "dense_rank": 2,
+          "lexical_score": 8.835501,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 2,
+          "similarity_score": 0.3296482,
+          "dense_rank": 3,
+          "lexical_score": 10.1098,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.28714794,
+          "dense_rank": 4,
+          "lexical_score": 3.4830678,
+          "lexical_rank": 9,
+          "considered": true,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blood pressure monitoring - $140\n- 81002: urine dipstick test done in the clinic - $15\n- 69210: ear wax removal, per ear - $75\n- 17110: wart freezing (cryotherapy), up to 14 warts in one session - $90",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.2348195,
+          "dense_rank": 5,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message or email. If you receive a message like that which claims to come from us, do not reply to it, and call the front desk on (212) 555-0142.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 0,
+          "similarity_score": 0.22382814,
+          "dense_rank": 6,
+          "lexical_score": 6.238951,
+          "lexical_rank": 4,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n\nThis guide lists, plan by plan, the health insurance plans we are in-network with. Insurance companies sell many plans under one brand name, and being in-network with a company",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.2007618,
+          "dense_rank": 7,
+          "lexical_score": 4.1308,
+          "lexical_rank": 7,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Text message reminders\n\nWe send a reminder by text message 48 hours before your appointment and another 2 hours before it. Our messages always c",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 6,
+          "similarity_score": 0.19867347,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Copays and deductibles\n\nYour plan decides how much you pay at the visit. A copay is a fixed amount your plan sets for each visit, and it is collected when you check in. If yo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.19372691,
+          "dense_rank": 9,
+          "lexical_score": 4.4457765,
+          "lexical_rank": 5,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 1,
+          "similarity_score": 0.19240642,
+          "dense_rank": 10,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Blue Cross Blue Shield\n\nWe are in-network with Blue Cross Blue Shield PPO plans, including BlueCard PPO members whose plan was issued in another state; look for the suitcase ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.18509182,
+          "dense_rank": 11,
+          "lexical_score": 3.5858188,
+          "lexical_rank": 8,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 1,
+          "similarity_score": 0.18266386,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Dental insurance\n\nMedical insurance plans do not cover dental care. For dental appointments we accept these dental plans: Delta Dental PPO, MetLife PDP Plus and Guardian DentalG",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.17385314,
+          "dense_rank": 13,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.16829312,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Medicare and Medicaid\n\nWe accept Original Medicare (Part B) for medical visits. Medicare does not cover routine dental care, so dental appointments are self-pay for Medicare ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 593,
+          "chunk_index": 0,
+          "similarity_score": 0.16227518,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Which health insurance plans do you accept?\nAnswer: We accept most major insurance providers, including Blue Cross Blue Shield, Aetna, Cigna, UnitedHealthcare, and Medicare. If you're unsure",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.16167042,
+          "dense_rank": 16,
+          "lexical_score": 4.3887467,
+          "lexical_rank": 6,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "similarity_score": 0.16150483,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.16132069,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.15447804,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.15403739,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the f",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.15330343,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 3,
+          "similarity_score": 0.1523323,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## How long we keep records\n\nWe keep adult medical records for 10 years after your last visit.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 596,
+          "chunk_index": 0,
+          "similarity_score": 0.15080987,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: When is payment due, and what payment methods do you accept?\nAnswer: Payment is due at the time of service. We accept cash, major credit and debit cards (Visa, Mastercard, American Express),",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.15069066,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Phone calls\n\nIf we cannot reach you by phone, we leave a voicemail with only the clinic's name, a callback number and your first name - never th",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "similarity_score": 0.15024896,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Insurance plan guide\n## Cigna\n\nWe are in-network with Cigna Open Access Plus (OAP) and Cigna PPO plans. Cigna LocalPlus plans are in-network only for members who live in our county; the network area",
+          "text_truncated": true
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.108570Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 25,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.42697856
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.36076707
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 2,
+          "similarity_score": 0.3296482
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.28714794
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.2348195
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 599,
+          "chunk_index": 0,
+          "similarity_score": 0.22382814
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 0,
+          "similarity_score": 0.2007618
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 6,
+          "similarity_score": 0.19867347
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.19372691
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 1,
+          "similarity_score": 0.19240642
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.18509182
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 1,
+          "similarity_score": 0.18266386
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.17385314
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 5,
+          "similarity_score": 0.16829312
+        },
+        {
+          "entry_id": 593,
+          "chunk_index": 0,
+          "similarity_score": 0.16227518
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.16167042
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "similarity_score": 0.16150483
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.16132069
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.15447804
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.15403739
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.15330343
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 3,
+          "similarity_score": 0.1523323
+        },
+        {
+          "entry_id": 596,
+          "chunk_index": 0,
+          "similarity_score": 0.15080987
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 2,
+          "similarity_score": 0.15069066
+        },
+        {
+          "entry_id": 599,
+          "chunk_index": 3,
+          "similarity_score": 0.15024896
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.109533Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 5,
+      "duration_ms": 282.02,
+      "scores": [
+        {
+          "entry_id": 608,
+          "chunk_index": 2,
+          "similarity_score": 0.3296482,
+          "rerank_score": 0.8223336935043335
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.36076707,
+          "rerank_score": 0.6179036498069763
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.42697856,
+          "rerank_score": 0.5905358791351318
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.28714794,
+          "rerank_score": 0.3822052478790283
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.2348195,
+          "rerank_score": 0.2883571684360504
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.392105Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 608,
+          "chunk_index": 2,
+          "rerank_score": 0.8223336935043335
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "rerank_score": 0.6179036498069763
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "rerank_score": 0.5905358791351318
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "rerank_score": 0.3822052478790283
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "rerank_score": 0.2883571684360504
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.393148Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 3,
+      "blocked_gate": null,
+      "best_similarity_score": 0.42697856,
+      "best_rerank_score": 0.8223336935043335,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.393596Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240\n\n# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.\n\n# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.\n\nWhat the question refers to, restated to stand on its own - it may leave out part of what was asked: What does the code D7140 on my receipt mean?\n\nQuestion: My receipt lists D7140. What is that?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:17:54.394669Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 564,
+        "output": 20,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.740940Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1416.04,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 3,
+        "answer_chars": 42,
+        "answer_text": "D7140 is a simple tooth extraction - $240.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "My receipt lists D7140. What is that?",
+            "verdict": "answered",
+            "answer_text": "D7140 is a simple tooth extraction - $240."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.741946Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.745110Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.68,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 3,
+        "answer_chars": 42,
+        "answer_text": "D7140 is a simple tooth extraction - $240."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.745495Z"
+    },
+    {
+      "duration_ms": 2496.01,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 608,
+              "chunk_index": 2,
+              "chunk_text": "# Procedure codes and self-pay prices\n## Dental procedures\n\n- D2391: tooth-coloured filling on one surface of a back tooth - $210\n- D2140: silver (amalgam) filling on one surface - $160\n- D7140: simple tooth extraction - $240",
+              "similarity_score": 0.3296482,
+              "rerank_score": 0.8223336935043335
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 0,
+              "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT codes that start with the letter D. If you pay out of pocket, each procedure below is charged at the price shown, in addition to the rate for the visit at which it is done.",
+              "similarity_score": 0.36076707,
+              "rerank_score": 0.6179036498069763
+            },
+            {
+              "entry_id": 608,
+              "chunk_index": 3,
+              "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+              "similarity_score": 0.42697856,
+              "rerank_score": 0.5905358791351318
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "D7140 is a simple tooth extraction - $240.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ6JKGK43PZA89ZJP99KRF"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.745949Z"
+    },
+    {
+      "message_id": "01M7QQ6MJ3QMNGRGYKWGGJ1V46",
+      "chat_id": "01M7QQ6JHGMV0P6WYHKAK4GKC5",
+      "sender": "assistant",
+      "content": "D7140 is a simple tooth extraction - $240.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ6JKGK43PZA89ZJP99KRF",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:54.767168Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {}
+}

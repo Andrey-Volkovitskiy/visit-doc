@@ -1,0 +1,221 @@
+{
+  "case_id": "G-e-08",
+  "chat_id": "01M7QPWEQ2ZN8KS0Z6KYVFQFB6",
+  "patient_id": "01M7QPWEQQVB25XVXV5BS87N3F",
+  "attempts": 1,
+  "elapsed_seconds": 1.4120747050001228,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+    "content": "Please change the name on my file to my married name.",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QPWG1EJXT4GCDG6502P0GK",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Please change the name on my file to my married name.",
+        "query": "Change the name on my file to my married name."
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "chat_id": "01M7QPWEQ2ZN8KS0Z6KYVFQFB6",
+      "sender": "patient",
+      "content": "Please change the name on my file to my married name.",
+      "event": "message.persisted",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:21.170548Z"
+    },
+    {
+      "message": "Please change the name on my file to my married name.",
+      "message_ids_unified": [
+        "01M7QPWES7RMRHB5SZ8GF74XSY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:21.170895Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:21.174139Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3442,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.437930Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Please change the name on my file to my married name.",
+          "query": "Change the name on my file to my married name."
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.438248Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1264.49,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "Please change the name on my file to my married name.",
+            "query": "Change the name on my file to my married name."
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.438418Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.440086Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.28,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.440268Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.441495Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.28,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.441654Z"
+    },
+    {
+      "duration_ms": 1282.42,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QPWES7RMRHB5SZ8GF74XSY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.441840Z"
+    },
+    {
+      "message_id": "01M7QPWG1EJXT4GCDG6502P0GK",
+      "chat_id": "01M7QPWEQ2ZN8KS0Z6KYVFQFB6",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "event": "message.persisted",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.460666Z"
+    },
+    {
+      "chat_id": "01M7QPWEQ2ZN8KS0Z6KYVFQFB6",
+      "reason": "not_authorized",
+      "message_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "event": "escalation.raised",
+      "turn_id": "01M7QPWES7RMRHB5SZ8GF74XSY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:22.470905Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

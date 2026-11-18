@@ -1,0 +1,856 @@
+{
+  "case_id": "G-u-06",
+  "chat_id": "01M7QQ5SQTDW53PKTJKH8B58WF",
+  "patient_id": "01M7QQ5SREJGT45YMTNW7S4JH3",
+  "attempts": 1,
+  "elapsed_seconds": 2.7515650290006306,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": [
+        {
+          "position": 0,
+          "question": "Can I get a DOT physical with you?",
+          "answer": "No.",
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 4,
+              "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment."
+            }
+          ]
+        }
+      ],
+      "message": null,
+      "answer_source": "faq"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+    "content": "Can I get a DOT physical with you?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ5WBZDY0AFV3ZR6FJ048S",
+    "content": "No.",
+    "attention_mark": null,
+    "request_outcomes": [
+      {
+        "position": 0,
+        "question": "Can I get a DOT physical with you?",
+        "answer": "No.",
+        "verdict": "answered",
+        "citations": [
+          {
+            "entry_id": 607,
+            "chunk_index": 4,
+            "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment."
+          }
+        ]
+      }
+    ]
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "faq_question",
+        "text": "Can I get a DOT physical with you?",
+        "query": "Can I get a DOT physical with you?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "chat_id": "01M7QQ5SQTDW53PKTJKH8B58WF",
+      "sender": "patient",
+      "content": "Can I get a DOT physical with you?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:27.365021Z"
+    },
+    {
+      "message": "Can I get a DOT physical with you?",
+      "message_ids_unified": [
+        "01M7QQ5SSTEWRNNHTK4RZ33W7V"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:27.365361Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:27.368014Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3440,
+        "output": 39,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.314957Z"
+    },
+    {
+      "intents": [
+        "faq_question"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "faq_question",
+          "text": "Can I get a DOT physical with you?",
+          "query": "Can I get a DOT physical with you?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.315237Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 947.55,
+      "result": {
+        "intents": [
+          "faq_question"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "faq_question",
+            "text": "Can I get a DOT physical with you?",
+            "query": "Can I get a DOT physical with you?"
+          }
+        ],
+        "specialists": [
+          "answer_faq"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.315501Z"
+    },
+    {
+      "node": "answer_faq",
+      "event": "node.started",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.317402Z"
+    },
+    {
+      "event": "turn.message_embedded",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.579802Z"
+    },
+    {
+      "pool_size": 25,
+      "pool_returned": 26,
+      "candidates": [
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.42338997,
+          "dense_rank": 1,
+          "lexical_score": 11.820831,
+          "lexical_rank": 1,
+          "considered": true,
+          "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.3854297,
+          "dense_rank": 2,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "Question: Do you offer virtual or telehealth consultations?\nAnswer: No, we currently only offer in-person visits at our clinic location.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "similarity_score": 0.3334868,
+          "dense_rank": 3,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "Question: What should I bring to my first appointment?\nAnswer: Please bring a valid photo ID, your insurance card, and any relevant prior lab or test results related to your case.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.32749653,
+          "dense_rank": 4,
+          "lexical_score": 6.7371798,
+          "lexical_rank": 2,
+          "considered": true,
+          "chunk_text": "# General practice services\n## Annual physical examination\n\nAn annual physical is a preventive check-up for adults who feel well. It includes a review of your medical history and current medicines; your blood pressure, heart rate, height, weight and body mass index (BMI); a physical examination; and a discussion of the screening tests and vaccinations recommended for your age. Most insurance plans cover one preventive physical a year at no cost to you, but check with your plan.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.31879893,
+          "dense_rank": 5,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": true,
+          "chunk_text": "# Your privacy and your health information\n## Questions and complaints about privacy\n\nOur privacy officer answers questions about how your information is used and handles privacy complaints. Ask the front desk for the privacy officer's contact details.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.29651913,
+          "dense_rank": 6,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n\nSome tests are done at the clinic during a regular appointment. This guide explains how to prepare for each of them. If your doctor has given you different instruc",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.29301643,
+          "dense_rank": 7,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Bringing someone with you\n\nYou may bring one adult companion into the consulting room. Anyone else who comes with you can wait in the waiting area.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.28752607,
+          "dense_rank": 8,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: Do I need a referral from a primary care doctor to book with a specialist?\nAnswer: You can book a visit with any of our practitioners without a referral.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 1,
+          "similarity_score": 0.28115705,
+          "dense_rank": 9,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Preparing for tests at the clinic\n## Electrocardiogram (ECG)\n\nA resting 12-lead ECG records the electrical activity of your heart through ten small sticky electrodes placed on your chest, arms and l",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.27947176,
+          "dense_rank": 10,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## A code you do not recognise\n\nIf your receipt shows a code that is not in this list, the front desk can tell you what it is.",
+          "text_truncated": false
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.27753654,
+          "dense_rank": 11,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## While you wait\n\nFree guest Wi-Fi is available in the waiting area: the network is called VisitDoc-Guest, and the password is printed on the card at the front desk. Ple",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.2747107,
+          "dense_rank": 12,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What should I do if my insurance isn't listed or I am out-of-network?\nAnswer: You can pay out-of-pocket for your visit, and we can provide you with an itemized receipt to submit to your insu",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.2745863,
+          "dense_rank": 13,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Recording a consultation\n\nYou may make an audio recording of your own consultation for your personal use, as long as you tell the practitioner before you ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.27265656,
+          "dense_rank": 14,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Messages we will never send\n\nWe will never ask for your card number, bank details, Social Security number or insurance member ID by text message",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.26820505,
+          "dense_rank": 15,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n## Medical procedures\n\n- 93000: resting 12-lead electrocardiogram, with the doctor's reading of it - $65\n- 94010: spirometry - $85\n- 93784: 24-hour ambulatory blo",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.2658019,
+          "dense_rank": 16,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: What are your clinic hours and locations?\nAnswer: We are open Monday through Saturday from 9:00 AM to 6:00 PM at 15a Willson St. The nearest free parking is a 3-minute walk away at the Mega ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.26495543,
+          "dense_rank": 17,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Appointment reminders and messages from the clinic\n## Email\n\nWe use email only to confirm a new appointment and to send an itemized receipt you have asked for. We do not send test results or medical",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.26276544,
+          "dense_rank": 18,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## Registering as a new patient\n\nNew patients fill in three forms at their first visit:\n\n- Form PR-1, New Patient Registration: your contact details, emergency contact an",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.2612075,
+          "dense_rank": 19,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Procedure codes and self-pay prices\n\nYour itemized receipt lists each procedure done at your visit by its billing code. Medical procedures use five-digit CPT codes, and dental procedures use CDT cod",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 598,
+          "chunk_index": 0,
+          "similarity_score": 0.26034942,
+          "dense_rank": 20,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "Question: How early should I arrive before my scheduled appointment time?\nAnswer: If it is your first visit to our clinic, please arrive 15 minutes before your appointment time to complete your regist",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.25790262,
+          "dense_rank": 21,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Checking in and registering\n## The self-check-in kiosk\n\nReturning patients can check in at the kiosk beside the front desk instead of queuing. Scan the QR code from your 48-hour reminder text, or ty",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 5,
+          "similarity_score": 0.25627786,
+          "dense_rank": 22,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Vaccinations\n## After your vaccination\n\nPlease stay in the waiting area for 15 minutes after any vaccination, so staff can help if you feel faint or have an allergic reaction. A sore arm for a day o",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.2561647,
+          "dense_rank": 23,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Your privacy and your health information\n## Conversations with the chat assistant\n\nConversations with the clinic's chat assistant are kept with your appointment records. Clinic staff can read them, ",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.24529573,
+          "dense_rank": 24,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# Dental care guide\n## Feeling anxious about the dentist\n\nLet us know when you book or when you check in. The dentist will agree a stop signal with you - raising your left hand - and will pause whenev",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 1,
+          "similarity_score": 0.24236903,
+          "dense_rank": 25,
+          "lexical_score": null,
+          "lexical_rank": null,
+          "considered": false,
+          "chunk_text": "# General practice services\n## Long-term conditions\n\nIf you live with a long-term condition such as type 2 diabetes, high blood pressure, asthma or COPD, your GP will agree a regular review schedule w",
+          "text_truncated": true
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 5,
+          "similarity_score": null,
+          "dense_rank": null,
+          "lexical_score": 5.6602216,
+          "lexical_rank": 3,
+          "considered": true,
+          "chunk_text": "# Dental care guide\n## After a tooth extraction\n\nBite firmly on the gauze pad for 30 to 45 minutes to let a blood clot form. Do not rinse your mouth for the first 24 hours; after that, rinse gently with warm salt water (half a teaspoon of salt in a glass of water) after meals. Do not drink through a straw, smoke or spit forcefully for at least 72 hours, because suction can dislodge the clot and cause a painful condition called dry socket. Eat soft food on the other side of your mouth for the first few days. For pain, use the over-the-counter painkiller the dentist recommended at your appointment.\n\nContact us if the bleeding has not stopped after four hours, or if the pain gets worse rather than better after the third day. If bleeding is heavy and will not stop, go to the nearest emergency department.",
+          "text_truncated": false
+        }
+      ],
+      "event": "faq.retrieval_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.591229Z"
+    },
+    {
+      "cap": 5,
+      "lexical_cap": 3,
+      "pool_returned": 26,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.42338997
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.3854297
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "similarity_score": 0.3334868
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.32749653
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.31879893
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 5,
+          "similarity_score": null
+        }
+      ],
+      "dropped_by_cap": [
+        {
+          "entry_id": 601,
+          "chunk_index": 0,
+          "similarity_score": 0.29651913
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 3,
+          "similarity_score": 0.29301643
+        },
+        {
+          "entry_id": 590,
+          "chunk_index": 0,
+          "similarity_score": 0.28752607
+        },
+        {
+          "entry_id": 601,
+          "chunk_index": 1,
+          "similarity_score": 0.28115705
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 3,
+          "similarity_score": 0.27947176
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 4,
+          "similarity_score": 0.27753654
+        },
+        {
+          "entry_id": 594,
+          "chunk_index": 0,
+          "similarity_score": 0.2747107
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 2,
+          "similarity_score": 0.2745863
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 3,
+          "similarity_score": 0.27265656
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 1,
+          "similarity_score": 0.26820505
+        },
+        {
+          "entry_id": 597,
+          "chunk_index": 0,
+          "similarity_score": 0.2658019
+        },
+        {
+          "entry_id": 604,
+          "chunk_index": 1,
+          "similarity_score": 0.26495543
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 0,
+          "similarity_score": 0.26276544
+        },
+        {
+          "entry_id": 608,
+          "chunk_index": 0,
+          "similarity_score": 0.2612075
+        },
+        {
+          "entry_id": 598,
+          "chunk_index": 0,
+          "similarity_score": 0.26034942
+        },
+        {
+          "entry_id": 605,
+          "chunk_index": 1,
+          "similarity_score": 0.25790262
+        },
+        {
+          "entry_id": 602,
+          "chunk_index": 5,
+          "similarity_score": 0.25627786
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 1,
+          "similarity_score": 0.2561647
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 3,
+          "similarity_score": 0.24529573
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 1,
+          "similarity_score": 0.24236903
+        }
+      ],
+      "event": "faq.similarity_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:28.591986Z"
+    },
+    {
+      "model": "rerank-3",
+      "candidate_count": 6,
+      "duration_ms": 508.78,
+      "scores": [
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "similarity_score": 0.42338997,
+          "rerank_score": 0.8013373017311096
+        },
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "similarity_score": 0.32749653,
+          "rerank_score": 0.4739876985549927
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "similarity_score": 0.3334868,
+          "rerank_score": 0.39974334836006165
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "similarity_score": 0.3854297,
+          "rerank_score": 0.39241012930870056
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "similarity_score": 0.31879893,
+          "rerank_score": 0.2877604067325592
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 5,
+          "similarity_score": null,
+          "rerank_score": 0.2591654658317566
+        }
+      ],
+      "event": "faq.reranking_completed",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.101210Z"
+    },
+    {
+      "floor": 0.58,
+      "cap": 3,
+      "kept": [
+        {
+          "entry_id": 607,
+          "chunk_index": 4,
+          "rerank_score": 0.8013373017311096
+        }
+      ],
+      "dropped_by_floor": [
+        {
+          "entry_id": 607,
+          "chunk_index": 0,
+          "rerank_score": 0.4739876985549927
+        },
+        {
+          "entry_id": 591,
+          "chunk_index": 0,
+          "rerank_score": 0.39974334836006165
+        },
+        {
+          "entry_id": 592,
+          "chunk_index": 0,
+          "rerank_score": 0.39241012930870056
+        },
+        {
+          "entry_id": 606,
+          "chunk_index": 4,
+          "rerank_score": 0.2877604067325592
+        },
+        {
+          "entry_id": 600,
+          "chunk_index": 5,
+          "rerank_score": 0.2591654658317566
+        }
+      ],
+      "dropped_by_cap": [],
+      "event": "faq.rerank_gate",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.101768Z"
+    },
+    {
+      "verdict": "answered",
+      "survivor_count": 1,
+      "blocked_gate": null,
+      "best_similarity_score": 0.42338997,
+      "best_rerank_score": 0.8013373017311096,
+      "event": "faq.verdict",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.102194Z"
+    },
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "Clinic information:\n# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.\n\nQuestion: Can I get a DOT physical with you?"
+        }
+      ],
+      "event": "faq.model_request",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:17:29.102342Z"
+    },
+    {
+      "call": "answer_faq.model",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 341,
+        "output": 4,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "segment": 0,
+      "node": "answer_faq",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.975312Z"
+    },
+    {
+      "node": "answer_faq",
+      "duration_ms": 1658.53,
+      "result": {
+        "segment_count": 1,
+        "abstained": false,
+        "citation_count": 1,
+        "answer_chars": 3,
+        "answer_text": "No.",
+        "segment_answers": [
+          {
+            "position": 0,
+            "question": "Can I get a DOT physical with you?",
+            "verdict": "answered",
+            "answer_text": "No."
+          }
+        ],
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.975796Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.977185Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.39,
+      "result": {
+        "answer_source": "faq",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 1,
+        "answer_chars": 3,
+        "answer_text": "No."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.977467Z"
+    },
+    {
+      "duration_ms": 2623.22,
+      "segment_count": 1,
+      "request_outcomes": [
+        {
+          "position": 0,
+          "verdict": "answered",
+          "citations": [
+            {
+              "entry_id": 607,
+              "chunk_index": 4,
+              "chunk_text": "# General practice services\n## Medical examinations for work, driving and sport\n\nWe do not carry out commercial driver (DOT) medical examinations, pilot medicals or immigration medical examinations. A sports physical before joining a team or a competition is done in a standard GP appointment.",
+              "similarity_score": 0.42338997,
+              "rerank_score": 0.8013373017311096
+            }
+          ]
+        }
+      ],
+      "outcome": "faq",
+      "answer_text": "No.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ5SSTEWRNNHTK4RZ33W7V"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:29.977676Z"
+    },
+    {
+      "message_id": "01M7QQ5WBZDY0AFV3ZR6FJ048S",
+      "chat_id": "01M7QQ5SQTDW53PKTJKH8B58WF",
+      "sender": "assistant",
+      "content": "No.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ5SSTEWRNNHTK4RZ33W7V",
+      "level": "info",
+      "timestamp": "2026-11-18T16:17:37.852168Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {}
+}

@@ -1,0 +1,221 @@
+{
+  "case_id": "G-y-08",
+  "chat_id": "01M7QQ7T6MVVPDS8406QFMPGQP",
+  "patient_id": "01M7QQ7T7BVXX23F74HZGKFGK7",
+  "attempts": 1,
+  "elapsed_seconds": 1.1282326580003428,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+    "content": "Can you renew my prescription for Brufen?",
+    "attention_mark": "not_authorized",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ7V84PWQ384SVA396QRJC",
+    "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "not_authorized",
+        "text": "Can you renew my prescription for Brufen?",
+        "query": "renew my prescription for Brufen"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "chat_id": "01M7QQ7T6MVVPDS8406QFMPGQP",
+      "sender": "patient",
+      "content": "Can you renew my prescription for Brufen?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:33.379229Z"
+    },
+    {
+      "message": "Can you renew my prescription for Brufen?",
+      "message_ids_unified": [
+        "01M7QQ7T8S6VJR4TJKYBBRCEXN"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:33.379551Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:33.382372Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3441,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.364888Z"
+    },
+    {
+      "intents": [
+        "not_authorized"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "not_authorized",
+          "text": "Can you renew my prescription for Brufen?",
+          "query": "renew my prescription for Brufen"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.365416Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 983.32,
+      "result": {
+        "intents": [
+          "not_authorized"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "not_authorized",
+            "text": "Can you renew my prescription for Brufen?",
+            "query": "renew my prescription for Brufen"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "not_authorized",
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.365558Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.367172Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.34,
+      "result": {
+        "cause": "not_authorized",
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.367402Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.368452Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.26,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 183,
+        "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.368620Z"
+    },
+    {
+      "duration_ms": 999.5,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ7T8S6VJR4TJKYBBRCEXN"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.368747Z"
+    },
+    {
+      "message_id": "01M7QQ7V84PWQ384SVA396QRJC",
+      "chat_id": "01M7QQ7T6MVVPDS8406QFMPGQP",
+      "sender": "assistant",
+      "content": "I'm not authorized to handle that request, so I've forwarded it to our staff. They'll follow up with you shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.380077Z"
+    },
+    {
+      "chat_id": "01M7QQ7T6MVVPDS8406QFMPGQP",
+      "reason": "not_authorized",
+      "message_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "event": "escalation.raised",
+      "turn_id": "01M7QQ7T8S6VJR4TJKYBBRCEXN",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:34.390108Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

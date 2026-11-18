@@ -1,0 +1,390 @@
+{
+  "case_id": "G-a-10",
+  "chat_id": "01M7QPT688CFFSZPGQBP798NAH",
+  "patient_id": "01M7QPT69A79GG00CDWK1MEA6B",
+  "attempts": 1,
+  "elapsed_seconds": 3.443356940999365,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "booking"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+    "content": "When is my next appointment?",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QPT91Q9SZPH2MW8QXX3DF1",
+    "content": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking",
+        "text": "When is my next appointment?",
+        "query": "When is my next appointment?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "chat_id": "01M7QPT688CFFSZPGQBP798NAH",
+      "sender": "patient",
+      "content": "When is my next appointment?",
+      "event": "message.persisted",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:07.049161Z"
+    },
+    {
+      "message": "When is my next appointment?",
+      "message_ids_unified": [
+        "01M7QPT6CJQ26TS27BD3C5GEJD"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:07.049631Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:07.054816Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3436,
+        "output": 32,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.175358Z"
+    },
+    {
+      "intents": [
+        "booking"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking",
+          "text": "When is my next appointment?",
+          "query": "When is my next appointment?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.175894Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1121.55,
+      "result": {
+        "intents": [
+          "booking"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking",
+            "text": "When is my next appointment?",
+            "query": "When is my next appointment?"
+          }
+        ],
+        "specialists": [
+          "handle_booking"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": null,
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.176221Z"
+    },
+    {
+      "node": "handle_booking",
+      "event": "node.started",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.178961Z"
+    },
+    {
+      "method": "ListPractitioners",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.190310Z"
+    },
+    {
+      "practitioner_count": 2,
+      "event": "booking.roster_read",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:08.190621Z"
+    },
+    {
+      "iteration": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is my next appointment?"
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:11:08.190922Z"
+    },
+    {
+      "call": "handle_booking.model[1]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "tool_use",
+      "usage": {
+        "input": 2,
+        "output": 30,
+        "cache_read": 5840,
+        "cache_write": 118,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.135936Z"
+    },
+    {
+      "iteration": 1,
+      "duration_ms": 945.12,
+      "tool_names": [
+        "list_my_appointments"
+      ],
+      "text": "",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.136203Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "arguments": {},
+      "event": "booking.tool_called",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.136377Z"
+    },
+    {
+      "method": "ListAppointments",
+      "attempt": 1,
+      "status": "OK",
+      "event": "scheduling.call",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.151715Z"
+    },
+    {
+      "tool_name": "list_my_appointments",
+      "iteration": 1,
+      "status": "ok",
+      "reason": null,
+      "duration_ms": 15.6,
+      "event": "booking.tool_result",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.152068Z"
+    },
+    {
+      "iteration": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "When is my next appointment?"
+        },
+        {
+          "role": "assistant",
+          "content": [
+            {
+              "id": "toolu_01YZy5ExsAku1hsqKphLpZ77",
+              "caller": {
+                "type": "direct"
+              },
+              "input": {},
+              "name": "list_my_appointments",
+              "type": "tool_use"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_use_id": "toolu_01YZy5ExsAku1hsqKphLpZ77",
+              "content": "{\"future\": [{\"id\": \"01M7QPT6BVS0TQ1QACFA0ZDGS9\", \"practitioner_full_name\": \"William Osler\", \"specialty\": \"General Practice\", \"starts_at\": \"2026-03-04T14:00:00\", \"ends_at\": \"2026-03-04T15:00:00\", \"status\": \"standing\"}], \"past\": [], \"past_truncated\": false, \"not_listed\": \"Cancelled appointments are not in this list. An appointment missing from it may have been cancelled - list again with status_filter both before saying it does not exist.\"}"
+            }
+          ]
+        }
+      ],
+      "event": "booking.model_request",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "debug",
+      "timestamp": "2026-11-18T16:11:09.152319Z"
+    },
+    {
+      "call": "handle_booking.model[2]",
+      "model": "claude-sonnet-5",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 2,
+        "output": 59,
+        "cache_read": 5958,
+        "cache_write": 217,
+        "cache_write_1h": 0,
+        "thinking": 0
+      },
+      "event": "model.usage",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.743995Z"
+    },
+    {
+      "iteration": 2,
+      "duration_ms": 1095.48,
+      "tool_names": [],
+      "text": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM.",
+      "event": "booking.model_call",
+      "node": "handle_booking",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.744584Z"
+    },
+    {
+      "node": "handle_booking",
+      "duration_ms": 2069.65,
+      "result": {
+        "outcome": "informational",
+        "appointment_id": null,
+        "iterations": 2,
+        "tool_calls": 1,
+        "answer_chars": 129,
+        "answer_text": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM.",
+        "mode": "streamed"
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.744918Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.746258Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.37,
+      "result": {
+        "answer_source": "booking",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": "informational",
+        "citation_count": 0,
+        "answer_chars": 129,
+        "answer_text": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.746455Z"
+    },
+    {
+      "duration_ms": 3223.52,
+      "segment_count": 1,
+      "outcome": "booking",
+      "answer_text": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM.",
+      "booking_outcome": "informational",
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QPT6CJQ26TS27BD3C5GEJD"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.746632Z"
+    },
+    {
+      "message_id": "01M7QPT91Q9SZPH2MW8QXX3DF1",
+      "chat_id": "01M7QPT688CFFSZPGQBP798NAH",
+      "sender": "assistant",
+      "content": "Your next appointment is on Wednesday, March 4, 2026 at 2:00 PM with Dr. William Osler (General Practice), lasting until 3:00 PM.",
+      "event": "message.persisted",
+      "turn_id": "01M7QPT6CJQ26TS27BD3C5GEJD",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:09.758640Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T14:00:00",
+      "status": "standing"
+    }
+  ],
+  "cancelled_after": [
+    {
+      "practitioner_full_name": "William Osler",
+      "starts_at": "2026-03-04T14:00:00",
+      "status": "cancelled"
+    }
+  ],
+  "excluded": null,
+  "unplantable": null,
+  "traces": {}
+}

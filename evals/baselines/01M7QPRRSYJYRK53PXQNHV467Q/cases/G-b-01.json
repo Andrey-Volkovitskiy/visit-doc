@@ -1,0 +1,221 @@
+{
+  "case_id": "G-b-01",
+  "chat_id": "01M7QPVQF9KZQNC7VDWSSBHZ85",
+  "patient_id": "01M7QPVQFWCQP6ZQBJ5RZG7648",
+  "attempts": 1,
+  "elapsed_seconds": 1.22877882299872,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+    "content": "I have chest pain radiating down my arm, what should I do?",
+    "attention_mark": "urgent_condition",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QPVGH192V5AB0S4ZR3DQYE",
+    "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "urgent_condition",
+        "text": "I have chest pain radiating down my arm, what should I do?",
+        "query": "I have chest pain radiating down my arm"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "chat_id": "01M7QPVQF9KZQNC7VDWSSBHZ85",
+      "sender": "patient",
+      "content": "I have chest pain radiating down my arm, what should I do?",
+      "event": "message.persisted",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:49.119588Z"
+    },
+    {
+      "message": "I have chest pain radiating down my arm, what should I do?",
+      "message_ids_unified": [
+        "01M7QPVFFHGKNY0SRVMWWTNE5G"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:49.119863Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:49.123061Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3445,
+        "output": 37,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.167651Z"
+    },
+    {
+      "intents": [
+        "urgent_condition"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "urgent_condition",
+          "text": "I have chest pain radiating down my arm, what should I do?",
+          "query": "I have chest pain radiating down my arm"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.168086Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1045.4,
+      "result": {
+        "intents": [
+          "urgent_condition"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "urgent_condition",
+            "text": "I have chest pain radiating down my arm, what should I do?",
+            "query": "I have chest pain radiating down my arm"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "urgent_condition",
+        "notice_owed": false,
+        "calm": true,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.168336Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.170364Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.33,
+      "result": {
+        "cause": "urgent_condition",
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.170611Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.171821Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.3,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 147,
+        "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.172001Z"
+    },
+    {
+      "duration_ms": 1066.69,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QPVFFHGKNY0SRVMWWTNE5G"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.172192Z"
+    },
+    {
+      "message_id": "01M7QPVGH192V5AB0S4ZR3DQYE",
+      "chat_id": "01M7QPVQF9KZQNC7VDWSSBHZ85",
+      "sender": "assistant",
+      "content": "This appears to be an emergency, I've immediately notified the clinic staff. A member of our team will follow up with you here as soon as possible.",
+      "event": "message.persisted",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.193562Z"
+    },
+    {
+      "chat_id": "01M7QPVQF9KZQNC7VDWSSBHZ85",
+      "reason": "urgent_condition",
+      "message_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "event": "escalation.raised",
+      "turn_id": "01M7QPVFFHGKNY0SRVMWWTNE5G",
+      "level": "info",
+      "timestamp": "2026-11-18T16:11:50.212715Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

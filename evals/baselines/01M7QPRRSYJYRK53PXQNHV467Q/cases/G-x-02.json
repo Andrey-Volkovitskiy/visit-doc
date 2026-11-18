@@ -1,0 +1,221 @@
+{
+  "case_id": "G-x-02",
+  "chat_id": "01M7QQ728KBEVDNHZQWS02WRT9",
+  "patient_id": "01M7QQ7296TZ22P8Y6ZR07ZW6V",
+  "attempts": 1,
+  "elapsed_seconds": 1.2234476359990367,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+    "content": "Any update?",
+    "attention_mark": "forwarded_follow_up",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ73D3Q7CKZCSRGEC77560",
+    "content": "I've added this to the request already with our staff, so it won't get lost. They'll follow up with you here.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "forwarded_follow_up",
+        "text": "Any update?",
+        "query": "Any update on speaking to a person about the charge on my bill?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "chat_id": "01M7QQ728KBEVDNHZQWS02WRT9",
+      "sender": "patient",
+      "content": "Any update?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:08.871043Z"
+    },
+    {
+      "message": "Any update?",
+      "message_ids_unified": [
+        "01M7QQ72AVK9HR6KZT2K2MVC85"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:08.871362Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:08.874473Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3748,
+        "output": 45,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.944291Z"
+    },
+    {
+      "intents": [
+        "forwarded_follow_up"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "forwarded_follow_up",
+          "text": "Any update?",
+          "query": "Any update on speaking to a person about the charge on my bill?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.944582Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1070.42,
+      "result": {
+        "intents": [
+          "forwarded_follow_up"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "forwarded_follow_up",
+            "text": "Any update?",
+            "query": "Any update on speaking to a person about the charge on my bill?"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "forwarded_follow_up",
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 1
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.944736Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.946604Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.37,
+      "result": {
+        "cause": "forwarded_follow_up",
+        "answer_chars": 109,
+        "answer_text": "I've added this to the request already with our staff, so it won't get lost. They'll follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.946884Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.948702Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.35,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 109,
+        "answer_text": "I've added this to the request already with our staff, so it won't get lost. They'll follow up with you here."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.948934Z"
+    },
+    {
+      "duration_ms": 1089.12,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I've added this to the request already with our staff, so it won't get lost. They'll follow up with you here.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ72AVK9HR6KZT2K2MVC85"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.949148Z"
+    },
+    {
+      "message_id": "01M7QQ73D3Q7CKZCSRGEC77560",
+      "chat_id": "01M7QQ728KBEVDNHZQWS02WRT9",
+      "sender": "assistant",
+      "content": "I've added this to the request already with our staff, so it won't get lost. They'll follow up with you here.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.964902Z"
+    },
+    {
+      "chat_id": "01M7QQ728KBEVDNHZQWS02WRT9",
+      "reason": "forwarded_follow_up",
+      "message_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "event": "escalation.raised",
+      "turn_id": "01M7QQ72AVK9HR6KZT2K2MVC85",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:09.976779Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

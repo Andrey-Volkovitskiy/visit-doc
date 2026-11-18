@@ -177,8 +177,10 @@ insurance half, and the prescription-renewal counter-case, which stays `not_auth
 
 A run that selected `G-s-07` or `G-s-12` no longer re-scores: both ids are gone from the set, and
 scoring refuses a run whose selected cases it cannot find. That includes the current baseline,
-`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`, which `compare` now refuses as well. A baseline of the
-160-case set needs a fresh `make eval-run`.
+`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`, which `compare` now refuses as well. Its successor
+is `evals/baselines/01M7QPRRSYJYRK53PXQNHV467Q`, the 160-case set. G-r-01's planted history
+changed in the same round - its Brufen question is now marked `medication_advice` and answered
+with the medication notice, as the current build leaves it - so its label digest moved too.
 
 ## What the set depends on, and what to re-check when each moves
 

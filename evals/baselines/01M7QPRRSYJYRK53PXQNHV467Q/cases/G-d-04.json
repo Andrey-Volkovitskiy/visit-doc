@@ -1,0 +1,221 @@
+{
+  "case_id": "G-d-04",
+  "chat_id": "01M7QPVZ6KZMV9ABRG72QYHSHH",
+  "patient_id": "01M7QPVZ77HRBK9MDX4BZYVDJT",
+  "attempts": 1,
+  "elapsed_seconds": 1.4472853490005946,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+    "content": "Can I cancel my wife's Thursday appointment?",
+    "attention_mark": "booking_for_another_person",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QPW0J1C91Z7D407NCAR21N",
+    "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "booking_for_another",
+        "text": "Can I cancel my wife's Thursday appointment?",
+        "query": "Cancel my wife's Thursday appointment"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "chat_id": "01M7QPVZ6KZMV9ABRG72QYHSHH",
+      "sender": "patient",
+      "content": "Can I cancel my wife's Thursday appointment?",
+      "event": "message.persisted",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:05.286242Z"
+    },
+    {
+      "message": "Can I cancel my wife's Thursday appointment?",
+      "message_ids_unified": [
+        "01M7QPVZ8WPD0A8MGF1BMBDNAS"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:05.286527Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:05.289537Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3439,
+        "output": 36,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.584650Z"
+    },
+    {
+      "intents": [
+        "booking_for_another"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "booking_for_another",
+          "text": "Can I cancel my wife's Thursday appointment?",
+          "query": "Cancel my wife's Thursday appointment"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.584983Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1295.83,
+      "result": {
+        "intents": [
+          "booking_for_another"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "booking_for_another",
+            "text": "Can I cancel my wife's Thursday appointment?",
+            "query": "Cancel my wife's Thursday appointment"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "booking_for_another_person",
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.585250Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.587381Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.37,
+      "result": {
+        "cause": "booking_for_another_person",
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.587675Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.588861Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.33,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 176,
+        "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.589101Z"
+    },
+    {
+      "duration_ms": 1313.05,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QPVZ8WPD0A8MGF1BMBDNAS"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.589266Z"
+    },
+    {
+      "message_id": "01M7QPW0J1C91Z7D407NCAR21N",
+      "chat_id": "01M7QPVZ6KZMV9ABRG72QYHSHH",
+      "sender": "assistant",
+      "content": "Appointments in this chat are booked for you, so I can't arrange one for someone else. I've passed this to the clinic's staff and a member of the team will arrange it with you.",
+      "event": "message.persisted",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.605454Z"
+    },
+    {
+      "chat_id": "01M7QPVZ6KZMV9ABRG72QYHSHH",
+      "reason": "booking_for_another_person",
+      "message_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "event": "escalation.raised",
+      "turn_id": "01M7QPVZ8WPD0A8MGF1BMBDNAS",
+      "level": "info",
+      "timestamp": "2026-11-18T16:12:06.617310Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

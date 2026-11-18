@@ -1,0 +1,221 @@
+{
+  "case_id": "G-y-05",
+  "chat_id": "01M7QQ7J2MVPN1AG356E0AKM44",
+  "patient_id": "01M7QQ7J39XA2VS8THXM2F45FH",
+  "attempts": 1,
+  "elapsed_seconds": 1.1610561859997688,
+  "terminal": {
+    "kind": "done",
+    "payload": {
+      "type": "done",
+      "request_outcomes": null,
+      "message": null,
+      "answer_source": "hand_off"
+    }
+  },
+  "stream_broke_contract": false,
+  "patient_message": {
+    "id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+    "content": "How long before spirometry do I have to stop my Spiriva?",
+    "attention_mark": "medication_advice",
+    "request_outcomes": null
+  },
+  "assistant_message": {
+    "id": "01M7QQ7JNHF62PHGJ14EN82K3H",
+    "content": "I'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime.",
+    "attention_mark": null,
+    "request_outcomes": null
+  },
+  "segments": {
+    "segments": [
+      {
+        "position": 0,
+        "intent": "medication_advice",
+        "text": "How long before spirometry do I have to stop my Spiriva?",
+        "query": "How long before spirometry do I have to stop my Spiriva?"
+      }
+    ],
+    "cap_bound": false
+  },
+  "events": [
+    {
+      "message_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "chat_id": "01M7QQ7J2MVPN1AG356E0AKM44",
+      "sender": "patient",
+      "content": "How long before spirometry do I have to stop my Spiriva?",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:32.933748Z"
+    },
+    {
+      "message": "How long before spirometry do I have to stop my Spiriva?",
+      "message_ids_unified": [
+        "01M7QQ7J4X2AT3Z5YSE1YJ4FBY"
+      ],
+      "event": "turn.message_received",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:32.933999Z"
+    },
+    {
+      "node": "classify_intent",
+      "event": "node.started",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:32.937825Z"
+    },
+    {
+      "call": "classify_intent.model",
+      "model": "claude-haiku-4-5-20251001",
+      "stop_reason": "end_turn",
+      "usage": {
+        "input": 3445,
+        "output": 43,
+        "cache_read": 0,
+        "cache_write": 0,
+        "cache_write_1h": 0
+      },
+      "event": "model.usage",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.577063Z"
+    },
+    {
+      "intents": [
+        "medication_advice"
+      ],
+      "segments": [
+        {
+          "position": 0,
+          "intent": "medication_advice",
+          "text": "How long before spirometry do I have to stop my Spiriva?",
+          "query": "How long before spirometry do I have to stop my Spiriva?"
+        }
+      ],
+      "cap_bound": false,
+      "event": "intent.classified",
+      "node": "classify_intent",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.577387Z"
+    },
+    {
+      "node": "classify_intent",
+      "duration_ms": 1007.22,
+      "result": {
+        "intents": [
+          "medication_advice"
+        ],
+        "segments": [
+          {
+            "position": 0,
+            "intent": "medication_advice",
+            "text": "How long before spirometry do I have to stop my Spiriva?",
+            "query": "How long before spirometry do I have to stop my Spiriva?"
+          }
+        ],
+        "specialists": [
+          "hand_off"
+        ],
+        "specialists_collect": false,
+        "stopping_cause": "medication_advice",
+        "notice_owed": false,
+        "calm": false,
+        "forwarded_open": 0
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.577563Z"
+    },
+    {
+      "node": "hand_off",
+      "event": "node.started",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.579337Z"
+    },
+    {
+      "node": "hand_off",
+      "duration_ms": 0.3,
+      "result": {
+        "cause": "medication_advice",
+        "answer_chars": 202,
+        "answer_text": "I'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.579514Z"
+    },
+    {
+      "node": "compose_answer",
+      "event": "node.started",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.580555Z"
+    },
+    {
+      "node": "compose_answer",
+      "duration_ms": 0.3,
+      "result": {
+        "answer_source": "hand_off",
+        "merged": false,
+        "collapsed_to_one_part": false,
+        "notice": null,
+        "booking_outcome": null,
+        "citation_count": 0,
+        "answer_chars": 202,
+        "answer_text": "I'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime."
+      },
+      "event": "node.completed",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.580709Z"
+    },
+    {
+      "duration_ms": 1025.85,
+      "segment_count": 1,
+      "outcome": "handed_off",
+      "answer_text": "I'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "booking_outcome": null,
+      "notice": null,
+      "message_ids_unified": [
+        "01M7QQ7J4X2AT3Z5YSE1YJ4FBY"
+      ],
+      "event": "turn.completed",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.580875Z"
+    },
+    {
+      "message_id": "01M7QQ7JNHF62PHGJ14EN82K3H",
+      "chat_id": "01M7QQ7J2MVPN1AG356E0AKM44",
+      "sender": "assistant",
+      "content": "I'm not authorized to give medication advice, so I've forwarded your question to our staff. They'll follow up with you here shortly. Feel free to ask if you need help with anything else in the meantime.",
+      "event": "message.persisted",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.598338Z"
+    },
+    {
+      "chat_id": "01M7QQ7J2MVPN1AG356E0AKM44",
+      "reason": "medication_advice",
+      "message_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "event": "escalation.raised",
+      "turn_id": "01M7QQ7J4X2AT3Z5YSE1YJ4FBY",
+      "level": "info",
+      "timestamp": "2026-11-18T16:18:25.608566Z"
+    }
+  ],
+  "reply_turn": null,
+  "scheduling_before_reply": null,
+  "reply_skipped": false,
+  "scheduling_after": null,
+  "cancelled_after": [],
+  "excluded": "handed_off_turn",
+  "unplantable": null,
+  "traces": {}
+}

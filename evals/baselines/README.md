@@ -18,8 +18,8 @@ from five runs of one unchanged build (`make eval-band`).
 `01M3W4D3…` and four more runs of its build (`a171078`), untraced. `01M3WD84…` differs from that
 build only in the classifier prompt, which the band shows never varied, so it applies there too:
 `make eval-compare BASE=evals/baselines/01M3WD842TTD1Q9FX8TDRTMFAB NEW=<run> BAND=evals/baselines/bands/01M3W93XYN42QWH1TCYXN3E5FC.json`.
-It does **not** apply to the current baseline `01M4X2XC…`, whose `retrieval` and `lexical_cap`
-conditions it was not measured under; a band of that build has not been taken.
+It does **not** apply to `01M4X2XC…` or the current baseline `01M7QPRR…`, whose `retrieval` and
+`lexical_cap` conditions it was not measured under; a band of the BM25 build has not been taken.
 It applies only to a comparison whose two runs share its conditions, corpus, clock and case set,
 so it marks a prompt or code change and stays silent on one that moves a setting. What it found:
 classification, retrieval and booking gave identical numbers in all five runs, case for case; only
@@ -44,6 +44,7 @@ finding out, not a thing to repair by editing the run.
 | [`01M3W4D3ZPHGWSV5DPQJB5RZC3`](01M3W4D3ZPHGWSV5DPQJB5RZC3/) | 146 (all) | `a171078` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M3WD842TTD1Q9FX8TDRTMFAB`](01M3WD842TTD1Q9FX8TDRTMFAB/) | 146 (all) | `009d4ff` on `018-hybrid-retrieval` | 2026-10-01 |
 | [`01M4X2XC19QBJWH8RQ9B81SAX6`](01M4X2XC19QBJWH8RQ9B81SAX6/) | 146 (all) | `583aaa8` on `main` | 2026-10-14 |
+| [`01M7QPRRSYJYRK53PXQNHV467Q`](01M7QPRRSYJYRK53PXQNHV467Q/) | 160 (all) | `81a643d` on `main` | 2026-11-18 |
 
 The first run of the golden set at v2 that is scoreable. The 2b record under
 `specs/012-golden-set-metrics/evaluation/` is not: it selects v1 case ids the set no longer holds,
@@ -58,9 +59,10 @@ that build with the answer prompt giving a no the information states, and
 `01M3W4D3ZPHGWSV5DPQJB5RZC3` is that build with heading-aware chunking, and the build the band
 was measured on. `01M3WD842TTD1Q9FX8TDRTMFAB` is that build with the classifier fix that closed
 Phase 4b, 1 of 87 answerable requests unserved, and stays as the record of retrieval without BM25.
-`01M4X2XC19QBJWH8RQ9B81SAX6` is the current baseline: that build with a BM25 branch whose top 3
-join the dense top 5 the reranker sees, which measured identically to it. Since family `y` took
-`G-s-07` and `G-s-12` out of the set (`../golden/PROVENANCE.md`) it no longer re-scores either, and
-`compare` refuses it; a baseline of the 160-case set has not been taken yet. It supersedes `01M321D…` in turn, which no longer
+`01M4X2XC19QBJWH8RQ9B81SAX6` is that build with a BM25 branch whose top 3 join the dense top 5
+the reranker sees, which measured identically to it. Since family `y` took `G-s-07` and `G-s-12`
+out of the set (`../golden/PROVENANCE.md`) it no longer re-scores, and `compare` refuses it.
+`01M7QPRRSYJYRK53PXQNHV467Q` is the current baseline: the 160-case set on the build that hands
+medication advice to staff, 3 of 88 answerable requests unserved. It supersedes `01M321D…` in turn, which no longer
 re-scores - the corpus pin changed and six of its labels gained a citation (`PROVENANCE.md`) - and
 stays as the record of the 9-entry build.

@@ -71,12 +71,13 @@ value but `0` or `1` stops Make. `make eval-score RUN=<run_id>` re-scores a stor
 RUNS=<id>,<id>,<id>,<id>,<id>` measures the run-to-run noise from five full runs of one unchanged
 build. Both of those are offline — no stack, no model call — and `compare` takes a run id or a
 directory path, so a committed run can be named as a baseline where it sits. **The baseline is
-`evals/baselines/01M4X2XC19QBJWH8RQ9B81SAX6`** - the whole set at 146 cases, taken on `583aaa8`,
-which adds a BM25 branch whose top 3 join the dense top 5 the reranker sees; it measured
-identically to the dense build before it, 1 of 87 answerable requests unserved. **It no longer
-scores against the current labels**: the set is 160 cases since family `y` (medication advice)
-took G-s-07 and G-s-12, so `eval-score` and `eval-compare` against it raise
-`LabelDigestMismatchError` until a run of the 160-case set is committed in its place.
+`evals/baselines/01M7QPRRSYJYRK53PXQNHV467Q`** - the whole set at 160 cases, taken on `81a643d`,
+which gives medication advice a label, cause and notice of its own (family `y`); 3 of 88
+answerable requests unserved, of which `G-w-05` and `G-o-06`'s restatement vary run to run.
+`01M4X2XC19QBJWH8RQ9B81SAX6`, the 146-case set on `583aaa8` - the build that added a BM25 branch
+whose top 3 join the dense top 5 the reranker sees, measured identically to the dense build before
+it, 1 of 87 answerable requests unserved - no longer re-scores, since family `y` took G-s-07 and
+G-s-12, and stays as the record of that build.
 `01M3WD842TTD1Q9FX8TDRTMFAB`, that dense build (`009d4ff`) - after Phase 4b extended the corpus to
 19 entries, dropped the similarity floor, let the answerer give a no the information states,
 chunked documents by heading section and fixed the classifier's routing of what the clinic sent,
