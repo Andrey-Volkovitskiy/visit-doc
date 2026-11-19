@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/d022c3f5-3596-4b5f-910f-ba716d667c42
+
 # VisitDoc
 **A conversational AI assistant** for medical clinics. It helps patients book, reschedule and
 cancel appointments through chat and get grounded answers to policy/FAQ questions. When the
