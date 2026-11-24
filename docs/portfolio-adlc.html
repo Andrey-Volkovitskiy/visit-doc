@@ -124,7 +124,7 @@
     <li><b>Written principles the agent follows.</b> A spec-kit constitution, code-style and testing guides, and a CLAUDE.md per service
       set the project's rules, e.g. <span class="em">"one value, one meaning"</span> (no status or empty result may stand for two situations) and
       <span class="em">non-negotiable TDD</span>: tests are written from the spec before the code exists, so they have no code to mirror.</li>
-    <li><b>4,800 tests</b> (unit, integration, end-to-end) catch regressions. Each test worker gets its own Postgres databases and
+    <li><b>3,200 tests</b> (unit, integration, end-to-end) catch regressions. Each test worker gets its own Postgres databases and
       Qdrant collections, so several coding agents can check their edits at the same time without collisions.</li>
     <li><b>Hooks.</b> After every edit, code is auto-formatted, linted and type-checked. Errors go straight back to the agent, so a
       type error never survives to the next step.</li>
@@ -155,7 +155,7 @@
     <div class="stat"><div class="n">18 features / 10 weeks</div><div class="l">major <a href="https://github.com/Andrey-Volkovitskiy/visit-doc/tree/main/specs" target="_blank" rel="noopener" style="color:inherit">features</a>, solo, shipped through SDD</div></div>
     <div class="stat"><div class="n">45k</div><div class="l">lines of app code</div></div>
     <div class="stat"><div class="n">100% agent-written</div><div class="l">built from my specs, reviewed by me</div></div>
-    <div class="stat"><div class="n">~4,800</div><div class="l">tests, written test-first</div></div>
+    <div class="stat"><div class="n">~3,200</div><div class="l">tests, written test-first</div></div>
   </div>
 
   <div class="stack"><b>Coding&nbsp;agent:</b>&nbsp;Claude Code&nbsp;· <b>Specs:</b>&nbsp;GitHub spec-kit&nbsp;· <b>Testing:</b>&nbsp;pytest + xdist, Vitest, Playwright&nbsp;· <b>Quality&nbsp;gates&nbsp;&amp;&nbsp;CI:</b>&nbsp;ruff, mypy strict, tsc, pre-commit, GitHub Actions&nbsp;· <b>AI&nbsp;evaluation:</b>&nbsp;golden-set harness, Langfuse</div>
